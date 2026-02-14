@@ -2,11 +2,7 @@ import fs from "node:fs";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  createStylePlugin,
-  generateSafelist,
-  Breakpoint,
-} from "@duydpdev/style-generator";
+import { createStylePlugin, generateSafelist, Breakpoint } from "../src";
 
 import theme from "./theme.json";
 

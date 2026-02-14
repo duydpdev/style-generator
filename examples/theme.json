@@ -3,7 +3,8 @@
     "base": {
       "blue25": "rgba(245.31, 254.49, 254.49, 1)",
       "primary": "#007AFF",
-      "white": "#FFFFFF"
+      "white": "#FFFFFF",
+      "black": "#000000"
     },
     "text": {
       "main": "#1C1C20",

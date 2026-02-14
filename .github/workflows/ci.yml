@@ -1,0 +1,39 @@
+name: CI Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
+  CI_SERVICE_REPOSITORY_NPM_PUBLIC_URL: "https://npm.pkg.github.com"
+
+jobs:
+  check:
+    name: Build & Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: Setup Java (required for openapi-generator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Run lint if available, otherwise just build
+      - name: Lint
+        run: yarn lint:spec
+
+      - name: Build
+        run: yarn build

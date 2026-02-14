@@ -20,7 +20,8 @@
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored",
     "lint-staged": "lint-staged",
     "lint:fix": "yarn run lint --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "semantic-release"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^19.7.1",

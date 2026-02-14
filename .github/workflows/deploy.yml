@@ -38,12 +38,6 @@ jobs:
           node-version: "20"
           cache: "yarn"
 
-      - name: Setup Java (required for openapi-generator)
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
       - name: Install dependencies
         run: yarn install --immutable
 

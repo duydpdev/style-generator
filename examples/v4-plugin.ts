@@ -6,7 +6,7 @@ import {
   createStylePlugin,
   generateSafelist,
   Breakpoint,
-} from "@duydp.dev/style-generator";
+} from "@duydpdev/style-generator";
 
 import theme from "./theme.json";
 

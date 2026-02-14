@@ -1,3 +1,9 @@
+# [1.0.0-DEV.3]() (2026-02-14)
+
+### Bug Fixes
+
+* update yarn config ([#3](https://github.com/duydpdev/style-generator/issues/3)) ([30f1140]())
+
 # [1.0.0-DEV.2]() (2026-02-14)
 
 ### Bug Fixes

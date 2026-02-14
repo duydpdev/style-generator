@@ -1,0 +1,10 @@
+# [{{version}}]({{compareUrl}}) ({{date}})
+
+{{#each commitGroups}}
+### {{title}}
+
+{{#each commits}}
+* {{#if scope}}**{{scope}}:** {{/if}}{{subject}} ([{{shortHash}}]({{commitUrl}}))
+{{/each}}
+
+{{/each}}

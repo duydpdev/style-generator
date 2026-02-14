@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────
+# Back-merge — Merge main ngược về develop sau khi release stable
+#
+# Reusable workflow, được gọi từ release.yml
+# Chỉ chạy khi release stable tag trên main
+# Commit message chứa [skip ci] để KHÔNG tạo tag mới trên develop
+# ─────────────────────────────────────────────────────
+name: Back-merge
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Release tag (e.g. v1.2.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  back-merge:
+    name: Merge main into develop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into develop
+        run: |
+          git fetch origin main
+          git merge origin/main -X theirs --no-edit \
+            -m "chore: merge main (${{ inputs.version }}) into develop [skip ci]"
+
+      - name: Push
+        run: git push origin develop

@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────
+# Deploy — Build & publish package lên GitHub Packages
+#
+# Reusable workflow, được gọi từ release.yml
+# Input: tag name (e.g. v1.2.0 hoặc v1.2.0-DEV.1)
+# ─────────────────────────────────────────────────────
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag to checkout and publish (e.g. v1.2.0)"
+        required: true
+        type: string
+
+env:
+  CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
+  CI_SERVICE_REPOSITORY_NPM_PUBLIC_URL: "https://npm.pkg.github.com"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    name: Build & Publish Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: Setup Java (required for openapi-generator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
+        run: yarn npm publish

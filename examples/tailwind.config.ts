@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import { createStylePlugin } from "@duydp.dev/style-generator";
+import { createStylePlugin } from "@duydpdev/style-generator";
 import theme from "./theme.json";
 // NOTE: This example is for Tailwind CSS v3 compatibility.
 // For Tailwind CSS v4, please refer to the README and v4-plugin.ts example.

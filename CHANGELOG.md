@@ -1,3 +1,9 @@
+# [1.0.0-DEV.2]() (2026-02-14)
+
+### Bug Fixes
+
+* update yarn config ([#2](https://github.com/duydpdev/style-generator/issues/2)) ([1425ccf]())
+
 # [1.0.0-DEV.1]() (2026-02-14)
 
 ### Features

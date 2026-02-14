@@ -33,7 +33,7 @@ jobs:
 
       # Run lint if available, otherwise just build
       - name: Lint
-        run: yarn lint:spec
+        run: yarn lint
 
       - name: Build
         run: yarn build

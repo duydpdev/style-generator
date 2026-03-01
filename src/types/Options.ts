@@ -59,7 +59,7 @@ export interface StyleGeneratorOptions {
   screens?: Record<Breakpoint | string, string>;
 
   /**
-   * Enable CSS Variables generation (`:root`, `html[data-theme='light/dark']`).
+   * Enable CSS Variables generation (`:root` and `html[data-theme='<name>']` for each theme).
    * Set to false if your project doesn't use CSS variables or theming.
    * @default true
    */

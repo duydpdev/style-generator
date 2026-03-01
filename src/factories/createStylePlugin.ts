@@ -1,27 +1,32 @@
 import plugin, { PluginAPI, PluginCreator } from "tailwindcss/plugin";
 
 import { ThemeConfig, StyleGeneratorOptions, defaultScreens } from "../types";
-import type { SpacingPropertyMap } from "../types";
+import type { SpacingPropertyMap, ThemeOverride } from "../types";
 import { extractData, addDot, flattenToVars, mapToVarRefs } from "../utils";
 import { DEFAULT_SPACING_PROPERTIES } from "../constants";
 
 import { generateSafelist } from "./generateSafelist";
 
 /**
- * Build dark mode CSS variable overrides from config.
- * @param {ThemeConfig['dark']} dark - Dark override config
- * @returns {Record<string, string>} Dark CSS variables
+ * Build CSS variable overrides from a theme override config.
+ * @param {ThemeOverride} override - Theme override config
+ * @returns {Record<string, string>} CSS variables for the theme
  */
-const buildDarkVars = (dark?: ThemeConfig["dark"]): Record<string, string> => {
-  if (!dark) return {};
+const buildThemeVars = (override: ThemeOverride): Record<string, string> => {
   return {
-    ...(dark.colors?.base ? flattenToVars("color-base", dark.colors.base) : {}),
-    ...(dark.colors?.text ? flattenToVars("color-text", dark.colors.text) : {}),
-    ...(dark.shadows ? flattenToVars("shadow", dark.shadows) : {}),
-    ...(dark.backDropBlurs
-      ? flattenToVars("backdrop-blur", dark.backDropBlurs)
+    ...(override.colors?.base
+      ? flattenToVars("color-base", override.colors.base)
       : {}),
-    ...(dark.borderRadius ? flattenToVars("radius", dark.borderRadius) : {}),
+    ...(override.colors?.text
+      ? flattenToVars("color-text", override.colors.text)
+      : {}),
+    ...(override.shadows ? flattenToVars("shadow", override.shadows) : {}),
+    ...(override.backDropBlurs
+      ? flattenToVars("backdrop-blur", override.backDropBlurs)
+      : {}),
+    ...(override.borderRadius
+      ? flattenToVars("radius", override.borderRadius)
+      : {}),
   };
 };
 
@@ -142,8 +147,7 @@ export const createStylePlugin = (
   options: StyleGeneratorOptions = {},
   safelist?: string[],
 ): unknown => {
-  const { colors, typography, shadows, backDropBlurs, borderRadius, dark } =
-    config;
+  const { colors, typography, shadows, backDropBlurs, borderRadius } = config;
 
   const { enableCssVariables = true, enableResponsive = true } = options;
 
@@ -177,17 +181,20 @@ export const createStylePlugin = (
   };
 
   const myPlugin: PluginCreator = (api: PluginAPI) => {
-    // Inject CSS variables for light/dark themes
+    // Inject CSS variables: base theme → :root, overrides → html[data-theme='<name>']
     if (enableCssVariables) {
-      const lightVars = buildLightVars(config);
-      const darkVars = buildDarkVars(dark);
-      const hasDark = Object.keys(darkVars).length > 0;
+      const baseVars = buildLightVars(config);
+      api.addBase({ ":root": baseVars });
 
-      api.addBase({
-        ":root": lightVars,
-        "html[data-theme='light']": lightVars,
-        ...(hasDark ? { "html[data-theme='dark']": darkVars } : {}),
-      });
+      // Generate CSS variables for each theme override
+      if (config.themes) {
+        for (const [name, override] of Object.entries(config.themes)) {
+          const vars = buildThemeVars(override);
+          if (Object.keys(vars).length > 0) {
+            api.addBase({ [`html[data-theme='${name}']`]: vars });
+          }
+        }
+      }
     }
 
     // Register custom typography utilities

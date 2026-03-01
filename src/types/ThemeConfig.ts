@@ -27,6 +27,10 @@ export interface ThemeConfig {
    * Border radius configuration.
    */
   borderRadius?: Record<string, string>;
+  /**
+   * Border configuration.
+   */
+  border?: Record<string, string>;
 
   /**
    * Theme overrides keyed by theme name.

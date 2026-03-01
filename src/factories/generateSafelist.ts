@@ -21,7 +21,8 @@ export const generateSafelist = (
   config: ThemeConfig,
   options: StyleGeneratorOptions = {},
 ): string[] => {
-  const { colors, typography, shadows, backDropBlurs, borderRadius } = config;
+  const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
+    config;
 
   const { enableResponsive = true, responsiveModules = ["layout", "rounded"] } =
     options;
@@ -91,7 +92,8 @@ export const generateSafelist = (
 
   // --- 3. Border widths ---
   if (options.border?.enabled !== false) {
-    const values = options.border?.values ?? [...DEFAULT_BORDER_VALUES];
+    const values =
+      options.border?.values ?? Object.keys(border ?? DEFAULT_BORDER_VALUES);
     const props = options.border?.properties ?? borderProperties;
     pushClasses("borders", props, values);
   }

@@ -1,28 +1,21 @@
-import { ThemeConfig, StyleGeneratorOptions, StyleModule } from "../types";
+import { ThemeConfig, StyleGeneratorOptions } from "../types";
 import { toKebabCase } from "../utils";
 import {
-  roundedOptionBase,
-  borderOption,
-  spacingOption,
-  opacityOption,
-  zIndexOption,
-  spacingProperties,
-  displayClasses,
-  flexClasses,
-  alignClasses,
-  justifyClasses,
-  selfClasses,
-  contentClasses,
-  textAlignClasses,
+  DEFAULT_LAYOUT_CLASSES,
+  DEFAULT_ROUNDED_VALUES,
+  DEFAULT_BORDER_VALUES,
+  DEFAULT_OPACITY_VALUES,
+  DEFAULT_ZINDEX_VALUES,
   roundedProperties,
   borderProperties,
 } from "../constants";
 
 /**
  * Generates a list of safelisted classes based on the theme configuration.
+ * NOTE: Spacing is NOT included — it uses CSS custom properties (see createStylePlugin).
  * @param {ThemeConfig} config - Theme configuration
  * @param {StyleGeneratorOptions} options - Generator options
- * @returns {string[]} Array of class names
+ * @returns {string[]} Array of class names to safelist
  */
 export const generateSafelist = (
   config: ThemeConfig,
@@ -30,44 +23,33 @@ export const generateSafelist = (
 ): string[] => {
   const { colors, typography, shadows, backDropBlurs, borderRadius } = config;
 
-  // --- Helpers ---
+  const { enableResponsive = true, responsiveModules = ["layout", "rounded"] } =
+    options;
 
-  const {
-    modules,
-    responsiveModules = ["spacing", "layout", "typography", "rounded"],
-  } = options;
-
-  const shouldGenerate = (moduleName: StyleModule) => {
-    return !modules || modules.includes(moduleName);
-  };
-
-  const shouldGenerateResponsive = (moduleName: StyleModule) => {
-    return (
-      shouldGenerate(moduleName) &&
-      (responsiveModules.includes(moduleName) || !responsiveModules)
-    );
-    // Note: If responsiveModules IS defined (even empty), we respect it.
-    // If it is undefined, we use the default provided above.
-  };
-
-  // Prefixes for responsive design
-  const keysToUse = options.breakpoints ?? ["md", "lg"];
-  const responsivePrefixes = keysToUse.map((b) => `${b}:`);
+  // Build responsive prefixes from breakpoint keys
+  const breakpointKeys = options.breakpoints ?? ["md", "lg"];
+  const responsivePrefixes = enableResponsive
+    ? breakpointKeys.map((b) => `${b}:`)
+    : [];
 
   const safelist: string[] = [];
 
-  // Helper to push combinations
+  /**
+   * Push class combinations to safelist with optional responsive variants.
+   * @param {string} moduleName - Module name (used to check responsive inclusion)
+   * @param {string[]} props - Property prefixes or full class names
+   * @param {Array<string | number>} values - Values to combine with properties
+   * @param {boolean} isClassOnly - If true, push props as-is without combining with values
+   */
   const pushClasses = (
-    moduleName: StyleModule,
+    moduleName: string,
     props: readonly string[],
     values: readonly (string | number)[],
     isClassOnly = false,
   ) => {
-    if (!shouldGenerate(moduleName)) return;
-
     const generate = (prefix: string) => {
-      // If prefix is not empty (responsive), check if this module allows responsive
-      if (prefix && !shouldGenerateResponsive(moduleName)) return;
+      // Skip responsive generation if module is not in responsiveModules
+      if (prefix && !responsiveModules.includes(moduleName as never)) return;
 
       if (isClassOnly) {
         for (const cls of props) {
@@ -82,88 +64,91 @@ export const generateSafelist = (
       }
     };
 
-    // Always generate base classes (empty prefix)
+    // Always generate base classes
     generate("");
 
-    // Generate responsive classes
+    // Generate responsive variants
     for (const prefix of responsivePrefixes) {
       generate(prefix);
     }
   };
 
-  // --- 1. Spacing ---
-  // Generates spacing classes (m, p, mx, my, etc.) combined with spacing options.
-  pushClasses("spacing", spacingProperties, spacingOption);
+  // --- 1. Layout (display, flex, align, justify, text-align) ---
+  if (options.layout?.enabled !== false) {
+    const classes = options.layout?.values ?? [...DEFAULT_LAYOUT_CLASSES];
+    pushClasses("layout", classes, [], true);
+  }
 
-  // --- 2. Layout ---
-  const layoutGroups = [
-    displayClasses,
-    flexClasses,
-    alignClasses,
-    justifyClasses,
-    selfClasses,
-    contentClasses,
-    textAlignClasses,
-  ];
+  // --- 2. Rounded ---
+  if (options.rounded?.enabled !== false) {
+    const values = [
+      ...(options.rounded?.values ?? [...DEFAULT_ROUNDED_VALUES]),
+      ...Object.keys(borderRadius ?? {}),
+    ];
+    const props = options.rounded?.properties ?? roundedProperties;
+    pushClasses("rounded", props, [...new Set(values)]);
+  }
 
-  layoutGroups.forEach((group) => {
-    pushClasses("layout", group, [], true);
-  });
+  // --- 3. Border widths ---
+  if (options.border?.enabled !== false) {
+    const values = options.border?.values ?? [...DEFAULT_BORDER_VALUES];
+    const props = options.border?.properties ?? borderProperties;
+    pushClasses("borders", props, values);
+  }
 
-  // --- 3. Rounded ---
-  const roundedValues = [
-    ...roundedOptionBase,
-    ...Object.keys(borderRadius ?? {}),
-  ];
-  pushClasses("rounded", roundedProperties, roundedValues);
-
-  // --- 4. Typography ---
-  const typographyKeys = Object.keys(typography);
-  pushClasses("typography", typographyKeys.map(toKebabCase), [], true);
-
-  // --- 5. Borders ---
-  const borderValues = borderOption;
-  pushClasses("borders", borderProperties, borderValues);
-
-  // --- 6. Colors ---
+  // --- 4. Colors (text, bg, border for each custom color key) ---
   const colorKeys = [
     ...Object.keys(colors.text),
     ...Object.keys(colors.base),
   ].map((k) => toKebabCase(k));
 
-  if (shouldGenerate("colors")) {
-    const generateColorClasses = (prefix: string) => {
-      if (prefix && !shouldGenerateResponsive("colors")) return;
-      colorKeys.forEach((color) => {
-        safelist.push(
-          `${prefix}text-${color}`,
-          `${prefix}bg-${color}`,
-          `${prefix}border-${color}`,
-        );
-      });
-    };
+  const generateColorClasses = (prefix: string) => {
+    if (prefix && !responsiveModules.includes("colors" as never)) return;
+    colorKeys.forEach((color) => {
+      safelist.push(
+        `${prefix}text-${color}`,
+        `${prefix}bg-${color}`,
+        `${prefix}border-${color}`,
+      );
+    });
+  };
 
-    generateColorClasses("");
-    for (const prefix of responsivePrefixes) {
-      generateColorClasses(prefix);
-    }
+  generateColorClasses("");
+  for (const prefix of responsivePrefixes) {
+    generateColorClasses(prefix);
   }
 
-  // --- 7. Shadows ---
+  // --- 5. Typography (custom utility classes) ---
+  const typographyKeys = Object.keys(typography);
+  pushClasses("typography", typographyKeys.map(toKebabCase), [], true);
+
+  // --- 6. Box shadows ---
   const shadowKeys = Object.keys(shadows ?? {});
   pushClasses("shadows", ["shadow"], shadowKeys);
 
-  // --- 8. Backdrop ---
+  // --- 7. Backdrop blur ---
   const blurKeys = Object.keys(backDropBlurs ?? {});
   pushClasses("backdrop", ["backdrop-blur"], blurKeys);
 
-  // --- 9. Opacity ---
-  const opacityValues = opacityOption;
-  pushClasses("opacity", ["opacity"], opacityValues);
+  // --- 8. Opacity ---
+  if (options.opacity?.enabled !== false) {
+    const opacityValues = options.opacity?.values ?? [
+      ...DEFAULT_OPACITY_VALUES,
+    ];
+    pushClasses("opacity", ["opacity"], opacityValues);
+  }
 
-  // --- 10. Z-Index ---
-  const zIndexValues = zIndexOption;
-  pushClasses("zIndex", ["z"], zIndexValues);
+  // --- 9. Z-Index ---
+  if (options.zIndex?.enabled !== false) {
+    const zIndexValues = options.zIndex?.values ?? [...DEFAULT_ZINDEX_VALUES];
+    pushClasses("zIndex", ["z"], zIndexValues);
+  }
 
-  return safelist;
+  // --- 10. User-defined dynamic classes ---
+  if (options.dynamicClasses) {
+    safelist.push(...options.dynamicClasses);
+  }
+
+  // Deduplicate
+  return [...new Set(safelist)];
 };

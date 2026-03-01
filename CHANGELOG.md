@@ -1,3 +1,9 @@
+# [1.1.0]() (2026-03-01)
+
+### Features
+
+* update color theme variable ([2ad29f0]())
+
 # [1.1.0-DEV.1]() (2026-03-01)
 
 ### Features

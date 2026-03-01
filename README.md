@@ -1,73 +1,39 @@
 # FE Style Generator
 
-Library giúp tự động tạo **Design System** cho Tailwind CSS từ file cấu hình (Theme Config).
-Hỗ trợ cả **Tailwind CSS v4** và **v3**.
+Library to automatically generate a **Design System** for Tailwind CSS from a theme configuration file.
+Supports both **Tailwind CSS v4** and **v3**.
 
-## Tính năng
+## Features
 
-- 🎨 **Theme Config**: Định nghĩa màu sắc, typography, spacing, shadows, v.v. từ một nơi duy nhất.
-- ⚡ **Tailwind v4 Support**: Tương thích hoàn toàn với `@plugin` và `@source`.
-- 🔄 **Backward Compatibility**: Hỗ trợ Tailwind v3 config truyền thống.
-- 🛡️ **Smart Safelist**: Tự động safelist các dynamic classes (ví dụ: `text-primary`, `m-4`, `md:p-8`) để tránh bị purge.
-- 📱 **Dynamic & Custom Breakpoints**: Hỗ trợ override screens width và chọn breakpoints cần safelist.
+- 🎨 **Theme Config**: Define colors, typography, spacing, shadows, etc. from a single source.
+- 🌗 **Dark / Light Mode**: Auto-generate CSS Variables with `html[data-theme='light/dark']`.
+- ⚡ **Tailwind v4 Support**: Fully compatible with `@plugin` and `@source`.
+- 🔄 **Backward Compatibility**: Supports traditional Tailwind v3 config.
+- 🚀 **CSS Custom Properties for Spacing**: Zero safelist for spacing — uses `.sp-*` utility classes with `var()` fallback chains for responsive support.
+- 🛡️ **Smart Safelist**: Only safelists custom tokens (colors, typography, shadows, layout) — not built-in utilities.
+- 📱 **Dynamic Breakpoints**: Override screen widths and select breakpoints dynamically.
+- ⚙️ **Feature Flags**: Toggle CSS Variables and Responsive per project.
 
 ---
 
-## 1. Cài đặt
+## 1. Installation
 
 ```bash
-yarn add @duydp.dev/style-generator
-# hoặc
-npm install @duydp.dev/style-generator
+yarn add @duydpdev/style-generator
+# or
+npm install @duydpdev/style-generator
 ```
 
 ---
 
-## 2. Chuẩn bị Config
+## 2. Theme Config
 
-#### Advanced Options
-
-You can control which modules are generated and which ones have responsive variants to optimize the safelist size.
-
-```typescript
-createStylePlugin(theme, {
-  // ... other options
-
-  // Whitelist modules to generate (default: all)
-  modules: ["spacing", "layout", "typography", "colors", "rounded"],
-
-  // Whitelist modules to generate responsive classes for (e.g. md:m-4)
-  // Default: ["spacing", "layout", "typography", "rounded"]
-  // Colors, shadows, borders, etc. are static by default to save size.
-  responsiveModules: ["spacing", "layout"], 
-});
-```
-
-### Options Reference
-
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `breakpoints` | `(string \| Breakpoint)[]` | `["md", "lg"]` | List of breakpoints to generate responsive prefixes for. |
-| `screens` | `Record<string, string>` | - | Custom screens to override or extend Tailwind default screens. |
-| `modules` | `string[]` | `undefined` (All) | List of modules to generate. Available: `spacing`, `layout`, `typography`, `colors`, `borders`, `shadows`, `rounded`, `backdrop`, `opacity`, `zIndex`. |
-| `responsiveModules` | `string[]` | `["spacing", "layout", "typography", "rounded"]` | List of modules to generate responsive variants for. |
-
-### Options (Breakpoints & Screens)
-
-Bạn có thể cấu hình breakpoints thông qua arguments thứ 2 của plugin:
-
-- **`screens`**: Định nghĩa custom width (override mặc định Tailwind).
-- **`breakpoints`**: Danh sách key breakpoints sẽ được generate trong safelist.
-
-## Development Config (Design Tokens)
-
-Tạo file `theme.json` (hoặc `.ts`) chứa cấu hình design tokens (Màu, Typography, Sizes...):
+Create a `theme.json` file with your design tokens:
 
 ```json
-/* theme.json */
 {
   "colors": {
-    "base": { "primary": "#3B82F6", "secondary": "#6366F1" },
+    "base": { "primary": "#3B82F6", "background": "#FFFFFF" },
     "text": { "main": "#111827", "muted": "#6B7280" }
   },
   "typography": {
@@ -83,53 +49,77 @@ Tạo file `theme.json` (hoặc `.ts`) chứa cấu hình design tokens (Màu, T
 }
 ```
 
-### Options (Breakpoints & Screens)
+### Dark Mode
 
-Bạn có thể cấu hình breakpoints thông qua arguments thứ 2 của plugin:
+Add a `dark` key containing only **overrides** (values that differ from light):
 
-- **`screens`**: Định nghĩa custom width (override mặc định Tailwind).
-- **`breakpoints`**: Danh sách key breakpoints sẽ được generate trong safelist.
+```json
+{
+  "colors": {
+    "base": { "primary": "#3B82F6", "background": "#FFFFFF" },
+    "text": { "main": "#111827" }
+  },
+
+  "dark": {
+    "colors": {
+      "base": { "background": "#000000" },
+      "text": { "main": "#FFFFFF" }
+    },
+    "shadows": { "sm": "0 1px 2px rgba(255,255,255,0.1)" }
+  }
+}
+```
+
+**Auto-generated CSS output:**
+
+```css
+:root, html[data-theme='light'] {
+  --color-base-primary: #3B82F6;
+  --color-base-background: #FFFFFF;
+  --color-text-main: #111827;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+html[data-theme='dark'] {
+  --color-base-background: #000000;
+  --color-text-main: #FFFFFF;
+  --shadow-sm: 0 1px 2px rgba(255,255,255,0.1);
+}
+```
+
+> **No `dark` key?** → Only light mode CSS variables are generated. Backward compatible.
 
 ---
 
-## 3. Sử dụng với Tailwind CSS v4
+## 3. Usage with Tailwind CSS v4
 
-### Bước 1: Tạo Script Plugin (`src/plugins/theme-plugin.ts`)
-
-Sử dụng hàm **`createStyleSystem`** để nhận về cả plugin và safelist generator với cùng một cấu hình.
+### Step 1: Create Plugin File
 
 ```typescript
-import { createStyleSystem, Breakpoint } from "@duydp.dev/style-generator";
+import { createStyleSystem, Breakpoint } from "@duydpdev/style-generator";
 import theme from "../styles/theme.json";
 import fs from "fs";
 import path from "path";
 
-// Cấu hình Options (Dùng chung cho cả Plugin và Safelist)
 const options = {
-  // 1. Override hoặc thêm screens mới
-  screens: {
-    md: "800px",
-    "3xl": "1920px"
-  },
-  // 2. Chọn breakpoints để safelist
-  breakpoints: [Breakpoint.SM, Breakpoint.MD, Breakpoint.LG, "3xl"] 
+  screens: { md: "800px" },
+  breakpoints: [Breakpoint.MD, Breakpoint.LG],
 };
 
-// Tạo system (plugin + safelist)
 const { plugin, safelist } = createStyleSystem(theme, options);
 
-// Export plugin cho Tailwind v4
+// Export plugin for Tailwind v4
 export default plugin;
 
-// Script generate safelist.txt (chạy riêng)
-if (require.main === module) {
-  const outPath = path.resolve(__dirname, "../styles/safelist.txt");
+// Script: generate safelist.txt
+if (process.argv[1] === import.meta.filename) {
+  const outPath = path.resolve(import.meta.dirname, "../styles/safelist.txt");
   fs.writeFileSync(outPath, safelist.join("\n"), "utf8");
   console.log("✅ Safelist generated!");
 }
 ```
 
-### Bước 2: Import vào CSS (`src/index.css`)
+### Step 2: Import in CSS
 
 ```css
 @import "tailwindcss";
@@ -139,20 +129,19 @@ if (require.main === module) {
 
 ---
 
-## 4. Sử dụng với Tailwind CSS v3
+## 4. Usage with Tailwind CSS v3
 
 ```typescript
 import type { Config } from "tailwindcss";
-import { createStylePlugin, Breakpoint } from "@duydp.dev/style-generator";
+import { createStylePlugin, Breakpoint } from "@duydpdev/style-generator";
 import theme from "./theme.json";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
-  theme: { extend: {} },
   plugins: [
     createStylePlugin(theme, {
       screens: { md: "800px" },
-      breakpoints: [Breakpoint.MD, Breakpoint.LG]
+      breakpoints: [Breakpoint.MD, Breakpoint.LG],
     }),
   ],
 };
@@ -162,18 +151,129 @@ export default config;
 
 ---
 
-## 5. Exports API
+## 5. Spacing — CSS Custom Properties
 
-| Hàm | Input | Mô tả |
+Spacing uses CSS custom properties instead of safelist, reducing class count from **~4,800 to 0**.
+
+The plugin generates fixed `.sp-*` utility classes with `var()` fallback chains:
+
+```css
+/* Base */
+.sp-p { padding: var(--sp-p) }
+.sp-mx { margin-left: var(--sp-mx); margin-right: var(--sp-mx) }
+
+/* Responsive (mobile-first) */
+@media (min-width: 768px) {
+  .sp-p { padding: var(--sp-p-md, var(--sp-p)) }
+}
+@media (min-width: 1024px) {
+  .sp-p { padding: var(--sp-p-lg, var(--sp-p-md, var(--sp-p))) }
+}
+```
+
+### Usage in Components
+
+Use the `resolveSpacing` / `resolveSpacingProps` helpers to map props to CSS variables:
+
+```tsx
+import { resolveSpacingProps } from "@duydpdev/style-generator";
+
+const Box = ({ p, px, py, m, mx, my, className, children, ...rest }) => {
+  const spacing = resolveSpacingProps({ p, px, py, m, mx, my });
+
+  return (
+    <div
+      className={twMerge(spacing.classNames.join(" "), className)}
+      style={{ ...spacing.style, ...rest.style }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Simple
+<Box p={4} />
+// → class="sp-p" style="--sp-p: 1rem"
+
+// Responsive
+<Box p={{ base: 2, md: 4, lg: 8 }} />
+// → class="sp-p" style="--sp-p: 0.5rem; --sp-p-md: 1rem; --sp-p-lg: 2rem"
+
+// Any value works (no safelist limitation)
+<Box p={13.5} />
+// → class="sp-p" style="--sp-p: 3.375rem"
+```
+
+---
+
+## 6. Options
+
+```typescript
+createStyleSystem(theme, {
+  // Breakpoints & Screens
+  screens: { md: "800px", "3xl": "1920px" },
+  breakpoints: [Breakpoint.MD, Breakpoint.LG],
+
+  // Spacing (CSS custom properties)
+  spacing: {
+    enabled: true,           // default: true
+    // properties: { ... },  // override/extend default property mapping
+  },
+
+  // Module configs (safelist-based)
+  layout: { enabled: true },                        // display, flex, align...
+  rounded: { values: ["none", "md", "lg", "full"] }, // customize values
+  border: { values: [0, 1, 2] },                    // customize values
+  opacity: { enabled: true },
+  zIndex: { enabled: true },
+
+  // Extra dynamic classes
+  dynamicClasses: ["animate-spin", "animate-pulse"],
+
+  // Feature flags
+  enableCssVariables: true,   // default: true
+  enableResponsive: true,     // default: true
+
+  // Responsive modules (which safelist modules get responsive prefixes)
+  responsiveModules: ["layout", "rounded"],
+});
+```
+
+### Options Reference
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `screens` | `Record<string, string>` | Tailwind defaults | Custom screen widths. |
+| `breakpoints` | `(Breakpoint \| string)[]` | `["md", "lg"]` | Breakpoints for responsive spacing and safelist. |
+| `spacing` | `{ enabled?, properties? }` | Enabled, all props | Spacing via CSS custom properties. Zero safelist. |
+| `layout` | `ModuleConfig<string>` | All layout classes | Layout classes (hidden, flex, items-center...). |
+| `rounded` | `ModuleConfig<string>` | 9 values | Border radius values for safelist. |
+| `border` | `ModuleConfig<number>` | `[0, 1, 2, 4]` | Border width values for safelist. |
+| `opacity` | `ModuleConfig<number>` | 0-100 step 5 | Opacity values for safelist. |
+| `zIndex` | `ModuleConfig<number\|string>` | `[0,10,..,50,"auto"]` | Z-index values for safelist. |
+| `dynamicClasses` | `string[]` | `[]` | Extra classes to add to safelist. |
+| `enableCssVariables` | `boolean` | `true` | Generate `:root` / `html[data-theme]` CSS variables. |
+| `enableResponsive` | `boolean` | `true` | Generate responsive spacing rules and safelist variants. |
+| `responsiveModules` | `StyleModule[]` | `["layout", "rounded"]` | Which safelist modules get responsive prefixes. |
+
+### Use Cases
+
+| Project type | Config |
+| :--- | :--- |
+| **Full (multi-platform web app)** | `{}` (defaults) |
+| **Mobile-only or Desktop-only** | `{ enableResponsive: false }` — no responsive spacing/safelist |
+| **No dark mode / CSS vars** | `{ enableCssVariables: false }` |
+| **Minimal safelist** | `{ layout: { enabled: false }, opacity: { enabled: false }, zIndex: { enabled: false } }` |
+
+---
+
+## 7. Exports API
+
+| Function | Input | Description |
 | --- | --- | --- |
-| `createStylePlugin` | `(theme, options?)` | Tạo Tailwind Plugin. Inject CSS variables, setup screens, typography. |
-| `createStyleSystem` | `(theme, options?)` | **Recommended**. Trả về `{ plugin, safelist }`. Giúp đồng bộ config. |
-| `generateSafelist` | `(theme, options?)` | Sinh danh sách class `string[]` cần safelist. |
-| `createDesignTokens` | `(theme, options?)` | Sinh object design tokens (bao gồm cả screens info). |
-
-### StyleGeneratorOptions
-
-| Property | Type | Default | Mô tả |
-| --- | --- | --- | --- |
-| `breakpoints` | `(Breakpoint \| string)[]` | `["md", "lg"]` | List các prefix responsive sẽ được safelist (vd: `md:`, `lg:`). |
-| `screens` | `Record<string, string>` | `undefined` | Custom screens map để override mặc định Tailwind (vd: `{ md: "800px" }`). |
+| `createStylePlugin` | `(theme, options?)` | Creates a Tailwind Plugin. Injects CSS variables, screens, typography, spacing rules. |
+| `createStyleSystem` | `(theme, options?)` | **Recommended**. Returns `{ plugin, safelist }`. |
+| `generateSafelist` | `(theme, options?)` | Generates `string[]` safelist (excludes spacing). |
+| `createDesignTokens` | `(theme, options?)` | Generates design tokens object for consumer apps. |
+| `resolveSpacing` | `(prop, value, unit?)` | Maps a single spacing prop to `{ className, style }`. |
+| `resolveSpacingProps` | `(props)` | Maps multiple spacing props to `{ classNames, style }`. |

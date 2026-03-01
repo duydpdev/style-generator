@@ -27,6 +27,21 @@ export interface ThemeConfig {
    * Border radius configuration.
    */
   borderRadius?: Record<string, string>;
+
+  /**
+   * Dark mode overrides.
+   * Only include values that differ from the base (light) theme.
+   * If omitted, only light mode CSS variables are generated.
+   */
+  dark?: {
+    colors?: {
+      base?: Record<string, string>;
+      text?: Record<string, string>;
+    };
+    shadows?: Record<string, string>;
+    backDropBlurs?: Record<string, string>;
+    borderRadius?: Record<string, string>;
+  };
 }
 
 /**

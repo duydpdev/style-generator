@@ -1,3 +1,9 @@
+# [1.2.0-DEV.1]() (2026-03-01)
+
+### Features
+
+* update safelist & token ([612e3f0]())
+
 # [1.1.0]() (2026-03-01)
 
 ### Features

@@ -35,20 +35,22 @@
     "md": "8px"
   },
 
-  "dark": {
-    "colors": {
-      "base": {
-        "primary": "#0A84FF",
-        "white": "#1C1C1E",
-        "black": "#FFFFFF"
+  "themes": {
+    "dark": {
+      "colors": {
+        "base": {
+          "primary": "#0A84FF",
+          "white": "#1C1C1E",
+          "black": "#FFFFFF"
+        },
+        "text": {
+          "main": "#FFFFFF",
+          "secondary": "#EBEBF5"
+        }
       },
-      "text": {
-        "main": "#FFFFFF",
-        "secondary": "#EBEBF5"
+      "shadows": {
+        "sm": "0px 1px 2px rgba(255, 255, 255, 0.1)"
       }
-    },
-    "shadows": {
-      "sm": "0px 1px 2px rgba(255, 255, 255, 0.1)"
     }
   }
 }

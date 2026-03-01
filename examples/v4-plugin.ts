@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createStylePlugin, generateSafelist, Breakpoint } from "../src";
+import { createStyleSystem, Breakpoint } from "../src";
 
 import theme from "./theme.json";
 
@@ -18,12 +18,14 @@ const options = {
   breakpoints: [Breakpoint.MD, Breakpoint.LG], // Only md and lg
 };
 
+// Create style system (plugin + safelist)
+const { plugin, safelist } = createStyleSystem(theme, options);
+
 // Export plugin
-export default createStylePlugin(theme, options);
+export default plugin;
 
 // 2. Generate safelist file (script execution)
 if (process.argv[1] === __filename) {
-  const safelist = generateSafelist(theme, options);
   const outPath = path.resolve(__dirname, "./safelist.txt");
   fs.writeFileSync(outPath, safelist.join("\n"), "utf8");
   console.log(

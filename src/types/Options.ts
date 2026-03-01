@@ -26,12 +26,29 @@ export type StyleModule =
   | "zIndex"
   | "rounded";
 
+/**
+ * Configuration for a utility module (safelist-based).
+ */
+export interface ModuleConfig<V = number | string> {
+  /** Set of values to generate. Falls back to defaults if not set. */
+  values?: V[];
+  /** Properties to generate. Falls back to defaults if not set. */
+  properties?: string[];
+  /** Disable this module entirely. @default true */
+  enabled?: boolean;
+}
+
+/**
+ * Mapping of spacing property keys to their CSS property declarations.
+ * Key: prop name (e.g. 'p', 'mx')
+ * Value: Record of CSS property → var() reference
+ */
+export type SpacingPropertyMap = Record<string, Record<string, string>>;
+
 export interface StyleGeneratorOptions {
   /**
-   * Defines the breakpoints to use.
-   * If provided, only these keys will be used generated in safelist and theme screens.
-   * If not provided, all available screens (default + custom) will be used.
-   * @default ["md", "lg"] // for safelist generation usually
+   * Breakpoint keys to use for responsive class generation.
+   * @default ["md", "lg"]
    */
   breakpoints?: (Breakpoint | string)[];
 
@@ -42,15 +59,59 @@ export interface StyleGeneratorOptions {
   screens?: Record<Breakpoint | string, string>;
 
   /**
-   * List of modules to generate safelist for.
-   * If not provided, all modules will be generated.
+   * Enable CSS Variables generation (`:root`, `html[data-theme='light/dark']`).
+   * Set to false if your project doesn't use CSS variables or theming.
+   * @default true
    */
-  modules?: StyleModule[];
+  enableCssVariables?: boolean;
 
   /**
-   * List of modules to generate responsive classes for.
-   * If provided, only these modules will have responsive variations (e.g. md:m-4).
-   * If not provided, specific defaults will be used to optimize size (usually ["spacing", "layout", "typography"]).
+   * Enable responsive class generation in safelist and spacing CSS rules.
+   * Set to false if your project only targets a single viewport.
+   * @default true
+   */
+  enableResponsive?: boolean;
+
+  // --- Spacing (CSS custom properties, zero safelist) ---
+
+  /**
+   * Spacing configuration. Uses CSS custom properties instead of safelist.
+   * Plugin generates fixed `.sp-*` utility classes with `var()` fallback chains.
+   */
+  spacing?: {
+    /** Disable spacing CSS rule generation entirely. @default true */
+    enabled?: boolean;
+    /** Override or extend the default spacing property-to-CSS mapping. */
+    properties?: SpacingPropertyMap;
+  };
+
+  // --- Module configs (safelist-based) ---
+
+  /** Layout classes config (hidden, flex, items-center, etc.). */
+  layout?: ModuleConfig<string>;
+  /** Border width config. */
+  border?: ModuleConfig<number>;
+  /** Border radius config. */
+  rounded?: ModuleConfig<string>;
+  /** Opacity config. */
+  opacity?: ModuleConfig<number>;
+  /** Z-index config. */
+  zIndex?: ModuleConfig;
+
+  /**
+   * Extra dynamic classes to add to safelist.
+   * Use for classes that are constructed at runtime and cannot be scanned by Tailwind.
+   */
+  dynamicClasses?: string[];
+
+  /**
+   * List of modules that should have responsive variants in the safelist.
+   * @default ["layout", "rounded"]
    */
   responsiveModules?: StyleModule[];
+
+  /**
+   * @deprecated Use individual module configs instead (spacing, layout, border, rounded, etc.).
+   */
+  modules?: StyleModule[];
 }

@@ -118,12 +118,12 @@ flowchart TD
 
 Commit message format: `[type] subject`
 
-| Type                        | Version bump    | Ví dụ                                      |
-| --------------------------- | --------------- | ------------------------------------------ |
-| `feat`                      | Minor (`1.1.0`) | `[feat] add multi-theme support`           |
-| `fix`                       | Patch (`1.0.1`) | `[fix] correct spacing var fallback`       |
-| `perf`                      | Patch (`1.0.1`) | `[perf] improve safelist generation`       |
-| `docs`, `chore`, `refactor` | Không bump      | `[docs] update architecture guide`         |
+| Type                        | Version bump    | Ví dụ                                |
+| --------------------------- | --------------- | ------------------------------------ |
+| `feat`                      | Minor (`1.1.0`) | `[feat] add multi-theme support`     |
+| `fix`                       | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
+| `perf`                      | Patch (`1.0.1`) | `[perf] improve safelist generation` |
+| `docs`, `chore`, `refactor` | Không bump      | `[docs] update architecture guide`   |
 
 ### Config
 

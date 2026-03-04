@@ -29,10 +29,6 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      # Validate PR title matches [type] subject so squash-merged commits
-      # trigger semantic-release correctly (the PR title becomes the squash
-      # commit message on main/develop).
-
       # Run lint if available, otherwise just build
       - name: Lint
         run: yarn lint

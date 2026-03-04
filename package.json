@@ -43,6 +43,7 @@
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-sonarjs": "^3.0.1",
     "globals": "^15.15.0",
+    "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
     "prettier": "^3.5.0",
     "semantic-release": "^24.2.2",
@@ -62,6 +63,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/duydpdev/style-generator.git"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": "eslint --fix --no-warn-ignored --max-warnings 0",
+    "*.{json,md,yml,yaml,css}": "prettier --write"
   },
   "packageManager": "yarn@4.6.0",
   "license": "MIT"

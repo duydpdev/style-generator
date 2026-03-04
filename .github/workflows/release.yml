@@ -61,7 +61,7 @@ jobs:
       - name: Check for new release
         id: check
         run: |
-          git fetch --tags origin
+          git fetch --tags --force origin
           git tag > /tmp/tags_after.txt
           NEW_TAG=$(comm -13 <(sort /tmp/tags_before.txt) <(sort /tmp/tags_after.txt) | head -1)
           if [ -n "$NEW_TAG" ]; then

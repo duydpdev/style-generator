@@ -7,7 +7,7 @@ const fs = require("node:fs");
 const template = fs.readFileSync("./changelog-template.hbs", "utf8");
 
 const parserOpts = {
-  headerPattern: /^\[(\w+)\] (.+)/,
+  headerPattern: /^\[(\w+)\] ([^:].+)/,
   headerCorrespondence: ["type", "subject"],
 };
 
@@ -19,7 +19,7 @@ module.exports = {
       "@semantic-release/commit-analyzer",
       {
         parserOpts: {
-          headerPattern: /^\[(\w+)\] (.+)/,
+          headerPattern: /^\[(\w+)\] ([^:].+)/,
           headerCorrespondence: ["type", "subject"],
         },
         releaseRules: [

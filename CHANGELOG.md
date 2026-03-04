@@ -1,3 +1,9 @@
+# [1.2.0-DEV.6]() (2026-03-04)
+
+### Features
+
+- update yarnrc ([#17](https://github.com/duydpdev/style-generator/issues/17)) ([7f5610e]())
+
 # [1.2.0-DEV.5]() (2026-03-04)
 
 ### Reverts

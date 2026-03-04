@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  packages: read
+
 env:
   # Use the auto-generated GITHUB_TOKEN so this workflow runs without
   # approval for all PR authors (including bots / Copilot).

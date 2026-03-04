@@ -19,7 +19,7 @@ const config: UserConfig = {
         },
         "type-enum": (parsed: any, _when: any, expectedValue: any) => {
           const { type } = parsed;
-          if (type && !expectedValue.includes(type)) {
+          if (type && !expectedValue.map((v: string) => v.toLowerCase()).includes(type.toLowerCase())) {
             return [false, `type must be one of ${expectedValue}`];
           }
           return [true, ""];
@@ -46,6 +46,7 @@ const config: UserConfig = {
         "build",
         "temp",
         "conf",
+        "wip",
       ],
     ],
   },

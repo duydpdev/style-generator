@@ -4,6 +4,23 @@
 
 - apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator/issues/13)) ([c47a7be]())
 - fix conflict ([#19](https://github.com/duydpdev/style-generator/issues/19)) ([5d5718c]())
+- fix conflict 1 ([#20](https://github.com/duydpdev/style-generator/issues/20)) ([83ce268]())
+
+### Features
+
+- update safe typescript safelist ([2631b60]())
+- update yarnrc ([#17](https://github.com/duydpdev/style-generator/issues/17)) ([72833a0]())
+
+### Reverts
+
+- Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator/issues/14))" ([#15](https://github.com/duydpdev/style-generator/issues/15)) ([9a986da]())
+
+# [1.2.0-DEV.1]() (2026-03-04)
+
+### Bug Fixes
+
+- apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator/issues/13)) ([c47a7be]())
+- fix conflict ([#19](https://github.com/duydpdev/style-generator/issues/19)) ([5d5718c]())
 
 ### Features
 

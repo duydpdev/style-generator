@@ -3,7 +3,7 @@
 ## Vitest Setup
 
 ```bash
-pnpm add -D vitest
+yarn add -D vitest
 ```
 
 ### Basic Config
@@ -130,8 +130,8 @@ jobs:
       matrix:
         ts: ["5.0", "5.2", "5.4", "5.6", "5.8"]
     steps:
-      - run: pnpm add -D typescript@${{ matrix.ts }}
-      - run: pnpm typecheck
+      - run: yarn add -D typescript@${{ matrix.ts }}
+      - run: yarn typecheck
 ```
 
 ## Package Validation
@@ -140,10 +140,10 @@ Validate published package:
 
 ```bash
 # Check exports are correct
-pnpm dlx publint
+yarn dlx publint
 
 # Check types work in different moduleResolutions
-pnpm dlx @arethetypeswrong/cli --pack .
+yarn dlx @arethetypeswrong/cli --pack .
 ```
 
 Add to tsdown config:

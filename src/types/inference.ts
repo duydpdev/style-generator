@@ -4,7 +4,8 @@ import type {
   DefaultSpacingKey,
 } from "../constants";
 
-import type { StyleModule, ThemeConfig } from ".";
+import type { StyleModule } from "./Options";
+import type { ThemeConfig } from "./ThemeConfig";
 
 // ---- Basic utilities ----
 

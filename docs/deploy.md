@@ -15,7 +15,7 @@ Quy trình deploy thư viện `fe-style-generator`.
   - [Branching Strategy](#branching-strategy)
   - [Release Process](#release-process)
     - [Quy trình đúng](#quy-trình-đúng)
-  - [Conventional Commits](#conventional-commits)
+  - [Commit Format](#commit-format)
     - [Config](#config)
 
 ---
@@ -98,12 +98,12 @@ flowchart TD
 ## Release Process
 
 > [!IMPORTANT]
-> Dự án dùng **semantic-release** — version được tự động tính từ commit messages theo Conventional Commits. **Không cần** tự tay chỉnh `package.json`.
+> Dự án dùng **semantic-release** — version được tự động tính từ commit messages. **Không cần** tự tay chỉnh `package.json`.
 
 ### Quy trình đúng
 
 1. Code thay đổi trên feature branch
-2. Commit theo format **Conventional Commits** (xem bên dưới)
+2. Commit theo format `[type] subject` (xem bên dưới)
 3. Mở Pull Request vào `develop` (pre-release) hoặc `main` (stable release)
 4. CI check pass → merge PR
 5. `release.yml` tự động:
@@ -114,17 +114,17 @@ flowchart TD
 
 ---
 
-## Conventional Commits
+## Commit Format
 
-Commit message format: `<type>(<scope>): <description>`
+Commit message format: `[type] subject`
 
-| Type                           | Version bump    | Ví dụ                                   |
-| ------------------------------ | --------------- | --------------------------------------- |
-| `feat`                         | Minor (`1.1.0`) | `feat: add multi-theme support`         |
-| `fix`                          | Patch (`1.0.1`) | `fix: correct spacing var fallback`     |
-| `feat!` hoặc `BREAKING CHANGE` | Major (`2.0.0`) | `feat!: remove legacy dark key support` |
-| `docs`, `chore`, `refactor`    | Không bump      | `docs: update architecture guide`       |
+| Type                        | Version bump    | Ví dụ                                      |
+| --------------------------- | --------------- | ------------------------------------------ |
+| `feat`                      | Minor (`1.1.0`) | `[feat] add multi-theme support`           |
+| `fix`                       | Patch (`1.0.1`) | `[fix] correct spacing var fallback`       |
+| `perf`                      | Patch (`1.0.1`) | `[perf] improve safelist generation`       |
+| `docs`, `chore`, `refactor` | Không bump      | `[docs] update architecture guide`         |
 
 ### Config
 
-Xem: [`commitlint.config.ts`](file:///Users/phanduy/workspaces/github.com/duydp.dev/template/fe-style-generator/commitlint.config.ts) và [`release.config.cjs`](file:///Users/phanduy/workspaces/github.com/duydp.dev/template/fe-style-generator/release.config.cjs)
+Xem: [`commitlint.config.ts`](commitlint.config.ts) và [`release.config.cjs`](release.config.cjs)

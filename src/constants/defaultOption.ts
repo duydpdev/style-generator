@@ -122,3 +122,11 @@ export const DEFAULT_OPACITY_VALUES = [
 
 /** Default z-index values for safelist. */
 export const DEFAULT_ZINDEX_VALUES = [0, 10, 20, 30, 40, 50, "auto"] as const;
+
+// ---- Type helpers for defaults (used in type inference) ----
+
+export type DefaultSpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
+
+export type DefaultRoundedValue = (typeof DEFAULT_ROUNDED_VALUES)[number];
+
+export type DefaultBorderValue = (typeof DEFAULT_BORDER_VALUES)[number];

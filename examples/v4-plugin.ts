@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createStyleSystem, Breakpoint } from "../src";
+import { createStyleSystem, Breakpoint, TailwindPlugin } from "../src";
 
 import theme from "./theme.json";
 
@@ -19,7 +19,8 @@ const options = {
 };
 
 // Create style system (plugin + safelist)
-const { plugin, safelist } = createStyleSystem(theme, options);
+const { plugin, safelist }: { plugin: TailwindPlugin; safelist: string[] } =
+  createStyleSystem(theme, options);
 
 // Export plugin
 export default plugin;

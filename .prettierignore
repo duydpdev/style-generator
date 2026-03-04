@@ -1,0 +1,10 @@
+node_modules
+dist
+.yarn
+
+# Generated / build artifacts
+*.cjs
+**/*.config.*
+__tests__/reports
+**/generations/*
+

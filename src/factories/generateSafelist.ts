@@ -1,4 +1,8 @@
-import { ThemeConfig, StyleGeneratorOptions } from "../types";
+import {
+  InferSafelistClasses,
+  ThemeConfig,
+  StyleGeneratorOptions,
+} from "../types";
 import { toKebabCase } from "../utils";
 import {
   DEFAULT_LAYOUT_CLASSES,
@@ -13,21 +17,28 @@ import {
 /**
  * Generates a list of safelisted classes based on the theme configuration.
  * NOTE: Spacing is NOT included — it uses CSS custom properties (see createStylePlugin).
- * @param {ThemeConfig} config - Theme configuration
- * @param {StyleGeneratorOptions} options - Generator options
- * @returns {string[]} Array of class names to safelist
+ * @param {ThemeConfig} config Theme configuration
+ * @param {StyleGeneratorOptions | undefined} [options] Generator options
+ * @returns {InferSafelistClasses<ThemeConfig, StyleGeneratorOptions | undefined>[]} Typed safelist classes
  */
-export const generateSafelist = (
-  config: ThemeConfig,
-  options: StyleGeneratorOptions = {},
-): string[] => {
-  const { colors, typography, shadows, backDropBlurs, borderRadius } = config;
+export const generateSafelist = <
+  TTheme extends ThemeConfig,
+  TOptions extends StyleGeneratorOptions | undefined = undefined,
+>(
+  config: TTheme,
+  options?: TOptions,
+): InferSafelistClasses<TTheme, TOptions>[] => {
+  const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
+    config;
+
+  const resolvedOptions: StyleGeneratorOptions =
+    ((options ?? {}) as StyleGeneratorOptions | undefined) ?? {};
 
   const { enableResponsive = true, responsiveModules = ["layout", "rounded"] } =
-    options;
+    resolvedOptions;
 
   // Build responsive prefixes from breakpoint keys
-  const breakpointKeys = options.breakpoints ?? ["md", "lg"];
+  const breakpointKeys = resolvedOptions.breakpoints ?? ["md", "lg"];
   const responsivePrefixes = enableResponsive
     ? breakpointKeys.map((b) => `${b}:`)
     : [];
@@ -74,25 +85,29 @@ export const generateSafelist = (
   };
 
   // --- 1. Layout (display, flex, align, justify, text-align) ---
-  if (options.layout?.enabled !== false) {
-    const classes = options.layout?.values ?? [...DEFAULT_LAYOUT_CLASSES];
+  if (resolvedOptions.layout?.enabled !== false) {
+    const classes = resolvedOptions.layout?.values ?? [
+      ...DEFAULT_LAYOUT_CLASSES,
+    ];
     pushClasses("layout", classes, [], true);
   }
 
   // --- 2. Rounded ---
-  if (options.rounded?.enabled !== false) {
+  if (resolvedOptions.rounded?.enabled !== false) {
     const values = [
-      ...(options.rounded?.values ?? [...DEFAULT_ROUNDED_VALUES]),
+      ...(resolvedOptions.rounded?.values ?? [...DEFAULT_ROUNDED_VALUES]),
       ...Object.keys(borderRadius ?? {}),
     ];
-    const props = options.rounded?.properties ?? roundedProperties;
+    const props = resolvedOptions.rounded?.properties ?? roundedProperties;
     pushClasses("rounded", props, [...new Set(values)]);
   }
 
   // --- 3. Border widths ---
-  if (options.border?.enabled !== false) {
-    const values = options.border?.values ?? [...DEFAULT_BORDER_VALUES];
-    const props = options.border?.properties ?? borderProperties;
+  if (resolvedOptions.border?.enabled !== false) {
+    const values =
+      resolvedOptions.border?.values ??
+      Object.keys(border ?? DEFAULT_BORDER_VALUES);
+    const props = resolvedOptions.border?.properties ?? borderProperties;
     pushClasses("borders", props, values);
   }
 
@@ -102,21 +117,9 @@ export const generateSafelist = (
     ...Object.keys(colors.base),
   ].map((k) => toKebabCase(k));
 
-  const generateColorClasses = (prefix: string) => {
-    if (prefix && !responsiveModules.includes("colors" as never)) return;
-    colorKeys.forEach((color) => {
-      safelist.push(
-        `${prefix}text-${color}`,
-        `${prefix}bg-${color}`,
-        `${prefix}border-${color}`,
-      );
-    });
-  };
-
-  generateColorClasses("");
-  for (const prefix of responsivePrefixes) {
-    generateColorClasses(prefix);
-  }
+  pushClasses("colors", ["text"], colorKeys);
+  pushClasses("colors", ["bg"], colorKeys);
+  pushClasses("colors", ["border"], colorKeys);
 
   // --- 5. Typography (custom utility classes) ---
   const typographyKeys = Object.keys(typography);
@@ -131,24 +134,26 @@ export const generateSafelist = (
   pushClasses("backdrop", ["backdrop-blur"], blurKeys);
 
   // --- 8. Opacity ---
-  if (options.opacity?.enabled !== false) {
-    const opacityValues = options.opacity?.values ?? [
+  if (resolvedOptions.opacity?.enabled !== false) {
+    const opacityValues = resolvedOptions.opacity?.values ?? [
       ...DEFAULT_OPACITY_VALUES,
     ];
     pushClasses("opacity", ["opacity"], opacityValues);
   }
 
   // --- 9. Z-Index ---
-  if (options.zIndex?.enabled !== false) {
-    const zIndexValues = options.zIndex?.values ?? [...DEFAULT_ZINDEX_VALUES];
+  if (resolvedOptions.zIndex?.enabled !== false) {
+    const zIndexValues = resolvedOptions.zIndex?.values ?? [
+      ...DEFAULT_ZINDEX_VALUES,
+    ];
     pushClasses("zIndex", ["z"], zIndexValues);
   }
 
   // --- 10. User-defined dynamic classes ---
-  if (options.dynamicClasses) {
-    safelist.push(...options.dynamicClasses);
+  if (resolvedOptions.dynamicClasses) {
+    safelist.push(...resolvedOptions.dynamicClasses);
   }
 
   // Deduplicate
-  return [...new Set(safelist)];
+  return [...new Set(safelist)] as InferSafelistClasses<TTheme, TOptions>[];
 };

@@ -115,3 +115,7 @@ export interface StyleGeneratorOptions {
    */
   modules?: StyleModule[];
 }
+
+// TailwindPlugin type is defined close to the factory that creates it
+// (`createStylePlugin.ts`) using ReturnType<typeof plugin>. It is re-used
+// from there instead of being defined here to avoid coupling to Tailwind internals.

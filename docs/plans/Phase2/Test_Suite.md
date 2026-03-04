@@ -17,13 +17,13 @@
 
 ### Rủi ro cụ thể
 
-| Scenario | Risk |
-|----------|------|
-| Refactor `generateSafelist` → output thay đổi | Class bị purge ở production, UI vỡ |
-| Update `buildFallbackChain` → CSS var chain sai | Responsive spacing không hoạt động |
-| Thêm flexible colors → safelist thiếu/thừa class | Color classes bị thiếu hoặc dư |
-| Update `resolveSpacing` → style output sai | Component spacing bị lỗi |
-| Theme validation false positive | Config đúng bị reject |
+| Scenario                                         | Risk                               |
+| ------------------------------------------------ | ---------------------------------- |
+| Refactor `generateSafelist` → output thay đổi    | Class bị purge ở production, UI vỡ |
+| Update `buildFallbackChain` → CSS var chain sai  | Responsive spacing không hoạt động |
+| Thêm flexible colors → safelist thiếu/thừa class | Color classes bị thiếu hoặc dư     |
+| Update `resolveSpacing` → style output sai       | Component spacing bị lỗi           |
+| Theme validation false positive                  | Config đúng bị reject              |
 
 ---
 
@@ -31,19 +31,20 @@
 
 ### So sánh
 
-| | Vitest | Node test runner | Jest |
-|---|--------|-----------------|------|
-| **Setup** | Minimal (dùng chung Vite config) | Zero dependency | Nặng |
-| **Speed** | Rất nhanh | Nhanh | Trung bình |
-| **TypeScript** | Native (qua Vite) | Cần tsx | Cần ts-jest |
-| **Watch mode** | Có | Có (Node 18+) | Có |
-| **Matchers** | Chai/expect built-in | assert module | Jest matchers |
-| **Snapshot** | Có | Không | Có |
-| **Compatibility** | Dùng chung Vite config hiện có | Không cần config | Config riêng |
+|                   | Vitest                           | Node test runner | Jest          |
+| ----------------- | -------------------------------- | ---------------- | ------------- |
+| **Setup**         | Minimal (dùng chung Vite config) | Zero dependency  | Nặng          |
+| **Speed**         | Rất nhanh                        | Nhanh            | Trung bình    |
+| **TypeScript**    | Native (qua Vite)                | Cần tsx          | Cần ts-jest   |
+| **Watch mode**    | Có                               | Có (Node 18+)    | Có            |
+| **Matchers**      | Chai/expect built-in             | assert module    | Jest matchers |
+| **Snapshot**      | Có                               | Không            | Có            |
+| **Compatibility** | Dùng chung Vite config hiện có   | Không cần config | Config riêng  |
 
 ### Quyết định: **Vitest**
 
 **Lý do**:
+
 1. Project đã dùng Vite build → Vitest dùng chung config, zero friction
 2. Snapshot testing hữu ích cho safelist output (detect regression)
 3. TypeScript support native
@@ -54,7 +55,7 @@
 
 ## Cấu trúc Test
 
-```
+````
 tests/
 ├── factories/
 │   ├── createStyleSystem.test.ts
@@ -89,7 +90,7 @@ tests/
 >
 > Đây là cách đúng vì: (1) không cần maintain fixture files, (2) test case tự mô tả ý đồ, (3) không bị TypeScript complaint.
 └── setup.ts                        # Vitest global setup (nếu cần)
-```
+````
 
 ---
 
@@ -278,7 +279,9 @@ describe("buildFallbackChain", () => {
 
   it("should build full chain for last breakpoint", () => {
     const chain = buildFallbackChain("p", breakpoints, 2);
-    expect(chain).toBe("var(--sp-p-xl, var(--sp-p-lg, var(--sp-p-md, var(--sp-p))))");
+    expect(chain).toBe(
+      "var(--sp-p-xl, var(--sp-p-lg, var(--sp-p-md, var(--sp-p))))",
+    );
   });
 
   it("should handle compound property names", () => {
@@ -422,7 +425,10 @@ describe("addDot", () => {
 ```typescript
 describe("flattenToVars", () => {
   it("should create CSS variable declarations", () => {
-    const result = flattenToVars("color-base", { primary: "#007AFF", white: "#FFF" });
+    const result = flattenToVars("color-base", {
+      primary: "#007AFF",
+      white: "#FFF",
+    });
     expect(result).toEqual({
       "--color-base-primary": "#007AFF",
       "--color-base-white": "#FFF",
@@ -506,12 +512,14 @@ describe("validateTheme", () => {
   });
 
   it("should throw for missing colors", () => {
-    expect(() => validateTheme({ typography: {} })).toThrow(/colors.*required/i);
+    expect(() => validateTheme({ typography: {} })).toThrow(
+      /colors.*required/i,
+    );
   });
 
   it("should throw for missing colors.base", () => {
     expect(() =>
-      validateTheme({ colors: { text: {} }, typography: {} })
+      validateTheme({ colors: { text: {} }, typography: {} }),
     ).toThrow(/colors\.base.*required/i);
   });
 
@@ -519,7 +527,12 @@ describe("validateTheme", () => {
     const theme = {
       colors: { base: {}, text: {} },
       typography: {
-        body: { fontSize: 16, lineHeight: "150%", fontWeight: 400, letterSpacing: "0px" },
+        body: {
+          fontSize: 16,
+          lineHeight: "150%",
+          fontWeight: 400,
+          letterSpacing: "0px",
+        },
       },
     };
     expect(() => validateTheme(theme)).toThrow(/fontSize.*string/i);
@@ -568,15 +581,25 @@ describe("createStylePlugin", () => {
     });
 
     it("should use var() references when CSS variables enabled", () => {
-      const plugin = createStylePlugin(minimalTheme, { enableCssVariables: true });
-      const colors = plugin.config?.theme?.extend?.colors as Record<string, string>;
+      const plugin = createStylePlugin(minimalTheme, {
+        enableCssVariables: true,
+      });
+      const colors = plugin.config?.theme?.extend?.colors as Record<
+        string,
+        string
+      >;
       expect(colors["primary"]).toMatch(/^var\(--color-base-/);
       expect(colors["main"]).toMatch(/^var\(--color-text-/);
     });
 
     it("should use direct hex values when CSS variables disabled", () => {
-      const plugin = createStylePlugin(minimalTheme, { enableCssVariables: false });
-      const colors = plugin.config?.theme?.extend?.colors as Record<string, string>;
+      const plugin = createStylePlugin(minimalTheme, {
+        enableCssVariables: false,
+      });
+      const colors = plugin.config?.theme?.extend?.colors as Record<
+        string,
+        string
+      >;
       expect(colors["primary"]).toBe("#007AFF");
     });
 
@@ -595,7 +618,9 @@ describe("createStylePlugin", () => {
     });
 
     it("should set empty screens when responsive disabled", () => {
-      const plugin = createStylePlugin(minimalTheme, { enableResponsive: false });
+      const plugin = createStylePlugin(minimalTheme, {
+        enableResponsive: false,
+      });
       const screens = plugin.config?.theme?.screens;
       expect(screens).toEqual({});
     });
@@ -630,7 +655,7 @@ describe("createStylePlugin", () => {
           border: { values: [0, 1, 2] },
           opacity: { enabled: true },
           zIndex: { enabled: true },
-        })
+        }),
       ).not.toThrow();
     });
   });
@@ -696,7 +721,12 @@ const theme = {
     text: { main: "#000" } as const,
   },
   typography: {
-    heading1: { fontSize: "32px", lineHeight: "120%", fontWeight: 700, letterSpacing: "0px" },
+    heading1: {
+      fontSize: "32px",
+      lineHeight: "120%",
+      fontWeight: 700,
+      letterSpacing: "0px",
+    },
   } as const,
   shadows: { sm: "0 1px 2px rgba(0,0,0,0.1)" } as const,
 } as const;
@@ -840,18 +870,18 @@ export default defineConfig({
 
 ## Coverage Targets
 
-| Module | Target | Lý do |
-|--------|--------|-------|
-| `generateSafelist` | 95%+ | Critical — sai = UI production vỡ |
-| `spacingHelpers` | 95%+ | Public API, user-facing |
-| `spacing` (buildFallbackChain) | 90%+ | Logic phức tạp, dễ regression |
-| `helpers` (toKebabCase, etc.) | 95%+ | Dùng khắp nơi |
-| `cssVariables` | 90%+ | CSS output correctness |
-| `createDesignTokens` | 85%+ | Token generation |
-| `createStylePlugin` | 70%+ | Test qua config object + không-throw checks (không mock Tailwind API) |
-| `createStyleSystem` | 80%+ | Integration test — verify output consistency |
-| `validation` | 95%+ | Phải cover tất cả error paths |
-| **Tổng** | **85%+** | |
+| Module                         | Target   | Lý do                                                                 |
+| ------------------------------ | -------- | --------------------------------------------------------------------- |
+| `generateSafelist`             | 95%+     | Critical — sai = UI production vỡ                                     |
+| `spacingHelpers`               | 95%+     | Public API, user-facing                                               |
+| `spacing` (buildFallbackChain) | 90%+     | Logic phức tạp, dễ regression                                         |
+| `helpers` (toKebabCase, etc.)  | 95%+     | Dùng khắp nơi                                                         |
+| `cssVariables`                 | 90%+     | CSS output correctness                                                |
+| `createDesignTokens`           | 85%+     | Token generation                                                      |
+| `createStylePlugin`            | 70%+     | Test qua config object + không-throw checks (không mock Tailwind API) |
+| `createStyleSystem`            | 80%+     | Integration test — verify output consistency                          |
+| `validation`                   | 95%+     | Phải cover tất cả error paths                                         |
+| **Tổng**                       | **85%+** |                                                                       |
 
 ---
 
@@ -909,12 +939,12 @@ export default defineConfig({
 
 ## Timeline ước tính
 
-| Step | Effort |
-|------|--------|
-| Step 1 (Setup) | ~0.5h |
-| Step 2 (Fixtures) | ~0.5h |
-| Step 3 (Utils tests) | ~2h |
-| Step 4 (Spacing tests) | ~1h |
-| Step 5 (Factory tests — safelist, tokens, **plugin**, **system**) | ~4h |
-| Step 6 (Type tests — positive + negative) | ~1.5h |
-| **Tổng** | **~9.5h** |
+| Step                                                              | Effort    |
+| ----------------------------------------------------------------- | --------- |
+| Step 1 (Setup)                                                    | ~0.5h     |
+| Step 2 (Fixtures)                                                 | ~0.5h     |
+| Step 3 (Utils tests)                                              | ~2h       |
+| Step 4 (Spacing tests)                                            | ~1h       |
+| Step 5 (Factory tests — safelist, tokens, **plugin**, **system**) | ~4h       |
+| Step 6 (Type tests — positive + negative)                         | ~1.5h     |
+| **Tổng**                                                          | **~9.5h** |

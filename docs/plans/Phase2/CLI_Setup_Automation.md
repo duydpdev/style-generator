@@ -17,12 +17,12 @@
 
 ### Vấn đề cụ thể
 
-| # | Vấn đề | Impact |
-|---|--------|--------|
-| 1 | User phải tự viết Node.js script với `fs.writeFileSync`, `process.argv` detection | Người không quen Node.js sẽ bối rối |
-| 2 | Không có template cho `theme.json` — user phải đọc docs để biết cấu trúc bắt buộc | Dễ viết sai, không có feedback |
-| 3 | `safelist.txt` phải chạy tay mỗi khi theme thay đổi | Dễ quên → class bị purge ở production |
-| 4 | Plugin file "dual purpose" (export + script) là pattern fragile | `process.argv[1] === import.meta.filename` có thể vỡ tùy runtime/bundler |
+| #   | Vấn đề                                                                            | Impact                                                                   |
+| --- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1   | User phải tự viết Node.js script với `fs.writeFileSync`, `process.argv` detection | Người không quen Node.js sẽ bối rối                                      |
+| 2   | Không có template cho `theme.json` — user phải đọc docs để biết cấu trúc bắt buộc | Dễ viết sai, không có feedback                                           |
+| 3   | `safelist.txt` phải chạy tay mỗi khi theme thay đổi                               | Dễ quên → class bị purge ở production                                    |
+| 4   | Plugin file "dual purpose" (export + script) là pattern fragile                   | `process.argv[1] === import.meta.filename` có thể vỡ tùy runtime/bundler |
 
 ---
 
@@ -215,15 +215,16 @@ Plugin file chứa options (breakpoints, screens, module configs...). Khi tách 
 
 **3 phương án:**
 
-| # | Phương án | Ưu điểm | Nhược điểm |
-|---|-----------|---------|------------|
-| A | CLI dynamic import plugin file (qua `tsx`) | Single source of truth — options chỉ ở plugin file | Cần `tsx` runtime để parse TS; plugin file import theme → cần resolve path đúng; fragile nếu plugin file có side effects |
-| B | CLI đọc config riêng (`style-gen.config.ts` hoặc `package.json`) | Tách biệt rõ ràng, không cần tsx | User phải maintain options ở 2 nơi (plugin + CLI config) → dễ lệch |
-| C | Plugin file export `safelist` trực tiếp, CLI chỉ import và ghi file | Đơn giản nhất, plugin là single source of truth | Vẫn cần `tsx` để import TS module |
+| #   | Phương án                                                           | Ưu điểm                                            | Nhược điểm                                                                                                               |
+| --- | ------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| A   | CLI dynamic import plugin file (qua `tsx`)                          | Single source of truth — options chỉ ở plugin file | Cần `tsx` runtime để parse TS; plugin file import theme → cần resolve path đúng; fragile nếu plugin file có side effects |
+| B   | CLI đọc config riêng (`style-gen.config.ts` hoặc `package.json`)    | Tách biệt rõ ràng, không cần tsx                   | User phải maintain options ở 2 nơi (plugin + CLI config) → dễ lệch                                                       |
+| C   | Plugin file export `safelist` trực tiếp, CLI chỉ import và ghi file | Đơn giản nhất, plugin là single source of truth    | Vẫn cần `tsx` để import TS module                                                                                        |
 
 **Quyết định: Phương án C** (CLI import plugin file, lấy `safelist` export)
 
 Lý do:
+
 - Plugin file đã tính sẵn `safelist` (từ `createStyleSystem`). CLI chỉ cần import và ghi ra file.
 - Không duplicate logic. Không cần tách options ra config riêng.
 - Yêu cầu `tsx` (hoặc `ts-node`) đã có sẵn trong devDependencies.
@@ -244,7 +245,7 @@ async function generateSafelistFile(pluginPath: string, outPath: string) {
   if (!Array.isArray(safelist)) {
     throw new Error(
       `Plugin file "${pluginPath}" must export "safelist" (string[]).\n` +
-      `Make sure your plugin file has: export { safelist }`
+        `Make sure your plugin file has: export { safelist }`,
     );
   }
 
@@ -264,7 +265,7 @@ const { plugin, safelist } = createStyleSystem(theme, {
 });
 
 export default plugin;
-export { safelist };  // ← CLI sẽ import field này
+export { safelist }; // ← CLI sẽ import field này
 ```
 
 **CLI chạy bằng `tsx`:**
@@ -314,18 +315,18 @@ Safelist: 847 classes
 
 **Files mới**:
 
-| File | Mô tả |
-|------|--------|
-| `src/cli/index.ts` | Entry point, parse args, route to commands |
-| `src/cli/commands/init.ts` | `init` command — interactive prompts + file generation |
-| `src/cli/commands/safelist.ts` | `safelist` command — read theme, generate, write file |
-| `src/cli/templates/` | Template files cho init command |
+| File                           | Mô tả                                                  |
+| ------------------------------ | ------------------------------------------------------ |
+| `src/cli/index.ts`             | Entry point, parse args, route to commands             |
+| `src/cli/commands/init.ts`     | `init` command — interactive prompts + file generation |
+| `src/cli/commands/safelist.ts` | `safelist` command — read theme, generate, write file  |
+| `src/cli/templates/`           | Template files cho init command                        |
 
 **Dependencies mới**:
 
-| Package | Mục đích | Dev/Prod |
-|---------|----------|----------|
-| Không cần thêm dependency | Dùng `node:util.parseArgs` (Node 18.3+) cho arg parsing, `node:readline` cho interactive prompts | — |
+| Package                   | Mục đích                                                                                         | Dev/Prod |
+| ------------------------- | ------------------------------------------------------------------------------------------------ | -------- |
+| Không cần thêm dependency | Dùng `node:util.parseArgs` (Node 18.3+) cho arg parsing, `node:readline` cho interactive prompts | —        |
 
 > **Lý do không dùng `commander`/`yargs`**: Lib này nhẹ, chỉ có 2-3 commands đơn giản. `node:util.parseArgs` (built-in Node.js 18.3+) đủ dùng. Giảm dependency footprint.
 
@@ -335,10 +336,10 @@ Safelist: 847 classes
 
 **Cho interactive prompts, có 2 phương án:**
 
-| # | Phương án | Ưu điểm | Nhược điểm |
-|---|-----------|---------|------------|
-| A | Dùng `node:readline/promises` (built-in Node 18+) | Zero dependency | API thô, phải tự viết logic yes/no, select; không có UI đẹp (không có arrow key select) |
-| B | Dùng lightweight lib (`@clack/prompts` ~7KB) | UI đẹp, API clean, spinner/select/confirm built-in | Thêm 1 dependency |
+| #   | Phương án                                         | Ưu điểm                                            | Nhược điểm                                                                              |
+| --- | ------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| A   | Dùng `node:readline/promises` (built-in Node 18+) | Zero dependency                                    | API thô, phải tự viết logic yes/no, select; không có UI đẹp (không có arrow key select) |
+| B   | Dùng lightweight lib (`@clack/prompts` ~7KB)      | UI đẹp, API clean, spinner/select/confirm built-in | Thêm 1 dependency                                                                       |
 
 **Quyết định: Phương án A cho MVP, cân nhắc B nếu cần UX tốt hơn**
 
@@ -350,9 +351,14 @@ import { stdin, stdout } from "node:process";
 
 const rl = createInterface({ input: stdin, output: stdout });
 
-const tailwindVersion = await rl.question("Tailwind version? (v3/v4) [v4]: ") || "v4";
-const themePath = await rl.question("Theme file location? [styles/theme.json]: ") || "styles/theme.json";
-const includeDarkMode = (await rl.question("Include dark mode template? (Y/n): ")).toLowerCase() !== "n";
+const tailwindVersion =
+  (await rl.question("Tailwind version? (v3/v4) [v4]: ")) || "v4";
+const themePath =
+  (await rl.question("Theme file location? [styles/theme.json]: ")) ||
+  "styles/theme.json";
+const includeDarkMode =
+  (await rl.question("Include dark mode template? (Y/n): ")).toLowerCase() !==
+  "n";
 
 rl.close();
 ```
@@ -392,12 +398,18 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        index: "src/index.ts",      // Lib entry (giữ nguyên)
-        "cli/index": "src/cli/index.ts",  // CLI entry (mới)
+        index: "src/index.ts", // Lib entry (giữ nguyên)
+        "cli/index": "src/cli/index.ts", // CLI entry (mới)
       },
     },
     rollupOptions: {
-      external: ["node:fs", "node:path", "node:url", "node:readline/promises", "node:util"],
+      external: [
+        "node:fs",
+        "node:path",
+        "node:url",
+        "node:readline/promises",
+        "node:util",
+      ],
     },
   },
 });
@@ -405,10 +417,10 @@ export default defineConfig({
 
 **Xử lý template files** — 2 cách:
 
-| # | Cách | Mô tả |
-|---|------|-------|
-| A | Inline templates thành string literals trong TS | Không cần copy files, templates là code. Nhược: khó đọc/edit template dài. |
-| B | Dùng Vite raw import (`?raw` suffix) | `import themeTemplate from "./templates/theme.json?raw"`. Vite inline nội dung file thành string. |
+| #   | Cách                                            | Mô tả                                                                                             |
+| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| A   | Inline templates thành string literals trong TS | Không cần copy files, templates là code. Nhược: khó đọc/edit template dài.                        |
+| B   | Dùng Vite raw import (`?raw` suffix)            | `import themeTemplate from "./templates/theme.json?raw"`. Vite inline nội dung file thành string. |
 
 **Quyết định: Cách B** — dùng `?raw` import. Templates vẫn là file riêng (dễ edit), nhưng được inline khi build:
 
@@ -428,8 +440,14 @@ Cần thêm type declaration cho `?raw` imports:
 
 ```typescript
 // src/cli/raw.d.ts
-declare module "*.json?raw" { const content: string; export default content; }
-declare module "*.tpl?raw" { const content: string; export default content; }
+declare module "*.json?raw" {
+  const content: string;
+  export default content;
+}
+declare module "*.tpl?raw" {
+  const content: string;
+  export default content;
+}
 ```
 
 ### Phase 2: Watch mode
@@ -465,37 +483,43 @@ CLI là additive — không thay đổi API hiện có. User không bắt buộc
 
 ### File changes
 
-| File | Hành động |
-|------|-----------|
-| `package.json` | Thêm `bin` field, thêm build script cho CLI |
-| `vite.config.ts` / build config | Thêm CLI entry point |
-| `src/cli/` | **Mới** — toàn bộ CLI code |
-| `README.md` | Thêm section "Quick Start with CLI" |
-| `docs/guide.md` | Thêm section CLI usage |
-| `examples/v4-plugin.ts` | Cập nhật — bỏ dual-purpose pattern, chỉ export plugin |
+| File                            | Hành động                                             |
+| ------------------------------- | ----------------------------------------------------- |
+| `package.json`                  | Thêm `bin` field, thêm build script cho CLI           |
+| `vite.config.ts` / build config | Thêm CLI entry point                                  |
+| `src/cli/`                      | **Mới** — toàn bộ CLI code                            |
+| `README.md`                     | Thêm section "Quick Start with CLI"                   |
+| `docs/guide.md`                 | Thêm section CLI usage                                |
+| `examples/v4-plugin.ts`         | Cập nhật — bỏ dual-purpose pattern, chỉ export plugin |
 
 ### Cập nhật docs
 
 README "Quick Start" section mới:
 
-```markdown
+````markdown
 ## Quick Start
 
 ### 1. Init project
+
 ```bash
 npx style-gen init
 ```
+````
 
 ### 2. Edit theme
+
 Edit `styles/theme.json` with your design tokens.
 
 ### 3. Generate safelist
+
 ```bash
 npx style-gen safelist
 ```
 
 ### 4. Start developing
+
 Your CSS file is ready. Start your dev server.
+
 ```
 
 ---
@@ -534,3 +558,4 @@ Your CSS file is ready. Start your dev server.
 | Phase 3 (config file) | ~2h |
 | Docs update | ~1h |
 | **Tổng** | **~9-11h** |
+```

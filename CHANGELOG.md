@@ -12,12 +12,9 @@
 
 # [1.2.0-DEV.3]() (2026-03-04)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    *
-    use addUtilities instead of addBase for responsive [@media](https://github.com/media) rules
-    ([d3733e3]())
+- use addUtilities instead of addBase for responsive @media rules ([d3733e3]())
 
 # [1.2.0-DEV.2]() (2026-03-04)
 

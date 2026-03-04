@@ -42,15 +42,17 @@ export type InferBackdropBlurKeys<TTheme extends ThemeConfig> = StringKeysOf<
 
 // ---- Tokens từ defaults + theme ----
 
-export type InferBorderOptions<TTheme extends ThemeConfig> =
-  keyof TTheme["border"] extends never
-    ? `${DefaultBorderValue}`
-    : Extract<keyof TTheme["border"], string>;
+export type InferBorderOptions<TTheme extends ThemeConfig> = TTheme extends {
+  border: infer B;
+}
+  ? Extract<keyof NonNullable<B>, string>
+  : `${DefaultBorderValue}`;
 
-export type InferRoundedOptions<TTheme extends ThemeConfig> =
-  keyof TTheme["borderRadius"] extends never
-    ? DefaultRoundedValue
-    : Extract<keyof TTheme["borderRadius"], string>;
+export type InferRoundedOptions<TTheme extends ThemeConfig> = TTheme extends {
+  borderRadius: infer R;
+}
+  ? Extract<keyof NonNullable<R>, string>
+  : DefaultRoundedValue;
 
 export type InferSpacingKeys = DefaultSpacingKey;
 

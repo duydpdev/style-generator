@@ -5,7 +5,11 @@ on:
     branches: [main, develop]
 
 env:
-  CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
+  # Use the auto-generated GITHUB_TOKEN so this workflow runs without
+  # approval for all PR authors (including bots / Copilot).
+  # The PAT (CI_WORKER_REPOSITORY_TOKEN) is only needed for publishing
+  # and is kept in release.yml / deploy.yml.
+  CI_WORKER_REPOSITORY_TOKEN: ${{ github.token }}
   CI_SERVICE_REPOSITORY_NPM_PUBLIC_URL: "https://npm.pkg.github.com"
 
 jobs:
@@ -22,14 +26,17 @@ jobs:
           node-version: "20"
           cache: "yarn"
 
-      - name: Setup Java (required for openapi-generator)
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
       - name: Install dependencies
         run: yarn install --immutable
+
+      # Validate PR title matches [type] subject so squash-merged commits
+      # trigger semantic-release correctly (the PR title becomes the squash
+      # commit message on main/develop).
+      - name: Validate PR title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | yarn commitlint
 
       # Run lint if available, otherwise just build
       - name: Lint

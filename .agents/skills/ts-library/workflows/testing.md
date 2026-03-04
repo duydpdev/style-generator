@@ -140,19 +140,10 @@ Validate published package:
 
 ```bash
 # Check exports are correct
-<<<<<<< HEAD
-<<<<<<< HEAD
 yarn dlx publint
 
 # Check types work in different moduleResolutions
 yarn dlx @arethetypeswrong/cli --pack .
-=======
-pnpm dlx publint
-
-# Check types work in different moduleResolutions
-pnpm dlx @arethetypeswrong/cli --pack .
->>>>>>> dd91d4f ([feat] update safe typescript safelist)
-=======
 yarn dlx publint
 
 # Check types work in different moduleResolutions

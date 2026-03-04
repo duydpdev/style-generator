@@ -1,3 +1,9 @@
+# [1.2.0-DEV.5]() (2026-03-04)
+
+### Reverts
+
+- Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator/issues/14))" ([#15](https://github.com/duydpdev/style-generator/issues/15)) ([039df9e]())
+
 # [1.2.0-DEV.4]() (2026-03-04)
 
 ### Bug Fixes

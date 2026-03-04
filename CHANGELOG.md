@@ -1,3 +1,12 @@
+# [1.2.0-DEV.2]() (2026-03-04)
+
+  ###
+  Features
+
+    *
+    update safe typescript safelist
+    ([dd91d4f]())
+
 # [1.2.0-DEV.1]() (2026-03-01)
 
 ### Features

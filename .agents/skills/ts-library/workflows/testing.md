@@ -130,18 +130,8 @@ jobs:
       matrix:
         ts: ["5.0", "5.2", "5.4", "5.6", "5.8"]
     steps:
-<<<<<<< HEAD
-<<<<<<< HEAD
       - run: yarn add -D typescript@${{ matrix.ts }}
       - run: yarn typecheck
-=======
-      - run: pnpm add -D typescript@${{ matrix.ts }}
-      - run: pnpm typecheck
->>>>>>> dd91d4f ([feat] update safe typescript safelist)
-=======
-      - run: yarn add -D typescript@${{ matrix.ts }}
-      - run: yarn typecheck
->>>>>>> d1734b8 ([fix] apply review feedback: circular imports, docs, types, border wiring (#13))
 ```
 
 ## Package Validation

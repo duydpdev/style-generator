@@ -19,8 +19,6 @@ Hướng dẫn tích hợp `fe-style-generator` vào dự án.
 
 ```bash
 yarn add @duydpdev/style-generator
-# hoặc
-npm install @duydpdev/style-generator
 ```
 
 **Peer dependencies cần có:**

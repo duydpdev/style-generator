@@ -47,7 +47,8 @@ export const createStylePlugin = (
   options: StyleGeneratorOptions = {},
   safelist?: string[],
 ): TailwindPlugin => {
-  const { colors, typography, shadows, backDropBlurs, borderRadius } = config;
+  const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
+    config;
 
   const { enableCssVariables = true, enableResponsive = true } = options;
 
@@ -75,6 +76,7 @@ export const createStylePlugin = (
         boxShadow: shadows ? extractData(shadows) : {},
         backdropBlur: backDropBlurs ? extractData(backDropBlurs) : {},
         borderRadius: borderRadius ? extractData(borderRadius, false) : {},
+        borderWidth: border ? extractData(border, false) : {},
       },
     },
     safelist: safelist ?? generateSafelist(config, options),

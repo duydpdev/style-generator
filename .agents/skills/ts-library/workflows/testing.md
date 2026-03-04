@@ -131,12 +131,17 @@ jobs:
         ts: ["5.0", "5.2", "5.4", "5.6", "5.8"]
     steps:
 <<<<<<< HEAD
+<<<<<<< HEAD
       - run: yarn add -D typescript@${{ matrix.ts }}
       - run: yarn typecheck
 =======
       - run: pnpm add -D typescript@${{ matrix.ts }}
       - run: pnpm typecheck
 >>>>>>> dd91d4f ([feat] update safe typescript safelist)
+=======
+      - run: yarn add -D typescript@${{ matrix.ts }}
+      - run: yarn typecheck
+>>>>>>> d1734b8 ([fix] apply review feedback: circular imports, docs, types, border wiring (#13))
 ```
 
 ## Package Validation
@@ -145,6 +150,7 @@ Validate published package:
 
 ```bash
 # Check exports are correct
+<<<<<<< HEAD
 <<<<<<< HEAD
 yarn dlx publint
 
@@ -156,6 +162,12 @@ pnpm dlx publint
 # Check types work in different moduleResolutions
 pnpm dlx @arethetypeswrong/cli --pack .
 >>>>>>> dd91d4f ([feat] update safe typescript safelist)
+=======
+yarn dlx publint
+
+# Check types work in different moduleResolutions
+yarn dlx @arethetypeswrong/cli --pack .
+>>>>>>> d1734b8 ([fix] apply review feedback: circular imports, docs, types, border wiring (#13))
 ```
 
 Add to tsdown config:

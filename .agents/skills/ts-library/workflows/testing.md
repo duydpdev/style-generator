@@ -144,6 +144,11 @@ yarn dlx publint
 
 # Check types work in different moduleResolutions
 yarn dlx @arethetypeswrong/cli --pack .
+yarn dlx publint
+
+# Check types work in different moduleResolutions
+yarn dlx @arethetypeswrong/cli --pack .
+>>>>>>> d1734b8 ([fix] apply review feedback: circular imports, docs, types, border wiring (#13))
 ```
 
 Add to tsdown config:

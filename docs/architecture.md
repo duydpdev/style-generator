@@ -220,16 +220,16 @@ const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
 
 ## Exports API
 
-| Export                  | Loại      | Mô tả                                |
-| ----------------------- | --------- | ------------------------------------ |
+| Export                  | Loại      | Mô tả                                              |
+| ----------------------- | --------- | -------------------------------------------------- |
 | `createStyleSystem`     | Function  | Entry point → `{ plugin, safelist, DesignTokens }` |
-| `createStylePlugin`     | Function  | Chỉ tạo plugin                       |
-| `generateSafelist`      | Function  | Chỉ sinh safelist array              |
-| `createDesignTokens`    | Function  | Sinh Design Tokens object            |
-| `resolveSpacing`        | Function  | Resolve một spacing prop             |
-| `resolveSpacingProps`   | Function  | Resolve nhiều spacing props          |
-| `Breakpoint`            | Enum      | `SM \| MD \| LG \| XL \| XXL`        |
-| `ThemeConfig`           | Interface | Type cho theme config object         |
-| `StyleGeneratorOptions` | Interface | Type cho options                     |
-| `ModuleConfig`          | Interface | Type cho module config               |
-| `SpacingPropertyMap`    | Type      | Type cho spacing property mapping    |
+| `createStylePlugin`     | Function  | Chỉ tạo plugin                                     |
+| `generateSafelist`      | Function  | Chỉ sinh safelist array                            |
+| `createDesignTokens`    | Function  | Sinh Design Tokens object                          |
+| `resolveSpacing`        | Function  | Resolve một spacing prop                           |
+| `resolveSpacingProps`   | Function  | Resolve nhiều spacing props                        |
+| `Breakpoint`            | Enum      | `SM \| MD \| LG \| XL \| XXL`                      |
+| `ThemeConfig`           | Interface | Type cho theme config object                       |
+| `StyleGeneratorOptions` | Interface | Type cho options                                   |
+| `ModuleConfig`          | Interface | Type cho module config                             |
+| `SpacingPropertyMap`    | Type      | Type cho spacing property mapping                  |

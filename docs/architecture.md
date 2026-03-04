@@ -97,9 +97,10 @@ src/
 Entry point chính. Tính safelist một lần và truyền vào plugin (tránh tính hai lần).
 
 ```typescript
-const { plugin, safelist } = createStyleSystem(theme, options);
+const { plugin, safelist, DesignTokens } = createStyleSystem(theme, options);
 // plugin → dùng trong @plugin hoặc plugins: [...]
 // safelist → string[] → ghi ra safelist.txt hoặc dùng @source
+// DesignTokens → object token hoá để dùng cho tooling/docs/custom build khác
 ```
 
 ### `createStylePlugin`
@@ -221,7 +222,7 @@ const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
 
 | Export                  | Loại      | Mô tả                                |
 | ----------------------- | --------- | ------------------------------------ |
-| `createStyleSystem`     | Function  | Entry point → `{ plugin, safelist }` |
+| `createStyleSystem`     | Function  | Entry point → `{ plugin, safelist, DesignTokens }` |
 | `createStylePlugin`     | Function  | Chỉ tạo plugin                       |
 | `generateSafelist`      | Function  | Chỉ sinh safelist array              |
 | `createDesignTokens`    | Function  | Sinh Design Tokens object            |

@@ -1,51 +1,51 @@
-import type { UserConfig } from '@commitlint/types';
+import type { UserConfig } from "@commitlint/types";
 
 const config: UserConfig = {
   parserPreset: {
     parserOpts: {
       headerPattern: /^\[(\w+)\] (.+)/,
-      headerCorrespondence: ['type', 'subject'],
+      headerCorrespondence: ["type", "subject"],
     },
   },
   plugins: [
     {
       rules: {
-        'header-match-team-pattern': (parsed: any) => {
+        "header-match-team-pattern": (parsed: any) => {
           const { type, subject } = parsed;
           if (!type || !subject) {
             return [false, "header must be in format '[type] subject'"];
           }
-          return [true, ''];
+          return [true, ""];
         },
-        'type-enum': (parsed: any, _when: any, expectedValue: any) => {
+        "type-enum": (parsed: any, _when: any, expectedValue: any) => {
           const { type } = parsed;
           if (type && !expectedValue.includes(type)) {
             return [false, `type must be one of ${expectedValue}`];
           }
-          return [true, ''];
+          return [true, ""];
         },
       },
     },
   ],
   rules: {
-    'header-match-team-pattern': [2, 'always'],
-    'type-enum': [
+    "header-match-team-pattern": [2, "always"],
+    "type-enum": [
       2,
-      'always',
+      "always",
       [
-        'feat',
-        'fix',
-        'docs',
-        'style',
-        'refactor',
-        'test',
-        'chore',
-        'revert',
-        'ci',
-        'perf',
-        'build',
-        'temp',
-        'conf',
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "test",
+        "chore",
+        "revert",
+        "ci",
+        "perf",
+        "build",
+        "temp",
+        "conf",
       ],
     ],
   },

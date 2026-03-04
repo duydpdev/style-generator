@@ -39,7 +39,7 @@ jobs:
         run: |
           git fetch origin main
           git merge origin/main -X theirs --no-edit \
-            -m "chore: merge main (${{ inputs.version }}) into develop [skip ci]"
+            -m "[chore] merge main (${{ inputs.version }}) into develop [skip ci]"
 
       - name: Push
         run: git push origin develop

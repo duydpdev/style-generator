@@ -1,8 +1,17 @@
 import {
   DEFAULT_BORDER_VALUES,
+  DEFAULT_ROUNDED_VALUES,
   DEFAULT_SPACING_PROPERTIES,
 } from "../constants";
-import { StyleGeneratorOptions, defaultScreens, ThemeConfig } from "../types";
+import {
+  DesignTokensResult,
+  InferColorKeys,
+  InferBorderOptions,
+  InferRoundedOptions,
+  StyleGeneratorOptions,
+  defaultScreens,
+  ThemeConfig,
+} from "../types";
 import { toKebabCase } from "../utils";
 
 /**
@@ -10,22 +19,47 @@ import { toKebabCase } from "../utils";
  * Useful for sharing token data with consumer applications (e.g., for CVA variant maps).
  * @param {ThemeConfig} config - Theme configuration
  * @param {StyleGeneratorOptions} options - Generator options
- * @returns {Record<string, unknown>} Design tokens object
+ * @returns {DesignTokensResult<ThemeConfig>} Design tokens object inferred from theme
  */
-export const createDesignTokens = (
-  config: ThemeConfig,
+export const createDesignTokens = <TTheme extends ThemeConfig>(
+  config: TTheme,
   options: StyleGeneratorOptions = {},
-) => {
+): DesignTokensResult<TTheme> => {
   const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
     config;
 
-  const variantText = Object.keys(typography);
-  const variantShadow = Object.keys(shadows ?? {});
-  const variantBackdropBlur = Object.keys(backDropBlurs ?? {});
-  const variantBorder = Object.keys(border ?? DEFAULT_BORDER_VALUES);
-  const variantTextColor = Object.keys(colors.text);
-  const variantColor = Object.keys(colors.base);
-  const variantColors = [...variantColor, ...variantTextColor];
+  const variantText = Object.keys(typography) as Extract<
+    keyof TTheme["typography"],
+    string
+  >[];
+
+  const variantShadow = Object.keys(shadows ?? {}) as Extract<
+    keyof NonNullable<TTheme["shadows"]>,
+    string
+  >[];
+
+  const variantBackdropBlur = Object.keys(backDropBlurs ?? {}) as Extract<
+    keyof NonNullable<TTheme["backDropBlurs"]>,
+    string
+  >[];
+
+  const variantBorder = (
+    border ? Object.keys(border) : DEFAULT_BORDER_VALUES.map(String)
+  ) as InferBorderOptions<TTheme>[];
+
+  const variantTextColor = Object.keys(colors.text) as Extract<
+    keyof TTheme["colors"]["text"],
+    string
+  >[];
+
+  const variantBaseColor = Object.keys(colors.base) as Extract<
+    keyof TTheme["colors"]["base"],
+    string
+  >[];
+
+  const variantColors = [...variantBaseColor, ...variantTextColor].map(
+    (color) => toKebabCase(color),
+  ) as InferColorKeys<TTheme>[];
 
   const mergedScreens = {
     ...defaultScreens,
@@ -37,19 +71,20 @@ export const createDesignTokens = (
     options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES,
   );
 
-  const roundedValues = Object.keys(borderRadius ?? {});
+  const roundedValues = (
+    borderRadius ? Object.keys(borderRadius) : [...DEFAULT_ROUNDED_VALUES]
+  ) as InferRoundedOptions<TTheme>[];
 
   return {
     DesignTokens: {
       Web: {
         variantText,
         variantTextColor,
-        variantColor: variantColors.map(toKebabCase),
+        variantColor: variantColors,
         variantShadow,
         variantBackdropBlur,
         borderOption: variantBorder,
         roundedOption: roundedValues,
-        /** Available spacing property keys (used via CSS custom properties, not safelist). */
         spacingProperties,
         breakpoints: keysToUse,
         screens: mergedScreens,

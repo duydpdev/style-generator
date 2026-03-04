@@ -49,9 +49,9 @@ Create a `theme.json` file with your design tokens:
 }
 ```
 
-### Dark Mode
+### Multi-theme (Dark/Light/Custom)
 
-Add a `dark` key containing only **overrides** (values that differ from light):
+Add a `themes` key containing named theme overrides. Each entry only needs **values that differ from the default**:
 
 ```json
 {
@@ -60,12 +60,19 @@ Add a `dark` key containing only **overrides** (values that differ from light):
     "text": { "main": "#111827" }
   },
 
-  "dark": {
-    "colors": {
-      "base": { "background": "#000000" },
-      "text": { "main": "#FFFFFF" }
+  "themes": {
+    "dark": {
+      "colors": {
+        "base": { "background": "#000000" },
+        "text": { "main": "#FFFFFF" }
+      },
+      "shadows": { "sm": "0 1px 2px rgba(255,255,255,0.1)" }
     },
-    "shadows": { "sm": "0 1px 2px rgba(255,255,255,0.1)" }
+    "high-contrast": {
+      "colors": {
+        "text": { "main": "#000000" }
+      }
+    }
   }
 }
 ```
@@ -73,21 +80,33 @@ Add a `dark` key containing only **overrides** (values that differ from light):
 **Auto-generated CSS output:**
 
 ```css
-:root, html[data-theme='light'] {
-  --color-base-primary: #3B82F6;
-  --color-base-background: #FFFFFF;
+:root {
+  --color-base-primary: #3b82f6;
+  --color-base-background: #ffffff;
   --color-text-main: #111827;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-html[data-theme='dark'] {
+html[data-theme="dark"] {
   --color-base-background: #000000;
-  --color-text-main: #FFFFFF;
-  --shadow-sm: 0 1px 2px rgba(255,255,255,0.1);
+  --color-text-main: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="high-contrast"] {
+  --color-text-main: #000000;
 }
 ```
 
-> **No `dark` key?** → Only light mode CSS variables are generated. Backward compatible.
+**Activate a theme:**
+
+```html
+<html data-theme="dark">
+  ...
+</html>
+```
+
+> **No `themes` key?** → Only default CSS variables are generated (`:root` only). Backward compatible.
 
 ---
 
@@ -159,15 +178,24 @@ The plugin generates fixed `.sp-*` utility classes with `var()` fallback chains:
 
 ```css
 /* Base */
-.sp-p { padding: var(--sp-p) }
-.sp-mx { margin-left: var(--sp-mx); margin-right: var(--sp-mx) }
+.sp-p {
+  padding: var(--sp-p);
+}
+.sp-mx {
+  margin-left: var(--sp-mx);
+  margin-right: var(--sp-mx);
+}
 
 /* Responsive (mobile-first) */
 @media (min-width: 768px) {
-  .sp-p { padding: var(--sp-p-md, var(--sp-p)) }
+  .sp-p {
+    padding: var(--sp-p-md, var(--sp-p));
+  }
 }
 @media (min-width: 1024px) {
-  .sp-p { padding: var(--sp-p-lg, var(--sp-p-md, var(--sp-p))) }
+  .sp-p {
+    padding: var(--sp-p-lg, var(--sp-p-md, var(--sp-p)));
+  }
 }
 ```
 
@@ -216,14 +244,14 @@ createStyleSystem(theme, {
 
   // Spacing (CSS custom properties)
   spacing: {
-    enabled: true,           // default: true
+    enabled: true, // default: true
     // properties: { ... },  // override/extend default property mapping
   },
 
   // Module configs (safelist-based)
-  layout: { enabled: true },                        // display, flex, align...
+  layout: { enabled: true }, // display, flex, align...
   rounded: { values: ["none", "md", "lg", "full"] }, // customize values
-  border: { values: [0, 1, 2] },                    // customize values
+  border: { values: [0, 1, 2] }, // customize values
   opacity: { enabled: true },
   zIndex: { enabled: true },
 
@@ -231,8 +259,8 @@ createStyleSystem(theme, {
   dynamicClasses: ["animate-spin", "animate-pulse"],
 
   // Feature flags
-  enableCssVariables: true,   // default: true
-  enableResponsive: true,     // default: true
+  enableCssVariables: true, // default: true
+  enableResponsive: true, // default: true
 
   // Responsive modules (which safelist modules get responsive prefixes)
   responsiveModules: ["layout", "rounded"],
@@ -241,39 +269,203 @@ createStyleSystem(theme, {
 
 ### Options Reference
 
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `screens` | `Record<string, string>` | Tailwind defaults | Custom screen widths. |
-| `breakpoints` | `(Breakpoint \| string)[]` | `["md", "lg"]` | Breakpoints for responsive spacing and safelist. |
-| `spacing` | `{ enabled?, properties? }` | Enabled, all props | Spacing via CSS custom properties. Zero safelist. |
-| `layout` | `ModuleConfig<string>` | All layout classes | Layout classes (hidden, flex, items-center...). |
-| `rounded` | `ModuleConfig<string>` | 9 values | Border radius values for safelist. |
-| `border` | `ModuleConfig<number>` | `[0, 1, 2, 4]` | Border width values for safelist. |
-| `opacity` | `ModuleConfig<number>` | 0-100 step 5 | Opacity values for safelist. |
-| `zIndex` | `ModuleConfig<number\|string>` | `[0,10,..,50,"auto"]` | Z-index values for safelist. |
-| `dynamicClasses` | `string[]` | `[]` | Extra classes to add to safelist. |
-| `enableCssVariables` | `boolean` | `true` | Generate `:root` / `html[data-theme]` CSS variables. |
-| `enableResponsive` | `boolean` | `true` | Generate responsive spacing rules and safelist variants. |
-| `responsiveModules` | `StyleModule[]` | `["layout", "rounded"]` | Which safelist modules get responsive prefixes. |
+| Option               | Type                           | Default                 | Description                                              |
+| :------------------- | :----------------------------- | :---------------------- | :------------------------------------------------------- |
+| `screens`            | `Record<string, string>`       | Tailwind defaults       | Custom screen widths.                                    |
+| `breakpoints`        | `(Breakpoint \| string)[]`     | `["md", "lg"]`          | Breakpoints for responsive spacing and safelist.         |
+| `spacing`            | `{ enabled?, properties? }`    | Enabled, all props      | Spacing via CSS custom properties. Zero safelist.        |
+| `layout`             | `ModuleConfig<string>`         | All layout classes      | Layout classes (hidden, flex, items-center...).          |
+| `rounded`            | `ModuleConfig<string>`         | 9 values                | Border radius values for safelist.                       |
+| `border`             | `ModuleConfig<number>`         | `[0, 1, 2, 4]`          | Border width values for safelist.                        |
+| `opacity`            | `ModuleConfig<number>`         | 0-100 step 5            | Opacity values for safelist.                             |
+| `zIndex`             | `ModuleConfig<number\|string>` | `[0,10,..,50,"auto"]`   | Z-index values for safelist.                             |
+| `dynamicClasses`     | `string[]`                     | `[]`                    | Extra classes to add to safelist.                        |
+| `enableCssVariables` | `boolean`                      | `true`                  | Generate `:root` / `html[data-theme]` CSS variables.     |
+| `enableResponsive`   | `boolean`                      | `true`                  | Generate responsive spacing rules and safelist variants. |
+| `responsiveModules`  | `StyleModule[]`                | `["layout", "rounded"]` | Which safelist modules get responsive prefixes.          |
 
 ### Use Cases
 
-| Project type | Config |
-| :--- | :--- |
-| **Full (multi-platform web app)** | `{}` (defaults) |
-| **Mobile-only or Desktop-only** | `{ enableResponsive: false }` — no responsive spacing/safelist |
-| **No dark mode / CSS vars** | `{ enableCssVariables: false }` |
-| **Minimal safelist** | `{ layout: { enabled: false }, opacity: { enabled: false }, zIndex: { enabled: false } }` |
+| Project type                      | Config                                                                                    |
+| :-------------------------------- | :---------------------------------------------------------------------------------------- |
+| **Full (multi-platform web app)** | `{}` (defaults)                                                                           |
+| **Mobile-only or Desktop-only**   | `{ enableResponsive: false }` — no responsive spacing/safelist                            |
+| **No dark mode / CSS vars**       | `{ enableCssVariables: false }`                                                           |
+| **Minimal safelist**              | `{ layout: { enabled: false }, opacity: { enabled: false }, zIndex: { enabled: false } }` |
 
 ---
 
 ## 7. Exports API
 
-| Function | Input | Description |
-| --- | --- | --- |
-| `createStylePlugin` | `(theme, options?)` | Creates a Tailwind Plugin. Injects CSS variables, screens, typography, spacing rules. |
-| `createStyleSystem` | `(theme, options?)` | **Recommended**. Returns `{ plugin, safelist }`. |
-| `generateSafelist` | `(theme, options?)` | Generates `string[]` safelist (excludes spacing). |
-| `createDesignTokens` | `(theme, options?)` | Generates design tokens object for consumer apps. |
-| `resolveSpacing` | `(prop, value, unit?)` | Maps a single spacing prop to `{ className, style }`. |
-| `resolveSpacingProps` | `(props)` | Maps multiple spacing props to `{ classNames, style }`. |
+| Function              | Input                  | Description                                                                           |
+| --------------------- | ---------------------- | ------------------------------------------------------------------------------------- |
+| `createStylePlugin`   | `(theme, options?)`    | Creates a Tailwind Plugin. Injects CSS variables, screens, typography, spacing rules. |
+| `createStyleSystem`   | `(theme, options?)`    | **Recommended**. Returns `{ plugin, safelist }`.                                      |
+| `generateSafelist`    | `(theme, options?)`    | Generates `string[]` safelist (excludes spacing).                                     |
+| `createDesignTokens`  | `(theme, options?)`    | Generates design tokens object for consumer apps.                                     |
+| `resolveSpacing`      | `(prop, value, unit?)` | Maps a single spacing prop to `{ className, style }`.                                 |
+| `resolveSpacingProps` | `(props)`              | Maps multiple spacing props to `{ classNames, style }`.                               |
+
+---
+
+## 8. TypeScript cho consumer (pattern khuyến nghị)
+
+### 8.1. Gõ kiểu cho `theme` và API factories
+
+**Cách 1 – Dùng `theme.ts` với `as const` (khuyến nghị):**
+
+```ts
+// styles/theme.ts
+import type { ThemeConfig } from "@duydpdev/style-generator";
+
+export const theme = {
+  colors: {
+    base: { primary: "#3B82F6", background: "#FFFFFF" } as const,
+    text: { main: "#111827", muted: "#6B7280" } as const,
+  },
+  typography: {
+    text16Medium: {
+      fontSize: "16px",
+      lineHeight: "24px",
+      fontWeight: 500,
+      letterSpacing: "0px",
+    },
+  },
+  shadows: {
+    sm: "0 1px 2px rgba(0,0,0,0.05)",
+  },
+  borderRadius: {
+    md: "0.375rem",
+  },
+} satisfies ThemeConfig;
+
+export type AppTheme = typeof theme;
+```
+
+Khi đó trong plugin Tailwind:
+
+```ts
+import { createStyleSystem } from "@duydpdev/style-generator";
+import { theme } from "./styles/theme";
+
+const { plugin, safelist } = createStyleSystem(theme, {
+  // TypeScript sẽ infer theo `AppTheme`
+});
+```
+
+**Cách 2 – `theme.json` + `as const`:**
+
+```ts
+import themeJson from "./styles/theme.json";
+import { createStyleSystem } from "@duydpdev/style-generator";
+
+const theme = themeJson as const;
+
+const { plugin, safelist } = createStyleSystem(theme, {
+  // Generics sẽ infer từ literal types của JSON
+});
+```
+
+### 8.2. Dùng Design Tokens để gõ variant props
+
+```ts
+import { createDesignTokens } from "@duydpdev/style-generator";
+import { theme } from "./styles/theme";
+
+const { DesignTokens } = createDesignTokens(theme, {
+  breakpoints: ["md", "lg"],
+});
+
+type ColorVariant = (typeof DesignTokens.Web.variantColor)[number];
+type TextVariant = (typeof DesignTokens.Web.variantText)[number];
+
+interface ButtonProps {
+  color?: ColorVariant;
+  textVariant?: TextVariant;
+}
+```
+
+Hoặc với `cva`:
+
+```ts
+import { cva } from "class-variance-authority";
+
+const button = cva("base-class", {
+  variants: {
+    color: DesignTokens.Web.variantColor.reduce<Record<string, string>>(
+      (acc, c) => {
+        acc[c] = `bg-${c}`;
+        return acc;
+      },
+      {},
+    ),
+    textVariant: DesignTokens.Web.variantText.reduce<Record<string, string>>(
+      (acc, t) => {
+        acc[t] = t;
+        return acc;
+      },
+      {},
+    ),
+  },
+});
+
+type ButtonColor = keyof typeof button.variants.color;
+type ButtonTextVariant = keyof typeof button.variants.textVariant;
+```
+
+### 8.3. Gõ kiểu cho spacing props
+
+Các helper `resolveSpacing` / `resolveSpacingProps` hoạt động tốt với TypeScript mà không cần thêm type phức tạp:
+
+```ts
+import { resolveSpacingProps } from "@duydpdev/style-generator";
+
+type SpacingValue =
+  | number
+  | {
+      base?: number;
+      md?: number;
+      lg?: number;
+    };
+
+interface BoxProps extends React.HTMLAttributes<HTMLDivElement> {
+  p?: SpacingValue;
+  px?: SpacingValue;
+  py?: SpacingValue;
+  m?: SpacingValue;
+  mx?: SpacingValue;
+  my?: SpacingValue;
+}
+
+export const Box: React.FC<BoxProps> = ({
+  p,
+  px,
+  py,
+  m,
+  mx,
+  my,
+  className,
+  style,
+  ...rest
+}) => {
+  const spacing = resolveSpacingProps({ p, px, py, m, mx, my });
+
+  return (
+    <div
+      {...rest}
+      className={[...spacing.classNames, className].filter(Boolean).join(" ")}
+      style={{ ...spacing.style, ...style }}
+    />
+  );
+};
+```
+
+### 8.4. Bắt lỗi type sớm với tokens
+
+Vì `DesignTokens` giữ literal union type, TypeScript sẽ báo lỗi nếu dùng sai token:
+
+```ts
+const invalidColor: (typeof DesignTokens.Web.variantColor)[number] = "oops"; // ❌ lỗi TS
+```
+
+Điều này giúp consumer bắt sai lệch giữa theme và UI layer ngay ở compile-time, đúng mục tiêu “Design System as single source of truth”. 

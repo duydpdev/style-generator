@@ -1,10 +1,13 @@
 # [{{version}}]({{compareUrl}}) ({{date}})
 
 {{#each commitGroups}}
-### {{title}}
+  ###
+  {{title}}
 
-{{#each commits}}
-* {{#if scope}}**{{scope}}:** {{/if}}{{subject}} ([{{shortHash}}]({{commitUrl}}))
-{{/each}}
+  {{#each commits}}
+    *
+    {{#if scope}}**{{scope}}:** {{/if}}{{subject}}
+    ([{{shortHash}}]({{commitUrl}}))
+  {{/each}}
 
 {{/each}}

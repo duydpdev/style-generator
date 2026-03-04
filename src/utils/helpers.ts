@@ -18,8 +18,11 @@ export const toPascalCase = (str: string) => {
     .replaceAll(/^(.)/, (_, c: string) => c.toUpperCase());
 };
 
-export const extractData = (object: object, isToKebabCase = true) => {
-  return Object.entries(object).reduce<Record<string, unknown>>(
+export const extractData = (
+  data: Record<string, unknown>,
+  isToKebabCase = true,
+) => {
+  return Object.entries(data).reduce<Record<string, unknown>>(
     (acc, [key, value]) => {
       acc[isToKebabCase ? toKebabCase(key) : key] = value;
       return acc;
@@ -28,8 +31,8 @@ export const extractData = (object: object, isToKebabCase = true) => {
   );
 };
 
-export const addDot = (object: object) => {
-  return Object.entries(object).reduce<Record<string, unknown>>(
+export const addDot = (data: Record<string, unknown>) => {
+  return Object.entries(data).reduce<Record<string, unknown>>(
     (acc, [key, value]) => {
       acc[`.${toKebabCase(key)}`] = value;
       return acc;

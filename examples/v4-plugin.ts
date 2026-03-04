@@ -19,7 +19,8 @@ const options = {
 };
 
 // Create style system (plugin + safelist)
-const { plugin, safelist } = createStyleSystem(theme, options);
+const { plugin, safelist }: { plugin: unknown; safelist: string[] } =
+  createStyleSystem(theme, options);
 
 // Export plugin
 export default plugin;

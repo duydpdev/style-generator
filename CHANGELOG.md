@@ -1,3 +1,9 @@
+# [1.2.0-DEV.4]() (2026-03-04)
+
+### Bug Fixes
+
+- apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator/issues/13)) ([d1734b8]())
+
 # [1.2.0-DEV.3]() (2026-03-04)
 
   ###

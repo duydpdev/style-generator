@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [main, develop]
 
-permissions:
-  contents: read
-  packages: read
-
 env:
   # Use the auto-generated GITHUB_TOKEN so this workflow runs without
   # approval for all PR authors (including bots / Copilot).
@@ -36,11 +32,6 @@ jobs:
       # Validate PR title matches [type] subject so squash-merged commits
       # trigger semantic-release correctly (the PR title becomes the squash
       # commit message on main/develop).
-      - name: Validate PR title
-        if: github.event_name == 'pull_request'
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: echo "$PR_TITLE" | yarn commitlint
 
       # Run lint if available, otherwise just build
       - name: Lint

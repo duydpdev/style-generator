@@ -33,7 +33,14 @@ createStyleSystem(theme as any);
 // Giá trị sai type: fontSize là number thay vì string
 const theme = {
   colors: { base: {}, text: {} },
-  typography: { body: { fontSize: 16, lineHeight: "150%", fontWeight: 400, letterSpacing: "0px" } }
+  typography: {
+    body: {
+      fontSize: 16,
+      lineHeight: "150%",
+      fontWeight: 400,
+      letterSpacing: "0px",
+    },
+  },
 };
 // → CSS output sai nhưng không báo lỗi
 ```
@@ -51,13 +58,13 @@ const theme = {
 
 ### Option A: Zod / Valibot
 
-| | Zod | Valibot |
-|---|-----|---------|
-| **Bundle size** | ~14KB min+gzip | ~6KB min+gzip |
-| **Tree-shaking** | Tốt | Rất tốt (modular) |
+|                    | Zod                  | Valibot              |
+| ------------------ | -------------------- | -------------------- |
+| **Bundle size**    | ~14KB min+gzip       | ~6KB min+gzip        |
+| **Tree-shaking**   | Tốt                  | Rất tốt (modular)    |
 | **TS integration** | Infer type từ schema | Infer type từ schema |
-| **Error messages** | Tốt | Tốt |
-| **Popularity** | Rất cao | Đang tăng |
+| **Error messages** | Tốt                  | Tốt                  |
+| **Popularity**     | Rất cao              | Đang tăng            |
 
 **Vấn đề**: Thêm runtime dependency cho một lib generator → tăng install size cho consumer.
 
@@ -66,11 +73,13 @@ const theme = {
 Viết validation functions thủ công với error messages rõ ràng.
 
 **Ưu điểm**:
+
 - Zero dependency thêm
 - Kiểm soát hoàn toàn error message format
 - Bundle size rất nhỏ (~1-2KB)
 
 **Nhược điểm**:
+
 - Phải tự viết và maintain validation logic
 - Không có schema reuse như Zod
 
@@ -82,6 +91,7 @@ Viết validation functions thủ công với error messages rõ ràng.
 ### Quyết định: **Option B** (Custom validation)
 
 **Lý do**:
+
 1. Lib này là build-time tool, validation logic đơn giản (check required keys + value types)
 2. Không muốn thêm dependency cho consumer
 3. Error messages cần custom theo context cụ thể của lib (không phải generic Zod messages)
@@ -147,44 +157,44 @@ interface ValidationRule {
 }
 ```
 
-| Path | Rule | Error message |
-|------|------|--------------|
-| `colors` | Required, phải là object | `"colors" is required and must be an object` |
+| Path          | Rule                     | Error message                                     |
+| ------------- | ------------------------ | ------------------------------------------------- |
+| `colors`      | Required, phải là object | `"colors" is required and must be an object`      |
 | `colors.base` | Required, phải là object | `"colors.base" is required and must be an object` |
 | `colors.text` | Required, phải là object | `"colors.text" is required and must be an object` |
-| `typography` | Required, phải là object | `"typography" is required and must be an object` |
+| `typography`  | Required, phải là object | `"typography" is required and must be an object`  |
 
 ### Level 2: Value type validation
 
-| Path | Rule | Error message |
-|------|------|--------------|
-| `colors.base.*` | Mỗi value phải là string | `"colors.base.{key}" must be a string (got {typeof value})` |
-| `colors.text.*` | Mỗi value phải là string | `"colors.text.{key}" must be a string (got {typeof value})` |
-| `colors.{group}.*` | Mỗi value phải là string | `"colors.{group}.{key}" must be a string (got {typeof value})` |
-| `typography.*` | Mỗi value phải là object với đúng shape | `"typography.{key}" must have: fontSize, lineHeight, fontWeight, letterSpacing` |
-| `typography.*.fontSize` | Phải là string | `"typography.{key}.fontSize" must be a string (e.g. "16px"), got {typeof value}` |
-| `typography.*.lineHeight` | Phải là string | `"typography.{key}.lineHeight" must be a string (e.g. "150%"), got {typeof value}` |
-| `typography.*.fontWeight` | Phải là number | `"typography.{key}.fontWeight" must be a number, got {typeof value}` |
-| `typography.*.letterSpacing` | Phải là string | `"typography.{key}.letterSpacing" must be a string (e.g. "0px"), got {typeof value}` |
-| `shadows.*` | Mỗi value phải là string | `"shadows.{key}" must be a string` |
-| `backDropBlurs.*` | Mỗi value phải là string | `"backDropBlurs.{key}" must be a string` |
-| `borderRadius.*` | Mỗi value phải là string | `"borderRadius.{key}" must be a string` |
+| Path                         | Rule                                    | Error message                                                                        |
+| ---------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `colors.base.*`              | Mỗi value phải là string                | `"colors.base.{key}" must be a string (got {typeof value})`                          |
+| `colors.text.*`              | Mỗi value phải là string                | `"colors.text.{key}" must be a string (got {typeof value})`                          |
+| `colors.{group}.*`           | Mỗi value phải là string                | `"colors.{group}.{key}" must be a string (got {typeof value})`                       |
+| `typography.*`               | Mỗi value phải là object với đúng shape | `"typography.{key}" must have: fontSize, lineHeight, fontWeight, letterSpacing`      |
+| `typography.*.fontSize`      | Phải là string                          | `"typography.{key}.fontSize" must be a string (e.g. "16px"), got {typeof value}`     |
+| `typography.*.lineHeight`    | Phải là string                          | `"typography.{key}.lineHeight" must be a string (e.g. "150%"), got {typeof value}`   |
+| `typography.*.fontWeight`    | Phải là number                          | `"typography.{key}.fontWeight" must be a number, got {typeof value}`                 |
+| `typography.*.letterSpacing` | Phải là string                          | `"typography.{key}.letterSpacing" must be a string (e.g. "0px"), got {typeof value}` |
+| `shadows.*`                  | Mỗi value phải là string                | `"shadows.{key}" must be a string`                                                   |
+| `backDropBlurs.*`            | Mỗi value phải là string                | `"backDropBlurs.{key}" must be a string`                                             |
+| `borderRadius.*`             | Mỗi value phải là string                | `"borderRadius.{key}" must be a string`                                              |
 
 ### Level 3: Theme override validation
 
-| Path | Rule | Error message |
-|------|------|--------------|
-| `themes` | Nếu có, phải là object | `"themes" must be an object if provided` |
-| `themes.*` | Mỗi value phải là object | `"themes.{name}" must be an object` |
+| Path              | Rule                                        | Error message                                                 |
+| ----------------- | ------------------------------------------- | ------------------------------------------------------------- |
+| `themes`          | Nếu có, phải là object                      | `"themes" must be an object if provided`                      |
+| `themes.*`        | Mỗi value phải là object                    | `"themes.{name}" must be an object`                           |
 | `themes.*.colors` | Nếu có, mỗi group phải là object of strings | `"themes.{name}.colors.{group}" must be an object of strings` |
 
 ### Level 4: Warnings (không throw, chỉ console.warn)
 
-| Check | Warning message |
-|-------|----------------|
-| `colors.base` rỗng | `Warning: "colors.base" is empty — no base colors will be generated` |
-| `colors.text` rỗng | `Warning: "colors.text" is empty — no text colors will be generated` |
-| `typography` rỗng | `Warning: "typography" is empty — no typography utilities will be generated` |
+| Check              | Warning message                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| `colors.base` rỗng | `Warning: "colors.base" is empty — no base colors will be generated`               |
+| `colors.text` rỗng | `Warning: "colors.text" is empty — no text colors will be generated`               |
+| `typography` rỗng  | `Warning: "typography" is empty — no typography utilities will be generated`       |
 | Tên key chứa space | `Warning: "{path}.{key}" contains spaces — this may cause issues with class names` |
 
 > ~~Giá trị color không giống color format~~ — **ĐÃ LOẠI BỎ**. CSS color formats quá đa dạng (hex, rgb, rgba, hsl, oklch, named colors, CSS variables...). Regex check sẽ phức tạp và dễ false positive. Không đáng effort cho warning.
@@ -262,9 +272,10 @@ export class ThemeValidationError extends Error {
   errors: ValidationError[];
 
   constructor(errors: ValidationError[]) {
-    const header = errors.length === 1
-      ? "[style-generator] Theme validation failed:"
-      : `[style-generator] Theme validation failed (${errors.length} errors):`;
+    const header =
+      errors.length === 1
+        ? "[style-generator] Theme validation failed:"
+        : `[style-generator] Theme validation failed (${errors.length} errors):`;
 
     const body = errors
       .map((e, i) => {
@@ -287,8 +298,8 @@ export class ThemeValidationError extends Error {
 
 ```typescript
 export interface ValidateOptions {
-  throwOnError?: boolean;  // default: true
-  warn?: boolean;          // default: true (console.warn for non-critical issues)
+  throwOnError?: boolean; // default: true
+  warn?: boolean; // default: true (console.warn for non-critical issues)
 }
 
 export interface ValidationResult {
@@ -317,7 +328,10 @@ export const validateTheme = (
   if (errors.length > 0) return finalize(errors, warnings, throwOnError);
 
   // Level 1b: colors sub-structure
-  const colors = (config as Record<string, unknown>).colors as Record<string, unknown>;
+  const colors = (config as Record<string, unknown>).colors as Record<
+    string,
+    unknown
+  >;
   validateRequired(colors, "base", "object", errors);
   validateRequired(colors, "text", "object", errors);
 
@@ -403,7 +417,10 @@ const validateRequired = (
     return;
   }
   if (expectedType === "object" && !isObject(obj[key])) {
-    errors.push({ path: key, message: `"${key}" must be an object, got ${typeof obj[key]}` });
+    errors.push({
+      path: key,
+      message: `"${key}" must be an object, got ${typeof obj[key]}`,
+    });
   }
 };
 
@@ -419,7 +436,9 @@ const validateColorGroup = (
 
   const isEmpty = Object.keys(groupValue).length === 0;
   if (isEmpty && warn) {
-    warnings.push(`"colors.${group}" is empty — no ${group} colors will be generated`);
+    warnings.push(
+      `"colors.${group}" is empty — no ${group} colors will be generated`,
+    );
   }
 
   for (const [key, value] of Object.entries(groupValue)) {
@@ -431,18 +450,22 @@ const validateColorGroup = (
       });
     }
     if (warn && typeof value === "string" && key.includes(" ")) {
-      warnings.push(`"colors.${group}.${key}" contains spaces — this may cause class name issues`);
+      warnings.push(
+        `"colors.${group}.${key}" contains spaces — this may cause class name issues`,
+      );
     }
   }
 };
 
-const validateTypography = (
-  typography: unknown,
-  errors: ValidationError[],
-) => {
+const validateTypography = (typography: unknown, errors: ValidationError[]) => {
   if (!isObject(typography)) return;
 
-  const requiredFields = ["fontSize", "lineHeight", "fontWeight", "letterSpacing"];
+  const requiredFields = [
+    "fontSize",
+    "lineHeight",
+    "fontWeight",
+    "letterSpacing",
+  ];
   const fieldTypes: Record<string, string> = {
     fontSize: "string",
     lineHeight: "string",
@@ -494,7 +517,10 @@ const validateOptionalStringRecord = (
   const value = config[key];
 
   if (!isObject(value)) {
-    errors.push({ path: key, message: `"${key}" must be an object if provided, got ${typeof value}` });
+    errors.push({
+      path: key,
+      message: `"${key}" must be an object if provided, got ${typeof value}`,
+    });
     return;
   }
 
@@ -512,18 +538,21 @@ const validateOptionalStringRecord = (
 /**
  * Validate `themes` field — each theme override.
  */
-const validateThemeOverrides = (
-  themes: unknown,
-  errors: ValidationError[],
-) => {
+const validateThemeOverrides = (themes: unknown, errors: ValidationError[]) => {
   if (!isObject(themes)) {
-    errors.push({ path: "themes", message: `"themes" must be an object if provided` });
+    errors.push({
+      path: "themes",
+      message: `"themes" must be an object if provided`,
+    });
     return;
   }
 
   for (const [name, override] of Object.entries(themes)) {
     if (!isObject(override)) {
-      errors.push({ path: `themes.${name}`, message: `"themes.${name}" must be an object` });
+      errors.push({
+        path: `themes.${name}`,
+        message: `"themes.${name}" must be an object`,
+      });
       continue;
     }
 
@@ -535,7 +564,9 @@ const validateThemeOverrides = (
           message: `"themes.${name}.colors" must be an object`,
         });
       } else {
-        for (const [group, groupValue] of Object.entries(override.colors as Record<string, unknown>)) {
+        for (const [group, groupValue] of Object.entries(
+          override.colors as Record<string, unknown>,
+        )) {
           if (groupValue == null) continue;
           if (!isObject(groupValue)) {
             errors.push({
@@ -560,7 +591,11 @@ const validateThemeOverrides = (
     // Validate optional string records in override
     for (const field of ["shadows", "backDropBlurs", "borderRadius"] as const) {
       if (field in override) {
-        validateOptionalStringRecord(override as Record<string, unknown>, field, errors);
+        validateOptionalStringRecord(
+          override as Record<string, unknown>,
+          field,
+          errors,
+        );
       }
     }
   }
@@ -576,16 +611,22 @@ const checkEmptyWarnings = (
   const colors = config.colors as Record<string, unknown> | undefined;
   if (colors) {
     if (isObject(colors.base) && Object.keys(colors.base).length === 0) {
-      warnings.push(`"colors.base" is empty — no base colors will be generated`);
+      warnings.push(
+        `"colors.base" is empty — no base colors will be generated`,
+      );
     }
     if (isObject(colors.text) && Object.keys(colors.text).length === 0) {
-      warnings.push(`"colors.text" is empty — no text colors will be generated`);
+      warnings.push(
+        `"colors.text" is empty — no text colors will be generated`,
+      );
     }
   }
 
   const typography = config.typography;
   if (isObject(typography) && Object.keys(typography).length === 0) {
-    warnings.push(`"typography" is empty — no typography utilities will be generated`);
+    warnings.push(
+      `"typography" is empty — no typography utilities will be generated`,
+    );
   }
 };
 ```
@@ -599,6 +640,7 @@ const checkEmptyWarnings = (
 **Không dùng** internal/external split hay Symbol flag — quá phức tạp cho bài toán đơn giản này.
 
 **Lý do**:
+
 - Validation cost < 1ms (chỉ check vài object keys + typeof), không đáng optimize
 - Mỗi factory (`createStyleSystem`, `createStylePlugin`, `generateSafelist`, `createDesignTokens`) đều có thể được gọi standalone → mỗi cái đều phải validate
 - Khi gọi từ `createStyleSystem`, validation chạy 4 lần nhưng tổng cộng < 4ms → chấp nhận được
@@ -608,7 +650,10 @@ const checkEmptyWarnings = (
 
 ```typescript
 // Mỗi public function — thêm 1 dòng ở đầu:
-export const createStyleSystem = <T extends ThemeConfig>(config: T, options?) => {
+export const createStyleSystem = <T extends ThemeConfig>(
+  config: T,
+  options?,
+) => {
   validateTheme(config);
   // ... logic hiện tại giữ nguyên
 };
@@ -618,12 +663,18 @@ export const createStylePlugin = (config: ThemeConfig, options?, safelist?) => {
   // ... logic hiện tại giữ nguyên
 };
 
-export const generateSafelist = <T extends ThemeConfig>(config: T, options?) => {
+export const generateSafelist = <T extends ThemeConfig>(
+  config: T,
+  options?,
+) => {
   validateTheme(config);
   // ... logic hiện tại giữ nguyên
 };
 
-export const createDesignTokens = <T extends ThemeConfig>(config: T, options?) => {
+export const createDesignTokens = <T extends ThemeConfig>(
+  config: T,
+  options?,
+) => {
   validateTheme(config);
   // ... logic hiện tại giữ nguyên
 };
@@ -639,9 +690,9 @@ User cũng có thể truyền sai `StyleGeneratorOptions`:
 
 ```typescript
 createStyleSystem(theme, {
-  breakpoints: [123],          // Phải là string, không phải number
-  layout: "flex",              // Phải là object { enabled?, values? }, không phải string
-  screens: "800px",            // Phải là Record<string, string>, không phải string
+  breakpoints: [123], // Phải là string, không phải number
+  layout: "flex", // Phải là object { enabled?, values? }, không phải string
+  screens: "800px", // Phải là Record<string, string>, không phải string
 });
 ```
 
@@ -668,15 +719,15 @@ Validation chạy ở build time (khi Tailwind process plugin). Cost < 1ms, khô
 
 ### File changes
 
-| File | Hành động |
-|------|-----------|
-| `src/validation/validateTheme.ts` | **Mới** |
-| `src/validation/errors.ts` | **Mới** |
-| `src/validation/index.ts` | **Mới** — re-export |
-| `src/index.ts` | Thêm export validation |
-| `src/factories/createStyleSystem.ts` | Thêm `validateTheme()` call |
-| `src/factories/createStylePlugin.ts` | Thêm `validateTheme()` call |
-| `src/factories/generateSafelist.ts` | Thêm `validateTheme()` call |
+| File                                  | Hành động                   |
+| ------------------------------------- | --------------------------- |
+| `src/validation/validateTheme.ts`     | **Mới**                     |
+| `src/validation/errors.ts`            | **Mới**                     |
+| `src/validation/index.ts`             | **Mới** — re-export         |
+| `src/index.ts`                        | Thêm export validation      |
+| `src/factories/createStyleSystem.ts`  | Thêm `validateTheme()` call |
+| `src/factories/createStylePlugin.ts`  | Thêm `validateTheme()` call |
+| `src/factories/generateSafelist.ts`   | Thêm `validateTheme()` call |
 | `src/factories/createDesignTokens.ts` | Thêm `validateTheme()` call |
 
 ---
@@ -699,10 +750,10 @@ Validation chạy ở build time (khi Tailwind process plugin). Cost < 1ms, khô
 
 ## Timeline ước tính
 
-| Step | Effort |
-|------|--------|
-| Validation module (errors.ts + validateTheme.ts) | ~3h |
-| Tích hợp vào factories | ~1h |
-| Test manual các edge cases | ~1.5h |
-| Docs update | ~0.5h |
-| **Tổng** | **~6h** |
+| Step                                             | Effort  |
+| ------------------------------------------------ | ------- |
+| Validation module (errors.ts + validateTheme.ts) | ~3h     |
+| Tích hợp vào factories                           | ~1h     |
+| Test manual các edge cases                       | ~1.5h   |
+| Docs update                                      | ~0.5h   |
+| **Tổng**                                         | **~6h** |

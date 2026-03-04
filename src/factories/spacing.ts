@@ -78,7 +78,7 @@ export const generateSpacingRules = (
       mediaRules[`.sp-${key}`] = overrides;
     }
 
-    api.addBase({
+    api.addUtilities({
       [`@media (min-width: ${bp.value})`]: mediaRules,
     });
   }

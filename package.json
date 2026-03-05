@@ -5,6 +5,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "style-gen": "./dist/cli/index.mjs"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -16,6 +19,8 @@
   ],
   "scripts": {
     "build": "tsc && vite build",
+    "build:cli": "tsdown src/cli/index.ts --format esm --out-dir dist/cli --banner.js '#!/usr/bin/env node'",
+    "build:all": "yarn build && yarn build:cli",
     "commitlint": "commitlint",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored",
     "lint-staged": "lint-staged",
@@ -49,6 +54,7 @@
     "semantic-release": "^24.2.2",
     "semantic-release-yarn": "^3.0.2",
     "tailwindcss": "^4.1.18",
+    "tsdown": "^0.21.0",
     "tslib": "^2.8.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
@@ -69,5 +75,9 @@
     "*.{json,md,yml,yaml,css}": "prettier --write"
   },
   "packageManager": "yarn@4.6.0",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^1.1.0",
+    "chokidar": "^5.0.0"
+  }
 }

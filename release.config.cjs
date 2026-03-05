@@ -23,13 +23,12 @@ module.exports = {
           headerCorrespondence: ["type", "subject"],
         },
         releaseRules: [
-          { type: "release", release: "major" },
           { type: "feat", release: "minor" },
           { type: "fix", release: "patch" },
           { type: "perf", release: "patch" },
           { type: "revert", release: "patch" },
-          { type: "style", release: "patch" },
-          { type: "refactor", release: "patch" },
+          { type: "style", release: false },
+          { type: "refactor", release: false },
           { type: "test", release: false },
           { type: "build", release: false },
           { type: "ci", release: false },
@@ -45,7 +44,6 @@ module.exports = {
         },
         presetConfig: {
           types: [
-            { type: "release", section: "Release" },
             { type: "feat", section: "Features" },
             { type: "fix", section: "Bug Fixes" },
             { type: "perf", section: "Performance Improvements" },

@@ -42,7 +42,7 @@ jobs:
         run: yarn install --immutable
 
       - name: Build
-        run: yarn build:all
+        run: yarn build
 
       - name: Publish to GitHub Packages
         env:

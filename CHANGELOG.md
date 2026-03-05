@@ -1,3 +1,12 @@
+# [1.3.0-DEV.1]() (2026-03-05)
+
+  ###
+  Features
+
+    -
+    implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator/issues/31))
+    ([88c327a]())
+
 # [1.2.0]() (2026-03-04)
 
 ###

@@ -1,3 +1,12 @@
+# [1.3.0-DEV.3]() (2026-03-05)
+
+  ###
+  Bug Fixes
+
+    -
+    fix cicd 3 ([#33](https://github.com/duydpdev/style-generator/issues/33))
+    ([9ff24ea]())
+
 # [1.3.0-DEV.2]() (2026-03-05)
 
 # [1.3.0-DEV.1]() (2026-03-05)

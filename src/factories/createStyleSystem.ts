@@ -14,7 +14,7 @@ import { generateSafelist } from "./generateSafelist";
  * Creates a complete style system including the Tailwind plugin and safelist.
  * @param {ThemeConfig} config - Theme configuration
  * @param {StyleGeneratorOptions} options - Generator options
- * @returns {object} Style system object including plugin, safelist and design tokens
+ * @returns {*} Style system object including plugin, safelist and design tokens
  */
 export const createStyleSystem = <
   TTheme extends ThemeConfig,

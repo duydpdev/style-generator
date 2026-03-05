@@ -1,37 +1,7 @@
-# [1.3.0-DEV.4]() (2026-03-05)
-
-  ###
-  Bug Fixes
-
-    -
-    fix cicd 4 ([#34](https://github.com/duydpdev/style-generator/issues/34))
-    ([e8374da]())
-
-# [1.3.0-DEV.3]() (2026-03-05)
-
-  ###
-  Bug Fixes
-
-    -
-    fix cicd 3 ([#33](https://github.com/duydpdev/style-generator/issues/33))
-    ([9ff24ea]())
-
-# [1.3.0-DEV.2]() (2026-03-05)
-
-# [1.3.0-DEV.1]() (2026-03-05)
-
-  ###
-  Features
-
-    -
-    implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator/issues/31))
-    ([88c327a]())
-
 # [1.2.0]() (2026-03-04)
 
-###
-
-Bug Fixes
+  ###
+  Bug Fixes
 
     -
     apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator/issues/13))
@@ -61,9 +31,8 @@ Bug Fixes
     remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator/issues/27))
     ([eec4eff]())
 
-###
-
-Features
+  ###
+  Features
 
     -
     merge develop into main
@@ -78,9 +47,8 @@ Features
     update yarnrc ([#17](https://github.com/duydpdev/style-generator/issues/17))
     ([72833a0]())
 
-###
-
-Reverts
+  ###
+  Reverts
 
     -
     Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator/issues/14))" ([#15](https://github.com/duydpdev/style-generator/issues/15))
@@ -88,9 +56,8 @@ Reverts
 
 # [1.2.0-DEV.1]() (2026-03-04)
 
-###
-
-Bug Fixes
+  ###
+  Bug Fixes
 
     -
     apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator/issues/13))
@@ -120,9 +87,8 @@ Bug Fixes
     remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator/issues/27))
     ([eec4eff]())
 
-###
-
-Features
+  ###
+  Features
 
     -
     merge develop into main ([#26](https://github.com/duydpdev/style-generator/issues/26))
@@ -134,9 +100,8 @@ Features
     update yarnrc ([#17](https://github.com/duydpdev/style-generator/issues/17))
     ([72833a0]())
 
-###
-
-Reverts
+  ###
+  Reverts
 
     -
     Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator/issues/14))" ([#15](https://github.com/duydpdev/style-generator/issues/15))

@@ -34,7 +34,7 @@ export interface ModuleConfig<V = number | string> {
   values?: V[];
   /** Properties to generate. Falls back to defaults if not set. */
   properties?: string[];
-  /** Disable this module entirely. Defaults to true. */
+  /** Disable this module entirely. @default true */
   enabled?: boolean;
 }
 
@@ -79,7 +79,7 @@ export interface StyleGeneratorOptions {
    * Plugin generates fixed `.sp-*` utility classes with `var()` fallback chains.
    */
   spacing?: {
-    /** Disable spacing CSS rule generation entirely. Defaults to true. */
+    /** Disable spacing CSS rule generation entirely. @default true */
     enabled?: boolean;
     /** Override or extend the default spacing property-to-CSS mapping. */
     properties?: SpacingPropertyMap;

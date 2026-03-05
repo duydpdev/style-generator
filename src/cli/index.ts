@@ -115,12 +115,37 @@ async function runInit(values: CLIValues): Promise<void> {
  *
  * Generates a Tailwind safelist file from the provided theme configuration.
  * If watch mode is enabled, the safelist will be regenerated when the theme file changes.
+ *
+ * Supports both:
+ * - Flag syntax: `style-gen safelist --theme styles/theme.json --out styles/safelist.txt`
+ * - Positional syntax (backwards compatible): `style-gen safelist styles/theme.json styles/safelist.txt`
  * @param {CLIValues} values Parsed CLI option values.
+ * @param {string[]} positionals Raw positional arguments (including the command name).
  */
-function runSafelist(values: CLIValues): void {
+function runSafelist(values: CLIValues, positionals: string[]): void {
+  const extraArgs = positionals.slice(1);
+
+  const themeFromPositional = extraArgs[0];
+  const outFromPositional = extraArgs[1];
+
+  if (
+    (themeFromPositional || outFromPositional) &&
+    (values.theme || values.out)
+  ) {
+    logger.info(
+      "Both flags and positional arguments detected. Flags (--theme, --out) take precedence over positionals.",
+    );
+  }
+
+  if (extraArgs.length > 0 && !values.theme && !values.out) {
+    logger.info(
+      "Detected positional arguments for `safelist`. For clarity, prefer: --theme <path> and --out <path>.",
+    );
+  }
+
   safelistCommand({
-    theme: values.theme,
-    out: values.out,
+    theme: values.theme ?? themeFromPositional,
+    out: values.out ?? outFromPositional,
     watch: values.watch,
   });
 }
@@ -158,7 +183,7 @@ async function main(): Promise<void> {
       break;
 
     case "safelist":
-      runSafelist(values);
+      runSafelist(values, positionals);
       break;
 
     default:

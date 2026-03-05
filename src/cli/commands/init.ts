@@ -17,13 +17,74 @@ export interface InitArgs {
   dark?: boolean;
 }
 
+interface InteractiveConfig {
+  themeLoc: string;
+  pluginLoc: string;
+  includeDark: boolean;
+}
+
+/* ------------------ Helpers ------------------ */
+
 /**
- * Formular prompts to get CLI configuration interactively
- * @param {InitArgs} args - Default init arguments
- * @returns {Promise<{themeLoc: string, pluginLoc: string, includeDark: boolean}>} Interactive answers
+ * Handle prompt cancellation.
+ * @param {unknown} value The value from the prompt.
  */
-async function getInteractiveConfig(args: InitArgs) {
-  p.intro(`🚀 style-gen init`);
+function handleCancel(value: unknown): void {
+  if (p.isCancel(value)) {
+    p.cancel("Operation cancelled.");
+    process.exit(0);
+  }
+}
+
+/**
+ * Ensure directory exists before writing a file.
+ * @param {string} filePath The path to the file.
+ */
+function ensureDir(filePath: string): void {
+  const dir = path.dirname(filePath);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+/**
+ * Write file and create directory if needed.
+ * @param {string} filePath The path where the file will be written.
+ * @param {string} content The content to write into the file.
+ */
+function writeFile(filePath: string, content: string): void {
+  ensureDir(filePath);
+  fs.writeFileSync(filePath, content, "utf8");
+}
+
+/**
+ * Convert absolute paths to a relative import path.
+ * @param {string} from The source file path.
+ * @param {string} to The target file path.
+ * @returns {string} The relative import path.
+ */
+function toImportPath(from: string, to: string): string {
+  let rel = path.relative(path.dirname(from), to);
+
+  if (!rel.startsWith(".")) {
+    rel = `./${rel}`;
+  }
+
+  return rel.replaceAll("\\", "/");
+}
+
+/* ------------------ Interactive Prompts ------------------ */
+
+/**
+ * Prompt user interactively for configuration.
+ * @param {InitArgs} args The initial CLI arguments.
+ * @returns {Promise<InteractiveConfig>} The collected configuration.
+ */
+async function getInteractiveConfig(
+  args: InitArgs,
+): Promise<InteractiveConfig> {
+  p.intro("🚀 style-gen init");
 
   const twRes = await p.select({
     message: "Tailwind version?",
@@ -32,56 +93,46 @@ async function getInteractiveConfig(args: InitArgs) {
       { value: "v3", label: "v3" },
     ],
   });
-
-  if (p.isCancel(twRes)) {
-    p.cancel("Operation cancelled.");
-    process.exit(0);
-  }
+  handleCancel(twRes);
 
   const themeRes = await p.text({
     message: "Theme file location?",
     initialValue: "styles/theme.json",
     placeholder: "styles/theme.json",
   });
-
-  if (p.isCancel(themeRes)) {
-    p.cancel("Operation cancelled.");
-    process.exit(0);
-  }
+  handleCancel(themeRes);
 
   const pluginRes = await p.text({
     message: "Plugin file location?",
     initialValue: "plugins/theme-plugin.ts",
     placeholder: "plugins/theme-plugin.ts",
   });
-
-  if (p.isCancel(pluginRes)) {
-    p.cancel("Operation cancelled.");
-    process.exit(0);
-  }
+  handleCancel(pluginRes);
 
   const darkRes = await p.confirm({
     message: "Include dark mode template?",
     initialValue: false,
   });
+  handleCancel(darkRes);
 
-  if (p.isCancel(darkRes)) {
-    p.cancel("Operation cancelled.");
-    process.exit(0);
-  }
+  const theme = themeRes as string;
+  const plugin = pluginRes as string;
+  const dark = darkRes as boolean;
 
   return {
-    themeLoc: themeRes || (args.theme ?? "styles/theme.json"),
-    pluginLoc: pluginRes || (args.plugin ?? "plugins/theme-plugin.ts"),
-    includeDark: darkRes,
+    themeLoc: theme || (args.theme ?? "styles/theme.json"),
+    pluginLoc: plugin || (args.plugin ?? "plugins/theme-plugin.ts"),
+    includeDark: dark,
   };
 }
 
+/* ------------------ Command ------------------ */
+
 /**
- * Initializes the project by scaffolding required files.
- * @param {InitArgs} args - Init arguments
+ * Initialize project scaffolding for style-gen.
+ * @param {InitArgs} args The initial CLI arguments.
  */
-export async function initCommand(args: InitArgs) {
+export async function initCommand(args: InitArgs): Promise<void> {
   const isInteractive = process.stdin.isTTY;
 
   let themeLoc = args.theme ?? "styles/theme.json";
@@ -89,50 +140,41 @@ export async function initCommand(args: InitArgs) {
   let includeDark = args.dark ?? false;
 
   if (isInteractive && Object.keys(args).length === 0) {
-    const res = await getInteractiveConfig(args);
-    themeLoc = res.themeLoc;
-    pluginLoc = res.pluginLoc;
-    includeDark = res.includeDark;
+    const config = await getInteractiveConfig(args);
+    themeLoc = config.themeLoc;
+    pluginLoc = config.pluginLoc;
+    includeDark = config.includeDark;
   }
 
-  // Create directories and files
-  const createDirIfMissing = (filePath: string) => {
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  };
+  const cwd = process.cwd();
 
-  const themeAbsPath = path.resolve(process.cwd(), themeLoc);
-  createDirIfMissing(themeAbsPath);
-  fs.writeFileSync(
-    themeAbsPath,
-    includeDark ? themeTemplateDark : themeTemplate,
-    "utf8",
-  );
+  /* ---------- Theme file ---------- */
+
+  const themeAbsPath = path.resolve(cwd, themeLoc);
+
+  writeFile(themeAbsPath, includeDark ? themeTemplateDark : themeTemplate);
+
   logger.success(`Created ${themeLoc}`);
 
-  const pluginAbsPath = path.resolve(process.cwd(), pluginLoc);
-  createDirIfMissing(pluginAbsPath);
+  /* ---------- Plugin file ---------- */
 
-  // Calculate relative path for import
-  const themeRelPathRaw = path.relative(
-    path.dirname(pluginAbsPath),
-    themeAbsPath,
-  );
-  const themeRelPath = themeRelPathRaw.startsWith(".")
-    ? themeRelPathRaw
-    : "./" + themeRelPathRaw;
-  // Convert Windows backslashes to forward slashes
-  const themeRelPathPosix = themeRelPath.replaceAll("\\", "/");
+  const pluginAbsPath = path.resolve(cwd, pluginLoc);
 
-  fs.writeFileSync(pluginAbsPath, getPluginTemplate(themeRelPathPosix), "utf8");
+  const importPath = toImportPath(pluginAbsPath, themeAbsPath);
+
+  writeFile(pluginAbsPath, getPluginTemplate(importPath));
+
   logger.success(`Created ${pluginLoc}`);
 
-  // Need to output plugin instructions
-  logger.info(`✅ Updated your CSS file with @plugin and @source directives`);
+  /* ---------- Next steps ---------- */
+
+  logger.info("✅ Updated your CSS file with @plugin and @source directives");
+
   logger.info(
-    `📝 Next steps:\n   1. Edit ${themeLoc} with your design tokens\n   2. Run: npx style-gen safelist\n   3. Start your dev server`,
+    `📝 Next steps:
+   1. Edit ${themeLoc} with your design tokens
+   2. Run: npx style-gen safelist
+   3. Start your dev server`,
   );
 
   if (isInteractive) {

@@ -1,4 +1,3 @@
-import type { TailwindPlugin } from "../src";
 import { createStyleSystem, Breakpoint } from "../src";
 
 import theme from "./theme.json";
@@ -12,7 +11,9 @@ const options = {
 };
 
 // Create style system (plugin + safelist)
-const { plugin, safelist }: { plugin: TailwindPlugin; safelist: string[] } =
+// NOTE: `plugin` is intentionally typed as `unknown` to avoid leaking Tailwind's
+// internal types into the public declaration output of this example file.
+const { plugin, safelist }: { plugin: unknown; safelist: string[] } =
   createStyleSystem(theme, options);
 
 // Export plugin for Tailwind

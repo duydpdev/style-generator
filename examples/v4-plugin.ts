@@ -1,15 +1,8 @@
-import fs from "node:fs";
-import path, { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-
-import { createStyleSystem, Breakpoint, TailwindPlugin } from "../src";
+import type { TailwindPlugin } from "../src";
+import { createStyleSystem, Breakpoint } from "../src";
 
 import theme from "./theme.json";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// 1. Export plugin for Tailwind v4 @plugin directive
 // Define options (breakpoints, screens)
 const options = {
   screens: {
@@ -22,14 +15,8 @@ const options = {
 const { plugin, safelist }: { plugin: TailwindPlugin; safelist: string[] } =
   createStyleSystem(theme, options);
 
-// Export plugin
+// Export plugin for Tailwind
 export default plugin;
 
-// 2. Generate safelist file (script execution)
-if (process.argv[1] === __filename) {
-  const outPath = path.resolve(__dirname, "./safelist.txt");
-  fs.writeFileSync(outPath, safelist.join("\n"), "utf8");
-  console.log(
-    `✅ Safelist written to ${outPath} (${safelist.length.toString()} classes)`,
-  );
-}
+// Safelist is managed by CLI: npx style-gen safelist
+export { safelist };

@@ -1,7 +1,8 @@
 # [1.2.0]() (2026-03-04)
 
-  ###
-  Bug Fixes
+###
+
+Bug Fixes
 
     -
     apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator/issues/13))
@@ -31,8 +32,9 @@
     remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator/issues/27))
     ([eec4eff]())
 
-  ###
-  Features
+###
+
+Features
 
     -
     merge develop into main
@@ -47,8 +49,9 @@
     update yarnrc ([#17](https://github.com/duydpdev/style-generator/issues/17))
     ([72833a0]())
 
-  ###
-  Reverts
+###
+
+Reverts
 
     -
     Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator/issues/14))" ([#15](https://github.com/duydpdev/style-generator/issues/15))
@@ -56,8 +59,9 @@
 
 # [1.2.0-DEV.1]() (2026-03-04)
 
-  ###
-  Bug Fixes
+###
+
+Bug Fixes
 
     -
     apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator/issues/13))
@@ -87,8 +91,9 @@
     remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator/issues/27))
     ([eec4eff]())
 
-  ###
-  Features
+###
+
+Features
 
     -
     merge develop into main ([#26](https://github.com/duydpdev/style-generator/issues/26))
@@ -100,8 +105,9 @@
     update yarnrc ([#17](https://github.com/duydpdev/style-generator/issues/17))
     ([72833a0]())
 
-  ###
-  Reverts
+###
+
+Reverts
 
     -
     Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator/issues/14))" ([#15](https://github.com/duydpdev/style-generator/issues/15))

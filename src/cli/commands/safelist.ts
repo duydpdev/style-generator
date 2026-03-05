@@ -22,14 +22,27 @@ export interface SafelistArgs {
  */
 export function safelistCommand(args: SafelistArgs) {
   try {
-    const options = resolveConfig({
-      theme: args.theme,
-      output: args.out,
-      breakpoints: args.breakpoints ? args.breakpoints.split(",") : undefined,
-      responsiveModules: args.responsiveModules
-        ? (args.responsiveModules.split(",") as StyleModule[])
-        : undefined,
-    });
+    const configFlags: Parameters<typeof resolveConfig>[0] = {};
+
+    if (args.theme !== undefined) {
+      configFlags.theme = args.theme;
+    }
+
+    if (args.out !== undefined) {
+      configFlags.output = args.out;
+    }
+
+    if (args.breakpoints) {
+      configFlags.breakpoints = args.breakpoints.split(",");
+    }
+
+    if (args.responsiveModules) {
+      configFlags.responsiveModules = args.responsiveModules.split(
+        ",",
+      ) as StyleModule[];
+    }
+
+    const options = resolveConfig(configFlags);
 
     const themePath = path.resolve(process.cwd(), options.theme);
     if (!fs.existsSync(themePath)) {

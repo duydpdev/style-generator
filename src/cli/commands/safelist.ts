@@ -3,8 +3,9 @@ import path from "node:path";
 
 import { watch } from "chokidar";
 
-import type { StyleModule, ThemeConfig } from "../../types";
-import { generateSafelist } from "../../factories/generateSafelist";
+import type { StyleModule } from "../../core/Options";
+import type { ThemeConfig } from "../../core/ThemeConfig";
+import { generateSafelist } from "../../features/safelist/generateSafelist";
 import { resolveConfig } from "../config";
 import { logger } from "../logger";
 

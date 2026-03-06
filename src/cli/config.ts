@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { StyleModule } from "../types";
+import type { StyleModule } from "../core/Options";
 
 export interface StyleGenConfig {
   theme: string;

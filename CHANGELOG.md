@@ -1,3 +1,18 @@
+# [1.3.0-DEV.5]() (2026-03-06)
+
+  ###
+  Bug Fixes
+
+    -
+    remove code
+    ([cf51a03]())
+    -
+    remove code
+    ([e90c0b8]())
+    -
+    update version node for cicd ([#41](https://github.com/duydpdev/style-generator/issues/41))
+    ([fe2c3a7]())
+
 # [1.3.0-DEV.4]() (2026-03-05)
 
   ###

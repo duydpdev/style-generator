@@ -1,3 +1,12 @@
+# [1.4.0]() (2026-03-06)
+
+  ###
+  Features
+
+    -
+    update agent & refactore code ([#43](https://github.com/duydpdev/style-generator/issues/43))
+    ([2bc3725]())
+
 # [1.4.0-DEV.1]() (2026-03-06)
 
   ###

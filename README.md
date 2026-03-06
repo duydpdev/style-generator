@@ -442,6 +442,7 @@ createStyleSystem(theme, {
 | `createStyleSystem`   | `(theme, options?)`    | **Recommended**. Returns `{ plugin, safelist }`.                                      |
 | `generateSafelist`    | `(theme, options?)`    | Generates `string[]` safelist (excludes spacing).                                     |
 | `createDesignTokens`  | `(theme, options?)`    | Generates design tokens object for consumer apps.                                     |
+| `createVariantMapper` | `(prefix, tokens)`     | Helper to map tokens to prefixed CSS classes for CVA variants.                        |
 | `resolveSpacing`      | `(prop, value, unit?)` | Maps a single spacing prop to `{ className, style }`.                                 |
 | `resolveSpacingProps` | `(props)`              | Maps multiple spacing props to `{ classNames, style }`.                               |
 
@@ -524,32 +525,24 @@ interface ButtonProps {
 }
 ```
 
-Hoặc với `cva`:
+Hoặc đơn giản hơn với utility `createVariantMapper` và `cva`:
 
 ```ts
 import { cva } from "class-variance-authority";
+import { createVariantMapper } from "@duydpdev/style-generator";
 
-const button = cva("base-class", {
+const colorMap = createVariantMapper("bg", DesignTokens.Web.variantColor);
+const textMap = createVariantMapper("", DesignTokens.Web.variantText);
+
+const buttonVariants = cva("base-class", {
   variants: {
-    color: DesignTokens.Web.variantColor.reduce<Record<string, string>>(
-      (acc, c) => {
-        acc[c] = `bg-${c}`;
-        return acc;
-      },
-      {},
-    ),
-    textVariant: DesignTokens.Web.variantText.reduce<Record<string, string>>(
-      (acc, t) => {
-        acc[t] = t;
-        return acc;
-      },
-      {},
-    ),
+    color: colorMap,
+    textVariant: textMap,
   },
 });
 
-type ButtonColor = keyof typeof button.variants.color;
-type ButtonTextVariant = keyof typeof button.variants.textVariant;
+type ButtonColor = keyof typeof buttonVariants.variants.color;
+type ButtonTextVariant = keyof typeof buttonVariants.variants.textVariant;
 ```
 
 ### 10.3. Gõ kiểu cho spacing props

@@ -1,7 +1,8 @@
 # [1.3.0]() (2026-03-06)
 
-  ###
-  Bug Fixes
+###
+
+Bug Fixes
 
     -
     fix cicd 3 ([#33](https://github.com/duydpdev/style-generator/issues/33))
@@ -19,8 +20,9 @@
     update version node for cicd ([#41](https://github.com/duydpdev/style-generator/issues/41))
     ([fe2c3a7]())
 
-  ###
-  Features
+###
+
+Features
 
     -
     implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator/issues/31))
@@ -31,8 +33,9 @@
 
 # [1.3.0-DEV.5]() (2026-03-06)
 
-  ###
-  Bug Fixes
+###
+
+Bug Fixes
 
     -
     remove code
@@ -46,8 +49,9 @@
 
 # [1.3.0-DEV.4]() (2026-03-05)
 
-  ###
-  Bug Fixes
+###
+
+Bug Fixes
 
     -
     fix cicd 4 ([#34](https://github.com/duydpdev/style-generator/issues/34))
@@ -55,8 +59,9 @@
 
 # [1.3.0-DEV.3]() (2026-03-05)
 
-  ###
-  Bug Fixes
+###
+
+Bug Fixes
 
     -
     fix cicd 3 ([#33](https://github.com/duydpdev/style-generator/issues/33))
@@ -66,8 +71,9 @@
 
 # [1.3.0-DEV.1]() (2026-03-05)
 
-  ###
-  Features
+###
+
+Features
 
     -
     implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator/issues/31))

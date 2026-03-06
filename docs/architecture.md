@@ -61,16 +61,14 @@ flowchart TD
 
 ```text
 src/
-├── index.ts                    # Re-export toàn bộ public API
-│
-├── factories/                  # Factory functions — sinh ra output chính
-│   ├── createStyleSystem.ts    # Entry point khuyến nghị → { plugin, safelist }
-│   ├── createStylePlugin.ts    # Tạo Tailwind Plugin (CSS vars + typography + spacing)
-│   ├── spacing.ts              # Logic spacing CSS vars (.sp-* + fallback chains)
-│   ├── generateSafelist.ts     # Sinh danh sách safelist classes
-│   ├── createDesignTokens.ts   # Sinh Design Tokens object cho component
-│   └── index.ts
-│
+├── core/                       # Base config, Types, Options & Inference
+├── features/                   # Core style functionalities
+│   ├── plugin/                 # Plugin logic & Variables
+│   ├── safelist/               # Safelist generation
+│   ├── spacing/                # Spacing constants & responsive rules
+│   ├── tokens/                 # Design Token inference & generation
+│   └── cva/                    # CVA variant mapper utils
+├── shared/                     # Utilities reused across features
 ├── types/                      # TypeScript type definitions
 │   ├── ThemeConfig.ts          # ThemeConfig, ThemeOverride, TypographyConfig
 │   ├── Options.ts              # StyleGeneratorOptions, Breakpoint enum, ModuleConfig
@@ -226,6 +224,7 @@ const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
 | `createStylePlugin`     | Function  | Chỉ tạo plugin                                     |
 | `generateSafelist`      | Function  | Chỉ sinh safelist array                            |
 | `createDesignTokens`    | Function  | Sinh Design Tokens object                          |
+| `createVariantMapper`   | Function  | Tự động map tokens + prefix từ feature cva         |
 | `resolveSpacing`        | Function  | Resolve một spacing prop                           |
 | `resolveSpacingProps`   | Function  | Resolve nhiều spacing props                        |
 | `Breakpoint`            | Enum      | `SM \| MD \| LG \| XL \| XXL`                      |

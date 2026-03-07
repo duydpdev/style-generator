@@ -4,6 +4,7 @@ import path from "node:path";
 import * as p from "@clack/prompts";
 
 import { logger } from "../logger";
+import { normalizePath } from "../config";
 import {
   themeTemplate,
   themeTemplateDark,
@@ -86,6 +87,12 @@ async function getInteractiveConfig(
 ): Promise<InteractiveConfig> {
   p.intro("🚀 style-gen init");
 
+  const hasSrc = fs.existsSync(path.resolve(process.cwd(), "src"));
+  const defaultTheme = hasSrc ? "src/styles/theme.json" : "styles/theme.json";
+  const defaultPlugin = hasSrc
+    ? "src/plugins/theme-plugin.ts"
+    : "plugins/theme-plugin.ts";
+
   const twRes = await p.select({
     message: "Tailwind version?",
     options: [
@@ -97,15 +104,15 @@ async function getInteractiveConfig(
 
   const themeRes = await p.text({
     message: "Theme file location?",
-    initialValue: "styles/theme.json",
-    placeholder: "styles/theme.json",
+    initialValue: defaultTheme,
+    placeholder: defaultTheme,
   });
   handleCancel(themeRes);
 
   const pluginRes = await p.text({
     message: "Plugin file location?",
-    initialValue: "plugins/theme-plugin.ts",
-    placeholder: "plugins/theme-plugin.ts",
+    initialValue: defaultPlugin,
+    placeholder: defaultPlugin,
   });
   handleCancel(pluginRes);
 
@@ -120,8 +127,8 @@ async function getInteractiveConfig(
   const dark = darkRes as boolean;
 
   return {
-    themeLoc: theme || (args.theme ?? "styles/theme.json"),
-    pluginLoc: plugin || (args.plugin ?? "plugins/theme-plugin.ts"),
+    themeLoc: theme || (args.theme ?? defaultTheme),
+    pluginLoc: plugin || (args.plugin ?? defaultPlugin),
     includeDark: dark,
   };
 }
@@ -134,9 +141,15 @@ async function getInteractiveConfig(
  */
 export async function initCommand(args: InitArgs): Promise<void> {
   const isInteractive = process.stdin.isTTY;
+  const cwd = process.cwd();
 
-  let themeLoc = args.theme ?? "styles/theme.json";
-  let pluginLoc = args.plugin ?? "plugins/theme-plugin.ts";
+  const hasSrc = fs.existsSync(path.resolve(cwd, "src"));
+
+  let themeLoc =
+    args.theme ?? (hasSrc ? "src/styles/theme.json" : "styles/theme.json");
+  let pluginLoc =
+    args.plugin ??
+    (hasSrc ? "src/plugins/theme-plugin.ts" : "plugins/theme-plugin.ts");
   let includeDark = args.dark ?? false;
 
   if (isInteractive && Object.keys(args).length === 0) {
@@ -146,11 +159,32 @@ export async function initCommand(args: InitArgs): Promise<void> {
     includeDark = config.includeDark;
   }
 
-  const cwd = process.cwd();
-
-  /* ---------- Theme file ---------- */
+  themeLoc = normalizePath(themeLoc);
+  pluginLoc = normalizePath(pluginLoc);
 
   const themeAbsPath = path.resolve(cwd, themeLoc);
+  const pluginAbsPath = path.resolve(cwd, pluginLoc);
+
+  if (fs.existsSync(themeAbsPath) || fs.existsSync(pluginAbsPath)) {
+    if (isInteractive) {
+      const overwrite = await p.confirm({
+        message: "Theme or plugin files already exist. Overwrite?",
+        initialValue: false,
+      });
+      handleCancel(overwrite);
+      if (!overwrite) {
+        logger.info("Operation cancelled. Existing files kept.");
+        process.exit(0);
+      }
+    } else {
+      logger.error(
+        "Files already exist. Run interactively to confirm overwrite.",
+      );
+      process.exit(1);
+    }
+  }
+
+  /* ---------- Theme file ---------- */
 
   writeFile(themeAbsPath, includeDark ? themeTemplateDark : themeTemplate);
 
@@ -158,23 +192,36 @@ export async function initCommand(args: InitArgs): Promise<void> {
 
   /* ---------- Plugin file ---------- */
 
-  const pluginAbsPath = path.resolve(cwd, pluginLoc);
-
   const importPath = toImportPath(pluginAbsPath, themeAbsPath);
 
   writeFile(pluginAbsPath, getPluginTemplate(importPath));
 
   logger.success(`Created ${pluginLoc}`);
 
+  /* ---------- Config file ---------- */
+
+  const outLoc = `${path.dirname(themeLoc)}/safelist.txt`;
+  const configContent = {
+    theme: themeLoc,
+    plugin: pluginLoc,
+    output: outLoc,
+  };
+  writeFile(
+    path.resolve(cwd, "style-gen.config.json"),
+    JSON.stringify(configContent, null, 2),
+  );
+  logger.success("Created style-gen.config.json");
+
   /* ---------- Next steps ---------- */
 
-  logger.info("✅ Updated your CSS file with @plugin and @source directives");
+  logger.info("✅ Tailwind configuration scaffolded successfully");
 
   logger.info(
     `📝 Next steps:
-   1. Edit ${themeLoc} with your design tokens
-   2. Run: npx style-gen safelist
-   3. Start your dev server`,
+   1. Import ${pluginLoc} into your Tailwind config or css file
+   2. Edit ${themeLoc} with your design tokens
+   3. Run: npx style-gen safelist
+   4. Start your dev server`,
   );
 
   if (isInteractive) {

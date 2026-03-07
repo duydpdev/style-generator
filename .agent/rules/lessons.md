@@ -82,3 +82,8 @@ _(Add new lessons below this line)_
 
 - **Mistake:** Quên cập nhật trạng thái `[x]` vào file kế hoạch vật lý (`docs/plans/*.md`) và file `task.md` tóm tắt ngày. Không chạy `checklist.py` để verify toàn bộ project trước khi báo cáo hoàn thành.
 - **New Rule:** LUÔN PHẢI cập nhật song song tiến độ vào cả Task Artifact (brain) và các file kế hoạch vật lý (`docs/plans/YYYY-MM-DD/task.md` và `XX-plan.md`). Chỉ được coi là hoàn thành khi đã cập nhật tất cả tài liệu liên quan và lệnh `python3 .agent/scripts/checklist.py .` trả về kết quả đạt (hoặc đã xử lý hết các lỗi nghiêm trọng).
+
+### [2026-03-07] - Không bao giờ thực thi mã (Code) khi chưa được Approve Plan
+
+- **Mistake:** Đã tự ý nhảy sang bước lập trình/thực thi (Phase 4 - Implementation) cho Task 05 khi người dùng chưa đồng ý/approve bản kế hoạch (Phase 3 - Solutioning/Plan). Việc này vi phạm nghiêm trọng phương pháp 4-Phase của dự án.
+- **New Rule:** LUÔN PHẢI dừng lại chờ người dùng xác nhận bằng các câu "ok", "duyệt", "triển khai" sau khi nộp file `.md` kế hoạch. Tuyệt đối không được kích hoạt các tool sửa code ngay sau khi notify_user bằng `BlockedOnUser: true` nếu người dùng chưa hồi đáp thuận tình.

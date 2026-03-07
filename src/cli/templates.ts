@@ -95,12 +95,35 @@ export const getPluginTemplate = (
 ) => `import { createStyleSystem, Breakpoint } from "@duydpdev/style-generator";
 import theme from "${themeRelPath}";
 
-const { plugin, safelist } = createStyleSystem(theme, {
+const { plugin, safelist, DesignTokens } = createStyleSystem(theme, {
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
+
+  // --- Uncomment to customize ---
+
+  // enableCssVariables: true,
+  // disableColorPrefix: false,
+  // enableResponsive: true,
+
+  // spacing: {
+  //   enabled: true,
+  // },
+
+  // layout: {
+  //   enabled: true,
+  //   values: ["hidden", "block", "flex", "grid", "inline-block", "inline-flex", "items-center", "justify-center", "justify-between", "text-center"],
+  // },
+
+  // border: { enabled: true },
+  // rounded: { enabled: true },
+  // opacity: { enabled: true },
+  // zIndex: { enabled: true },
+
+  // responsiveModules: ["layout", "rounded"],
+  // dynamicClasses: [],
 });
 
 export default plugin;
 
 // Safelist is managed by CLI: npx style-gen safelist
-export { safelist };
+export { safelist, DesignTokens };
 `;

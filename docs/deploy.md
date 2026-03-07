@@ -9,6 +9,7 @@ Quy trình deploy thư viện `fe-style-generator`.
   - [CI/CD Overview](#cicd-overview)
   - [GitHub Actions Workflows](#github-actions-workflows)
     - [`ci.yml` — PR Check](#ciyml--pr-check)
+    - [Local (Pre-commit) — Husky](#local-pre-commit--husky)
     - [`release.yml` — Semantic Release Orchestrator](#releaseyml--semantic-release-orchestrator)
     - [`deploy.yml` — Build \& Publish](#deployyml--build--publish)
     - [`back-merge.yml` — Back-merge](#back-mergeyml--back-merge)
@@ -46,8 +47,18 @@ flowchart TD
 3. `yarn install --immutable`
 4. `yarn lint` — ESLint check
 5. `yarn build` — TypeScript compile + Vite build
+6. `yarn test` — Unit testing with **Vitest**
+7. `yarn test:types` — Type inference verification
 
-> PR chỉ được merge nếu CI pass toàn bộ.
+---
+
+### Local (Pre-commit) — Husky
+
+Dự án sử dụng **Husky** và **lint-staged** để chặn các commit không đạt tiêu chuẩn:
+
+- Tự động chạy `lint` và `prettier` cho các file đang thay đổi.
+- Chạy `tsc --noEmit` để đảm bảo không lỗi type.
+- Chạy `vitest run` cho các unit tests liên quan.
 
 ---
 

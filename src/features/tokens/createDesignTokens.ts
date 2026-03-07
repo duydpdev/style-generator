@@ -5,6 +5,7 @@ import {
 } from "../../shared/defaultOption";
 import {
   DesignTokensResult,
+  DesignTokensWeb,
   InferColorKeys,
   InferBorderOptions,
   InferRoundedOptions,
@@ -46,19 +47,44 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     border ? Object.keys(border) : DEFAULT_BORDER_VALUES.map(String)
   ) as InferBorderOptions<TTheme>[];
 
-  const variantTextColor = Object.keys(colors.text) as Extract<
-    keyof TTheme["colors"]["text"],
-    string
-  >[];
+  // Helper to extract nested keys safely
+  const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
+    if (!obj) return [];
+    const keys: string[] = [];
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === "DEFAULT") {
+        keys.push(""); // DEFAULT signifies drop prefix
+      } else if (typeof v === "object" && v !== null) {
+        const subKeys = extractKeys(v as Record<string, unknown>);
+        for (const sub of subKeys) {
+          keys.push(sub ? `${k}-${sub}` : k);
+        }
+      } else {
+        keys.push(k);
+      }
+    }
+    return keys;
+  };
 
-  const variantBaseColor = Object.keys(colors.base) as Extract<
-    keyof TTheme["colors"]["base"],
-    string
-  >[];
+  const variantTextColor = extractKeys(
+    colors.text as Record<string, unknown> | undefined,
+  ) as DesignTokensWeb<TTheme>["variantTextColor"];
 
-  const variantColors = [...variantBaseColor, ...variantTextColor].map(
-    (color) => toKebabCase(color),
-  ) as InferColorKeys<TTheme>[];
+  const variantCommonColor = extractKeys(
+    colors.common as Record<string, unknown> | undefined,
+  ) as DesignTokensWeb<TTheme>["variantCommonColor"];
+
+  const variantBaseColor = extractKeys(
+    colors.base as Record<string, unknown> | undefined,
+  ) as Extract<keyof TTheme["colors"]["base"], string>[];
+
+  const variantColors = [
+    ...variantBaseColor,
+    ...variantTextColor,
+    ...variantCommonColor,
+  ]
+    .filter(Boolean)
+    .map((color) => toKebabCase(color)) as InferColorKeys<TTheme>[];
 
   const mergedScreens = {
     ...defaultScreens,
@@ -79,6 +105,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
       Web: {
         variantText,
         variantTextColor,
+        variantCommonColor,
         variantColor: variantColors,
         variantShadow,
         variantBackdropBlur,

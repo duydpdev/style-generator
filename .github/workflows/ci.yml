@@ -25,6 +25,7 @@ jobs:
   check:
     name: Build & Lint Check
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,5 +43,11 @@ jobs:
       - name: Lint
         run: yarn lint
 
+      - name: Type Check
+        run: yarn tsc --noEmit
+
       - name: Build
         run: yarn build:all
+
+      - name: Test
+        run: yarn test

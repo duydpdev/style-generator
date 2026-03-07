@@ -2,88 +2,78 @@
 
 Tài liệu hướng dẫn về các phương pháp testing cho `fe-style-generator`.
 
-## Trạng thái hiện tại
+## CI/CD Pipeline
 
-> [!NOTE]
-> Test framework **chưa được setup** (không có script `test` trong `package.json`). Hiện tại testing được thực hiện thủ công thông qua consumer project. Xem phần [Roadmap](#roadmap) bên dưới.
+Dự án sử dụng hệ thống kiểm tra 2 lớp để đảm bảo tính ổn định:
 
----
-
-## Test Strategies (Kế hoạch)
-
-### Unit Testing
-
-Test cho các hàm tiện ích và helper functions:
-
-- **`toKebabCase`** — chuyển đổi chuỗi sang kebab-case (bao gồm edge cases: số, capitalize, camelCase)
-- **`resolveSpacing`** / **`resolveSpacingProps`** — map prop values sang CSS variables
-- **`flattenToVars`** — flatten object thành CSS variable declarations
-- **`buildFallbackChain`** — sinh `var()` fallback chains đúng thứ tự (mobile-first)
-
-**Target file:** `src/utils/`, `src/factories/`
+1. **Local (Pre-commit):** Sử dụng `Husky` và `lint-staged` để chạy `eslint`, `prettier`, `tsc` và `vitest` trước khi commit code.
+2. **Remote (GitHub Actions):** Tự động chạy toàn bộ quy trình `lint` -> `build` -> `test` khi có PR hoặc push vào nhánh `main`/`develop`.
 
 ---
 
-### Integration Testing
+### Các loại Testing
 
-Test toàn bộ output của factory functions:
+#### 1. Unit Testing (Vitest)
 
-- **`createStyleSystem(theme, options)`** → kiểm tra `plugin` và `safelist` đúng cấu trúc
-- **`generateSafelist(theme, options)`** → kiểm tra danh sách class names theo từng module và options
-- **`createDesignTokens(theme, options)`** → kiểm tra `DesignTokens.Web.*` chứa đúng keys từ theme
-- Feature flags: `enableCssVariables: false` → không inject CSS variables; `enableResponsive: false` → không sinh responsive rules
-
----
-
-### Consumer Testing (Thủ công — hiện tại)
-
-Test với project consumer thực tế (ví dụ `test-style-lib`, `fe-component-lib`):
-
-1. **Build thư viện:** `yarn build`
-2. **Link vào consumer:** dùng `yalc` hoặc `yarn link`
-3. **Chạy Tailwind build trong consumer** → kiểm tra CSS output
-4. **Kiểm tra TypeScript types:**
-
-```typescript
-// test-type.ts trong consumer
-import { createDesignTokens } from "@duydpdev/style-generator";
-import theme from "./theme.json";
-
-const { DesignTokens } = createDesignTokens(theme as const, {});
-
-// TS phải báo lỗi dòng này:
-const color: (typeof DesignTokens.Web.variantColor)[number] = "invalid-color";
-// → Error: Type '"invalid-color"' is not assignable to type '"primary" | "white" | ...
-```
-
----
-
-## Chạy Checks Hiện Tại
-
-Mặc dù chưa có unit tests, các checks sau vẫn được chạy trong CI:
+Sử dụng **Vitest** để kiểm tra logic của các hàm helper và factories.
 
 ```bash
-# Lint
-yarn lint
+# Chạy tất cả unit tests
+yarn test
 
-# Build (TypeScript compile + Vite bundle)
-yarn build
+# Chạy ở chế độ watch
+yarn test:watch
 ```
+
+**Các module chính được test:**
+
+- `src/utils/*`: kebabCase, flattenToVars, resolveSpacing...
+- `src/factories/*`: generateSafelist, createStyleSystem...
+
+#### 2. Type Testing (Vitest Typecheck)
+
+Đảm bảo TypeScript inference hoạt động chính xác. Kiểm tra mảng `DesignTokens` phản ánh đúng các mảng keys từ `theme.json`.
+
+```bash
+# Chạy kiểm tra types
+yarn test:types
+```
+
+#### 3. Integration Testing
+
+Kiểm tra sự phối hợp giữa plugin và Tailwind CSS build engine.
 
 ---
 
-## Roadmap
+## Setup Môi Trường Test
 
-**TODO:** Thiết lập test framework:
+Để thêm một file test mới:
 
-- [ ] Thêm test framework (khuyến nghị: **Vitest**)
+1. Tạo file `${name}.test.ts` hoặc `${name}.test-d.ts` (cho type tests).
+2. Viết test case sử dụng API của `vitest`.
 
-  ```bash
-  yarn add -D vitest
-  ```
+Ví dụ Unit Test:
 
-- [ ] Thêm script `"test": "vitest run"` vào `package.json`
-- [ ] Thêm script `"test:watch": "vitest"` cho development
-- [ ] Viết unit tests cho `src/utils/`
-- [ ] Viết integration tests cho `src/factories/`
-- [ ] Thêm `yarn test` vào CI workflow (`ci.yml`)
+```typescript
+import { expect, test } from "vitest";
+import { toKebabCase } from "../utils/toKebabCase";
+
+test("convert camelCase to kebab-case", () => {
+  expect(toKebabCase("camelCase")).toBe("camel-case");
+});
+```
+
+Ví dụ Type Test:
+
+```typescript
+import { assertType, test } from "vitest";
+import { createDesignTokens } from "./createDesignTokens";
+
+test("DesignTokens types", () => {
+  const { DesignTokens } = createDesignTokens(
+    { colors: { base: { p: "#000" } } } as const,
+    {},
+  );
+  assertType<"p">(DesignTokens.Web.variantColor[0]);
+});
+```

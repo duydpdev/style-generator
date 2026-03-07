@@ -32,6 +32,7 @@ Tài liệu mô tả kiến trúc tổng thể của thư viện `fe-style-gener
 | **Plugin**        | Tailwind CSS plugin object — inject CSS variables, typography utilities, spacing rules                               |
 | **Safelist**      | Mảng class names được bảo vệ khỏi Tailwind purge                                                                     |
 | **Design Tokens** | Object chứa các mảng token keys, dùng trong UI Component logic (CVA, styled-components...)                           |
+| **Hybrid Theme**  | Cơ chế tổ chức màu sắc theo 3 buckets: `base`, `text`, `common`. Hỗ trợ Nested Colors và `DEFAULT` key.              |
 | **Consumer**      | Project sử dụng thư viện — kết nối plugin vào Tailwind build pipeline                                                |
 
 ---
@@ -142,6 +143,17 @@ const { DesignTokens } = createDesignTokens(theme, options);
 // DesignTokens.Web.variantColor → ["primary", "white", "main", ...]
 // DesignTokens.Web.variantText  → ["text16Medium", "text32Bold", ...]
 ```
+
+Hỗ trợ **Hybrid Theme** mapping:
+
+- `base.*` -> `--color-base-*`
+- `text.*` -> `--color-text-*`
+- `common.*` -> `--color-common-*`
+
+Hỗ trợ **Nested Colors**:
+
+- `primary.500` -> `primary-500` trong token array.
+- `primary.DEFAULT` -> `primary` trong token array.
 
 **Type inference:** Hàm dùng Generic `T extends ThemeConfig` kết hợp type utilities (`KebabCase`, `KeysOf`, `LiteralArray`) để preserve literal types thay vì widen sang `string`.
 

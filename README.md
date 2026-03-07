@@ -156,7 +156,26 @@ npx style-gen safelist --watch                  # Watch mode
 | `--theme`       | `string`  | `styles/theme.json`   | Path to theme JSON file                          |
 | `--out`         | `string`  | `styles/safelist.txt` | Path to output safelist file                     |
 | `-w`, `--watch` | `boolean` | `false`               | Watch theme file for changes and auto-regenerate |
-| `-h`, `--help`  | `boolean` | —                     | Display help                                     |
+
+#### `style-gen doctor`
+
+Check project setup, validate configuration, and verify theme schema.
+
+```bash
+npx style-gen doctor
+```
+
+The doctor will check:
+
+- Is `style-gen.config.json` present?
+- Does the theme file exist and contain valid JSON?
+- Are the required schema keys (`colors`, `typography`) present in the theme?
+- Do the plugin and output files exist?
+
+#### Global Flags
+
+- `-v`, `--version`: Display the current version of the CLI.
+- `-h`, `--help`: Display CLI usage help.
 
 ### Configuration file
 

@@ -6,7 +6,7 @@ import { watch } from "chokidar";
 import type { StyleModule } from "../../core/Options";
 import type { ThemeConfig } from "../../core/ThemeConfig";
 import { generateSafelist } from "../../features/safelist/generateSafelist";
-import { resolveConfig } from "../config";
+import { resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
 
 export interface SafelistArgs {
@@ -45,9 +45,20 @@ export function safelistCommand(args: SafelistArgs) {
 
     const options = resolveConfig(configFlags);
 
-    const themePath = path.resolve(process.cwd(), options.theme);
+    const themePath = path.resolve(process.cwd(), normalizePath(options.theme));
+
     if (!fs.existsSync(themePath)) {
-      logger.error(`Theme file not found at ${options.theme}`);
+      logger.error(
+        `Theme file not found at ${options.theme} (resolved: ${themePath})\n💡 Run: npx style-gen init`,
+      );
+      process.exit(1);
+    }
+
+    const stat = fs.statSync(themePath);
+    if (stat.isDirectory()) {
+      logger.error(
+        `The path provided for --theme is a directory, not a file: ${themePath}\n💡 Did you mean: ${options.theme.replace(/\/$/, "")}/theme.json?`,
+      );
       process.exit(1);
     }
 

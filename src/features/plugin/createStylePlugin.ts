@@ -13,20 +13,27 @@ export type TailwindPlugin = ReturnType<typeof plugin>;
 
 interface VarSource {
   colors?: {
-    base?: Record<string, string>;
-    text?: Record<string, string>;
+    base?: Record<string, string | Record<string, string>>;
+    text?: Record<string, string | Record<string, string>>;
+    common?: Record<string, string | Record<string, string>>;
   };
   shadows?: Record<string, string>;
   backDropBlurs?: Record<string, string>;
   borderRadius?: Record<string, string>;
 }
 
-const buildCssVars = (source: VarSource): Record<string, string> => ({
+const buildCssVars = (
+  source: VarSource,
+  disablePrefix = false,
+): Record<string, string> => ({
   ...(source.colors?.base
-    ? flattenToVars("color-base", source.colors.base)
+    ? flattenToVars("color-base", source.colors.base, disablePrefix)
     : {}),
   ...(source.colors?.text
-    ? flattenToVars("color-text", source.colors.text)
+    ? flattenToVars("color-text", source.colors.text, disablePrefix)
+    : {}),
+  ...(source.colors?.common
+    ? flattenToVars("color-common", source.colors.common, disablePrefix)
     : {}),
   ...(source.shadows ? flattenToVars("shadow", source.shadows) : {}),
   ...(source.backDropBlurs
@@ -34,6 +41,33 @@ const buildCssVars = (source: VarSource): Record<string, string> => ({
     : {}),
   ...(source.borderRadius ? flattenToVars("radius", source.borderRadius) : {}),
 });
+
+const buildColorConfig = (
+  colors: ThemeConfig["colors"],
+  enableCssVariables: boolean,
+  disableColorPrefix: boolean,
+): Record<string, string | Record<string, string>> => {
+  if (enableCssVariables) {
+    return {
+      ...(colors.base
+        ? mapToVarRefs("color-base", colors.base, disableColorPrefix)
+        : {}),
+      ...(colors.text
+        ? mapToVarRefs("color-text", colors.text, disableColorPrefix)
+        : {}),
+      ...(colors.common
+        ? mapToVarRefs("color-common", colors.common, disableColorPrefix)
+        : {}),
+    };
+  }
+  return {
+    ...(colors.base ? extractData(colors.base as Record<string, unknown>) : {}),
+    ...(colors.text ? extractData(colors.text as Record<string, unknown>) : {}),
+    ...(colors.common
+      ? extractData(colors.common as Record<string, unknown>)
+      : {}),
+  } as Record<string, string | Record<string, string>>;
+};
 
 /**
  * Creates a Tailwind CSS plugin based on the provided theme configuration.
@@ -52,7 +86,11 @@ export const createStylePlugin = (
   const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
     config;
 
-  const { enableCssVariables = true, enableResponsive = true } = options;
+  const {
+    enableCssVariables = true,
+    enableResponsive = true,
+    disableColorPrefix = false,
+  } = options;
 
   // Merge default screens with custom overrides
   const mergedScreens = enableResponsive
@@ -60,15 +98,11 @@ export const createStylePlugin = (
     : {};
 
   // Colors: use var() references if CSS variables enabled, otherwise direct hex values
-  const colorConfig = enableCssVariables
-    ? {
-        ...mapToVarRefs("color-base", colors.base),
-        ...mapToVarRefs("color-text", colors.text),
-      }
-    : {
-        ...extractData(colors.base),
-        ...extractData(colors.text),
-      };
+  const colorConfig = buildColorConfig(
+    colors,
+    enableCssVariables,
+    disableColorPrefix,
+  );
 
   const tailwindConfig = {
     theme: {
@@ -87,13 +121,13 @@ export const createStylePlugin = (
   const myPlugin: PluginCreator = (api: PluginAPI) => {
     // Inject CSS variables: base theme → :root, overrides → html[data-theme='<name>']
     if (enableCssVariables) {
-      api.addBase({ ":root": buildCssVars(config) });
+      api.addBase({ ":root": buildCssVars(config, disableColorPrefix) });
 
       if (config.themes) {
         for (const [name, override] of Object.entries<ThemeOverride>(
           config.themes,
         )) {
-          const vars = buildCssVars(override);
+          const vars = buildCssVars(override, disableColorPrefix);
           if (Object.keys(vars).length > 0) {
             api.addBase({ [`html[data-theme='${name}']`]: vars });
           }

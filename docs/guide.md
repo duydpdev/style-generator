@@ -8,7 +8,7 @@ Hướng dẫn tích hợp `fe-style-generator` vào dự án.
 2. [Tạo Theme Config](#tạo-theme-config)
 3. [Tích hợp Tailwind v4](#tích-hợp-tailwind-v4)
 4. [Tích hợp Tailwind v3](#tích-hợp-tailwind-v3)
-5. [Multi-theme (Dark/Light)](#multi-theme)
+5. [Multi-theme](#multi-theme)
 6. [Spacing Helpers](#spacing-helpers)
 7. [Design Tokens cho Component](#design-tokens-cho-component)
 8. [TypeScript Tips](#typescript-tips)
@@ -27,25 +27,58 @@ yarn add @duydpdev/style-generator
 yarn add tailwindcss typescript
 ```
 
+- [ ] (Tuỳ chọn) Cấu hình CLI qua `style-gen.config.json` để đồng bộ hoá build.
+
 ---
 
 ## Tạo Theme Config
 
-Tạo file `theme.json` (hoặc `theme.ts`) chứa toàn bộ design tokens:
+Tạo file `theme.json` (hoặc `theme.ts`) chứa toàn bộ design tokens.
+
+### Hybrid Theme Color System
+
+Hệ thống màu sắc hỗ trợ cơ chế Hybrid Theme với 3 root buckets chính: `base`, `text`, và `common`.
+
+- **`base`**: Các màu nền và màu chính của ứng dụng (primary, background, surface...).
+- **`text`**: Các màu chữ (main, muted, contrast...).
+- **`common`**: Các màu dùng chung (border, outline, status...).
+
+### Nested Colors & `DEFAULT` key
+
+Bạn có thể lồng các object để tổ chức màu sắc tốt hơn. Sử dụng key `DEFAULT` để định nghĩa màu cơ sở cho một nhóm mà không cần thêm hậu tố vào tên CSS variable hay class name.
 
 ```json
 {
   "colors": {
     "base": {
-      "primary": "#007AFF",
-      "white": "#FFFFFF",
-      "black": "#000000"
+      "primary": {
+        "DEFAULT": "#007AFF",
+        "50": "#F2F7FF",
+        "500": "#007AFF",
+        "900": "#003A7A"
+      }
     },
     "text": {
-      "main": "#1C1C20",
-      "secondary": "#8E8E93"
+      "main": "#1C1C20"
     }
-  },
+  }
+}
+```
+
+**Kết quả CSS Variables:**
+
+- `primary.DEFAULT` -> `--color-base-primary: #007aff`
+- `primary.500` -> `--color-base-primary-500: #007aff`
+- `text.main` -> `--color-text-main: #1c1c20`
+
+**Kết quả Tailwind Utility:**
+
+- `bg-base-primary`, `text-text-main`, `border-common-border`...
+
+### Typography
+
+```json
+{
   "typography": {
     "text16Medium": {
       "fontSize": "16px",

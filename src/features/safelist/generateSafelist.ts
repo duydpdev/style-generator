@@ -111,11 +111,33 @@ export const generateSafelist = <
     pushClasses("borders", props, values);
   }
 
+  // Helper to extract nested keys safely
+  const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
+    if (!obj) return [];
+    const keys: string[] = [];
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === "DEFAULT") {
+        keys.push(""); // DEFAULT signifies drop prefix (will be handled by join)
+      } else if (typeof v === "object" && v !== null) {
+        const subKeys = extractKeys(v as Record<string, unknown>);
+        for (const sub of subKeys) {
+          keys.push(sub ? `${k}-${sub}` : k);
+        }
+      } else {
+        keys.push(k);
+      }
+    }
+    return keys;
+  };
+
   // --- 4. Colors (text, bg, border for each custom color key) ---
   const colorKeys = [
-    ...Object.keys(colors.text),
-    ...Object.keys(colors.base),
-  ].map((k) => toKebabCase(k));
+    ...extractKeys(colors.text),
+    ...extractKeys(colors.base),
+    ...extractKeys(colors.common),
+  ]
+    .filter(Boolean)
+    .map((k) => toKebabCase(k));
 
   pushClasses("colors", ["text"], colorKeys);
   pushClasses("colors", ["bg"], colorKeys);

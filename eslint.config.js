@@ -78,6 +78,7 @@ export default pluginTs.config(
       ".yarn/*",
       "__tests__/reports/*",
       "**/generations/*",
+      "coverage/*",
     ],
   },
 );

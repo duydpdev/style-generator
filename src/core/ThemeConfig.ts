@@ -7,9 +7,11 @@ export interface ThemeConfig {
    */
   colors: {
     /** Base colors (e.g., primary, secondary, background). */
-    base: Record<string, string>;
+    base?: Record<string, string | Record<string, string>>;
     /** Text colors. */
-    text: Record<string, string>;
+    text?: Record<string, string | Record<string, string>>;
+    /** Common colors (e.g., static palettes like white, black, or external UI colors like Shadcn). */
+    common?: Record<string, string | Record<string, string>>;
   };
   /**
    * Typography configuration (e.g., h1, body, caption).
@@ -51,8 +53,9 @@ export interface ThemeConfig {
  */
 export interface ThemeOverride {
   colors?: {
-    base?: Record<string, string>;
-    text?: Record<string, string>;
+    base?: Record<string, string | Record<string, string>>;
+    text?: Record<string, string | Record<string, string>>;
+    common?: Record<string, string | Record<string, string>>;
   };
   shadows?: Record<string, string>;
   backDropBlurs?: Record<string, string>;

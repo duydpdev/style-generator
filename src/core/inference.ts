@@ -21,9 +21,30 @@ type StringKeysOf<T> = Extract<KeysOf<T>, string>;
 
 // ---- Theme-based token keys ----
 
+// Recursively get nested keys. If key is "DEFAULT", it maps to "" to drop prefix.
+type NestedKeys<T> = T extends object
+  ? {
+      [K in keyof T]-?: K extends string
+        ? T[K] extends string
+          ? K extends "DEFAULT"
+            ? ""
+            : K
+          : T[K] extends object
+            ? K extends "DEFAULT"
+              ? NestedKeys<T[K]>
+              : `${K}-${NestedKeys<T[K]> & string}`
+            : never
+        : never;
+    }[keyof T]
+  : never;
+
+type CleanTrailing<S> = S extends `${infer Head}-` ? Head : S;
+
 export type InferColorKeys<TTheme extends ThemeConfig> = KebabCase<
   Extract<
-    keyof TTheme["colors"]["base"] | keyof TTheme["colors"]["text"],
+    | CleanTrailing<NestedKeys<TTheme["colors"]["base"]>>
+    | CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>
+    | CleanTrailing<NestedKeys<TTheme["colors"]["common"]>>,
     string
   >
 >;
@@ -138,7 +159,14 @@ export type InferSafelistClasses<TTheme extends ThemeConfig, TOptions> =
 
 export interface DesignTokensWeb<TTheme extends ThemeConfig> {
   variantText: Extract<keyof TTheme["typography"], string>[];
-  variantTextColor: Extract<keyof TTheme["colors"]["text"], string>[];
+  variantTextColor: Extract<
+    CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>,
+    string
+  >[];
+  variantCommonColor: Extract<
+    CleanTrailing<NestedKeys<TTheme["colors"]["common"]>>,
+    string
+  >[];
   variantColor: InferColorKeys<TTheme>[];
   variantShadow: Extract<keyof NonNullable<TTheme["shadows"]>, string>[];
   variantBackdropBlur: Extract<

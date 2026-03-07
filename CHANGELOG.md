@@ -1,3 +1,12 @@
+# [1.5.0-DEV.2]() (2026-03-07)
+
+  ###
+  Bug Fixes
+
+    -
+    fix readme docs ([#46](https://github.com/duydpdev/style-generator/issues/46))
+    ([58e84c8]())
+
 # [1.5.0-DEV.1]() (2026-03-07)
 
   ###

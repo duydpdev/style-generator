@@ -1,3 +1,12 @@
+# [1.6.0-DEV.1]() (2026-03-07)
+
+  ###
+  Features
+
+    -
+    update cli ([#48](https://github.com/duydpdev/style-generator/issues/48))
+    ([09a1b54]())
+
 # [1.5.0]() (2026-03-07)
 
   ###

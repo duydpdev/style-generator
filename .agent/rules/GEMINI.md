@@ -23,7 +23,8 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 
 1. **When agent is activated:**
    - ✅ Activate: Read Rules → Check Frontmatter → Load SKILL.md → Apply All.
-2. **Forbidden:** Never skip reading agent rules or skill instructions. "Read → Understand → Apply" is mandatory.
+   - 🔴 **KNOWLEDGE RECALL:** Read `.agent/rules/lessons.md` BEFORE taking any action to avoid repeating past mistakes.
+2. **Forbidden:** Never skip reading agent rules, skill instructions, OR previous lessons. "Read → Understand → Apply" is mandatory.
 
 ---
 

@@ -66,6 +66,13 @@ export interface StyleGeneratorOptions {
   enableCssVariables?: boolean;
 
   /**
+   * Disable auto-prefixing `--color-base-` and `--color-text-` on CSS variables.
+   * Flat design tokens will be generated if true.
+   * @default false
+   */
+  disableColorPrefix?: boolean;
+
+  /**
    * Enable responsive class generation in safelist and spacing CSS rules.
    * Set to false if your project only targets a single viewport.
    * @default true

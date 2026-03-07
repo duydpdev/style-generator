@@ -1,6 +1,6 @@
 {
   "name": "@duydpdev/style-generator",
-  "version": "1.4.0",
+  "version": "1.5.0-DEV.2",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,7 +28,11 @@
     "prettier": "prettier .",
     "prettier:fix": "prettier --write .",
     "prepare": "husky",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:types": "vitest typecheck --run src/**/*.test-d.ts"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^20.4.3",
@@ -39,6 +43,7 @@
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^25.3.3",
     "@typescript-eslint/parser": "^8.56.1",
+    "@vitest/coverage-v8": "^4.0.18",
     "commitlint": "^20.4.3",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
@@ -60,7 +65,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18"
   },
   "peerDependencies": {
     "tailwindcss": ">=3.4.0 || >=4.0.0",

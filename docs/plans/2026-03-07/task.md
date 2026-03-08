@@ -7,6 +7,7 @@ Thứ tự thực hiện các kế hoạch trong ngày hôm nay:
 3. [03-ci-pipeline-and-design-token-types.md](03-ci-pipeline-and-design-token-types.md): Thiết lập CI Pipeline (GitHub Actions), Husky pre-commit và viết Type Tests cho Design Tokens. [DONE]
 4. [04-update-documentation.md](04-update-documentation.md): Cập nhật tài liệu và thông tin CLI theo các thay đổi mới nhất. [DONE]
 5. [05-cli-dx-overhaul.md](05-cli-dx-overhaul.md): Nâng cấp toàn diện CLI: smart defaults, `style-gen.config.json`, plugin template đầy đủ, `doctor` command, path validation. [DONE]
+6. [06-fix-tailwind-utilities.md](06-fix-tailwind-utilities.md): Sửa lỗi Vite/Tailwind v4 báo lỗi selector utilities không hợp lệ. [DONE]
 
 ---
 

@@ -1,3 +1,12 @@
+# [1.6.0-DEV.2]() (2026-03-08)
+
+  ###
+  Bug Fixes
+
+    -
+    fix spacing css gen ([#49](https://github.com/duydpdev/style-generator/issues/49))
+    ([4ed7916]())
+
 # [1.6.0-DEV.1]() (2026-03-07)
 
   ###

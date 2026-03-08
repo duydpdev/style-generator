@@ -1,3 +1,12 @@
+# [1.6.0-DEV.3]() (2026-03-08)
+
+  ###
+  Features
+
+    -
+    add api gen cva function ([#50](https://github.com/duydpdev/style-generator/issues/50))
+    ([53770f5]())
+
 # [1.6.0-DEV.2]() (2026-03-08)
 
   ###

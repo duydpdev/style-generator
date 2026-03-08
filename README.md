@@ -495,3 +495,25 @@ const { DesignTokens } = createDesignTokens(theme, {
 const colorMap = createVariantMapper("bg", DesignTokens.Web.variantColor);
 // colorMap will have keys like "primary", "primary-500", "text-main"
 ```
+
+### Custom Breakpoints Intellisense
+
+If you are using custom breakpoints (e.g. `tablet`, `desktop`) in your Tailwind config, you can wrap the \`ResponsiveValue\` type to get full IDE intellisense across your project components:
+
+```ts
+// types.ts
+import { ResponsiveValue as LibResponsiveValue } from "@duydpdev/style-generator";
+
+// Define your project's custom breakpoints
+export type AppBreakpoints =
+  | "base"
+  | "mobile"
+  | "tablet"
+  | "laptop"
+  | "desktop";
+
+// Export the wrapped type for your components to use
+export type ResponsiveValue<T> = LibResponsiveValue<T, AppBreakpoints>;
+```
+
+Then use this local \`ResponsiveValue\` type in your components (like \`Box\`, \`Flex\`) instead of importing it directly from the library. This ensures VSCode automatically suggests all your custom keys when passing \`p={{ ... }}\`.

@@ -106,7 +106,7 @@ export const generateSafelist = <
   if (resolvedOptions.border?.enabled !== false) {
     const values =
       resolvedOptions.border?.values ??
-      Object.keys(border ?? DEFAULT_BORDER_VALUES);
+      (border ? Object.keys(border) : DEFAULT_BORDER_VALUES);
     const props = resolvedOptions.border?.properties ?? borderProperties;
     pushClasses("borders", props, values);
   }

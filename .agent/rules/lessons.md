@@ -28,7 +28,7 @@ _(Add new lessons below this line)_
 
 - **Mistake:** Cứ thế code luôn mà không khởi tạo file kế hoạch và thỏa thuận rõ ràng với user. Đặt file plan sai cấu trúc thư mục (để file markdown trần hoặc tên folder có chứa text).
 - **New Rule:** LUÔN PHẢI lên plan TRƯỚC khi code bất kỳ tính năng lớn/nhỏ nào. Mọi plan mới đều phải xuất hiện dưới dạng Markdown checklist và được MẶC ĐỊNH lưu vào **đúng cấu trúc thư mục** `docs/plans/YYYY-MM-DD/XX-ten-tinh-nang.md` (ví dụ: `docs/plans/2026-03-07/03-refactor-color-system.md`). Thư mục ngày (`YYYY-MM-DD`) phải chứa một file `task.md` để liệt kê thứ tự thực hiện các kế hoạch trong ngày đó. File markdown của plan phải tuân theo **TEMPLATE BẮT BUỘC** sau:
-  - `XX` là số thứ tự thực hiện trong ngày (01, 02, 03...).
+  - `XX` là số thứ tự thực hiện trong ngày (01, 02, 03...). **LƯU Ý:** Khi chuyển sang thư mục ngày mới (`YYYY-MM-DD`), số thứ tự ĐẢM BẢO phải bắt đầu lại từ `01`.
   - Tên file không chứa ký tự đặc biệt ngoài gạch nối `-`.
 
 ```markdown
@@ -87,3 +87,8 @@ _(Add new lessons below this line)_
 
 - **Mistake:** Đã tự ý nhảy sang bước lập trình/thực thi (Phase 4 - Implementation) cho Task 05 khi người dùng chưa đồng ý/approve bản kế hoạch (Phase 3 - Solutioning/Plan). Việc này vi phạm nghiêm trọng phương pháp 4-Phase của dự án.
 - **New Rule:** LUÔN PHẢI dừng lại chờ người dùng xác nhận bằng các câu "ok", "duyệt", "triển khai" sau khi nộp file `.md` kế hoạch. Tuyệt đối không được kích hoạt các tool sửa code ngay sau khi notify_user bằng `BlockedOnUser: true` nếu người dùng chưa hồi đáp thuận tình.
+
+### [2026-03-08] - Tuyệt đối tuân thủ quy trình lập kế hoạch (4-Phase) và cấu trúc thư mục
+
+- **Mistake:** Tiếp tục bỏ qua việc tạo file kế hoạch vật lý (`docs/plans/...`) và không sử dụng đúng template bắt buộc dù đã có lesson trước đó. Ngoài ra còn sử dụng đường dẫn tuyệt đối trong plan.
+- **New Rule:** LUÔN PHẢI kiểm tra `lessons.md` trước khi bắt đầu bất kỳ task nào. Việc tạo plan trong `docs/plans/YYYY-MM-DD/XX-plan.md` là BẮT BUỘC và phải là bước đầu tiên sau khi phân tích. Không được phép "quên" hoặc "sơ suất" vì đây là quy trình vận hành tiêu chuẩn của dự án.

@@ -1,10 +1,14 @@
-/**
- * Helper utility for automatically generating class maps for CVA variants.
- */
+import { toKebabCase } from "../../shared";
+
+type KebabCase<S extends string> = S extends `${infer T}${infer U}`
+  ? U extends Uncapitalize<U>
+    ? `${Lowercase<T>}${KebabCase<U>}`
+    : `${Lowercase<T>}-${KebabCase<Uncapitalize<U>>}`
+  : S;
 
 type MappedVariant<T extends string, P extends string> = P extends ""
-  ? T
-  : `${P}-${T}`;
+  ? KebabCase<T>
+  : `${P}-${KebabCase<T>}`;
 
 /**
  * Creates a mapping of tokens to their corresponding prefixed CSS classes.
@@ -24,7 +28,8 @@ export const createVariantMapper = <T extends string, P extends string = "">(
 ): Record<T, MappedVariant<T, P>> => {
   return tokens.reduce(
     (acc, token) => {
-      const cls = prefix === "" ? token : `${prefix}-${token}`;
+      const kebabToken = toKebabCase(token);
+      const cls = prefix === "" ? kebabToken : `${prefix}-${kebabToken}`;
       acc[token] = cls as MappedVariant<T, P>;
       return acc;
     },

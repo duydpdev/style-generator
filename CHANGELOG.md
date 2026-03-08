@@ -1,3 +1,12 @@
+# [1.6.0-DEV.6]() (2026-03-08)
+
+  ###
+  Bug Fixes
+
+    -
+    fix gensafelist border ([#53](https://github.com/duydpdev/style-generator/issues/53))
+    ([6a654c0]())
+
 # [1.6.0-DEV.5]() (2026-03-08)
 
   ###

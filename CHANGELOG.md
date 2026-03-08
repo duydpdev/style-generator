@@ -1,3 +1,12 @@
+# [1.6.0-DEV.5]() (2026-03-08)
+
+  ###
+  Features
+
+    -
+    update type responsiveValue ([#52](https://github.com/duydpdev/style-generator/issues/52))
+    ([49d6761]())
+
 # [1.6.0-DEV.4]() (2026-03-08)
 
   ###

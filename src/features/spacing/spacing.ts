@@ -34,8 +34,13 @@ export const buildFallbackChain = (
 
 /**
  * Generate spacing utility CSS rules (`.sp-p`, `.sp-mx`, etc.) with responsive
- * `var()` fallback chains. This replaces the traditional safelist approach for spacing,
- * producing a fixed number of CSS rules regardless of how many spacing values exist.
+ * `var()` fallback chains. Each utility class reads from CSS custom properties
+ * that can be set inline by components (e.g. `style={{ "--sp-p": "1rem" }}`).
+ *
+ * Tailwind v4 CSS-first architecture does not support `@media` inside
+ * `addUtilities()` or `addBase()` JS plugin API. Responsive behavior is
+ * achieved through the fallback chain: components set `--sp-p-md`, `--sp-p-lg`
+ * variables inline, and the utility reads them via nested `var()` fallbacks.
  * @param {PluginAPI} api Tailwind plugin API
  * @param {StyleGeneratorOptions} options Style generator options
  * @param {Record<string, string>} mergedScreens Merged screen breakpoint definitions
@@ -65,27 +70,23 @@ export const generateSpacingRules = (
         )
     : [];
 
-  const baseRules: Record<string, Record<string, string>> = {};
+  // Generate flat utility classes that reference CSS custom properties.
+  // No @media queries — Tailwind v4 plugin API does not support them.
+  // Responsive values are resolved via var() fallback chain at runtime.
+  const utilities: Record<string, Record<string, string>> = {};
   for (const [key, cssProps] of Object.entries(spacingProps)) {
-    baseRules[`.sp-${key}`] = { ...cssProps } as Record<string, string>;
-  }
-  api.addUtilities(baseRules);
-
-  for (let i = 0; i < sortedBreakpoints.length; i++) {
-    const bp = sortedBreakpoints[i];
-    const mediaRules: Record<string, Record<string, string>> = {};
-
-    for (const [key, cssProps] of Object.entries(spacingProps)) {
-      const fallback = buildFallbackChain(key, sortedBreakpoints, i);
-      const overrides: Record<string, string> = {};
-      for (const cssProp of Object.keys(cssProps)) {
-        overrides[cssProp] = fallback;
-      }
-      mediaRules[`.sp-${key}`] = overrides;
+    const overrides: Record<string, string> = {};
+    for (const cssProp of Object.keys(cssProps)) {
+      overrides[cssProp] = enableResponsive
+        ? buildFallbackChain(
+            key,
+            sortedBreakpoints,
+            sortedBreakpoints.length - 1,
+          )
+        : `var(--sp-${key})`;
     }
-
-    api.addUtilities({
-      [`@media (min-width: ${bp.value})`]: mediaRules,
-    });
+    utilities[`.sp-${key}`] = overrides;
   }
+
+  api.addUtilities(utilities);
 };

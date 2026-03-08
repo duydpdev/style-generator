@@ -62,10 +62,13 @@ export const mapToVarRefs = (
       if (typeof value === "string") {
         const varName = fullPath.length > 0 ? fullPath.join("-") : "";
         const finalPrefix = disablePrefix ? "" : `${prefix}-`;
-        result[key === "DEFAULT" ? key : toKebabCase(key)] =
-          `var(--${finalPrefix}${varName})`;
+
+        const finalKey = key === "DEFAULT" ? key : toKebabCase(key);
+
+        result[finalKey] = `var(--${finalPrefix}${varName})`;
       } else {
-        result[toKebabCase(key)] = processNode(value, fullPath) as Record<
+        const finalKey = toKebabCase(key);
+        result[finalKey] = processNode(value, fullPath) as Record<
           string,
           string
         >;

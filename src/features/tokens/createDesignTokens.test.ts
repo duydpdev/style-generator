@@ -38,7 +38,7 @@ describe("createDesignTokens", () => {
     const result = createDesignTokens(mockTheme);
     expect(result.DesignTokens.Web.variantTextColor).toContain("main");
     expect(result.DesignTokens.Web.variantTextColor).toContain("muted");
-    expect(result.DesignTokens.Web.variantTextColor).toContain("muted-darker");
+    expect(result.DesignTokens.Web.variantTextColor).toContain("mutedDarker");
     // DEFAULT itself should be converted to an empty string in the helper but we filter(Boolean) later or handle it.
     // In createDesignTokens, it's pushed as "" which is then filtered out in variantColor.
   });
@@ -49,7 +49,7 @@ describe("createDesignTokens", () => {
     expect(colors).toContain("primary");
     expect(colors).toContain("main");
     expect(colors).toContain("muted");
-    expect(colors).toContain("muted-darker");
+    expect(colors).toContain("mutedDarker");
     expect(colors).toContain("white");
   });
 
@@ -85,7 +85,7 @@ describe("createDesignTokens", () => {
     const result = createDesignTokens(themeWithNestedBase);
     const colors = result.DesignTokens.Web.variantColor;
     expect(colors).toContain("primary");
-    expect(colors).toContain("blue-500");
-    expect(colors).toContain("blue-600");
+    expect(colors).toContain("blue500");
+    expect(colors).toContain("blue600");
   });
 });

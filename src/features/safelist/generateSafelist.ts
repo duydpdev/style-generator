@@ -145,7 +145,12 @@ export const generateSafelist = <
 
   // --- 5. Typography (custom utility classes) ---
   const typographyKeys = Object.keys(typography);
-  pushClasses("typography", typographyKeys.map(toKebabCase), [], true);
+  pushClasses(
+    "typography",
+    typographyKeys.map((k) => toKebabCase(k)),
+    [],
+    true,
+  );
 
   // --- 6. Box shadows ---
   const shadowKeys = Object.keys(shadows ?? {});

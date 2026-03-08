@@ -9,7 +9,7 @@ export const toKebabCase = (str: string) => {
 export const toCamelCase = (str: string) => {
   return str
     .replaceAll(/[-_\s]+(.)?/g, (_, c: string) => (c ? c.toUpperCase() : ""))
-    .replaceAll(/^(.)/, (_, c: string) => c.toLowerCase());
+    .replace(/^(.)/, (_, c: string) => c.toLowerCase());
 };
 
 export const toPascalCase = (str: string) => {
@@ -18,13 +18,10 @@ export const toPascalCase = (str: string) => {
     .replaceAll(/^(.)/, (_, c: string) => c.toUpperCase());
 };
 
-export const extractData = (
-  data: Record<string, unknown>,
-  isToKebabCase = true,
-) => {
+export const extractData = (data: Record<string, unknown>) => {
   return Object.entries(data).reduce<Record<string, unknown>>(
     (acc, [key, value]) => {
-      acc[isToKebabCase ? toKebabCase(key) : key] = value;
+      acc[toKebabCase(key)] = value;
       return acc;
     },
     {},

@@ -9,6 +9,12 @@ import type { ThemeConfig } from "./ThemeConfig";
 
 // ---- Basic utilities ----
 
+export type CamelCase<S extends string> = S extends `${infer P1}-${infer P2}`
+  ? `${Uncapitalize<P1>}${Capitalize<CamelCase<P2>>}`
+  : S extends `${infer P1}_${infer P2}`
+    ? `${Uncapitalize<P1>}${Capitalize<CamelCase<P2>>}`
+    : Uncapitalize<S>;
+
 export type KebabCase<S extends string> = S extends `${infer T}${infer U}`
   ? U extends Uncapitalize<U>
     ? `${Uncapitalize<T>}${KebabCase<U>}`
@@ -40,7 +46,7 @@ type NestedKeys<T> = T extends object
 
 type CleanTrailing<S> = S extends `${infer Head}-` ? Head : S;
 
-export type InferColorKeys<TTheme extends ThemeConfig> = KebabCase<
+export type InferColorKeys<TTheme extends ThemeConfig> = CamelCase<
   Extract<
     | CleanTrailing<NestedKeys<TTheme["colors"]["base"]>>
     | CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>
@@ -117,9 +123,9 @@ type WithResponsive<TOptions, M extends StyleModule, C extends string> =
 // ---- Safelist classes inferred from theme + options ----
 
 type ColorClasses<TTheme extends ThemeConfig> =
-  | `text-${InferColorKeys<TTheme>}`
-  | `bg-${InferColorKeys<TTheme>}`
-  | `border-${InferColorKeys<TTheme>}`;
+  | `text-${KebabCase<InferColorKeys<TTheme>>}`
+  | `bg-${KebabCase<InferColorKeys<TTheme>>}`
+  | `border-${KebabCase<InferColorKeys<TTheme>>}`;
 
 type TypographyClasses<TTheme extends ThemeConfig> = KebabCase<
   Extract<keyof TTheme["typography"], string>
@@ -159,15 +165,16 @@ export type InferSafelistClasses<TTheme extends ThemeConfig, TOptions> =
 
 export interface DesignTokensWeb<TTheme extends ThemeConfig> {
   variantText: Extract<keyof TTheme["typography"], string>[];
-  variantTextColor: Extract<
-    CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>,
-    string
+  variantTextColor: CamelCase<
+    Extract<CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>, string>
   >[];
-  variantCommonColor: Extract<
-    CleanTrailing<NestedKeys<TTheme["colors"]["common"]>>,
-    string
+  variantCommonColor: CamelCase<
+    Extract<CleanTrailing<NestedKeys<TTheme["colors"]["common"]>>, string>
   >[];
   variantColor: InferColorKeys<TTheme>[];
+  variantBaseColor: CamelCase<
+    Extract<CleanTrailing<NestedKeys<TTheme["colors"]["base"]>>, string>
+  >[];
   variantShadow: Extract<keyof NonNullable<TTheme["shadows"]>, string>[];
   variantBackdropBlur: Extract<
     keyof NonNullable<TTheme["backDropBlurs"]>,

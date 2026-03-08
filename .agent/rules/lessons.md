@@ -92,3 +92,8 @@ _(Add new lessons below this line)_
 
 - **Mistake:** Tiếp tục bỏ qua việc tạo file kế hoạch vật lý (`docs/plans/...`) và không sử dụng đúng template bắt buộc dù đã có lesson trước đó. Ngoài ra còn sử dụng đường dẫn tuyệt đối trong plan.
 - **New Rule:** LUÔN PHẢI kiểm tra `lessons.md` trước khi bắt đầu bất kỳ task nào. Việc tạo plan trong `docs/plans/YYYY-MM-DD/XX-plan.md` là BẮT BUỘC và phải là bước đầu tiên sau khi phân tích. Không được phép "quên" hoặc "sơ suất" vì đây là quy trình vận hành tiêu chuẩn của dự án.
+
+### [2026-03-08] - Không bao giờ thực thi mã (Code) khi chưa được Approve Plan (Lặp lại lỗi)
+
+- **Mistake:** Trong quá trình xử lý bug border, dù đã tạo plan nhưng ngay sau khi giải thích đã tự ý thực thi mã nguồn trước khi user phản hồi phê duyệt. Đây là lặp lại lỗi vi phạm nghiêm trọng Phase 3.
+- **New Rule:** LUÔN PHẢI DỪNG LẠI CHỜ DUYỆT. Tuyệt đối KHÔNG gộp chung bước giải thích lỗi + fix bug vào cùng 1 lượt. `[ ] Task` chỉ được phép chuyển thành `[/]` hoặc `[x]` sau khi có sự đồng ý của user.

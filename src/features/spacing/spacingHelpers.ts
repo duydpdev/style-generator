@@ -1,10 +1,24 @@
+import { Breakpoint } from "../../core/Options";
+
+/**
+ * Mặc định các breakpoint chuẩn theo Option của thư viện
+ */
+export type DefaultBreakpointKeys = `${Breakpoint}`;
+
 /**
  * Responsive value type: simple value or per-breakpoint object.
+ * Generic `BKeys` cho phép dự án tuỳ biến breakpoint khi bọc type.
+ * `base` mặc định luôn có sẵn độc lập.
+ * Fallback `(string & {})` giữ cho việc truyền runtime custom string không ném lỗi Type.
  * @example
  * // Simple: p={4}
  * // Responsive: p={{ base: 4, md: 8, lg: 12 }}
+ * // Custom breakpoint (ở project React):
+ * // type ResponsiveOptions<T> = ResponsiveValue<T, 'tablet' | 'desktop'>;
  */
-export type ResponsiveValue<T> = T | Partial<Record<string, T>>;
+export type ResponsiveValue<T, BKeys extends string = DefaultBreakpointKeys> =
+  | T
+  | Partial<Record<BKeys | "base" | (string & {}), T>>;
 
 /**
  * Resolve a single spacing prop into className + inline style CSS variables.

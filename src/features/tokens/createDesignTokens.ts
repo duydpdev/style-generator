@@ -12,7 +12,7 @@ import {
 } from "../../core/inference";
 import { StyleGeneratorOptions, defaultScreens } from "../../core/Options";
 import { ThemeConfig } from "../../core/ThemeConfig";
-import { toKebabCase } from "../../shared/helpers";
+import { toCamelCase } from "../../shared/helpers";
 
 /**
  * Creates a structured design tokens object from the theme configuration.
@@ -47,7 +47,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     border ? Object.keys(border) : DEFAULT_BORDER_VALUES.map(String)
   ) as InferBorderOptions<TTheme>[];
 
-  // Helper to extract nested keys safely
+  // Helper to extract nested keys safely and convert to camelCase
   const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
     if (!obj) return [];
     const keys: string[] = [];
@@ -57,10 +57,10 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
       } else if (typeof v === "object" && v !== null) {
         const subKeys = extractKeys(v as Record<string, unknown>);
         for (const sub of subKeys) {
-          keys.push(sub ? `${k}-${sub}` : k);
+          keys.push(sub ? toCamelCase(`${k}-${sub}`) : toCamelCase(k));
         }
       } else {
-        keys.push(k);
+        keys.push(toCamelCase(k));
       }
     }
     return keys;
@@ -76,7 +76,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
 
   const variantBaseColor = extractKeys(
     colors.base as Record<string, unknown> | undefined,
-  ) as Extract<keyof TTheme["colors"]["base"], string>[];
+  ) as DesignTokensWeb<TTheme>["variantBaseColor"];
 
   const variantColors = [
     ...variantBaseColor,
@@ -84,7 +84,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     ...variantCommonColor,
   ]
     .filter(Boolean)
-    .map((color) => toKebabCase(color)) as InferColorKeys<TTheme>[];
+    .map((color) => toCamelCase(color)) as InferColorKeys<TTheme>[];
 
   const mergedScreens = {
     ...defaultScreens,
@@ -104,6 +104,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     DesignTokens: {
       Web: {
         variantText,
+        variantBaseColor,
         variantTextColor,
         variantCommonColor,
         variantColor: variantColors,

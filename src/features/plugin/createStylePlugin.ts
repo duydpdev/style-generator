@@ -35,11 +35,13 @@ const buildCssVars = (
   ...(source.colors?.common
     ? flattenToVars("color-common", source.colors.common, disablePrefix)
     : {}),
-  ...(source.shadows ? flattenToVars("shadow", source.shadows) : {}),
+  ...(source.shadows ? flattenToVars("shadow", source.shadows, false) : {}),
   ...(source.backDropBlurs
-    ? flattenToVars("backdrop-blur", source.backDropBlurs)
+    ? flattenToVars("backdrop-blur", source.backDropBlurs, false)
     : {}),
-  ...(source.borderRadius ? flattenToVars("radius", source.borderRadius) : {}),
+  ...(source.borderRadius
+    ? flattenToVars("radius", source.borderRadius, false)
+    : {}),
 });
 
 const buildColorConfig = (
@@ -111,8 +113,8 @@ export const createStylePlugin = (
         colors: colorConfig,
         boxShadow: shadows ? extractData(shadows) : {},
         backdropBlur: backDropBlurs ? extractData(backDropBlurs) : {},
-        borderRadius: borderRadius ? extractData(borderRadius, false) : {},
-        borderWidth: border ? extractData(border, false) : {},
+        borderRadius: borderRadius ? extractData(borderRadius) : {},
+        borderWidth: border ? extractData(border) : {},
       },
     },
     safelist: safelist ?? generateSafelist(config, options),
@@ -121,7 +123,9 @@ export const createStylePlugin = (
   const myPlugin: PluginCreator = (api: PluginAPI) => {
     // Inject CSS variables: base theme → :root, overrides → html[data-theme='<name>']
     if (enableCssVariables) {
-      api.addBase({ ":root": buildCssVars(config, disableColorPrefix) });
+      api.addBase({
+        ":root": buildCssVars(config, disableColorPrefix),
+      });
 
       if (config.themes) {
         for (const [name, override] of Object.entries<ThemeOverride>(

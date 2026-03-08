@@ -69,12 +69,12 @@ describe("Type Inference", () => {
     }
 
     expectTypeOf<InferColorKeys<MyTheme>>().toEqualTypeOf<
-      | "blue-500"
-      | "blue-600"
+      | "blue500"
+      | "blue600"
       | "muted"
-      | "muted-dark"
+      | "mutedDark"
       | "shadcn"
-      | "shadcn-foreground"
+      | "shadcnForeground"
     >();
   });
 
@@ -106,11 +106,11 @@ describe("Type Inference", () => {
 
     expectTypeOf<Web["variantText"]>().toEqualTypeOf<"h1"[]>();
     expectTypeOf<Web["variantTextColor"]>().toEqualTypeOf<
-      ("muted" | "muted-dark")[]
+      ("muted" | "mutedDark")[]
     >();
     expectTypeOf<Web["variantCommonColor"]>().toEqualTypeOf<"white"[]>();
     expectTypeOf<Web["variantColor"]>().toEqualTypeOf<
-      ("primary" | "muted" | "muted-dark" | "white")[]
+      ("primary" | "muted" | "mutedDark" | "white")[]
     >();
 
     // @ts-expect-error - variantBaseColor is not exposed on DesignTokensWeb
@@ -142,7 +142,7 @@ describe("Type Inference", () => {
     type Web = DesignTokensWeb<MyTheme>;
 
     expectTypeOf<Web["variantColor"]>().toEqualTypeOf<
-      ("primary" | "secondary" | "secondary-light")[]
+      ("primary" | "secondary" | "secondaryLight")[]
     >();
     expectTypeOf<Web["variantTextColor"]>().toEqualTypeOf<never[]>();
     expectTypeOf<Web["variantCommonColor"]>().toEqualTypeOf<never[]>();

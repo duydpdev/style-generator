@@ -1,3 +1,12 @@
+# [1.6.0-DEV.4]() (2026-03-08)
+
+  ###
+  Features
+
+    -
+    update gen design token cammelCase ([#51](https://github.com/duydpdev/style-generator/issues/51))
+    ([9c6454e]())
+
 # [1.6.0-DEV.3]() (2026-03-08)
 
   ###

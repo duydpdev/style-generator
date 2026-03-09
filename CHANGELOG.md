@@ -1,3 +1,12 @@
+# [1.6.0-DEV.8]() (2026-03-09)
+
+  ###
+  Bug Fixes
+
+    -
+    fix tempalte gen plugins ([#55](https://github.com/duydpdev/style-generator/issues/55))
+    ([72dead0]())
+
 # [1.6.0-DEV.7]() (2026-03-09)
 
   ###

@@ -97,3 +97,8 @@ _(Add new lessons below this line)_
 
 - **Mistake:** Trong quá trình xử lý bug border, dù đã tạo plan nhưng ngay sau khi giải thích đã tự ý thực thi mã nguồn trước khi user phản hồi phê duyệt. Đây là lặp lại lỗi vi phạm nghiêm trọng Phase 3.
 - **New Rule:** LUÔN PHẢI DỪNG LẠI CHỜ DUYỆT. Tuyệt đối KHÔNG gộp chung bước giải thích lỗi + fix bug vào cùng 1 lượt. `[ ] Task` chỉ được phép chuyển thành `[/]` hoặc `[x]` sau khi có sự đồng ý của user.
+
+### [2026-03-09] - Chú ý xử lý script trên môi trường ESM
+
+- **Mistake**: Chạy script thử nghiệm (`.js`) bằng `node` mà vẫn dùng cú pháp `require()` trong một project đã setup `"type": "module"` trong `package.json`, dẫn tới lỗi `ReferenceError: require is not defined in ES module scope`.
+- **New Rule**: TRƯỚC KHI tạo script chạy bằng Node, LUÔN phải check `package.json` xem đang ở chế độ CommonJS hay ES Module. Nếu là ESM, bắt buộc dùng cú pháp `import` hoặc đổi đuôi file script thành `.cjs` để Node hiểu đúng context.

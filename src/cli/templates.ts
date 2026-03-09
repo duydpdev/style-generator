@@ -92,35 +92,34 @@ export const themeTemplateDark = `{
 
 export const getPluginTemplate = (
   themeRelPath: string,
-) => `import { createStyleSystem, Breakpoint } from "@duydpdev/style-generator";
+) => `import { createStyleSystem, Breakpoint, StyleGeneratorOptions, } from "@duydpdev/style-generator";
 import theme from "${themeRelPath}";
 
-const { plugin, safelist, DesignTokens } = createStyleSystem(theme, {
+const options: StyleGeneratorOptions = {
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
+  enableCssVariables: true,
+  disableColorPrefix: false,
+  enableResponsive: true,
 
-  // --- Uncomment to customize ---
+  spacing: {
+    enabled: true,
+  },
 
-  // enableCssVariables: true,
-  // disableColorPrefix: false,
-  // enableResponsive: true,
+  layout: {
+    enabled: true,
+    values: ["hidden", "block", "flex", "grid", "inline-block", "inline-flex", "items-center", "justify-center", "justify-between", "text-center"],
+  },
 
-  // spacing: {
-  //   enabled: true,
-  // },
+  border: { enabled: true },
+  rounded: { enabled: true },
+  opacity: { enabled: true },
+  zIndex: { enabled: true },
 
-  // layout: {
-  //   enabled: true,
-  //   values: ["hidden", "block", "flex", "grid", "inline-block", "inline-flex", "items-center", "justify-center", "justify-between", "text-center"],
-  // },
+  responsiveModules: ["layout", "rounded"],
+  dynamicClasses: [],
+};
 
-  // border: { enabled: true },
-  // rounded: { enabled: true },
-  // opacity: { enabled: true },
-  // zIndex: { enabled: true },
-
-  // responsiveModules: ["layout", "rounded"],
-  // dynamicClasses: [],
-});
+const { plugin, safelist, DesignTokens } = createStyleSystem(theme, options);
 
 export default plugin;
 

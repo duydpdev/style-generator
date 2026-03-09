@@ -1,3 +1,12 @@
+# [1.6.0-DEV.7]() (2026-03-09)
+
+  ###
+  Bug Fixes
+
+    -
+    fix repsonsive ([#54](https://github.com/duydpdev/style-generator/issues/54))
+    ([4e41e8f]())
+
 # [1.6.0-DEV.6]() (2026-03-08)
 
   ###

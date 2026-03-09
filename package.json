@@ -1,6 +1,6 @@
 {
   "name": "@duydpdev/style-generator",
-  "version": "1.6.0-DEV.6",
+  "version": "1.6.0-DEV.7",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

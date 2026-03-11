@@ -2,6 +2,7 @@ import {
   DEFAULT_BORDER_VALUES,
   DEFAULT_ROUNDED_VALUES,
   DEFAULT_SPACING_PROPERTIES,
+  DEFAULT_ZINDEX_VALUES,
 } from "../../shared/defaultOption";
 import {
   DesignTokensResult,
@@ -9,6 +10,7 @@ import {
   InferColorKeys,
   InferBorderOptions,
   InferRoundedOptions,
+  InferZIndexOptions,
 } from "../../core/inference";
 import { StyleGeneratorOptions, defaultScreens } from "../../core/Options";
 import { ThemeConfig } from "../../core/ThemeConfig";
@@ -100,6 +102,12 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     borderRadius ? Object.keys(borderRadius) : [...DEFAULT_ROUNDED_VALUES]
   ) as InferRoundedOptions<TTheme>[];
 
+  const zIndexValues = (
+    options.zIndex?.enabled
+      ? (options.zIndex.values ?? [...DEFAULT_ZINDEX_VALUES])
+      : ([] as InferZIndexOptions<TTheme>[])
+  ) as InferZIndexOptions<TTheme>[];
+
   return {
     DesignTokens: {
       Web: {
@@ -112,6 +120,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
         variantBackdropBlur,
         borderOption: variantBorder,
         roundedOption: roundedValues,
+        zIndexOption: zIndexValues,
         spacingProperties,
         breakpoints: keysToUse,
         screens: mergedScreens,

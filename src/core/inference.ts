@@ -2,6 +2,7 @@ import type {
   DefaultBorderValue,
   DefaultRoundedValue,
   DefaultSpacingKey,
+  DefaultZIndexValue,
 } from "../shared/defaultOption";
 
 import type { StyleModule } from "./Options";
@@ -80,6 +81,12 @@ export type InferRoundedOptions<TTheme extends ThemeConfig> = TTheme extends {
 }
   ? Extract<keyof NonNullable<R>, string>
   : DefaultRoundedValue;
+
+export type InferZIndexOptions<TTheme extends ThemeConfig> = TTheme extends {
+  zIndex: infer Z;
+}
+  ? Extract<keyof NonNullable<Z>, string>
+  : DefaultZIndexValue;
 
 export type InferSpacingKeys = DefaultSpacingKey;
 
@@ -182,6 +189,7 @@ export interface DesignTokensWeb<TTheme extends ThemeConfig> {
   >[];
   borderOption: InferBorderOptions<TTheme>[];
   roundedOption: InferRoundedOptions<TTheme>[];
+  zIndexOption: InferZIndexOptions<TTheme>[];
   spacingProperties: InferSpacingKeys[];
   breakpoints: string[];
   screens: Record<string, string>;

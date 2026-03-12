@@ -86,7 +86,7 @@ export type InferZIndexOptions<TTheme extends ThemeConfig> = TTheme extends {
   zIndex: infer Z;
 }
   ? Extract<keyof NonNullable<Z>, string>
-  : DefaultZIndexValue;
+  : `${DefaultZIndexValue}`;
 
 export type InferSpacingKeys = DefaultSpacingKey;
 

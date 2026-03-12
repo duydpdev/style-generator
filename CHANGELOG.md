@@ -1,3 +1,12 @@
+# [1.6.0-DEV.9]() (2026-03-12)
+
+  ###
+  Features
+
+    -
+    update claude code setting ([#56](https://github.com/duydpdev/style-generator/issues/56))
+    ([e9e8c4d]())
+
 # [1.6.0-DEV.8]() (2026-03-09)
 
   ###

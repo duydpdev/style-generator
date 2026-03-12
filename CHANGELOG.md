@@ -1,3 +1,12 @@
+# [1.6.0-DEV.10]() (2026-03-12)
+
+  ###
+  Bug Fixes
+
+    -
+    fix interface zindex ([#57](https://github.com/duydpdev/style-generator/issues/57))
+    ([8ca4f43]())
+
 # [1.6.0-DEV.9]() (2026-03-12)
 
   ###

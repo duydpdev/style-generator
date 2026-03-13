@@ -121,4 +121,25 @@ export const generateSpacingRules = (
   }
 
   api.addUtilities(utilities);
+
+  // JIT mode: register matchUtilities so consumers can use sp-p-4, sp-p-[24px] directly
+  if (options.spacing?.useMatchUtilities) {
+    for (const [key, cssProps] of Object.entries(spacingProps)) {
+      api.matchUtilities(
+        {
+          [`sp-${key}`]: (value: string) => {
+            const result: Record<string, string> = {};
+            for (const cssProp of Object.keys(cssProps)) {
+              result[cssProp] = value;
+            }
+            return result;
+          },
+        },
+        {
+          values: api.theme("spacing") as Record<string, string>,
+          supportsNegativeValues: false,
+        },
+      );
+    }
+  }
 };

@@ -345,21 +345,23 @@ yarn test:types
 (_If you used `npx style-gen init`, this is already done for you!_)
 
 ```typescript
-import { createStyleSystem, Breakpoint } from "@duydpdev/style-generator";
-import theme from "../styles/theme.json";
+import { createStyleSystem, defineTheme, defineOptions, Breakpoint } from "@duydpdev/style-generator";
+import themeJson from "../styles/theme.json";
 
-const options = {
+const theme = defineTheme(themeJson); // type-checked at compile time
+
+const options = defineOptions({
   screens: { md: "800px" },
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
-  // disableColorPrefix: true, // Optional: remove --color-base-/--color-text- prefixes
-};
+  colorNamingMode: "v3", // "v3" | "v4" | "flat"
+});
 
 const { plugin, safelist } = createStyleSystem(theme, options);
 
 // Export plugin for Tailwind v4
 export default plugin;
 
-// Export safelist if you need to access it (Safelist generation is managed by: npx style-gen safelist)
+// Safelist generation is managed by: npx style-gen safelist
 export { safelist };
 ```
 
@@ -377,8 +379,10 @@ export { safelist };
 
 ```typescript
 import type { Config } from "tailwindcss";
-import { createStylePlugin, Breakpoint } from "@duydpdev/style-generator";
-import theme from "./theme.json";
+import { createStylePlugin, defineTheme, Breakpoint } from "@duydpdev/style-generator";
+import themeJson from "./theme.json";
+
+const theme = defineTheme(themeJson);
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
@@ -386,6 +390,7 @@ const config: Config = {
     createStylePlugin(theme, {
       screens: { md: "800px" },
       breakpoints: [Breakpoint.MD, Breakpoint.LG],
+      colorNamingMode: "v3",
     }),
   ],
 };
@@ -452,14 +457,17 @@ const Box = ({ p, px, py, m, mx, my, className, children, ...rest }) => {
 
 ## 10. Options Reference
 
-| Option               | Type                       | Default                 | Description                                              |
-| :------------------- | :------------------------- | :---------------------- | :------------------------------------------------------- |
-| `breakpoints`        | `(Breakpoint \| string)[]` | `["md", "lg"]`          | Breakpoints for responsive spacing and safelist.         |
-| `screens`            | `Record<string, string>`   | Tailwind defaults       | Custom screen widths.                                    |
-| `enableCssVariables` | `boolean`                  | `true`                  | Generate `:root` / `html[data-theme]` CSS variables.     |
-| `disableColorPrefix` | `boolean`                  | `false`                 | Remove `--color-base-` and `--color-text-` prefixes.     |
-| `enableResponsive`   | `boolean`                  | `true`                  | Generate responsive spacing rules and safelist variants. |
-| `responsiveModules`  | `StyleModule[]`            | `["layout", "rounded"]` | Which modules get responsive prefixes.                   |
+| Option                        | Type                       | Default                 | Description                                                      |
+| :---------------------------- | :------------------------- | :---------------------- | :--------------------------------------------------------------- |
+| `breakpoints`                 | `(Breakpoint \| string)[]` | `["md", "lg"]`          | Breakpoints for responsive spacing and safelist.                 |
+| `screens`                     | `Record<string, string>`   | Tailwind defaults       | Custom screen widths.                                            |
+| `enableCssVariables`          | `boolean`                  | `true`                  | Generate `:root` / `html[data-theme]` CSS variables.             |
+| `colorNamingMode`             | `"v3" \| "v4" \| "flat"`  | `"v3"`                  | CSS variable naming convention for colors. See section 13.       |
+| `enableResponsive`            | `boolean`                  | `true`                  | Generate responsive spacing rules and safelist variants.         |
+| `responsiveModules`           | `StyleModule[]`            | `["layout", "rounded"]` | Which modules get responsive prefixes.                           |
+| `spacing.useMatchUtilities`   | `boolean`                  | `false`                 | Enable JIT spacing (`sp-p-4`, `sp-p-[24px]`). See section 14.   |
+| `typography.cssVarDriven`     | `boolean`                  | `false`                 | Drive typography utilities via CSS custom properties. See sec 15. |
+| ~~`disableColorPrefix`~~      | `boolean`                  | `false`                 | **Deprecated.** Use `colorNamingMode: "flat"` instead.           |
 
 ---
 
@@ -473,10 +481,173 @@ const Box = ({ p, px, py, m, mx, my, className, children, ...rest }) => {
 | `createDesignTokens`  | Generates typed design tokens for consumer apps.        |
 | `createVariantMapper` | Helper for mapping tokens to CSS classes for CVA.       |
 | `resolveSpacingProps` | Maps multiple spacing props to `{ classNames, style }`. |
+| `defineTheme`         | Type-safe theme config helper. Zero runtime cost.       |
+| `defineOptions`       | Type-safe options helper. Zero runtime cost.            |
 
 ---
 
-## 12. TypeScript for Consumers
+---
+
+## 12. `defineTheme()` — Type-safe Config
+
+Use `defineTheme()` and `defineOptions()` to catch typos and missing fields **at edit time** with zero runtime cost.
+
+```typescript
+import {
+  defineTheme,
+  defineOptions,
+  createStyleSystem,
+  Breakpoint,
+} from "@duydpdev/style-generator";
+
+// TypeScript will error immediately if required fields are missing or mistyped
+const theme = defineTheme({
+  colors: {
+    base: { primary: "#3B82F6", background: "#FFFFFF" },
+    text: { main: "#111827", muted: "#6B7280" },
+  },
+  typography: {
+    heading: { fontSize: "32px", lineHeight: "120%", fontWeight: 700, letterSpacing: "-0.02em" },
+    body: { fontSize: "16px", lineHeight: "150%", fontWeight: 400, letterSpacing: "0px" },
+  },
+});
+
+const options = defineOptions({
+  breakpoints: [Breakpoint.MD, Breakpoint.LG],
+  colorNamingMode: "v3",
+});
+
+const { plugin, safelist } = createStyleSystem(theme, options);
+```
+
+**TS errors caught at compile time:**
+
+```typescript
+defineTheme({ colors: {} });
+// Error: Property 'typography' is missing
+
+defineTheme({
+  colors: {},
+  typography: { h1: { lineHeight: "1.2" } },
+  // Error: Property 'fontSize' is missing in TypographyConfig
+});
+```
+
+> These are identity functions — no runtime overhead. They exist purely to activate TypeScript inference.
+
+---
+
+## 13. `colorNamingMode` — CSS Variable Naming
+
+Controls how color namespaces are mapped to CSS variable names. Replaces the deprecated `disableColorPrefix` flag.
+
+| Mode       | `base.primary`          | `text.muted`            | `common.accent`          |
+| :--------- | :---------------------- | :---------------------- | :----------------------- |
+| `"v3"` (default) | `--color-base-primary`  | `--color-text-muted`    | `--color-common-accent`  |
+| `"v4"`     | `--color-primary`       | `--color-text-muted`    | `--color-accent`         |
+| `"flat"`   | `--color-primary`       | `--color-muted`         | `--color-accent`         |
+
+```typescript
+// v3 (default) — namespaced, explicit
+createStylePlugin(theme, { colorNamingMode: "v3" });
+// :root { --color-base-primary: ...; --color-text-muted: ...; }
+
+// v4 — base + common flattened, text keeps prefix (Tailwind v4 auto-detects --color-*)
+createStylePlugin(theme, { colorNamingMode: "v4" });
+// :root { --color-primary: ...; --color-text-muted: ...; }
+
+// flat — all namespaces removed (same as old disableColorPrefix: true)
+createStylePlugin(theme, { colorNamingMode: "flat" });
+// :root { --color-primary: ...; --color-muted: ...; }
+```
+
+> `disableColorPrefix: true` is deprecated but still works — it maps internally to `colorNamingMode: "flat"`.
+
+---
+
+## 14. Spacing — JIT Mode with `useMatchUtilities`
+
+The library supports **two independent spacing modes** that work in parallel:
+
+| Mode | API | Use case | Responsive | Safelist? |
+| :--- | :-- | :------- | :--------- | :-------- |
+| **Static** (default) | `resolveSpacingProps()` → `className="sp-p"` + inline `style` | React components | Via CSS var chain `--tw-sp-p` | No |
+| **JIT** (opt-in) | Write `sp-p-4` or `sp-p-[24px]` directly in templates | HTML / JSX templates | Via Tailwind `md:sp-p-8` | No |
+
+Enable JIT mode by adding `spacing.useMatchUtilities: true`:
+
+```typescript
+const options = defineOptions({
+  spacing: {
+    enabled: true,
+    useMatchUtilities: true, // adds JIT on top of static .sp-p classes
+  },
+});
+```
+
+**JIT usage in templates:**
+
+```html
+<!-- Tailwind scale values -->
+<div class="sp-p-4">padding: 1rem</div>
+<div class="sp-mx-8">margin-left/right: 2rem</div>
+
+<!-- Arbitrary values -->
+<div class="sp-p-[24px]">padding: 24px</div>
+<div class="sp-gap-[1.5rem]">gap: 1.5rem</div>
+
+<!-- Responsive via Tailwind prefixes -->
+<div class="sp-p-2 md:sp-p-4 lg:sp-p-8">responsive padding</div>
+```
+
+> Static `.sp-p` and JIT `sp-p-4` do **not conflict** — they use different CSS mechanisms. Choose the mode that fits your component model.
+
+---
+
+## 15. Typography — CSS Custom Properties Mode
+
+By default, typography utilities use hard-coded values. Enable `typography.cssVarDriven: true` to inject tokens as CSS variables and have utilities reference them — enabling runtime overrides via CSS.
+
+```typescript
+const options = defineOptions({
+  typography: { cssVarDriven: true },
+});
+```
+
+**Output when `cssVarDriven: true`:**
+
+```css
+/* Tokens injected into :root */
+:root {
+  --typography-heading-font-size: 32px;
+  --typography-heading-line-height: 120%;
+  --typography-heading-font-weight: 700;
+  --typography-heading-letter-spacing: -0.02em;
+}
+
+/* Utilities reference vars instead of hard-coded values */
+.heading {
+  font-size: var(--typography-heading-font-size);
+  line-height: var(--typography-heading-line-height);
+  font-weight: var(--typography-heading-font-weight);
+  letter-spacing: var(--typography-heading-letter-spacing);
+}
+```
+
+**Consumer override — no JS changes needed:**
+
+```css
+/* Override a single token for a specific context */
+.marketing-hero {
+  --typography-heading-font-size: 48px;
+}
+```
+
+> When `cssVarDriven: false` (default), utilities use hard-coded values directly — same behavior as before.
+
+---
+
+## 16. TypeScript for Consumers
 
 ### Typed Design Tokens
 

@@ -92,18 +92,26 @@ export const themeTemplateDark = `{
 
 export const getPluginTemplate = (
   themeRelPath: string,
-) => `import { createStyleSystem, Breakpoint, StyleGeneratorOptions, } from "@duydpdev/style-generator";
-import theme from "${themeRelPath}";
+) => `import { createStyleSystem, defineTheme, defineOptions, Breakpoint } from "@duydpdev/style-generator";
+import themeJson from "${themeRelPath}";
 
-const options: StyleGeneratorOptions = {
+// defineTheme() provides full TypeScript type-checking on your theme config (zero runtime cost)
+const theme = defineTheme(themeJson);
+
+const options = defineOptions({
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
   enableCssVariables: true,
-  disableColorPrefix: false,
+  // colorNamingMode: "v3",  // "v3" (default) | "v4" | "flat"
   enableResponsive: true,
 
   spacing: {
     enabled: true,
+    // useMatchUtilities: true,  // Enable JIT: sp-p-4, sp-p-[24px] (in addition to .sp-p)
   },
+
+  // typography: {
+  //   cssVarDriven: true,  // Inject --typography-* vars into :root; override via CSS
+  // },
 
   layout: {
     enabled: true,
@@ -117,7 +125,7 @@ const options: StyleGeneratorOptions = {
 
   responsiveModules: ["layout", "rounded"],
   dynamicClasses: [],
-};
+});
 
 const { plugin, safelist, DesignTokens } = createStyleSystem(theme, options);
 

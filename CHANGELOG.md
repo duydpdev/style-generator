@@ -1,3 +1,12 @@
+# [1.6.0-DEV.11]() (2026-03-13)
+
+  ###
+  Bug Fixes
+
+    -
+    update logic gen plugin, safelist, design token ([#58](https://github.com/duydpdev/style-generator/issues/58))
+    ([0047ebf]())
+
 # [1.6.0-DEV.10]() (2026-03-12)
 
   ###

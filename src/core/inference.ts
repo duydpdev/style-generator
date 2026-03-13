@@ -139,10 +139,10 @@ type TypographyClasses<TTheme extends ThemeConfig> = KebabCase<
 >;
 
 type ShadowClasses<TTheme extends ThemeConfig> =
-  `shadow-${InferShadowKeys<TTheme>}`;
+  `shadow-${KebabCase<InferShadowKeys<TTheme>>}`;
 
 type BackdropClasses<TTheme extends ThemeConfig> =
-  `backdrop-blur-${InferBackdropBlurKeys<TTheme>}`;
+  `backdrop-blur-${KebabCase<InferBackdropBlurKeys<TTheme>>}`;
 
 type ThemeDerivedClasses<TTheme extends ThemeConfig> =
   | ColorClasses<TTheme>
@@ -171,7 +171,7 @@ export type InferSafelistClasses<TTheme extends ThemeConfig, TOptions> =
 // ---- DesignTokens result types ----
 
 export interface DesignTokensWeb<TTheme extends ThemeConfig> {
-  variantText: Extract<keyof TTheme["typography"], string>[];
+  variantText: CamelCase<Extract<keyof TTheme["typography"], string>>[];
   variantTextColor: CamelCase<
     Extract<CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>, string>
   >[];
@@ -182,13 +182,14 @@ export interface DesignTokensWeb<TTheme extends ThemeConfig> {
   variantBaseColor: CamelCase<
     Extract<CleanTrailing<NestedKeys<TTheme["colors"]["base"]>>, string>
   >[];
-  variantShadow: Extract<keyof NonNullable<TTheme["shadows"]>, string>[];
-  variantBackdropBlur: Extract<
-    keyof NonNullable<TTheme["backDropBlurs"]>,
-    string
+  variantShadow: CamelCase<
+    Extract<keyof NonNullable<TTheme["shadows"]>, string>
   >[];
-  borderOption: InferBorderOptions<TTheme>[];
-  roundedOption: InferRoundedOptions<TTheme>[];
+  variantBackdropBlur: CamelCase<
+    Extract<keyof NonNullable<TTheme["backDropBlurs"]>, string>
+  >[];
+  borderOption: CamelCase<InferBorderOptions<TTheme>>[];
+  roundedOption: CamelCase<InferRoundedOptions<TTheme>>[];
   zIndexOption: InferZIndexOptions<TTheme>[];
   spacingProperties: InferSpacingKeys[];
   breakpoints: string[];

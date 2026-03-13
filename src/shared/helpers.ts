@@ -1,7 +1,7 @@
 export const toKebabCase = (str: string) => {
   return str
     .replaceAll(/([a-z])([A-Z])/g, "$1-$2")
-    .replaceAll(/(\d)([A-Za-z])/g, "$1-$2")
+    .replaceAll(/(\d)([A-Z])/g, "$1-$2")
     .replaceAll(/([A-Za-z])(\d)/g, "$1-$2")
     .toLowerCase();
 };

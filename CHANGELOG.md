@@ -1,3 +1,12 @@
+# [1.6.0-DEV.12]() (2026-03-13)
+
+  ###
+  Features
+
+    -
+    update plan imrovement lib ([#59](https://github.com/duydpdev/style-generator/issues/59))
+    ([287b712]())
+
 # [1.6.0-DEV.11]() (2026-03-13)
 
   ###

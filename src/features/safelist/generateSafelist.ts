@@ -96,7 +96,7 @@ export const generateSafelist = <
   if (resolvedOptions.rounded?.enabled !== false) {
     const values = [
       ...(resolvedOptions.rounded?.values ?? [...DEFAULT_ROUNDED_VALUES]),
-      ...Object.keys(borderRadius ?? {}),
+      ...Object.keys(borderRadius ?? {}).map(toKebabCase),
     ];
     const props = resolvedOptions.rounded?.properties ?? roundedProperties;
     pushClasses("rounded", props, [...new Set(values)]);
@@ -106,7 +106,7 @@ export const generateSafelist = <
   if (resolvedOptions.border?.enabled !== false) {
     const values =
       resolvedOptions.border?.values ??
-      (border ? Object.keys(border) : DEFAULT_BORDER_VALUES);
+      (border ? Object.keys(border).map(toKebabCase) : DEFAULT_BORDER_VALUES);
     const props = resolvedOptions.border?.properties ?? borderProperties;
     pushClasses("borders", props, values);
   }
@@ -153,11 +153,11 @@ export const generateSafelist = <
   );
 
   // --- 6. Box shadows ---
-  const shadowKeys = Object.keys(shadows ?? {});
+  const shadowKeys = Object.keys(shadows ?? {}).map(toKebabCase);
   pushClasses("shadows", ["shadow"], shadowKeys);
 
   // --- 7. Backdrop blur ---
-  const blurKeys = Object.keys(backDropBlurs ?? {});
+  const blurKeys = Object.keys(backDropBlurs ?? {}).map(toKebabCase);
   pushClasses("backdrop", ["backdrop-blur"], blurKeys);
 
   // --- 8. Opacity ---

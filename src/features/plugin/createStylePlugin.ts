@@ -94,10 +94,10 @@ export const createStylePlugin = (
     disableColorPrefix = false,
   } = options;
 
-  // Merge default screens with custom overrides
-  const mergedScreens = enableResponsive
-    ? { ...defaultScreens, ...options.screens }
-    : {};
+  // Always include all screens in Tailwind config so breakpoint utilities (md:*, lg:*) work.
+  // mergedScreens is used only for spacing responsive rule generation.
+  const allScreens = { ...defaultScreens, ...options.screens };
+  const mergedScreens = enableResponsive ? allScreens : {};
 
   // Colors: use var() references if CSS variables enabled, otherwise direct hex values
   const colorConfig = buildColorConfig(
@@ -108,7 +108,7 @@ export const createStylePlugin = (
 
   const tailwindConfig = {
     theme: {
-      screens: mergedScreens,
+      screens: allScreens,
       extend: {
         colors: colorConfig,
         boxShadow: shadows ? extractData(shadows) : {},

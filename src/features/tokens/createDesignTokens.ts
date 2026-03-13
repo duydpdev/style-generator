@@ -5,6 +5,7 @@ import {
   DEFAULT_ZINDEX_VALUES,
 } from "../../shared/defaultOption";
 import {
+  CamelCase,
   DesignTokensResult,
   DesignTokensWeb,
   InferColorKeys,
@@ -30,24 +31,23 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
   const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
     config;
 
-  const variantText = Object.keys(typography) as Extract<
-    keyof TTheme["typography"],
-    string
+  const variantText = Object.keys(typography).map(toCamelCase) as CamelCase<
+    Extract<keyof TTheme["typography"], string>
   >[];
 
-  const variantShadow = Object.keys(shadows ?? {}) as Extract<
-    keyof NonNullable<TTheme["shadows"]>,
-    string
-  >[];
+  const variantShadow = Object.keys(shadows ?? {}).map(
+    toCamelCase,
+  ) as CamelCase<Extract<keyof NonNullable<TTheme["shadows"]>, string>>[];
 
-  const variantBackdropBlur = Object.keys(backDropBlurs ?? {}) as Extract<
-    keyof NonNullable<TTheme["backDropBlurs"]>,
-    string
-  >[];
+  const variantBackdropBlur = Object.keys(backDropBlurs ?? {}).map(
+    toCamelCase,
+  ) as CamelCase<Extract<keyof NonNullable<TTheme["backDropBlurs"]>, string>>[];
 
   const variantBorder = (
-    border ? Object.keys(border) : DEFAULT_BORDER_VALUES.map(String)
-  ) as InferBorderOptions<TTheme>[];
+    border
+      ? Object.keys(border).map(toCamelCase)
+      : DEFAULT_BORDER_VALUES.map(String)
+  ) as CamelCase<InferBorderOptions<TTheme>>[];
 
   // Helper to extract nested keys safely and convert to camelCase
   const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
@@ -99,13 +99,15 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
   );
 
   const roundedValues = (
-    borderRadius ? Object.keys(borderRadius) : [...DEFAULT_ROUNDED_VALUES]
-  ) as InferRoundedOptions<TTheme>[];
+    borderRadius
+      ? Object.keys(borderRadius).map(toCamelCase)
+      : [...DEFAULT_ROUNDED_VALUES]
+  ) as CamelCase<InferRoundedOptions<TTheme>>[];
 
   const zIndexValues = (
-    options.zIndex?.enabled
-      ? (options.zIndex.values ?? [...DEFAULT_ZINDEX_VALUES])
-      : ([] as InferZIndexOptions<TTheme>[])
+    options.zIndex?.enabled === false
+      ? ([] as InferZIndexOptions<TTheme>[])
+      : (options.zIndex?.values ?? [...DEFAULT_ZINDEX_VALUES])
   ) as InferZIndexOptions<TTheme>[];
 
   return {

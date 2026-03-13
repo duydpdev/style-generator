@@ -103,6 +103,14 @@ _(Add new lessons below this line)_
 - **Mistake**: Chạy script thử nghiệm (`.js`) bằng `node` mà vẫn dùng cú pháp `require()` trong một project đã setup `"type": "module"` trong `package.json`, dẫn tới lỗi `ReferenceError: require is not defined in ES module scope`.
 - **New Rule**: TRƯỚC KHI tạo script chạy bằng Node, LUÔN phải check `package.json` xem đang ở chế độ CommonJS hay ES Module. Nếu là ESM, bắt buộc dùng cú pháp `import` hoặc đổi đuôi file script thành `.cjs` để Node hiểu đúng context.
 
+### [2026-03-13] - Luôn đánh dấu `[x]` vào plan và task.md ngay sau khi hoàn thành
+
+- **Mistake:** Sau khi implement xong tất cả tasks, quên cập nhật checkbox `[x]` trong file plan (`docs/plans/YYYY-MM-DD/XX-plan.md`) và `task.md`. Báo cáo hoàn thành mà tài liệu vật lý vẫn còn `[ ]`.
+- **New Rule:** SAU KHI implement xong mỗi task (test pass, lint sạch), NGAY LẬP TỨC phải:
+  1. Đổi `[ ]` → `[x]` trong file plan tương ứng
+  2. Đổi `[ ]` → `[x]` trong `task.md` của ngày đó
+  - Đây là bước bắt buộc trước khi báo cáo hoàn thành với user. Không được bỏ qua dù "chỉ quên".
+
 ### [2026-03-11] - Brainstorm: Cải thiện lib (type safe, bundle size, easy setup)
 
 - **Context:** Phân tích toàn bộ codebase `@duydpdev/style-generator` và đưa ra options cải thiện theo 3 mục tiêu.

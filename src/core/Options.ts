@@ -69,8 +69,18 @@ export interface StyleGeneratorOptions {
    * Disable auto-prefixing `--color-base-` and `--color-text-` on CSS variables.
    * Flat design tokens will be generated if true.
    * @default false
+   * @deprecated Use `colorNamingMode: "flat"` instead.
    */
   disableColorPrefix?: boolean;
+
+  /**
+   * CSS variable naming mode for colors.
+   * - `"v3"` (default): `--color-base-primary`, `--color-text-muted`
+   * - `"v4"`: flatten `base` and `common` → `--color-primary`; keep `text` → `--color-text-muted`
+   * - `"flat"`: flatten all namespaces → `--color-primary`, `--color-muted` (same as `disableColorPrefix: true`)
+   * @default "v3"
+   */
+  colorNamingMode?: "v3" | "v4" | "flat";
 
   /**
    * Enable responsive class generation in safelist and spacing CSS rules.
@@ -78,6 +88,19 @@ export interface StyleGeneratorOptions {
    * @default true
    */
   enableResponsive?: boolean;
+
+  /**
+   * Typography configuration.
+   */
+  typography?: {
+    /**
+     * When true, inject typography tokens as CSS vars into :root and have
+     * utility classes reference those vars instead of hard-coded values.
+     * Allows consumer to override a single token via CSS without touching JS.
+     * @default false
+     */
+    cssVarDriven?: boolean;
+  };
 
   // --- Spacing (CSS custom properties, zero safelist) ---
 
@@ -90,6 +113,12 @@ export interface StyleGeneratorOptions {
     enabled?: boolean;
     /** Override or extend the default spacing property-to-CSS mapping. */
     properties?: SpacingPropertyMap;
+    /**
+     * Enable matchUtilities for JIT arbitrary value support (sp-p-4, sp-p-[24px]).
+     * Static .sp-p classes remain active in parallel.
+     * @default false
+     */
+    useMatchUtilities?: boolean;
   };
 
   // --- Module configs (safelist-based) ---

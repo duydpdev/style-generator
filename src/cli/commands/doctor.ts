@@ -22,13 +22,21 @@ function checkTheme(cwd: string, optionsTheme: string): boolean {
 
   if (fs.existsSync(themePath)) {
     try {
-      const parsedTheme = JSON.parse(
-        fs.readFileSync(themePath, "utf-8"),
-      ) as Partial<ThemeConfig> | null;
+      const parsedTheme = JSON.parse(fs.readFileSync(themePath, "utf-8")) as
+        | (Partial<ThemeConfig> & { colors?: Record<string, unknown> })
+        | null;
       if (parsedTheme?.colors && parsedTheme.typography) {
         logger.log(
           `  Theme   (${padStr(optionsTheme)}) ✅ Valid JSON, schema OK`,
         );
+
+        // Warn about old v1 format (colors.base/text/common)
+        const colors = parsedTheme.colors as Record<string, unknown>;
+        if (colors.base || colors.text || colors.common) {
+          logger.log(
+            `  ⚠️  Detected old color format (colors.base/text/common). v2 uses flat colors. Migrate to: { "colors": { "primary": "#...", ... } }`,
+          );
+        }
       } else {
         logger.log(
           `  Theme   (${padStr(optionsTheme)}) ❌ Invalid schema (missing 'colors' or 'typography')`,

@@ -1,15 +1,11 @@
 {
   "colors": {
-    "base": {
-      "blue25": "rgba(245.31, 254.49, 254.49, 1)",
-      "primary": "#007AFF",
-      "white": "#FFFFFF",
-      "black": "#000000"
-    },
-    "text": {
-      "main": "#1C1C20",
-      "secondary": "#8E8E93"
-    }
+    "blue25": "rgba(245.31, 254.49, 254.49, 1)",
+    "primary": "#007AFF",
+    "white": "#FFFFFF",
+    "black": "#000000",
+    "main": "#1C1C20",
+    "secondary": "#8E8E93"
   },
   "typography": {
     "text16Medium": {
@@ -38,15 +34,11 @@
   "themes": {
     "dark": {
       "colors": {
-        "base": {
-          "primary": "#0A84FF",
-          "white": "#1C1C1E",
-          "black": "#FFFFFF"
-        },
-        "text": {
-          "main": "#FFFFFF",
-          "secondary": "#EBEBF5"
-        }
+        "primary": "#0A84FF",
+        "white": "#1C1C1E",
+        "black": "#FFFFFF",
+        "main": "#FFFFFF",
+        "secondary": "#EBEBF5"
       },
       "shadows": {
         "sm": "0px 1px 2px rgba(255, 255, 255, 0.1)"

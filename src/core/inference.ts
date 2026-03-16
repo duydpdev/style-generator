@@ -48,12 +48,7 @@ type NestedKeys<T> = T extends object
 type CleanTrailing<S> = S extends `${infer Head}-` ? Head : S;
 
 export type InferColorKeys<TTheme extends ThemeConfig> = CamelCase<
-  Extract<
-    | CleanTrailing<NestedKeys<TTheme["colors"]["base"]>>
-    | CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>
-    | CleanTrailing<NestedKeys<TTheme["colors"]["common"]>>,
-    string
-  >
+  Extract<CleanTrailing<NestedKeys<TTheme["colors"]>>, string>
 >;
 
 export type InferTypographyKeys<TTheme extends ThemeConfig> = StringKeysOf<
@@ -172,16 +167,7 @@ export type InferSafelistClasses<TTheme extends ThemeConfig, TOptions> =
 
 export interface DesignTokensWeb<TTheme extends ThemeConfig> {
   variantText: CamelCase<Extract<keyof TTheme["typography"], string>>[];
-  variantTextColor: CamelCase<
-    Extract<CleanTrailing<NestedKeys<TTheme["colors"]["text"]>>, string>
-  >[];
-  variantCommonColor: CamelCase<
-    Extract<CleanTrailing<NestedKeys<TTheme["colors"]["common"]>>, string>
-  >[];
   variantColor: InferColorKeys<TTheme>[];
-  variantBaseColor: CamelCase<
-    Extract<CleanTrailing<NestedKeys<TTheme["colors"]["base"]>>, string>
-  >[];
   variantShadow: CamelCase<
     Extract<keyof NonNullable<TTheme["shadows"]>, string>
   >[];

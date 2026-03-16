@@ -7,7 +7,6 @@ import {
 import {
   CamelCase,
   DesignTokensResult,
-  DesignTokensWeb,
   InferColorKeys,
   InferBorderOptions,
   InferRoundedOptions,
@@ -55,7 +54,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     const keys: string[] = [];
     for (const [k, v] of Object.entries(obj)) {
       if (k === "DEFAULT") {
-        keys.push(""); // DEFAULT signifies drop prefix
+        keys.push("");
       } else if (typeof v === "object" && v !== null) {
         const subKeys = extractKeys(v as Record<string, unknown>);
         for (const sub of subKeys) {
@@ -68,23 +67,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     return keys;
   };
 
-  const variantTextColor = extractKeys(
-    colors.text as Record<string, unknown> | undefined,
-  ) as DesignTokensWeb<TTheme>["variantTextColor"];
-
-  const variantCommonColor = extractKeys(
-    colors.common as Record<string, unknown> | undefined,
-  ) as DesignTokensWeb<TTheme>["variantCommonColor"];
-
-  const variantBaseColor = extractKeys(
-    colors.base as Record<string, unknown> | undefined,
-  ) as DesignTokensWeb<TTheme>["variantBaseColor"];
-
-  const variantColors = [
-    ...variantBaseColor,
-    ...variantTextColor,
-    ...variantCommonColor,
-  ]
+  const variantColor = extractKeys(colors as Record<string, unknown>)
     .filter(Boolean)
     .map((color) => toCamelCase(color)) as InferColorKeys<TTheme>[];
 
@@ -114,10 +97,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     DesignTokens: {
       Web: {
         variantText,
-        variantBaseColor,
-        variantTextColor,
-        variantCommonColor,
-        variantColor: variantColors,
+        variantColor,
         variantShadow,
         variantBackdropBlur,
         borderOption: variantBorder,

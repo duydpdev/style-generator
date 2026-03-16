@@ -8,7 +8,7 @@ import type { ThemeConfig } from "./ThemeConfig";
  * @returns {T} The same config object (type-preserving)
  * @example
  * const theme = defineTheme({
- *   colors: { base: { primary: "#007AFF" } },
+ *   colors: { primary: "#007AFF", foreground: "#111827" },
  *   typography: { heading: { fontSize: "2rem", lineHeight: "1.2", fontWeight: 700, letterSpacing: "-0.02em" } },
  * });
  */

@@ -1,10 +1,10 @@
 import type { Config } from "tailwindcss";
 import { createStylePlugin } from "../src";
 import theme from "./theme.json";
-// NOTE: This example is for Tailwind CSS v3 compatibility.
-// For Tailwind CSS v4, please refer to the README and v4-plugin.ts example.
+// NOTE: This example is for Tailwind CSS v3.
+// For Tailwind CSS v4, refer to the README and v4-plugin.ts example.
 
-// Example of how to integrate the style generator plugin (v3 style)
+// Example of how to integrate the style generator plugin (v3)
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
@@ -12,13 +12,13 @@ const config: Config = {
   },
   plugins: [
     // This plugin will:
-    // 1. Inject CSS variables for colors, shadows, etc.
-    // 2. Configure theme.extend with these variables
+    // 1. Inject CSS variables into :root (--color-primary, etc.)
+    // 2. Register theme.extend.colors with var() references
     // 3. Generate typography utilities
-    // Plugin tự động config theme.extend và safelist
     createStylePlugin(theme, {
+      tailwindVersion: 3,
       breakpoints: ["md", "lg"],
-    }) as any,
+    }) as never,
   ],
 };
 

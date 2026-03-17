@@ -1,15 +1,11 @@
 export const themeTemplate = `{
   "colors": {
-    "base": {
-      "primary": "#3B82F6",
-      "secondary": "#6366F1",
-      "background": "#FFFFFF",
-      "surface": "#F9FAFB"
-    },
-    "text": {
-      "main": "#111827",
-      "muted": "#6B7280"
-    }
+    "primary": "#3B82F6",
+    "secondary": "#6366F1",
+    "background": "#FFFFFF",
+    "surface": "#F9FAFB",
+    "foreground": "#111827",
+    "muted": "#6B7280"
   },
   "typography": {
     "heading1": {
@@ -39,28 +35,20 @@ export const themeTemplate = `{
 
 export const themeTemplateDark = `{
   "colors": {
-    "base": {
-      "primary": "#3B82F6",
-      "secondary": "#6366F1",
-      "background": "#FFFFFF",
-      "surface": "#F9FAFB"
-    },
-    "text": {
-      "main": "#111827",
-      "muted": "#6B7280"
-    }
+    "primary": "#3B82F6",
+    "secondary": "#6366F1",
+    "background": "#FFFFFF",
+    "surface": "#F9FAFB",
+    "foreground": "#111827",
+    "muted": "#6B7280"
   },
   "themes": {
     "dark": {
       "colors": {
-        "base": {
-          "background": "#111827",
-          "surface": "#1F2937"
-        },
-        "text": {
-          "main": "#F9FAFB",
-          "muted": "#9CA3AF"
-        }
+        "background": "#111827",
+        "surface": "#1F2937",
+        "foreground": "#F9FAFB",
+        "muted": "#9CA3AF"
       }
     }
   },
@@ -100,9 +88,10 @@ const theme = defineTheme(themeJson);
 
 const options = defineOptions({
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
-  enableCssVariables: true,
-  // colorNamingMode: "v3",  // "v3" (default) | "v4" | "flat"
   enableResponsive: true,
+
+  // safelistColors: true,  // Include color classes in safelist (default: false)
+  // tailwindVersion: 4,    // Override auto-detection if needed
 
   spacing: {
     enabled: true,
@@ -127,10 +116,11 @@ const options = defineOptions({
   dynamicClasses: [],
 });
 
-const { plugin, safelist, DesignTokens } = createStyleSystem(theme, options);
+const { plugin, safelist, themeCss, DesignTokens } = createStyleSystem(theme, options);
 
 export default plugin;
 
 // Safelist is managed by CLI: npx style-gen safelist
-export { safelist, DesignTokens };
+// themeCss: CSS string with @theme inline block for Tailwind v4 users
+export { safelist, themeCss, DesignTokens };
 `;

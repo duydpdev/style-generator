@@ -3,16 +3,11 @@
  */
 export interface ThemeConfig {
   /**
-   * Color palette configuration.
+   * Flat color palette configuration.
+   * All colors live in a single namespace — no more base/text/common separation.
+   * Supports flat values or nested objects (e.g., `{ sidebar: { DEFAULT: "#...", foreground: "#..." } }`).
    */
-  colors: {
-    /** Base colors (e.g., primary, secondary, background). */
-    base?: Record<string, string | Record<string, string>>;
-    /** Text colors. */
-    text?: Record<string, string | Record<string, string>>;
-    /** Common colors (e.g., static palettes like white, black, or external UI colors like Shadcn). */
-    common?: Record<string, string | Record<string, string>>;
-  };
+  colors: Record<string, string | Record<string, string>>;
   /**
    * Typography configuration (e.g., h1, body, caption).
    */
@@ -40,8 +35,7 @@ export interface ThemeConfig {
    * Only include values that differ from the base (default) theme.
    * @example
    * themes: {
-   *   dark: { colors: { base: { primary: "#0A84FF" } } },
-   *   "high-contrast": { colors: { text: { main: "#000" } } }
+   *   dark: { colors: { primary: "#0A84FF", foreground: "#F9FAFB" } },
    * }
    */
   themes?: Record<string, ThemeOverride>;
@@ -52,11 +46,7 @@ export interface ThemeConfig {
  * Contains partial overrides for colors, shadows, backdrop blurs, and border radius.
  */
 export interface ThemeOverride {
-  colors?: {
-    base?: Record<string, string | Record<string, string>>;
-    text?: Record<string, string | Record<string, string>>;
-    common?: Record<string, string | Record<string, string>>;
-  };
+  colors?: Record<string, string | Record<string, string>>;
   shadows?: Record<string, string>;
   backDropBlurs?: Record<string, string>;
   borderRadius?: Record<string, string>;

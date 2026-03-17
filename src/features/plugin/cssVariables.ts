@@ -1,29 +1,15 @@
 import { toKebabCase } from "../../shared/helpers";
 
-/** Options for CSS variable flattening. */
-export interface FlattenVarsOptions {
-  /** Disable prepending the namespace prefix to variables (legacy flag). */
-  disablePrefix?: boolean;
-}
-
 /**
  * Flatten a record of key-value pairs into CSS variable declarations.
- * @param {string} prefix - Variable prefix (e.g., "color-base")
+ * @param {string} prefix - Variable prefix (e.g., "color")
  * @param {Record<string, string | Record<string, string>>} data - Key-value pairs
- * @param {boolean | FlattenVarsOptions} [disablePrefixOrOptions] - Legacy boolean or options object
- * @returns {Record<string, string>} CSS variable map (e.g., { "--color-base-primary": "#007AFF" })
+ * @returns {Record<string, string>} CSS variable map (e.g., { "--color-primary": "#007AFF" })
  */
 export const flattenToVars = (
   prefix: string,
   data: Record<string, string | Record<string, string>>,
-  disablePrefixOrOptions: boolean | FlattenVarsOptions = false,
 ): Record<string, string> => {
-  const opts: FlattenVarsOptions =
-    typeof disablePrefixOrOptions === "boolean"
-      ? { disablePrefix: disablePrefixOrOptions }
-      : disablePrefixOrOptions;
-  const disablePrefix = opts.disablePrefix ?? false;
-
   const result: Record<string, string> = {};
 
   const processNode = (
@@ -37,8 +23,7 @@ export const flattenToVars = (
 
       if (typeof value === "string") {
         const varName = fullPath.length > 0 ? fullPath.join("-") : "";
-        const finalPrefix = disablePrefix ? "" : `${prefix}-`;
-        result[`--${finalPrefix}${varName}`] = value;
+        result[`--${prefix}-${varName}`] = value;
       } else {
         processNode(value, fullPath);
       }
@@ -51,22 +36,14 @@ export const flattenToVars = (
 
 /**
  * Convert a record of key-value pairs into Tailwind-compatible var() references.
- * @param {string} prefix - Variable prefix (e.g., "color-base")
+ * @param {string} prefix - Variable prefix (e.g., "color")
  * @param {Record<string, string | Record<string, string>>} data - Key-value pairs
- * @param {boolean | FlattenVarsOptions} [disablePrefixOrOptions] - Legacy boolean or options object
- * @returns {Record<string, string | Record<string, string>>} Tailwind color map (e.g., { "primary": "var(--color-base-primary)" })
+ * @returns {Record<string, string | Record<string, string>>} Tailwind color map (e.g., { "primary": "var(--color-primary)" })
  */
 export const mapToVarRefs = (
   prefix: string,
   data: Record<string, string | Record<string, string>>,
-  disablePrefixOrOptions: boolean | FlattenVarsOptions = false,
 ): Record<string, string | Record<string, string>> => {
-  const opts: FlattenVarsOptions =
-    typeof disablePrefixOrOptions === "boolean"
-      ? { disablePrefix: disablePrefixOrOptions }
-      : disablePrefixOrOptions;
-  const disablePrefix = opts.disablePrefix ?? false;
-
   const processNode = (
     node: Record<string, string | Record<string, string>>,
     currentPath: string[],
@@ -79,11 +56,8 @@ export const mapToVarRefs = (
 
       if (typeof value === "string") {
         const varName = fullPath.length > 0 ? fullPath.join("-") : "";
-        const finalPrefix = disablePrefix ? "" : `${prefix}-`;
-
         const finalKey = key === "DEFAULT" ? key : toKebabCase(key);
-
-        result[finalKey] = `var(--${finalPrefix}${varName})`;
+        result[finalKey] = `var(--${prefix}-${varName})`;
       } else {
         const finalKey = toKebabCase(key);
         result[finalKey] = processNode(value, fullPath) as Record<

@@ -6,10 +6,10 @@ describe("cssVariables utilities", () => {
   describe("flattenToVars", () => {
     it("should flatten simple key-value pairs with prefix", () => {
       const data = { primary: "#007AFF", secondary: "#5856D6" };
-      const result = flattenToVars("color-base", data);
+      const result = flattenToVars("color", data);
       expect(result).toEqual({
-        "--color-base-primary": "#007AFF",
-        "--color-base-secondary": "#5856D6",
+        "--color-primary": "#007AFF",
+        "--color-secondary": "#5856D6",
       });
     });
 
@@ -20,10 +20,10 @@ describe("cssVariables utilities", () => {
           600: "#0062CC",
         },
       };
-      const result = flattenToVars("color-base", data);
+      const result = flattenToVars("color", data);
       expect(result).toEqual({
-        "--color-base-blue-500": "#007AFF",
-        "--color-base-blue-600": "#0062CC",
+        "--color-blue-500": "#007AFF",
+        "--color-blue-600": "#0062CC",
       });
     });
 
@@ -34,18 +34,10 @@ describe("cssVariables utilities", () => {
           foreground: "#FFFFFF",
         },
       };
-      const result = flattenToVars("color-base", data);
+      const result = flattenToVars("color", data);
       expect(result).toEqual({
-        "--color-base-primary": "#007AFF",
-        "--color-base-primary-foreground": "#FFFFFF",
-      });
-    });
-
-    it("should respect disablePrefix flag", () => {
-      const data = { primary: "#007AFF" };
-      const result = flattenToVars("color-base", data, true);
-      expect(result).toEqual({
-        "--primary": "#007AFF",
+        "--color-primary": "#007AFF",
+        "--color-primary-foreground": "#FFFFFF",
       });
     });
 
@@ -57,11 +49,11 @@ describe("cssVariables utilities", () => {
           foreground: "#111111",
         },
       };
-      const result = flattenToVars("color-common", data, true);
+      const result = flattenToVars("color", data);
       expect(result).toEqual({
-        "--background": "#FFFFFF",
-        "--card": "#F9F9F9",
-        "--card-foreground": "#111111",
+        "--color-background": "#FFFFFF",
+        "--color-card": "#F9F9F9",
+        "--color-card-foreground": "#111111",
       });
     });
   });
@@ -69,9 +61,9 @@ describe("cssVariables utilities", () => {
   describe("mapToVarRefs", () => {
     it("should create var() references for simple keys", () => {
       const data = { primary: "#007AFF" };
-      const result = mapToVarRefs("color-base", data);
+      const result = mapToVarRefs("color", data);
       expect(result).toEqual({
-        primary: "var(--color-base-primary)",
+        primary: "var(--color-primary)",
       });
     });
 
@@ -81,10 +73,10 @@ describe("cssVariables utilities", () => {
           500: "#007AFF",
         },
       };
-      const result = mapToVarRefs("color-base", data);
+      const result = mapToVarRefs("color", data);
       expect(result).toEqual({
         blue: {
-          500: "var(--color-base-blue-500)",
+          500: "var(--color-blue-500)",
         },
       });
     });
@@ -96,20 +88,12 @@ describe("cssVariables utilities", () => {
           foreground: "#FFFFFF",
         },
       };
-      const result = mapToVarRefs("color-base", data);
+      const result = mapToVarRefs("color", data);
       expect(result).toEqual({
         primary: {
-          DEFAULT: "var(--color-base-primary)",
-          foreground: "var(--color-base-primary-foreground)",
+          DEFAULT: "var(--color-primary)",
+          foreground: "var(--color-primary-foreground)",
         },
-      });
-    });
-
-    it("should respect disablePrefix flag in references", () => {
-      const data = { primary: "#007AFF" };
-      const result = mapToVarRefs("color-base", data, true);
-      expect(result).toEqual({
-        primary: "var(--primary)",
       });
     });
   });

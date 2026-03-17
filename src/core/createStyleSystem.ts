@@ -2,16 +2,17 @@ import type { TailwindPlugin } from "../features/plugin/createStylePlugin";
 import { createStylePlugin } from "../features/plugin/createStylePlugin";
 import { generateSafelist } from "../features/safelist/generateSafelist";
 import { createDesignTokens } from "../features/tokens/createDesignTokens";
+import { generateThemeCss } from "../features/theme-css/generateThemeCss";
 
 import { DesignTokensResult, InferSafelistClasses } from "./inference";
 import { StyleGeneratorOptions } from "./Options";
 import { ThemeConfig } from "./ThemeConfig";
 
 /**
- * Creates a complete style system including the Tailwind plugin and safelist.
+ * Creates a complete style system including the Tailwind plugin, safelist, and theme CSS.
  * @param {ThemeConfig} config - Theme configuration
  * @param {StyleGeneratorOptions} options - Generator options
- * @returns {object} Style system object including plugin, safelist and design tokens
+ * @returns {object} Style system object including plugin, safelist, themeCss, and design tokens
  */
 export const createStyleSystem = <
   TTheme extends ThemeConfig,
@@ -22,9 +23,9 @@ export const createStyleSystem = <
 ): {
   plugin: TailwindPlugin;
   safelist: InferSafelistClasses<TTheme, TOptions>[];
+  themeCss: string;
   DesignTokens: DesignTokensResult<TTheme>["DesignTokens"];
 } => {
-  // Generate safelist once to avoid double calculation
   const safelist = generateSafelist<TTheme, TOptions>(config, options);
 
   const styleOptions: StyleGeneratorOptions = options ?? {};
@@ -32,20 +33,9 @@ export const createStyleSystem = <
   const { DesignTokens } = createDesignTokens<TTheme>(config, styleOptions);
 
   return {
-    /**
-     * The Tailwind CSS plugin instance.
-     * With optimized safelist passed down.
-     */
     plugin: createStylePlugin(config, styleOptions, safelist),
-
-    /**
-     * The list of safelisted classes.
-     */
     safelist,
-
-    /**
-     * Typed design tokens inferred from the theme.
-     */
+    themeCss: generateThemeCss(config, styleOptions),
     DesignTokens,
   };
 };

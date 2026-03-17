@@ -7,14 +7,10 @@ import { generateSafelist } from "./generateSafelist";
 describe("generateSafelist", () => {
   const mockTheme: ThemeConfig = {
     colors: {
-      base: {
-        primary: "#007AFF",
-      },
-      text: {
-        muted: {
-          DEFAULT: "#666666",
-          darker: "#333333",
-        },
+      primary: "#007AFF",
+      muted: {
+        DEFAULT: "#666666",
+        darker: "#333333",
       },
     },
     typography: {
@@ -23,15 +19,22 @@ describe("generateSafelist", () => {
     shadows: { md: "..." },
   };
 
-  it("should generate basic color classes", () => {
+  it("should NOT include color classes by default", () => {
     const list = generateSafelist(mockTheme);
+    expect(list).not.toContain("bg-primary");
+    expect(list).not.toContain("text-primary");
+    expect(list).not.toContain("border-primary");
+  });
+
+  it("should include color classes when safelistColors=true", () => {
+    const list = generateSafelist(mockTheme, { safelistColors: true });
     expect(list).toContain("bg-primary");
     expect(list).toContain("text-primary");
     expect(list).toContain("border-primary");
   });
 
-  it("should handle nested color keys and DEFAULT", () => {
-    const list = generateSafelist(mockTheme);
+  it("should handle nested color keys and DEFAULT when safelistColors=true", () => {
+    const list = generateSafelist(mockTheme, { safelistColors: true });
     expect(list).toContain("text-muted");
     expect(list).toContain("text-muted-darker");
     expect(list).toContain("bg-muted");
@@ -45,6 +48,7 @@ describe("generateSafelist", () => {
 
   it("should generate responsive variants when enabled", () => {
     const list = generateSafelist(mockTheme, {
+      safelistColors: true,
       enableResponsive: true,
       breakpoints: ["md"],
       responsiveModules: ["colors"],
@@ -57,7 +61,6 @@ describe("generateSafelist", () => {
     const list = generateSafelist(mockTheme, {
       layout: { enabled: false },
     });
-    // Check for a default layout class that should now be missing
     expect(list).not.toContain("flex");
   });
 

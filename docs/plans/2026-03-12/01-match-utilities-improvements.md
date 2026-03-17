@@ -199,7 +199,7 @@ typography?: {
 
 ---
 
-### [ ] Task 03: Tailwind v4 `@plugin` CSS-first Support *(deferred — high effort, v4 API còn thay đổi)*
+### [ ] Task 03: Tailwind v4 `@plugin` CSS-first Support _(deferred — high effort, v4 API còn thay đổi)_
 
 - **Agent**: frontend-specialist
 - **Input**: `src/v4/index.ts` (mới), `src/features/plugin/createStylePlugin.ts`, `package.json`, `vite.config.ts`
@@ -386,7 +386,7 @@ const buildCssVars = (
 
 ---
 
-### [ ] Task 05: Subpath Exports cho Tree-shaking *(deferred — high effort, cần refactor import graph)*
+### [ ] Task 05: Subpath Exports cho Tree-shaking _(deferred — high effort, cần refactor import graph)_
 
 - **Agent**: frontend-specialist
 - **Input**: `package.json`, `vite.config.ts`, `src/index.ts`, internal import graph

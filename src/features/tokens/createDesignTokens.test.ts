@@ -7,19 +7,13 @@ import { createDesignTokens } from "./createDesignTokens";
 describe("createDesignTokens", () => {
   const mockTheme: ThemeConfig = {
     colors: {
-      base: {
-        primary: "#007AFF",
+      primary: "#007AFF",
+      main: "#000000",
+      muted: {
+        DEFAULT: "#666666",
+        darker: "#333333",
       },
-      text: {
-        main: "#000000",
-        muted: {
-          DEFAULT: "#666666",
-          darker: "#333333",
-        },
-      },
-      common: {
-        white: "#FFFFFF",
-      },
+      white: "#FFFFFF",
     },
     typography: {
       h1: {
@@ -34,16 +28,7 @@ describe("createDesignTokens", () => {
     },
   };
 
-  it("should extract variantTextColor correctly with nesting and DEFAULT", () => {
-    const result = createDesignTokens(mockTheme);
-    expect(result.DesignTokens.Web.variantTextColor).toContain("main");
-    expect(result.DesignTokens.Web.variantTextColor).toContain("muted");
-    expect(result.DesignTokens.Web.variantTextColor).toContain("mutedDarker");
-    // DEFAULT itself should be converted to an empty string in the helper but we filter(Boolean) later or handle it.
-    // In createDesignTokens, it's pushed as "" which is then filtered out in variantColor.
-  });
-
-  it("should merge all color keys into variantColor", () => {
+  it("should extract all color keys into variantColor", () => {
     const result = createDesignTokens(mockTheme);
     const colors = result.DesignTokens.Web.variantColor;
     expect(colors).toContain("primary");
@@ -68,21 +53,19 @@ describe("createDesignTokens", () => {
     expect(result.DesignTokens.Web.breakpoints).toEqual(["md"]);
     expect(result.DesignTokens.Web.screens).toHaveProperty("md");
   });
-  it("should handle nested base colors correctly", () => {
-    const themeWithNestedBase: ThemeConfig = {
+
+  it("should handle nested colors correctly", () => {
+    const themeWithNested: ThemeConfig = {
       ...mockTheme,
       colors: {
-        ...mockTheme.colors,
-        base: {
-          primary: "#007AFF",
-          blue: {
-            "500": "#3B82F6",
-            "600": "#2563EB",
-          },
+        primary: "#007AFF",
+        blue: {
+          "500": "#3B82F6",
+          "600": "#2563EB",
         },
       },
     };
-    const result = createDesignTokens(themeWithNestedBase);
+    const result = createDesignTokens(themeWithNested);
     const colors = result.DesignTokens.Web.variantColor;
     expect(colors).toContain("primary");
     expect(colors).toContain("blue500");

@@ -59,28 +59,18 @@ export interface StyleGeneratorOptions {
   screens?: Record<Breakpoint | string, string>;
 
   /**
-   * Enable CSS Variables generation (`:root` and `html[data-theme='<name>']` for each theme).
-   * Set to false if your project doesn't use CSS variables or theming.
-   * @default true
-   */
-  enableCssVariables?: boolean;
-
-  /**
-   * Disable auto-prefixing `--color-base-` and `--color-text-` on CSS variables.
-   * Flat design tokens will be generated if true.
+   * Include color classes (text-*, bg-*, border-*) in the safelist.
+   * Default is false — Tailwind v4's `@theme` auto-generates these utilities.
+   * Set to true if you need explicit safelist for dynamic class names.
    * @default false
-   * @deprecated Use `colorNamingMode: "flat"` instead.
    */
-  disableColorPrefix?: boolean;
+  safelistColors?: boolean;
 
   /**
-   * CSS variable naming mode for colors.
-   * - `"v3"` (default): `--color-base-primary`, `--color-text-muted`
-   * - `"v4"`: flatten `base` and `common` → `--color-primary`; keep `text` → `--color-text-muted`
-   * - `"flat"`: flatten all namespaces → `--color-primary`, `--color-muted` (same as `disableColorPrefix: true`)
-   * @default "v3"
+   * Override auto-detected Tailwind version.
+   * When omitted, the library auto-detects from the installed tailwindcss package.
    */
-  colorNamingMode?: "v3" | "v4" | "flat";
+  tailwindVersion?: 3 | 4;
 
   /**
    * Enable responsive class generation in safelist and spacing CSS rules.

@@ -122,3 +122,8 @@ _(Add new lessons below this line)_
   4. **JSON Schema trong `doctor` command** — Runtime validation theme.json, effort Medium
   5. **Tailwind v4 CSS plugin format** — Future-proof, effort High (đợi v4 stable)
 - **New Rule:** Khi brainstorm tính năng cho library, LUÔN lưu kết quả vào `docs/brainstorm/YYYY-MM-DD/XX-topic.md` (tương tự cấu trúc `docs/plans/`) và tạo file `session.md` tóm tắt ngày. Cấu trúc thư mục brainstorm phải mirror cấu trúc plans.
+
+### [2026-03-16] - Luôn tạo file plan vật lý dù user đã cung cấp plan trong prompt
+
+- **Mistake:** User nói "Implement the following plan:" kèm nội dung plan chi tiết → tôi implement ngay mà không tạo file `docs/plans/YYYY-MM-DD/XX-plan.md` và `task.md`. File plan vật lý bị bỏ qua hoàn toàn.
+- **New Rule:** Dù user cung cấp plan trực tiếp trong prompt, PHẢI tạo file `docs/plans/YYYY-MM-DD/XX-plan.md` và `task.md` TRƯỚC khi implement. Đây là tài liệu tracking bắt buộc của dự án, không phụ thuộc vào việc plan đến từ đâu. "Implement the following plan" = đã approve plan → vẫn phải tạo file plan vật lý ngay bước đầu tiên.

@@ -1,3 +1,12 @@
+# [1.6.0-DEV.13]() (2026-03-17)
+
+  ###
+  Features
+
+    -
+    upadate lib with new doc tailwind ([#60](https://github.com/duydpdev/style-generator/issues/60))
+    ([0031e0f]())
+
 # [1.6.0-DEV.12]() (2026-03-13)
 
   ###

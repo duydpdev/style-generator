@@ -4,7 +4,7 @@ import { flattenToVars, mapToVarRefs } from "./cssVariables";
 
 describe("cssVariables utilities", () => {
   describe("flattenToVars", () => {
-    it("should flatten simple key-value pairs with prefix", () => {
+    it("should flatten flat key-value pairs with prefix", () => {
       const data = { primary: "#007AFF", secondary: "#5856D6" };
       const result = flattenToVars("color", data);
       expect(result).toEqual({
@@ -13,53 +13,26 @@ describe("cssVariables utilities", () => {
       });
     });
 
-    it("should handle nested objects recursively", () => {
-      const data = {
-        blue: {
-          500: "#007AFF",
-          600: "#0062CC",
-        },
-      };
+    it("should convert camelCase keys to kebab-case", () => {
+      const data = { sidebarForeground: "#fff", primaryBlue: "#007" };
       const result = flattenToVars("color", data);
       expect(result).toEqual({
-        "--color-blue-500": "#007AFF",
-        "--color-blue-600": "#0062CC",
+        "--color-sidebar-foreground": "#fff",
+        "--color-primary-blue": "#007",
       });
     });
 
-    it("should skip 'DEFAULT' key in variable path", () => {
-      const data = {
-        primary: {
-          DEFAULT: "#007AFF",
-          foreground: "#FFFFFF",
-        },
-      };
+    it("should handle already kebab-case keys", () => {
+      const data = { "sidebar-foreground": "#fff" };
       const result = flattenToVars("color", data);
       expect(result).toEqual({
-        "--color-primary": "#007AFF",
-        "--color-primary-foreground": "#FFFFFF",
-      });
-    });
-
-    it("should handle mixed flat and nested structures with DEFAULT", () => {
-      const data = {
-        background: "#FFFFFF",
-        card: {
-          DEFAULT: "#F9F9F9",
-          foreground: "#111111",
-        },
-      };
-      const result = flattenToVars("color", data);
-      expect(result).toEqual({
-        "--color-background": "#FFFFFF",
-        "--color-card": "#F9F9F9",
-        "--color-card-foreground": "#111111",
+        "--color-sidebar-foreground": "#fff",
       });
     });
   });
 
   describe("mapToVarRefs", () => {
-    it("should create var() references for simple keys", () => {
+    it("should create var() references for flat keys", () => {
       const data = { primary: "#007AFF" };
       const result = mapToVarRefs("color", data);
       expect(result).toEqual({
@@ -67,33 +40,12 @@ describe("cssVariables utilities", () => {
       });
     });
 
-    it("should handle nested references recursively", () => {
-      const data = {
-        blue: {
-          500: "#007AFF",
-        },
-      };
+    it("should convert camelCase keys to kebab-case var() refs", () => {
+      const data = { sidebarForeground: "#fff", primaryBlue: "#007" };
       const result = mapToVarRefs("color", data);
       expect(result).toEqual({
-        blue: {
-          500: "var(--color-blue-500)",
-        },
-      });
-    });
-
-    it("should handle DEFAULT key correctly in references", () => {
-      const data = {
-        primary: {
-          DEFAULT: "#007AFF",
-          foreground: "#FFFFFF",
-        },
-      };
-      const result = mapToVarRefs("color", data);
-      expect(result).toEqual({
-        primary: {
-          DEFAULT: "var(--color-primary)",
-          foreground: "var(--color-primary-foreground)",
-        },
+        "sidebar-foreground": "var(--color-sidebar-foreground)",
+        "primary-blue": "var(--color-primary-blue)",
       });
     });
   });

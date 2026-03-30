@@ -8,10 +8,7 @@ describe("generateSafelist", () => {
   const mockTheme: ThemeConfig = {
     colors: {
       primary: "#007AFF",
-      muted: {
-        DEFAULT: "#666666",
-        darker: "#333333",
-      },
+      sidebarForeground: "#666666",
     },
     typography: {
       h1: { fontSize: "1", lineHeight: "1", fontWeight: 1, letterSpacing: "0" },
@@ -33,11 +30,11 @@ describe("generateSafelist", () => {
     expect(list).toContain("border-primary");
   });
 
-  it("should handle nested color keys and DEFAULT when safelistColors=true", () => {
+  it("should convert camelCase color keys to kebab-case classes", () => {
     const list = generateSafelist(mockTheme, { safelistColors: true });
-    expect(list).toContain("text-muted");
-    expect(list).toContain("text-muted-darker");
-    expect(list).toContain("bg-muted");
+    expect(list).toContain("text-sidebar-foreground");
+    expect(list).toContain("bg-sidebar-foreground");
+    expect(list).toContain("border-sidebar-foreground");
   });
 
   it("should include typography and shadow classes", () => {
@@ -54,7 +51,7 @@ describe("generateSafelist", () => {
       responsiveModules: ["colors"],
     });
     expect(list).toContain("md:bg-primary");
-    expect(list).toContain("md:text-muted-darker");
+    expect(list).toContain("md:text-sidebar-foreground");
   });
 
   it("should respect module.enabled settings", () => {

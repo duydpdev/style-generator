@@ -1,12 +1,12 @@
 {
   "name": "@duydpdev/style-generator",
-  "version": "1.6.0",
+  "version": "1.7.0-DEV.1",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "style-gen": "./dist/cli/index.mjs"
+    "style-gen": "dist/cli/index.mjs"
   },
   "exports": {
     ".": {
@@ -74,7 +74,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/duydpdev/style-generator.git"
+    "url": "git+https://github.com/duydpdev/style-generator.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": "eslint --fix --no-warn-ignored --max-warnings 0",

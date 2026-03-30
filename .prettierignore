@@ -3,8 +3,8 @@ dist
 .yarn
 
 # Generated / build artifacts
+CHANGELOG.md
 *.cjs
 **/*.config.*
 __tests__/reports
 **/generations/*
-

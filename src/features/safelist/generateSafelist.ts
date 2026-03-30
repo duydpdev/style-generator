@@ -72,25 +72,6 @@ export const generateSafelist = <
     }
   };
 
-  // Helper to extract nested keys safely
-  const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
-    if (!obj) return [];
-    const keys: string[] = [];
-    for (const [k, v] of Object.entries(obj)) {
-      if (k === "DEFAULT") {
-        keys.push("");
-      } else if (typeof v === "object" && v !== null) {
-        const subKeys = extractKeys(v as Record<string, unknown>);
-        for (const sub of subKeys) {
-          keys.push(sub ? `${k}-${sub}` : k);
-        }
-      } else {
-        keys.push(k);
-      }
-    }
-    return keys;
-  };
-
   // --- 1. Layout (display, flex, align, justify, text-align) ---
   if (resolvedOptions.layout?.enabled !== false) {
     const classes = resolvedOptions.layout?.values ?? [
@@ -120,10 +101,7 @@ export const generateSafelist = <
 
   // --- 4. Colors (optional — only when safelistColors is true) ---
   if (resolvedOptions.safelistColors) {
-    const colorKeys = extractKeys(colors as Record<string, unknown>)
-      .filter(Boolean)
-      .map((k) => toKebabCase(k));
-
+    const colorKeys = Object.keys(colors).map(toKebabCase);
     pushClasses("colors", ["text"], colorKeys);
     pushClasses("colors", ["bg"], colorKeys);
     pushClasses("colors", ["border"], colorKeys);

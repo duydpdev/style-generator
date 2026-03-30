@@ -9,10 +9,7 @@ describe("createDesignTokens", () => {
     colors: {
       primary: "#007AFF",
       main: "#000000",
-      muted: {
-        DEFAULT: "#666666",
-        darker: "#333333",
-      },
+      sidebarForeground: "#666666",
       white: "#FFFFFF",
     },
     typography: {
@@ -28,14 +25,27 @@ describe("createDesignTokens", () => {
     },
   };
 
-  it("should extract all color keys into variantColor", () => {
+  it("should extract camelCase color keys into variantColor", () => {
     const result = createDesignTokens(mockTheme);
     const colors = result.DesignTokens.Web.variantColor;
     expect(colors).toContain("primary");
     expect(colors).toContain("main");
-    expect(colors).toContain("muted");
-    expect(colors).toContain("mutedDarker");
+    expect(colors).toContain("sidebarForeground");
     expect(colors).toContain("white");
+  });
+
+  it("should convert kebab-case color keys to camelCase in variantColor", () => {
+    const theme: ThemeConfig = {
+      ...mockTheme,
+      colors: {
+        "primary-blue": "#007",
+        "sidebar-foreground": "#fff",
+      },
+    };
+    const result = createDesignTokens(theme);
+    const colors = result.DesignTokens.Web.variantColor;
+    expect(colors).toContain("primaryBlue");
+    expect(colors).toContain("sidebarForeground");
   });
 
   it("should extract typography keys", () => {
@@ -52,23 +62,5 @@ describe("createDesignTokens", () => {
     const result = createDesignTokens(mockTheme, { breakpoints: ["md"] });
     expect(result.DesignTokens.Web.breakpoints).toEqual(["md"]);
     expect(result.DesignTokens.Web.screens).toHaveProperty("md");
-  });
-
-  it("should handle nested colors correctly", () => {
-    const themeWithNested: ThemeConfig = {
-      ...mockTheme,
-      colors: {
-        primary: "#007AFF",
-        blue: {
-          "500": "#3B82F6",
-          "600": "#2563EB",
-        },
-      },
-    };
-    const result = createDesignTokens(themeWithNested);
-    const colors = result.DesignTokens.Web.variantColor;
-    expect(colors).toContain("primary");
-    expect(colors).toContain("blue500");
-    expect(colors).toContain("blue600");
   });
 });

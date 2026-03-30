@@ -130,3 +130,5 @@ export type DefaultSpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
 export type DefaultRoundedValue = (typeof DEFAULT_ROUNDED_VALUES)[number];
 
 export type DefaultBorderValue = (typeof DEFAULT_BORDER_VALUES)[number];
+
+export type DefaultZIndexValue = (typeof DEFAULT_ZINDEX_VALUES)[number];

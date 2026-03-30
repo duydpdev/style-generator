@@ -1,3 +1,120 @@
+# [1.6.0-DEV.13]() (2026-03-17)
+
+  ###
+  Features
+
+    -
+    upadate lib with new doc tailwind ([#60](https://github.com/duydpdev/style-generator/issues/60))
+    ([0031e0f]())
+
+# [1.6.0-DEV.12]() (2026-03-13)
+
+  ###
+  Features
+
+    -
+    update plan imrovement lib ([#59](https://github.com/duydpdev/style-generator/issues/59))
+    ([287b712]())
+
+# [1.6.0-DEV.11]() (2026-03-13)
+
+  ###
+  Bug Fixes
+
+    -
+    update logic gen plugin, safelist, design token ([#58](https://github.com/duydpdev/style-generator/issues/58))
+    ([0047ebf]())
+
+# [1.6.0-DEV.10]() (2026-03-12)
+
+  ###
+  Bug Fixes
+
+    -
+    fix interface zindex ([#57](https://github.com/duydpdev/style-generator/issues/57))
+    ([8ca4f43]())
+
+# [1.6.0-DEV.9]() (2026-03-12)
+
+  ###
+  Features
+
+    -
+    update claude code setting ([#56](https://github.com/duydpdev/style-generator/issues/56))
+    ([e9e8c4d]())
+
+# [1.6.0-DEV.8]() (2026-03-09)
+
+  ###
+  Bug Fixes
+
+    -
+    fix tempalte gen plugins ([#55](https://github.com/duydpdev/style-generator/issues/55))
+    ([72dead0]())
+
+# [1.6.0-DEV.7]() (2026-03-09)
+
+  ###
+  Bug Fixes
+
+    -
+    fix repsonsive ([#54](https://github.com/duydpdev/style-generator/issues/54))
+    ([4e41e8f]())
+
+# [1.6.0-DEV.6]() (2026-03-08)
+
+  ###
+  Bug Fixes
+
+    -
+    fix gensafelist border ([#53](https://github.com/duydpdev/style-generator/issues/53))
+    ([6a654c0]())
+
+# [1.6.0-DEV.5]() (2026-03-08)
+
+  ###
+  Features
+
+    -
+    update type responsiveValue ([#52](https://github.com/duydpdev/style-generator/issues/52))
+    ([49d6761]())
+
+# [1.6.0-DEV.4]() (2026-03-08)
+
+  ###
+  Features
+
+    -
+    update gen design token cammelCase ([#51](https://github.com/duydpdev/style-generator/issues/51))
+    ([9c6454e]())
+
+# [1.6.0-DEV.3]() (2026-03-08)
+
+  ###
+  Features
+
+    -
+    add api gen cva function ([#50](https://github.com/duydpdev/style-generator/issues/50))
+    ([53770f5]())
+
+# [1.6.0-DEV.2]() (2026-03-08)
+
+  ###
+  Bug Fixes
+
+    -
+    fix spacing css gen ([#49](https://github.com/duydpdev/style-generator/issues/49))
+    ([4ed7916]())
+
+# [1.6.0-DEV.1]() (2026-03-07)
+
+  ###
+  Features
+
+    -
+    update cli ([#48](https://github.com/duydpdev/style-generator/issues/48))
+    ([09a1b54]())
+
 # [1.5.0]() (2026-03-07)
 
   ###

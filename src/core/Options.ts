@@ -59,18 +59,18 @@ export interface StyleGeneratorOptions {
   screens?: Record<Breakpoint | string, string>;
 
   /**
-   * Enable CSS Variables generation (`:root` and `html[data-theme='<name>']` for each theme).
-   * Set to false if your project doesn't use CSS variables or theming.
-   * @default true
-   */
-  enableCssVariables?: boolean;
-
-  /**
-   * Disable auto-prefixing `--color-base-` and `--color-text-` on CSS variables.
-   * Flat design tokens will be generated if true.
+   * Include color classes (text-*, bg-*, border-*) in the safelist.
+   * Default is false — Tailwind v4's `@theme` auto-generates these utilities.
+   * Set to true if you need explicit safelist for dynamic class names.
    * @default false
    */
-  disableColorPrefix?: boolean;
+  safelistColors?: boolean;
+
+  /**
+   * Override auto-detected Tailwind version.
+   * When omitted, the library auto-detects from the installed tailwindcss package.
+   */
+  tailwindVersion?: 3 | 4;
 
   /**
    * Enable responsive class generation in safelist and spacing CSS rules.
@@ -78,6 +78,19 @@ export interface StyleGeneratorOptions {
    * @default true
    */
   enableResponsive?: boolean;
+
+  /**
+   * Typography configuration.
+   */
+  typography?: {
+    /**
+     * When true, inject typography tokens as CSS vars into :root and have
+     * utility classes reference those vars instead of hard-coded values.
+     * Allows consumer to override a single token via CSS without touching JS.
+     * @default false
+     */
+    cssVarDriven?: boolean;
+  };
 
   // --- Spacing (CSS custom properties, zero safelist) ---
 
@@ -90,6 +103,12 @@ export interface StyleGeneratorOptions {
     enabled?: boolean;
     /** Override or extend the default spacing property-to-CSS mapping. */
     properties?: SpacingPropertyMap;
+    /**
+     * Enable matchUtilities for JIT arbitrary value support (sp-p-4, sp-p-[24px]).
+     * Static .sp-p classes remain active in parallel.
+     * @default false
+     */
+    useMatchUtilities?: boolean;
   };
 
   // --- Module configs (safelist-based) ---

@@ -83,7 +83,7 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 
 1. Checkout tại tag mới
 2. `yarn build` → sinh `dist/`
-3. Publish lên GitHub Packages (npm registry)
+3. Publish lên npm public registry (`registry.npmjs.org`)
 
 ---
 
@@ -110,6 +110,7 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 
 > [!IMPORTANT]
 > Dự án dùng **semantic-release** — version được tự động tính từ commit messages. **Không cần** tự tay chỉnh `package.json`.
+> Muốn publish major `v2.0.0` thay vì tiếp tục `v1.x`, merge commit phải match rule major release.
 
 ### Quy trình đúng
 
@@ -119,9 +120,14 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 4. CI check pass → merge PR
 5. `release.yml` tự động:
    - Tính version mới
-   - Tạo git tag (`v1.2.3`)
+   - Tạo git tag (`vX.Y.Z`)
    - Cập nhật `CHANGELOG.md`
    - Trigger `deploy.yml` để publish lên npm
+
+### Required Secrets
+
+- `CI_WORKER_REPOSITORY_TOKEN`: token có quyền push release commit và tag về GitHub repo
+- `NPM_TOKEN`: npm granular access token có quyền publish package `@duydpdev/style-generator`
 
 ---
 
@@ -131,6 +137,7 @@ Commit message format: `[type] subject`
 
 | Type                        | Version bump    | Ví dụ                                |
 | --------------------------- | --------------- | ------------------------------------ |
+| `release`                   | Major (`2.0.0`) | `[release] ship public v2 API`       |
 | `feat`                      | Minor (`1.1.0`) | `[feat] add multi-theme support`     |
 | `fix`                       | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
 | `perf`                      | Patch (`1.0.1`) | `[perf] improve safelist generation` |

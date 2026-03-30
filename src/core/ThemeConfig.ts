@@ -4,10 +4,10 @@
 export interface ThemeConfig {
   /**
    * Flat color palette configuration.
-   * All colors live in a single namespace — no more base/text/common separation.
-   * Supports flat values or nested objects (e.g., `{ sidebar: { DEFAULT: "#...", foreground: "#..." } }`).
+   * All colors live in a single namespace — use kebab-case or camelCase keys directly.
+   * Example: `{ primary: "#007AFF", "sidebar-foreground": "#fff" }`
    */
-  colors: Record<string, string | Record<string, string>>;
+  colors: Record<string, string>;
   /**
    * Typography configuration (e.g., h1, body, caption).
    */
@@ -46,7 +46,7 @@ export interface ThemeConfig {
  * Contains partial overrides for colors, shadows, backdrop blurs, and border radius.
  */
 export interface ThemeOverride {
-  colors?: Record<string, string | Record<string, string>>;
+  colors?: Record<string, string>;
   shadows?: Record<string, string>;
   backDropBlurs?: Record<string, string>;
   borderRadius?: Record<string, string>;

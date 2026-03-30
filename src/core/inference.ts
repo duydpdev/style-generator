@@ -16,10 +16,19 @@ export type CamelCase<S extends string> = S extends `${infer P1}-${infer P2}`
     ? `${Uncapitalize<P1>}${Capitalize<CamelCase<P2>>}`
     : Uncapitalize<S>;
 
+type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+
+// Converts camelCase to kebab-case.
+// Adds a dash at uppercase-letter boundaries AND at letter→digit transitions
+// so that e.g. "blue500" → "blue-500" and "2xl" → "2xl" (digit-prefix untouched).
 export type KebabCase<S extends string> = S extends `${infer T}${infer U}`
-  ? U extends Uncapitalize<U>
-    ? `${Uncapitalize<T>}${KebabCase<U>}`
-    : `${Uncapitalize<T>}-${KebabCase<U>}`
+  ? U extends `${Digit}${string}`
+    ? T extends Digit
+      ? `${T}${KebabCase<U>}` // digit→digit: no dash (e.g. "500" stays "500")
+      : `${Uncapitalize<T>}-${KebabCase<U>}` // letter→digit: add dash (e.g. "blue5" → "blue-5")
+    : U extends Uncapitalize<U>
+      ? `${Uncapitalize<T>}${KebabCase<U>}` // same case: no dash
+      : `${Uncapitalize<T>}-${KebabCase<U>}` // camelCase boundary: add dash
   : S;
 
 type KeysOf<T> = T extends object ? keyof T : never;
@@ -28,27 +37,10 @@ type StringKeysOf<T> = Extract<KeysOf<T>, string>;
 
 // ---- Theme-based token keys ----
 
-// Recursively get nested keys. If key is "DEFAULT", it maps to "" to drop prefix.
-type NestedKeys<T> = T extends object
-  ? {
-      [K in keyof T]-?: K extends string
-        ? T[K] extends string
-          ? K extends "DEFAULT"
-            ? ""
-            : K
-          : T[K] extends object
-            ? K extends "DEFAULT"
-              ? NestedKeys<T[K]>
-              : `${K}-${NestedKeys<T[K]> & string}`
-            : never
-        : never;
-    }[keyof T]
-  : never;
-
-type CleanTrailing<S> = S extends `${infer Head}-` ? Head : S;
-
+// Colors are flat keys only (e.g. "primary", "sidebar-foreground").
+// CamelCase normalises kebab/snake keys → "sidebarForeground".
 export type InferColorKeys<TTheme extends ThemeConfig> = CamelCase<
-  Extract<CleanTrailing<NestedKeys<TTheme["colors"]>>, string>
+  Extract<keyof TTheme["colors"], string>
 >;
 
 export type InferTypographyKeys<TTheme extends ThemeConfig> = StringKeysOf<

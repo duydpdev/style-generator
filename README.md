@@ -3,6 +3,9 @@
 Library to automatically generate a **Design System** for Tailwind CSS from a theme configuration file.
 Supports both **Tailwind CSS v4** and **v3**.
 
+Published on **npm** as [`@duydpdev/style-generator`](https://www.npmjs.com/package/@duydpdev/style-generator).
+The public npm release target is the **v2 API** with flat `colors` and `themeCss` support.
+
 ## Features
 
 - 🎨 **Flat Theme Config**: Define all colors in a single flat namespace — no more `base/text/common` split.
@@ -24,16 +27,31 @@ yarn add @duydpdev/style-generator
 npm install @duydpdev/style-generator
 ```
 
+This package expects these peer dependencies from your project:
+
+```bash
+yarn add -D typescript
+yarn add tailwindcss
+```
+
+If your project already has `typescript` and `tailwindcss`, you do not need to install them again.
+
 ---
 
 ## 2. Quick Start with CLI
 
 The fastest way to get started is using the built-in `style-gen` CLI tool.
 
-### Step 1. Initialize project
+After installing the package locally, you can also run the local bin directly:
 
 ```bash
 npx style-gen init
+```
+
+### Step 1. Initialize project
+
+```bash
+npx @duydpdev/style-generator init
 ```
 
 The interactive wizard will prompt you to:
@@ -72,7 +90,7 @@ Open `styles/theme.json` and customize your design tokens. Colors are a **flat o
 ### Step 3. Generate safelist
 
 ```bash
-npx style-gen safelist
+npx @duydpdev/style-generator safelist
 ```
 
 ### Step 4. Import in CSS (Tailwind v4)
@@ -89,7 +107,25 @@ For v4 users who want `@theme inline` auto-utilities (`bg-primary`, etc.), write
 import { createStyleSystem } from "@duydpdev/style-generator";
 import fs from "node:fs";
 
+const theme = {
+  colors: {
+    primary: "#3B82F6",
+    background: "#FFFFFF",
+    foreground: "#111827",
+  },
+  typography: {
+    body: {
+      fontSize: "16px",
+      lineHeight: "150%",
+      fontWeight: 400,
+      letterSpacing: "0px",
+    },
+  },
+};
+
+const options = {};
 const { themeCss } = createStyleSystem(theme, options);
+
 fs.writeFileSync("styles/theme.css", themeCss, "utf8");
 ```
 
@@ -113,8 +149,8 @@ Then import in your CSS:
 Scaffold project files (theme config + plugin file).
 
 ```bash
-npx style-gen init                    # Interactive mode (prompts)
-npx style-gen init --tw v4 --dark     # Non-interactive mode
+npx @duydpdev/style-generator init                    # Interactive mode (prompts)
+npx @duydpdev/style-generator init --tw v4 --dark     # Non-interactive mode
 ```
 
 | Flag       | Type      | Default                   | Description                     |
@@ -129,8 +165,8 @@ npx style-gen init --tw v4 --dark     # Non-interactive mode
 Generate `safelist.txt` from theme config.
 
 ```bash
-npx style-gen safelist
-npx style-gen safelist --theme ./theme.json --out ./safelist.txt --watch
+npx @duydpdev/style-generator safelist
+npx @duydpdev/style-generator safelist --theme ./theme.json --out ./safelist.txt --watch
 ```
 
 | Flag            | Type      | Default               | Description                          |
@@ -144,7 +180,15 @@ npx style-gen safelist --theme ./theme.json --out ./safelist.txt --watch
 Check project setup, validate configuration, and verify theme schema. Also warns if old v1 `colors.base/text/common` format is detected.
 
 ```bash
-npx style-gen doctor
+npx @duydpdev/style-generator doctor
+```
+
+#### `style-gen --version`
+
+Print the installed CLI version.
+
+```bash
+npx @duydpdev/style-generator --version
 ```
 
 ### Configuration file
@@ -158,6 +202,13 @@ npx style-gen doctor
   "responsiveModules": ["layout", "rounded"]
 }
 ```
+
+The CLI resolves configuration in this order:
+
+1. command flags
+2. `style-gen.config.json`
+3. `package.json["style-gen"]`
+4. built-in defaults
 
 ---
 
@@ -591,6 +642,8 @@ export type ResponsiveValue<T> = LibResponsiveValue<T, AppBreakpoints>;
 ---
 
 ## Migration from v1
+
+> Current public release line is intended to ship as **v2**, not as another v1-compatible release.
 
 If you're upgrading from v1, the main breaking change is the color structure:
 

@@ -93,3 +93,6 @@ storybook-static/
 public/
 
 safelist.txt
+
+# MCP local config (contains API keys)
+.mcp.json

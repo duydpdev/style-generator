@@ -1,5 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import { parseArgs } from "node:util";
 
+import { doctorCommand } from "./commands/doctor";
 import { initCommand } from "./commands/init";
 import { safelistCommand } from "./commands/safelist";
 import { logger } from "./logger";
@@ -34,6 +37,11 @@ const options = {
     short: "h",
     description: "Display help",
   },
+  version: {
+    type: "boolean",
+    short: "v",
+    description: "Display version",
+  },
   watch: {
     type: "boolean",
     short: "w",
@@ -64,9 +72,12 @@ const listCommands = [
     name: "safelist",
     description: "Generate safelist.txt",
   },
+  {
+    name: "doctor",
+    description: "Check project setup and schema validation",
+  },
 ] as const;
 
-/* ------------------ Help Printer ------------------ */
 /* ------------------ Help Printer ------------------ */
 
 /**
@@ -172,6 +183,18 @@ async function main(): Promise<void> {
 
   const command = positionals[0];
 
+  if (values.version) {
+    try {
+      const pkgPath = path.resolve(__dirname, "../../package.json");
+      const pkgStr = fs.readFileSync(pkgPath, "utf-8");
+      const pkg = JSON.parse(pkgStr) as { version: string };
+      logger.log(`style-gen v${pkg.version}`);
+    } catch {
+      logger.log(`style-gen vUnknown`);
+    }
+    process.exit(0);
+  }
+
   if (values.help || !command) {
     printHelp();
     process.exit(0);
@@ -185,6 +208,11 @@ async function main(): Promise<void> {
     case "safelist":
       runSafelist(values, positionals);
       break;
+
+    case "doctor": {
+      doctorCommand();
+      break;
+    }
 
     default:
       logger.error(`Unknown command: ${command}`);

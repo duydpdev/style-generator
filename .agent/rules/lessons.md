@@ -28,7 +28,7 @@ _(Add new lessons below this line)_
 
 - **Mistake:** Cứ thế code luôn mà không khởi tạo file kế hoạch và thỏa thuận rõ ràng với user. Đặt file plan sai cấu trúc thư mục (để file markdown trần hoặc tên folder có chứa text).
 - **New Rule:** LUÔN PHẢI lên plan TRƯỚC khi code bất kỳ tính năng lớn/nhỏ nào. Mọi plan mới đều phải xuất hiện dưới dạng Markdown checklist và được MẶC ĐỊNH lưu vào **đúng cấu trúc thư mục** `docs/plans/YYYY-MM-DD/XX-ten-tinh-nang.md` (ví dụ: `docs/plans/2026-03-07/03-refactor-color-system.md`). Thư mục ngày (`YYYY-MM-DD`) phải chứa một file `task.md` để liệt kê thứ tự thực hiện các kế hoạch trong ngày đó. File markdown của plan phải tuân theo **TEMPLATE BẮT BUỘC** sau:
-  - `XX` là số thứ tự thực hiện trong ngày (01, 02, 03...).
+  - `XX` là số thứ tự thực hiện trong ngày (01, 02, 03...). **LƯU Ý:** Khi chuyển sang thư mục ngày mới (`YYYY-MM-DD`), số thứ tự ĐẢM BẢO phải bắt đầu lại từ `01`.
   - Tên file không chứa ký tự đặc biệt ngoài gạch nối `-`.
 
 ```markdown
@@ -82,3 +82,23 @@ _(Add new lessons below this line)_
 
 - **Mistake:** Quên cập nhật trạng thái `[x]` vào file kế hoạch vật lý (`docs/plans/*.md`) và file `task.md` tóm tắt ngày. Không chạy `checklist.py` để verify toàn bộ project trước khi báo cáo hoàn thành.
 - **New Rule:** LUÔN PHẢI cập nhật song song tiến độ vào cả Task Artifact (brain) và các file kế hoạch vật lý (`docs/plans/YYYY-MM-DD/task.md` và `XX-plan.md`). Chỉ được coi là hoàn thành khi đã cập nhật tất cả tài liệu liên quan và lệnh `python3 .agent/scripts/checklist.py .` trả về kết quả đạt (hoặc đã xử lý hết các lỗi nghiêm trọng).
+
+### [2026-03-07] - Không bao giờ thực thi mã (Code) khi chưa được Approve Plan
+
+- **Mistake:** Đã tự ý nhảy sang bước lập trình/thực thi (Phase 4 - Implementation) cho Task 05 khi người dùng chưa đồng ý/approve bản kế hoạch (Phase 3 - Solutioning/Plan). Việc này vi phạm nghiêm trọng phương pháp 4-Phase của dự án.
+- **New Rule:** LUÔN PHẢI dừng lại chờ người dùng xác nhận bằng các câu "ok", "duyệt", "triển khai" sau khi nộp file `.md` kế hoạch. Tuyệt đối không được kích hoạt các tool sửa code ngay sau khi notify_user bằng `BlockedOnUser: true` nếu người dùng chưa hồi đáp thuận tình.
+
+### [2026-03-08] - Tuyệt đối tuân thủ quy trình lập kế hoạch (4-Phase) và cấu trúc thư mục
+
+- **Mistake:** Tiếp tục bỏ qua việc tạo file kế hoạch vật lý (`docs/plans/...`) và không sử dụng đúng template bắt buộc dù đã có lesson trước đó. Ngoài ra còn sử dụng đường dẫn tuyệt đối trong plan.
+- **New Rule:** LUÔN PHẢI kiểm tra `lessons.md` trước khi bắt đầu bất kỳ task nào. Việc tạo plan trong `docs/plans/YYYY-MM-DD/XX-plan.md` là BẮT BUỘC và phải là bước đầu tiên sau khi phân tích. Không được phép "quên" hoặc "sơ suất" vì đây là quy trình vận hành tiêu chuẩn của dự án.
+
+### [2026-03-08] - Không bao giờ thực thi mã (Code) khi chưa được Approve Plan (Lặp lại lỗi)
+
+- **Mistake:** Trong quá trình xử lý bug border, dù đã tạo plan nhưng ngay sau khi giải thích đã tự ý thực thi mã nguồn trước khi user phản hồi phê duyệt. Đây là lặp lại lỗi vi phạm nghiêm trọng Phase 3.
+- **New Rule:** LUÔN PHẢI DỪNG LẠI CHỜ DUYỆT. Tuyệt đối KHÔNG gộp chung bước giải thích lỗi + fix bug vào cùng 1 lượt. `[ ] Task` chỉ được phép chuyển thành `[/]` hoặc `[x]` sau khi có sự đồng ý của user.
+
+### [2026-03-09] - Chú ý xử lý script trên môi trường ESM
+
+- **Mistake**: Chạy script thử nghiệm (`.js`) bằng `node` mà vẫn dùng cú pháp `require()` trong một project đã setup `"type": "module"` trong `package.json`, dẫn tới lỗi `ReferenceError: require is not defined in ES module scope`.
+- **New Rule**: TRƯỚC KHI tạo script chạy bằng Node, LUÔN phải check `package.json` xem đang ở chế độ CommonJS hay ES Module. Nếu là ESM, bắt buộc dùng cú pháp `import` hoặc đổi đuôi file script thành `.cjs` để Node hiểu đúng context.

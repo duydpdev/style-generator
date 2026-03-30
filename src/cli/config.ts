@@ -19,6 +19,23 @@ export const defaultConfig: StyleGenConfig = {
 };
 
 /**
+ * Normalizes a path input from the user.
+ * Strips leading '/' to prevent path.resolve from treating it as an absolute path from filesystem root.
+ * @param {string} p - The path to normalize
+ * @returns {string} The normalized path
+ */
+export function normalizePath(p: string): string {
+  let normalized = p.trim();
+
+  // Strip leading slash if it's not meant to be an absolute path from the system root
+  if (normalized.startsWith("/") && !normalized.startsWith(process.cwd())) {
+    normalized = normalized.substring(1);
+  }
+
+  return path.normalize(normalized);
+}
+
+/**
  * Sanitizes the flags to remove undefined values
  * @param {Partial<StyleGenConfig>} flags - The flags to sanitize
  * @returns {Partial<StyleGenConfig>} The sanitized flags

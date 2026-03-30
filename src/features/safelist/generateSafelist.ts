@@ -17,8 +17,8 @@ import {
 /**
  * Generates a list of safelisted classes based on the theme configuration.
  * NOTE: Spacing is NOT included — it uses CSS custom properties (see createStylePlugin).
- * @param {ThemeConfig} config Theme configuration
- * @param {StyleGeneratorOptions | undefined} [options] Generator options
+ * @param {ThemeConfig} config - Theme configuration
+ * @param {StyleGeneratorOptions | undefined} [options] - Generator options
  * @returns {InferSafelistClasses<ThemeConfig, StyleGeneratorOptions | undefined>[]} Typed safelist classes
  */
 export const generateSafelist = <
@@ -37,7 +37,6 @@ export const generateSafelist = <
   const { enableResponsive = true, responsiveModules = ["layout", "rounded"] } =
     resolvedOptions;
 
-  // Build responsive prefixes from breakpoint keys
   const breakpointKeys = resolvedOptions.breakpoints ?? ["md", "lg"];
   const responsivePrefixes = enableResponsive
     ? breakpointKeys.map((b: string) => `${b}:`)
@@ -45,13 +44,6 @@ export const generateSafelist = <
 
   const safelist: string[] = [];
 
-  /**
-   * Push class combinations to safelist with optional responsive variants.
-   * @param {string} moduleName - Module name (used to check responsive inclusion)
-   * @param {string[]} props - Property prefixes or full class names
-   * @param {Array<string | number>} values - Values to combine with properties
-   * @param {boolean} isClassOnly - If true, push props as-is without combining with values
-   */
   const pushClasses = (
     moduleName: string,
     props: readonly string[],
@@ -59,7 +51,6 @@ export const generateSafelist = <
     isClassOnly = false,
   ) => {
     const generate = (prefix: string) => {
-      // Skip responsive generation if module is not in responsiveModules
       if (prefix && !responsiveModules.includes(moduleName as never)) return;
 
       if (isClassOnly) {
@@ -75,13 +66,29 @@ export const generateSafelist = <
       }
     };
 
-    // Always generate base classes
     generate("");
-
-    // Generate responsive variants
     for (const prefix of responsivePrefixes) {
       generate(prefix);
     }
+  };
+
+  // Helper to extract nested keys safely
+  const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
+    if (!obj) return [];
+    const keys: string[] = [];
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === "DEFAULT") {
+        keys.push("");
+      } else if (typeof v === "object" && v !== null) {
+        const subKeys = extractKeys(v as Record<string, unknown>);
+        for (const sub of subKeys) {
+          keys.push(sub ? `${k}-${sub}` : k);
+        }
+      } else {
+        keys.push(k);
+      }
+    }
+    return keys;
   };
 
   // --- 1. Layout (display, flex, align, justify, text-align) ---
@@ -96,7 +103,7 @@ export const generateSafelist = <
   if (resolvedOptions.rounded?.enabled !== false) {
     const values = [
       ...(resolvedOptions.rounded?.values ?? [...DEFAULT_ROUNDED_VALUES]),
-      ...Object.keys(borderRadius ?? {}),
+      ...Object.keys(borderRadius ?? {}).map(toKebabCase),
     ];
     const props = resolvedOptions.rounded?.properties ?? roundedProperties;
     pushClasses("rounded", props, [...new Set(values)]);
@@ -106,53 +113,37 @@ export const generateSafelist = <
   if (resolvedOptions.border?.enabled !== false) {
     const values =
       resolvedOptions.border?.values ??
-      Object.keys(border ?? DEFAULT_BORDER_VALUES);
+      (border ? Object.keys(border).map(toKebabCase) : DEFAULT_BORDER_VALUES);
     const props = resolvedOptions.border?.properties ?? borderProperties;
     pushClasses("borders", props, values);
   }
 
-  // Helper to extract nested keys safely
-  const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
-    if (!obj) return [];
-    const keys: string[] = [];
-    for (const [k, v] of Object.entries(obj)) {
-      if (k === "DEFAULT") {
-        keys.push(""); // DEFAULT signifies drop prefix (will be handled by join)
-      } else if (typeof v === "object" && v !== null) {
-        const subKeys = extractKeys(v as Record<string, unknown>);
-        for (const sub of subKeys) {
-          keys.push(sub ? `${k}-${sub}` : k);
-        }
-      } else {
-        keys.push(k);
-      }
-    }
-    return keys;
-  };
+  // --- 4. Colors (optional — only when safelistColors is true) ---
+  if (resolvedOptions.safelistColors) {
+    const colorKeys = extractKeys(colors as Record<string, unknown>)
+      .filter(Boolean)
+      .map((k) => toKebabCase(k));
 
-  // --- 4. Colors (text, bg, border for each custom color key) ---
-  const colorKeys = [
-    ...extractKeys(colors.text),
-    ...extractKeys(colors.base),
-    ...extractKeys(colors.common),
-  ]
-    .filter(Boolean)
-    .map((k) => toKebabCase(k));
-
-  pushClasses("colors", ["text"], colorKeys);
-  pushClasses("colors", ["bg"], colorKeys);
-  pushClasses("colors", ["border"], colorKeys);
+    pushClasses("colors", ["text"], colorKeys);
+    pushClasses("colors", ["bg"], colorKeys);
+    pushClasses("colors", ["border"], colorKeys);
+  }
 
   // --- 5. Typography (custom utility classes) ---
   const typographyKeys = Object.keys(typography);
-  pushClasses("typography", typographyKeys.map(toKebabCase), [], true);
+  pushClasses(
+    "typography",
+    typographyKeys.map((k) => toKebabCase(k)),
+    [],
+    true,
+  );
 
   // --- 6. Box shadows ---
-  const shadowKeys = Object.keys(shadows ?? {});
+  const shadowKeys = Object.keys(shadows ?? {}).map(toKebabCase);
   pushClasses("shadows", ["shadow"], shadowKeys);
 
   // --- 7. Backdrop blur ---
-  const blurKeys = Object.keys(backDropBlurs ?? {});
+  const blurKeys = Object.keys(backDropBlurs ?? {}).map(toKebabCase);
   pushClasses("backdrop", ["backdrop-blur"], blurKeys);
 
   // --- 8. Opacity ---

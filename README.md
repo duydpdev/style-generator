@@ -214,29 +214,31 @@ The CLI resolves configuration in this order:
 
 ## 4. Theme Config
 
-### Colors (flat)
+### Colors — camelCase Keys
 
-All colors live in a single flat namespace. Nested objects and `DEFAULT` key are supported.
+All colors live in a single **flat object**. Keys use **camelCase** (or kebab-case) — the lib converts them to kebab-case CSS variables and Tailwind classes automatically. Nested objects and `DEFAULT` key are **not supported**.
 
 ```json
 {
   "colors": {
     "primary": "#3B82F6",
-    "primary-foreground": "#FFFFFF",
-    "sidebar": {
-      "DEFAULT": "#F9FAFB",
-      "foreground": "#111827"
-    }
+    "primaryForeground": "#FFFFFF",
+    "sidebarForeground": "#111827",
+    "blue500": "#3B82F6"
   }
 }
 ```
 
-**Generated CSS variables:**
+**camelCase → kebab-case convention:**
 
-- `primary` → `--color-primary: #3B82F6`
-- `primary-foreground` → `--color-primary-foreground: #FFFFFF`
-- `sidebar.DEFAULT` → `--color-sidebar: #F9FAFB` (no `-default` suffix)
-- `sidebar.foreground` → `--color-sidebar-foreground: #111827`
+| Theme key (camelCase) | CSS Variable                 | Tailwind class            |
+| --------------------- | ---------------------------- | ------------------------- |
+| `primaryForeground`   | `--color-primary-foreground` | `text-primary-foreground` |
+| `sidebarForeground`   | `--color-sidebar-foreground` | `bg-sidebar-foreground`   |
+| `blue500`             | `--color-blue-500`           | `border-blue-500`         |
+| `primary`             | `--color-primary`            | `text-primary`            |
+
+> **Rule:** letter→digit boundary auto-adds a dash (`blue500` → `blue-500`). Digit-prefix values stay unchanged (`2xl` → `2xl`).
 
 ### Multi-theme (Dark/Light/Custom)
 
@@ -641,11 +643,40 @@ export type ResponsiveValue<T> = LibResponsiveValue<T, AppBreakpoints>;
 
 ---
 
-## Migration from v1
+## Migration
 
-> Current public release line is intended to ship as **v2**, not as another v1-compatible release.
+### v2 → v3 (breaking)
 
-If you're upgrading from v1, the main breaking change is the color structure:
+Nested color objects and `DEFAULT` key are removed — flat camelCase keys only.
+
+```json
+// v2 (old) — nested no longer supported
+{
+  "colors": {
+    "sidebar": { "DEFAULT": "#F9FAFB", "foreground": "#111" }
+  }
+}
+
+// v3 (new) — flat camelCase
+{
+  "colors": {
+    "sidebar": "#F9FAFB",
+    "sidebarForeground": "#111"
+  }
+}
+```
+
+**CVA usage:** Use `createVariantMapper` instead of string interpolation (since `variantColor` returns camelCase keys):
+
+```ts
+// v2 (wrong — class becomes "bg-sidebarForeground")
+acc[c] = `bg-${c}`;
+
+// v3 (correct — auto-converts to "bg-sidebar-foreground")
+createVariantMapper("bg", DesignTokens.Web.variantColor);
+```
+
+### v1 → v2
 
 ```json
 // v1 (old)

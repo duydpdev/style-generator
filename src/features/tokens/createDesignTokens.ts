@@ -48,28 +48,9 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
       : DEFAULT_BORDER_VALUES.map(String)
   ) as CamelCase<InferBorderOptions<TTheme>>[];
 
-  // Helper to extract nested keys safely and convert to camelCase
-  const extractKeys = (obj: Record<string, unknown> | undefined): string[] => {
-    if (!obj) return [];
-    const keys: string[] = [];
-    for (const [k, v] of Object.entries(obj)) {
-      if (k === "DEFAULT") {
-        keys.push("");
-      } else if (typeof v === "object" && v !== null) {
-        const subKeys = extractKeys(v as Record<string, unknown>);
-        for (const sub of subKeys) {
-          keys.push(sub ? toCamelCase(`${k}-${sub}`) : toCamelCase(k));
-        }
-      } else {
-        keys.push(toCamelCase(k));
-      }
-    }
-    return keys;
-  };
-
-  const variantColor = extractKeys(colors as Record<string, unknown>)
-    .filter(Boolean)
-    .map((color) => toCamelCase(color)) as InferColorKeys<TTheme>[];
+  const variantColor = Object.keys(colors).map(
+    toCamelCase,
+  ) as InferColorKeys<TTheme>[];
 
   const mergedScreens = {
     ...defaultScreens,

@@ -33,53 +33,51 @@ yarn add tailwindcss typescript
 
 Tạo file `styles/theme.json` chứa toàn bộ design tokens.
 
-### Flat Color System (v2)
+### Color System — camelCase Keys
 
-Tất cả màu sắc nằm trong một flat object. Không còn phân chia `base/text/common`.
+Tất cả màu sắc nằm trong một **flat object**. Keys dùng **camelCase** hoặc **kebab-case**, lib tự convert sang kebab-case chuẩn Tailwind.
 
 ```json
 {
   "colors": {
     "primary": "#007AFF",
-    "primary-foreground": "#FFFFFF",
+    "primaryForeground": "#FFFFFF",
+    "sidebarForeground": "#111827",
     "background": "#FFFFFF",
-    "foreground": "#1C1C20",
     "muted": "#8E8E93",
-    "border": "#E5E7EB"
+    "blue500": "#3B82F6"
   }
 }
 ```
 
-### Nested Colors & `DEFAULT` key
+**Convention camelCase → kebab-case:**
 
-Dùng nested object để nhóm màu liên quan. Key `DEFAULT` giúp bỏ hậu tố trong tên CSS variable.
+| Theme key (camelCase) | CSS Variable                 | Tailwind class            |
+| --------------------- | ---------------------------- | ------------------------- |
+| `primaryForeground`   | `--color-primary-foreground` | `text-primary-foreground` |
+| `sidebarForeground`   | `--color-sidebar-foreground` | `bg-sidebar-foreground`   |
+| `blue500`             | `--color-blue-500`           | `border-blue-500`         |
+| `primary`             | `--color-primary`            | `text-primary`            |
 
-```json
-{
-  "colors": {
-    "primary": "#007AFF",
-    "sidebar": {
-      "DEFAULT": "#F9FAFB",
-      "foreground": "#111827",
-      "accent": "#3B82F6"
-    }
-  }
-}
-```
+> **Quy tắc:** letter→digit tự động thêm dash (`blue500` → `blue-500`). Digit-prefix giữ nguyên (`2xl` → `2xl`).
 
 **Kết quả CSS Variables (v3 mode):**
 
-- `primary` → `--color-primary: #007aff`
-- `sidebar.DEFAULT` → `--color-sidebar: #f9fafb` (không có hậu tố `-default`)
-- `sidebar.foreground` → `--color-sidebar-foreground: #111827`
+```css
+:root {
+  --color-primary: #007aff;
+  --color-sidebar-foreground: #111827;
+  --color-blue-500: #3b82f6;
+}
+```
 
 **Kết quả `@theme inline` (v4 mode, qua `generateThemeCss`):**
 
 ```css
 @theme inline {
   --color-primary: var(--sg-primary);
-  --color-sidebar: var(--sg-sidebar);
   --color-sidebar-foreground: var(--sg-sidebar-foreground);
+  --color-blue-500: var(--sg-blue-500);
 }
 ```
 
@@ -294,24 +292,23 @@ import {
   createDesignTokens,
   createVariantMapper,
 } from "@duydpdev/style-generator";
+import { cva } from "class-variance-authority";
 import theme from "./styles/theme.json";
 
 const { DesignTokens } = createDesignTokens(theme, {
   breakpoints: ["md", "lg"],
 });
 
-// Sử dụng với cva
-import { cva } from "class-variance-authority";
-
+// createVariantMapper chuyển camelCase token → kebab-case Tailwind class tự động
+// "sidebarForeground" → "bg-sidebar-foreground"
+// "blue500"           → "bg-blue-500"
 const button = cva("base-class", {
   variants: {
-    color: DesignTokens.Web.variantColor.reduce(
-      (acc, c) => {
-        acc[c] = `bg-${c}`;
-        return acc;
-      },
-      {} as Record<string, string>,
-    ),
+    color: createVariantMapper("bg", DesignTokens.Web.variantColor),
+    // Result: { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", ... }
+
+    text: createVariantMapper("", DesignTokens.Web.variantText),
+    // Result: { text16Medium: "text-16-medium", bodyLg: "body-lg", ... }
   },
 });
 ```
@@ -373,9 +370,40 @@ export type ResponsiveValue<T> = LibResponsiveValue<T, AppBreakpoints>;
 
 ---
 
-## Migration từ v1
+## Migration
 
-Thay đổi breaking duy nhất là cấu trúc màu:
+### v2 → v3 (breaking)
+
+**Colors:** Nested color objects và `DEFAULT` key bị xóa — chỉ còn flat keys.
+
+```json
+// v2 (cũ) — nested không còn support
+{
+  "colors": {
+    "sidebar": { "DEFAULT": "#F9FAFB", "foreground": "#111" }
+  }
+}
+
+// v3 (mới) — flat camelCase
+{
+  "colors": {
+    "sidebar": "#F9FAFB",
+    "sidebarForeground": "#111"
+  }
+}
+```
+
+**CVA usage:** Dùng `createVariantMapper` thay vì string interpolation thủ công (vì `variantColor` trả về camelCase, không phải kebab-case).
+
+```ts
+// v2 (sai — class sẽ là "bg-sidebarForeground")
+acc[c] = `bg-${c}`;
+
+// v3 (đúng — tự convert sang "bg-sidebar-foreground")
+createVariantMapper("bg", DesignTokens.Web.variantColor);
+```
+
+### v1 → v2
 
 ```json
 // v1 (cũ)

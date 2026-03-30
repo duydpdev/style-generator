@@ -1,9 +1,16 @@
 import { toKebabCase } from "../../shared";
 
+type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+
+// Mirrors inference.ts KebabCase: handles camelCase + letter→digit boundaries.
 type KebabCase<S extends string> = S extends `${infer T}${infer U}`
-  ? U extends Uncapitalize<U>
-    ? `${Lowercase<T>}${KebabCase<U>}`
-    : `${Lowercase<T>}-${KebabCase<Uncapitalize<U>>}`
+  ? U extends `${Digit}${string}`
+    ? T extends Digit
+      ? `${Lowercase<T>}${KebabCase<U>}` // digit→digit: no dash
+      : `${Lowercase<T>}-${KebabCase<U>}` // letter→digit: add dash
+    : U extends Uncapitalize<U>
+      ? `${Lowercase<T>}${KebabCase<U>}` // same case: no dash
+      : `${Lowercase<T>}-${KebabCase<Uncapitalize<U>>}` // camelCase: add dash
   : S;
 
 type MappedVariant<T extends string, P extends string> = P extends ""

@@ -25,11 +25,9 @@ describe("generateThemeCss", () => {
     expect(css).toContain("@theme inline");
   });
 
-  it("should generate CSS vars for nested colors", () => {
+  it("should convert camelCase color keys to kebab-case vars", () => {
     const config: ThemeConfig = {
-      colors: {
-        blue: { "500": "#3B82F6", "600": "#2563EB" },
-      },
+      colors: { sidebarForeground: "#fff", primaryBlue: "#007" },
       typography: {
         body: {
           fontSize: "16px",
@@ -40,9 +38,11 @@ describe("generateThemeCss", () => {
       },
     };
     const css = generateThemeCss(config);
-    expect(css).toContain("--sg-blue-500: #3B82F6;");
-    expect(css).toContain("--sg-blue-600: #2563EB;");
-    expect(css).toContain("--color-blue-500: var(--sg-blue-500);");
+    expect(css).toContain("--sg-sidebar-foreground: #fff;");
+    expect(css).toContain("--sg-primary-blue: #007;");
+    expect(css).toContain(
+      "--color-sidebar-foreground: var(--sg-sidebar-foreground);",
+    );
   });
 
   it("should generate dark theme override block", () => {

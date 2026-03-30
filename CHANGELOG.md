@@ -1,3 +1,52 @@
+# [1.6.0]() (2026-03-30)
+
+  ###
+  Bug Fixes
+
+    -
+    fix gensafelist border ([#53](https://github.com/duydpdev/style-generator/issues/53))
+    ([6a654c0]())
+    -
+    fix interface zindex ([#57](https://github.com/duydpdev/style-generator/issues/57))
+    ([8ca4f43]())
+    -
+    fix repsonsive ([#54](https://github.com/duydpdev/style-generator/issues/54))
+    ([4e41e8f]())
+    -
+    fix spacing css gen ([#49](https://github.com/duydpdev/style-generator/issues/49))
+    ([4ed7916]())
+    -
+    fix tempalte gen plugins ([#55](https://github.com/duydpdev/style-generator/issues/55))
+    ([72dead0]())
+    -
+    update logic gen plugin, safelist, design token ([#58](https://github.com/duydpdev/style-generator/issues/58))
+    ([0047ebf]())
+
+  ###
+  Features
+
+    -
+    add api gen cva function ([#50](https://github.com/duydpdev/style-generator/issues/50))
+    ([53770f5]())
+    -
+    upadate lib with new doc tailwind ([#60](https://github.com/duydpdev/style-generator/issues/60))
+    ([0031e0f]())
+    -
+    update claude code setting ([#56](https://github.com/duydpdev/style-generator/issues/56))
+    ([e9e8c4d]())
+    -
+    update cli ([#48](https://github.com/duydpdev/style-generator/issues/48))
+    ([09a1b54]())
+    -
+    update gen design token cammelCase ([#51](https://github.com/duydpdev/style-generator/issues/51))
+    ([9c6454e]())
+    -
+    update plan imrovement lib ([#59](https://github.com/duydpdev/style-generator/issues/59))
+    ([287b712]())
+    -
+    update type responsiveValue ([#52](https://github.com/duydpdev/style-generator/issues/52))
+    ([49d6761]())
+
 # [1.6.0-DEV.13]() (2026-03-17)
 
   ###

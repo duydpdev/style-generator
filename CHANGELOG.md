@@ -1,3 +1,12 @@
+# [1.7.0-DEV.1]() (2026-03-30)
+
+  ###
+  Features
+
+    -
+    change publish package to npm ([#62](https://github.com/duydpdev/style-generator/issues/62))
+    ([5ce9fad]())
+
 # [1.6.0]() (2026-03-30)
 
   ###

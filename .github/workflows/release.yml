@@ -5,7 +5,7 @@
 # Flow:
 #   1. Semantic-release tạo tag & version bump
 #   2. Detect tag mới (so sánh trước/sau)
-#   3. Gọi deploy.yml để build & publish
+#   3. Gọi deploy.yml để build & publish lên npm public
 #   4. Gọi back-merge.yml nếu là stable tag trên main
 # ─────────────────────────────────────────────────────
 name: Release
@@ -16,13 +16,12 @@ on:
 
 permissions:
   contents: write
-  packages: write
   issues: write
   pull-requests: write
 
 env:
   CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
-  CI_SERVICE_REPOSITORY_NPM_PUBLIC_URL: "https://npm.pkg.github.com"
+  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 jobs:
   # ── 1. Tạo tag ────────────────────────────────────
@@ -55,7 +54,7 @@ jobs:
       - name: Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
-          NPM_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn release
 
       - name: Check for new release

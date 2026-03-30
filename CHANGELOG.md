@@ -1,3 +1,12 @@
+# [3.0.0]() (2026-03-30)
+
+  ###
+  Features
+
+    -
+    update lib ([#64](https://github.com/duydpdev/style-generator/issues/64))
+    ([a2661d5]())
+
 # [2.1.0-DEV.1]() (2026-03-30)
 
   ###

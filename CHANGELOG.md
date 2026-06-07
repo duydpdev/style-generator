@@ -1,3 +1,12 @@
+# [3.1.0-DEV.2]() (2026-06-07)
+
+  ###
+  Features
+
+    -
+    add next-v4 and nuxt-v4 examples ([#68](https://github.com/duydpdev/style-generator-private/issues/68))
+    ([c69de63]())
+
 # [3.1.0-DEV.1]() (2026-06-07)
 
   ###

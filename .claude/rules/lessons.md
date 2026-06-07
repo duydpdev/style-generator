@@ -136,3 +136,9 @@ _(Add new lessons below this line)_
   2. **Reusable workflow (`workflow_call`)**: token permissions ⊆ caller. Muốn job con (vd `deploy.yml`) có `packages: write` thì PHẢI khai quyền đó ở **caller** (`release.yml` top-level `permissions`), không chỉ ở file con.
   3. Yarn Berry auth lấy từ `.yarnrc.yml` (`npmScopes.<scope>.npmAuthToken` interpolate env), KHÔNG từ `.npmrc` mà `setup-node registry-url` tạo. Set đúng env `YARN_NPM_AUTH_TOKEN`.
   4. GitHub Packages trên private repo: chỉ collaborator/được-grant cài được, kể cả có PAT `read:packages` → muốn share người lạ phải invite hoặc dùng org.
+
+### [2026-06-07] - Example workspace KHÔNG được có `postinstall` build hook
+
+- **Mistake:** Thêm `"postinstall": "nuxt prepare"` vào `examples/nuxt-v4/package.json`. CI `yarn install --immutable` chạy hook này trong Link step — TRƯỚC khi lib `dist/` được build — `nuxt.config.ts` import `@duydpdev/style-generator/vite` không resolve được → workspace build fail (exit 1) → cả install fail. Local pass vì `dist/` đã tồn tại.
+- **New Rule:** Trong monorepo, example/consumer workspace TUYỆT ĐỐI không đặt lifecycle hook (`postinstall`/`prepare`) gọi tool cần lib đã build (vd `nuxt prepare`, codegen). `yarn install --immutable` chạy các hook đó trước khi root build → fail. Đổi thành script thủ công (`prepare:nuxt`) hoặc để `dev`/`build`/`typecheck` tự lo. Đối chiếu các example sẵn có (react-v3/v4 KHÔNG có install hook) trước khi thêm script.
+- **Liên quan:** `examples/*` mới cũng phải được thêm vào `exclude` của root `tsconfig.json` (pre-commit `tsc --noEmit` ở root sẽ check chúng → lỗi `--jsx`/auto-import nếu không exclude).

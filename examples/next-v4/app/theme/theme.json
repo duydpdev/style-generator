@@ -1,0 +1,85 @@
+{
+  "colors": {
+    "primary": "#2647D9",
+    "secondary": "#6E5BFF",
+    "success": "#2E7D5B",
+    "danger": "#C8462C",
+    "background": "#FAF7F2",
+    "surface": "#FFFFFF",
+    "foreground": "#0F1530",
+    "muted": "#6B6D7A"
+  },
+  "typography": {
+    "text12Mono": {
+      "fontSize": "12px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text14Regular": {
+      "fontSize": "14px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text20Semibold": {
+      "fontSize": "20px",
+      "fontWeight": 600,
+      "lineHeight": "140%",
+      "letterSpacing": "-0.01em"
+    },
+    "text32Bold": {
+      "fontSize": "32px",
+      "fontWeight": 700,
+      "lineHeight": "120%",
+      "letterSpacing": "-0.02em"
+    },
+    "display56Serif": {
+      "fontSize": "56px",
+      "fontWeight": 400,
+      "lineHeight": "100%",
+      "letterSpacing": "-0.025em"
+    }
+  },
+  "shadows": {
+    "sm": "0px 1px 2px rgba(15, 21, 48, 0.06), 0px 1px 1px rgba(15, 21, 48, 0.04)",
+    "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
+    "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)"
+  },
+  "backDropBlurs": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "14px"
+  },
+  "borderRadius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "16px",
+    "pill": "999px"
+  },
+  "themes": {
+    "dark": {
+      "colors": {
+        "primary": "#8FA6FF",
+        "secondary": "#A89AFF",
+        "success": "#6BBF93",
+        "danger": "#F08369",
+        "background": "#0B0E1D",
+        "surface": "#161A2D",
+        "foreground": "#F2EFE9",
+        "muted": "#8A8FA8"
+      },
+      "shadows": {
+        "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
+        "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+        "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+      }
+    }
+  }
+}

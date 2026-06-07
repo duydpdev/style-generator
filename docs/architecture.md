@@ -329,6 +329,19 @@ Khi Vite build site, content của `public/` được copy thẳng sang `dist/`,
 
 Iframe trong `examples-page.tsx` load `${BASE}/examples/v4/index.html` với `sandbox="allow-scripts allow-same-origin allow-forms"`.
 
+### Examples catalog (`examples/*`)
+
+`examples/` hiện có 4 consumer app (tất cả link lib qua `workspace:*`, full-parity cùng `theme.json` + palettes + cva configs + 10 demo section):
+
+| Example    | Stack                           | Theme wiring                                                                                                                                                                                     |
+| ---------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `react-v3` | Vite + React + Tailwind v3      | `createStyleSystem()` → `tailwind.config.ts` (plugin + safelist)                                                                                                                                 |
+| `react-v4` | Vite + React + Tailwind v4      | `styleGenVite` → `@plugin` + `@theme inline`                                                                                                                                                     |
+| `next-v4`  | Next.js 15 (App Router) + TW v4 | Không Vite → prebuild Node script `scripts/generate-theme.mjs` (`generateThemeCss`/`generateSafelist`), chain `yarn generate:theme && next build` (Yarn Berry bỏ qua `pre`/`post` hooks)         |
+| `nuxt-v4`  | Nuxt 3 (Vue 3) + TW v4          | Nuxt chạy trên Vite → tái dùng `styleGenVite` trong `nuxt.config.ts → vite.plugins`; component rewrite thành Vue SFC, state qua `useState` composables (SSR-safe `<html data-*>` bằng `useHead`) |
+
+`build-examples.mjs` của site chỉ embed `react-v3`/`react-v4` (iframe). `next-v4`/`nuxt-v4` là standalone, không nhúng vào landing site.
+
 ### Deploy pipelines
 
 | Target              | Workflow                     | See                                                          |

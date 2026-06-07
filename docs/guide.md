@@ -150,6 +150,8 @@ export default defineConfig({
 
 Plugin tự động phát sinh `theme.css` (HMR-enabled) + `safelist.txt` khi lưu theme JSON.
 
+> **Example tham khảo:** `examples/react-v4` (Vite + React). Nuxt 3 cũng chạy trên Vite — `examples/nuxt-v4` đăng ký `styleGenVite` trong `nuxt.config.ts → vite.plugins`, không cần script riêng.
+
 ### Cách 2: Manual Script (Dùng khi không có Vite)
 
 **Bước 1** — Tạo plugin file:
@@ -192,6 +194,8 @@ console.log("✅ theme.css generated");
 @plugin "./src/plugins/theme-plugin.ts";
 @source "./styles/safelist.txt";
 ```
+
+> **Example tham khảo:** `examples/next-v4` (Next.js 15 App Router — webpack/turbopack, không Vite). Script `scripts/generate-theme.mjs` được chain qua `yarn generate:theme && next build` (Yarn Berry bỏ qua `pre`/`post` hooks nên phải chain tường minh, không dùng `prebuild`).
 
 ---
 

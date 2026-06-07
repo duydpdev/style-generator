@@ -1,0 +1,84 @@
+# Nuxt + Tailwind v4 example
+
+Demo app showing `@duydpdev/style-generator` with **Nuxt 3** (Vue 3) and **Tailwind CSS v4** (`@plugin` + `@theme inline`).
+
+Because Nuxt runs on Vite, this example reuses the same `styleGenVite` plugin as the `react-v4` example — registered through `nuxt.config.ts` → `vite.plugins`.
+
+## Prerequisites
+
+The example uses `workspace:*` to link the local copy of the library, so the lib **must be built first**:
+
+```bash
+# From the repo root
+yarn install
+yarn build
+```
+
+## Run the example
+
+```bash
+cd examples/nuxt-v4
+yarn install        # workspace link resolves from the repo root install
+yarn dev            # starts Nuxt dev server on http://localhost:3000
+```
+
+`styleGenVite` (registered in `nuxt.config.ts`) emits the following on dev start, build, and whenever `theme.json` changes:
+
+- `theme/theme.css` — `@theme inline` block (consumed by Tailwind v4)
+- `theme/safelist.txt` — class safelist (consumed via `@source`)
+
+Both generated files are gitignored.
+
+## Scripts
+
+| Script              | What it does                           |
+| ------------------- | -------------------------------------- |
+| `yarn dev`          | Nuxt dev server (HMR on `theme.json`)  |
+| `yarn build`        | Production build via Nuxt              |
+| `yarn preview`      | Serve the production build             |
+| `yarn typecheck`    | `nuxt typecheck` (vue-tsc)             |
+| `yarn prepare:nuxt` | Generate `.nuxt/` types (auto-imports) |
+| `yarn doctor`       | `style-gen doctor` config validation   |
+
+> `dev` / `build` / `typecheck` each run `nuxt prepare` internally, so `.nuxt/` types are generated on demand. There is intentionally **no `postinstall` hook** — it would run during the repo-root `yarn install` before the library `dist/` exists and break `yarn install --immutable` in CI. Run `yarn prepare:nuxt` manually if your editor needs `.nuxt/tsconfig.json` before the first dev/build.
+
+## What it demonstrates
+
+1. **Color tokens + theme toggle** — `bg-primary`, `bg-background`, etc. generated via `@theme inline`; toggling sets `<html data-theme>` (via `useHead`) and swaps `[data-theme="dark"]` overrides.
+2. **Typography utilities** — `text-16-medium`, `text-32-bold` emitted from `theme.typography` and consumed by `<Text type="...">`.
+3. **Spacing helpers** — `<Box :p="4" :mx="{ base: 2, md: 4 }">` uses `resolveSpacingProps` from `@duydpdev/style-generator/spacing` to emit `.sp-*` classes + inline CSS variables. No safelist required for spacing.
+4. **CVA mapper + `cn()`** — `<Button>` composes `class-variance-authority` with `createVariantMapper("bg", colors)` from `@duydpdev/style-generator/cva`. Final classes flow through a `cn(clsx, twMerge)` helper.
+
+## SSR notes
+
+State lives in `useState`-backed composables (`useStyleGuide`, `useDrawers`), so the server and the first client render share the same initial values. The `<html data-*>` attributes are applied reactively via `useHead` in `app.vue`, keeping SSR and hydration in agreement.
+
+## Layout (Nuxt conventions)
+
+```
+examples/nuxt-v4
+├── nuxt.config.ts                # vite.plugins: [styleGenVite, tailwindcss] + app.head (fonts, html data-*)
+├── app.vue                       # reactive <html data-*> via useHead
+├── assets/css/globals.css        # tailwind + theme.css + palettes + style-guide + @plugin + @source
+├── pages/
+│   └── index.vue                 # showcase composition
+├── composables/
+│   ├── useStyleGuide.ts          # palette/theme/voice/geometry/surface state
+│   └── useDrawers.ts             # json + tweaks panel open state
+├── lib/
+│   └── utils.ts                  # cn() = twMerge(clsx(...))
+├── components/
+│   ├── Box.vue / Text.vue / Button.vue       # token-typed primitives
+│   ├── box.style.ts / text.style.ts / button.style.ts   # cva configs (shared logic with react-v4)
+│   ├── box.type.ts               # SpacingProperties + StyleProperties + BoxProps
+│   └── sections/                 # Topbar / Hero / Color / Typography / Utilities / ... demo screens
+├── data/
+│   ├── palettes.ts               # palette list + color rows
+│   └── types.ts                  # StyleGuideState + tweak unions
+└── theme/
+    ├── theme.json
+    ├── theme-plugin.ts           # Tailwind @plugin entry (root barrel — Node-side only)
+    └── design-tokens.ts          # App-side DesignTokens via /tokens subpath (browser-safe)
+```
+
+The cva configs, theme JSON, palettes and bespoke chrome CSS are identical to `react-v4` — only the component layer is rewritten as Vue SFCs and the state moves into Nuxt composables.

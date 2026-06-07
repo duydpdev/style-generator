@@ -14,6 +14,7 @@ Tài liệu mô tả kiến trúc tổng thể của thư viện `fe-style-gener
     - [`createStylePlugin`](#createstyleplugin)
     - [`generateSafelist`](#generatesafelist)
     - [`createDesignTokens`](#createdesigntokens)
+    - [Vite Plugin (emit-only)](#vite-plugin-emit-only)
   - [Multi-theme System](#multi-theme-system)
   - [Spacing System](#spacing-system)
     - [Plugin Output (tự động tạo)](#plugin-output-tự-động-tạo)
@@ -63,12 +64,17 @@ flowchart TD
 ```text
 src/
 ├── core/                       # Base config, Types, Options & Inference
+│   ├── designTokensTypes.ts    # Semantic type aliases (ColorVariant, TextVariant, etc.)
+│   └── ...
 ├── features/                   # Core style functionalities
 │   ├── plugin/                 # Plugin logic & Variables
 │   ├── safelist/               # Safelist generation
 │   ├── spacing/                # Spacing constants & responsive rules
 │   ├── tokens/                 # Design Token inference & generation
-│   └── cva/                    # CVA variant mapper utils
+│   ├── cva/                    # CVA variant mapper utils
+│   ├── vite/                   # Vite plugin for emit-only theme generation
+│   ├── theme-css/              # Theme CSS (@theme inline) generation
+│   └── ...
 ├── shared/                     # Utilities reused across features
 ├── types/                      # TypeScript type definitions
 │   ├── ThemeConfig.ts          # ThemeConfig, ThemeOverride, TypographyConfig
@@ -157,6 +163,41 @@ Hỗ trợ **Nested Colors**:
 
 **Type inference:** Hàm dùng Generic `T extends ThemeConfig` kết hợp type utilities (`KebabCase`, `KeysOf`, `LiteralArray`) để preserve literal types thay vì widen sang `string`.
 
+### Vite Plugin (emit-only)
+
+Vite plugin tự động phát sinh `theme.css` và `safelist.txt` từ theme JSON, thay thế workflow manual predev/prebuild cho Tailwind v4.
+
+```typescript
+// vite.config.ts
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    styleGenVite({
+      themePath: "src/theme/theme.json",
+      outDir: "src/theme",
+      options: { tailwindVersion: 4 },
+    }),
+    tailwindcss(),
+  ],
+});
+```
+
+**Tùy chọn:**
+
+- `themePath` — Đường dẫn theme JSON (tương đối từ project root)
+- `outDir` — Thư mục output (mặc định: `dirname(themePath)`, PHẢI khớp với `@import` path)
+- `options` — Forwarded đến `createStyleSystem` internals
+
+**Lifecycle:**
+
+- `configResolved` — Phát sinh file đồng bộ (trước `@source` scan)
+- `configureServer` — HMR watcher (200ms debounce)
+- `closeBundle` — Final write cho build command
+
+**Bảo mật:** Path-traversal guard giữ themePath/outDir trong project root; module-scoped registry cảnh báo khi nhiều instance target cùng outDir (monorepo safe); SSR per-environment guarded.
+
 ---
 
 ## Multi-theme System
@@ -183,7 +224,9 @@ flowchart LR
 
 ## Spacing System
 
-Spacing **không** dùng safelist. Thay vào đó, plugin tạo các utility class cố định `.sp-*` với `var()` fallback chains — hỗ trợ responsive mà không cần generate hàng nghìn class.
+Spacing **không** dùng safelist manual. Plugin tạo các utility class cố định `.sp-*` với `var()` fallback chains — hỗ trợ responsive mà không cần generate hàng nghìn class.
+
+Từ **v3.1+**, `generateSafelist()` tự động bao gồm `sp-<key>` cho mỗi spacing property (mặc định: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gapX`, `gapY`). Tắt với `options.spacing.enabled = false`; tùy chỉnh với `options.spacing.properties = {...}`.
 
 ### Plugin Output (tự động tạo)
 
@@ -222,7 +265,7 @@ const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
 
 ### Ưu điểm
 
-- **Zero safelist** cho spacing — giảm từ ~4,800 xuống còn 0 spacing classes
+- **Safelist tự động** cho spacing — v3.1+ không cần thêm manual
 - **Hỗ trợ giá trị tự do** — không bị giới hạn bởi predefined values
 - **Responsive** — mobile-first cascade tự động
 
@@ -235,12 +278,60 @@ const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
 | `createStyleSystem`     | Function  | Entry point → `{ plugin, safelist, DesignTokens }` |
 | `createStylePlugin`     | Function  | Chỉ tạo plugin                                     |
 | `generateSafelist`      | Function  | Chỉ sinh safelist array                            |
+| `generateThemeCss`      | Function  | Sinh `@theme inline` CSS (v4 only)                 |
 | `createDesignTokens`    | Function  | Sinh Design Tokens object                          |
 | `createVariantMapper`   | Function  | Tự động map tokens + prefix từ feature cva         |
 | `resolveSpacing`        | Function  | Resolve một spacing prop                           |
 | `resolveSpacingProps`   | Function  | Resolve nhiều spacing props                        |
+| `styleGenVite`          | Function  | Vite plugin (subpath `/vite`)                      |
 | `Breakpoint`            | Enum      | `SM \| MD \| LG \| XL \| XXL`                      |
+| `ColorVariant`          | Type      | Color keys union (semantic alias)                  |
+| `TextVariant`           | Type      | Typography keys union (semantic alias)             |
+| `ShadowVariant`         | Type      | Shadow keys union (semantic alias)                 |
+| `BackdropBlurVariant`   | Type      | Backdrop blur keys union (semantic alias)          |
+| `BorderVariant`         | Type      | Border keys union (semantic alias)                 |
+| `RoundedVariant`        | Type      | Border-radius keys union (semantic alias)          |
 | `ThemeConfig`           | Interface | Type cho theme config object                       |
 | `StyleGeneratorOptions` | Interface | Type cho options                                   |
 | `ModuleConfig`          | Interface | Type cho module config                             |
 | `SpacingPropertyMap`    | Type      | Type cho spacing property mapping                  |
+
+---
+
+## Landing Site (`site/`)
+
+Top-level `site/` là một marketing landing page riêng (React + Vite + Tailwind v4) dogfood thư viện qua yarn workspace `workspace:*`.
+
+- **Path:** `site/`
+- **Stack:** React 19, Vite 7, Tailwind v4, `@duydpdev/style-generator` (workspace), `styleGenVite()`
+- **Theme:** Cobalt palette (`site/src/theme/theme.json`) — sinh ra `site/src/theme/theme.css` qua `styleGenVite` plugin
+- **Cấu trúc:** 10 chapters editorial-scroll (Hero · Pros/Cons · Compare · Build · Features · Spacing · Theming · Types · Tooling · Start + CTA + Footer)
+- **Effects:** sidebar TOC + scroll-spy, scroll progress bar, IntersectionObserver reveal/stagger, marquee, terminal typewriter lazy-trigger, single-pass JSON/CSS/TS syntax highlighter, theme toggle (`data-theme=light|dark`)
+- **Scripts:** `yarn workspace site {dev,build,typecheck,lint}`. Dev port mặc định 5174 để không xung đột với examples.
+- **Workspace setup:** root `package.json` khai báo `workspaces: ["site", "examples/*"]` + `resolutions.vite` để chỉ có một instance Vite duy nhất, tránh lỗi `Plugin<any>` không khớp giữa hai bản sao.
+
+### Routes
+
+- `/` — landing (10 chapters editorial scroll).
+- `/docs` — auto-redirect tới doc đầu tiên.
+- `/docs/:slug` — render `docs/*.md` qua `react-markdown` + `remark-gfm` + `rehype-highlight`. Sidebar liệt kê toàn bộ doc.
+- `/examples/v3` và `/examples/v4` — iframe embed các app trong `examples/react-v{3,4}/dist`. Tab switcher giữa v3/v4 + nút open-in-new-tab.
+
+### Examples integration
+
+`site/scripts/build-examples.mjs` chạy trước Vite build site (qua `yarn build:examples`):
+
+1. Đặt env `EXAMPLE_BASE=${VITE_BASE}examples/<v3|v4>/` cho từng example.
+2. Gọi `yarn workspace react-v{3,4}-example build`.
+3. Copy `examples/react-v{3,4}/dist` vào `site/public/examples/{v3,v4}` (gitignored).
+
+Khi Vite build site, content của `public/` được copy thẳng sang `dist/`, tạo path `dist/examples/v{3,4}/index.html`.
+
+Iframe trong `examples-page.tsx` load `${BASE}/examples/v4/index.html` với `sandbox="allow-scripts allow-same-origin allow-forms"`.
+
+### Deploy pipelines
+
+| Target              | Workflow                     | See                                                          |
+| ------------------- | ---------------------------- | ------------------------------------------------------------ |
+| npm package         | `release.yml` + `deploy.yml` | [`docs/deploy.md`](./deploy.md)                              |
+| GitHub Pages (site) | `deploy-site.yml`            | [`docs/deploy.md`](./deploy.md#site-deployment-github-pages) |

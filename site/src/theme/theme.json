@@ -1,0 +1,87 @@
+{
+  "$palette": "cobalt",
+  "colors": {
+    "primary": "#2647D9",
+    "primarySoft": "#2647D914",
+    "secondary": "#6E5BFF",
+    "success": "#2E7D5B",
+    "successSoft": "#2E7D5B14",
+    "danger": "#C8462C",
+    "dangerSoft": "#C8462C14",
+    "bg": "#F6F1E6",
+    "paper": "#FBF7EF",
+    "foreground": "#0F1530",
+    "ink": "#1B2240",
+    "muted": "#6B6D7A",
+    "line": "#0F153012",
+    "lineStrong": "#0F153022",
+    "lineStronger": "#0F153040"
+  },
+  "typography": {
+    "displayHero": {
+      "fontFamily": "Instrument Serif",
+      "fontStyle": "italic",
+      "fontSize": "116px",
+      "fontWeight": 400,
+      "lineHeight": "92%",
+      "letterSpacing": "-0.025em"
+    },
+    "displayChapter": {
+      "fontFamily": "Instrument Serif",
+      "fontSize": "52px",
+      "fontWeight": 400,
+      "lineHeight": "104%",
+      "letterSpacing": "-0.02em"
+    },
+    "body": {
+      "fontSize": "16px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "mono": {
+      "fontFamily": "JetBrains Mono",
+      "fontSize": "12px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    }
+  },
+  "shadows": {
+    "sm": "0px 1px 2px rgba(15, 21, 48, 0.06), 0px 1px 1px rgba(15, 21, 48, 0.04)",
+    "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
+    "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)"
+  },
+  "borderRadius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "14px",
+    "pill": "999px"
+  },
+  "themes": {
+    "dark": {
+      "colors": {
+        "primary": "#8FA6FF",
+        "primarySoft": "#8FA6FF18",
+        "secondary": "#A89AFF",
+        "success": "#6BBF93",
+        "successSoft": "#6BBF9318",
+        "danger": "#F08369",
+        "dangerSoft": "#F0836918",
+        "bg": "#0A0C18",
+        "paper": "#11142A",
+        "foreground": "#F2EFE9",
+        "ink": "#DCD8CB",
+        "muted": "#8A8FA8",
+        "line": "#F2EFE910",
+        "lineStrong": "#F2EFE928",
+        "lineStronger": "#F2EFE94A"
+      },
+      "shadows": {
+        "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
+        "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+        "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+      }
+    }
+  }
+}

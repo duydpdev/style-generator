@@ -19,5 +19,6 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "examples", "scripts"]
+  "include": ["src", "examples", "scripts"],
+  "exclude": ["examples/react-v3", "examples/react-v4"]
 }

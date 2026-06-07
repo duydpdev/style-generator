@@ -1,0 +1,111 @@
+.compare-wrap {
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--c-paper) 70%, transparent);
+  overflow: hidden;
+}
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.compare thead th {
+  text-align: left;
+  padding: 16px 20px;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--c-line);
+  vertical-align: bottom;
+}
+.compare thead th.col-tw {
+  color: var(--c-fg);
+  font-family: var(--f-sans);
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: -0.005em;
+  font-weight: 500;
+}
+.compare thead th.col-tw small {
+  display: block;
+  color: var(--c-muted);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.compare thead th.col-us {
+  color: var(--c-fg);
+  font-family: var(--f-sans);
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: -0.005em;
+  font-weight: 600;
+}
+.compare thead th.col-us small {
+  display: block;
+  color: var(--c-primary);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-top: 3px;
+}
+.compare tbody tr + tr td {
+  border-top: 1px solid var(--c-line);
+}
+.compare tbody td {
+  padding: 14px 20px;
+  vertical-align: top;
+  line-height: 1.5;
+}
+.compare tbody td.row-label {
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.compare tbody td.cell-tw {
+  color: var(--c-muted);
+}
+.compare tbody td.cell-us {
+  background: color-mix(in srgb, var(--c-primary) 4%, transparent);
+  position: relative;
+}
+.compare tbody td.cell-us::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--c-primary);
+}
+.compare tbody td.cell-us b {
+  color: var(--c-fg);
+}
+
+.pill {
+  display: inline-block;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  margin-right: 6px;
+}
+.pill-warn {
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+}
+.pill-good {
+  background: var(--c-success-soft);
+  color: var(--c-success);
+}
+.pill-info {
+  background: var(--c-primary-soft);
+  color: var(--c-primary);
+}

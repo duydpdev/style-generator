@@ -2,11 +2,15 @@
 /**
  * Guard against publishing to the wrong registry.
  *
+ * Publish target = GitHub Packages (scoped @duydpdev). Dependency installs
+ * still resolve from npmjs.org via the global registry.
+ *
  * Verifies:
- *   - package.json#publishConfig.registry === https://registry.npmjs.org
- *   - package.json#publishConfig.access === public
- *   - .yarnrc.yml declares npmPublishRegistry + npmRegistryServer = npmjs.org
- *   - .yarnrc.yml scope override for @duydpdev points to npmjs.org
+ *   - package.json#publishConfig.registry === https://npm.pkg.github.com
+ *   - package.json#publishConfig.access is "restricted" or "public"
+ *   - .yarnrc.yml global npmRegistryServer === https://registry.npmjs.org (deps)
+ *   - .yarnrc.yml scope @duydpdev npmRegistryServer === GitHub Packages
+ *   - .yarnrc.yml scope @duydpdev npmPublishRegistry === GitHub Packages
  *
  * Called by prepublishOnly and by CI before `yarn npm publish`.
  * Exits 1 on any mismatch.
@@ -16,33 +20,33 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const EXPECTED = "https://registry.npmjs.org";
+const EXPECTED_PUBLISH = "https://npm.pkg.github.com";
+const EXPECTED_GLOBAL = "https://registry.npmjs.org";
 const EXPECTED_SCOPE = "duydpdev";
 
 let ok = true;
 const fail = (msg) => {
-  console.error(`\u2717 ${msg}`);
+  console.error(`✗ ${msg}`);
   ok = false;
 };
-const pass = (msg) => console.log(`\u2713 ${msg}`);
+const pass = (msg) => console.log(`✓ ${msg}`);
 
 // --- package.json checks ---
 const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 
-if (pkg.publishConfig?.registry !== EXPECTED) {
+if (pkg.publishConfig?.registry !== EXPECTED_PUBLISH) {
   fail(
-    `publishConfig.registry = ${pkg.publishConfig?.registry}, expected ${EXPECTED}`,
+    `publishConfig.registry = ${pkg.publishConfig?.registry}, expected ${EXPECTED_PUBLISH}`,
   );
 } else {
-  pass(`publishConfig.registry = ${EXPECTED}`);
+  pass(`publishConfig.registry = ${EXPECTED_PUBLISH}`);
 }
 
-if (pkg.publishConfig?.access !== "public") {
-  fail(
-    `publishConfig.access = ${pkg.publishConfig?.access}, expected "public"`,
-  );
+const access = pkg.publishConfig?.access;
+if (access !== "restricted" && access !== "public") {
+  fail(`publishConfig.access = ${access}, expected "restricted" or "public"`);
 } else {
-  pass(`publishConfig.access = public`);
+  pass(`publishConfig.access = ${access}`);
 }
 
 // --- .yarnrc.yml checks (string-based; no YAML parser dep) ---
@@ -58,44 +62,43 @@ const scanLine = (key, required = true) => {
   return m[1].trim();
 };
 
+// Global registry must stay on npmjs so dependency installs keep working.
 const globalRegistry = scanLine("npmRegistryServer");
-if (globalRegistry && globalRegistry !== EXPECTED) {
+if (globalRegistry && globalRegistry !== EXPECTED_GLOBAL) {
   fail(
-    `.yarnrc.yml npmRegistryServer = ${globalRegistry}, expected ${EXPECTED}`,
+    `.yarnrc.yml global npmRegistryServer = ${globalRegistry}, expected ${EXPECTED_GLOBAL}`,
   );
-} else if (globalRegistry === EXPECTED) {
-  pass(`.yarnrc.yml npmRegistryServer = ${EXPECTED}`);
+} else if (globalRegistry === EXPECTED_GLOBAL) {
+  pass(`.yarnrc.yml global npmRegistryServer = ${EXPECTED_GLOBAL}`);
 }
 
-const globalPublish = scanLine("npmPublishRegistry");
-if (globalPublish && globalPublish !== EXPECTED) {
-  fail(
-    `.yarnrc.yml npmPublishRegistry = ${globalPublish}, expected ${EXPECTED}`,
+// Scope block must point at GitHub Packages for both resolve + publish.
+const scopeField = (field) => {
+  const re = new RegExp(
+    `npmScopes:[\\s\\S]*?${EXPECTED_SCOPE}:[\\s\\S]*?${field}:\\s*"?([^"\\n]+)"?`,
+    "m",
   );
-} else if (globalPublish === EXPECTED) {
-  pass(`.yarnrc.yml npmPublishRegistry = ${EXPECTED}`);
-}
+  const m = yarnrc.match(re);
+  return m ? m[1].trim() : null;
+};
 
-// Scope block check
-const scopeRe = new RegExp(
-  `npmScopes:[\\s\\S]*?${EXPECTED_SCOPE}:[\\s\\S]*?npmRegistryServer:\\s*"?([^"\\n]+)"?`,
-  "m",
-);
-const scopeMatch = yarnrc.match(scopeRe);
-if (!scopeMatch) {
-  fail(`.yarnrc.yml missing npmScopes.${EXPECTED_SCOPE}.npmRegistryServer`);
-} else if (scopeMatch[1].trim() !== EXPECTED) {
-  fail(
-    `.yarnrc.yml npmScopes.${EXPECTED_SCOPE}.npmRegistryServer = ${scopeMatch[1]}, expected ${EXPECTED}`,
-  );
-} else {
-  pass(
-    `.yarnrc.yml npmScopes.${EXPECTED_SCOPE}.npmRegistryServer = ${EXPECTED}`,
-  );
+for (const field of ["npmRegistryServer", "npmPublishRegistry"]) {
+  const val = scopeField(field);
+  if (!val) {
+    fail(`.yarnrc.yml missing npmScopes.${EXPECTED_SCOPE}.${field}`);
+  } else if (val !== EXPECTED_PUBLISH) {
+    fail(
+      `.yarnrc.yml npmScopes.${EXPECTED_SCOPE}.${field} = ${val}, expected ${EXPECTED_PUBLISH}`,
+    );
+  } else {
+    pass(
+      `.yarnrc.yml npmScopes.${EXPECTED_SCOPE}.${field} = ${EXPECTED_PUBLISH}`,
+    );
+  }
 }
 
 if (!ok) {
-  console.error("\n\u2717 check-publish-target FAILED");
+  console.error("\n✗ check-publish-target FAILED");
   process.exit(1);
 }
-console.log("\n\u2713 Publish target verified: npmjs.org (public)");
+console.log("\n✓ Publish target verified: GitHub Packages (@duydpdev)");

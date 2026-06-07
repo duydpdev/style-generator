@@ -127,3 +127,12 @@ _(Add new lessons below this line)_
 
 - **Mistake:** User nói "Implement the following plan:" kèm nội dung plan chi tiết → tôi implement ngay mà không tạo file `docs/plans/YYYY-MM-DD/XX-plan.md` và `task.md`. File plan vật lý bị bỏ qua hoàn toàn.
 - **New Rule:** Dù user cung cấp plan trực tiếp trong prompt, PHẢI tạo file `docs/plans/YYYY-MM-DD/XX-plan.md` và `task.md` TRƯỚC khi implement. Đây là tài liệu tracking bắt buộc của dự án, không phụ thuộc vào việc plan đến từ đâu. "Implement the following plan" = đã approve plan → vẫn phải tạo file plan vật lý ngay bước đầu tiên.
+
+### [2026-06-07] - CI token hết hạn + reusable workflow permissions + GitHub Packages
+
+- **Mistake/Context:** Release CI fail vì PAT `CI_WORKER_REPOSITORY_TOKEN` hết hạn (checkout "could not read Username") và npm publish 404 do `NPM_TOKEN` hết hạn. Khi chuyển sang GitHub Packages, suýt bỏ sót `packages: write` ở caller workflow.
+- **New Rule:**
+  1. Ưu tiên `GITHUB_TOKEN` built-in (tự hết hạn theo job, không cần xoay tay) thay PAT/npm-token có hạn cho CI publish/checkout. Nếu buộc dùng PAT → đặt expiry dài + lịch nhắc gia hạn.
+  2. **Reusable workflow (`workflow_call`)**: token permissions ⊆ caller. Muốn job con (vd `deploy.yml`) có `packages: write` thì PHẢI khai quyền đó ở **caller** (`release.yml` top-level `permissions`), không chỉ ở file con.
+  3. Yarn Berry auth lấy từ `.yarnrc.yml` (`npmScopes.<scope>.npmAuthToken` interpolate env), KHÔNG từ `.npmrc` mà `setup-node registry-url` tạo. Set đúng env `YARN_NPM_AUTH_TOKEN`.
+  4. GitHub Packages trên private repo: chỉ collaborator/được-grant cài được, kể cả có PAT `read:packages` → muốn share người lạ phải invite hoặc dùng org.

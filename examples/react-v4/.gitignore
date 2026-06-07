@@ -1,0 +1,8 @@
+node_modules
+dist
+.vite
+*.log
+
+# Generated theme artifacts
+src/theme/theme.css
+src/theme/safelist.txt

@@ -1,0 +1,86 @@
+# ─────────────────────────────────────────────────────
+# Deploy Site — GitHub Pages
+#
+# Builds the library + landing site (with embedded examples)
+# and publishes the static bundle to GitHub Pages.
+#
+# Triggers:
+#   - push to main affecting site/, docs/, examples/, src/
+#   - manual via workflow_dispatch
+#
+# Independent from release.yml / deploy.yml (npm publish).
+# ─────────────────────────────────────────────────────
+name: Deploy Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/**"
+      - "examples/**"
+      - "src/**"
+      - "package.json"
+      - "yarn.lock"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Repo path served at https://<owner>.github.io/<repo>/
+  VITE_BASE: /${{ github.event.repository.name }}/
+
+jobs:
+  build:
+    name: Build site bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build library
+        run: yarn build:all
+
+      - name: Build site (includes examples)
+        run: yarn workspace site build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

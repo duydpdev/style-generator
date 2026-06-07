@@ -30,6 +30,7 @@ export default defineConfig({
         cva: r("./src/exports/cva.ts"),
         spacing: r("./src/exports/spacing.ts"),
         types: r("./src/exports/types.ts"),
+        vite: r("./src/exports/vite.ts"),
       },
       formats: ["es", "cjs"],
       fileName: (format, name) =>

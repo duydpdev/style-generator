@@ -1,0 +1,38 @@
+/* Local CSS vars mapped from style-generator @theme inline tokens.
+   The --c-* names mirror the prototype so editorial CSS reads naturally. */
+:root {
+  --c-primary: var(--color-primary);
+  --c-primary-soft: var(--color-primary-soft);
+  --c-secondary: var(--color-secondary);
+  --c-success: var(--color-success);
+  --c-success-soft: var(--color-success-soft);
+  --c-danger: var(--color-danger);
+  --c-danger-soft: var(--color-danger-soft);
+  --c-bg: var(--color-bg);
+  --c-paper: var(--color-paper);
+  --c-fg: var(--color-foreground);
+  --c-ink: var(--color-ink);
+  --c-muted: var(--color-muted);
+  --c-line: var(--color-line);
+  --c-line-strong: var(--color-line-strong);
+  --c-line-stronger: var(--color-line-stronger);
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  --f-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --f-display: "Inter", "Geist", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --gutter: 96px;
+  --content-w: 880px;
+  --sidebar-w: 220px;
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --gutter: 32px;
+  }
+}

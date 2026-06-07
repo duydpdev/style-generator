@@ -17,6 +17,7 @@ const budgets = {
   "dist/cva.js": 500,
   "dist/spacing.js": 1_000,
   "dist/types.js": 200,
+  "dist/vite.js": 8_000,
 };
 
 let ok = true;

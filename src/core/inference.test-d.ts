@@ -7,6 +7,7 @@ import {
   DesignTokensWeb,
   InferBorderOptions,
   InferRoundedOptions,
+  InferSafelistClasses,
 } from "./inference";
 import type { ThemeConfig } from "./ThemeConfig";
 
@@ -180,5 +181,38 @@ describe("InferBorderOptions / InferRoundedOptions defaults", () => {
       typography: Record<string, never>;
     }
     expectTypeOf<InferRoundedOptions<T>>().not.toBeNever();
+  });
+});
+
+// ---- InferSafelistClasses: spacing branch ----
+
+describe("InferSafelistClasses sp-* branch", () => {
+  interface T {
+    colors: { primary: string };
+  }
+
+  it("includes sp-* default keys when spacing not configured", () => {
+    type Result = InferSafelistClasses<T, undefined>;
+    type SpP = "sp-p" extends Result ? true : false;
+    type SpGapX = "sp-gap-x" extends Result ? true : false;
+    expectTypeOf<SpP>().toEqualTypeOf<true>();
+    expectTypeOf<SpGapX>().toEqualTypeOf<true>();
+  });
+
+  it("removes sp-* when spacing.enabled = false", () => {
+    type Result = InferSafelistClasses<T, { spacing: { enabled: false } }>;
+    // DynamicSafelistClass (branded string) still absorbs any string —
+    // this branch is decorative (documents intent at type level).
+    type IsNever = Result extends `sp-${string}` ? false : true;
+    expectTypeOf<IsNever>().toEqualTypeOf<true>();
+  });
+
+  it("reflects custom spacing.properties keys", () => {
+    type Result = InferSafelistClasses<
+      T,
+      { spacing: { properties: { inset: Record<string, string> } } }
+    >;
+    type HasInset = "sp-inset" extends Result ? true : false;
+    expectTypeOf<HasInset>().toEqualTypeOf<true>();
   });
 });

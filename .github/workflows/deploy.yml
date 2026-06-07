@@ -16,10 +16,10 @@ on:
 
 env:
   CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
-  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   deploy:
@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: "22"
           cache: "yarn"
-          registry-url: "https://registry.npmjs.org"
+          registry-url: "https://npm.pkg.github.com"
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -52,22 +52,20 @@ jobs:
 
       - name: Publish dry-run (assert registry from output)
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
           OUT=$(yarn npm publish --dry-run 2>&1)
           echo "$OUT"
-          echo "$OUT" | grep -F "registry.npmjs.org" \
-            || { echo "::error::Dry-run did not target registry.npmjs.org"; exit 1; }
+          echo "$OUT" | grep -F "npm.pkg.github.com" \
+            || { echo "::error::Dry-run did not target npm.pkg.github.com"; exit 1; }
 
-      - name: Publish to npm
+      - name: Publish to GitHub Packages
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ "${{ inputs.tag }}" == *-* ]]; then
-            yarn npm publish --access public --tag DEV
+            yarn npm publish --tag DEV
           else
-            yarn npm publish --access public
+            yarn npm publish
           fi

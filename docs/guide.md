@@ -109,7 +109,50 @@ Khi có `@theme inline`, Tailwind v4 tự sinh `bg-primary`, `text-primary`, `bo
 
 ## Tích hợp Tailwind v4
 
-### Bước 1 — Tạo plugin file
+### Cách 1: Vite Plugin (Khuyến nghị)
+
+**Bước 1** — Cài đặt Vite (nếu chưa):
+
+```bash
+yarn add -D vite
+```
+
+**Bước 2** — Config Vite plugin:
+
+```typescript
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    styleGenVite({
+      themePath: "src/theme/theme.json",
+      outDir: "src/theme",
+      options: { tailwindVersion: 4 },
+    }),
+    // Tailwind plugin sau styleGenVite
+    // import tailwindcss plugin nếu sử dụng
+  ],
+});
+```
+
+**Bước 3** — Import trong CSS:
+
+```css
+@import "tailwindcss";
+@import "./theme.css"; /* Tự động phát sinh bởi plugin */
+@plugin "./src/plugins/theme-plugin.ts";
+@source "./styles/safelist.txt"; /* Tự động phát sinh bởi plugin */
+```
+
+Plugin tự động phát sinh `theme.css` (HMR-enabled) + `safelist.txt` khi lưu theme JSON.
+
+### Cách 2: Manual Script (Dùng khi không có Vite)
+
+**Bước 1** — Tạo plugin file:
 
 ```typescript
 // src/plugins/theme-plugin.ts
@@ -123,14 +166,13 @@ import theme from "../styles/theme.json";
 const { plugin, safelist, themeCss } = createStyleSystem(defineTheme(theme), {
   screens: { md: "800px" },
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
-  // safelistColors: true,  // Thêm vào safelist nếu không dùng @theme inline
 });
 
 export default plugin;
 export { safelist, themeCss };
 ```
 
-### Bước 2 — (Optional) Generate `theme.css` với `@theme inline`
+**Bước 2** — Generate `theme.css`:
 
 ```typescript
 // scripts/generate-theme-css.ts
@@ -142,7 +184,7 @@ fs.writeFileSync("styles/theme.css", generateThemeCss(theme), "utf8");
 console.log("✅ theme.css generated");
 ```
 
-### Bước 3 — Import trong CSS
+**Bước 3** — Import trong CSS:
 
 ```css
 @import "tailwindcss";
@@ -150,8 +192,6 @@ console.log("✅ theme.css generated");
 @plugin "./src/plugins/theme-plugin.ts";
 @source "./styles/safelist.txt";
 ```
-
-Nếu không dùng `theme.css`, đặt `safelistColors: true` để có color classes trong safelist.
 
 ---
 
@@ -242,7 +282,7 @@ html[data-theme="dark"] {
 
 ## Spacing Helpers
 
-Plugin tự động tạo các utility class `.sp-*` với CSS custom properties.
+Plugin tự động tạo các utility class `.sp-*` với CSS custom properties. Từ **v3.1+**, `generateSafelist()` tự động bao gồm tất cả `sp-<key>` classes (mặc định).
 
 ### Trong Component
 
@@ -277,9 +317,24 @@ const Box = ({ p, px, py, m, mx, my, className, children }) => {
 // Giá trị tự do
 <Box p={13.5} />
 // → class="sp-p" style="--sp-p: 3.375rem"
+
+// Gap responsive (từ v3.1+)
+<Box gap={{ base: 4, md: 8 }} gapX={2} />
+// → class="sp-gap sp-gap-x" style="--sp-gap: 1rem; --sp-gap-md: 2rem; --sp-gap-x: 0.5rem"
 ```
 
-**Spacing properties mặc định:** `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`
+**Spacing properties mặc định:** `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gapX`, `gapY`, `top`, `right`, `bottom`, `left`
+
+**Tắt/tùy chỉnh safelist spacing:**
+
+```typescript
+const { safelist } = createStyleSystem(theme, {
+  spacing: {
+    enabled: false, // Tắt auto-include sp-* classes
+    properties: { p: true, m: false }, // Chỉ include sp-p
+  },
+});
+```
 
 ---
 
@@ -353,6 +408,33 @@ const theme = defineTheme({
 // TypeScript báo lỗi ngay khi thiếu field bắt buộc
 ```
 
+### Semantic Type Aliases (v3.1+)
+
+Dùng semantic variant aliases để tránh deep `typeof DesignTokens.Web.X[number]` indexing:
+
+```typescript
+import type {
+  ColorVariant,
+  TextVariant,
+  BorderVariant,
+} from "@duydpdev/style-generator";
+import type { Theme } from "./theme/design-tokens";
+
+type ButtonProps = {
+  color?: ColorVariant<Theme>;
+  borderStyle?: BorderVariant<Theme>;
+  textStyle?: TextVariant<Theme>;
+};
+```
+
+Không cần `defineTheme()` nếu theme là file JSON — dùng `typeof`:
+
+```typescript
+import theme from "./theme.json";
+
+type MyColorVariant = ColorVariant<typeof theme>;
+```
+
 ### Custom Breakpoints Intellisense
 
 ```ts
@@ -366,6 +448,22 @@ export type AppBreakpoints =
   | "laptop"
   | "desktop";
 export type ResponsiveValue<T> = LibResponsiveValue<T, AppBreakpoints>;
+```
+
+### Responsive Value (Strict Mode)
+
+Dùng `ResponsiveValueStrict` để stricter typing (chỉ accept chính xác breakpoint keys):
+
+```typescript
+import { ResponsiveValueStrict } from "@duydpdev/style-generator";
+
+const props: {
+  padding: ResponsiveValueStrict<number, "md" | "lg">;
+} = {
+  padding: { base: 4, md: 8, lg: 16 }, // ✅ Exact keys
+};
+
+// ❌ const props = { padding: { base: 4, md: 8, unknownBreak: 10 } };
 ```
 
 ---

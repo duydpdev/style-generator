@@ -10,6 +10,7 @@ export {
 } from "../features/spacing/spacingHelpers";
 export type {
   ResponsiveValue,
+  ResponsiveValueStrict,
   DefaultBreakpointKeys,
 } from "../features/spacing/spacingHelpers";
 export { DEFAULT_SPACING_PROPERTIES } from "../shared/defaultOption";

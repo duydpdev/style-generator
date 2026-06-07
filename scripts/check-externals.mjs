@@ -34,7 +34,15 @@ const buildMatcher = (name) => {
   );
 };
 
-const entries = ["index", "plugin", "tokens", "cva", "spacing", "types"];
+const entries = [
+  "index",
+  "plugin",
+  "tokens",
+  "cva",
+  "spacing",
+  "types",
+  "vite",
+];
 const targets = entries.flatMap((e) => [
   resolve(root, `dist/${e}.js`),
   resolve(root, `dist/${e}.cjs`),

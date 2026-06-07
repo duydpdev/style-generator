@@ -21,6 +21,28 @@ export type ResponsiveValue<T, BKeys extends string = DefaultBreakpointKeys> =
   | Partial<Record<BKeys | "base" | (string & {}), T>>;
 
 /**
+ * Strict variant of {@link ResponsiveValue} without the `(string & {})` fallback.
+ * Use when you want typos in breakpoint keys to be type errors instead of silently accepted.
+ *
+ * Opt in by importing directly:
+ * ```ts
+ * import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
+ * // optionally alias for migration ergonomics:
+ * import { ResponsiveValueStrict as ResponsiveValue } from "@duydpdev/style-generator/spacing";
+ * ```
+ *
+ * Planned to replace `ResponsiveValue` as the default in v4 major.
+ * @example
+ * type P = ResponsiveValueStrict<number, "base" | "md">;
+ * const ok: P = { base: 4, md: 8 };
+ * // const bad: P = { typo: 4 }; // type error
+ */
+export type ResponsiveValueStrict<
+  T,
+  BKeys extends string = DefaultBreakpointKeys,
+> = T | Partial<Record<BKeys | "base", T>>;
+
+/**
  * Resolve a single spacing prop into className + inline style CSS variables.
  * @param {string} prop - Spacing property name (e.g. 'p', 'mx', 'gap')
  * @param {ResponsiveValue<number>} value - Simple number or responsive object

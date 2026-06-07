@@ -28,7 +28,17 @@ yarn test:watch
 **Các module chính được test:**
 
 - `src/utils/*`: kebabCase, flattenToVars, resolveSpacing...
-- `src/factories/*`: generateSafelist, createStyleSystem...
+- `src/features/plugin/*`: createStylePlugin, cssVariables...
+- `src/features/safelist/*`: generateSafelist (bao gồm auto-include spacing)
+- `src/features/spacing/*`: spacing utilities
+- `src/features/tokens/*`: createDesignTokens, type inference
+- `src/features/vite/*`: styleGenVite plugin (emit-only, HMR, SSR)
+- `src/features/theme-css/*`: generateThemeCss (@theme inline)
+- `src/cli/*`: init, safelist, doctor commands
+- `src/shared/*`: detectTailwindVersion, helpers
+- `src/__integration__/*`: Tailwind compile integration tests
+
+Test coverage: 20 test files, ≥80% v8 coverage, loại trừ dist/ và test files.
 
 #### 2. Type Testing (Vitest Typecheck)
 

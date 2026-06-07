@@ -72,14 +72,17 @@ export default pluginTs.config(
   {
     ignores: [
       "node_modules/*",
+      "**/node_modules/*",
       "**/*.config.*",
-      "dist/*",
+      "**/dist/*",
       "*.cjs",
       ".yarn/*",
       "__tests__/reports/*",
       "**/generations/*",
       "coverage/*",
-      "scripts/*",
+      "**/scripts/*",
+      "examples/**",
+      "site/**",
     ],
   },
 );

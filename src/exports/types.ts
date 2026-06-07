@@ -17,3 +17,13 @@ export type {
   InferSafelistClasses,
   DesignTokensResult,
 } from "../core/inference";
+export type {
+  DesignTokenKeys,
+  ColorVariant,
+  TextVariant,
+  ShadowVariant,
+  BackdropBlurVariant,
+  BorderVariant,
+  RoundedVariant,
+} from "../core/designTokensTypes";
+export type { ResponsiveValueStrict } from "../features/spacing/spacingHelpers";

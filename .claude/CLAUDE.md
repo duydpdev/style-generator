@@ -49,7 +49,7 @@ Custom format `[type] subject` (NOT standard conventional-commits prefix):
 | `[fix]` `[perf]` `[style]` `[refactor]`      | patch   |
 | `[chore]` `[docs]` `[test]` `[build]` `[ci]` | none    |
 
-Merges to `main` (stable) or `develop` (pre-release `DEV` dist-tag) trigger Semantic Release → tag → publish workflow to **npm (`registry.npmjs.org`, public access)**. Stable release on `main` back-merges to `develop`.
+Merges to `main` (stable) or `develop` (pre-release `DEV` dist-tag) trigger Semantic Release → tag → publish workflow to **GitHub Packages (`npm.pkg.github.com`, scope `@duydpdev`, private)**. Stable release on `main` back-merges to `develop`.
 
 ## Architecture
 
@@ -139,10 +139,10 @@ Built separately by `tsdown` to `dist/cli/index.mjs` (bin entry). Commands: `ini
 
 1. PRs merge to `develop` (pre-release, `DEV` dist-tag) or `main` (stable).
 2. Semantic Release creates version tag + updates `CHANGELOG.md` (custom `changelog-template.hbs`).
-3. Tag triggers publish to **npm** (`registry.npmjs.org`, public).
+3. Tag triggers publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`, private). Auth uses the built-in `GITHUB_TOKEN` (no external `NPM_TOKEN`). `release.yml` grants `packages: write` so the reusable `deploy.yml` token can publish.
 4. Stable release on `main` back-merges to `develop`.
 
-> Publish target locked by `yarn check:publish-target` (runs in `prepublishOnly` and CI). CI also runs `yarn npm publish --dry-run` and grep-asserts `registry.npmjs.org` before real publish. `NPM_TOKEN` is mapped to `YARN_NPM_AUTH_TOKEN` in the workflow so yarn berry auths correctly.
+> Publish target locked by `yarn check:publish-target` (runs in `prepublishOnly` and CI). CI also runs `yarn npm publish --dry-run` and grep-asserts `npm.pkg.github.com` before real publish. `GITHUB_TOKEN` is mapped to `YARN_NPM_AUTH_TOKEN` in the workflow so yarn berry auths correctly. Only the `@duydpdev` scope resolves to GitHub Packages; the global registry stays `registry.npmjs.org` for normal dependency installs. Consumers need a PAT with `read:packages` + repo access.
 > Bundle hygiene locked by `yarn check:externals` (`prepublishOnly` + CI) — fails if `dist/` ever inlines a peer/dependency.
 
 ## Project-Specific Workflow Rules

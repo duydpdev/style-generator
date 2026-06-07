@@ -3,7 +3,7 @@
 TypeScript library + CLI that generates a complete **Design System** for Tailwind CSS from a theme JSON config.
 Supports both **Tailwind CSS v4** and **v3** (auto-detected).
 
-Published on **npm** as [`@duydpdev/style-generator`](https://www.npmjs.com/package/@duydpdev/style-generator).
+Published on **GitHub Packages** as `@duydpdev/style-generator` (private — requires access, see Installation).
 
 ## Features
 
@@ -20,11 +20,33 @@ Published on **npm** as [`@duydpdev/style-generator`](https://www.npmjs.com/pack
 
 ## 1. Installation
 
+This package is published to **GitHub Packages** under a **private** repository.
+To install you must be a repository collaborator and authenticate with a GitHub
+Personal Access Token (classic) that has the `read:packages` scope.
+
+**1. Configure the `@duydpdev` scope** — add to your project `.npmrc`:
+
+```ini
+@duydpdev:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_PAT}
+```
+
+Set `GITHUB_PAT` in your environment (do not commit the token):
+
+```bash
+export GITHUB_PAT=ghp_xxxxxxxxxxxxxxxxxxxx
+```
+
+**2. Install:**
+
 ```bash
 yarn add @duydpdev/style-generator
 # or
 npm install @duydpdev/style-generator
 ```
+
+> Access is granted per collaborator. If install returns `404`/`401`, your token
+> lacks `read:packages` or you have not been added to the repository.
 
 This package expects these peer dependencies from your project:
 
@@ -59,10 +81,91 @@ import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
 import type {
   ThemeConfig,
   InferColorKeys,
+  // Semantic design-token variant aliases (v3.1+)
+  ColorVariant,
+  TextVariant,
+  ShadowVariant,
+  RoundedVariant,
 } from "@duydpdev/style-generator/types";
+
+// Vite plugin — auto-emits theme.css + safelist.txt (v3.1+, Tailwind v4)
+import { styleGenVite } from "@duydpdev/style-generator/vite";
 ```
 
 Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node16"`, or `"nodenext"`. Root barrel still works for back-compat. See `docs/migration/v3-to-v4.md`.
+
+### Vite plugin (Tailwind v4)
+
+Replaces the manual `predev`/`prebuild` script. Plugin emits `theme.css` + `safelist.txt` to the configured `outDir` whenever `theme.json` changes (HMR-friendly).
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+import { Breakpoint } from "@duydpdev/style-generator";
+
+export default defineConfig({
+  plugins: [
+    styleGenVite({
+      themePath: "src/theme/theme.json",
+      outDir: "src/theme", // must match index.css @import paths
+      options: {
+        tailwindVersion: 4,
+        breakpoints: [Breakpoint.MD, Breakpoint.LG],
+        safelistColors: true,
+      },
+    }),
+    tailwindcss(), // runs after styleGenVite so @source sees fresh files
+  ],
+});
+```
+
+Add `theme.css` + `safelist.txt` to `.gitignore` if `theme.json` is your source of truth.
+
+### Semantic type aliases (v3.1+)
+
+Skip the `(typeof DesignTokens.Web.X)[number]` boilerplate in component types:
+
+```ts
+import type {
+  ColorVariant,
+  TextVariant,
+} from "@duydpdev/style-generator/types";
+
+import themeJson from "./theme.json";
+type Theme = typeof themeJson;
+
+interface BoxProps {
+  backgroundColor?: ColorVariant<Theme>;
+  shadow?: ShadowVariant<Theme>;
+}
+
+interface TextProps {
+  type?: TextVariant<Theme>;
+  color?: ColorVariant<Theme>;
+}
+```
+
+Exposed aliases: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, `BorderVariant`, `RoundedVariant`, plus the underlying mapped type `DesignTokenKeys<T>`.
+
+### Tightening responsive types — opt-in today, default in v4
+
+`ResponsiveValue<T>` accepts arbitrary string keys for back-compat (`{ typo: 4 }` does not error). If you want strict breakpoint key checking now, import the strict variant:
+
+```ts
+import { ResponsiveValueStrict as ResponsiveValue } from "@duydpdev/style-generator/spacing";
+
+type P = ResponsiveValue<number, "base" | "md">;
+const ok: P = { base: 4, md: 8 };
+// const bad: P = { typo: 4 }; // type error at the literal site
+```
+
+`ResponsiveValueStrict` will replace `ResponsiveValue` as the default in v4 major.
+
+### Spacing safelist (auto-included since v3.1)
+
+`createStyleSystem(...).safelist` now includes all `sp-*` spacing utilities by default. You can delete any hardcoded `SPACING_KEYS` arrays you previously appended. Disable via `options.spacing.enabled = false` if you don't use the runtime spacing helpers.
 
 ---
 

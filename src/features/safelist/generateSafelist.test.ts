@@ -67,4 +67,35 @@ describe("generateSafelist", () => {
     });
     expect(list).toContain("custom-class-123");
   });
+
+  it("should include sp-* spacing classes by default (non-responsive)", () => {
+    const list = generateSafelist(mockTheme);
+    expect(list).toContain("sp-p");
+    expect(list).toContain("sp-mx");
+    expect(list).toContain("sp-gap");
+    expect(list).toContain("sp-gap-x");
+    expect(list).toContain("sp-gap-y");
+    // Non-responsive: no md:sp-*
+    expect(list).not.toContain("md:sp-p");
+    expect(list).not.toContain("lg:sp-p");
+  });
+
+  it("should strip sp-* when spacing.enabled = false", () => {
+    const list = generateSafelist(mockTheme, { spacing: { enabled: false } });
+    for (const cls of list) {
+      expect(cls).not.toMatch(/^sp-/);
+    }
+  });
+
+  it("should reflect custom spacing.properties keys", () => {
+    const list = generateSafelist(mockTheme, {
+      spacing: {
+        properties: {
+          inset: { inset: "var(--sp-inset)" },
+        },
+      },
+    });
+    expect(list).toContain("sp-inset");
+    expect(list).not.toContain("sp-p"); // overridden, no defaults
+  });
 });

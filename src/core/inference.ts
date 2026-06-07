@@ -145,14 +145,33 @@ type ThemeDerivedResponsiveClasses<TTheme extends ThemeConfig, TOptions> =
 
 type DynamicSafelistClass = string & { __type?: "DynamicSafelistClass" };
 
+// ---- Spacing classes ----
+
+type InferSpacingPropertyKeys<TOptions> = TOptions extends {
+  spacing?: { properties?: infer P };
+}
+  ? P extends Record<infer K, unknown>
+    ? Extract<K, string>
+    : DefaultSpacingKey
+  : DefaultSpacingKey;
+
+type SpacingClasses<TOptions> = TOptions extends {
+  spacing?: { enabled?: false };
+}
+  ? never
+  : `sp-${InferSpacingPropertyKeys<TOptions>}`;
+
 /**
  * Inferred safelist classes dựa trên ThemeConfig + StyleGeneratorOptions.
  * Phần bắt nguồn từ theme được typed chi tiết, phần còn lại dùng branded string
  * cho các class hoàn toàn động (dynamicClasses, layout cố định, ...).
+ *
+ * `sp-*` spacing classes are non-responsive — see SpacingClasses.
  */
 export type InferSafelistClasses<TTheme extends ThemeConfig, TOptions> =
   | ThemeDerivedClasses<TTheme>
   | ThemeDerivedResponsiveClasses<TTheme, TOptions>
+  | SpacingClasses<TOptions>
   | DynamicSafelistClass;
 
 // ---- DesignTokens result types ----

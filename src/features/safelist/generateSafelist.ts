@@ -8,6 +8,7 @@ import {
   DEFAULT_BORDER_VALUES,
   DEFAULT_OPACITY_VALUES,
   DEFAULT_ZINDEX_VALUES,
+  DEFAULT_SPACING_PROPERTIES,
 } from "../../shared/defaultOption";
 import {
   roundedProperties,
@@ -16,7 +17,9 @@ import {
 
 /**
  * Generates a list of safelisted classes based on the theme configuration.
- * NOTE: Spacing is NOT included — it uses CSS custom properties (see createStylePlugin).
+ * Spacing `.sp-*` classes are included by default (non-responsive — they consume CSS
+ * custom property fallback chains injected by the plugin's `addBase`). Disable via
+ * `options.spacing.enabled = false`.
  * @param {ThemeConfig} config - Theme configuration
  * @param {StyleGeneratorOptions | undefined} [options] - Generator options
  * @returns {InferSafelistClasses<ThemeConfig, StyleGeneratorOptions | undefined>[]} Typed safelist classes
@@ -140,7 +143,17 @@ export const generateSafelist = <
     pushClasses("zIndex", ["z"], zIndexValues);
   }
 
-  // --- 10. User-defined dynamic classes ---
+  // --- 10. Spacing (non-responsive) — `sp-*` classes consume runtime CSS vars ---
+  if (resolvedOptions.spacing?.enabled !== false) {
+    const spacingKeys = Object.keys(
+      resolvedOptions.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES,
+    );
+    for (const key of spacingKeys) {
+      safelist.push(`sp-${key}`);
+    }
+  }
+
+  // --- 11. User-defined dynamic classes ---
   if (resolvedOptions.dynamicClasses) {
     safelist.push(...resolvedOptions.dynamicClasses);
   }

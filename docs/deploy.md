@@ -146,3 +146,48 @@ Commit message format: `[type] subject`
 ### Config
 
 Xem: [`commitlint.config.ts`](commitlint.config.ts) và [`release.config.cjs`](release.config.cjs)
+
+---
+
+## Site Deployment (GitHub Pages)
+
+Landing site (`site/`) deploy độc lập với package release. Hai pipeline tách biệt:
+
+| Pipeline            | Workflow                     | Trigger                                                           | Target                                                     |
+| ------------------- | ---------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Package → npm**   | `release.yml` → `deploy.yml` | Push `main` / `develop` (qua semantic-release tag)                | `https://registry.npmjs.org` (`@duydpdev/style-generator`) |
+| **Site → GH Pages** | `deploy-site.yml`            | Push `main` (paths `site/**`, `docs/**`, `examples/**`, `src/**`) | `https://<owner>.github.io/<repo>/`                        |
+
+### Workflow `deploy-site.yml`
+
+Job `build`:
+
+1. Checkout + setup Node 22 + enable Corepack.
+2. `yarn install --immutable`.
+3. `yarn build:all` — biên dịch library (cần thiết vì site dogfood qua `workspace:*`).
+4. `yarn workspace site build` — chạy `build:examples` (build `examples/react-v3` + `react-v4` với `EXAMPLE_BASE`), copy `examples/*/dist` vào `site/public/examples/{v3,v4}`, rồi Vite build site.
+5. Upload `site/dist` qua `actions/upload-pages-artifact@v3`.
+
+Job `deploy`: `actions/deploy-pages@v4` xuất bản artifact.
+
+Env quan trọng: `VITE_BASE=/${{ github.event.repository.name }}/` ensures asset URLs khớp với GH Pages subpath. Cả `site/vite.config.ts` lẫn `site/scripts/build-examples.mjs` đọc biến này.
+
+### Manual deploy
+
+```bash
+# Build + deploy site lên gh-pages branch (cần gh-pages package)
+VITE_BASE=/style-generator/ yarn site:deploy:manual
+```
+
+### Repo settings (one-off)
+
+GitHub repo → Settings → Pages → **Source: GitHub Actions**. Lần đầu workflow chạy thành công sẽ tạo deployment environment `github-pages` tự động.
+
+### Script aliases (root)
+
+| Script                    | Description                                           |
+| ------------------------- | ----------------------------------------------------- |
+| `yarn site:dev`           | Vite dev server site (port 5174)                      |
+| `yarn site:build`         | Library build → site build → dist tại `site/dist/`    |
+| `yarn site:preview`       | Vite preview server đọc `site/dist/`                  |
+| `yarn site:deploy:manual` | Build + push lên `gh-pages` branch qua `gh-pages` npm |

@@ -1,3 +1,12 @@
+# [3.1.0-DEV.1]() (2026-06-07)
+
+  ###
+  Features
+
+    -
+    update lib v4 ([#66](https://github.com/duydpdev/style-generator-private/issues/66))
+    ([8e25647]())
+
 # [3.0.0]() (2026-03-30)
 
   ###

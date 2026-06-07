@@ -13,14 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # Use the auto-generated GITHUB_TOKEN so this workflow runs without
-  # approval for all PR authors (including bots / Copilot).
-  # The PAT (CI_WORKER_REPOSITORY_TOKEN) is only needed for publishing
-  # and is kept in release.yml / deploy.yml.
-  CI_WORKER_REPOSITORY_TOKEN: ${{ github.token }}
-  CI_SERVICE_REPOSITORY_NPM_PUBLIC_URL: "https://npm.pkg.github.com"
-
 jobs:
   check:
     name: Build & Lint Check
@@ -29,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -39,6 +33,10 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
+
+      - name: Commitlint (PR commits)
+        run: |
+          yarn commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
 
       - name: Lint
         run: yarn lint

@@ -30,9 +30,9 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
   const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
     config;
 
-  const variantText = Object.keys(typography).map(toCamelCase) as CamelCase<
-    Extract<keyof TTheme["typography"], string>
-  >[];
+  const variantText = Object.keys(typography ?? {}).map(
+    toCamelCase,
+  ) as CamelCase<Extract<keyof NonNullable<TTheme["typography"]>, string>>[];
 
   const variantShadow = Object.keys(shadows ?? {}).map(
     toCamelCase,

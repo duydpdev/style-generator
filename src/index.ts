@@ -1,7 +1,22 @@
+// Core types & helpers
 export * from "./core";
 export * from "./core/factories.index";
-export * from "./features/plugin/cssVariables";
+
+// Feature modules — public API only
 export * from "./features/spacing/spacingHelpers";
 export * from "./features/cva";
-export * from "./shared";
+
+// Shared — only public-facing exports
 export { detectTailwindVersion } from "./shared/detectTailwindVersion";
+export {
+  DEFAULT_LAYOUT_CLASSES,
+  DEFAULT_ROUNDED_VALUES,
+  DEFAULT_BORDER_VALUES,
+  DEFAULT_OPACITY_VALUES,
+  DEFAULT_ZINDEX_VALUES,
+  DEFAULT_SPACING_PROPERTIES,
+} from "./shared/defaultOption";
+export {
+  roundedProperties,
+  borderProperties,
+} from "./shared/safelistProperties";

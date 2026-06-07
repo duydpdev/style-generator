@@ -15,7 +15,7 @@ export const toCamelCase = (str: string) => {
 export const toPascalCase = (str: string) => {
   return str
     .replaceAll(/[-_\s]+(.)?/g, (_, c: string) => (c ? c.toUpperCase() : ""))
-    .replaceAll(/^(.)/, (_, c: string) => c.toUpperCase());
+    .replace(/^(.)/, (_, c: string) => c.toUpperCase());
 };
 
 export const extractData = (data: Record<string, unknown>) => {

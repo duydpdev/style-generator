@@ -44,7 +44,7 @@ export type InferColorKeys<TTheme extends ThemeConfig> = CamelCase<
 >;
 
 export type InferTypographyKeys<TTheme extends ThemeConfig> = StringKeysOf<
-  TTheme["typography"]
+  NonNullable<TTheme["typography"]>
 >;
 
 export type InferShadowKeys<TTheme extends ThemeConfig> = StringKeysOf<
@@ -122,7 +122,7 @@ type ColorClasses<TTheme extends ThemeConfig> =
   | `border-${KebabCase<InferColorKeys<TTheme>>}`;
 
 type TypographyClasses<TTheme extends ThemeConfig> = KebabCase<
-  Extract<keyof TTheme["typography"], string>
+  Extract<keyof NonNullable<TTheme["typography"]>, string>
 >;
 
 type ShadowClasses<TTheme extends ThemeConfig> =
@@ -158,7 +158,9 @@ export type InferSafelistClasses<TTheme extends ThemeConfig, TOptions> =
 // ---- DesignTokens result types ----
 
 export interface DesignTokensWeb<TTheme extends ThemeConfig> {
-  variantText: CamelCase<Extract<keyof TTheme["typography"], string>>[];
+  variantText: CamelCase<
+    Extract<keyof NonNullable<TTheme["typography"]>, string>
+  >[];
   variantColor: InferColorKeys<TTheme>[];
   variantShadow: CamelCase<
     Extract<keyof NonNullable<TTheme["shadows"]>, string>

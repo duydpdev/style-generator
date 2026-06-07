@@ -79,6 +79,7 @@ export default pluginTs.config(
       "__tests__/reports/*",
       "**/generations/*",
       "coverage/*",
+      "scripts/*",
     ],
   },
 );

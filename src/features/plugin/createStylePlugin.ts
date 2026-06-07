@@ -64,12 +64,17 @@ const buildPluginHandler = (
     }
 
     // Register custom typography utilities
-    if (options.typography?.cssVarDriven) {
-      buildTypographyCssVarDriven(api, typography);
-    } else {
-      api.addUtilities(
-        addDot(typography) as Record<string, Record<string, string | string[]>>,
-      );
+    if (typography) {
+      if (options.typography?.cssVarDriven) {
+        buildTypographyCssVarDriven(api, typography);
+      } else {
+        api.addUtilities(
+          addDot(typography) as Record<
+            string,
+            Record<string, string | string[]>
+          >,
+        );
+      }
     }
 
     // Register spacing CSS custom property utilities

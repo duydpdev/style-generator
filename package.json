@@ -10,10 +10,38 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js",
+      "require": "./dist/plugin.cjs"
+    },
+    "./tokens": {
+      "types": "./dist/tokens.d.ts",
+      "import": "./dist/tokens.js",
+      "require": "./dist/tokens.cjs"
+    },
+    "./cva": {
+      "types": "./dist/cva.d.ts",
+      "import": "./dist/cva.js",
+      "require": "./dist/cva.cjs"
+    },
+    "./spacing": {
+      "types": "./dist/spacing.d.ts",
+      "import": "./dist/spacing.js",
+      "require": "./dist/spacing.cjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.cjs"
+    },
+    "./package.json": "./package.json"
   },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
@@ -21,6 +49,9 @@
     "build": "tsc && vite build",
     "build:cli": "tsdown src/cli/index.ts --format esm --out-dir dist/cli --banner.js '#!/usr/bin/env node'",
     "build:all": "yarn build && yarn build:cli",
+    "check:externals": "node scripts/check-externals.mjs",
+    "check:publish-target": "node scripts/check-publish-target.mjs",
+    "check:sizes": "node scripts/check-sizes.mjs",
     "commitlint": "commitlint",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored",
     "lint-staged": "lint-staged",
@@ -28,6 +59,7 @@
     "prettier": "prettier .",
     "prettier:fix": "prettier --write .",
     "prepare": "husky",
+    "prepublishOnly": "yarn check:publish-target && yarn check:externals && yarn check:sizes",
     "release": "semantic-release",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -41,6 +73,7 @@
     "@rollup/plugin-typescript": "^12.3.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
+    "@tailwindcss/node": "^4.2.4",
     "@types/node": "^25.3.3",
     "@typescript-eslint/parser": "^8.56.1",
     "@vitest/coverage-v8": "^4.0.18",
@@ -57,7 +90,6 @@
     "lint-staged": "^16.3.2",
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.3",
-    "semantic-release-yarn": "^3.0.2",
     "tailwindcss": "^4.2.1",
     "tsdown": "^0.21.0",
     "tslib": "^2.8.1",
@@ -84,7 +116,7 @@
     "*.{ts,tsx,js,jsx}": "eslint --fix --no-warn-ignored --max-warnings 0",
     "*.{json,md,yml,yaml,css}": "prettier --write"
   },
-  "packageManager": "yarn@4.6.0",
+  "packageManager": "yarn@4.10.3",
   "license": "MIT",
   "dependencies": {
     "@clack/prompts": "^1.1.0",
@@ -92,6 +124,7 @@
   },
   "resolutions": {
     "minimatch": "^10.2.3",
-    "tar": "^7.5.10"
+    "tar": "^7.5.10",
+    "@microsoft/api-extractor": "^7.58.7"
   }
 }

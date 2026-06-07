@@ -11,7 +11,7 @@ export interface ThemeConfig {
   /**
    * Typography configuration (e.g., h1, body, caption).
    */
-  typography: Record<string, TypographyConfig>;
+  typography?: Record<string, TypographyConfig>;
   /**
    * Box shadow configuration.
    */

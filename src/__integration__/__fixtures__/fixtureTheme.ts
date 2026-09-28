@@ -53,7 +53,7 @@ export const FIXTURE_TYPOGRAPHY_CLASS = "text-12-mono";
 /**
  * Extra candidates (beyond `generateSafelist`) needed to prove typography
  * utilities pick up `hover:`/`md:` variants once they are emitted via
- * `@utility` (Task 2 — AC "class do lib tự viết phát bằng @utility").
+ * `\@utility` (Task 2 — AC "class do lib tự viết phát bằng \@utility").
  */
 export const fixtureExtraCandidates = [
   `hover:${FIXTURE_TYPOGRAPHY_CLASS}`,

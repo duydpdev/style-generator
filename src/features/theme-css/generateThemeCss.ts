@@ -44,23 +44,27 @@ const formatCssBlock = (
 };
 
 /**
- * Map intermediate `--sg-*` vars to Tailwind v4 `\@theme` namespace vars,
- * using each registered category's own `cssVarPrefix`/`themeNamespace`
- * instead of guessing the category from the variable name.
- * @param {Record<string, string>} intermediateVars - Intermediate CSS variable map
+ * Map intermediate `--sg-*` vars to Tailwind v4 `\@theme` namespace vars.
+ * Each category is flattened from its OWN theme data: prefix-matching a
+ * merged var map would misroute vars, because the colors prefix `--sg-` is
+ * also a prefix of `--sg-shadow-*`, `--sg-radius-*` and `--sg-backdrop-blur-*`.
+ * @param {ThemeConfig} config - Theme configuration (base theme only)
  * @returns {Record<string, string>} Tailwind v4 theme mapping
  */
-const buildThemeMapping = (
-  intermediateVars: Record<string, string>,
-): Record<string, string> => {
+const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
   const mapping: Record<string, string> = {};
 
   for (const category of builtInCategories) {
     if (!category.cssVarPrefix || !category.themeNamespace) continue;
     const varPrefix = `--${category.cssVarPrefix}-`;
+    const vars = flattenByCategory(
+      category,
+      (config as unknown as Record<string, Record<string, string> | undefined>)[
+        category.key
+      ],
+    );
 
-    for (const varName of Object.keys(intermediateVars)) {
-      if (!varName.startsWith(varPrefix)) continue;
+    for (const varName of Object.keys(vars)) {
       const key = varName.slice(varPrefix.length);
       mapping[`${category.themeNamespace}${key}`] = `var(${varName})`;
     }
@@ -102,7 +106,7 @@ export const generateThemeCss = (config: ThemeConfig): string => {
   }
 
   // 3. @theme inline mapping (only base theme vars, not overrides)
-  const themeMapping = buildThemeMapping(rootVars);
+  const themeMapping = buildThemeMapping(config);
   if (Object.keys(themeMapping).length > 0) {
     const lines = Object.entries(themeMapping)
       .map(([k, v]) => `  ${k}: ${v};`)

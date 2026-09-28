@@ -178,29 +178,16 @@ const isOldJsPluginDuplicateBlock = (r: LeafRecord): boolean => {
   );
 };
 
-/**
- * (d) Declared improvement: `backDropBlurs` now maps into Tailwind v4's
- * real `--blur-*` theme namespace instead of the old `--backdrop-blur-*`
- * mapping key (both resolve to the same `.backdrop-blur-<key>` utility
- * body since `@theme inline` inlines the `--sg-backdrop-blur-<key>` var
- * reference either way — see builtInCategories.ts for the full namespace
- * rationale). Any textual rename of the mapping property itself, inside
- * the `@theme`-derived `theme` layer, is an allowed difference.
- * @param {LeafRecord} r - Flattened declaration record
- * @returns {boolean} Whether the record is the renamed blur theme mapping
- */
-const isBlurNamespaceRename = (r: LeafRecord): boolean =>
-  r.layers === "theme" && /^--(backdrop-blur|blur)-/.test(r.prop);
-
 // (b) Safelist literals: both compiles call `.build(candidates)` with the
 // exact same candidate array (see `candidates` below) — generate() never
 // injects its own safelist, so there is nothing to filter here in practice;
 // documented per the plan as a declared (dormant) exemption.
 
-const isExempt = (r: LeafRecord): boolean =>
-  isSpacingVarChain(r) ||
-  isOldJsPluginDuplicateBlock(r) ||
-  isBlurNamespaceRename(r);
+// (c) applies to the DEV.1 baseline only: if generate() ever emitted that
+// duplicate block, the new side must show it as a diff.
+const isExemptOld = (r: LeafRecord): boolean =>
+  isSpacingVarChain(r) || isOldJsPluginDuplicateBlock(r);
+const isExemptNew = (r: LeafRecord): boolean => isSpacingVarChain(r);
 
 let oldCss: string;
 let newCss: string;
@@ -230,11 +217,11 @@ describe("registry-refactor-parity: DEV.1 baseline vs generate() (Tailwind v4 @t
     const byLocale = (a: string, b: string): number => a.localeCompare(b);
 
     const oldCanonical = flattenCss(oldCss)
-      .filter((r) => !isExempt(r))
+      .filter((r) => !isExemptOld(r))
       .map(canonical)
       .sort(byLocale);
     const newCanonical = flattenCss(newCss)
-      .filter((r) => !isExempt(r))
+      .filter((r) => !isExemptNew(r))
       .map(canonical)
       .sort(byLocale);
 
@@ -284,7 +271,9 @@ describe("registry-refactor-parity: DEV.1 baseline vs generate() (Tailwind v4 @t
     );
   });
 
-  it("backdrop-blur-<key> rule exists (new --blur- namespace, same inlined value)", () => {
-    expect(newCss).toMatch(/\.backdrop-blur-sm\s*\{/);
+  it("backdrop-blur-<key> resolves to the theme value", () => {
+    expect(newCss).toMatch(
+      /\.backdrop-blur-sm\s*\{\s*--tw-backdrop-blur:\s*blur\(var\(--sg-backdrop-blur-sm\)\)/,
+    );
   });
 });

@@ -46,22 +46,16 @@ export const shadowsCategory = defineCategory({
 /**
  * `backDropBlurs` — named blur presets.
  *
- * Tailwind v4's real theme namespace for blur is `--blur-*`, NOT
- * `--backdrop-blur-*`: mapping into `--blur-<key>` makes Tailwind
- * auto-generate BOTH `.blur-<key>` (`filter: blur(...)`) AND
- * `.backdrop-blur-<key>` (`backdrop-filter: blur(...)`) from the same
- * declaration (see https://tailwindcss.com/docs/backdrop-filter-blur —
- * "Once defined, Tailwind automatically generates both sets of
- * utilities"). The pre-registry code mapped into a `--backdrop-blur-*`
- * namespace that Tailwind does not natively recognize for utility
- * generation, so this is a deliberate behavior improvement over the
- * DEV.1 baseline, not a pure refactor — declared as an explicit
- * additional difference in `registry-refactor-parity.test.ts`.
+ * Maps into `--backdrop-blur-*`, which Tailwind v4's `backdrop-blur-*`
+ * utility resolves (the DEV.1 baseline fixture compiles
+ * `.backdrop-blur-sm` to `blur(var(--sg-backdrop-blur-sm))`). `--blur-*`
+ * is deliberately NOT used: it would also redefine the `blur-*` filter
+ * scale and override Tailwind's default `--blur-sm`/`md`/`lg` values.
  */
 export const backDropBlursCategory = defineCategory({
   key: "backDropBlurs",
   cssVarPrefix: "sg-backdrop-blur",
-  themeNamespace: "--blur-",
+  themeNamespace: "--backdrop-blur-",
   classPrefixes: ["backdrop-blur"],
 });
 

@@ -1,24 +1,18 @@
 # [{{version}}]({{compareUrl}}) ({{date}})
 
 {{#each commitGroups}}
-  ###
-  {{title}}
+### {{title}}
 
-  {{#each commits}}
-    -
-    {{#if scope}}**{{scope}}:** {{/if}}{{subject}}
-    ([{{shortHash}}]({{commitUrl}}))
-  {{/each}}
+{{#each commits}}
+- {{#if scope}}**{{scope}}:** {{/if}}{{subject}} ([{{shortHash}}]({{commitUrl}}))
+{{/each}}
 
 {{/each}}
 {{#each noteGroups}}
+### {{title}}
 
-  ###
-  {{title}}
-
-  {{#each notes}}
-    -
-    {{text}}
-  {{/each}}
+{{#each notes}}
+- {{text}}
+{{/each}}
 
 {{/each}}

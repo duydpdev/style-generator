@@ -103,6 +103,23 @@ describe("generateThemeCss", () => {
     expect(css).toContain("--radius-md: var(--sg-radius-md);");
   });
 
+  it("maps each category only into its own @theme namespace", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      shadows: { sm: "0 1px 2px #0000000d" },
+      borderRadius: { md: "8px" },
+      backDropBlurs: { sm: "4px" },
+    };
+    const themeBlock = generateThemeCss(config).split("@theme inline")[1];
+    expect(themeBlock).toContain("--color-primary: var(--sg-primary);");
+    expect(themeBlock).toContain("--shadow-sm: var(--sg-shadow-sm);");
+    expect(themeBlock).toContain("--radius-md: var(--sg-radius-md);");
+    expect(themeBlock).toContain(
+      "--backdrop-blur-sm: var(--sg-backdrop-blur-sm);",
+    );
+    expect(themeBlock).not.toMatch(/--color-(shadow|radius|backdrop-blur)-/);
+  });
+
   it("should return minimal output for empty config", () => {
     const config: ThemeConfig = {
       colors: {},

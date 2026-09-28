@@ -4,7 +4,7 @@ import path from "node:path";
 import { watch } from "chokidar";
 
 import type { StyleModule } from "../../core/Options";
-import type { ThemeConfig } from "../../core/ThemeConfig";
+import type { ThemeConfig } from "../../core/themeSchema";
 import { generateSafelist } from "../../features/safelist/generateSafelist";
 import { resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";

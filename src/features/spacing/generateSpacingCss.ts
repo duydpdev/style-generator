@@ -134,10 +134,6 @@ const buildPropertyBlocks = (
  * var is registered via `@property` so it participates correctly in the
  * cascade instead of leaking a parent's value into children via
  * unregistered custom-property inheritance.
- *
- * Note: `options.spacing.useMatchUtilities` (JIT arbitrary-value support,
- * e.g. `sp-p-[24px]`) has no static-CSS equivalent — it required the real
- * Tailwind JS plugin's `matchUtilities` API — and is out of scope here.
  * @param {StyleGeneratorOptions} [options] - Generator options
  * @returns {string} CSS string, empty when spacing generation is disabled
  */

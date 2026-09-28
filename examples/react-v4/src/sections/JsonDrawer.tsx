@@ -34,7 +34,6 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
     });
     return JSON.stringify(
       {
-        $palette: palette,
         colors,
         typography: baseTheme.typography,
         shadows: baseTheme.shadows,

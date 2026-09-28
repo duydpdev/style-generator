@@ -10,7 +10,7 @@ import type {
   DesignTokenKeys,
 } from "./designTokensTypes";
 import type { InferColorKeys } from "./inference";
-import type { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 describe("DesignTokenKeys semantic aliases", () => {
   interface SampleTheme extends ThemeConfig {

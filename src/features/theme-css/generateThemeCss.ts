@@ -1,4 +1,4 @@
-import { ThemeConfig, ThemeOverride } from "../../core/ThemeConfig";
+import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
 import { builtInCategories } from "../registry/builtInCategories";
 import { flattenByCategory } from "../registry/flattenByCategory";
 

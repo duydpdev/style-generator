@@ -4,7 +4,7 @@ import type {
   InferBorderOptions,
   InferRoundedOptions,
 } from "./inference";
-import type { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 /**
  * Mapped type exposing the derived design-token key unions for a theme.

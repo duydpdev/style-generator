@@ -6,7 +6,7 @@ import type {
 } from "../shared/defaultOption";
 
 import type { StyleModule } from "./Options";
-import type { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 // ---- Basic utilities ----
 

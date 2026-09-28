@@ -7,7 +7,7 @@ import { generateTypographyCss } from "../features/typography/generateTypography
 
 import { DesignTokensResult } from "./inference";
 import { StyleGeneratorOptions } from "./Options";
-import { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 /**
  * Generate the complete registry-driven CSS string (breakpoint `@theme`

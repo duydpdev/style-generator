@@ -92,14 +92,6 @@ export function SpacingSection() {
                 Values live on the element. No safelist regex.
               </span>
             </li>
-            <li>
-              <b>JIT-aware.</b>
-              <span className="meta">
-                {" "}
-                Opt-in <code>useMatchUtilities</code> for{" "}
-                <code>sp-p-[24px]</code>.
-              </span>
-            </li>
           </ul>
         </div>
         <CodeCard

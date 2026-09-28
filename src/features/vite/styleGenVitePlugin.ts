@@ -5,7 +5,7 @@ import type { Plugin, ResolvedConfig } from "vite";
 
 import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
-import type { ThemeConfig } from "../../core/ThemeConfig";
+import type { ThemeConfig } from "../../core/themeSchema";
 import { generateSafelist } from "../safelist/generateSafelist";
 
 export interface StyleGenViteOptions {

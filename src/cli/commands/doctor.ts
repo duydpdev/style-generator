@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { ThemeConfig } from "../../core/ThemeConfig";
+import type { ThemeConfig } from "../../core/themeSchema";
 import { resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
 

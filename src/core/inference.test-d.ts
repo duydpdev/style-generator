@@ -9,7 +9,7 @@ import {
   InferRoundedOptions,
   InferSafelistClasses,
 } from "./inference";
-import type { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 // ---- Base type helpers ----
 

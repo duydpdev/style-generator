@@ -1,5 +1,5 @@
 import type { StyleGeneratorOptions } from "./Options";
-import type { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 /**
  * Type-safe theme config helper. Zero runtime cost.

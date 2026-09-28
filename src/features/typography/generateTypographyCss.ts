@@ -1,18 +1,12 @@
 import { StyleGeneratorOptions } from "../../core/Options";
-import { TypographyConfig } from "../../core/ThemeConfig";
-import { toKebabCase } from "../../shared/helpers";
-
-/**
- * Tailwind v4 `@utility` names must be a single CSS-ident-safe lowercase
- * token: start with a lowercase letter, then any run of lowercase
- * letters/digits/dashes. A kebab-cased typography key that starts with a
- * digit (e.g. a top-level `"2xl"` key) or a dash cannot be registered.
- */
-const UTILITY_NAME_RE = /^[a-z][a-z0-9-]*$/;
+import type { TypographyConfig } from "../../core/themeSchema";
+import { UTILITY_NAME_RE, toKebabCase } from "../../shared/helpers";
 
 /**
  * Validate a derived `@utility` name, throwing a clear, actionable error
- * when the kebab-cased typography key cannot be used as-is.
+ * when the kebab-cased typography key cannot be used as-is. Uses the same
+ * `UTILITY_NAME_RE` as `themeSchema.ts` so the parse-time rejection and the
+ * CSS emission this function guards are always in sync.
  * @param {string} utilityName - Kebab-cased candidate utility name
  * @param {string} sourceKey - Original theme.typography key it came from
  * @returns {void} No return value; throws on invalid input

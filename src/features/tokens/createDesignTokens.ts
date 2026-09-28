@@ -13,7 +13,7 @@ import {
   InferZIndexOptions,
 } from "../../core/inference";
 import { StyleGeneratorOptions, defaultScreens } from "../../core/Options";
-import { ThemeConfig } from "../../core/ThemeConfig";
+import type { ThemeConfig } from "../../core/themeSchema";
 import { toCamelCase } from "../../shared/helpers";
 
 /**

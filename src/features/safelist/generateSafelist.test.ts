@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { ThemeConfig } from "../../core/ThemeConfig";
+import type { ThemeConfig } from "../../core/themeSchema";
 
 import { generateSafelist } from "./generateSafelist";
 

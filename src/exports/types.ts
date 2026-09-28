@@ -7,7 +7,7 @@ export type {
   ThemeConfig,
   ThemeOverride,
   TypographyConfig,
-} from "../core/ThemeConfig";
+} from "../core/themeSchema";
 export type { StyleGeneratorOptions, StyleModule } from "../core/Options";
 export type {
   InferColorKeys,

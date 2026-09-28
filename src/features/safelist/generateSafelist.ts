@@ -1,6 +1,6 @@
 import { InferSafelistClasses } from "../../core/inference";
-import { ThemeConfig } from "../../core/ThemeConfig";
 import { StyleGeneratorOptions } from "../../core/Options";
+import type { ThemeConfig } from "../../core/themeSchema";
 import { toKebabCase } from "../../shared/helpers";
 import {
   DEFAULT_LAYOUT_CLASSES,

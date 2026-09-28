@@ -1,3 +1,4 @@
+import type { SpacingKey } from "../../shared/defaultOption";
 import {
   DEFAULT_BORDER_VALUES,
   DEFAULT_ROUNDED_VALUES,
@@ -61,7 +62,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
   const keysToUse = options.breakpoints ?? Object.keys(mergedScreens);
   const spacingProperties = Object.keys(
     options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES,
-  );
+  ) as SpacingKey[];
 
   const roundedValues = (
     borderRadius

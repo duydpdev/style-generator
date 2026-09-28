@@ -4,7 +4,7 @@ import type { SpacingPropertyMap } from "../core/Options";
  * Default spacing properties → CSS property mapping.
  * Used by plugin to generate `.sp-*` utility classes with CSS custom properties.
  */
-export const DEFAULT_SPACING_PROPERTIES: SpacingPropertyMap = {
+export const DEFAULT_SPACING_PROPERTIES = {
   p: { padding: "var(--sg-sp-p)" },
   px: {
     "padding-left": "var(--sg-sp-px)",
@@ -38,7 +38,7 @@ export const DEFAULT_SPACING_PROPERTIES: SpacingPropertyMap = {
   right: { right: "var(--sg-sp-right)" },
   bottom: { bottom: "var(--sg-sp-bottom)" },
   left: { left: "var(--sg-sp-left)" },
-};
+} as const satisfies SpacingPropertyMap;
 
 /**
  * Default layout utility classes for safelist.
@@ -125,7 +125,13 @@ export const DEFAULT_ZINDEX_VALUES = [0, 10, 20, 30, 40, 50, "auto"] as const;
 
 // ---- Type helpers for defaults (used in type inference) ----
 
-export type DefaultSpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
+/**
+ * Literal union of every default spacing property key (e.g. `"p" | "px" |
+ * ... | "left"`). The single spacing-key type used repo-wide — inferred
+ * from `DEFAULT_SPACING_PROPERTIES` via `as const satisfies` so it stays a
+ * literal union instead of widening to `string`.
+ */
+export type SpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
 
 export type DefaultRoundedValue = (typeof DEFAULT_ROUNDED_VALUES)[number];
 

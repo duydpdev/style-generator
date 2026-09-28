@@ -1,8 +1,8 @@
 import type {
   DefaultBorderValue,
   DefaultRoundedValue,
-  DefaultSpacingKey,
   DefaultZIndexValue,
+  SpacingKey,
 } from "../shared/defaultOption";
 
 import type { StyleModule } from "./Options";
@@ -75,7 +75,7 @@ export type InferZIndexOptions<TTheme extends ThemeConfig> = TTheme extends {
   ? Extract<keyof NonNullable<Z>, string>
   : `${DefaultZIndexValue}`;
 
-export type InferSpacingKeys = DefaultSpacingKey;
+export type InferSpacingKeys = SpacingKey;
 
 // ---- Responsive options inference ----
 
@@ -152,8 +152,8 @@ type InferSpacingPropertyKeys<TOptions> = TOptions extends {
 }
   ? P extends Record<infer K, unknown>
     ? Extract<K, string>
-    : DefaultSpacingKey
-  : DefaultSpacingKey;
+    : SpacingKey
+  : SpacingKey;
 
 type SpacingClasses<TOptions> = TOptions extends {
   spacing?: { enabled?: false };

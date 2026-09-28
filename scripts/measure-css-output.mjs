@@ -161,9 +161,14 @@ walk(css, undefined);
 
 const classSet = new Set();
 for (const sel of selectors) {
-  for (const m of sel.matchAll(/\.((?:\\.|[A-Za-z0-9_-])+)/g)) {
-    const name = m[1].replace(/\\(.)/g, "$1");
-    if (/^[0-9]/.test(name)) continue;
+  for (const m of sel.matchAll(
+    /\.((?:\\[0-9a-fA-F]{1,6}\s?|\\.|[A-Za-z0-9_-])+)/g,
+  )) {
+    const name = m[1]
+      .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_, hex) =>
+        String.fromCodePoint(parseInt(hex, 16)),
+      )
+      .replace(/\\(.)/g, "$1");
     classSet.add(name);
   }
 }

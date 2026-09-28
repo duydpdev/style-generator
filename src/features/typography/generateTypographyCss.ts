@@ -27,6 +27,22 @@ const assertValidUtilityName = (
 };
 
 /**
+ * Style entries with a value. Optional fields (`fontFamily`, `fontStyle`)
+ * may be present as explicit `undefined` in TS input, and Zod keeps them.
+ * @param {TypographyConfig} styles - One typography variant
+ * @returns {[string, string | number][]} Entries whose value is defined
+ */
+const definedEntries = (
+  styles: TypographyConfig,
+): [string, string | number][] => {
+  const entries: [string, string | number | undefined][] =
+    Object.entries(styles);
+  return entries.filter(
+    (entry): entry is [string, string | number] => entry[1] !== undefined,
+  );
+};
+
+/**
  * Generate static CSS for `theme.typography`: replaces the old JS-plugin
  * `addUtilities(addDot(typography))` / `buildTypographyCssVarDriven` pair
  * with plain `@utility` CSS text, fed straight into `generate().css`.
@@ -54,7 +70,7 @@ export const generateTypographyCss = (
     const varDeclarations: Record<string, string> = {};
     for (const [name, styles] of Object.entries(typography)) {
       const kebabName = toKebabCase(name);
-      for (const [prop, value] of Object.entries(styles)) {
+      for (const [prop, value] of definedEntries(styles)) {
         varDeclarations[`--typography-${kebabName}-${toKebabCase(prop)}`] =
           String(value);
       }
@@ -68,7 +84,7 @@ export const generateTypographyCss = (
       const utilityName = toKebabCase(name);
       assertValidUtilityName(utilityName, name);
 
-      const lines = Object.keys(styles).map((prop) => {
+      const lines = definedEntries(styles).map(([prop]) => {
         const cssProp = toKebabCase(prop);
         return `  ${cssProp}: var(--typography-${utilityName}-${cssProp});`;
       });
@@ -81,7 +97,7 @@ export const generateTypographyCss = (
       const utilityName = toKebabCase(name);
       assertValidUtilityName(utilityName, name);
 
-      const lines = Object.entries(styles).map(
+      const lines = definedEntries(styles).map(
         ([prop, value]) => `  ${toKebabCase(prop)}: ${String(value)};`,
       );
       blocks.push(`@utility ${utilityName} {\n${lines.join("\n")}\n}`);

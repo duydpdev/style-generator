@@ -57,6 +57,24 @@ describe("generateTypographyCss", () => {
     expect(css).not.toMatch(/^\.[A-Za-z]/m);
   });
 
+  it("skips optional fields passed as explicit undefined in both modes", () => {
+    const withUndefined = {
+      heading: {
+        fontSize: "24px",
+        lineHeight: "1.2",
+        fontWeight: 700,
+        letterSpacing: "0",
+        fontFamily: undefined,
+      },
+    };
+    expect(generateTypographyCss(withUndefined)).not.toMatch(/undefined/);
+    expect(
+      generateTypographyCss(withUndefined, {
+        typography: { cssVarDriven: true },
+      }),
+    ).not.toMatch(/undefined|font-family/);
+  });
+
   it("cssVarDriven: injects --typography-<key>-<prop> vars into :root under @layer base and references them from @utility", () => {
     const css = generateTypographyCss(typography, {
       typography: { cssVarDriven: true },

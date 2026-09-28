@@ -1,4 +1,5 @@
 {
+  "$schema": "./theme.schema.json",
   "colors": {
     "primary": "#2647D9",
     "secondary": "#6E5BFF",

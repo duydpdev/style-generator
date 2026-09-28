@@ -118,3 +118,13 @@ additionalProperties error present: true
   `theme.schema.json`) in VSCode and watching the warning/autocomplete
   appear on screen. That step requires a human or a GUI-driving agent and
   was out of reach in this environment.
+
+## Limits of editor-side validation
+
+`z.toJSONSchema()` does not carry `.refine`/`.superRefine` rules into JSON
+Schema. Editors therefore catch unknown keys and key `pattern` violations
+only. The token-value injection grammar and the typography `@utility` name
+rule are enforced at runtime by `ThemeSchema.parse()` (in `generate()`, the
+CLI, and the Vite plugin), which remains authoritative. The committed
+`theme.schema.json` copies are locked to `z.toJSONSchema(ThemeSchema)` by
+`src/__integration__/committed-schema.test.ts`.

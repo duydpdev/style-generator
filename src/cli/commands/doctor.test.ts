@@ -80,7 +80,7 @@ describe("doctorCommand", () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
-  it("v1 legacy nested colors → emits migration warning (no exit)", () => {
+  it("v1 nested colors (object values) → schema error naming the offending path, exit 1", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
@@ -103,9 +103,30 @@ describe("doctorCommand", () => {
 
     expect(() => {
       doctorCommand();
-    }).not.toThrow();
-    expect(lines()).toMatch(/old color format/i);
-    expect(exitSpy).not.toHaveBeenCalled();
+    }).toThrow(/__exit_1__/);
+    expect(lines()).toMatch(/colors\.base/);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("misspelled 'colours' key → schema error names the offending path, exit 1", () => {
+    writeProject(tmp, {
+      "style-gen.config.json": {
+        theme: "styles/theme.json",
+        plugin: "plugins/theme-plugin.ts",
+        output: "styles/safelist.txt",
+      },
+      "styles/theme.json": {
+        colors: { primary: "#3B82F6" },
+        colours: { primary: "#3B82F6" },
+      },
+      "plugins/theme-plugin.ts": "// stub",
+    });
+
+    expect(() => {
+      doctorCommand();
+    }).toThrow(/__exit_1__/);
+    expect(lines()).toMatch(/colours/);
+    expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it("invalid JSON theme → exit 1 with 'Invalid JSON'", () => {

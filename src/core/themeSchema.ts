@@ -131,3 +131,26 @@ export type ThemeOverride = z.infer<typeof ThemeOverrideSchema>;
  * {@link TypographyStyleSchema}.
  */
 export type TypographyConfig = z.infer<typeof TypographyStyleSchema>;
+
+/**
+ * Format every issue in a `ZodError` as one `"path → message"` line, safe to
+ * print in a terminal (CLI `doctor`) or surface via a bundler plugin error
+ * (`this.error`). `unrecognized_keys` issues carry the offending key names
+ * in `issue.keys` rather than `issue.path` — expand each into its own line
+ * so a typo like `colours` is named explicitly instead of reporting the
+ * unhelpful `(root)`.
+ * @param {z.ZodError} error - The Zod validation error to format
+ * @returns {string} One formatted line per issue, joined by newlines
+ */
+export const formatZodError = (error: z.ZodError): string =>
+  error.issues
+    .flatMap((issue) =>
+      issue.code === "unrecognized_keys"
+        ? issue.keys.map(
+            (key) => `${[...issue.path, key].join(".")} → ${issue.message}`,
+          )
+        : [
+            `${issue.path.length > 0 ? issue.path.join(".") : "(root)"} → ${issue.message}`,
+          ],
+    )
+    .join("\n");

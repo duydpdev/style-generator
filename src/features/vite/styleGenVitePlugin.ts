@@ -2,10 +2,11 @@ import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 import type { Plugin, ResolvedConfig } from "vite";
+import { z } from "zod";
 
 import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
-import type { ThemeConfig } from "../../core/themeSchema";
+import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { generateSafelist } from "../safelist/generateSafelist";
 
 export interface StyleGenViteOptions {
@@ -36,7 +37,7 @@ const emit = (
   options: StyleGeneratorOptions,
 ): Emitted => {
   const raw = readFileSync(themePathAbs, "utf8");
-  const theme = JSON.parse(raw) as ThemeConfig;
+  const theme = ThemeSchema.parse(JSON.parse(raw));
 
   const themeCss = generate(theme, options).css;
   const safelist = generateSafelist(theme, options).join("\n");
@@ -61,6 +62,18 @@ const debounce = <Args extends unknown[]>(
     }, ms);
   };
 };
+
+/**
+ * Render a caught `emit()` error for display: `ZodError`s get one
+ * `path → message` line per issue (unknown keys, injection-unsafe values);
+ * anything else (JSON syntax, fs errors) falls back to `.message`. Shared by
+ * `configResolved`, `configureServer`'s re-emit, and `closeBundle` so all
+ * three surfaces report the same detail for the same failure.
+ * @param {unknown} err - The error caught from `emit()`
+ * @returns {string} A human-readable detail string
+ */
+const formatEmitError = (err: unknown): string =>
+  err instanceof z.ZodError ? formatZodError(err) : (err as Error).message;
 
 /**
  * Vite plugin that emits `theme.css` + `safelist.txt` from a theme JSON.
@@ -126,9 +139,8 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
       try {
         emit(themePathAbs, outDirAbs, generatorOptions);
       } catch (err) {
-        throw new Error(
-          `[${PLUGIN_NAME}] failed to read or parse theme.json: ${(err as Error).message}`,
-          { cause: err },
+        this.error(
+          `[${PLUGIN_NAME}] invalid theme in ${themePathAbs}:\n${formatEmitError(err)}`,
         );
       }
       hasEmitted = true;
@@ -146,7 +158,7 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
           server.ws.send({ type: "full-reload", path: "*" });
         } catch (err) {
           server.config.logger.error(
-            `[${PLUGIN_NAME}] Re-emit failed: ${(err as Error).message}`,
+            `[${PLUGIN_NAME}] Re-emit failed for ${themePathAbs}:\n${formatEmitError(err)}`,
           );
         }
       }, 200);
@@ -159,7 +171,13 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
     closeBundle() {
       // Final write for prod build — captures last-second theme.json edits.
       if (resolvedConfig?.command === "build") {
-        emit(themePathAbs, outDirAbs, generatorOptions);
+        try {
+          emit(themePathAbs, outDirAbs, generatorOptions);
+        } catch (err) {
+          this.error(
+            `[${PLUGIN_NAME}] invalid theme in ${themePathAbs}:\n${formatEmitError(err)}`,
+          );
+        }
       }
     },
   };

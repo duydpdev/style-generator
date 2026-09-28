@@ -32,10 +32,24 @@ const theme = defineTheme({
 });
 
 describe("generate", () => {
-  it("returns { css, tokens }", () => {
+  it("returns { css, tokens, schema }", () => {
     const result = generate(theme);
     expect(typeof result.css).toBe("string");
     expect(result.tokens).toBeDefined();
+    expect(result.schema).toBeDefined();
+  });
+
+  it("schema is the theme JSON Schema (z.toJSONSchema(ThemeSchema))", () => {
+    const { schema } = generate(theme);
+    expect(schema).toMatchObject({
+      type: "object",
+      additionalProperties: false,
+      required: ["colors"],
+    });
+  });
+
+  it("throws before generating CSS when the theme contains an injection-unsafe value", () => {
+    expect(() => generate({ colors: { a: "red;}" } })).toThrow();
   });
 
   it("css contains the :root intermediate vars block", () => {

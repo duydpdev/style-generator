@@ -1,4 +1,5 @@
 export const themeTemplate = `{
+  "$schema": "./theme.schema.json",
   "colors": {
     "primary": "#3B82F6",
     "secondary": "#6366F1",
@@ -34,6 +35,7 @@ export const themeTemplate = `{
 `;
 
 export const themeTemplateDark = `{
+  "$schema": "./theme.schema.json",
   "colors": {
     "primary": "#3B82F6",
     "secondary": "#6366F1",
@@ -87,7 +89,8 @@ import { fileURLToPath } from "node:url";
 import { generate, defineTheme, defineOptions, Breakpoint } from "@duydpdev/style-generator";
 import themeJson from "${themeRelPath}";
 
-// defineTheme() provides full TypeScript type-checking on your theme config (zero runtime cost)
+// defineTheme() type-checks your theme config AND validates it at runtime,
+// throwing a ZodError with the offending key/value if the theme is invalid
 const theme = defineTheme(themeJson);
 
 const options = defineOptions({

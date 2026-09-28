@@ -21,7 +21,7 @@ const FEATS: Feat[] = [
   },
   {
     cls: "feat-2",
-    tag: "/tokens",
+    tag: ".",
     title: "defineTheme()",
     body: (
       <>

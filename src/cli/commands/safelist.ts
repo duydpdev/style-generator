@@ -2,9 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { watch } from "chokidar";
+import { z } from "zod";
 
 import type { StyleModule } from "../../core/Options";
-import type { ThemeConfig } from "../../core/themeSchema";
+import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { generateSafelist } from "../../features/safelist/generateSafelist";
 import { resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
@@ -66,9 +67,9 @@ export function safelistCommand(args: SafelistArgs) {
 
     const performGenerate = () => {
       try {
-        const theme = JSON.parse(
-          fs.readFileSync(themePath, "utf8"),
-        ) as ThemeConfig;
+        const theme = ThemeSchema.parse(
+          JSON.parse(fs.readFileSync(themePath, "utf8")),
+        );
         const safelist = generateSafelist(theme, options);
 
         const outDir = path.dirname(outPath);
@@ -81,7 +82,11 @@ export function safelistCommand(args: SafelistArgs) {
           `Safelist written to ${options.output} (${String(safelist.length)} classes)`,
         );
       } catch (error) {
-        if (error instanceof Error) {
+        if (error instanceof z.ZodError) {
+          logger.error(
+            `Invalid theme (${options.theme}):\n${formatZodError(error)}`,
+          );
+        } else if (error instanceof Error) {
           logger.error(`Failed to generate safelist: ${error.message}`);
         } else {
           logger.error(`Unknown error occurred.`);

@@ -5,6 +5,7 @@ import { parseArgs } from "node:util";
 import { doctorCommand } from "./commands/doctor";
 import { initCommand } from "./commands/init";
 import { safelistCommand } from "./commands/safelist";
+import { schemaCommand } from "./commands/schema";
 import { logger } from "./logger";
 
 const args = process.argv.slice(2);
@@ -26,7 +27,7 @@ const options = {
   },
   out: {
     type: "string",
-    description: "Path to output safelist (safelist only)",
+    description: "Path to output file (safelist/schema)",
   },
   help: {
     type: "boolean",
@@ -70,6 +71,10 @@ const listCommands = [
   {
     name: "doctor",
     description: "Check project setup and schema validation",
+  },
+  {
+    name: "schema",
+    description: "Generate theme.schema.json for editor autocomplete",
   },
 ] as const;
 
@@ -208,6 +213,10 @@ async function main(): Promise<void> {
       doctorCommand();
       break;
     }
+
+    case "schema":
+      schemaCommand({ out: values.out });
+      break;
 
     default:
       logger.error(`Unknown command: ${command}`);

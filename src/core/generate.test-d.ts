@@ -31,8 +31,10 @@ describe("generate consumer shape", () => {
 
   const result = generate(theme, { breakpoints: ["md", "lg"] });
 
-  it("return shape is exactly { css, tokens } — no legacy plugin/safelist/themeCss fields", () => {
-    expectTypeOf<keyof typeof result>().toEqualTypeOf<"css" | "tokens">();
+  it("return shape is exactly { css, tokens, schema } — no legacy plugin/safelist/themeCss fields", () => {
+    expectTypeOf<keyof typeof result>().toEqualTypeOf<
+      "css" | "tokens" | "schema"
+    >();
   });
 
   it("css is typed string", () => {

@@ -14,10 +14,11 @@ describe("subpath exports — symbols match root barrel", () => {
     expectTypeOf(tokens.createDesignTokens).toEqualTypeOf<
       typeof root.createDesignTokens
     >();
-    expectTypeOf(tokens.defineTheme).toEqualTypeOf<typeof root.defineTheme>();
-    expectTypeOf(tokens.defineOptions).toEqualTypeOf<
-      typeof root.defineOptions
-    >();
+  });
+
+  it("tokens subpath does not re-export defineTheme/defineOptions (root-only, keeps Zod out of the browser-safe bundle)", () => {
+    expectTypeOf<"defineTheme">().not.toExtend<keyof typeof tokens>();
+    expectTypeOf<"defineOptions">().not.toExtend<keyof typeof tokens>();
   });
 
   it("cva subpath", () => {

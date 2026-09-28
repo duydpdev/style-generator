@@ -70,6 +70,7 @@ export default pluginTs.config(
         "error",
         { prefer: "type-imports", fixStyle: "separate-type-imports" },
       ],
+      "@typescript-eslint/no-non-null-assertion": "error",
     },
   },
 

@@ -35,7 +35,7 @@ export const createStyleSystem = <
   return {
     plugin: createStylePlugin(config, styleOptions, safelist),
     safelist,
-    themeCss: generateThemeCss(config, styleOptions),
+    themeCss: generateThemeCss(config),
     DesignTokens,
   };
 };

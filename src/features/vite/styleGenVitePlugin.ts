@@ -38,7 +38,7 @@ const emit = (
   const raw = readFileSync(themePathAbs, "utf8");
   const theme = JSON.parse(raw) as ThemeConfig;
 
-  const themeCss = generateThemeCss(theme, options);
+  const themeCss = generateThemeCss(theme);
   const safelist = generateSafelist(theme, options).join("\n");
 
   mkdirSync(outDirAbs, { recursive: true });

@@ -1,10 +1,10 @@
-import { StyleGeneratorOptions } from "../../core/Options";
 import { ThemeConfig, ThemeOverride } from "../../core/ThemeConfig";
-import { flattenToVars } from "../plugin/cssVariables";
+import { builtInCategories } from "../registry/builtInCategories";
+import { flattenByCategory } from "../registry/flattenByCategory";
 
 /**
- * Generate intermediate CSS variables from theme config.
- * All values are stored as `--sg-*` intermediate vars.
+ * Build intermediate `--sg-*` CSS variables for every registered category
+ * present on the given theme source (base theme or a `themes` override).
  * @param {Partial<Pick<ThemeConfig, "colors">> & Pick<ThemeOverride, "shadows" | "backDropBlurs" | "borderRadius">} source - Theme source data
  * @returns {Record<string, string>} CSS variable map
  */
@@ -12,16 +12,18 @@ const buildIntermediateVars = (
   source: Partial<Pick<ThemeConfig, "colors">> &
     Pick<ThemeOverride, "shadows" | "backDropBlurs" | "borderRadius">,
 ): Record<string, string> => {
-  return {
-    ...(source.colors ? flattenToVars("sg", source.colors) : {}),
-    ...(source.shadows ? flattenToVars("sg-shadow", source.shadows) : {}),
-    ...(source.backDropBlurs
-      ? flattenToVars("sg-backdrop-blur", source.backDropBlurs)
-      : {}),
-    ...(source.borderRadius
-      ? flattenToVars("sg-radius", source.borderRadius)
-      : {}),
-  };
+  return builtInCategories.reduce<Record<string, string>>(
+    (acc, category) => ({
+      ...acc,
+      ...flattenByCategory(
+        category,
+        (source as Record<string, Record<string, string> | undefined>)[
+          category.key
+        ],
+      ),
+    }),
+    {},
+  );
 };
 
 /**
@@ -42,8 +44,9 @@ const formatCssBlock = (
 };
 
 /**
- * Map intermediate `--sg-*` vars to Tailwind v4 `\@theme` namespace vars.
- * Colors → `--color-*`, shadows → `--shadow-*`, radius → `--radius-*`, backdrop-blur → `--backdrop-blur-*`.
+ * Map intermediate `--sg-*` vars to Tailwind v4 `\@theme` namespace vars,
+ * using each registered category's own `cssVarPrefix`/`themeNamespace`
+ * instead of guessing the category from the variable name.
  * @param {Record<string, string>} intermediateVars - Intermediate CSS variable map
  * @returns {Record<string, string>} Tailwind v4 theme mapping
  */
@@ -52,20 +55,14 @@ const buildThemeMapping = (
 ): Record<string, string> => {
   const mapping: Record<string, string> = {};
 
-  for (const varName of Object.keys(intermediateVars)) {
-    // varName is like "--sg-primary", "--sg-shadow-sm", "--sg-radius-md", "--sg-backdrop-blur-sm"
-    // Strip "--sg-" prefix to get the key
-    const key = varName.slice(5); // "--sg-" is 5 chars → "primary", "shadow-sm", etc.
+  for (const category of builtInCategories) {
+    if (!category.cssVarPrefix || !category.themeNamespace) continue;
+    const varPrefix = `--${category.cssVarPrefix}-`;
 
-    if (key.startsWith("shadow-")) {
-      mapping[`--${key}`] = `var(${varName})`;
-    } else if (key.startsWith("backdrop-blur-")) {
-      mapping[`--${key}`] = `var(${varName})`;
-    } else if (key.startsWith("radius-")) {
-      mapping[`--${key}`] = `var(${varName})`;
-    } else {
-      // Colors: key is "primary", "blue-500", etc.
-      mapping[`--color-${key}`] = `var(${varName})`;
+    for (const varName of Object.keys(intermediateVars)) {
+      if (!varName.startsWith(varPrefix)) continue;
+      const key = varName.slice(varPrefix.length);
+      mapping[`${category.themeNamespace}${key}`] = `var(${varName})`;
     }
   }
 
@@ -80,14 +77,9 @@ const buildThemeMapping = (
  * 2. `[data-theme="<name>"]` blocks for each theme override
  * 3. `\@theme inline` block mapping `--sg-*` → Tailwind v4 namespaces
  * @param {ThemeConfig} config - Theme configuration
- * @param {StyleGeneratorOptions} _options - Generator options
  * @returns {string} CSS string
  */
-export const generateThemeCss = (
-  config: ThemeConfig,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _options: StyleGeneratorOptions = {},
-): string => {
+export const generateThemeCss = (config: ThemeConfig): string => {
   const blocks: string[] = [];
 
   // 1. :root with intermediate vars

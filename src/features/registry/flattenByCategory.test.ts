@@ -1,0 +1,52 @@
+import { describe, it, expect } from "vitest";
+
+import { flattenByCategory } from "./flattenByCategory";
+import {
+  colorsCategory,
+  shadowsCategory,
+  backDropBlursCategory,
+  borderRadiusCategory,
+  borderCategory,
+} from "./builtInCategories";
+
+describe("flattenByCategory", () => {
+  it('flattens colors into --sg-<key> vars, matching the old flattenToVars("sg", ...) output', () => {
+    expect(flattenByCategory(colorsCategory, { primary: "#fff" })).toEqual({
+      "--sg-primary": "#fff",
+    });
+  });
+
+  it("converts camelCase keys to kebab-case", () => {
+    expect(
+      flattenByCategory(colorsCategory, { sidebarForeground: "#111827" }),
+    ).toEqual({ "--sg-sidebar-foreground": "#111827" });
+  });
+
+  it("uses the category's own cssVarPrefix for shadows", () => {
+    expect(
+      flattenByCategory(shadowsCategory, { sm: "0 1px 2px #000" }),
+    ).toEqual({
+      "--sg-shadow-sm": "0 1px 2px #000",
+    });
+  });
+
+  it("uses the category's own cssVarPrefix for backDropBlurs", () => {
+    expect(flattenByCategory(backDropBlursCategory, { sm: "4px" })).toEqual({
+      "--sg-backdrop-blur-sm": "4px",
+    });
+  });
+
+  it("uses the category's own cssVarPrefix for borderRadius", () => {
+    expect(flattenByCategory(borderRadiusCategory, { sm: "4px" })).toEqual({
+      "--sg-radius-sm": "4px",
+    });
+  });
+
+  it("returns {} for categories with no cssVarPrefix (border)", () => {
+    expect(flattenByCategory(borderCategory, { thin: "1px" })).toEqual({});
+  });
+
+  it("returns {} when data is undefined", () => {
+    expect(flattenByCategory(colorsCategory, undefined)).toEqual({});
+  });
+});

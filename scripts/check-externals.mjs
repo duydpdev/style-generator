@@ -34,7 +34,9 @@ const buildMatcher = (name) => {
   );
 };
 
-const entries = ["index", "tokens", "cva", "spacing", "types", "vite"];
+const entries = Object.keys(pkg.exports)
+  .filter((key) => key !== "./package.json")
+  .map((key) => (key === "." ? "index" : key.replace(/^\.\//, "")));
 const targets = entries.flatMap((e) => [
   resolve(root, `dist/${e}.js`),
   resolve(root, `dist/${e}.cjs`),

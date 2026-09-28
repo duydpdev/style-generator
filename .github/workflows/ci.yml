@@ -47,5 +47,11 @@ jobs:
       - name: Build
         run: yarn build:all
 
+      - name: Check externals
+        run: yarn check:externals
+
+      - name: Check size budgets
+        run: yarn check:sizes
+
       - name: Test
         run: yarn test

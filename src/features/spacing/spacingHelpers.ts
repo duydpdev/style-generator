@@ -50,6 +50,8 @@ export const resolveSpacing = (
     style[`--sg-sp-${prop}`] = `${String(value * unit)}rem`;
   } else {
     for (const [bp, val] of Object.entries(value)) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime JS callers (e.g. object literals built from possibly-undefined variables) can pass `undefined` here despite the declared type; Object.entries(undefined) throws.
+      if (val == null) continue;
       const suffix = bp === "base" ? "" : `-${bp}`;
       style[`--sg-sp-${prop}${suffix}`] = `${String(val * unit)}rem`;
     }
@@ -76,6 +78,8 @@ export const resolveSpacingProps = (
   const style: Record<string, string> = {};
 
   for (const [prop, value] of Object.entries(props)) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime JS callers (e.g. `resolveSpacingProps({ p, px, py })` destructuring optional component props) can pass `undefined` here despite the declared type; Object.entries(undefined) throws.
+    if (value == null) continue;
     const result = resolveSpacing(prop as SpacingKey, value);
     classNames.push(result.className);
     Object.assign(style, result.style);

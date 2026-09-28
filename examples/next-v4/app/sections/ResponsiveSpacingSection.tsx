@@ -27,7 +27,7 @@ export const ResponsiveSpacingSection = () => {
       <SectionHead
         num="05 — Responsive"
         title="Spacing reacts to breakpoints."
-        desc="Pass a ResponsiveValue object to spacing props. Each breakpoint key sets a CSS custom property; the plugin's fallback chain selects the right value at each viewport."
+        desc="Pass a ResponsiveValueStrict object to spacing props. Each breakpoint key sets a CSS custom property; the plugin's fallback chain selects the right value at each viewport."
       />
 
       <div className="grid gap-8">

@@ -110,7 +110,7 @@ const BoxComponent = ({
           shadow,
           backdropBlur,
         }),
-        ...spacingClasses,
+        spacingClasses,
         className,
       )}
       style={{

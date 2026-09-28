@@ -6,7 +6,7 @@ const SPACING_CODE = `import { resolveSpacingProps } from
 function Box({ p, m, gap, children }) {
   const s = resolveSpacingProps({ p, m, gap });
   return (
-    <div className={s.classNames.join(" ")}
+    <div className={s.classNames}
          style={s.style}>
       {children}
     </div>

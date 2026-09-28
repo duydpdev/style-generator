@@ -23,4 +23,19 @@ describe("resolveSpacingProps", () => {
   it("returns an empty classNames string and empty style for no props", () => {
     expect(resolveSpacingProps({})).toEqual({ classNames: "", style: {} });
   });
+
+  it("skips props whose value is explicit undefined instead of throwing", () => {
+    // Mirrors real call sites like `resolveSpacingProps({ p, px, py })` in a
+    // consumer component: destructured optional props that weren't passed
+    // are still present as own keys with value `undefined` in the object
+    // literal. Our own exactOptionalPropertyTypes-strict src rejects this
+    // at compile time, but consumers without that flag (the common case)
+    // — or plain JS — can and do construct it, so the runtime must stay
+    // defensive.
+    const p: number | undefined = undefined;
+    // @ts-expect-error exactOptionalPropertyTypes forbids explicit undefined here for our own strict callers; runtime must still handle it for looser consumers.
+    const { classNames, style } = resolveSpacingProps({ p, m: 2 });
+    expect(classNames).toBe("sp-m");
+    expect(style).toEqual({ "--sg-sp-m": "0.5rem" });
+  });
 });

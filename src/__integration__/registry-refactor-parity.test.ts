@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
-import postcss, { ChildNode, Container, Root } from "postcss";
+import type { ChildNode, Container, Root } from "postcss";
+import postcss from "postcss";
 import { describe, it, expect, beforeAll } from "vitest";
 
 import { generate } from "../core/generate";

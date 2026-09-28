@@ -1,4 +1,5 @@
-import postcss, { AtRule, Rule } from "postcss";
+import type { AtRule, Rule } from "postcss";
+import postcss from "postcss";
 import { describe, it, expect } from "vitest";
 
 import { fixtureOptions } from "../../__integration__/__fixtures__/fixtureTheme";

@@ -1,4 +1,5 @@
-import postcss, { AtRule, Declaration, Rule } from "postcss";
+import type { AtRule, Declaration, Rule } from "postcss";
+import postcss from "postcss";
 import { describe, it, expect } from "vitest";
 
 import { generateTypographyCss } from "./generateTypographyCss";

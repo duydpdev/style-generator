@@ -4,7 +4,7 @@ import {
   DEFAULT_SPACING_PROPERTIES,
   DEFAULT_ZINDEX_VALUES,
 } from "../../shared/defaultOption";
-import {
+import type {
   CamelCase,
   DesignTokensResult,
   InferColorKeys,
@@ -12,7 +12,8 @@ import {
   InferRoundedOptions,
   InferZIndexOptions,
 } from "../../core/inference";
-import { StyleGeneratorOptions, defaultScreens } from "../../core/Options";
+import type { StyleGeneratorOptions } from "../../core/Options";
+import { defaultScreens } from "../../core/Options";
 import type { ThemeConfig } from "../../core/themeSchema";
 import { toCamelCase } from "../../shared/helpers";
 

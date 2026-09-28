@@ -50,6 +50,9 @@ jobs:
       - name: Check externals
         run: yarn check:externals
 
+      - name: Check browser-safe subpaths
+        run: yarn check:browser-safe
+
       - name: Check size budgets
         run: yarn check:sizes
 

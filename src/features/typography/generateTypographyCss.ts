@@ -1,4 +1,4 @@
-import { StyleGeneratorOptions } from "../../core/Options";
+import type { StyleGeneratorOptions } from "../../core/Options";
 import type { TypographyConfig } from "../../core/themeSchema";
 import { UTILITY_NAME_RE, toKebabCase } from "../../shared/helpers";
 

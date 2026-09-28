@@ -1,4 +1,7 @@
-import { StyleGeneratorOptions, SpacingPropertyMap } from "../../core/Options";
+import type {
+  StyleGeneratorOptions,
+  SpacingPropertyMap,
+} from "../../core/Options";
 import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
 
 /**

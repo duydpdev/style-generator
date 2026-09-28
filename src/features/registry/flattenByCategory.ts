@@ -1,6 +1,6 @@
 import { toKebabCase } from "../../shared/helpers";
 
-import { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
+import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
 
 /**
  * Flatten a theme category's flat key-value data into intermediate CSS

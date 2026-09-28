@@ -1,5 +1,5 @@
-import { InferSafelistClasses } from "../../core/inference";
-import { StyleGeneratorOptions } from "../../core/Options";
+import type { InferSafelistClasses } from "../../core/inference";
+import type { StyleGeneratorOptions } from "../../core/Options";
 import type { ThemeConfig } from "../../core/themeSchema";
 import { toKebabCase } from "../../shared/helpers";
 import {

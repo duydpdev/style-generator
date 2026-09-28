@@ -5,8 +5,8 @@ import { generateThemeCss } from "../features/theme-css/generateThemeCss";
 import { createDesignTokens } from "../features/tokens/createDesignTokens";
 import { generateTypographyCss } from "../features/typography/generateTypographyCss";
 
-import { DesignTokensResult } from "./inference";
-import { StyleGeneratorOptions } from "./Options";
+import type { DesignTokensResult } from "./inference";
+import type { StyleGeneratorOptions } from "./Options";
 import type { ThemeConfig } from "./themeSchema";
 
 /**

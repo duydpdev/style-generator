@@ -1,8 +1,8 @@
-import {
+import type {
   StyleGeneratorOptions,
   SpacingPropertyMap,
-  defaultScreens,
 } from "../../core/Options";
+import { defaultScreens } from "../../core/Options";
 import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
 
 interface SortedBreakpoint {

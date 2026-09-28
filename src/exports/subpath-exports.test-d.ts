@@ -1,7 +1,7 @@
 import { describe, it, expectTypeOf } from "vitest";
 
 // Import via root barrel
-import * as root from "../index";
+import type * as root from "../index";
 
 // Import via subpath barrels (v4 new paths — resolved via `src/exports/*`
 // which is how consumers will see them after exports map resolves).

@@ -1,4 +1,5 @@
-import { StyleGeneratorOptions, defaultScreens } from "../../core/Options";
+import type { StyleGeneratorOptions } from "../../core/Options";
+import { defaultScreens } from "../../core/Options";
 
 /**
  * Generate a `@theme { --breakpoint-<key>: <value>; ... }` block overriding

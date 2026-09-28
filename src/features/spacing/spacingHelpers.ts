@@ -1,4 +1,4 @@
-import { Breakpoint } from "../../core/Options";
+import type { Breakpoint } from "../../core/Options";
 
 /**
  * Mặc định các breakpoint chuẩn theo Option của thư viện

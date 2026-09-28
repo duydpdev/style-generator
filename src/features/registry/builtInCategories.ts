@@ -7,10 +7,8 @@ import {
   roundedProperties,
 } from "../../shared/safelistProperties";
 
-import {
-  defineCategory,
-  TokenCategoryDescriptor,
-} from "./TokenCategoryDescriptor";
+import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
+import { defineCategory } from "./TokenCategoryDescriptor";
 
 /**
  * `colors` — flat camelCase palette. Feeds `bg-*`/`text-*`/`border-*`

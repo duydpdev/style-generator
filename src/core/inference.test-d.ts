@@ -1,6 +1,6 @@
 import { describe, it, expectTypeOf } from "vitest";
 
-import {
+import type {
   CamelCase,
   KebabCase,
   InferColorKeys,

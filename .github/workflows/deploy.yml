@@ -47,6 +47,9 @@ jobs:
       - name: Verify externals (dist must not inline peer/dep packages)
         run: yarn check:externals
 
+      - name: Verify browser-safe subpaths
+        run: yarn check:browser-safe
+
       - name: Verify publish target = npmjs.org
         run: yarn check:publish-target
 

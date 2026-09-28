@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import postcss, { Rule } from "postcss";
+import type { Rule } from "postcss";
+import postcss from "postcss";
 
 import { generate } from "../core/generate";
 import { defineTheme } from "../core/defineTheme";

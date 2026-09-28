@@ -129,19 +129,28 @@ const diffSorted = (
   let i = 0;
   let j = 0;
   while (i < sortedA.length && j < sortedB.length) {
-    if (sortedA[i] === sortedB[j]) {
+    const a = sortedA[i];
+    const b = sortedB[j];
+    if (a === undefined || b === undefined) break;
+    if (a === b) {
       i++;
       j++;
-    } else if (sortedA[i] < sortedB[j]) {
-      onlyInA.push(sortedA[i]);
+    } else if (a < b) {
+      onlyInA.push(a);
       i++;
     } else {
-      onlyInB.push(sortedB[j]);
+      onlyInB.push(b);
       j++;
     }
   }
-  while (i < sortedA.length) onlyInA.push(sortedA[i++]);
-  while (j < sortedB.length) onlyInB.push(sortedB[j++]);
+  while (i < sortedA.length) {
+    const a = sortedA[i++];
+    if (a !== undefined) onlyInA.push(a);
+  }
+  while (j < sortedB.length) {
+    const b = sortedB[j++];
+    if (b !== undefined) onlyInB.push(b);
+  }
   return { onlyInA, onlyInB };
 };
 

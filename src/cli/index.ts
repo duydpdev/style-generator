@@ -154,10 +154,13 @@ function runSafelist(values: CLIValues, positionals: string[]): void {
     );
   }
 
+  const theme = values.theme ?? themeFromPositional;
+  const out = values.out ?? outFromPositional;
+
   safelistCommand({
-    theme: values.theme ?? themeFromPositional,
-    out: values.out ?? outFromPositional,
-    watch: values.watch,
+    ...(theme !== undefined && { theme }),
+    ...(out !== undefined && { out }),
+    ...(values.watch !== undefined && { watch: values.watch }),
   });
 }
 
@@ -215,7 +218,7 @@ async function main(): Promise<void> {
     }
 
     case "schema":
-      schemaCommand({ out: values.out });
+      schemaCommand({ ...(values.out !== undefined && { out: values.out }) });
       break;
 
     default:

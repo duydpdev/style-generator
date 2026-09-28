@@ -12,6 +12,16 @@ export interface StyleGenConfig {
   screens?: Record<string, string>;
 }
 
+/**
+ * Raw CLI/programmatic flags input: unlike {@link StyleGenConfig}, each
+ * field may be explicitly `undefined` (e.g. an unset `parseArgs` flag, or
+ * a caller spreading an optional value) — `sanitizeFlags` strips those
+ * before merging with file config and defaults.
+ */
+export type StyleGenConfigFlags = {
+  [K in keyof StyleGenConfig]?: StyleGenConfig[K] | undefined;
+};
+
 export const defaultConfig: StyleGenConfig = {
   theme: "styles/theme.json",
   output: "styles/safelist.txt",
@@ -37,12 +47,10 @@ export function normalizePath(p: string): string {
 
 /**
  * Sanitizes the flags to remove undefined values
- * @param {Partial<StyleGenConfig>} flags - The flags to sanitize
+ * @param {StyleGenConfigFlags} flags - The flags to sanitize
  * @returns {Partial<StyleGenConfig>} The sanitized flags
  */
-function sanitizeFlags(
-  flags: Partial<StyleGenConfig>,
-): Partial<StyleGenConfig> {
+function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   const sanitized: Partial<StyleGenConfig> = {};
 
   if (flags.theme !== undefined) {
@@ -109,10 +117,10 @@ function loadFileConfig(cwd: string): Partial<StyleGenConfig> {
 
 /**
  * Resolves CLI configuration from file arguments and defaults
- * @param {Partial<StyleGenConfig>} flags - The command line flags
+ * @param {StyleGenConfigFlags} flags - The command line flags
  * @returns {StyleGenConfig} The resolved StyleGen configuration
  */
-export function resolveConfig(flags: Partial<StyleGenConfig>): StyleGenConfig {
+export function resolveConfig(flags: StyleGenConfigFlags): StyleGenConfig {
   const sanitizedFlags = sanitizeFlags(flags);
   const fileConfig = loadFileConfig(process.cwd());
 

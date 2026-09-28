@@ -30,12 +30,13 @@ const resolveSortedBreakpoints = (
   };
 
   return breakpointKeys
-    .filter((bp) => mergedScreens[bp])
-    .map((bp) => ({
-      key: bp,
-      value: mergedScreens[bp],
-      numericValue: Number.parseInt(mergedScreens[bp], 10),
-    }))
+    .map((bp) => {
+      const value = mergedScreens[bp];
+      return value === undefined
+        ? undefined
+        : { key: bp, value, numericValue: Number.parseInt(value, 10) };
+    })
+    .filter((entry): entry is SortedBreakpoint => entry !== undefined)
     .sort((a, b) => a.numericValue - b.numericValue);
 };
 
@@ -60,7 +61,9 @@ const buildFallbackChain = (
 ): string => {
   let chain = `var(--sg-sp-${key})`;
   for (let j = 0; j <= uptoIndex; j++) {
-    chain = `var(--sg-sp-${key}-${sortedBreakpoints[j].key}, ${chain})`;
+    const bp = sortedBreakpoints[j];
+    if (bp === undefined) continue;
+    chain = `var(--sg-sp-${key}-${bp.key}, ${chain})`;
   }
   return chain;
 };
@@ -147,9 +150,12 @@ export const generateSpacingCss = (
   const spacingKeys = Object.keys(spacingProps);
   const sortedBreakpoints = resolveSortedBreakpoints(options);
 
-  const utilityBlocks = spacingKeys.map((key) =>
-    buildUtilityBlock(key, spacingProps[key], sortedBreakpoints),
-  );
+  const utilityBlocks = spacingKeys.flatMap((key) => {
+    const cssProps = spacingProps[key];
+    return cssProps === undefined
+      ? []
+      : [buildUtilityBlock(key, cssProps, sortedBreakpoints)];
+  });
   const propertyBlocks = spacingKeys.flatMap((key) =>
     buildPropertyBlocks(key, sortedBreakpoints),
   );

@@ -87,6 +87,7 @@ describe("generateSpacingCss", () => {
   it("nests the accumulated --sg-sp-* fallback chain inside @utility sp-p per declared breakpoint", () => {
     const css = generateSpacingCss(fixtureOptions);
     const { "sp-p": spP } = parseUtilities(css);
+    if (spP === undefined) throw new Error("sp-p utility not found");
     expect(spP.base).toEqual({ padding: "var(--sg-sp-p)" });
     expect(spP.media).toEqual({
       "(width >= 768px)": { padding: "var(--sg-sp-p-md, var(--sg-sp-p))" },
@@ -99,11 +100,14 @@ describe("generateSpacingCss", () => {
   it("multi-property keys (px) repeat the same chain across all their CSS properties", () => {
     const css = generateSpacingCss(fixtureOptions);
     const { "sp-px": spPx } = parseUtilities(css);
+    if (spPx === undefined) throw new Error("sp-px utility not found");
     expect(spPx.base).toEqual({
       "padding-left": "var(--sg-sp-px)",
       "padding-right": "var(--sg-sp-px)",
     });
-    expect(spPx.media["(width >= 768px)"]).toEqual({
+    const spPxMd = spPx.media["(width >= 768px)"];
+    if (spPxMd === undefined) throw new Error("sp-px md media not found");
+    expect(spPxMd).toEqual({
       "padding-left": "var(--sg-sp-px-md, var(--sg-sp-px))",
       "padding-right": "var(--sg-sp-px-md, var(--sg-sp-px))",
     });

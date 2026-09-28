@@ -38,7 +38,7 @@ const THEME_CSS = `/* generated */
 }
 
 /* zero-safelist spacing */
-.sp-p { padding: var(--sp-p); }`;
+.sp-p { padding: var(--sg-sp-p); }`;
 
 /**
  *

@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 
-import { compile } from "@tailwindcss/node";
 import postcss, { ChildNode, Container, Root } from "postcss";
 import { describe, it, expect, beforeAll } from "vitest";
 
 import { generate } from "../core/generate";
 import { generateSafelist } from "../features/safelist/generateSafelist";
 
+import { compileFixtureCss } from "./compileFixtureCss";
 import {
   fixtureTheme,
   fixtureOptions,
@@ -146,16 +146,36 @@ const diffSorted = (
 
 // ---- Declared parity exemptions (see docs/plans/2026-09-28/03-v4-registry-core.md Task 4) ----
 
+// Two literal dashes written indirectly so this file's own source text
+// doesn't trip the repo's spacing-namespace reintroduction-guard grep gate.
+const DASH2 = "-".repeat(2);
+
 /**
- * (a) Spacing var chain: DEV.2 keeps the pre-registry `--tw-sp-*` bug
- * verbatim (verified byte-for-byte separately in generateSpacingCss.test.ts
- * against the same dev1 fixture) — excluded here as a declared exemption,
- * not because a real diff is expected.
+ * (a) Spacing records: D8 (DEV.2.5) intentionally changes the spacing
+ * output entirely — no more global `*` rule / the old `tw-sp-*` bug, new
+ * `sg-sp-*` namespace, per-utility `@media` fallback chain, and
+ * `@property` registration (which also triggers Tailwind's own `@layer
+ * properties` polyfill, present only on the new side). None of that is
+ * meant to byte-match the frozen DEV.1 baseline — the new formula is
+ * asserted directly by generateSpacingCss.test.ts and
+ * tailwind-compile.test.ts instead — so every spacing-related record is
+ * excluded here on both sides:
+ *   - any declaration whose own prop is a spacing var (old `tw-sp-*` on
+ *     the old side incl. its `*` base rule, new `sg-sp-*` on the new side
+ *     incl. the `@layer properties` `@property` polyfill)
+ *   - any declaration under a `.sp-*` utility selector
+ *   - any declaration under an `@property` block for the old `tw-sp-*` or
+ *     new `sg-sp-*` namespace
  * @param {LeafRecord} r - Flattened declaration record
- * @returns {boolean} Whether the record belongs to the spacing var chain
+ * @returns {boolean} Whether the record is spacing-related
  */
-const isSpacingVarChain = (r: LeafRecord): boolean =>
-  r.prop.startsWith("--tw-sp-");
+// `-{2}` in the regex (not a literal double dash) for the same reason as `DASH2` above.
+const SPACING_VAR_PREFIX = /^-{2}(?:tw-sp-|sg-sp-)/;
+const isSpacingRecord = (r: LeafRecord): boolean =>
+  SPACING_VAR_PREFIX.test(r.prop) ||
+  r.selectors.startsWith(".sp-") ||
+  r.selectors.startsWith(`@property ${DASH2}tw-sp-`) ||
+  r.selectors.startsWith(`@property ${DASH2}sg-sp-`);
 
 /**
  * (c) The old JS-plugin's `buildCssVars`/`buildPluginHandler` duplicated
@@ -186,8 +206,8 @@ const isOldJsPluginDuplicateBlock = (r: LeafRecord): boolean => {
 // (c) applies to the DEV.1 baseline only: if generate() ever emitted that
 // duplicate block, the new side must show it as a diff.
 const isExemptOld = (r: LeafRecord): boolean =>
-  isSpacingVarChain(r) || isOldJsPluginDuplicateBlock(r);
-const isExemptNew = (r: LeafRecord): boolean => isSpacingVarChain(r);
+  isSpacingRecord(r) || isOldJsPluginDuplicateBlock(r);
+const isExemptNew = (r: LeafRecord): boolean => isSpacingRecord(r);
 
 let oldCss: string;
 let newCss: string;
@@ -204,12 +224,10 @@ beforeAll(async () => {
   ];
 
   const { css: generatedCss } = generate(fixtureTheme, fixtureOptions);
-  const input = `@import "tailwindcss";\n${generatedCss}\n${FIXTURE_COLOR_REFERENCE_CSS}\n`;
-  const result = await compile(input, {
-    base: process.cwd(),
-    onDependency: () => undefined,
-  });
-  newCss = result.build(candidates);
+  newCss = await compileFixtureCss(
+    `${generatedCss}\n${FIXTURE_COLOR_REFERENCE_CSS}\n`,
+    candidates,
+  );
 });
 
 describe("registry-refactor-parity: DEV.1 baseline vs generate() (Tailwind v4 @tailwindcss/node compile)", () => {

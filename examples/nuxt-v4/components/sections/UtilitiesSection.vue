@@ -32,7 +32,7 @@ const RADII: { key: "sm" | "md" | "lg" | "pill"; width: number }[] = [
       title="A measured cadence."
     >
       <template #desc>
-        Padding compiles to inline <code>--sp-*</code> variables — zero
+        Padding compiles to inline <code>--sg-sp-*</code> variables — zero
         safelist. Radii and shadows stay tokenized so a single palette swap
         reshapes the entire surface treatment.
       </template>

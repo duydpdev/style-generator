@@ -50,10 +50,10 @@ export type ResponsiveValueStrict<
  * @returns {{ className: string; style: Record<string, string> }} Resolved class name and CSS variable style map
  * @example
  * resolveSpacing('p', 4)
- * // → { className: 'sp-p', style: { '--sp-p': '1rem' } }
+ * // → { className: 'sp-p', style: { '--sg-sp-p': '1rem' } }
  * @example
  * resolveSpacing('p', { base: 4, md: 8, xl: 16 })
- * // → { className: 'sp-p', style: { '--sp-p': '1rem', '--sp-p-md': '2rem', '--sp-p-xl': '4rem' } }
+ * // → { className: 'sp-p', style: { '--sg-sp-p': '1rem', '--sg-sp-p-md': '2rem', '--sg-sp-p-xl': '4rem' } }
  */
 export const resolveSpacing = (
   prop: string,
@@ -63,12 +63,12 @@ export const resolveSpacing = (
   const style: Record<string, string> = {};
 
   if (typeof value === "number") {
-    style[`--sp-${prop}`] = `${String(value * unit)}rem`;
+    style[`--sg-sp-${prop}`] = `${String(value * unit)}rem`;
   } else {
     for (const [bp, val] of Object.entries(value)) {
       if (val == null) continue;
       const suffix = bp === "base" ? "" : `-${bp}`;
-      style[`--sp-${prop}${suffix}`] = `${String(val * unit)}rem`;
+      style[`--sg-sp-${prop}${suffix}`] = `${String(val * unit)}rem`;
     }
   }
 
@@ -83,7 +83,7 @@ export const resolveSpacing = (
  * resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } })
  * // → {
  * //     classNames: ['sp-p', 'sp-mx'],
- * //     style: { '--sp-p': '1rem', '--sp-mx': '0.5rem', '--sp-mx-md': '1rem' }
+ * //     style: { '--sg-sp-p': '1rem', '--sg-sp-mx': '0.5rem', '--sg-sp-mx-md': '1rem' }
  * //   }
  */
 export const resolveSpacingProps = (

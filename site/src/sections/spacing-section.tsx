@@ -15,11 +15,11 @@ function Box({ p, m, gap, children }) {
 
 // Usage
 <Box p={4} />
-// → class="sp-p" style="--sp-p:1rem"
+// → class="sp-p" style="--sg-sp-p:1rem"
 
 <Box p={{ base: 2, md: 4, lg: 8 }} />
-// → --sp-p:.5rem  --sp-p-md:1rem
-//   --sp-p-lg:2rem`;
+// → --sg-sp-p:.5rem  --sg-sp-p-md:1rem
+//   --sg-sp-p-lg:2rem`;
 
 /**
  *
@@ -81,8 +81,8 @@ export function SpacingSection() {
               </b>
               <span className="meta">
                 {" "}
-                <code>--sp-p-md</code> overrides <code>--sp-p</code> at the
-                breakpoint.
+                <code>--sg-sp-p-md</code> overrides <code>--sg-sp-p</code> at
+                the breakpoint.
               </span>
             </li>
             <li>

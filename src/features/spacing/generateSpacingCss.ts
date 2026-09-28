@@ -12,54 +12,132 @@ interface SortedBreakpoint {
 }
 
 /**
- * Build the `@layer base { * { --tw-sp-<key>: ... } \@media (...) { * {...} } }`
- * block. Intentionally reproduces the pre-registry `--tw-sp-*`/`*` var chain
- * exactly as-is (including its known bug) — DEV.2 scope only, fixed in
- * DEV.2.5.
- * @param {string[]} spacingKeys - Spacing property keys (e.g. `["p", "px", ...]`)
- * @param {SortedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
- * @returns {string} `@layer base { ... }` block
+ * Resolve the ascending breakpoint list to generate fallback chains for.
+ * Empty when `enableResponsive` is `false` — no `@media`/`@property`
+ * breakpoint variants are emitted in that case, only the base value.
+ * @param {StyleGeneratorOptions} options - Generator options
+ * @returns {SortedBreakpoint[]} Ascending breakpoints (by resolved width)
  */
-const buildBaseLayer = (
-  spacingKeys: string[],
+const resolveSortedBreakpoints = (
+  options: StyleGeneratorOptions,
+): SortedBreakpoint[] => {
+  if (options.enableResponsive === false) return [];
+
+  const breakpointKeys = options.breakpoints ?? ["md", "lg"];
+  const mergedScreens: Record<string, string> = {
+    ...defaultScreens,
+    ...options.screens,
+  };
+
+  return breakpointKeys
+    .filter((bp) => mergedScreens[bp])
+    .map((bp) => ({
+      key: bp,
+      value: mergedScreens[bp],
+      numericValue: Number.parseInt(mergedScreens[bp], 10),
+    }))
+    .sort((a, b) => a.numericValue - b.numericValue);
+};
+
+/**
+ * Build the ascending `var(--sg-sp-<key>-<bp>, ...)` fallback chain for a
+ * spacing key up to (and including) `uptoIndex` in `sortedBreakpoints`.
+ * Every level accumulates every narrower breakpoint on top of the base
+ * value: range media queries (`width >= X`) can be simultaneously true at
+ * a given viewport width, so the LAST matching `@media` block wins by
+ * source order — its declaration must therefore carry the full chain
+ * rather than only its own override, or a wider viewport could silently
+ * fall back past a narrower breakpoint's value.
+ * @param {string} key - Spacing property key (e.g. `"p"`)
+ * @param {SortedBreakpoint[]} sortedBreakpoints - Ascending breakpoints
+ * @param {number} uptoIndex - Inclusive index into `sortedBreakpoints`
+ * @returns {string} `var(--sg-sp-<key>...)` fallback chain
+ */
+const buildFallbackChain = (
+  key: string,
+  sortedBreakpoints: SortedBreakpoint[],
+  uptoIndex: number,
+): string => {
+  let chain = `var(--sg-sp-${key})`;
+  for (let j = 0; j <= uptoIndex; j++) {
+    chain = `var(--sg-sp-${key}-${sortedBreakpoints[j].key}, ${chain})`;
+  }
+  return chain;
+};
+
+/**
+ * Build one `@utility sp-<key> { ... }` block: base declarations reference
+ * `var(--sg-sp-<key>)` directly, followed by one nested `@media (width >=
+ * ...)` per declared breakpoint holding the accumulated fallback chain.
+ * No bare selector is ever emitted — Tailwind's variant engine only picks
+ * up `hover:`/`md:` modifiers on classes defined via `@utility`.
+ * @param {string} key - Spacing property key
+ * @param {Record<string, string>} cssProps - CSS property → `var()` template map for this key
+ * @param {SortedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
+ * @returns {string} `@utility sp-<key> { ... }` block
+ */
+const buildUtilityBlock = (
+  key: string,
+  cssProps: Record<string, string>,
   sortedBreakpoints: SortedBreakpoint[],
 ): string => {
-  const rootLines = spacingKeys.map(
-    (key) => `    --tw-sp-${key}: var(--sp-${key});`,
+  const cssPropNames = Object.keys(cssProps);
+  const baseSection = cssPropNames
+    .map((cssProp) => `  ${cssProp}: var(--sg-sp-${key});`)
+    .join("\n");
+
+  const mediaSections = sortedBreakpoints.map((bp, i) => {
+    const chain = buildFallbackChain(key, sortedBreakpoints, i);
+    const lines = cssPropNames
+      .map((cssProp) => `    ${cssProp}: ${chain};`)
+      .join("\n");
+    return `  @media (width >= ${bp.value}) {\n${lines}\n  }`;
+  });
+
+  return `@utility sp-${key} {\n${[baseSection, ...mediaSections].join("\n\n")}\n}`;
+};
+
+/**
+ * Build `@property --sg-sp-<key>[-<bp>] { syntax: "*"; inherits: false; }`
+ * for a spacing key: the base var plus every declared breakpoint variant.
+ * Deliberately has no `initial-value` — an unregistered custom property
+ * with `syntax: "*"` and no `initial-value` is guaranteed-invalid at
+ * computed-value time when unset, which is what makes the `var(--x,
+ * fallback)` chain fall through to its fallback instead of resolving to
+ * an empty string (the root cause of the pre-fix bug this block replaces).
+ * @param {string} key - Spacing property key
+ * @param {SortedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
+ * @returns {string[]} One `@property` block per (key, base|breakpoint) pair
+ */
+const buildPropertyBlocks = (
+  key: string,
+  sortedBreakpoints: SortedBreakpoint[],
+): string[] => {
+  const names = [
+    `--sg-sp-${key}`,
+    ...sortedBreakpoints.map((bp) => `--sg-sp-${key}-${bp.key}`),
+  ];
+  return names.map(
+    (name) => `@property ${name} {\n  syntax: "*";\n  inherits: false;\n}`,
   );
-  const sections = [`  * {\n${rootLines.join("\n")}\n  }`];
-
-  for (let i = 0; i < sortedBreakpoints.length; i++) {
-    const bp = sortedBreakpoints[i];
-    const lines = spacingKeys.map((key) => {
-      let chain = `var(--sp-${key})`;
-      for (let j = 0; j <= i; j++) {
-        const iterBp = sortedBreakpoints[j];
-        chain = `var(--sp-${key}-${iterBp.key}, ${chain})`;
-      }
-      return `      --tw-sp-${key}: ${chain};`;
-    });
-    sections.push(
-      `  @media (min-width: ${bp.value}) {\n    * {\n${lines.join("\n")}\n    }\n  }`,
-    );
-  }
-
-  return `@layer base {\n${sections.join("\n")}\n}`;
 };
 
 /**
  * Generate static CSS for `.sp-*` spacing utilities — replaces the old
  * JS-plugin `generateSpacingRules` (`api.addBase` + `api.addUtilities`).
- * Preserves the exact pre-registry output, bug-for-bug (DEV.2 scope; the
- * `--tw-sp-*` chain gets its real fix in DEV.2.5). Each `.sp-<key>` is
- * emitted as `@utility sp-<key> { ... }` (never a bare `.class {}` rule) so
- * Tailwind's variant engine still applies `hover:`/`md:` modifiers to it
- * from raw CSS-text input.
+ * Each `.sp-<key>` is emitted as `@utility sp-<key> { ... }` (never a bare
+ * `.class {}` rule) so Tailwind's variant engine still applies
+ * `hover:`/`md:` modifiers to it from raw CSS-text input.
+ *
+ * D8 fix (DEV.2.5): no global `*` rule / `@layer base` — each utility owns
+ * its full breakpoint fallback chain inline — and every `--sg-sp-<key>[-<bp>]`
+ * var is registered via `@property` so it participates correctly in the
+ * cascade instead of leaking a parent's value into children via
+ * unregistered custom-property inheritance.
  *
  * Note: `options.spacing.useMatchUtilities` (JIT arbitrary-value support,
  * e.g. `sp-p-[24px]`) has no static-CSS equivalent — it required the real
- * Tailwind JS plugin's `matchUtilities` API — and is out of scope here; it
- * is removed entirely in DEV.2 Task 3 alongside `spacing.ts`.
+ * Tailwind JS plugin's `matchUtilities` API — and is out of scope here.
  * @param {StyleGeneratorOptions} [options] - Generator options
  * @returns {string} CSS string, empty when spacing generation is disabled
  */
@@ -71,41 +149,14 @@ export const generateSpacingCss = (
   const spacingProps: SpacingPropertyMap =
     options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES;
   const spacingKeys = Object.keys(spacingProps);
+  const sortedBreakpoints = resolveSortedBreakpoints(options);
 
-  if (options.enableResponsive === false) {
-    const utilityBlocks = spacingKeys.map((key) => {
-      const lines = Object.keys(spacingProps[key]).map(
-        (cssProp) => `  ${cssProp}: var(--sp-${key});`,
-      );
-      return `@utility sp-${key} {\n${lines.join("\n")}\n}`;
-    });
-    return utilityBlocks.join("\n\n") + "\n";
-  }
-
-  const breakpointKeys = options.breakpoints ?? ["md", "lg"];
-  const mergedScreens: Record<string, string> = {
-    ...defaultScreens,
-    ...options.screens,
-  };
-  const sortedBreakpoints = breakpointKeys
-    .filter((bp) => mergedScreens[bp])
-    .map((bp) => ({
-      key: bp,
-      value: mergedScreens[bp],
-      numericValue: Number.parseInt(mergedScreens[bp], 10),
-    }))
-    .sort((a, b) => a.numericValue - b.numericValue);
-
-  const utilityBlocks = spacingKeys.map((key) => {
-    const lines = Object.keys(spacingProps[key]).map(
-      (cssProp) => `  ${cssProp}: var(--tw-sp-${key});`,
-    );
-    return `@utility sp-${key} {\n${lines.join("\n")}\n}`;
-  });
-
-  return (
-    [buildBaseLayer(spacingKeys, sortedBreakpoints), ...utilityBlocks].join(
-      "\n\n",
-    ) + "\n"
+  const utilityBlocks = spacingKeys.map((key) =>
+    buildUtilityBlock(key, spacingProps[key], sortedBreakpoints),
   );
+  const propertyBlocks = spacingKeys.flatMap((key) =>
+    buildPropertyBlocks(key, sortedBreakpoints),
+  );
+
+  return [...utilityBlocks, ...propertyBlocks].join("\n\n") + "\n";
 };

@@ -91,7 +91,7 @@ describe("generateSafelist", () => {
     const list = generateSafelist(mockTheme, {
       spacing: {
         properties: {
-          inset: { inset: "var(--sp-inset)" },
+          inset: { inset: "var(--sg-sp-inset)" },
         },
       },
     });

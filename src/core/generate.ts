@@ -1,3 +1,4 @@
+import { generateSourceInline } from "../features/registry/generateSourceInline";
 import { generateSpacingCss } from "../features/spacing/generateSpacingCss";
 import { generateScreensCss } from "../features/theme-css/generateScreensCss";
 import { generateThemeCss } from "../features/theme-css/generateThemeCss";
@@ -34,6 +35,7 @@ export const generate = <TTheme extends ThemeConfig>(
     generateThemeCss(theme),
     generateTypographyCss(theme.typography, styleOptions),
     generateSpacingCss(styleOptions),
+    generateSourceInline(styleOptions),
   ]
     .filter((block) => block.length > 0)
     .join("\n");

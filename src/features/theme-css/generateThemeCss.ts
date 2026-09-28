@@ -17,12 +17,7 @@ const buildIntermediateVars = (
   return builtInCategories.reduce<Record<string, string>>(
     (acc, category) => ({
       ...acc,
-      ...flattenByCategory(
-        category,
-        (source as Record<string, Record<string, string> | undefined>)[
-          category.key
-        ],
-      ),
+      ...flattenByCategory(category, category.select?.(source)),
     }),
     {},
   );
@@ -59,12 +54,7 @@ const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
   for (const category of builtInCategories) {
     if (!category.cssVarPrefix || !category.themeNamespace) continue;
     const varPrefix = `--${category.cssVarPrefix}-`;
-    const vars = flattenByCategory(
-      category,
-      (config as unknown as Record<string, Record<string, string> | undefined>)[
-        category.key
-      ],
-    );
+    const vars = flattenByCategory(category, category.select?.(config));
 
     for (const varName of Object.keys(vars)) {
       const key = varName.slice(varPrefix.length);

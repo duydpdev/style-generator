@@ -2,7 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type MockInstance,
+} from "vitest";
 
 import { logger } from "../logger";
 
@@ -25,7 +33,7 @@ const writeProject = (
 describe("doctorCommand", () => {
   let tmp: string;
   let origCwd: string;
-  let logSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: MockInstance<typeof logger.log>;
   let exitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -44,10 +52,7 @@ describe("doctorCommand", () => {
     vi.restoreAllMocks();
   });
 
-  const lines = (): string => {
-    const spy = logSpy as unknown as { mock: { calls: unknown[][] } };
-    return spy.mock.calls.map((c) => String(c[0])).join("\n");
-  };
+  const lines = (): string => logSpy.mock.calls.map((c) => c[0]).join("\n");
 
   it("v3 valid theme + plugin + output → success path", () => {
     writeProject(tmp, {

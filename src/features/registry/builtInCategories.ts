@@ -19,6 +19,7 @@ export const colorsCategory = defineCategory({
   cssVarPrefix: "sg",
   themeNamespace: "--color-",
   classPrefixes: ["bg", "text", "border"],
+  select: (source) => source.colors,
 });
 
 /**
@@ -39,6 +40,7 @@ export const shadowsCategory = defineCategory({
   cssVarPrefix: "sg-shadow",
   themeNamespace: "--shadow-",
   classPrefixes: ["shadow"],
+  select: (source) => source.shadows,
 });
 
 /**
@@ -55,6 +57,7 @@ export const backDropBlursCategory = defineCategory({
   cssVarPrefix: "sg-backdrop-blur",
   themeNamespace: "--backdrop-blur-",
   classPrefixes: ["backdrop-blur"],
+  select: (source) => source.backDropBlurs,
 });
 
 /**
@@ -69,6 +72,7 @@ export const borderRadiusCategory = defineCategory({
   classPrefixes: roundedProperties,
   responsive: true,
   defaultValues: DEFAULT_ROUNDED_VALUES,
+  select: (source) => source.borderRadius,
 });
 
 /**

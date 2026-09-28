@@ -1,3 +1,5 @@
+import type { ThemeOverride } from "../../core/themeSchema";
+
 /**
  * Describes how a single theme token category (colors, shadows, typography,
  * etc.) is flattened into CSS variables and which utility classes it feeds.
@@ -42,6 +44,23 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   states?: readonly string[];
   /** Fallback values used when the theme config omits this category. */
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];
+  /**
+   * Typed accessor pulling this category's flat token data out of a theme
+   * source (base `ThemeConfig` or a `themes` override `ThemeOverride` — both
+   * are structurally compatible with the `Pick` below since `ThemeConfig`'s
+   * `colors` is a required narrowing of the optional-with-undefined
+   * `ThemeOverride.colors`). Omitted for categories with no CSS-variable
+   * representation (`typography`, `border`) — `flattenByCategory` never
+   * reads `data` for those, so there is nothing to select.
+   * @param {Pick<ThemeOverride, "colors" | "shadows" | "backDropBlurs" | "borderRadius">} source - Theme source data
+   * @returns {Record<string, string> | undefined} Flat token data for this category
+   */
+  select?: (
+    source: Pick<
+      ThemeOverride,
+      "colors" | "shadows" | "backDropBlurs" | "borderRadius"
+    >,
+  ) => Record<string, string> | undefined;
 }
 
 /**

@@ -7,7 +7,6 @@ export * from "./features/spacing/spacingHelpers";
 export * from "./features/cva";
 
 // Shared — only public-facing exports
-export { detectTailwindVersion } from "./shared/detectTailwindVersion";
 export {
   DEFAULT_LAYOUT_CLASSES,
   DEFAULT_ROUNDED_VALUES,

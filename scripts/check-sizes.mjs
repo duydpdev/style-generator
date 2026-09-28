@@ -12,7 +12,6 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const budgets = {
   "dist/index.js": 2_000,
-  "dist/plugin.js": 4_000,
   "dist/tokens.js": 1_000,
   "dist/cva.js": 500,
   "dist/spacing.js": 1_000,

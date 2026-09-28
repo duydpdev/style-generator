@@ -6,7 +6,6 @@ import type { ThemeName } from "./types";
 
 interface TopbarProps {
   theme: ThemeName;
-  tailwindVersion: 3 | 4;
   onToggleTheme: () => void;
   onOpenJson: () => void;
   onToggleTweaks: () => void;
@@ -14,7 +13,6 @@ interface TopbarProps {
 
 export const Topbar = ({
   theme,
-  tailwindVersion,
   onToggleTheme,
   onOpenJson,
   onToggleTweaks,
@@ -32,7 +30,7 @@ export const Topbar = ({
               @duydpdev/style-generator
             </Text>
             <Text type="text12Mono" color="muted">
-              v0.2 · tokens → tailwind v{tailwindVersion}
+              v0.2 · tokens → tailwind v4
             </Text>
           </Box>
         </Box>

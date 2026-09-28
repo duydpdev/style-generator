@@ -12,10 +12,6 @@ const args = process.argv.slice(2);
 /* ------------------ CLI Options ------------------ */
 
 const options = {
-  tw: {
-    type: "string",
-    description: "Tailwind version (init only, v3 or v4)",
-  },
   theme: {
     type: "string",
     description: "Path to theme.json",
@@ -52,7 +48,6 @@ const options = {
 /* ------------------ Types ------------------ */
 
 interface CLIValues {
-  tw?: string;
   theme?: string;
   plugin?: string;
   dark?: boolean;
@@ -109,7 +104,7 @@ ${Object.entries(options)
  * Executes the `init` CLI command.
  *
  * Scaffolds the required project files based on the provided CLI options,
- * including the theme configuration, Tailwind version, and optional plugin file.
+ * including the theme configuration and optional plugin file.
  * @param {CLIValues} values Parsed CLI option values.
  */
 async function runInit(values: CLIValues): Promise<void> {

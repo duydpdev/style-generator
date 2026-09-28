@@ -1,6 +1,6 @@
 # Nuxt + Tailwind v4 example
 
-Demo app showing `@duydpdev/style-generator` with **Nuxt 3** (Vue 3) and **Tailwind CSS v4** (`@plugin` + `@theme inline`).
+Demo app showing `@duydpdev/style-generator` with **Nuxt 3** (Vue 3) and **Tailwind CSS v4** (`generate()` + `@theme inline`).
 
 Because Nuxt runs on Vite, this example reuses the same `styleGenVite` plugin as the `react-v4` example — registered through `nuxt.config.ts` → `vite.plugins`.
 
@@ -24,7 +24,7 @@ yarn dev            # starts Nuxt dev server on http://localhost:3000
 
 `styleGenVite` (registered in `nuxt.config.ts`) emits the following on dev start, build, and whenever `theme.json` changes:
 
-- `theme/theme.css` — `@theme inline` block (consumed by Tailwind v4)
+- `theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities)
 - `theme/safelist.txt` — class safelist (consumed via `@source`)
 
 Both generated files are gitignored.
@@ -59,7 +59,7 @@ State lives in `useState`-backed composables (`useStyleGuide`, `useDrawers`), so
 examples/nuxt-v4
 ├── nuxt.config.ts                # vite.plugins: [styleGenVite, tailwindcss] + app.head (fonts, html data-*)
 ├── app.vue                       # reactive <html data-*> via useHead
-├── assets/css/globals.css        # tailwind + theme.css + palettes + style-guide + @plugin + @source
+├── assets/css/globals.css        # tailwind + theme.css + palettes + style-guide + @source
 ├── pages/
 │   └── index.vue                 # showcase composition
 ├── composables/
@@ -77,7 +77,6 @@ examples/nuxt-v4
 │   └── types.ts                  # StyleGuideState + tweak unions
 └── theme/
     ├── theme.json
-    ├── theme-plugin.ts           # Tailwind @plugin entry (root barrel — Node-side only)
     └── design-tokens.ts          # App-side DesignTokens via /tokens subpath (browser-safe)
 ```
 

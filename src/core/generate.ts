@@ -11,11 +11,9 @@ import { ThemeConfig } from "./ThemeConfig";
 /**
  * Generate the complete registry-driven CSS string (breakpoint `@theme`
  * override + theme vars + `@theme inline` mapping + typography/spacing
- * `@utility` blocks) and typed design tokens for a theme. Registry-core
- * replacement for `createStyleSystem`: instead of a Tailwind JS plugin
- * object, this returns a single static CSS string meant to be written to a
- * file and `@import`ed alongside `@import "tailwindcss"` (Tailwind v4
- * only — no `tailwindVersion` branch).
+ * `@utility` blocks) and typed design tokens for a theme. Returns a single
+ * static CSS string meant to be written to a file and `@import`ed alongside
+ * `@import "tailwindcss"` (Tailwind v4 only).
  * @param {ThemeConfig} theme - Theme configuration
  * @param {StyleGeneratorOptions} [options] - Generator options
  * @returns {object} `{ css, tokens }` — generated CSS string and typed design tokens

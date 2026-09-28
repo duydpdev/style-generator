@@ -2,5 +2,4 @@
 @import "./theme/theme.css";
 @import "./theme/palettes.css";
 @import "./theme/style-guide.css";
-@plugin "./theme/theme-plugin.ts";
 @source "./theme/safelist.txt";

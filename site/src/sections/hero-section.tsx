@@ -11,7 +11,7 @@ const STATS = [
 ] as const;
 
 const MARQUEE_TOKENS = [
-  "createStyleSystem",
+  "generate",
   "defineTheme",
   "resolveSpacingProps",
   "createVariantMapper",

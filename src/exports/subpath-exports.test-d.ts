@@ -1,34 +1,15 @@
 import { describe, it, expectTypeOf } from "vitest";
 
-// Import via root barrel (v3 back-compat path)
+// Import via root barrel
 import * as root from "../index";
 
 // Import via subpath barrels (v4 new paths — resolved via `src/exports/*`
 // which is how consumers will see them after exports map resolves).
-import * as plugin from "./plugin";
 import * as tokens from "./tokens";
 import * as cva from "./cva";
 import * as spacing from "./spacing";
 
 describe("subpath exports — symbols match root barrel", () => {
-  it("plugin subpath", () => {
-    expectTypeOf(plugin.createStyleSystem).toEqualTypeOf<
-      typeof root.createStyleSystem
-    >();
-    expectTypeOf(plugin.createStylePlugin).toEqualTypeOf<
-      typeof root.createStylePlugin
-    >();
-    expectTypeOf(plugin.generateSafelist).toEqualTypeOf<
-      typeof root.generateSafelist
-    >();
-    expectTypeOf(plugin.generateThemeCss).toEqualTypeOf<
-      typeof root.generateThemeCss
-    >();
-    expectTypeOf(plugin.detectTailwindVersion).toEqualTypeOf<
-      typeof root.detectTailwindVersion
-    >();
-  });
-
   it("tokens subpath", () => {
     expectTypeOf(tokens.createDesignTokens).toEqualTypeOf<
       typeof root.createDesignTokens

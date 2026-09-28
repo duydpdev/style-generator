@@ -67,12 +67,6 @@ export interface StyleGeneratorOptions {
   safelistColors?: boolean;
 
   /**
-   * Override auto-detected Tailwind version.
-   * When omitted, the library auto-detects from the installed tailwindcss package.
-   */
-  tailwindVersion?: 3 | 4;
-
-  /**
    * Enable responsive class generation in safelist and spacing CSS rules.
    * Set to false if your project only targets a single viewport.
    * @default true
@@ -103,12 +97,6 @@ export interface StyleGeneratorOptions {
     enabled?: boolean;
     /** Override or extend the default spacing property-to-CSS mapping. */
     properties?: SpacingPropertyMap;
-    /**
-     * Enable matchUtilities for JIT arbitrary value support (sp-p-4, sp-p-[24px]).
-     * Static .sp-p classes remain active in parallel.
-     * @default false
-     */
-    useMatchUtilities?: boolean;
   };
 
   // --- Module configs (safelist-based) ---
@@ -141,7 +129,3 @@ export interface StyleGeneratorOptions {
    */
   modules?: StyleModule[];
 }
-
-// TailwindPlugin type is defined close to the factory that creates it
-// (`createStylePlugin.ts`) using ReturnType<typeof plugin>. It is re-used
-// from there instead of being defined here to avoid coupling to Tailwind internals.

@@ -20,7 +20,6 @@ export default defineNuxtConfig({
         themePath: "theme/theme.json",
         outDir: "theme",
         options: {
-          tailwindVersion: 4,
           breakpoints: [Breakpoint.MD, Breakpoint.LG],
           safelistColors: true,
         },

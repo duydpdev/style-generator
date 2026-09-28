@@ -10,12 +10,12 @@ interface Feat {
 const FEATS: Feat[] = [
   {
     cls: "feat-1",
-    tag: "/plugin",
-    title: "createStyleSystem()",
+    tag: "/core",
+    title: "generate()",
     body: (
       <>
-        Single entry. Returns <code>plugin</code>, <code>safelist</code>,{" "}
-        <code>themeCss</code>, <code>DesignTokens</code> in one call.
+        Single entry. Returns <code>css</code> (the full Tailwind CSS string)
+        and <code>tokens</code>, typed <code>DesignTokens</code>.
       </>
     ),
   },

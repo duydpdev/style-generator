@@ -3,10 +3,10 @@ import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 import type { Plugin, ResolvedConfig } from "vite";
 
+import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
 import type { ThemeConfig } from "../../core/ThemeConfig";
 import { generateSafelist } from "../safelist/generateSafelist";
-import { generateThemeCss } from "../theme-css/generateThemeCss";
 
 export interface StyleGenViteOptions {
   /** Path to theme JSON, resolved relative to Vite project root. */
@@ -16,7 +16,7 @@ export interface StyleGenViteOptions {
    * MUST match the path that consumer CSS `@import`s from.
    */
   outDir?: string;
-  /** Forwarded to `createStyleSystem` internals (safelist + themeCss). */
+  /** Forwarded to `generate()` internals (theme CSS) and `generateSafelist`. */
   options?: StyleGeneratorOptions;
 }
 
@@ -38,7 +38,7 @@ const emit = (
   const raw = readFileSync(themePathAbs, "utf8");
   const theme = JSON.parse(raw) as ThemeConfig;
 
-  const themeCss = generateThemeCss(theme);
+  const themeCss = generate(theme, options).css;
   const safelist = generateSafelist(theme, options).join("\n");
 
   mkdirSync(outDirAbs, { recursive: true });

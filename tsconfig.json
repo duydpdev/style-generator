@@ -20,10 +20,5 @@
     "resolveJsonModule": true
   },
   "include": ["src", "examples", "scripts"],
-  "exclude": [
-    "examples/react-v3",
-    "examples/react-v4",
-    "examples/next-v4",
-    "examples/nuxt-v4"
-  ]
+  "exclude": ["examples/react-v4", "examples/next-v4", "examples/nuxt-v4"]
 }

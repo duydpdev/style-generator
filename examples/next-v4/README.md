@@ -1,6 +1,6 @@
 # Next.js + Tailwind v4 example
 
-Demo app showing `@duydpdev/style-generator` with **Next.js 15 (App Router)** and **Tailwind CSS v4** (`@plugin` + `@theme inline`), React 19.
+Demo app showing `@duydpdev/style-generator` with **Next.js 15 (App Router)** and **Tailwind CSS v4** (`generate()` + `@theme inline`), React 19.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ yarn dev            # starts Next.js dev server on http://localhost:3000
 
 Next.js runs on webpack/turbopack, so the Vite-only `styleGenVite` plugin used by the React examples does not apply. Instead, `scripts/generate-theme.mjs` calls the same programmatic API and runs in a Node context:
 
-- `app/theme/theme.css` — `@theme inline` block (consumed by Tailwind v4)
+- `app/theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities)
 - `app/theme/safelist.txt` — class safelist (consumed via `@source`)
 
 It is chained into the `dev` / `build` scripts (`yarn generate:theme && …`) so the generated files always exist before Tailwind processes `globals.css`. (Yarn Berry does not honour `pre`/`post` script hooks, so the chaining is explicit rather than a `prebuild` hook.) Both generated files are gitignored.
@@ -55,19 +55,18 @@ examples/next-v4
 ├── postcss.config.mjs            # @tailwindcss/postcss
 ├── package.json                  # predev/prebuild → scripts/generate-theme.mjs
 ├── scripts/
-│   └── generate-theme.mjs        # Node prebuild: generateThemeCss + generateSafelist
+│   └── generate-theme.mjs        # Node prebuild: generate() + generateSafelist
 └── app/
     ├── layout.tsx                # <html data-*> defaults + Google Fonts
     ├── page.tsx                  # renders <StyleGuide/>
     ├── StyleGuide.tsx            # "use client" state container (palette/theme/tweaks)
-    ├── globals.css               # tailwind + theme.css + palettes + style-guide + @plugin + @source
+    ├── globals.css               # tailwind + theme.css + palettes + style-guide + @source
     ├── lib/
     │   └── utils.ts              # cn() = twMerge(clsx(...))
     ├── components/               # Box / Text / Button (shared with react-v4)
     ├── sections/                 # Hero / Color / Typography / Utilities / ... demo screens
     └── theme/
         ├── theme.json
-        ├── theme-plugin.ts       # Tailwind @plugin entry (root barrel — Node-side only)
         ├── design-tokens.ts      # App-side DesignTokens via /tokens subpath (browser-safe)
         ├── palettes.css          # runtime --sg-* palette overrides
         └── style-guide.css       # bespoke chrome (topbar, hero, drawers, tweaks)

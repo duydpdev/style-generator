@@ -1,6 +1,6 @@
 # React + Tailwind v4 example
 
-Demo app showing `@duydpdev/style-generator` with **Tailwind CSS v4** (`@plugin` + `@theme inline`), Vite, and React 19.
+Demo app showing `@duydpdev/style-generator` with **Tailwind CSS v4** (`generate()` + `@theme inline`), Vite, and React 19.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ npm run dev        # starts Vite dev server on http://localhost:5173
 
 `styleGenVite` (registered in `vite.config.ts`) emits the following on dev start, build, and whenever `theme.json` changes:
 
-- `src/theme/theme.css` — `@theme inline` block (consumed by Tailwind v4)
+- `src/theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities)
 - `src/theme/safelist.txt` — class safelist (consumed via `@source`)
 
 Both generated files are gitignored.
@@ -56,7 +56,7 @@ examples/react-v4
 └── src/
     ├── App.tsx                   # header + theme toggle, composed of Box/Text/Button
     ├── main.tsx
-    ├── index.css                 # Tailwind + plugin entry
+    ├── index.css                 # Tailwind + generated theme.css import
     ├── lib/
     │   └── utils.ts              # cn() = twMerge(clsx(...))
     ├── components/
@@ -82,15 +82,5 @@ examples/react-v4
     │   └── cva-demo.tsx
     └── theme/
         ├── theme.json
-        ├── theme-plugin.ts       # Tailwind @plugin entry — runs in plugin loader, exports plugin default
         └── design-tokens.ts      # App-side DesignTokens via /tokens subpath (browser-safe)
 ```
-
-### Why split `theme-plugin.ts` and `design-tokens.ts`?
-
-The root barrel `@duydpdev/style-generator` (used by `createStyleSystem`) pulls in `detectTailwindVersion`, which uses `node:module`. Vite cannot bundle that for the browser. So:
-
-- `theme-plugin.ts` (Tailwind-only, loaded by `@plugin` directive in CSS) keeps using the full barrel.
-- `design-tokens.ts` imports from the `/tokens` subpath which is browser-safe and contains only `createDesignTokens` + its deps.
-
-App code imports `DesignTokens` from `design-tokens.ts` — never from `theme-plugin.ts`.

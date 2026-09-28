@@ -134,6 +134,7 @@ describe("styleGenVite plugin", () => {
     expect(existsSync(cssPath)).toBe(true);
     expect(existsSync(slPath)).toBe(true);
     expect(readFileSync(cssPath, "utf8")).toMatch(/--sg-primary/);
+    expect(readFileSync(cssPath, "utf8")).toMatch(/@utility body \{/);
     expect(readFileSync(slPath, "utf8")).toMatch(/sp-p/);
     expect(logger.info).toHaveBeenCalledOnce();
   });

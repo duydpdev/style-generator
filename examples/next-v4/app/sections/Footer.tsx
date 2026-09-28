@@ -1,7 +1,7 @@
 import { Box } from "../components/Box";
 import { Text } from "../components/Text";
 
-export const Footer = ({ tailwindVersion }: { tailwindVersion: 3 | 4 }) => {
+export const Footer = () => {
   return (
     <footer
       className="mt-6 border-t pt-16 pb-20"
@@ -20,7 +20,7 @@ export const Footer = ({ tailwindVersion }: { tailwindVersion: 3 | 4 }) => {
           </Text>
         </Box>
         <Text type="text12Mono" color="muted">
-          React 18 · Tailwind v{tailwindVersion} · cva · twMerge
+          React 18 · Tailwind v4 · cva · twMerge
         </Text>
       </Box>
     </footer>

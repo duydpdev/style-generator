@@ -1,9 +1,9 @@
 import { describe, it, expectTypeOf } from "vitest";
 
-import { createStyleSystem } from "./createStyleSystem";
 import { defineTheme } from "./defineTheme";
+import { generate } from "./generate";
 
-describe("createStyleSystem consumer shape", () => {
+describe("generate consumer shape", () => {
   const theme = defineTheme({
     colors: {
       primary: "#3B82F6",
@@ -29,41 +29,31 @@ describe("createStyleSystem consumer shape", () => {
     borderRadius: { sm: "4px", "2xl": "16px" },
   });
 
-  const sys = createStyleSystem(theme, { breakpoints: ["md", "lg"] });
+  const result = generate(theme, { breakpoints: ["md", "lg"] });
+
+  it("return shape is exactly { css, tokens } — no legacy plugin/safelist/themeCss fields", () => {
+    expectTypeOf<keyof typeof result>().toEqualTypeOf<"css" | "tokens">();
+  });
+
+  it("css is typed string", () => {
+    expectTypeOf(result.css).toEqualTypeOf<string>();
+  });
 
   it("DesignTokens.Web.variantColor is literal camelCase union", () => {
-    expectTypeOf(sys.DesignTokens.Web.variantColor).toEqualTypeOf<
+    expectTypeOf(result.tokens.Web.variantColor).toEqualTypeOf<
       ("primary" | "primaryForeground" | "sidebarForeground" | "blue500")[]
     >();
   });
 
   it("DesignTokens.Web.variantText is typography keys", () => {
-    expectTypeOf(sys.DesignTokens.Web.variantText).toEqualTypeOf<
+    expectTypeOf(result.tokens.Web.variantText).toEqualTypeOf<
       ("h1" | "bodyLg")[]
     >();
   });
 
   it("DesignTokens.Web.roundedOption preserves digit-prefix tokens", () => {
-    expectTypeOf(sys.DesignTokens.Web.roundedOption).toEqualTypeOf<
+    expectTypeOf(result.tokens.Web.roundedOption).toEqualTypeOf<
       ("sm" | "2xl")[]
     >();
-  });
-
-  it("safelist element type contains theme-derived literal classes", () => {
-    type S = (typeof sys.safelist)[number];
-    expectTypeOf<"text-primary">().toExtend<S>();
-    expectTypeOf<"bg-sidebar-foreground">().toExtend<S>();
-    expectTypeOf<"border-blue-500">().toExtend<S>();
-    expectTypeOf<"shadow-md">().toExtend<S>();
-  });
-
-  it("safelist supports responsive prefix for responsive modules", () => {
-    type S = (typeof sys.safelist)[number];
-    expectTypeOf<"md:bg-primary">().toExtend<S>();
-    expectTypeOf<"lg:text-sidebar-foreground">().toExtend<S>();
-  });
-
-  it("themeCss is typed string", () => {
-    expectTypeOf(sys.themeCss).toEqualTypeOf<string>();
   });
 });

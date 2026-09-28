@@ -25,7 +25,6 @@ export default defineConfig({
     lib: {
       entry: {
         index: r("./src/index.ts"),
-        plugin: r("./src/exports/plugin.ts"),
         tokens: r("./src/exports/tokens.ts"),
         cva: r("./src/exports/cva.ts"),
         spacing: r("./src/exports/spacing.ts"),

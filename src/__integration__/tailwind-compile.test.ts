@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { compile } from "@tailwindcss/node";
 
-import { createStyleSystem } from "../core/createStyleSystem";
+import { generate } from "../core/generate";
 import { defineTheme } from "../core/defineTheme";
 
 /**
- * End-to-end: feed `themeCss` from createStyleSystem into the real Tailwind v4
+ * End-to-end: feed `css` from generate() into the real Tailwind v4
  * compiler, then build CSS for a candidate class list. Asserts that:
  *   - color CSS variables appear in :root
  *   - data-theme override block emits when `themes` set
@@ -35,7 +35,7 @@ describe("integration: Tailwind v4 compile pipeline", () => {
   });
 
   const buildCss = async (extraInput = ""): Promise<string> => {
-    const { themeCss } = createStyleSystem(theme, { tailwindVersion: 4 });
+    const { css: themeCss } = generate(theme);
     const input = `@import "tailwindcss";\n${themeCss}\n${extraInput}`;
     const result = await compile(input, {
       base: process.cwd(),

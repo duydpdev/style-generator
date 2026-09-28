@@ -12,7 +12,6 @@ export default defineConfig({
       themePath: "src/theme/theme.json",
       outDir:    "src/theme",
       options: {
-        tailwindVersion: 4,
         breakpoints: ["md", "lg"],
         safelistColors: true,
       },

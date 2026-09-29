@@ -22,23 +22,22 @@ yarn dev            # starts Next.js dev server on http://localhost:3000
 
 ## How theme generation works (no Vite)
 
-Next.js runs on webpack/turbopack, so the Vite-only `styleGenVite` plugin used by the React examples does not apply. Instead, `scripts/generate-theme.mjs` calls the same programmatic API and runs in a Node context:
+Next.js runs on webpack/Turbopack, so the Vite-only `styleGenVite` plugin used by the React/Nuxt examples does not apply. Instead, `next.config.ts` wraps the Next config in `styleGenNext` from `@duydpdev/style-generator/next`, which calls the same programmatic `generate()` API whenever Next evaluates the config:
 
-- `app/theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities)
-- `app/theme/safelist.txt` — class safelist (consumed via `@source`)
+- `app/theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities, `@source inline` utility coverage)
 
-It is chained into the `dev` / `build` scripts (`yarn generate:theme && …`) so the generated files always exist before Tailwind processes `globals.css`. (Yarn Berry does not honour `pre`/`post` script hooks, so the chaining is explicit rather than a `prebuild` hook.) Both generated files are gitignored.
+`styleGenNext` does not import `next`, so it runs identically under both webpack (`next build`) and Turbopack (`next build --turbopack`). During `next dev` it also watches `theme.json` and re-writes `theme.css` on change. The generated file is gitignored.
 
 ## Scripts
 
-| Script                | What it does                               |
-| --------------------- | ------------------------------------------ |
-| `yarn dev`            | `generate:theme &&` Next.js dev server     |
-| `yarn build`          | `generate:theme &&` production build       |
-| `yarn start`          | Serve the production build                 |
-| `yarn typecheck`      | `tsc --noEmit` for source type-checking    |
-| `yarn generate:theme` | Emit `theme.css` + `safelist.txt` manually |
-| `yarn doctor`         | `style-gen doctor` config validation       |
+| Script                   | What it does                                                              |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `yarn dev`               | Next.js dev server (theme.css regenerated on config evaluation + watched) |
+| `yarn build`             | Production build (webpack)                                                |
+| `yarn build --turbopack` | Production build (Turbopack)                                              |
+| `yarn start`             | Serve the production build                                                |
+| `yarn typecheck`         | `tsc --noEmit` for source type-checking                                   |
+| `yarn doctor`            | `style-gen doctor` config validation                                      |
 
 ## What it demonstrates
 
@@ -51,11 +50,9 @@ It is chained into the `dev` / `build` scripts (`yarn generate:theme && …`) so
 
 ```
 examples/next-v4
-├── next.config.ts
+├── next.config.ts                # wraps nextConfig in styleGenNext (writes theme.css)
 ├── postcss.config.mjs            # @tailwindcss/postcss
-├── package.json                  # predev/prebuild → scripts/generate-theme.mjs
-├── scripts/
-│   └── generate-theme.mjs        # Node prebuild: generate()
+├── package.json
 └── app/
     ├── layout.tsx                # <html data-*> defaults + Google Fonts
     ├── page.tsx                  # renders <StyleGuide/>
@@ -72,4 +69,4 @@ examples/next-v4
         └── style-guide.css       # bespoke chrome (topbar, hero, drawers, tweaks)
 ```
 
-The component layer is identical to `react-v4` — only the build wiring (App Router + prebuild script instead of Vite plugin) differs.
+The component layer is identical to `react-v4` — only the build wiring (App Router + `styleGenNext` in `next.config.ts` instead of the Vite plugin) differs.

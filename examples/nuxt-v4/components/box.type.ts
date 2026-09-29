@@ -3,7 +3,7 @@ import type {
   ColorVariant,
   ShadowVariant,
   BackdropBlurVariant,
-  BorderVariant,
+  BorderWidthVariant,
   RoundedVariant,
 } from "@duydpdev/style-generator/types";
 
@@ -57,13 +57,13 @@ export interface SpacingProperties {
 export interface StyleProperties {
   backgroundColor?: ColorVariant<Theme>;
   borderColor?: ColorVariant<Theme>;
-  border?: BorderVariant<Theme>;
-  borderX?: BorderVariant<Theme>;
-  borderY?: BorderVariant<Theme>;
-  borderT?: BorderVariant<Theme>;
-  borderB?: BorderVariant<Theme>;
-  borderL?: BorderVariant<Theme>;
-  borderR?: BorderVariant<Theme>;
+  border?: BorderWidthVariant<Theme>;
+  borderX?: BorderWidthVariant<Theme>;
+  borderY?: BorderWidthVariant<Theme>;
+  borderT?: BorderWidthVariant<Theme>;
+  borderB?: BorderWidthVariant<Theme>;
+  borderL?: BorderWidthVariant<Theme>;
+  borderR?: BorderWidthVariant<Theme>;
   rounded?: RoundedVariant<Theme>;
   roundedT?: RoundedVariant<Theme>;
   roundedB?: RoundedVariant<Theme>;

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`@duydpdev/style-generator` — TypeScript library + CLI that generates Tailwind CSS utilities (plugin, safelist, `@theme inline` CSS, typed design tokens) from a theme JSON. Supports Tailwind CSS **v3 and v4** (auto-detected via `detectTailwindVersion`, overridable with `tailwindVersion`). ESM-first (`"type": "module"`) with CJS interop.
+`@duydpdev/style-generator` — TypeScript library + CLI that compiles a theme JSON into Tailwind CSS **v4** utilities via a single `generate()` call: a CSS string (`@theme inline` variables, dark-mode overrides, registry-generated `@source inline` utility coverage), typed design tokens, and a JSON Schema. **Tailwind v4 only** — no v3 support, no version auto-detection. ESM-first (`"type": "module"`) with CJS interop.
 
 ## Package Manager
 
@@ -28,7 +28,7 @@ yarn test           # Vitest run, unit (*.test.ts)
 yarn test:watch     # Watch mode
 yarn test:coverage  # v8 coverage; excludes test files and dist/
 yarn test:types     # vitest typecheck — runs *.test-d.ts (expectTypeOf)
-yarn vitest run src/features/plugin/cssVariables.test.ts   # Single file
+yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single file
 
 # Quality
 yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directives
@@ -56,78 +56,103 @@ Merges to `main` (stable) or `develop` (pre-release `DEV` dist-tag) trigger Sema
 ### Core Flow
 
 ```text
-theme.json → createStyleSystem(theme, options) → { plugin, safelist, themeCss, DesignTokens }
+theme.json → generate(theme, options) → { css, tokens, schema }
 ```
 
-Only `colors` is required in `ThemeConfig`. All other fields (`typography`, `shadows`, `borderRadius`, `border`, `themes`, `backDropBlurs`) are optional — the lib handles `undefined` gracefully with `?? {}` guards.
+`generate()` (`src/core/generate.ts`) always re-validates `theme` against `ThemeSchema` first (a Zod `strictObject` — unknown keys throw a `ZodError`), then returns:
 
-`src/core/createStyleSystem.ts` composes three feature pipelines:
+- `css` — the full generated CSS string: `:root` `--sg-*` intermediate vars, `[data-theme="…"]` theme overrides, `@theme inline` mapping, typography/border-width/spacing `@utility` blocks, and one `@source inline(...)` directive per token category (+ `extraSources`). Written to a file and `@import`ed next to `@import "tailwindcss";`.
+- `tokens` — typed `DesignTokens.Web.*` (also available standalone via `createDesignTokens()`/`./tokens`).
+- `schema` — `z.toJSONSchema(ThemeSchema)`, the same JSON Schema the CLI `schema` command writes for editor autocomplete.
 
-1. **tokens** (`src/features/tokens/`) — raw theme JSON → typed design tokens (consumed by CVA helpers).
-2. **plugin** (`src/features/plugin/`) — Tailwind plugin producing CSS variables; v3 vs v4 auto-detected. For v4 also emits **`themeCss`**: a string containing `:root` `--sg-*` intermediate vars, `[data-theme="…"]` override blocks, and an `@theme inline` mapping `--sg-*` → `--color-*` (gives v4 auto-utilities like `bg-primary` without safelist). The `--sg-*` intermediate layer exists to break circular reference when theme switching — consumers use standard Tailwind classes/vars (`bg-primary`, `var(--color-primary)`), never `--sg-*` directly.
-3. **safelist** (`src/features/safelist/`) — class safelist for tokens. **Spacing is intentionally excluded** (CSS-var strategy — see below). Color classes excluded by default (`safelistColors: false`).
+Only `colors` is required in `ThemeConfig`. All other fields (`typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themes`) are optional — the lib handles `undefined` gracefully with `?? {}`/fallback-default guards.
 
-Other feature modules:
+`generate()` composes several registry-driven pipelines:
 
-- `src/features/cva/` — `createVariantMapper` handles camelCase → kebab-case key conversion.
-- `src/features/spacing/` — `resolveSpacingProps()` maps spacing props to `{ classNames, style }`; runtime emits `.sp-*` utilities consuming `var(--sp-*)` chains, eliminating ~4,800 safelisted classes. JIT mode via `spacing.useMatchUtilities`.
+1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`); `flattenByCategory.ts` turns a category's theme data into `--sg-*` vars (resolving `$key` aliases to `var(--sg-<key>)`); `generateSourceInline.ts` walks every descriptor and emits `@source inline("{<bp>:,}{<classPrefixes>}-{<keys>}")` — this replaced the old static safelist, so `bg-primary`/`text-primary`/`border-primary` etc. are always available, not just classes referenced in scanned source.
+2. **theme-css** (`src/features/theme-css/`) — `generateThemeCss.ts` builds the `:root`/`[data-theme]`/`@theme inline` blocks generically from `builtInCategories`; `generateBorderWidthCss.ts` emits explicit `@utility border(-x/y/t/r/b/l)?-<key> { border-*-width: var(--sg-border-width-<key>); }` per declared `borderWidth` key (Tailwind v4 has no `@theme` namespace for border width); `generateScreensCss.ts` handles custom breakpoints.
+3. **tokens** (`src/features/tokens/`) — `createDesignTokens()`: theme JSON → typed `DesignTokens.Web.*` (consumed by `createVariantMapper`).
+4. **typography** (`src/features/typography/`) — named text styles → `@utility text-<kebab-key>` blocks.
+5. **spacing** (`src/features/spacing/`) — `resolveSpacingProps()` maps spacing props to `{ classNames, style }`; runtime emits `.sp-*` utilities consuming `var(--sg-sp-*)` chains instead of a class safelisted per axis × size × breakpoint.
+
+**Aliases**: a category value of the form `"$<key>"` (matching `^\$<TokenKey>$`) resolves to `var(--<cssVarPrefix>-<kebab-target>)` instead of being emitted literally — e.g. `shadows.card: "$base"` → `var(--sg-shadow-base)`. `ThemeSchema`'s `.superRefine()` validates the target exists (base ∪ same-theme override keys) and the alias graph is acyclic (DFS) before any CSS is generated.
 
 ### Source Layout
 
-- `src/core/` — `createStyleSystem`, `defineTheme`/`defineOptions` (zero-runtime type-safe helpers), `Options`, `ThemeConfig`, `inference.ts` (+ `inference.test-d.ts` for `DesignTokens.Web.*` shape inference).
-- `src/features/{plugin,safelist,tokens,cva,spacing}/`
-- `src/shared/` — defaults, helpers, safelist property catalog.
-- `src/cli/` — `commands/` (`init`, `safelist`, `doctor`), `config.ts`, `templates.ts`, `logger.ts`.
-- `src/index.ts` — public API.
-- `examples/` — sample theme configs + usage.
+- `src/core/` — `generate.ts` (main entry), `defineTheme`/`defineOptions` (`defineTheme.ts`, zero-runtime type-safe helpers), `Options.ts` (`StyleGeneratorOptions`, `Breakpoint`), `themeSchema.ts` (`ThemeConfig`/`ThemeOverride`, the Zod schema + alias/injection-safety refinements), `inference.ts`/`designTokensTypes.ts` (+ `*.test-d.ts` for `DesignTokens.Web.*` / `ColorVariant<T>` etc. shape inference).
+- `src/features/{registry,theme-css,tokens,typography,cva,spacing,vite,next}/`
+- `src/shared/` — `defaultOption.ts` (`DEFAULT_*` fallbacks), `helpers.ts` (case conversion), `safelistProperties.ts` (`roundedProperties`/`borderProperties` — category `classPrefixes` lists; name predates the safelist removal).
+- `src/cli/` — `commands/` (`init`, `generate`, `doctor`, `schema`), `config.ts`, `templates.ts`, `logger.ts`.
+- `src/exports/` — one file per public subpath (`index.ts`, `tokens.ts`, `cva.ts`, `spacing.ts`, `types.ts`, `vite.ts`, `next.ts`).
+- `src/index.ts` — public API (root `.` subpath barrel).
+- `examples/` — sample theme configs + working consumer apps (`react-v4`, `next-v4`, `nuxt-v4`).
 
 ### Key Exports (public API)
 
 ```typescript
-// Core
-createStyleSystem();      // Main — returns { plugin, safelist, themeCss, DesignTokens }
-createStylePlugin();      // Tailwind plugin only (v3/v4 auto-detected)
-generateSafelist();       // string[] safelist (excludes spacing)
-generateThemeCss();       // v4 @theme inline CSS string
-createDesignTokens();     // Typed DesignTokens.Web.*
+// Core (root ".")
+generate(); // Main — { css, tokens, schema } from a Zod-validated theme
+defineTheme(); // Zero-runtime type-safe theme helper (throws ZodError on invalid input)
+defineOptions(); // Zero-runtime type-safe options helper
+createDesignTokens(); // Typed DesignTokens.Web.* (also at "./tokens", browser-safe)
+generateThemeCss(); // :root vars + @theme inline mapping (generate() calls this internally too)
 
 // Helpers
-createVariantMapper();    // CVA: token keys → CSS class names (auto kebab-case)
-resolveSpacingProps();    // Spacing props → { classNames, style }
-resolveSpacing();         // Single spacing prop → { className, style }
-defineTheme();            // Zero-runtime type-safe theme helper
-defineOptions();          // Zero-runtime type-safe options helper
-detectTailwindVersion();  // Auto-detect installed Tailwind major version (ESM-safe via createRequire)
+createVariantMapper(); // "./cva" — (prefix, tokens) -> Record<token, class>, OR (prefixes[], tokens) -> nested map; always kebab-cases like the registry
+resolveSpacingProps(); // "./spacing" — spacing props -> { classNames, style }
+resolveSpacing(); // "./spacing" — single spacing prop -> { className, style }
+styleGenVite(); // "./vite" — Vite plugin, writes theme.css on dev start/build/theme.json change
+styleGenNext(); // "./next" — Next.js config wrapper, writes theme.css on config evaluation (webpack + Turbopack, no `next` peer dep)
 
 // Constants
-Breakpoint;               // Enum: SM, MD, LG, XL, XXL
-defaultScreens;           // Default screen widths map
-DEFAULT_*;                // Default safelist values (LAYOUT_CLASSES, ROUNDED_VALUES, etc.)
-roundedProperties;        // Default rounded property list
-borderProperties;         // Default border property list
+Breakpoint; // Enum: SM, MD, LG, XL, XXL
+defaultScreens; // Default screen widths map
+DEFAULT_ROUNDED_VALUES; // Default rounded-value fallbacks
+DEFAULT_BORDER_VALUES; // Default border-width fallbacks (also DesignTokens.Web.borderWidthOption's default)
+DEFAULT_SPACING_PROPERTIES; // Default spacing property -> CSS declaration map
+roundedProperties; // borderRadius category's classPrefixes ("rounded", "rounded-t", ...)
+borderProperties; // borderWidth category's classPrefixes ("border", "border-x", ...)
+
+// Types ("./types")
+ThemeConfig; // Parsed/validated theme shape
+ThemeOverride; // Partial per-theme override shape (themes.<name>)
+TypographyConfig; // A single typography variant's style shape
+StyleGeneratorOptions; // generate()'s second argument
+ColorVariant<T>; // Semantic variant unions derived from a theme's own keys —
+TextVariant<T>; // one per CSS-var/typography category:
+ShadowVariant<T>; // colors, typography, shadows, backDropBlurs,
+BackdropBlurVariant<T>; // fontFamily, borderWidth, borderRadius
+FontFamilyVariant<T>;
+BorderWidthVariant<T>;
+RoundedVariant<T>;
 ```
 
-Internal helpers (`addDot`, `extractData`, `toCamelCase`, `toPascalCase`, `flattenToVars`, `mapToVarRefs`) are not part of public API — not exported from any barrel.
+Removed in this API: `createStyleSystem`, `createStylePlugin`, `generateSafelist`/`safelist.txt`, `detectTailwindVersion`/`tailwindVersion` (Tailwind v4 only now), the `safelistColors`/`layout`/`border`/`rounded`/`opacity`/`zIndex`/`dynamicClasses`/`responsiveModules`/`modules` options (replaced by declaring the category in `theme.json` + the new `extraSources: string[]` option for runtime-built class names Tailwind's static scan can't see), and `createVariantMapper`'s third `isKeepFormat` argument (classes are always kebab-cased now).
+
+Internal helpers (`toCamelCase`, `toPascalCase`, `toKebabCase`, `extractData`, `addDot`) are not part of public API — not exported from any barrel.
 
 ### CLI Tool (`style-gen`)
 
-Built separately by `tsdown` to `dist/cli/index.mjs` (bin entry). Commands: `init` (scaffold theme + plugin file, interactive or `--tw v3|v4 --dark`), `safelist` (write `safelist.txt`; `--watch` via `chokidar`), `doctor` (validate config; warns on legacy v1 nested `base/text/common` colors). Config resolution order: **CLI flags → `style-gen.config.json` → `package.json["style-gen"]` → built-in defaults**.
+Built separately by `tsdown` to `dist/cli/index.mjs` (bin entry). Commands: `init` (scaffold theme + plugin file, interactive or `--dark`), `generate [--watch]` (validate theme, write `theme.css`; `--watch` via `chokidar` — replaced the old `safelist` command), `doctor` (validate config + theme parse), `schema` (write `theme.schema.json` from `z.toJSONSchema(ThemeSchema)`, for editor autocomplete). Config resolution order: **CLI flags → `style-gen.config.json` → `package.json["style-gen"]` → built-in defaults**.
 
 ### Build Outputs
 
-- `dist/{index,plugin,tokens,cva,spacing,types}.{js,cjs,d.ts}` — 6 subpaths, Vite lib multi-entry via `vite-plugin-dts`.
-- Shared helper chunks (`helpers-*`, `defaultOption-*`, `safelistProperties-*`) — internal, not part of public `exports` map.
+- `dist/{index,tokens,cva,spacing,types,vite,next}.{js,cjs,d.ts}` — 7 subpaths, Vite lib multi-entry via `vite-plugin-dts`.
+- Shared helper chunks (`helpers-*`, `defaultOption-*`, `resolveSafePath-*`, `generate-*`) — internal, not part of public `exports` map.
 - `dist/cli/index.mjs` — CLI executable.
 - Only `dist/` is published. `"sideEffects": false` in package.json enables tree-shaking.
 - Size budget enforced by `yarn check:sizes` (gzip limits per chunk). See `docs/migration/v3-to-v4.md`.
 
-## Theme / Color Rules (current v3 API)
+## Theme / Color Rules (current v4 API)
 
-- `colors` is the only **required** field in `ThemeConfig`. All others (`typography`, `shadows`, `borderRadius`, `border`, `themes`, `backDropBlurs`) are optional.
-- Colors are a **flat camelCase** object. Nested color objects and `DEFAULT` key are unsupported (removed in v3).
-- Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`).
+- `colors` is the only **required** field in `ThemeConfig`, which is a Zod `strictObject` — unknown keys throw a `ZodError`. All others (`typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themes`) are optional.
+- Colors are a **flat camelCase** object. Nested color objects and `DEFAULT` key are unsupported.
+- Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`). Two keys that collide once kebab-cased (e.g. `blue500`/`blue-500`) are rejected at parse time.
 - `themes` key holds named overrides (only diff from default needed). Activated via `[data-theme="<name>"]` (e.g. `html[data-theme="dark"]`).
-- `safelistColors: false` by default — v4 users get color utilities through `themeCss` (`@theme inline`); v3 users should set `safelistColors: true` or rely on content scanning.
+- Alias sigil `"$<key>"` (e.g. `primary: "$blue500"`) resolves within the SAME category to `var(--sg-<key>)`; validated for existence and acyclicity at parse time (see Core Flow above).
+- `fontFamily` keys must not kebab-case to a Tailwind font-_weight_ utility name (`thin`, `extralight`, `light`, `normal`, `medium`, `semibold`, `bold`, `extrabold`, `black`) — both font-family and font-weight utilities share the `font-` class prefix.
+- `borderWidth` replaces the old `border` module option — declare named widths in `theme.json`; the library emits `@utility border(-x/y/t/r/b/l)?-<key>` for all 7 side prefixes. Configs written against the old `border` option must rename the key to `borderWidth`. Omitting `borderWidth` entirely falls back to Tailwind's own built-in scale (`border-0/1/2/4`) via `@source inline`, with no custom CSS.
+- Every category emits its own `@source inline(...)` directive (registry-generated, replacing the removed static safelist) — so `bg-`/`text-`/`border-*` color utilities are always available, even ones never referenced in scanned source. Runtime-built class names Tailwind's static scan can't see (e.g. a template-literal class) go through the `extraSources: string[]` option instead, validated by `generate()` (non-empty, ≤512 chars, no `"`, `'`, `\`, `;`, `@`, `<`, `>`, or line break).
 
 ## Testing Approach
 
@@ -170,5 +195,3 @@ Mirror the plans layout: `docs/brainstorm/YYYY-MM-DD/XX-topic.md` + `session.md`
 ### ESM gotcha
 
 `package.json` is `"type": "module"`. Ad-hoc Node scripts must use `import` syntax, or use `.cjs` extension — `require()` in a `.js` file throws `ReferenceError: require is not defined in ES module scope`.
-
-`detectTailwindVersion` internally uses `createRequire(import.meta.url)` to safely `require("tailwindcss/package.json")` in ESM context — no bare `require()` in library code.

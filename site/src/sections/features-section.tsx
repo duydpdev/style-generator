@@ -66,11 +66,9 @@ const FEATS: Feat[] = [
   {
     cls: "feat-7",
     tag: "CLI",
-    title: "style-gen — init · safelist · doctor",
+    title: "style-gen — init · generate · doctor",
     body: (
-      <>
-        Interactive scaffold, watch-mode safelist regenerator, schema validator.
-      </>
+      <>Interactive scaffold, watch-mode CSS regenerator, schema validator.</>
     ),
   },
 ];

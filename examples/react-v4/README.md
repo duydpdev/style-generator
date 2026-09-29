@@ -22,10 +22,9 @@ npm run dev        # starts Vite dev server on http://localhost:5173
 
 `styleGenVite` (registered in `vite.config.ts`) emits the following on dev start, build, and whenever `theme.json` changes:
 
-- `src/theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities)
-- `src/theme/safelist.txt` — class safelist (consumed via `@source`)
+- `src/theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities, `@source inline` utility coverage)
 
-Both generated files are gitignored.
+The generated file is gitignored.
 
 ## Scripts
 

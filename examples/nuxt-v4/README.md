@@ -24,10 +24,9 @@ yarn dev            # starts Nuxt dev server on http://localhost:3000
 
 `styleGenVite` (registered in `nuxt.config.ts`) emits the following on dev start, build, and whenever `theme.json` changes:
 
-- `theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities)
-- `theme/safelist.txt` — class safelist (consumed via `@source`)
+- `theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities, `@source inline` utility coverage)
 
-Both generated files are gitignored.
+The generated file is gitignored.
 
 ## Scripts
 

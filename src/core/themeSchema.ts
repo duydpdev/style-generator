@@ -66,17 +66,32 @@ export const TokenValue = z
 export const ALIAS_VALUE_RE = new RegExp(`^\\$(${TOKEN_KEY_SOURCE})$`);
 
 /**
+ * `TokenValue`, further restricted to reject a leading `$` — the alias
+ * sigil (`$<TokenKey>`, see {@link ALIAS_VALUE_RE}) is only resolved by
+ * `flattenByCategory.ts` for the CSS-var categories in
+ * {@link ThemeCssVarShape}; `typography` has no CSS variable
+ * representation of its own (`generateTypographyCss.ts` emits literal
+ * property values), so a `$`-prefixed value would leak into the compiled
+ * CSS unresolved (e.g. a literal `font-size: $primary;`).
+ */
+const TypographyValue = TokenValue.refine(
+  (v) => !v.startsWith("$"),
+  "aliases are not supported in typography",
+);
+
+/**
  * A single typography variant. `fontFamily`/`fontStyle` are optional because
  * most variants inherit the base font stack and style; when present they
- * follow the same injection-safe `TokenValue` grammar as every other value.
+ * follow the same injection-safe `TypographyValue` grammar as every other
+ * value.
  */
 export const TypographyStyleSchema = z.strictObject({
-  fontSize: TokenValue,
-  lineHeight: TokenValue,
+  fontSize: TypographyValue,
+  lineHeight: TypographyValue,
   fontWeight: z.number(),
-  letterSpacing: TokenValue,
-  fontFamily: TokenValue.optional(),
-  fontStyle: TokenValue.optional(),
+  letterSpacing: TypographyValue,
+  fontFamily: TypographyValue.optional(),
+  fontStyle: TypographyValue.optional(),
 });
 
 /**
@@ -190,15 +205,13 @@ const ThemeCssVarShape = z.strictObject({
  */
 export type ThemeCssVarSource = z.infer<typeof ThemeCssVarShape>;
 
-/** Every category key with a `--sg-*` CSS variable representation. */
-const ALIAS_CATEGORIES = [
-  "colors",
-  "shadows",
-  "backDropBlurs",
-  "borderRadius",
-  "fontFamily",
-  "borderWidth",
-] as const;
+/**
+ * Every category key with a `--sg-*` CSS variable representation, derived
+ * from {@link ThemeCssVarShape} (`.keyof().options`) instead of repeating
+ * the key list a second time — adding a category to `ThemeCssVarShape`
+ * automatically extends alias/kebab-collision validation to it too.
+ */
+const ALIAS_CATEGORIES = ThemeCssVarShape.keyof().options;
 
 /**
  * Theme override configuration. Contains partial overrides for every
@@ -215,8 +228,10 @@ export const ThemeOverrideSchema = ThemeCssVarShape.partial();
  * doesn't match `^\$<TokenKey>$`, or references a key absent from
  * `validKeys`. `ownEntries` is the record the value is actually *declared*
  * in (the base record for the base pass, an override's own record for a
- * per-theme pass) — `validKeys` is the wider merged key set it may
- * reference (base ∪ override for a themed pass).
+ * per-theme pass) — `validKeys` is the merged key set it may reference
+ * (the override's own keys are always a subset of the base keys by the
+ * time this runs, since `validateThemeOverride` rejects an override key
+ * absent from the base record before reaching this check).
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string>} ownEntries - Entries whose own grammar/target is checked
  * @param {ReadonlySet<string>} validKeys - Keys a `$` alias may legally reference
@@ -414,8 +429,12 @@ const validateBaseCategories = (
 
 /**
  * Validate a single `themes.<name>` override: kebab-key uniqueness on its
- * own records, the alias grammar/cycle graph merged with the base theme,
- * and the borderWidth/colors collision check scoped to this override.
+ * own records, that every override key already exists in the matching base
+ * record (an override-only key never maps into `@theme inline`/`@utility`
+ * output — it produces no class, see `flattenByCategory.ts`/
+ * `generateThemeCss.ts`, both of which only ever iterate base keys), the
+ * alias grammar/cycle graph merged with the base theme, and the
+ * borderWidth/colors collision check scoped to this override.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {ThemeCssVarSource} baseTheme - Base theme (for the alias merge)
  * @param {string} themeName - Override name (`themes.<themeName>`)
@@ -432,6 +451,18 @@ const validateThemeOverride = (
     const overrideRecord = override[category];
     reportKebabCollisions(ctx, overrideRecord, ["themes", themeName, category]);
     if (!overrideRecord) continue;
+
+    const baseRecord = baseTheme[category];
+    for (const key of Object.keys(overrideRecord)) {
+      if (baseRecord && Object.hasOwn(baseRecord, key)) continue;
+      ctx.addIssue({
+        code: "custom",
+        path: ["themes", themeName, category, key],
+        message:
+          `Override key "${key}" has no base value in theme.${category} — ` +
+          "it produces no utility; declare it in the base theme instead.",
+      });
+    }
 
     const merged = { ...baseTheme[category], ...overrideRecord };
     validateCategoryAliasGraph(ctx, merged, overrideRecord, (key) => [

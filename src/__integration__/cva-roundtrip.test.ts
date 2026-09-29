@@ -5,6 +5,7 @@ import postcss from "postcss";
 import { generate } from "../core/generate";
 import { builtInCategories } from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
+import { toKebabCase } from "../shared/helpers";
 
 import { fixtureTheme, fixtureOptions } from "./__fixtures__/fixtureTheme";
 import { compileFixtureCss } from "./compileFixtureCss";
@@ -55,6 +56,13 @@ interface RoundTripCase {
   prefix: string;
   keys: readonly string[];
   key: string;
+  /**
+   * The category's `cssVarPrefix` (see `TokenCategoryDescriptor`), or
+   * `undefined` for a category with no CSS-variable representation
+   * (`typography`, which `generateTypographyCss` emits as literal
+   * declarations — nothing to assert a `var(...)` reference against).
+   */
+  cssVarPrefix: string | undefined;
 }
 
 /**
@@ -81,7 +89,13 @@ const buildRoundTripCases = (): RoundTripCase[] => {
 
     for (const prefix of prefixes) {
       for (const key of keys) {
-        cases.push({ category: descriptor.key, prefix, keys, key });
+        cases.push({
+          category: descriptor.key,
+          prefix,
+          keys,
+          key,
+          cssVarPrefix: descriptor.cssVarPrefix,
+        });
       }
     }
   }
@@ -92,6 +106,17 @@ const buildRoundTripCases = (): RoundTripCase[] => {
 describe("integration: createVariantMapper round-trip through cva + compiled Tailwind CSS", () => {
   const cases = buildRoundTripCases();
   let selectors: Set<string>;
+  /**
+   * Every rule's declaration text, keyed by selector — a selector can have
+   * more than one rule (e.g. `.bg-none`/`.border-none` also match
+   * Tailwind's own built-in static utility of the same name, which emits a
+   * second, unrelated rule for the same selector). Checking every rule's
+   * body, not just the first, is what makes the "references the
+   * category's var" assertion below probative instead of a tautology that
+   * would also pass for a theme key that merely happens to share a name
+   * with a Tailwind built-in.
+   */
+  let ruleBodiesBySelector: Map<string, string[]>;
 
   beforeAll(async () => {
     const { css } = generate(fixtureTheme, fixtureOptions);
@@ -99,9 +124,15 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
     const root = postcss.parse(compiled);
 
     selectors = new Set<string>();
+    ruleBodiesBySelector = new Map<string, string[]>();
     root.walkRules((rule) => {
+      const body = rule.nodes.map((node) => node.toString()).join(";");
       for (const selector of rule.selectors) {
-        selectors.add(selector.trim());
+        const trimmed = selector.trim();
+        selectors.add(trimmed);
+        const bodies = ruleBodiesBySelector.get(trimmed) ?? [];
+        bodies.push(body);
+        ruleBodiesBySelector.set(trimmed, bodies);
       }
     });
   });
@@ -119,15 +150,21 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
   });
 
   it.each(cases)(
-    "$category: createVariantMapper($prefix, keys)[$key] resolves in compiled CSS",
-    ({ prefix, keys, key }) => {
+    "$category: createVariantMapper($prefix, keys)[$key] resolves in compiled CSS and references its var prefix",
+    ({ prefix, keys, key, cssVarPrefix }) => {
       const cls = cva("", {
         variants: { v: createVariantMapper(prefix, keys) },
       })({
         v: key,
       }).trim();
+      const selector = `.${escapeClassName(cls)}`;
 
-      expect(selectors.has(`.${escapeClassName(cls)}`)).toBe(true);
+      expect(selectors.has(selector)).toBe(true);
+      if (cssVarPrefix === undefined) return;
+
+      const expectedVarRef = `var(--${cssVarPrefix}-${toKebabCase(key)})`;
+      const bodies = ruleBodiesBySelector.get(selector) ?? [];
+      expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
     },
   );
 });

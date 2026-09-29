@@ -104,6 +104,23 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects a themes override key with no matching base key (produces no utility)", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { primary: "#fff" },
+      themes: {
+        dark: { colors: { primary: "#000", background: "#111" } },
+      },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual([
+      "themes",
+      "dark",
+      "colors",
+      "background",
+    ]);
+    expect(result.error?.issues[0]?.message).toMatch(/no utility/);
+  });
+
   it("rejects an alias target that doesn't exist", () => {
     const result = ThemeSchema.safeParse({ colors: { a: "$b" } });
     expect(result.success).toBe(false);
@@ -114,6 +131,31 @@ describe("ThemeSchema — invalid themes", () => {
     const result = ThemeSchema.safeParse({ colors: { a: "$b", b: "$a" } });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toMatch(/cycle detected/);
+  });
+
+  it("rejects a $-alias in borderWidth/fontFamily targeting an unknown key (AC4: ALIAS_CATEGORIES tracks every ThemeCssVarShape category)", () => {
+    const borderWidthResult = ThemeSchema.safeParse({
+      colors: { primary: "#fff" },
+      borderWidth: { a: "$nope" },
+    });
+    expect(borderWidthResult.success).toBe(false);
+    expect(borderWidthResult.error?.issues[0]?.path).toEqual([
+      "borderWidth",
+      "a",
+    ]);
+    expect(borderWidthResult.error?.issues[0]?.message).toMatch(
+      /references unknown key/,
+    );
+
+    const fontFamilyResult = ThemeSchema.safeParse({
+      colors: { primary: "#fff" },
+      fontFamily: { a: "$nope" },
+    });
+    expect(fontFamilyResult.success).toBe(false);
+    expect(fontFamilyResult.error?.issues[0]?.path).toEqual([
+      "fontFamily",
+      "a",
+    ]);
   });
 
   it("rejects a borderWidth key that collides with a colors key", () => {
@@ -134,6 +176,24 @@ describe("ThemeSchema — invalid themes", () => {
     });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toMatch(/font-weight utility/);
+  });
+
+  it("rejects a $-prefixed value in typography (aliases are not supported there)", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { primary: "#fff" },
+      typography: {
+        body: {
+          fontSize: "$primary",
+          lineHeight: "150%",
+          fontWeight: 400,
+          letterSpacing: "0",
+        },
+      },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(
+      /aliases are not supported in typography/,
+    );
   });
 
   it("rejects keys in the same record that kebab-case to the same value", () => {

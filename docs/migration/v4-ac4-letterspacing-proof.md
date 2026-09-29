@@ -103,6 +103,38 @@ compiled `.tracking-tight` rule is:
 }
 ```
 
+## Caveats (honest scope of the 3-file claim)
+
+- **`yarn test` also requires regenerating 5 committed `theme.schema.json`
+  copies.** The worktree only ran a scoped
+  `yarn vitest run src/features/registry/letterSpacing.test.ts`, not the
+  full `yarn test` gate. `src/__integration__/committed-schema.test.ts`
+  deep-equals `z.toJSONSchema(ThemeSchema)` against 5 committed
+  `theme.schema.json` files (`examples/theme.schema.json`,
+  `examples/{react-v4/src,next-v4/app,nuxt-v4}/theme/theme.schema.json`,
+  `site/src/theme/theme.schema.json`); adding `letterSpacing` to
+  `ThemeCssVarShape` changes that generated schema, so a real `yarn test`
+  run would be RED until those 5 files are regenerated (mechanical:
+  `yarn build:cli && node dist/cli/index.mjs schema --out <path>` per
+  file). "3 files" covers the CSS-generation path only, not the full gate.
+- **Typed tokens are still hand-listed in 3 more files.** `theme.schema.json`
+  and CSS generation are registry-driven, but the typed-token surface
+  (`variant*` accessors in `src/features/tokens/createDesignTokens.ts`, the
+  `DesignTokens.Web.*` shape in `src/core/inference.ts`, and the
+  `*Variant<T>` helper types in `src/core/designTokensTypes.ts`) is not —
+  each still branches per category by name. A category that also needs a
+  typed token surface (e.g. a `variantLetterSpacing` accessor or a
+  `LetterSpacingVariant<T>` type) is 3 additional files, 6 total. This
+  proof only demonstrates the CSS-generation path.
+- **`ALIAS_CATEGORIES` was a duplicated key list when this proof was
+  captured.** `themeSchema.ts`'s `ALIAS_CATEGORIES` (alias grammar/cycle
+  validation, kebab-collision checks) has since been changed to derive
+  from `ThemeCssVarShape.keyof().options` instead of repeating the
+  category list a second time, so a category added to `ThemeCssVarShape`
+  (as `letterSpacing` was here) is automatically covered by alias
+  validation too — this proof's own worktree snapshot predates that fix
+  and did not exercise an alias/cycle case for `letterSpacing`.
+
 ## Outcome
 
 - Worktree removed via `git worktree remove ../sg-letterspacing-proof --force`

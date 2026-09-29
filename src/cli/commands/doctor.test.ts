@@ -59,7 +59,7 @@ describe("doctorCommand", () => {
       "style-gen.config.json": {
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "styles/theme.json": {
         colors: { primary: "#3B82F6" },
@@ -73,7 +73,7 @@ describe("doctorCommand", () => {
         },
       },
       "plugins/theme-plugin.ts": "// stub",
-      "styles/safelist.txt": "text-primary",
+      "styles/theme.css": "text-primary",
     });
 
     expect(() => {
@@ -90,7 +90,7 @@ describe("doctorCommand", () => {
       "style-gen.config.json": {
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "styles/theme.json": {
         colors: { base: { primary: "#3B82F6" }, text: {}, common: {} },
@@ -118,7 +118,7 @@ describe("doctorCommand", () => {
       "style-gen.config.json": {
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "styles/theme.json": {
         colors: { primary: "#3B82F6" },
@@ -139,7 +139,7 @@ describe("doctorCommand", () => {
       "style-gen.config.json": {
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "styles/theme.json": "{ this is not json",
       "plugins/theme-plugin.ts": "// stub",
@@ -157,7 +157,7 @@ describe("doctorCommand", () => {
       "style-gen.config.json": {
         theme: "styles/missing.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "plugins/theme-plugin.ts": "// stub",
     });

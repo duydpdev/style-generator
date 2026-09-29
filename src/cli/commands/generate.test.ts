@@ -4,7 +4,7 @@ import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { safelistCommand } from "./safelist";
+import { generateCommand } from "./generate";
 
 const sampleTheme = {
   colors: { primary: "#3B82F6", background: "#FFFFFF" },
@@ -19,12 +19,12 @@ const sampleTheme = {
   shadows: { sm: "0 1px 2px #0000000d" },
 };
 
-describe("safelistCommand", () => {
+describe("generateCommand", () => {
   let tmp: string;
   let origCwd: string;
 
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-safelist-"));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-generate-"));
     origCwd = process.cwd();
     process.chdir(tmp);
   });
@@ -35,27 +35,25 @@ describe("safelistCommand", () => {
     vi.restoreAllMocks();
   });
 
-  it("writes safelist.txt with theme-derived classes", () => {
+  it("writes theme.css with theme-derived CSS", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, "styles/theme.json"),
       JSON.stringify(sampleTheme),
     );
 
-    safelistCommand({
+    generateCommand({
       theme: "styles/theme.json",
-      out: "styles/safelist.txt",
+      out: "styles/theme.css",
     });
 
-    const outPath = path.join(tmp, "styles/safelist.txt");
+    const outPath = path.join(tmp, "styles/theme.css");
     expect(fs.existsSync(outPath)).toBe(true);
 
     const content = fs.readFileSync(outPath, "utf8");
-    const classes = content.split("\n").filter(Boolean);
-    expect(classes.length).toBeGreaterThan(0);
-    // Typography keys are h1, h2, ... — toKebabCase("h1") === "h-1"
-    expect(classes).toContain("h-1");
-    expect(classes).toContain("shadow-sm");
+    expect(content).toMatch(/--sg-primary/);
+    expect(content).toMatch(/@utility h-1 \{/);
+    expect(content).toMatch(/shadow-sm/);
   });
 
   it("exits 1 when theme file missing", () => {
@@ -64,7 +62,7 @@ describe("safelistCommand", () => {
     }) as never);
 
     expect(() => {
-      safelistCommand({ theme: "styles/missing.json", out: "out.txt" });
+      generateCommand({ theme: "styles/missing.json", out: "out.css" });
     }).toThrow("__exit__");
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
@@ -77,7 +75,7 @@ describe("safelistCommand", () => {
     }) as never);
 
     expect(() => {
-      safelistCommand({ theme: "styles", out: "out.txt" });
+      generateCommand({ theme: "styles", out: "out.css" });
     }).toThrow("__exit__");
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
@@ -89,37 +87,30 @@ describe("safelistCommand", () => {
       JSON.stringify(sampleTheme),
     );
 
-    safelistCommand({
+    generateCommand({
       theme: "styles/theme.json",
-      out: "dist/nested/safelist.txt",
+      out: "dist/nested/theme.css",
     });
 
-    expect(fs.existsSync(path.join(tmp, "dist/nested/safelist.txt"))).toBe(
-      true,
-    );
+    expect(fs.existsSync(path.join(tmp, "dist/nested/theme.css"))).toBe(true);
   });
 
-  it("passes breakpoints and responsiveModules from args", () => {
+  it("passes breakpoints from args", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, "styles/theme.json"),
       JSON.stringify(sampleTheme),
     );
 
-    safelistCommand({
+    generateCommand({
       theme: "styles/theme.json",
-      out: "styles/safelist.txt",
+      out: "styles/theme.css",
       breakpoints: "sm,lg",
-      responsiveModules: "layout,rounded",
     });
 
-    const content = fs.readFileSync(
-      path.join(tmp, "styles/safelist.txt"),
-      "utf8",
-    );
-    const classes = content.split("\n").filter(Boolean);
-    expect(classes).toContain("sm:hidden");
-    expect(classes).toContain("lg:hidden");
+    const content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
+    expect(content).toMatch(/--breakpoint-sm/);
+    expect(content).toMatch(/--breakpoint-lg/);
   });
 
   it("handles malformed theme JSON gracefully", () => {
@@ -128,10 +119,50 @@ describe("safelistCommand", () => {
 
     // Should not throw — logs error internally
     expect(() => {
-      safelistCommand({
+      generateCommand({
         theme: "styles/theme.json",
-        out: "styles/safelist.txt",
+        out: "styles/theme.css",
       });
     }).not.toThrow();
+  });
+
+  it("watch mode: regenerates theme.css when theme.json changes", async () => {
+    // Real delays, not fake timers: this drives a genuine chokidar fs
+    // watcher plus the command's own setTimeout debounce, both racing
+    // against real OS file-change events — there is no promise/event this
+    // test can await instead, and mocking the clock would desync from
+    // chokidar's own real-time polling.
+    // Repo tsconfig targets ES2022 (no Promise.withResolvers types), so a
+    // plain executor is used here instead.
+    const delay = (ms: number): Promise<void> =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify(sampleTheme),
+    );
+
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+      watch: true,
+    });
+
+    // Initial (debounced) generation.
+    await delay(300);
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(true);
+
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify({
+        ...sampleTheme,
+        colors: { ...sampleTheme.colors, primary: "#FF0000" },
+      }),
+    );
+
+    await delay(400);
+    const content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
+    expect(content).toMatch(/#FF0000/);
   });
 });

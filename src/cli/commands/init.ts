@@ -190,7 +190,7 @@ export async function initCommand(args: InitArgs): Promise<void> {
 
   /* ---------- Config file ---------- */
 
-  const outLoc = `${path.dirname(themeLoc)}/safelist.txt`;
+  const outLoc = `${path.dirname(themeLoc)}/theme.css`;
   const configContent = {
     theme: themeLoc,
     plugin: pluginLoc,
@@ -211,7 +211,7 @@ export async function initCommand(args: InitArgs): Promise<void> {
    1. Edit ${themeLoc} with your design tokens
    2. Run ${pluginLoc} (e.g. \`npx tsx ${pluginLoc}\`) to generate theme.css
    3. Add \`@import "./theme.css";\` to your CSS entry point, next to \`@import "tailwindcss";\`
-   4. Run: npx style-gen safelist
+   4. Run: npx style-gen generate
    5. Start your dev server`,
   );
 

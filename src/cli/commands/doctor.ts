@@ -108,7 +108,7 @@ export function doctorCommand() {
     logger.log("💡 Everything looks good!\n");
   } else {
     logger.log(
-      "💡 Setup looks complete! Generate your safelist by running: npx style-gen safelist\n",
+      "💡 Setup looks complete! Generate your CSS by running: npx style-gen generate\n",
     );
   }
 }

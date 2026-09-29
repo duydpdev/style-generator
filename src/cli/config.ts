@@ -1,14 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { StyleModule } from "../core/Options";
-
 export interface StyleGenConfig {
   theme: string;
   output: string;
   plugin: string;
   breakpoints?: string[];
-  responsiveModules?: StyleModule[];
   screens?: Record<string, string>;
 }
 
@@ -24,7 +21,7 @@ export type StyleGenConfigFlags = {
 
 export const defaultConfig: StyleGenConfig = {
   theme: "styles/theme.json",
-  output: "styles/safelist.txt",
+  output: "styles/theme.css",
   plugin: "plugins/theme-plugin.ts",
 };
 
@@ -64,9 +61,6 @@ function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   }
   if (flags.breakpoints !== undefined) {
     sanitized.breakpoints = flags.breakpoints;
-  }
-  if (flags.responsiveModules !== undefined) {
-    sanitized.responsiveModules = flags.responsiveModules;
   }
   if (flags.screens !== undefined) {
     sanitized.screens = flags.screens;

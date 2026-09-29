@@ -105,18 +105,9 @@ const options = defineOptions({
   //   cssVarDriven: true,  // Inject --typography-* vars into :root; override via CSS
   // },
 
-  layout: {
-    enabled: true,
-    values: ["hidden", "block", "flex", "grid", "inline-block", "inline-flex", "items-center", "justify-center", "justify-between", "text-center"],
-  },
-
-  border: { enabled: true },
-  rounded: { enabled: true },
-  opacity: { enabled: true },
-  zIndex: { enabled: true },
-
-  responsiveModules: ["layout", "rounded"],
-  dynamicClasses: [],
+  // Classes built at runtime (e.g. \`bg-\${variant}\`) that Tailwind's static
+  // candidate scan can never see — emitted as @source inline(...) instead:
+  // extraSources: ["hover:bg-{primary,secondary}"],
 });
 
 const { css, tokens } = generate(theme, options);
@@ -128,6 +119,6 @@ const { css, tokens } = generate(theme, options);
 const outDir = dirname(fileURLToPath(import.meta.url));
 writeFileSync(resolve(outDir, "theme.css"), css, "utf8");
 
-// Safelist is managed by CLI: npx style-gen safelist
+// Regenerate on demand: npx style-gen generate --watch
 export { tokens };
 `;

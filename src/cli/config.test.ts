@@ -40,7 +40,7 @@ describe("resolveConfig", () => {
   it("returns defaults when no file config exists", () => {
     const config = resolveConfig({});
     expect(config.theme).toBe("styles/theme.json");
-    expect(config.output).toBe("styles/safelist.txt");
+    expect(config.output).toBe("styles/theme.css");
     expect(config.plugin).toBe("plugins/theme-plugin.ts");
   });
 

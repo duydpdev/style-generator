@@ -4,25 +4,27 @@ import path from "node:path";
 import { watch } from "chokidar";
 import { z } from "zod";
 
-import type { StyleModule } from "../../core/Options";
+import { generate } from "../../core/generate";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
-import { generateSafelist } from "../../features/safelist/generateSafelist";
 import { resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
 
-export interface SafelistArgs {
+export interface GenerateArgs {
   theme?: string;
   out?: string;
   breakpoints?: string;
-  responsiveModules?: string;
   watch?: boolean;
 }
 
 /**
- * Safelist command handler
- * @param {SafelistArgs} args - Safelist arguments from CLI
+ * Generate command handler: reads the theme, validates it, runs `generate()`,
+ * and writes the resulting CSS (`@theme`/`@theme inline`/typography/spacing/
+ * `@source inline` blocks) to disk. Replaces the removed `safelist` command —
+ * consumers `@import` the written file directly instead of feeding a
+ * safelist to Tailwind's content scanner.
+ * @param {GenerateArgs} args - Generate arguments from CLI
  */
-export function safelistCommand(args: SafelistArgs) {
+export function generateCommand(args: GenerateArgs) {
   try {
     const configFlags: Parameters<typeof resolveConfig>[0] = {};
 
@@ -36,12 +38,6 @@ export function safelistCommand(args: SafelistArgs) {
 
     if (args.breakpoints) {
       configFlags.breakpoints = args.breakpoints.split(",");
-    }
-
-    if (args.responsiveModules) {
-      configFlags.responsiveModules = args.responsiveModules.split(
-        ",",
-      ) as StyleModule[];
     }
 
     const options = resolveConfig(configFlags);
@@ -70,24 +66,22 @@ export function safelistCommand(args: SafelistArgs) {
         const theme = ThemeSchema.parse(
           JSON.parse(fs.readFileSync(themePath, "utf8")),
         );
-        const safelist = generateSafelist(theme, options);
+        const { css } = generate(theme, options);
 
         const outDir = path.dirname(outPath);
         if (!fs.existsSync(outDir)) {
           fs.mkdirSync(outDir, { recursive: true });
         }
 
-        fs.writeFileSync(outPath, safelist.join("\n"), "utf8");
-        logger.success(
-          `Safelist written to ${options.output} (${String(safelist.length)} classes)`,
-        );
+        fs.writeFileSync(outPath, css, "utf8");
+        logger.success(`CSS written to ${options.output}`);
       } catch (error) {
         if (error instanceof z.ZodError) {
           logger.error(
             `Invalid theme (${options.theme}):\n${formatZodError(error)}`,
           );
         } else if (error instanceof Error) {
-          logger.error(`Failed to generate safelist: ${error.message}`);
+          logger.error(`Failed to generate CSS: ${error.message}`);
         } else {
           logger.error(`Unknown error occurred.`);
         }

@@ -12,6 +12,7 @@ export {
   DEFAULT_BORDER_VALUES,
   DEFAULT_SPACING_PROPERTIES,
 } from "./shared/defaultOption";
+export { COLOR_STATES } from "./shared/colorStates";
 export {
   roundedProperties,
   borderProperties,

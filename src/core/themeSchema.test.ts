@@ -54,6 +54,30 @@ describe("ThemeSchema — valid themes", () => {
     expect(result.success).toBe(true);
   });
 
+  it.each(["contrast100", "007", "1e3", "a1"])(
+    "accepts the non-canonical-integer variant name %j",
+    (variant) => {
+      const result = ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: { contrast: { [variant]: { colors: { primary: "#000" } } } },
+      });
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it("accepts an alias declared inside a variant override and keeps it verbatim for emit-time resolution", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { primary: "#3B82F6", blue500: "#3B82F6" },
+      themeAxes: {
+        palette: { rose: { colors: { primary: "$blue500" } } },
+      },
+    });
+    expect(result.success).toBe(true);
+    expect(result.data?.themeAxes?.palette?.rose?.colors?.primary).toBe(
+      "$blue500",
+    );
+  });
+
   it.each([
     "#fff",
     "rgb(0 0 0 / 50%)",
@@ -237,4 +261,32 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toMatch(/themeAxes/);
   });
+
+  it.each([
+    [
+      "axis",
+      { "100": { dark: { colors: { primary: "#000" } } } },
+      ["themeAxes", "100"],
+    ],
+    [
+      "variant",
+      { contrast: { "200": { colors: { primary: "#000" } } } },
+      ["themeAxes", "contrast", "200"],
+    ],
+    [
+      "axis",
+      { "0": { dark: { colors: { primary: "#000" } } } },
+      ["themeAxes", "0"],
+    ],
+  ])(
+    "rejects a canonical-integer %s name (JS key order would break declaration-order precedence)",
+    (_kind, themeAxes, path) => {
+      const result = ThemeSchema.safeParse({ ...baseTheme, themeAxes });
+      expect(result.success).toBe(false);
+      const issue = result.error?.issues[0];
+      expect(issue?.path).toEqual(path);
+      expect(issue?.message).toMatch(/canonical integer/);
+      expect(issue?.message).toMatch(/declaration order/);
+    },
+  );
 });

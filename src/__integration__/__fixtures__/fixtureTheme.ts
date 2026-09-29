@@ -10,6 +10,8 @@ export const fixtureTheme = defineTheme({
     primary: "#3B82F6",
     primaryHover: "#2563EB",
     primaryActive: "#1D4ED8",
+    accent: "#F59E0B",
+    "accent-hover": "#D97706",
     secondary: "#10B981",
     sidebarForeground: "#111827",
     blue500: "#3B82F6",

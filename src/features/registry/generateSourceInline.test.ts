@@ -79,6 +79,17 @@ describe("generateSourceInline", () => {
     expect(css).not.toMatch(/active:/);
   });
 
+  it("detects siblings on camelCased keys, so a kebab-case theme key still gets its state line", () => {
+    const theme: ThemeConfig = {
+      colors: { primary: "#fff", "primary-hover": "#eee" },
+    };
+    const css = generateSourceInline(theme, { spacing: { enabled: false } });
+
+    expect(css).toContain(
+      '@source inline("hover:{bg,text,border}-{primary-hover}");',
+    );
+  });
+
   it("omits a state line entirely when no token has a sibling for it", () => {
     const theme: ThemeConfig = { colors: { primary: "#fff", danger: "#f00" } };
     const css = generateSourceInline(theme, { spacing: { enabled: false } });

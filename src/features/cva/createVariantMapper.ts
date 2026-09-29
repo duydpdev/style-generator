@@ -52,10 +52,11 @@ export interface VariantMapperStatesOptions {
  * const border = createVariantMapper(["border-x", "border-y"] as const, ["sm", "md"] as const);
  * // Result: { "border-x": { sm: "border-x-sm", md: "border-x-md" }, "border-y": { sm: "border-y-sm", md: "border-y-md" } }
  * @example
- * // Flat sibling state tokens (colorsCategory.states) collapse into one
- * // chained class string per base token — feed straight into cva's variants.
+ * // Flat sibling state tokens collapse into one chained class string per
+ * // base token — feed straight into cva's variants. `COLOR_STATES` is the
+ * // same list the registry's `@source inline` state lines are built from.
  * const tokens = ["primary", "primaryHover", "primaryActive", "danger"] as const;
- * const bg = createVariantMapper("bg", tokens, { states: ["hover", "active"] });
+ * const bg = createVariantMapper("bg", tokens, { states: COLOR_STATES });
  * // Result: {
  * //   primary: "bg-primary hover:bg-primary-hover active:bg-primary-active",
  * //   primaryHover: "bg-primary-hover",

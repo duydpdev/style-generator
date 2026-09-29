@@ -1,3 +1,4 @@
+import { COLOR_STATES } from "../../shared/colorStates";
 import {
   DEFAULT_BORDER_VALUES,
   DEFAULT_ROUNDED_VALUES,
@@ -27,7 +28,7 @@ export const colorsCategory = defineCategory({
    * `generateSourceInline` emits for it. See `consumer-app/packages/
    * theme/theme.json`'s flat-sibling convention this mirrors.
    */
-  states: ["hover", "active"] as const,
+  states: COLOR_STATES,
   select: (source) => source.colors,
 });
 

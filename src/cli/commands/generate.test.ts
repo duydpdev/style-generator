@@ -4,6 +4,8 @@ import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+import { logger } from "../logger";
+
 import { generateCommand } from "./generate";
 
 const sampleTheme = {
@@ -56,21 +58,59 @@ describe("generateCommand", () => {
     expect(content).toMatch(/shadow-sm/);
   });
 
-  it("writes atomically: no leftover .tmp files remain in the output directory", () => {
+  it("writes atomically: the output path is only ever produced by renameSync from a sibling temp file", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, "styles/theme.json"),
       JSON.stringify(sampleTheme),
     );
+    const outPath = path.join(tmp, "styles/theme.css");
+    // `process.chdir(tmp)` + macOS `/var` -> `/private/var` symlink means the
+    // command's resolved path may differ textually from `outPath`; compare
+    // by basename + dir realpath instead of raw string equality.
+    const isOutPath = (p: unknown): boolean =>
+      typeof p === "string" &&
+      path.basename(p) === "theme.css" &&
+      fs.realpathSync(path.dirname(p)) ===
+        fs.realpathSync(path.dirname(outPath));
+
+    const writeSpy = vi.spyOn(fs, "writeFileSync");
+    const renameSpy = vi.spyOn(fs, "renameSync");
 
     generateCommand({
       theme: "styles/theme.json",
       out: "styles/theme.css",
     });
 
-    const entries = fs.readdirSync(path.join(tmp, "styles"));
-    expect(entries).toEqual(["theme.css", "theme.json"]);
-    expect(entries.some((name) => name.endsWith(".tmp"))).toBe(false);
+    expect(writeSpy.mock.calls.some(([target]) => isOutPath(target))).toBe(
+      false,
+    );
+    expect(renameSpy).toHaveBeenCalledTimes(1);
+    const [from, to] = renameSpy.mock.calls[0] ?? [];
+    expect(isOutPath(to)).toBe(true);
+    expect(path.dirname(String(from))).toBe(path.dirname(String(to)));
+    expect(path.basename(String(from))).toMatch(/\.tmp$/);
+    expect(fs.existsSync(String(from))).toBe(false);
+    expect(fs.readFileSync(outPath, "utf8")).toMatch(/--sg-primary/);
+  });
+
+  it("removes the temp file and leaves no partial output when the rename fails", () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify(sampleTheme),
+    );
+    vi.spyOn(fs, "renameSync").mockImplementation(() => {
+      throw new Error("EXDEV: simulated rename failure");
+    });
+    vi.spyOn(logger, "error").mockImplementation(() => undefined);
+
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+    });
+
+    expect(fs.readdirSync(path.join(tmp, "styles"))).toEqual(["theme.json"]);
   });
 
   it("threads extraSources/spacing/typography from style-gen.config.json into generate()", () => {

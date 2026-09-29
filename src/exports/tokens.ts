@@ -9,6 +9,7 @@ export {
   DEFAULT_BORDER_VALUES,
   DEFAULT_ROUNDED_VALUES,
 } from "../shared/defaultOption";
+export { COLOR_STATES } from "../shared/colorStates";
 export {
   borderProperties,
   roundedProperties,

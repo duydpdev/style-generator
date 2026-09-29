@@ -69,6 +69,20 @@ describe("generateThemeCss", () => {
     expect(css).toContain("--sg-primary: #0A84FF;");
   });
 
+  it("resolves an alias declared inside a variant override to the target's --sg var, pinned to html", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF", blue500: "#3B82F6" },
+      themeAxes: {
+        palette: { rose: { colors: { primary: "$blue500" } } },
+      },
+    };
+    const css = generateThemeCss(config);
+    const block = css.slice(css.indexOf('html[data-palette="rose"]'));
+    expect(block).toMatch(
+      /^html\[data-palette="rose"\] \{\s*--sg-primary: var\(--sg-blue-500\);\s*\}/,
+    );
+  });
+
   it("emits multiple axes after :root, in declaration order (both axes and variants)", () => {
     const config: ThemeConfig = {
       colors: { primary: "#007AFF", secondary: "#FF9500" },

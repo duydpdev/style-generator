@@ -484,6 +484,18 @@ const validateThemeOverride = (
 };
 
 /**
+ * Canonical array-index-like names (`0`, `7`, `100`, `2024` — no leading
+ * zero, digits only). JS engines enumerate these own keys FIRST in
+ * ascending numeric order, ahead of every string key regardless of the
+ * order they were written in the JSON file, so they can't honour the
+ * declaration-order precedence `themeAxes` relies on.
+ */
+const INTEGER_LIKE_NAME_RE = /^(0|[1-9]\d*)$/;
+
+const integerLikeNameMessage = (kind: "axis" | "variant", name: string) =>
+  `themeAxes ${kind} name "${name}" is a canonical integer; JS object key order puts integer-like keys first (ascending) regardless of declaration order, which would silently break the "last declared wins" precedence — rename it (e.g. "contrast${name}" or "c${name}")`;
+
+/**
  * `themeAxes` — replaces the single-axis `themes` field. Outer key is the
  * axis name (e.g. `"theme"`, `"palette"`), inner key is the variant name
  * within that axis (e.g. `"dark"`, `"forest"`) — both use the
@@ -492,11 +504,34 @@ const validateThemeOverride = (
  * toggled independently (`html[data-theme]` + `html[data-palette]`, ...);
  * `generateThemeCss.ts` emits one `html[data-<axis-kebab>="<variant-kebab>"]`
  * block per variant, in declaration order, after `:root`.
+ *
+ * Axis and variant names that are canonical integers (`/^(0|[1-9]\d*)$/`)
+ * are rejected: `JSON.parse`/object enumeration hoists them ahead of all
+ * other keys, so declaration order — and with it the emit-order precedence
+ * contract — would be lost before this library ever sees the object.
  */
-const ThemeAxesSchema = z.record(
-  TokenKey,
-  z.record(TokenKey, ThemeOverrideSchema),
-);
+const ThemeAxesSchema = z
+  .record(TokenKey, z.record(TokenKey, ThemeOverrideSchema))
+  .superRefine((axes, ctx) => {
+    for (const [axisName, variants] of Object.entries(axes)) {
+      if (INTEGER_LIKE_NAME_RE.test(axisName)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [axisName],
+          message: integerLikeNameMessage("axis", axisName),
+        });
+      }
+      for (const variantName of Object.keys(variants)) {
+        if (INTEGER_LIKE_NAME_RE.test(variantName)) {
+          ctx.addIssue({
+            code: "custom",
+            path: [axisName, variantName],
+            message: integerLikeNameMessage("variant", variantName),
+          });
+        }
+      }
+    }
+  });
 
 /**
  * Detect the removed `themes` key (single-axis, pre-DEV.6) on the RAW
@@ -506,6 +541,11 @@ const ThemeAxesSchema = z.record(
  * `ZodPipe` skips the right-hand schema once the left-hand transform has
  * added an issue, so a `themes` key never *also* triggers
  * `unrecognized_keys` for itself.
+ *
+ * Side effect: while `themes` is present this SUPPRESSES every other
+ * validation issue (missing `colors`, typos, bad values, ...) — none of
+ * them surface until the key is renamed, so expect a second wave of
+ * errors after the rename.
  * @param {unknown} raw - Raw (pre-Zod) input
  * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
  * @returns {unknown} `raw`, unchanged
@@ -562,8 +602,8 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
  * Wraps {@link ThemeSchemaShape} in `z.preprocess` ({@link rejectLegacyThemesKey})
  * so a theme still using the removed `themes` key gets a rename hint
  * instead of a generic unrecognized-key error — see that function's doc
- * for why this also takes precedence over any other issue on the same
- * input.
+ * for why the rename issue also suppresses every other issue on the same
+ * input while `themes` is present.
  */
 export const ThemeSchema = z.preprocess(
   rejectLegacyThemesKey,

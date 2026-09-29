@@ -84,8 +84,14 @@ export function generateCommand(args: GenerateArgs) {
           outDir,
           `.${path.basename(outPath)}.${String(process.pid)}.${randomUUID()}.tmp`,
         );
-        fs.writeFileSync(tmpFile, css, "utf8");
-        fs.renameSync(tmpFile, outPath);
+        try {
+          fs.writeFileSync(tmpFile, css, "utf8");
+          fs.renameSync(tmpFile, outPath);
+        } finally {
+          // No-op after a successful rename (`force` swallows ENOENT); on a
+          // failed write/rename it removes the orphaned temp file.
+          fs.rmSync(tmpFile, { force: true });
+        }
         logger.success(`CSS written to ${options.output}`);
       } catch (error) {
         if (error instanceof z.ZodError) {

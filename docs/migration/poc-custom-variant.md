@@ -41,23 +41,29 @@ class), its `@apply` body is the only thing under test.
 ## Installed Tailwind version (verified, not assumed)
 
 The plan's Task 5 line assumed Tailwind **4.3.0 [UNVERIFIED cho tới khi PoC
-chạy]**. Running the PoC required first checking what's actually resolved:
+chạy]**. Running the PoC required first checking what's actually resolved.
 
-- `node_modules/tailwindcss/package.json` (the direct project dependency):
-  **4.2.1**.
-- `@tailwindcss/node`'s **own** `package.json` depends on `tailwindcss@4.2.4`
-  and Yarn's node-modules linker nested a second copy at
-  `node_modules/@tailwindcss/node/node_modules/tailwindcss` (**4.2.4**) to
-  satisfy it, since 4.2.1 doesn't satisfy `@tailwindcss/node`'s own `4.2.4`
-  requirement.
-- `compileFixtureCss.ts` (and every integration/e2e test built on it, plus
-  this PoC) imports `compile` from `@tailwindcss/node`, which resolves the
-  **nested 4.2.4** copy — confirmed directly from the compiled output's own
-  banner comment: `/*! tailwindcss v4.2.4 | MIT License | ... */`.
+**Initial state (as found when the PoC was first run).** Root
+`node_modules/tailwindcss` was **4.2.1**, while `@tailwindcss/node` (which
+`compileFixtureCss.ts`, every integration/e2e test and this PoC import
+`compile` from) required `tailwindcss@4.2.4` and had a nested copy of it. The
+compiled banner reported `tailwindcss v4.2.4`, but the `@import "tailwindcss"`
+CSS files (`theme.css`, `preflight.css`, `utilities.css`) were loaded from the
+root **4.2.1** copy — so the suite ran a 4.2.4-engine / 4.2.1-CSS hybrid that
+no consumer ships, while the examples built on 4.3.0. (The earlier version of
+this paragraph wrongly said the root copy was never used by `compile()`.)
+
+**Current state (fixed).** Root devDependencies `tailwindcss` and
+`@tailwindcss/node` are pinned to exactly **4.3.0**, matching the examples and
+site. Verified: `compile('@import "tailwindcss"')` prints
+`/*! tailwindcss v4.3.0 | ... */`, its `onDependency` callback reports
+`node_modules/tailwindcss/index.css`, `node_modules/tailwindcss/package.json`
+is 4.3.0, no `node_modules/@tailwindcss/node/node_modules/tailwindcss` exists,
+and `yarn why tailwindcss` lists only 4.3.0.
 
 **Actual engine version exercised by this repo's compiled-CSS tests: Tailwind
-v4.2.4** (not 4.3.0, and not the root project's declared 4.2.1 either — that
-copy is never the one `compile()` runs).
+v4.3.0** (the PoC below was re-run on the unified 4.3.0 install and produced the
+identical output; the mechanism does not depend on the version).
 
 ## Result: PASS
 
@@ -102,9 +108,10 @@ this PoC is not wired into `yarn build:all` or any CI gate.
   NOT prove a `@custom-variant`-per-state option would compose cleanly with
   the multi-axis `themeAxes` selectors DEV.6 Task 1–3 add (untested here —
   out of scope for this PoC).
-- The nested-dependency version skew above (root `tailwindcss@4.2.1` vs. the
-  `@tailwindcss/node`-resolved `4.2.4` actually driving every compiled-CSS
-  test in this repo) is itself worth a follow-up: `yarn.lock`/`package.json`
-  currently under-declare the effective engine version consumers' own
-  `@tailwindcss/postcss`/CLI setups will resolve, which could differ from
-  what this repo's own test suite exercises.
+- The PoC was first run on a skewed install (root `tailwindcss@4.2.1` beside a
+  nested `@tailwindcss/node`-owned `4.2.4` engine). That skew is resolved:
+  root `tailwindcss` and `@tailwindcss/node` are now both pinned to `4.3.0`,
+  the same version the examples and site resolve, so `compile()` runs one
+  engine against that same engine's own `index.css`/`theme.css`/`utilities.css`.
+  The peer floor (`tailwindcss >=4.1.0`) is still not exercised by any
+  in-repo test.

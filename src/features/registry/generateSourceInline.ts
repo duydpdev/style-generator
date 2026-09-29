@@ -4,7 +4,7 @@ import type {
 } from "../../core/Options";
 import type { ThemeConfig } from "../../core/themeSchema";
 import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
-import { toKebabCase, toPascalCase } from "../../shared/helpers";
+import { toCamelCase, toKebabCase, toPascalCase } from "../../shared/helpers";
 
 import { builtInCategories } from "./builtInCategories";
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
@@ -88,12 +88,14 @@ const buildCategoryLine = (
  * into one shell-style brace group would cross-multiply into invalid
  * pairings like `hover:bg-primary-active`.
  *
- * For a state `s`, only the RAW theme keys that have a matching sibling
- * (`key` + Pascal-cased `s`, e.g. `primary` + `primaryHover`) contribute —
- * and they contribute their OWN kebab-cased form (`primary-hover`), the
- * same class `createVariantMapper(prefix, tokens, { states })` chains onto
- * the base token. A category with no sibling for a given state emits no
- * line for it at all (never `{}` empty braces).
+ * Siblings are detected on the CAMEL-cased keys — the exact form
+ * `createDesignTokens` feeds to `createVariantMapper` (`primary-hover` and
+ * `primaryHover` both become `primaryHover`). For a state `s`, a camel key
+ * `k` contributes when `k` + Pascal-cased `s` (e.g. `primary` +
+ * `primaryHover`) is also present, and it emits the kebab-cased sibling
+ * (`primary-hover`) — the same class the mapper chains onto the base token.
+ * A category with no sibling for a given state emits no line for it at all
+ * (never `{}` empty braces).
  * @param {TokenCategoryDescriptor} descriptor - Category descriptor
  * @param {ThemeConfig} theme - Theme configuration
  * @returns {string[]} Zero or more `@source inline(...)` directives, one per state that has at least one sibling pair
@@ -112,15 +114,16 @@ const buildStateLines = (
   const rawKeys = record ? Object.keys(record) : [];
   if (rawKeys.length === 0) return [];
 
-  const rawKeySet = new Set(rawKeys);
+  const camelKeys = rawKeys.map(toCamelCase);
+  const camelKeySet = new Set(camelKeys);
   const isBareKeyCategory = prefixes.length === 1 && prefixes[0] === "";
   const prefixPart = isBareKeyCategory ? "" : `{${prefixes.join(",")}}-`;
 
   const lines: string[] = [];
   for (const state of states) {
     const siblingSuffix = toPascalCase(state);
-    const siblingKebabKeys = rawKeys
-      .filter((key) => rawKeySet.has(`${key}${siblingSuffix}`))
+    const siblingKebabKeys = camelKeys
+      .filter((key) => camelKeySet.has(`${key}${siblingSuffix}`))
       .map((key) => toKebabCase(`${key}${siblingSuffix}`));
 
     if (siblingKebabKeys.length === 0) continue;

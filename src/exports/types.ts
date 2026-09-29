@@ -28,3 +28,4 @@ export type {
   RoundedVariant,
 } from "../core/designTokensTypes";
 export type { ResponsiveValueStrict } from "../features/spacing/spacingHelpers";
+export type { VariantMapperStatesOptions } from "../features/cva/createVariantMapper";

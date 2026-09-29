@@ -5,7 +5,7 @@ import postcss from "postcss";
 import { generate } from "../core/generate";
 import { builtInCategories } from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
-import { toKebabCase, toPascalCase } from "../shared/helpers";
+import { toCamelCase, toKebabCase, toPascalCase } from "../shared/helpers";
 
 import { fixtureTheme, fixtureOptions } from "./__fixtures__/fixtureTheme";
 import { compileFixtureCss } from "./compileFixtureCss";
@@ -134,8 +134,11 @@ const buildStateRoundTripCases = (): StateRoundTripCase[] => {
     if (!prefixes || prefixes.length === 0 || !states || states.length === 0)
       continue;
 
+    // `createDesignTokens` camelCases every key before it reaches the mapper
+    // (`accent-hover` -> `accentHover`); mirror that so kebab-keyed themes
+    // are round-tripped the way real consumers see them.
     const record = descriptor.select?.(fixtureTheme);
-    const keys = record ? Object.keys(record) : [];
+    const keys = record ? Object.keys(record).map(toCamelCase) : [];
     if (keys.length === 0) continue;
 
     for (const prefix of prefixes) {

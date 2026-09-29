@@ -33,11 +33,11 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single fi
 # Quality
 yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directives
 yarn lint:fix
-yarn prettier / yarn prettier:fix
+yarn prettier:check   # CI gate (check mode); yarn prettier only prints, yarn prettier:fix writes
 yarn tsc --noEmit   # Type check
 ```
 
-Pre-commit (Husky + lint-staged): eslint → prettier → tsc --noEmit → vitest run.
+Pre-commit (Husky + lint-staged): eslint → prettier → tsc --noEmit → vitest run. Yarn Berry never runs `prepare`, so Husky is installed via `postinstall: husky` (verify with `git config core.hooksPath` → `.husky/_`). `pinst` (`prepack: pinst --disable`, `postpack: pinst --enable`) renames `postinstall` to `_postinstall` inside the published tarball so consumers never run Husky. Release CI sets `HUSKY=0`.
 
 ## Commit Convention
 
@@ -175,8 +175,8 @@ Built separately by `tsdown` to `dist/cli/index.mjs` (bin entry). Commands: `ini
 3. Tag triggers publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`, private). Auth uses the built-in `GITHUB_TOKEN` (no external `NPM_TOKEN`). `release.yml` grants `packages: write` so the reusable `deploy.yml` token can publish.
 4. Stable release on `main` back-merges to `develop`.
 
-> Publish target locked by `yarn check:publish-target` (runs in `prepublishOnly` and CI). CI also runs `yarn npm publish --dry-run` and grep-asserts `npm.pkg.github.com` before real publish. `GITHUB_TOKEN` is mapped to `YARN_NPM_AUTH_TOKEN` in the workflow so yarn berry auths correctly. Only the `@duydpdev` scope resolves to GitHub Packages; the global registry stays `registry.npmjs.org` for normal dependency installs. Consumers need a PAT with `read:packages` + repo access.
-> Bundle hygiene locked by `yarn check:externals` (`prepublishOnly` + CI) — fails if `dist/` ever inlines a peer/dependency.
+> Publish target locked by `yarn check:publish-target` (runs in `prepublish` and CI). CI also runs `yarn npm publish --dry-run` and grep-asserts `npm.pkg.github.com` before real publish. `GITHUB_TOKEN` is mapped to `YARN_NPM_AUTH_TOKEN` in the workflow so yarn berry auths correctly. Only the `@duydpdev` scope resolves to GitHub Packages; the global registry stays `registry.npmjs.org` for normal dependency installs. Consumers need a PAT with `read:packages` + repo access. (Yarn Berry runs `prepublish`, not `prepublishOnly`, on `yarn npm publish`.)
+> Bundle hygiene locked by `yarn check:externals` (`prepublish` + CI) — fails if `dist/` ever inlines a peer/dependency.
 
 ## Project-Specific Workflow Rules
 

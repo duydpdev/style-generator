@@ -94,8 +94,7 @@ export function StartSection() {
             title={<code>style-gen generate --watch</code>}
             body={
               <>
-                Regenerates theme.css on every save. Pair with the Vite
-                plugin.
+                Regenerates theme.css on every save. Pair with the Vite plugin.
               </>
             }
           />

@@ -52,8 +52,7 @@ export function ToolingSection() {
             title={<code>{"styleGenVite({ themePath, outDir })"}</code>}
             body={
               <>
-                Emits <code>theme.css</code> on every JSON save.
-                HMR-friendly.
+                Emits <code>theme.css</code> on every JSON save. HMR-friendly.
               </>
             }
           />

@@ -41,8 +41,17 @@ jobs:
       - name: Lint
         run: yarn lint
 
+      - name: Prettier check
+        run: yarn prettier:check
+
       - name: Type Check
         run: yarn tsc --noEmit
+
+      - name: Script syntax check
+        run: |
+          for f in scripts/*.mjs; do
+            node --check "$f"
+          done
 
       - name: Build
         run: yarn build:all
@@ -58,6 +67,9 @@ jobs:
 
       - name: Test
         run: yarn test
+
+      - name: Type tests
+        run: yarn test:types
 
   e2e:
     name: E2E (Playwright)

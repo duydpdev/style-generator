@@ -99,3 +99,50 @@ jobs:
 
       - name: Run e2e tests
         run: yarn test:e2e
+
+  # The published peer range is `tailwindcss >=4.1.0`, but the lockfile pins
+  # 4.3.0, so the floor is otherwise never exercised. This leg re-resolves the
+  # Tailwind packages to the latest 4.1.x via `resolutions` (edited in this
+  # runner's checkout only — the committed package.json/yarn.lock are not
+  # changed) and runs the unit + e2e suites against it.
+  tailwind-floor:
+    name: Tailwind peer floor (4.1.x)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Pin Tailwind packages to the 4.1.x floor
+        run: |
+          jq '.resolutions += {
+            "tailwindcss": "~4.1.0",
+            "@tailwindcss/node": "~4.1.0",
+            "@tailwindcss/vite": "~4.1.0",
+            "@tailwindcss/postcss": "~4.1.0"
+          }' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          yarn install --no-immutable
+          yarn why tailwindcss
+          yarn why @tailwindcss/node
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps chromium webkit
+
+      - name: Unit tests
+        run: yarn test
+
+      - name: E2E tests
+        run: yarn test:e2e

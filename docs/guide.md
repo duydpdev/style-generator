@@ -1,27 +1,29 @@
 # User Guide
 
-Hướng dẫn tích hợp `@duydpdev/style-generator` v2 vào dự án.
+Hướng dẫn tích hợp `@duydpdev/style-generator` 4.0.0 vào dự án **Tailwind CSS v4**. Tra cứu đầy đủ (option, export, CLI) nằm ở [`README.md`](../README.md); đang nâng cấp từ 3.x thì đọc [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
 
 ## Mục lục
 
 1. [Cài đặt](#cài-đặt)
 2. [Tạo Theme Config](#tạo-theme-config)
-3. [Tích hợp Tailwind v4](#tích-hợp-tailwind-v4)
-4. [Tích hợp Tailwind v3](#tích-hợp-tailwind-v3)
-5. [Multi-theme](#multi-theme)
-6. [Spacing Helpers](#spacing-helpers)
-7. [Design Tokens cho Component](#design-tokens-cho-component)
-8. [TypeScript Tips](#typescript-tips)
+3. [Sinh CSS và import vào Tailwind](#sinh-css-và-import-vào-tailwind)
+4. [Multi-axis theming](#multi-axis-theming)
+5. [Spacing Helpers](#spacing-helpers)
+6. [Design Tokens cho Component](#design-tokens-cho-component)
+7. [TypeScript Tips](#typescript-tips)
+8. [Nâng cấp từ bản cũ](#nâng-cấp-từ-bản-cũ)
 
 ---
 
 ## Cài đặt
 
+Package được publish lên GitHub Packages (private); cấu hình `.npmrc` theo mục Installation của [`README.md`](../README.md), rồi:
+
 ```bash
 yarn add @duydpdev/style-generator
 ```
 
-**Peer dependencies cần có:**
+**Peer dependencies:** `tailwindcss >=4.1.0` (Tailwind v3 không còn được hỗ trợ), `typescript ^5`, và `vite` (tuỳ chọn, chỉ khi dùng `styleGenVite`). `zod` là dependency thường của package — không cần cài riêng.
 
 ```bash
 yarn add tailwindcss typescript
@@ -31,62 +33,19 @@ yarn add tailwindcss typescript
 
 ## Tạo Theme Config
 
-Tạo file `styles/theme.json` chứa toàn bộ design tokens.
-
-### Color System — camelCase Keys
-
-Tất cả màu sắc nằm trong một **flat object**. Keys dùng **camelCase** hoặc **kebab-case**, lib tự convert sang kebab-case chuẩn Tailwind.
+Tạo `styles/theme.json` chứa toàn bộ design tokens. Chỉ `colors` là bắt buộc; mọi field khác đều tuỳ chọn. Theme được kiểm bằng một Zod schema **strict**: key lạ, giá trị không an toàn hay alias hỏng đều bị từ chối trước khi sinh CSS.
 
 ```json
 {
+  "$schema": "./theme.schema.json",
   "colors": {
-    "primary": "#007AFF",
+    "blue500": "#3B82F6",
+    "primary": "$blue500",
     "primaryForeground": "#FFFFFF",
     "sidebarForeground": "#111827",
     "background": "#FFFFFF",
-    "muted": "#8E8E93",
-    "blue500": "#3B82F6"
-  }
-}
-```
-
-**Convention camelCase → kebab-case:**
-
-| Theme key (camelCase) | CSS Variable                 | Tailwind class            |
-| --------------------- | ---------------------------- | ------------------------- |
-| `primaryForeground`   | `--color-primary-foreground` | `text-primary-foreground` |
-| `sidebarForeground`   | `--color-sidebar-foreground` | `bg-sidebar-foreground`   |
-| `blue500`             | `--color-blue-500`           | `border-blue-500`         |
-| `primary`             | `--color-primary`            | `text-primary`            |
-
-> **Quy tắc:** letter→digit tự động thêm dash (`blue500` → `blue-500`). Digit-prefix giữ nguyên (`2xl` → `2xl`).
-
-**Kết quả CSS Variables (v3 mode):**
-
-```css
-:root {
-  --color-primary: #007aff;
-  --color-sidebar-foreground: #111827;
-  --color-blue-500: #3b82f6;
-}
-```
-
-**Kết quả `@theme inline` (v4 mode, qua `generateThemeCss`):**
-
-```css
-@theme inline {
-  --color-primary: var(--sg-primary);
-  --color-sidebar-foreground: var(--sg-sidebar-foreground);
-  --color-blue-500: var(--sg-blue-500);
-}
-```
-
-Khi có `@theme inline`, Tailwind v4 tự sinh `bg-primary`, `text-primary`, `border-primary`, `ring-primary`, v.v. — không cần safelist.
-
-### Typography
-
-```json
-{
+    "muted": "#8E8E93"
+  },
   "typography": {
     "text16Medium": {
       "fontSize": "16px",
@@ -97,32 +56,85 @@ Khi có `@theme inline`, Tailwind v4 tự sinh `bg-primary`, `text-primary`, `bo
   },
   "shadows": { "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)" },
   "backDropBlurs": { "sm": "4px" },
-  "borderRadius": { "md": "8px" }
+  "borderRadius": { "md": "8px" },
+  "fontFamily": { "sans": "\"Inter\", system-ui, sans-serif" },
+  "borderWidth": { "thin": "1px" }
 }
 ```
 
-**Các trường bắt buộc:** `colors`, `typography`
+| Field           | Sinh ra                                                            |
+| --------------- | ------------------------------------------------------------------ |
+| `colors`        | `bg-*`, `text-*`, `border-*` (bắt buộc)                            |
+| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)        |
+| `shadows`       | `shadow-*`                                                         |
+| `backDropBlurs` | `backdrop-blur-*`                                                  |
+| `borderRadius`  | `rounded-*` (+ biến thể `md:`/`lg:` theo breakpoint đang bật)      |
+| `fontFamily`    | `font-*` qua namespace `--font-*` của Tailwind                     |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l` (thay cho key `border` của bản 3.x) |
+| `themeAxes`     | override theo trục (xem [Multi-axis theming](#multi-axis-theming)) |
 
-**Các trường tuỳ chọn:** `shadows`, `backDropBlurs`, `borderRadius`, `border`, `themes`
+### Quy ước key
+
+Key màu là **camelCase** (hoặc kebab-case); lib tự đổi sang kebab-case cho biến CSS và class:
+
+| Theme key           | CSS variable                 | Tailwind class            |
+| ------------------- | ---------------------------- | ------------------------- |
+| `primaryForeground` | `--color-primary-foreground` | `text-primary-foreground` |
+| `sidebarForeground` | `--color-sidebar-foreground` | `bg-sidebar-foreground`   |
+| `blue500`           | `--color-blue-500`           | `border-blue-500`         |
+| `primary`           | `--color-primary`            | `text-primary`            |
+
+- Letter→digit thêm dash (`blue500` → `blue-500`); key bắt đầu bằng số giữ nguyên (`2xl`). Hai key cùng kebab-case về một tên (`blue500` và `blue-500`) bị từ chối.
+- Key chỉ gồm chữ, số và `-`, bắt đầu bằng chữ hoặc số. **`_` bị từ chối ở mọi vị trí tên** (token, tên axis, tên variant): dùng `primaryActive` hoặc `primary-active`. Nguyên nhân: `toKebabCase` giữ `_` còn token có kiểu camelCase bỏ `_`, nên class do mapper sinh ra sẽ không tồn tại. Lưu ý CLI in lỗi này là `colors.primary_active → Invalid key in record`; câu gợi ý nằm ở `issues[0].message` lồng bên trong `ZodError`.
+- Giá trị không được chứa `;`, `{`, `}`, `<`, `@`, `\`, `/*` hay xuống dòng, và dấu nháy phải cân.
+- Key typography phải kebab-case thành tên `@utility` hợp lệ (không bắt đầu bằng số hay dash): `heading1` → `.heading-1`.
+- Key `fontFamily` không được trùng tên độ đậm của Tailwind (`thin`, `light`, `normal`, `medium`, `bold`, `black`, …).
+
+### Alias `$key`
+
+Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phát thành `var(--sg-<key>)`, nên không phải lặp mã hex:
+
+```json
+{
+  "colors": { "blue500": "#3B82F6", "primary": "$blue500" },
+  "shadows": { "base": "0 1px 2px rgb(0 0 0 / 0.1)", "card": "$base" }
+}
+```
+
+Đích là **key gốc** (`$blue500`, không phải `$blue-500`), phải tồn tại và đồ thị alias không được có chu trình. Không dùng alias trong `typography`.
+
+### Trạng thái hover/active
+
+Khai báo key anh em cạnh màu gốc: `primary`, `primaryHover`, `primaryActive`. Registry tự sinh `hover:bg-primary-hover`, `active:bg-primary-active` (và dạng `text-`/`border-`), còn `createVariantMapper(..., { states: COLOR_STATES })` gộp chúng thành một chuỗi class (xem [Design Tokens](#design-tokens-cho-component)). Tên state được kebab-case (`focusVisible` → `focus-visible:`).
+
+### Autocomplete trong editor
+
+```bash
+npx style-gen schema        # ghi theme.schema.json
+```
+
+Thêm `"$schema": "./theme.schema.json"` vào theme để editor gợi ý key và cảnh báo key lạ.
 
 ---
 
-## Tích hợp Tailwind v4
+## Sinh CSS và import vào Tailwind
 
-### Cách 1: Vite Plugin (Khuyến nghị)
+`generate(theme, options)` trả về `{ css, tokens, schema }`. `css` là **một file duy nhất** để `@import` cạnh Tailwind — không có `@plugin`, không có file safelist:
 
-**Bước 1** — Cài đặt Vite (nếu chưa):
-
-```bash
-yarn add -D vite
+```css
+@import "tailwindcss";
+@import "./theme.css";
 ```
 
-**Bước 2** — Config Vite plugin:
+Chọn một cách để ghi `theme.css`:
+
+### Cách 1: Vite plugin (khuyến nghị)
 
 ```typescript
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
 
 export default defineConfig({
@@ -130,110 +142,83 @@ export default defineConfig({
     react(),
     styleGenVite({
       themePath: "src/theme/theme.json",
-      outDir: "src/theme",
-      options: { tailwindVersion: 4 },
+      outDir: "src/theme", // phải khớp đường dẫn @import trong CSS
     }),
-    // Tailwind plugin sau styleGenVite
-    // import tailwindcss plugin nếu sử dụng
+    tailwindcss(),
   ],
 });
 ```
 
-**Bước 3** — Import trong CSS:
+Plugin ghi `theme.css` (nguyên tử) khi khởi động dev, khi build và mỗi lần lưu theme JSON. Thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật. Nuxt chạy trên Vite nên đăng ký cùng plugin trong `nuxt.config.ts → vite.plugins` (xem `examples/nuxt-v4`); ví dụ Vite + React ở `examples/react-v4`.
 
-```css
-@import "tailwindcss";
-@import "./theme.css"; /* Tự động phát sinh bởi plugin */
-@plugin "./src/plugins/theme-plugin.ts";
-@source "./styles/safelist.txt"; /* Tự động phát sinh bởi plugin */
-```
-
-Plugin tự động phát sinh `theme.css` (HMR-enabled) + `safelist.txt` khi lưu theme JSON.
-
-> **Example tham khảo:** `examples/react-v4` (Vite + React). Nuxt 3 cũng chạy trên Vite — `examples/nuxt-v4` đăng ký `styleGenVite` trong `nuxt.config.ts → vite.plugins`, không cần script riêng.
-
-### Cách 2: Manual Script (Dùng khi không có Vite)
-
-**Bước 1** — Tạo plugin file:
+### Cách 2: Next.js
 
 ```typescript
-// src/plugins/theme-plugin.ts
-import {
-  createStyleSystem,
-  Breakpoint,
-  defineTheme,
-} from "@duydpdev/style-generator";
-import theme from "../styles/theme.json";
+// next.config.ts
+import type { NextConfig } from "next";
+import { styleGenNext } from "@duydpdev/style-generator/next";
 
-const { plugin, safelist, themeCss } = createStyleSystem(defineTheme(theme), {
+const nextConfig: NextConfig = {};
+
+export default styleGenNext({
+  themePath: "app/theme/theme.json",
+  outDir: "app/theme",
+})(nextConfig);
+```
+
+Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Giới hạn: `nextConfig` phải là object thường (dạng hàm `(phase, { defaultConfig })` không được hỗ trợ) và guard đường dẫn không `realpath` symlink. Xem `examples/next-v4`.
+
+### Cách 3: CLI
+
+```bash
+npx style-gen init                 # scaffold theme + script generate() + style-gen.config.json
+npx style-gen generate             # ghi styles/theme.css
+npx style-gen generate --watch     # sinh lại khi lưu
+npx style-gen doctor               # kiểm tra cấu hình, schema và cảnh báo va chạm utility
+```
+
+Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định (`styles/theme.json` → `styles/theme.css`).
+
+### Cách 4: Script tự viết
+
+```typescript
+import { writeFileSync } from "node:fs";
+import {
+  generate,
+  defineTheme,
+  defineOptions,
+  Breakpoint,
+} from "@duydpdev/style-generator";
+import themeJson from "../styles/theme.json";
+
+const theme = defineTheme(themeJson); // type-check VÀ validate lúc chạy
+const options = defineOptions({
   screens: { md: "800px" },
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
 });
 
-export default plugin;
-export { safelist, themeCss };
+const { css, tokens } = generate(theme, options);
+writeFileSync("styles/theme.css", css, "utf8");
+export { tokens };
 ```
 
-**Bước 2** — Generate `theme.css`:
+### Class dựng lúc runtime
+
+Mọi màu luôn có `bg-*`/`text-*`/`border-*` nhờ `@source inline` do registry sinh. Class bạn ghép bằng template literal thì Tailwind không quét được — khai báo bằng `extraSources`:
 
 ```typescript
-// scripts/generate-theme-css.ts
-import fs from "node:fs";
-import { generateThemeCss } from "@duydpdev/style-generator";
-import theme from "../styles/theme.json";
-
-fs.writeFileSync("styles/theme.css", generateThemeCss(theme), "utf8");
-console.log("✅ theme.css generated");
+generate(theme, { extraSources: ["hover:bg-{primary,secondary}"] });
 ```
 
-**Bước 3** — Import trong CSS:
+### Class bị trùng utility có sẵn của Tailwind
 
-```css
-@import "tailwindcss";
-@import "./theme.css"; /* @theme inline — sinh bg-primary, text-primary, v.v. */
-@plugin "./src/plugins/theme-plugin.ts";
-@source "./styles/safelist.txt";
-```
-
-> **Example tham khảo:** `examples/next-v4` (Next.js 15 App Router — webpack/turbopack, không Vite). Script `scripts/generate-theme.mjs` được chain qua `yarn generate:theme && next build` (Yarn Berry bỏ qua `pre`/`post` hooks nên phải chain tường minh, không dùng `prebuild`).
+Key có class trùng utility tĩnh của Tailwind (`none` trong `colors`/`shadows`/`borderRadius`, `borderWidth` toàn số, key typography thành `text-sm`, màu `transparent`/`current`/`inherit`) không bị schema từ chối, nhưng rule nào thắng do Tailwind quyết định. Đặt tên khác (`clear`, `flat`, `zero`); `style-gen doctor` liệt kê các va chạm nó nhận ra được (chỉ là cảnh báo).
 
 ---
 
-## Tích hợp Tailwind v3
+## Multi-axis theming
 
-```typescript
-// tailwind.config.ts
-import type { Config } from "tailwindcss";
-import {
-  createStylePlugin,
-  Breakpoint,
-  defineTheme,
-} from "@duydpdev/style-generator";
-import theme from "./styles/theme.json";
-
-const config: Config = {
-  content: ["./src/**/*.{js,ts,jsx,tsx}"],
-  plugins: [
-    createStylePlugin(defineTheme(theme), {
-      tailwindVersion: 3,
-      screens: { md: "800px" },
-      breakpoints: [Breakpoint.MD, Breakpoint.LG],
-    }) as never,
-  ],
-};
-
-export default config;
-```
-
-Với v3, plugin tự động:
-
-- Inject CSS variables vào `:root`
-- Đăng ký `theme.extend.colors` với `var()` references
-- Sinh typography utilities
-
----
-
-## Multi-theme
+`themeAxes` ánh xạ **tên trục** → **các variant**; mỗi variant chỉ liệt kê giá trị khác base. Nhiều trục bật cùng lúc:
 
 ```json
 {
@@ -242,64 +227,69 @@ Với v3, plugin tự động:
     "background": "#FFFFFF",
     "foreground": "#1C1C20"
   },
-  "themes": {
-    "dark": {
-      "colors": {
-        "primary": "#0A84FF",
-        "background": "#000000",
-        "foreground": "#FFFFFF"
-      },
-      "shadows": {
-        "sm": "0px 1px 2px rgba(255, 255, 255, 0.1)"
+  "shadows": { "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)" },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#0A84FF",
+          "background": "#000000",
+          "foreground": "#FFFFFF"
+        },
+        "shadows": { "sm": "0px 1px 2px rgba(255, 255, 255, 0.1)" }
       }
+    },
+    "palette": {
+      "forest": { "colors": { "primary": "#16A34A" } },
+      "highContrast": { "colors": { "primary": "#000000" } }
     }
   }
 }
 ```
 
-**CSS được tạo tự động:**
+CSS sinh ra (sau `:root`, theo thứ tự khai báo):
 
 ```css
-:root {
-  --color-primary: #007aff;
-  --color-background: #ffffff;
-  --color-foreground: #1c1c20;
-}
-
-html[data-theme="dark"] {
-  --color-primary: #0a84ff;
-  --color-background: #000000;
-  --color-foreground: #ffffff;
-  --shadow-sm: 0px 1px 2px rgba(255, 255, 255, 0.1);
-}
+html[data-theme="dark"] { … }
+html[data-palette="forest"] { … }
+html[data-palette="high-contrast"] { … }
 ```
 
-**Kích hoạt theme:**
+Kích hoạt trên phần tử `<html>`:
 
 ```html
-<html data-theme="dark">
-  ...
+<html data-theme="dark" data-palette="high-contrast">
+  …
 </html>
 ```
+
+Quy tắc cần nhớ:
+
+- **Selector ghim vào `html`.** Attribute đặt trên phần tử bọc khác không có tác dụng: alias `var()` được tính tại phần tử _khai báo_ biến (`:root`), nên override ở phần tử con không bao giờ tới được giá trị alias.
+- **Giá trị attribute là dạng kebab của key**: variant `highContrast` → `data-palette="high-contrast"`; trục `colorScheme` → `data-color-scheme`.
+- **Precedence = thứ tự khai báo**: hai trục cùng override một token có specificity ngang nhau, trục khai báo **sau** thắng.
+- **Tên trục/variant không được là số nguyên** (`100`, `2024`): JS liệt kê key kiểu số lên đầu và phá thứ tự. Dùng `contrast100`.
+- **Key override phải có ở base** — key chỉ có ở override không tạo utility nên bị từ chối lúc parse.
+- **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay; bảng phạm vi ở `examples/nuxt-v4/README.md`.
+
+`--sg-*` là lớp biến trung gian nội bộ để tránh vòng tham chiếu khi đổi theme; code của bạn chỉ dùng class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`, không dùng `--sg-*` trực tiếp.
 
 ---
 
 ## Spacing Helpers
 
-Plugin tự động tạo các utility class `.sp-*` với CSS custom properties. Từ **v3.1+**, `generateSafelist()` tự động bao gồm tất cả `sp-<key>` classes (mặc định).
-
-### Trong Component
+Lib sinh sẵn các utility `.sp-*` (một `@utility` cho mỗi key, chuỗi fallback breakpoint nằm trong chính utility) — không cần safelist theo từng giá trị. Component chỉ set biến inline `--sg-sp-*` bằng `resolveSpacingProps`:
 
 ```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator";
+import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
 
-const Box = ({ p, px, py, m, mx, my, className, children }) => {
+const Box = ({ p, px, py, m, mx, my, className, style, children }) => {
   const spacing = resolveSpacingProps({ p, px, py, m, mx, my });
 
   return (
     <div
-      className={[...spacing.classNames, className].join(" ")}
-      style={spacing.style}
+      className={[spacing.classNames, className].filter(Boolean).join(" ")}
+      style={{ ...spacing.style, ...style }}
     >
       {children}
     </div>
@@ -307,50 +297,35 @@ const Box = ({ p, px, py, m, mx, my, className, children }) => {
 };
 ```
 
-**Ví dụ sử dụng:**
-
 ```tsx
-// Đơn giản
 <Box p={4} />
-// → class="sp-p" style="--sp-p: 1rem"
+// → class="sp-p" style="--sg-sp-p: 1rem"
 
-// Responsive
 <Box p={{ base: 2, md: 4, lg: 8 }} />
-// → class="sp-p" style="--sp-p: 0.5rem; --sp-p-md: 1rem; --sp-p-lg: 2rem"
+// → class="sp-p" style="--sg-sp-p: 0.5rem; --sg-sp-p-md: 1rem; --sg-sp-p-lg: 2rem"
 
-// Giá trị tự do
 <Box p={13.5} />
-// → class="sp-p" style="--sp-p: 3.375rem"
+// → class="sp-p" style="--sg-sp-p: 3.375rem"
 
-// Gap responsive (từ v3.1+)
 <Box gap={{ base: 4, md: 8 }} gapX={2} />
-// → class="sp-gap sp-gap-x" style="--sp-gap: 1rem; --sp-gap-md: 2rem; --sp-gap-x: 0.5rem"
+// resolveSpacingProps({ gap: …, "gap-x": 2 }) → class="sp-gap sp-gap-x"
 ```
 
-**Spacing properties mặc định:** `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gapX`, `gapY`, `top`, `right`, `bottom`, `left`
-
-**Tắt/tùy chỉnh safelist spacing:**
-
-```typescript
-const { safelist } = createStyleSystem(theme, {
-  spacing: {
-    enabled: false, // Tắt auto-include sp-* classes
-    properties: { p: true, m: false }, // Chỉ include sp-p
-  },
-});
-```
+- `classNames` là **chuỗi** (nối bằng dấu cách), không phải mảng.
+- **Quy tắc cùng phần tử:** biến `--sg-sp-*` được đăng ký với `inherits: false`, nên class `sp-*` chỉ đọc biến khai báo trên chính phần tử đó; giá trị của phần tử cha không rò xuống con.
+- Prop hợp lệ là `SpacingKey`: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`. `resolveSpacing(prop, value, unit?)` xử lý một prop; `unit` mặc định `0.25` rem.
+- Chỉ breakpoint trong `options.breakpoints` (mặc định `["md", "lg"]`) mới có chuỗi fallback.
+- Tắt bằng `spacing: { enabled: false }`; tuỳ chỉnh bằng `spacing: { properties: { … } }` (map prop → khai báo CSS).
 
 ---
 
 ## Design Tokens cho Component
 
-`createDesignTokens` trả về mảng token keys dùng để định nghĩa prop types cho UI Components.
+`generate()` trả `tokens`; cũng có thể dựng riêng, an toàn cho browser, bằng `createDesignTokens` từ `./tokens`:
 
 ```typescript
-import {
-  createDesignTokens,
-  createVariantMapper,
-} from "@duydpdev/style-generator";
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import { cva } from "class-variance-authority";
 import theme from "./styles/theme.json";
 
@@ -358,48 +333,65 @@ const { DesignTokens } = createDesignTokens(theme, {
   breakpoints: ["md", "lg"],
 });
 
-// createVariantMapper chuyển camelCase token → kebab-case Tailwind class tự động
-// "sidebarForeground" → "bg-sidebar-foreground"
-// "blue500"           → "bg-blue-500"
+// createVariantMapper luôn kebab-case cùng hàm với registry, nên mọi class trả ra đều tồn tại
 const button = cva("base-class", {
   variants: {
     color: createVariantMapper("bg", DesignTokens.Web.variantColor),
-    // Result: { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", ... }
+    // { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }
 
     text: createVariantMapper("", DesignTokens.Web.variantText),
-    // Result: { text16Medium: "text-16-medium", bodyLg: "body-lg", ... }
+    // { text16Medium: "text-16-medium", … }   ("" = class trần, dùng cho typography)
   },
 });
 ```
 
-**Tokens có sẵn trong `DesignTokens.Web`:**
+**Tokens trong `DesignTokens.Web`:**
 
-| Token                 | Mô tả                               |
-| --------------------- | ----------------------------------- |
-| `variantColor`        | Tất cả color keys (flat, camelCase) |
-| `variantText`         | Keys của `typography`               |
-| `variantShadow`       | Keys của `shadows`                  |
-| `variantBackdropBlur` | Keys của `backDropBlurs`            |
-| `borderOption`        | Keys của `border`                   |
-| `roundedOption`       | Keys của `borderRadius`             |
-| `spacingProperties`   | Danh sách spacing props đang dùng   |
-| `breakpoints`         | Breakpoints đang dùng               |
-| `screens`             | Bản đồ breakpoint → giá trị pixel   |
+| Token                 | Mô tả                                                      |
+| --------------------- | ---------------------------------------------------------- |
+| `variantColor`        | Tất cả key màu (flat, camelCase)                           |
+| `variantText`         | Key của `typography`                                       |
+| `variantShadow`       | Key của `shadows`                                          |
+| `variantBackdropBlur` | Key của `backDropBlurs`                                    |
+| `variantFontFamily`   | Key của `fontFamily`                                       |
+| `borderWidthOption`   | Key của `borderWidth` (mặc định `0, 1, 2, 4`)              |
+| `roundedOption`       | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES`) |
+| `spacingProperties`   | Danh sách spacing props                                    |
+| `breakpoints`         | Breakpoint đang dùng — mặc định `["md", "lg"]`             |
+| `screens`             | Bản đồ breakpoint → độ rộng                                |
+
+### Class trạng thái
+
+Với các key anh em `primaryHover`/`primaryActive` trong theme, `{ states }` gộp chúng vào class của key gốc:
+
+```typescript
+import {
+  createVariantMapper,
+  COLOR_STATES,
+} from "@duydpdev/style-generator/cva";
+
+const bg = createVariantMapper(
+  "bg",
+  ["primary", "primaryHover", "primaryActive", "danger"] as const,
+  { states: COLOR_STATES },
+);
+// primary: "bg-primary hover:bg-primary-hover active:bg-primary-active"
+// primaryHover: "bg-primary-hover", primaryActive: "bg-primary-active", danger: "bg-danger"
+```
+
+Luôn truyền `COLOR_STATES` thay vì gõ tay `["hover", "active"]` — đó là danh sách mà các dòng `@source inline` cũng dùng. Truyền key camelCase như `DesignTokens.Web.variantColor` cung cấp (`primaryHover`, không phải `primary-hover`).
 
 ---
 
 ## TypeScript Tips
 
-### Dùng `defineTheme()` để có type-check đầy đủ
+### `defineTheme()` — type-check và validate
 
 ```typescript
 import { defineTheme } from "@duydpdev/style-generator";
 
 const theme = defineTheme({
-  colors: {
-    primary: "#007AFF",
-    background: "#FFFFFF",
-  },
+  colors: { primary: "#007AFF", background: "#FFFFFF" },
   typography: {
     body: {
       fontSize: "16px",
@@ -409,114 +401,47 @@ const theme = defineTheme({
     },
   },
 });
-// TypeScript báo lỗi ngay khi thiếu field bắt buộc
 ```
 
-### Semantic Type Aliases (v3.1+)
+TypeScript báo lỗi ngay khi thiếu `colors`; lúc chạy `defineTheme` ném `ZodError` (có `path`) cho key lạ hoặc giá trị không an toàn. Chỉ có ở root barrel `.` — không nằm ở `./tokens`, để Zod không lọt vào các subpath dùng trên browser. `generate()` luôn validate lại nên `defineTheme` là tuỳ chọn.
 
-Dùng semantic variant aliases để tránh deep `typeof DesignTokens.Web.X[number]` indexing:
+### Semantic type aliases
 
 ```typescript
 import type {
   ColorVariant,
   TextVariant,
-  BorderVariant,
-} from "@duydpdev/style-generator";
-import type { Theme } from "./theme/design-tokens";
+  BorderWidthVariant,
+} from "@duydpdev/style-generator/types";
+import theme from "./theme.json";
+
+type Theme = typeof theme;
 
 type ButtonProps = {
   color?: ColorVariant<Theme>;
-  borderStyle?: BorderVariant<Theme>;
+  borderWidth?: BorderWidthVariant<Theme>;
   textStyle?: TextVariant<Theme>;
 };
 ```
 
-Không cần `defineTheme()` nếu theme là file JSON — dùng `typeof`:
+Các alias có sẵn: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, `FontFamilyVariant`, `BorderWidthVariant`, `RoundedVariant`, cùng kiểu ánh xạ `DesignTokenKeys<T>`.
+
+### Responsive value — chế độ strict duy nhất
+
+`ResponsiveValueStrict` là kiểu responsive duy nhất; gõ sai breakpoint (`{ typo: 4 }`) là lỗi kiểu, và `base` luôn được phép:
 
 ```typescript
-import theme from "./theme.json";
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
 
-type MyColorVariant = ColorVariant<typeof theme>;
-```
-
-### Custom Breakpoints Intellisense
-
-```ts
-// types.ts
-import { ResponsiveValue as LibResponsiveValue } from "@duydpdev/style-generator";
-
-export type AppBreakpoints =
-  | "base"
-  | "mobile"
-  | "tablet"
-  | "laptop"
-  | "desktop";
-export type ResponsiveValue<T> = LibResponsiveValue<T, AppBreakpoints>;
-```
-
-### Responsive Value (Strict Mode)
-
-Dùng `ResponsiveValueStrict` để stricter typing (chỉ accept chính xác breakpoint keys):
-
-```typescript
-import { ResponsiveValueStrict } from "@duydpdev/style-generator";
-
-const props: {
-  padding: ResponsiveValueStrict<number, "md" | "lg">;
-} = {
-  padding: { base: 4, md: 8, lg: 16 }, // ✅ Exact keys
-};
-
-// ❌ const props = { padding: { base: 4, md: 8, unknownBreak: 10 } };
+type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop"; // "base" luôn hợp lệ
+export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 ```
 
 ---
 
-## Migration
+## Nâng cấp từ bản cũ
 
-### v2 → v3 (breaking)
-
-**Colors:** Nested color objects và `DEFAULT` key bị xóa — chỉ còn flat keys.
-
-```json
-// v2 (cũ) — nested không còn support
-{
-  "colors": {
-    "sidebar": { "DEFAULT": "#F9FAFB", "foreground": "#111" }
-  }
-}
-
-// v3 (mới) — flat camelCase
-{
-  "colors": {
-    "sidebar": "#F9FAFB",
-    "sidebarForeground": "#111"
-  }
-}
-```
-
-**CVA usage:** Dùng `createVariantMapper` thay vì string interpolation thủ công (vì `variantColor` trả về camelCase, không phải kebab-case).
-
-```ts
-// v2 (sai — class sẽ là "bg-sidebarForeground")
-acc[c] = `bg-${c}`;
-
-// v3 (đúng — tự convert sang "bg-sidebar-foreground")
-createVariantMapper("bg", DesignTokens.Web.variantColor);
-```
-
-### v1 → v2
-
-```json
-// v1 (cũ)
-{ "colors": { "base": { "primary": "#007AFF" }, "text": { "main": "#111" } } }
-
-// v2 (mới) — flat
-{ "colors": { "primary": "#007AFF", "main": "#111" } }
-```
-
-Options bị xóa: `colorNamingMode`, `disableColorPrefix`, `enableCssVariables`
-Options mới: `safelistColors`, `tailwindVersion`
-Return mới từ `createStyleSystem`: thêm `themeCss`
-
-Chạy `npx style-gen doctor` để phát hiện format cũ tự động.
+- **3.x → 4.0.0** (breaking: chỉ Tailwind v4, `generate()` thay plugin + safelist, schema strict, `themeAxes`, `borderWidth`, `--sg-sp-*`): [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), gồm bảng trước/sau và runbook rollback.
+- Đợt subpath exports của 3.x (lịch sử, còn yêu cầu về `moduleResolution`): [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md).
+- Key `themes` một trục đã đổi tên thành `themeAxes`; theme còn dùng tên cũ bị từ chối kèm thông báo hướng dẫn đổi tên (nguyên văn trong guide migration).
+- Các major cũ hơn: 2 → 3 bỏ object màu lồng nhau và key `DEFAULT` (chỉ còn key flat camelCase); 1 → 2 làm phẳng các nhóm màu `base`/`text`/`common`.

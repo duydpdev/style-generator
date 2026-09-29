@@ -11,7 +11,7 @@ const STATS = [
 ] as const;
 
 const MARQUEE_TOKENS = [
-  "createStyleSystem",
+  "generate",
   "defineTheme",
   "resolveSpacingProps",
   "createVariantMapper",
@@ -46,10 +46,10 @@ export function HeroSection() {
         </h1>
         <p className="hero-lede">
           <b>@duydpdev/style-generator</b> compiles a flat{" "}
-          <code>theme.json</code> into a complete Tailwind plugin — CSS
-          variables, dark mode overrides, a smart safelist, runtime spacing
-          utilities, typed design tokens. One source of truth. Zero safelist for
-          spacing.
+          <code>theme.json</code> into complete Tailwind v4 CSS — variables,
+          dark mode overrides, registry-generated <code>@source inline</code>{" "}
+          utility coverage, runtime spacing utilities, typed design tokens. One
+          source of truth. Zero safelist.
         </p>
         <div className="hero-cta">
           <div className="install">

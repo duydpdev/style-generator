@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────
-# Deploy — Build & publish package lên npm public registry
+# Deploy — Build & publish package lên GitHub Packages (npm.pkg.github.com)
 #
 # Reusable workflow, được gọi từ release.yml
 # Input: tag name (e.g. v1.2.0 hoặc v1.2.0-DEV.1)
@@ -47,7 +47,10 @@ jobs:
       - name: Verify externals (dist must not inline peer/dep packages)
         run: yarn check:externals
 
-      - name: Verify publish target = npmjs.org
+      - name: Verify browser-safe subpaths
+        run: yarn check:browser-safe
+
+      - name: Verify publish target = GitHub Packages (npm.pkg.github.com)
         run: yarn check:publish-target
 
       - name: Publish dry-run (assert registry from output)

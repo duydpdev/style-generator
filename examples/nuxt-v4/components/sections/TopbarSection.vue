@@ -5,8 +5,6 @@ import Button from "~/components/Button.vue";
 import { useStyleGuide } from "~/composables/useStyleGuide";
 import { useDrawers } from "~/composables/useDrawers";
 
-const TAILWIND_VERSION = 4 as const;
-
 const { state, toggleTheme } = useStyleGuide();
 const { jsonOpen, tweaksOpen } = useDrawers();
 </script>
@@ -24,7 +22,7 @@ const { jsonOpen, tweaksOpen } = useDrawers();
             @duydpdev/style-generator
           </Text>
           <Text type="text12Mono" color="muted">
-            v0.2 · tokens → tailwind v{{ TAILWIND_VERSION }}
+            v0.2 · tokens → tailwind v4
           </Text>
         </Box>
       </Box>

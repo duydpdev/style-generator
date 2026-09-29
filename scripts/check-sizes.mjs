@@ -9,19 +9,37 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 
+// Budget per subpath (export key name, not file path) — kept in lockstep
+// with the current published entries. `check:sizes` fails if an export in
+// `package.json#exports` has no budget entry here.
 const budgets = {
-  "dist/index.js": 2_000,
-  "dist/plugin.js": 4_000,
-  "dist/tokens.js": 1_000,
-  "dist/cva.js": 500,
-  "dist/spacing.js": 1_000,
-  "dist/types.js": 200,
-  "dist/vite.js": 8_000,
+  index: 2_000,
+  tokens: 1_000,
+  cva: 500,
+  spacing: 1_000,
+  types: 200,
+  vite: 8_000,
+  // Same shape as `vite` (generate() + ThemeSchema.parse + a chokidar dev
+  // watcher, no `next` types imported) — same budget.
+  next: 8_000,
 };
 
+const exportNames = Object.keys(pkg.exports)
+  .filter((key) => key !== "./package.json")
+  .map((key) => (key === "." ? "index" : key.replace(/^\.\//, "")));
+
 let ok = true;
-for (const [rel, limit] of Object.entries(budgets)) {
+for (const name of exportNames) {
+  const limit = budgets[name];
+  if (limit === undefined) {
+    console.error(`\u2717 no size budget configured for export: ${name}`);
+    ok = false;
+    continue;
+  }
+
+  const rel = `dist/${name}.js`;
   const file = resolve(root, rel);
   if (!existsSync(file)) {
     console.error(`\u2717 missing: ${rel}`);

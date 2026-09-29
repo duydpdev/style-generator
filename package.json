@@ -18,11 +18,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./plugin": {
-      "types": "./dist/plugin.d.ts",
-      "import": "./dist/plugin.js",
-      "require": "./dist/plugin.cjs"
-    },
     "./tokens": {
       "types": "./dist/tokens.d.ts",
       "import": "./dist/tokens.js",
@@ -48,6 +43,11 @@
       "import": "./dist/vite.js",
       "require": "./dist/vite.cjs"
     },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js",
+      "require": "./dist/next.cjs"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": false,
@@ -58,6 +58,7 @@
     "build": "tsc && vite build",
     "build:cli": "tsdown src/cli/index.ts --format esm --out-dir dist/cli --banner.js '#!/usr/bin/env node'",
     "build:all": "yarn build && yarn build:cli",
+    "check:browser-safe": "node scripts/check-browser-safe.mjs",
     "check:externals": "node scripts/check-externals.mjs",
     "check:publish-target": "node scripts/check-publish-target.mjs",
     "check:sizes": "node scripts/check-sizes.mjs",
@@ -66,14 +67,18 @@
     "lint-staged": "lint-staged",
     "lint:fix": "yarn run lint --fix",
     "prettier": "prettier .",
+    "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
-    "prepare": "husky",
-    "prepublishOnly": "yarn check:publish-target && yarn check:externals && yarn check:sizes",
+    "postinstall": "husky",
+    "prepack": "pinst --disable",
+    "postpack": "pinst --enable",
+    "prepublish": "yarn check:publish-target && yarn check:externals && yarn check:sizes && yarn check:browser-safe",
     "release": "semantic-release",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:types": "vitest typecheck --run src/**/*.test-d.ts",
+    "test:e2e": "playwright test",
     "site:dev": "yarn workspace site dev",
     "site:build": "yarn build:all && yarn workspace site build",
     "site:preview": "yarn workspace site preview",
@@ -83,13 +88,15 @@
     "@commitlint/config-conventional": "^20.4.3",
     "@commitlint/types": "^20.4.3",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@rollup/plugin-typescript": "^12.3.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@tailwindcss/node": "^4.2.4",
+    "@tailwindcss/node": "4.3.0",
     "@types/node": "^25.3.3",
     "@typescript-eslint/parser": "^8.56.1",
     "@vitest/coverage-v8": "^4.0.18",
+    "class-variance-authority": "^0.7.0",
     "commitlint": "^20.4.3",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
@@ -101,9 +108,11 @@
     "globals": "^17.4.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.2",
+    "pinst": "^3.0.0",
+    "postcss": "^8.5.28",
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.3",
-    "tailwindcss": "^4.2.1",
+    "tailwindcss": "4.3.0",
     "tsdown": "^0.21.0",
     "tslib": "^2.8.1",
     "tsx": "^4.21.0",
@@ -114,7 +123,7 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "tailwindcss": ">=3.4.0 || >=4.0.0",
+    "tailwindcss": ">=4.1.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
@@ -139,7 +148,8 @@
   "license": "MIT",
   "dependencies": {
     "@clack/prompts": "^1.1.0",
-    "chokidar": "^5.0.0"
+    "chokidar": "^5.0.0",
+    "zod": "^4"
   },
   "resolutions": {
     "minimatch": "^10.2.3",

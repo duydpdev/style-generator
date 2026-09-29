@@ -1,79 +1,100 @@
-# Validation & Final Checks
+# Validation & Plan Protocol
 
-## Final Checklist Protocol
+## Gate before reporting done
 
-Trigger when user says: "final checks", "verify", "pre-deploy", or similar.
-
-**Execution order:**
-
-1. Security → 2. Lint → 3. Schema → 4. Tests → 5. UX → 6. SEO → 7. Lighthouse/E2E
-
-A task is NOT finished until checklist passes (or critical blockers are resolved).
-
-## Available Scripts
-
-| Script                     | Skill                 | When                |
-| -------------------------- | --------------------- | ------------------- |
-| `security_scan.py`         | vulnerability-scanner | Always on deploy    |
-| `dependency_analyzer.py`   | vulnerability-scanner | Weekly / Deploy     |
-| `lint_runner.py`           | lint-and-validate     | Every code change   |
-| `test_runner.py`           | testing-patterns      | After logic change  |
-| `schema_validator.py`      | database-design       | After DB change     |
-| `ux_audit.py`              | frontend-design       | After UI change     |
-| `accessibility_checker.py` | frontend-design       | After UI change     |
-| `seo_checker.py`           | seo-fundamentals      | After page change   |
-| `bundle_analyzer.py`       | performance-profiling | Before deploy       |
-| `mobile_audit.py`          | mobile-design         | After mobile change |
-| `lighthouse_audit.py`      | performance-profiling | Before deploy       |
-| `playwright_runner.py`     | webapp-testing        | Before deploy       |
-
-## Usage
+A task is done only when this chain exits 0 at the repo root:
 
 ```bash
-# Quick validation during development
-python .agent/scripts/checklist.py .
-
-# Full verification before deployment
-python .agent/scripts/verify_all.py . --url http://localhost:3000
+yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types
 ```
+
+Add the rows that match the change:
+
+| When the change touches                                                       | Also run                                                                                                             |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `src/**`, `package.json`, `vite.config.ts`, `scripts/*.mjs`                   | `yarn build:all && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target` |
+| Spacing, generated CSS, `@source inline`, `themeAxes`                         | `yarn build:all && yarn test:e2e`                                                                                    |
+| `documents/*.md`, `site/**`, `examples/**`                                    | `yarn site:build`                                                                                                    |
+| Release/publish config (`release.config.cjs`, `.github/workflows/deploy.yml`) | `yarn build:all && yarn npm publish --dry-run` — output must contain `npm.pkg.github.com`                            |
+
+The pre-commit hook (Husky + lint-staged) runs eslint → prettier → `tsc --noEmit` → `vitest run`. It does not replace the gate above: it skips `test:types`, `check:*`, e2e and the site build.
 
 ## Plan Protocol (4-Phase)
 
-| Phase             | Mode | Rule                                      |
-| ----------------- | ---- | ----------------------------------------- |
-| 1. ANALYSIS       | plan | Research, questions                       |
-| 2. PLANNING       | plan | Create `docs/plans/YYYY-MM-DD/XX-name.md` |
-| 3. SOLUTIONING    | plan | Architecture, design — NO CODE            |
-| 4. IMPLEMENTATION | edit | Code + tests                              |
+| Phase             | Mode | Rule                                     |
+| ----------------- | ---- | ---------------------------------------- |
+| 1. ANALYSIS       | plan | Research, questions                      |
+| 2. PLANNING       | plan | Create the plan directory (layout below) |
+| 3. SOLUTIONING    | plan | Architecture, design — NO CODE           |
+| 4. IMPLEMENTATION | edit | Code + tests                             |
 
-> 🔴 NEVER write code before user approves the plan. Wait for explicit "ok", "proceed", or equivalent.
+> 🔴 NEVER write code before the user approves the plan. Wait for explicit "ok", "proceed", "duyệt" or equivalent.
 
-### Plan File Structure
+### Plan layout
 
-Save plans to `docs/plans/YYYY-MM-DD/XX-task-name.md`. Reset numbering (01, 02...) each new date.
+One directory per plan, grouped by the date the plan was created. There is no per-day `task.md`.
+
+```text
+documents/plans/YYYY-MM-DD/<plan-slug>/
+├── plan.md              # index: overview, success criteria, phase table (status lives here)
+├── phase-01-<name>.md   # one file per phase, numbered in execution order
+├── phase-02-<name>.md
+└── reports/             # optional: reviews/research produced for this plan
+```
+
+- `<plan-slug>` is kebab-case, no date and no number prefix (e.g. `docs-restructure`). Phase numbers are two digits and never reused inside a plan.
+- A plan the user supplies inline is still materialized as a plan directory before implementation.
+- Relative links only; never absolute paths.
+- Reports that belong to no plan go to `documents/plans/reports/`; journals go to `documents/plans/journals/YYYY-MM-DD-<slug>.md` (where `ak journal create` writes them).
+- Brainstorm/advise output: `documents/brainstorm/YYYY-MM-DD/<topic>.md`; no per-day `session.md`.
+
+`plan.md` template:
 
 ```markdown
-# Project Plan: [Task Name]
+---
+title: "<Plan title>"
+status: pending # pending | in-progress | blocked | completed
+created: YYYY-MM-DD
+---
+
+# <Plan title>
 
 ## Overview
 
-[Short goal]
+<Goal, decisions already made, non-goals>
 
 ## Project Type
 
-[WEB / BACKEND / MOBILE / LIBRARY]
+LIBRARY
 
 ## Success Criteria
 
-1. [Condition 1]
-2. [Condition 2]
+1. <Mechanically checkable condition>
 
-## Task Breakdown
+## Phases
 
-### [ ] Task 1: [Step name]
-
-- **Agent**: [Agent name]
-- **Input**: [Affected files]
-- **Output**: [Expected result]
-- **Verify**: [How to confirm done]
+| #   | Phase                          | Status  |
+| --- | ------------------------------ | ------- |
+| 01  | [<name>](./phase-01-<name>.md) | pending |
 ```
+
+Phase file template:
+
+```markdown
+# Phase 01 — <name>
+
+## Goal
+
+<One observable outcome>
+
+## Tasks
+
+### [ ] Task 1: <step name>
+
+- **Skill/role**: <optional>
+- **Input**: <affected files>
+- **Output**: <expected result>
+- **Verify**: <command + expected exit code/output>
+```
+
+On completion flip `[ ]` → `[x]` in the phase file and set the phase row in `plan.md` to `completed` in the same change.

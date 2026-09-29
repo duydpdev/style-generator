@@ -33,16 +33,17 @@ const activeJson = computed(() => {
   });
   return JSON.stringify(
     {
-      $palette: palette,
       colors,
       typography: baseTheme.typography,
       shadows: baseTheme.shadows,
       backDropBlurs: baseTheme.backDropBlurs,
       borderRadius: baseTheme.borderRadius,
-      themes: {
-        dark: {
-          colors: darkOverrides,
-          shadows: baseTheme.themes.dark.shadows,
+      themeAxes: {
+        theme: {
+          dark: {
+            colors: darkOverrides,
+            shadows: baseTheme.themeAxes.theme.dark.shadows,
+          },
         },
       },
     },

@@ -15,11 +15,6 @@ const EXAMPLE_BASE = "./";
 
 const EXAMPLES = [
   {
-    name: "v3",
-    workspace: "react-v3-example",
-    sourceDist: resolve(repoRoot, "examples/react-v3/dist"),
-  },
-  {
     name: "v4",
     workspace: "react-v4-example",
     sourceDist: resolve(repoRoot, "examples/react-v4/dist"),

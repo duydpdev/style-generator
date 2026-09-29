@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { ThemeConfig } from "../../core/ThemeConfig";
+import type { ThemeConfig } from "../../core/themeSchema";
 
 import { generateThemeCss } from "./generateThemeCss";
 
@@ -56,15 +56,77 @@ describe("generateThemeCss", () => {
           letterSpacing: "0",
         },
       },
-      themes: {
-        dark: {
-          colors: { primary: "#0A84FF" },
+      themeAxes: {
+        theme: {
+          dark: {
+            colors: { primary: "#0A84FF" },
+          },
         },
       },
     };
     const css = generateThemeCss(config);
-    expect(css).toContain('[data-theme="dark"]');
+    expect(css).toContain('html[data-theme="dark"]');
     expect(css).toContain("--sg-primary: #0A84FF;");
+  });
+
+  it("resolves an alias declared inside a variant override to the target's --sg var, pinned to html", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF", blue500: "#3B82F6" },
+      themeAxes: {
+        palette: { rose: { colors: { primary: "$blue500" } } },
+      },
+    };
+    const css = generateThemeCss(config);
+    const block = css.slice(css.indexOf('html[data-palette="rose"]'));
+    expect(block).toMatch(
+      /^html\[data-palette="rose"\] \{\s*--sg-primary: var\(--sg-blue-500\);\s*\}/,
+    );
+  });
+
+  it("emits multiple axes after :root, in declaration order (both axes and variants)", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF", secondary: "#FF9500" },
+      themeAxes: {
+        theme: {
+          dark: { colors: { primary: "#0A84FF" } },
+        },
+        palette: {
+          forest: { colors: { primary: "#2f5f47" } },
+          sunset: { colors: { primary: "#b23a1b" } },
+        },
+      },
+    };
+    const css = generateThemeCss(config);
+    const rootIndex = css.indexOf(":root");
+    const themeIndex = css.indexOf('html[data-theme="dark"]');
+    const forestIndex = css.indexOf('html[data-palette="forest"]');
+    const sunsetIndex = css.indexOf('html[data-palette="sunset"]');
+    expect(rootIndex).toBeGreaterThanOrEqual(0);
+    expect(themeIndex).toBeGreaterThan(rootIndex);
+    expect(forestIndex).toBeGreaterThan(themeIndex);
+    expect(sunsetIndex).toBeGreaterThan(forestIndex);
+  });
+
+  it("reversing axis/variant declaration order reverses the output order", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      themeAxes: {
+        palette: {
+          sunset: { colors: { primary: "#b23a1b" } },
+          forest: { colors: { primary: "#2f5f47" } },
+        },
+        theme: {
+          dark: { colors: { primary: "#0A84FF" } },
+        },
+      },
+    };
+    const css = generateThemeCss(config);
+    const sunsetIndex = css.indexOf('html[data-palette="sunset"]');
+    const forestIndex = css.indexOf('html[data-palette="forest"]');
+    const themeIndex = css.indexOf('html[data-theme="dark"]');
+    expect(sunsetIndex).toBeGreaterThanOrEqual(0);
+    expect(forestIndex).toBeGreaterThan(sunsetIndex);
+    expect(themeIndex).toBeGreaterThan(forestIndex);
   });
 
   it("should generate shadow namespace vars", () => {
@@ -101,6 +163,23 @@ describe("generateThemeCss", () => {
     const css = generateThemeCss(config);
     expect(css).toContain("--sg-radius-md: 8px;");
     expect(css).toContain("--radius-md: var(--sg-radius-md);");
+  });
+
+  it("maps each category only into its own @theme namespace", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      shadows: { sm: "0 1px 2px #0000000d" },
+      borderRadius: { md: "8px" },
+      backDropBlurs: { sm: "4px" },
+    };
+    const themeBlock = generateThemeCss(config).split("@theme inline")[1];
+    expect(themeBlock).toContain("--color-primary: var(--sg-primary);");
+    expect(themeBlock).toContain("--shadow-sm: var(--sg-shadow-sm);");
+    expect(themeBlock).toContain("--radius-md: var(--sg-radius-md);");
+    expect(themeBlock).toContain(
+      "--backdrop-blur-sm: var(--sg-backdrop-blur-sm);",
+    );
+    expect(themeBlock).not.toMatch(/--color-(shadow|radius|backdrop-blur)-/);
   });
 
   it("should return minimal output for empty config", () => {

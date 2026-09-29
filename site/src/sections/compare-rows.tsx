@@ -28,9 +28,9 @@ export const COMPARE_ROWS: CompareRow[] = [
     us: (
       <>
         <b>
-          <code>safelistColors: true</code>
+          <code>@source inline(...)</code>
         </b>{" "}
-        — done.
+        — auto-generated.
       </>
     ),
   },
@@ -43,7 +43,7 @@ export const COMPARE_ROWS: CompareRow[] = [
     ),
     us: (
       <>
-        <code>themes.dark</code> in JSON → overrides generated.
+        <code>themeAxes.theme.dark</code> in JSON → overrides generated.
       </>
     ),
   },

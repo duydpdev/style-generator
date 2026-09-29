@@ -3,8 +3,9 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 
 import { doctorCommand } from "./commands/doctor";
+import { generateCommand } from "./commands/generate";
 import { initCommand } from "./commands/init";
-import { safelistCommand } from "./commands/safelist";
+import { schemaCommand } from "./commands/schema";
 import { logger } from "./logger";
 
 const args = process.argv.slice(2);
@@ -12,10 +13,6 @@ const args = process.argv.slice(2);
 /* ------------------ CLI Options ------------------ */
 
 const options = {
-  tw: {
-    type: "string",
-    description: "Tailwind version (init only, v3 or v4)",
-  },
   theme: {
     type: "string",
     description: "Path to theme.json",
@@ -30,7 +27,7 @@ const options = {
   },
   out: {
     type: "string",
-    description: "Path to output safelist (safelist only)",
+    description: "Path to output file (generate/schema)",
   },
   help: {
     type: "boolean",
@@ -45,14 +42,13 @@ const options = {
   watch: {
     type: "boolean",
     short: "w",
-    description: "Watch theme file for changes (safelist only)",
+    description: "Watch theme file for changes (generate only)",
   },
 } as const;
 
 /* ------------------ Types ------------------ */
 
 interface CLIValues {
-  tw?: string;
   theme?: string;
   plugin?: string;
   dark?: boolean;
@@ -69,12 +65,16 @@ const listCommands = [
     description: "Scaffold project files",
   },
   {
-    name: "safelist",
-    description: "Generate safelist.txt",
+    name: "generate",
+    description: "Generate theme.css",
   },
   {
     name: "doctor",
     description: "Check project setup and schema validation",
+  },
+  {
+    name: "schema",
+    description: "Generate theme.schema.json for editor autocomplete",
   },
 ] as const;
 
@@ -109,7 +109,7 @@ ${Object.entries(options)
  * Executes the `init` CLI command.
  *
  * Scaffolds the required project files based on the provided CLI options,
- * including the theme configuration, Tailwind version, and optional plugin file.
+ * including the theme configuration and optional plugin file.
  * @param {CLIValues} values Parsed CLI option values.
  */
 async function runInit(values: CLIValues): Promise<void> {
@@ -122,18 +122,19 @@ async function runInit(values: CLIValues): Promise<void> {
 }
 
 /**
- * Executes the `safelist` CLI command.
+ * Executes the `generate` CLI command.
  *
- * Generates a Tailwind safelist file from the provided theme configuration.
- * If watch mode is enabled, the safelist will be regenerated when the theme file changes.
+ * Runs `generate()` against the theme configuration and writes the
+ * resulting CSS to disk. If watch mode is enabled, the CSS is
+ * regenerated when the theme file changes.
  *
  * Supports both:
- * - Flag syntax: `style-gen safelist --theme styles/theme.json --out styles/safelist.txt`
- * - Positional syntax (backwards compatible): `style-gen safelist styles/theme.json styles/safelist.txt`
+ * - Flag syntax: `style-gen generate --theme styles/theme.json --out styles/theme.css`
+ * - Positional syntax (backwards compatible): `style-gen generate styles/theme.json styles/theme.css`
  * @param {CLIValues} values Parsed CLI option values.
  * @param {string[]} positionals Raw positional arguments (including the command name).
  */
-function runSafelist(values: CLIValues, positionals: string[]): void {
+function runGenerate(values: CLIValues, positionals: string[]): void {
   const extraArgs = positionals.slice(1);
 
   const themeFromPositional = extraArgs[0];
@@ -150,14 +151,17 @@ function runSafelist(values: CLIValues, positionals: string[]): void {
 
   if (extraArgs.length > 0 && !values.theme && !values.out) {
     logger.info(
-      "Detected positional arguments for `safelist`. For clarity, prefer: --theme <path> and --out <path>.",
+      "Detected positional arguments for `generate`. For clarity, prefer: --theme <path> and --out <path>.",
     );
   }
 
-  safelistCommand({
-    theme: values.theme ?? themeFromPositional,
-    out: values.out ?? outFromPositional,
-    watch: values.watch,
+  const theme = values.theme ?? themeFromPositional;
+  const out = values.out ?? outFromPositional;
+
+  generateCommand({
+    ...(theme !== undefined && { theme }),
+    ...(out !== undefined && { out }),
+    ...(values.watch !== undefined && { watch: values.watch }),
   });
 }
 
@@ -170,7 +174,9 @@ function runSafelist(values: CLIValues, positionals: string[]): void {
  *
  * Supported commands:
  * - `init`
- * - `safelist`
+ * - `generate`
+ * - `doctor`
+ * - `schema`
  *
  * If no command or `--help` is provided, the CLI usage help will be displayed.
  */
@@ -205,14 +211,18 @@ async function main(): Promise<void> {
       await runInit(values);
       break;
 
-    case "safelist":
-      runSafelist(values, positionals);
+    case "generate":
+      runGenerate(values, positionals);
       break;
 
     case "doctor": {
       doctorCommand();
       break;
     }
+
+    case "schema":
+      schemaCommand({ ...(values.out !== undefined && { out: values.out }) });
+      break;
 
     default:
       logger.error(`Unknown command: ${command}`);

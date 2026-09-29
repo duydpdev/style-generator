@@ -21,8 +21,7 @@ const META: Record<
   Variant,
   { label: string; badge?: string; bundler: string }
 > = {
-  v3: { label: "React + TW v3", bundler: "vite + react" },
-  v4: { label: "React + TW v4", badge: "NEW", bundler: "vite + react" },
+  v4: { label: "React + TW v4", bundler: "vite + react" },
 };
 
 type View = "preview" | "code";
@@ -43,16 +42,14 @@ export function ExamplesPage() {
 
   // Bootstrap / reset tabs whenever the variant changes
   useEffect(() => {
-    if (!variant || (variant !== "v3" && variant !== "v4")) return;
+    if (!variant || variant !== "v4") return;
     const first = flatFiles(variant as Variant)[0];
     setOpenTabs(first ? [first] : []);
     setActivePath(first?.path ?? null);
     setView("preview");
   }, [variant]);
 
-  if (!variant) return <Navigate to="/examples/v4" replace />;
-  if (variant !== "v3" && variant !== "v4")
-    return <Navigate to="/examples/v4" replace />;
+  if (variant !== "v4") return <Navigate to="/examples/v4" replace />;
 
   const v = variant as Variant;
   const meta = META[v];

@@ -7,15 +7,12 @@ export * from "./features/spacing/spacingHelpers";
 export * from "./features/cva";
 
 // Shared — only public-facing exports
-export { detectTailwindVersion } from "./shared/detectTailwindVersion";
 export {
-  DEFAULT_LAYOUT_CLASSES,
   DEFAULT_ROUNDED_VALUES,
   DEFAULT_BORDER_VALUES,
-  DEFAULT_OPACITY_VALUES,
-  DEFAULT_ZINDEX_VALUES,
   DEFAULT_SPACING_PROPERTIES,
 } from "./shared/defaultOption";
+export { COLOR_STATES } from "./shared/colorStates";
 export {
   roundedProperties,
   borderProperties,

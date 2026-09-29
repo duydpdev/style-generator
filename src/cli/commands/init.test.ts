@@ -35,7 +35,6 @@ describe("initCommand (non-interactive)", () => {
 
   it("scaffolds theme.json, plugin file, and style-gen.config.json", async () => {
     await initCommand({
-      tw: "v4",
       theme: "styles/theme.json",
       plugin: "plugins/theme-plugin.ts",
       dark: false,
@@ -57,9 +56,10 @@ describe("initCommand (non-interactive)", () => {
     expect(parsed).toHaveProperty("colors");
     expect(parsed).toHaveProperty("typography");
 
-    // Plugin file must import createStyleSystem
+    // Script must import generate() and never the removed v3 @plugin API
     const pluginSrc = fs.readFileSync(plugin, "utf8");
-    expect(pluginSrc).toMatch(/createStyleSystem|createStylePlugin/);
+    expect(pluginSrc).toMatch(/generate\(/);
+    expect(pluginSrc).not.toMatch(/@plugin/);
     expect(pluginSrc).toMatch(/@duydpdev\/style-generator/);
 
     // Config must point at the scaffolded files
@@ -73,7 +73,6 @@ describe("initCommand (non-interactive)", () => {
 
   it("includes dark mode variant when dark=true", async () => {
     await initCommand({
-      tw: "v4",
       theme: "styles/theme.json",
       plugin: "plugins/theme-plugin.ts",
       dark: true,
@@ -81,15 +80,15 @@ describe("initCommand (non-interactive)", () => {
 
     const theme = JSON.parse(
       fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8"),
-    ) as { themes?: Record<string, unknown> };
-    expect(theme).toHaveProperty("themes");
-    expect(theme.themes).toHaveProperty("dark");
+    ) as { themeAxes?: { theme?: Record<string, unknown> } };
+    expect(theme).toHaveProperty("themeAxes");
+    expect(theme.themeAxes?.theme).toHaveProperty("dark");
   });
 
   it("uses src/ prefix when src directory exists", async () => {
     fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
 
-    await initCommand({ tw: "v4" });
+    await initCommand({});
 
     expect(fs.existsSync(path.join(tmp, "src/styles/theme.json"))).toBe(true);
     expect(fs.existsSync(path.join(tmp, "src/plugins/theme-plugin.ts"))).toBe(
@@ -108,7 +107,6 @@ describe("initCommand (non-interactive)", () => {
 
     await expect(
       initCommand({
-        tw: "v4",
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
         dark: false,

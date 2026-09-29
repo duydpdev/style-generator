@@ -1,4 +1,8 @@
-export * from "./ThemeConfig";
+export type {
+  ThemeConfig,
+  ThemeOverride,
+  TypographyConfig,
+} from "./themeSchema";
 export * from "./Options";
 export * from "./inference";
 export * from "./defineTheme";

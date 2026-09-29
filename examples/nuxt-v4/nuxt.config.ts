@@ -12,17 +12,15 @@ export default defineNuxtConfig({
   css: ["~/assets/css/globals.css"],
 
   // Nuxt runs on Vite, so the styleGenVite plugin works exactly like the
-  // react-v4 example: it emits theme/theme.css + theme/safelist.txt from
-  // theme/theme.json on dev start, build, and whenever theme.json changes.
+  // react-v4 example: it emits theme/theme.css from theme/theme.json on
+  // dev start, build, and whenever theme.json changes.
   vite: {
     plugins: [
       styleGenVite({
         themePath: "theme/theme.json",
         outDir: "theme",
         options: {
-          tailwindVersion: 4,
           breakpoints: [Breakpoint.MD, Breakpoint.LG],
-          safelistColors: true,
         },
       }),
       tailwindcss(),

@@ -12,9 +12,7 @@ export default defineConfig({
       themePath: "src/theme/theme.json",
       outDir:    "src/theme",
       options: {
-        tailwindVersion: 4,
         breakpoints: ["md", "lg"],
-        safelistColors: true,
       },
     }),
     tailwindcss(),
@@ -54,8 +52,7 @@ export function ToolingSection() {
             title={<code>{"styleGenVite({ themePath, outDir })"}</code>}
             body={
               <>
-                Emits <code>theme.css</code> + <code>safelist.txt</code> on
-                every JSON save. HMR-friendly.
+                Emits <code>theme.css</code> on every JSON save. HMR-friendly.
               </>
             }
           />

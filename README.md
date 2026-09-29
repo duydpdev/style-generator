@@ -1,20 +1,20 @@
 # @duydpdev/style-generator
 
-TypeScript library + CLI that generates a complete **Design System** for Tailwind CSS from a theme JSON config.
-Supports both **Tailwind CSS v4** and **v3** (auto-detected).
+TypeScript library + CLI that turns a theme JSON into a complete **design system for Tailwind CSS v4**: one generated CSS file (theme variables, dark-mode/palette overrides, typography and spacing utilities, `@source inline` class coverage), typed design tokens, and a JSON Schema for editor autocomplete.
 
 Published on **GitHub Packages** as `@duydpdev/style-generator` (private — requires access, see Installation).
 
+> **Upgrading from 3.x?** 4.0.0 is a breaking release (Tailwind v4 only, `generate()` instead of a plugin + safelist, strict theme schema, `themeAxes`). Read [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md).
+
 ## Features
 
-- 🎨 **Flat Theme Config**: Define all colors in a single flat namespace — no more `base/text/common` split.
-- 🌗 **Dark / Light Mode**: Auto-generate CSS Variables with `[data-theme='dark']`.
-- ⚡ **Tailwind v4 Support**: `generateThemeCss()` outputs `@theme inline` block for full v4 auto-utilities.
-- 🔄 **Backward Compatibility**: Supports traditional Tailwind v3 config.
-- 🚀 **CSS Custom Properties for Spacing**: Zero safelist for spacing — uses `.sp-*` utility classes with `var()` fallback chains.
-- 🛡️ **Smart Safelist**: Color classes are optional (`safelistColors: true`). Only safelists typography, shadows, layout, etc. by default.
-- 📱 **Dynamic Breakpoints**: Override screen widths and select breakpoints dynamically.
-- 🖥️ **CLI Tool**: `style-gen` — scaffold projects and generate safelist from the command line.
+- 🎨 **Flat theme config** — every color in one camelCase namespace, validated by a strict Zod schema (unknown keys and unsafe values are errors).
+- 🔗 **Aliases** — `"primary": "$blue500"` emits `var(--sg-blue-500)`; no duplicated hex values.
+- 🌗 **Multi-axis theming** — `themeAxes` generates `html[data-theme="dark"]`, `html[data-palette="forest"]`, … that can be toggled independently.
+- ⚡ **One call, one file** — `generate(theme)` returns the CSS you `@import` next to `@import "tailwindcss"`; no `@plugin`, no safelist file.
+- 🚀 **CSS-variable spacing** — `.sp-*` utilities with `var()` fallback chains instead of thousands of safelisted classes.
+- 🧩 **Typed design tokens + CVA helper** — `createVariantMapper` maps token keys to class names (including `hover:`/`active:` state classes).
+- 🖥️ **CLI + plugins** — `style-gen` (`init`, `generate`, `schema`, `doctor`), `styleGenVite`, `styleGenNext`.
 
 ---
 
@@ -48,156 +48,66 @@ npm install @duydpdev/style-generator
 > Access is granted per collaborator. If install returns `404`/`401`, your token
 > lacks `read:packages` or you have not been added to the repository.
 
-This package expects these peer dependencies from your project:
+Peer dependencies your project must provide:
 
-```bash
-yarn add -D typescript
-yarn add tailwindcss
-```
+| Peer          | Range                           | Notes                                                           |
+| ------------- | ------------------------------- | --------------------------------------------------------------- |
+| `tailwindcss` | `>=4.1.0`                       | Tailwind v3 is not supported. `@source inline(...)` needs 4.1+. |
+| `typescript`  | `^5.0.0`                        |                                                                 |
+| `vite`        | `^5 \|\| ^6 \|\| ^7` (optional) | Only for `styleGenVite` (also used by Nuxt).                    |
 
-If your project already has `typescript` and `tailwindcss`, you do not need to install them again.
+`zod` is a regular dependency of the package; you do not install it yourself.
 
-### Subpath exports (v4+)
+### Subpath exports
 
 For tree-shaking, import from subpaths instead of the root barrel:
 
 ```ts
-// Plugin / safelist / theme CSS
-import { createStyleSystem } from "@duydpdev/style-generator/plugin";
-
-// Design tokens + define* helpers
+// Generator + validated theme helpers (pulls in Zod) — root barrel only
 import {
+  generate,
   defineTheme,
+  defineOptions,
+} from "@duydpdev/style-generator";
+
+// Browser-safe (no Zod, no Node built-ins)
+import {
   createDesignTokens,
+  COLOR_STATES,
 } from "@duydpdev/style-generator/tokens";
-
-// CVA helper only
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
-
-// Runtime spacing
 import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
-
-// Types-only (zero runtime)
 import type {
   ThemeConfig,
-  InferColorKeys,
-  // Semantic design-token variant aliases (v3.1+)
   ColorVariant,
-  TextVariant,
-  ShadowVariant,
-  RoundedVariant,
 } from "@duydpdev/style-generator/types";
 
-// Vite plugin — auto-emits theme.css + safelist.txt (v3.1+, Tailwind v4)
+// Build-tool integrations (Node only)
 import { styleGenVite } from "@duydpdev/style-generator/vite";
+import { styleGenNext } from "@duydpdev/style-generator/next";
 ```
 
-Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node16"`, or `"nodenext"`. Root barrel still works for back-compat. See `docs/migration/v3-to-v4.md`.
-
-### Vite plugin (Tailwind v4)
-
-Replaces the manual `predev`/`prebuild` script. Plugin emits `theme.css` + `safelist.txt` to the configured `outDir` whenever `theme.json` changes (HMR-friendly).
-
-```ts
-// vite.config.ts
-import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite";
-import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { Breakpoint } from "@duydpdev/style-generator";
-
-export default defineConfig({
-  plugins: [
-    styleGenVite({
-      themePath: "src/theme/theme.json",
-      outDir: "src/theme", // must match index.css @import paths
-      options: {
-        tailwindVersion: 4,
-        breakpoints: [Breakpoint.MD, Breakpoint.LG],
-        safelistColors: true,
-      },
-    }),
-    tailwindcss(), // runs after styleGenVite so @source sees fresh files
-  ],
-});
-```
-
-Add `theme.css` + `safelist.txt` to `.gitignore` if `theme.json` is your source of truth.
-
-### Semantic type aliases (v3.1+)
-
-Skip the `(typeof DesignTokens.Web.X)[number]` boilerplate in component types:
-
-```ts
-import type {
-  ColorVariant,
-  TextVariant,
-} from "@duydpdev/style-generator/types";
-
-import themeJson from "./theme.json";
-type Theme = typeof themeJson;
-
-interface BoxProps {
-  backgroundColor?: ColorVariant<Theme>;
-  shadow?: ShadowVariant<Theme>;
-}
-
-interface TextProps {
-  type?: TextVariant<Theme>;
-  color?: ColorVariant<Theme>;
-}
-```
-
-Exposed aliases: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, `BorderVariant`, `RoundedVariant`, plus the underlying mapped type `DesignTokenKeys<T>`.
-
-### Tightening responsive types — opt-in today, default in v4
-
-`ResponsiveValue<T>` accepts arbitrary string keys for back-compat (`{ typo: 4 }` does not error). If you want strict breakpoint key checking now, import the strict variant:
-
-```ts
-import { ResponsiveValueStrict as ResponsiveValue } from "@duydpdev/style-generator/spacing";
-
-type P = ResponsiveValue<number, "base" | "md">;
-const ok: P = { base: 4, md: 8 };
-// const bad: P = { typo: 4 }; // type error at the literal site
-```
-
-`ResponsiveValueStrict` will replace `ResponsiveValue` as the default in v4 major.
-
-### Spacing safelist (auto-included since v3.1)
-
-`createStyleSystem(...).safelist` now includes all `sp-*` spacing utilities by default. You can delete any hardcoded `SPACING_KEYS` arrays you previously appended. Disable via `options.spacing.enabled = false` if you don't use the runtime spacing helpers.
+Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node16"`, or `"nodenext"`. See [`documents/migration/3.x-subpath-exports.md`](./documents/migration/3.x-subpath-exports.md) for the background and [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md) for what changed in 4.0.0.
 
 ---
 
-## 2. Quick Start with CLI
+## 2. Quick Start
 
-The fastest way to get started is using the built-in `style-gen` CLI tool.
-
-After installing the package locally, you can also run the local bin directly:
+### Step 1. Scaffold
 
 ```bash
 npx style-gen init
 ```
 
-### Step 1. Initialize project
+The wizard asks for the theme file location (default `styles/theme.json`), the location of the generator script (default `plugins/theme-plugin.ts`) and whether to include a dark-mode template. Non-interactive: `npx style-gen init --dark`. It writes the theme, a small script that calls `generate()`, and `style-gen.config.json`.
 
-```bash
-npx @duydpdev/style-generator init
-```
+### Step 2. Edit the theme
 
-The interactive wizard will prompt you to:
-
-- Choose your Tailwind version (v3 or v4)
-- Set the theme file location (default: `styles/theme.json`)
-- Set the plugin file location (default: `plugins/theme-plugin.ts`)
-- Optionally include a dark mode template
-
-### Step 2. Edit theme
-
-Open `styles/theme.json` and customize your design tokens. Colors are a **flat object** — no namespaces.
+Colors are a **flat object**; only `colors` is required:
 
 ```json
 {
+  "$schema": "./theme.schema.json",
   "colors": {
     "primary": "#3B82F6",
     "secondary": "#6366F1",
@@ -218,56 +128,24 @@ Open `styles/theme.json` and customize your design tokens. Colors are a **flat o
 }
 ```
 
-### Step 3. Generate safelist
+### Step 3. Generate the CSS
 
 ```bash
-npx @duydpdev/style-generator safelist
+npx style-gen generate            # writes styles/theme.css
+npx style-gen generate --watch    # regenerate on save
+npx style-gen schema              # writes theme.schema.json (editor autocomplete)
 ```
 
-### Step 4. Import in CSS (Tailwind v4)
+### Step 4. Import it next to Tailwind
 
 ```css
 @import "tailwindcss";
-@plugin "./plugins/theme-plugin.ts";
-@source "../styles/safelist.txt";
+@import "./theme.css";
 ```
 
-For v4 users who want `@theme inline` auto-utilities (`bg-primary`, etc.), write the `themeCss` output to a CSS file:
+That is the whole wiring — there is no `@plugin` and no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`heading1` → `.heading-1`, `text16Medium` → `.text-16-medium`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available.
 
-```typescript
-import { createStyleSystem } from "@duydpdev/style-generator";
-import fs from "node:fs";
-
-const theme = {
-  colors: {
-    primary: "#3B82F6",
-    background: "#FFFFFF",
-    foreground: "#111827",
-  },
-  typography: {
-    body: {
-      fontSize: "16px",
-      lineHeight: "150%",
-      fontWeight: 400,
-      letterSpacing: "0px",
-    },
-  },
-};
-
-const options = {};
-const { themeCss } = createStyleSystem(theme, options);
-
-fs.writeFileSync("styles/theme.css", themeCss, "utf8");
-```
-
-Then import in your CSS:
-
-```css
-@import "tailwindcss";
-@import "./theme.css"; /* @theme inline block */
-@plugin "./plugins/theme-plugin.ts";
-@source "../styles/safelist.txt";
-```
+Prefer no CLI step? Use [`styleGenVite`](#5-build-tool-integrations) or [`styleGenNext`](#5-build-tool-integrations), which write the same file for you.
 
 ---
 
@@ -277,64 +155,72 @@ Then import in your CSS:
 
 #### `style-gen init`
 
-Scaffold project files (theme config + plugin file).
+Scaffold the theme JSON, a generator script and `style-gen.config.json`.
 
 ```bash
-npx @duydpdev/style-generator init                    # Interactive mode (prompts)
-npx @duydpdev/style-generator init --tw v4 --dark     # Non-interactive mode
+npx style-gen init            # Interactive mode
+npx style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
 ```
 
-| Flag       | Type      | Default                   | Description                     |
-| :--------- | :-------- | :------------------------ | :------------------------------ |
-| `--tw`     | `string`  | —                         | Tailwind version (`v3` or `v4`) |
-| `--theme`  | `string`  | `styles/theme.json`       | Path to theme config file       |
-| `--plugin` | `string`  | `plugins/theme-plugin.ts` | Path to plugin file             |
-| `--dark`   | `boolean` | `false`                   | Include dark mode template      |
+| Flag       | Type      | Default                   | Description                         |
+| :--------- | :-------- | :------------------------ | :---------------------------------- |
+| `--theme`  | `string`  | `styles/theme.json`       | Path to the theme file              |
+| `--plugin` | `string`  | `plugins/theme-plugin.ts` | Path to the generator script        |
+| `--dark`   | `boolean` | `false`                   | Include the dark-mode axis template |
 
-#### `style-gen safelist`
+(Both defaults become `src/…` when a `src/` directory exists.)
 
-Generate `safelist.txt` from theme config.
+#### `style-gen generate`
+
+Validate the theme and write the complete CSS (`@theme`, `:root` variables, axis overrides, `@theme inline`, `@utility` blocks, `@source inline`).
 
 ```bash
-npx @duydpdev/style-generator safelist
-npx @duydpdev/style-generator safelist --theme ./theme.json --out ./safelist.txt --watch
+npx style-gen generate
+npx style-gen generate --theme ./theme.json --out ./theme.css --watch
 ```
 
-| Flag            | Type      | Default               | Description                          |
-| :-------------- | :-------- | :-------------------- | :----------------------------------- |
-| `--theme`       | `string`  | `styles/theme.json`   | Path to theme JSON file              |
-| `--out`         | `string`  | `styles/safelist.txt` | Path to output safelist file         |
-| `-w`, `--watch` | `boolean` | `false`               | Watch mode — auto-regenerate on save |
+| Flag            | Type      | Default             | Description                          |
+| :-------------- | :-------- | :------------------ | :----------------------------------- |
+| `--theme`       | `string`  | `styles/theme.json` | Path to the theme JSON file          |
+| `--out`         | `string`  | `styles/theme.css`  | Path to the output CSS file          |
+| `-w`, `--watch` | `boolean` | `false`             | Watch mode — auto-regenerate on save |
+
+Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically.
+
+#### `style-gen schema`
+
+Write the theme's JSON Schema (from `z.toJSONSchema(ThemeSchema)`) so editors can autocomplete keys and flag unknown ones when the theme declares `"$schema"`.
+
+```bash
+npx style-gen schema                            # → theme.schema.json
+npx style-gen schema --out styles/theme.schema.json
+```
 
 #### `style-gen doctor`
 
-Check project setup, validate configuration, and verify theme schema. Also warns if old v1 `colors.base/text/common` format is detected.
+Check the setup: config file, JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), generator script and output file. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind static utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, or typography keys such as `textSm`).
 
 ```bash
-npx @duydpdev/style-generator doctor
+npx style-gen doctor
 ```
 
 #### `style-gen --version`
 
 Print the installed CLI version.
 
-```bash
-npx @duydpdev/style-generator --version
-```
-
 ### Configuration file
 
 ```json
 {
   "theme": "styles/theme.json",
-  "output": "styles/safelist.txt",
+  "output": "styles/theme.css",
   "plugin": "plugins/theme-plugin.ts",
   "breakpoints": ["md", "lg"],
-  "responsiveModules": ["layout", "rounded"]
+  "extraSources": ["hover:bg-{primary,secondary}"]
 }
 ```
 
-The CLI resolves configuration in this order:
+`breakpoints`, `screens`, `extraSources`, `spacing` and `typography` are forwarded to `generate()`. The CLI resolves configuration in this order:
 
 1. command flags
 2. `style-gen.config.json`
@@ -345,48 +231,83 @@ The CLI resolves configuration in this order:
 
 ## 4. Theme Config
 
-### Minimal Config
+`ThemeSchema` is a strict Zod schema: unknown keys, unsafe values and invalid references throw a `ZodError` with the offending path. `generate()`, `defineTheme()`, the CLI, `styleGenVite` and `styleGenNext` all validate independently.
+
+### Minimal config
 
 Only `colors` is required. Everything else is optional:
 
-```typescript
-import { createStyleSystem } from "@duydpdev/style-generator";
+```ts
+import { generate } from "@duydpdev/style-generator";
 
-// Simplest possible config — just colors
-const { plugin, safelist, themeCss } = createStyleSystem({
+const { css } = generate({
   colors: { primary: "#3B82F6", background: "#FFFFFF" },
 });
 ```
 
-### Colors — camelCase Keys
+### Key grammar
 
-All colors live in a single **flat object**. Keys use **camelCase** (or kebab-case) — the lib converts them to kebab-case CSS variables and Tailwind classes automatically. Nested objects and `DEFAULT` key are **not supported**.
+Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, and quotes must be balanced.
+
+### Categories
+
+| Theme key       | Generates                                                                | Notes                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `colors`        | `bg-*`, `text-*`, `border-*` via `@theme inline` (`--color-*`)           | Required. Flat, camelCase.                                                                                              |
+| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)              | Entry: `fontSize`, `lineHeight`, `fontWeight` (number), `letterSpacing`, optional `fontFamily`/`fontStyle`. No aliases. |
+| `shadows`       | `shadow-*`                                                               |                                                                                                                         |
+| `backDropBlurs` | `backdrop-blur-*`                                                        |                                                                                                                         |
+| `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)          | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                 |
+| `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                             | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                       |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l` utilities backed by `--sg-border-width-*` | Falls back to Tailwind's own `0/1/2/4` scale when omitted. Replaces the 3.x `border` key.                               |
+
+### Colors — camelCase keys
+
+Keys use **camelCase** (or kebab-case); the library converts them to kebab-case variables and classes. Nested objects and a `DEFAULT` key are not supported.
+
+| Theme key           | CSS variable                 | Tailwind class            |
+| ------------------- | ---------------------------- | ------------------------- |
+| `primaryForeground` | `--color-primary-foreground` | `text-primary-foreground` |
+| `sidebarForeground` | `--color-sidebar-foreground` | `bg-sidebar-foreground`   |
+| `blue500`           | `--color-blue-500`           | `border-blue-500`         |
+| `primary`           | `--color-primary`            | `text-primary`            |
+
+> **Rule:** a letter→digit boundary adds a dash (`blue500` → `blue-500`). Digit-prefix values stay unchanged (`2xl` → `2xl`).
+
+### Aliases (`$key`)
+
+A value `"$<key>"` refers to another key **in the same category** and is emitted as `var(--sg-<key>)`:
+
+```json
+{
+  "colors": { "blue500": "#3B82F6", "primary": "$blue500" },
+  "shadows": { "base": "0 1px 2px rgb(0 0 0 / 0.1)", "card": "$base" }
+}
+```
+
+The target is the raw key (`$blue500`, not `$blue-500`), it must exist, and the alias graph must be acyclic. Aliases are not allowed inside `typography`.
+
+### Interactive states (`primaryHover`, `primaryActive`)
+
+Declare flat sibling keys next to a color and the registry emits the state utilities for them:
 
 ```json
 {
   "colors": {
+    "blue600": "#2563EB",
+    "blue700": "#1D4ED8",
     "primary": "#3B82F6",
-    "primaryForeground": "#FFFFFF",
-    "sidebarForeground": "#111827",
-    "blue500": "#3B82F6"
+    "primaryHover": "$blue600",
+    "primaryActive": "$blue700"
   }
 }
 ```
 
-**camelCase → kebab-case convention:**
+`primary` now opts into `hover:bg-primary-hover` and `active:bg-primary-active` (and the `text-`/`border-` forms). The state list is the exported constant `COLOR_STATES` (`["hover", "active"]`); feed it to `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` to get the class string, see [section 7](#7-design-tokens--cva). State names are kebab-cased (`focusVisible` → `focus-visible:`).
 
-| Theme key (camelCase) | CSS Variable                 | Tailwind class            |
-| --------------------- | ---------------------------- | ------------------------- |
-| `primaryForeground`   | `--color-primary-foreground` | `text-primary-foreground` |
-| `sidebarForeground`   | `--color-sidebar-foreground` | `bg-sidebar-foreground`   |
-| `blue500`             | `--color-blue-500`           | `border-blue-500`         |
-| `primary`             | `--color-primary`            | `text-primary`            |
+### Multi-axis theming (`themeAxes`)
 
-> **Rule:** letter→digit boundary auto-adds a dash (`blue500` → `blue-500`). Digit-prefix values stay unchanged (`2xl` → `2xl`).
-
-### Multi-theme (Dark/Light/Custom)
-
-Add a `themes` key with named overrides. Each entry only needs values that differ from the default:
+`themeAxes` maps an **axis name** to its **variants**; each variant only lists the values that differ from the base. Several axes can be active at once:
 
 ```json
 {
@@ -395,332 +316,74 @@ Add a `themes` key with named overrides. Each entry only needs values that diffe
     "background": "#FFFFFF",
     "foreground": "#111827"
   },
-  "themes": {
-    "dark": {
-      "colors": {
-        "primary": "#60A5FA",
-        "background": "#111827",
-        "foreground": "#F9FAFB"
-      },
-      "shadows": { "sm": "0 1px 2px rgba(255,255,255,0.1)" }
+  "shadows": { "sm": "0 1px 2px rgba(0,0,0,0.1)" },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#60A5FA",
+          "background": "#111827",
+          "foreground": "#F9FAFB"
+        },
+        "shadows": { "sm": "0 1px 2px rgba(255,255,255,0.1)" }
+      }
+    },
+    "palette": {
+      "forest": { "colors": { "primary": "#16A34A" } },
+      "highContrast": { "colors": { "primary": "#000000" } }
     }
   }
 }
 ```
 
-**Generated CSS output (v3 mode):**
+Generated selectors (after `:root`, in declaration order):
 
 ```css
-:root {
-  --color-primary: #3b82f6;
-  --color-background: #ffffff;
-  --color-foreground: #111827;
-}
-
-html[data-theme="dark"] {
-  --color-primary: #60a5fa;
-  --color-background: #111827;
-  --color-foreground: #f9fafb;
-  --shadow-sm: 0 1px 2px rgba(255, 255, 255, 0.1);
-}
+:root { --sg-primary: #3B82F6; … }
+html[data-theme="dark"] { --sg-primary: #60A5FA; … }
+html[data-palette="forest"] { --sg-primary: #16A34A; }
+html[data-palette="high-contrast"] { --sg-primary: #000000; }
 ```
 
-**Activate a theme:**
-
 ```html
-<html data-theme="dark">
-  ...
+<html data-theme="dark" data-palette="high-contrast">
+  …
 </html>
 ```
 
----
+Rules:
 
-## 5. Development & CI
+- **Selectors are pinned to `html`.** A `data-*` attribute on a wrapper element has no effect. The reason is aliases: a `var()` alias resolves at the element that _declares_ the custom property (`:root`), so an override on any other element never reaches an alias's value.
+- **Attribute values are the kebab form of the key**: variant `highContrast` → `data-palette="high-contrast"`; axis `colorScheme` → `data-color-scheme`.
+- **Precedence is declaration order.** The selectors have equal specificity, so when two axes override the same token the axis declared **later** in the JSON wins.
+- **Axis and variant names cannot be canonical integers** (`100`, `2024`): JavaScript enumerates integer-like keys first, which would silently break declaration order. Use `contrast100` instead.
+- **Override keys must already exist in the base** record; an override-only key would produce no utility and is rejected.
+- **Compound overrides stay hand-written CSS.** A single override cannot target two axes' attributes at once:
 
-### Local (Pre-commit)
+| Axis (source)                                        | Content                                                                              | Handling                                                                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `theme` (`themeAxes.theme.dark`)                     | override `--sg-*` colors + shadows                                                   | Generated by the library — `html[data-theme="dark"]`                                                                                       |
+| `palette` (`themeAxes.palette.{forest,sunset,mono}`) | override `--sg-*` colors                                                             | Generated by the library — `html[data-palette="forest\|sunset\|mono"]`                                                                     |
+| compound `[data-theme="dark"][data-palette="…"]`     | cross-axis override (dark × a specific palette)                                      | Hand-written CSS: its `(0,2,0)` specificity beats either single-axis `html[data-…]` rule `(0,1,1)` regardless of source order              |
+| `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, and a nested `.sg-glass-target` child rule | Hand-written CSS: variables outside `--sg-*` and nested-child selectors are not representable by a theme override (see `examples/nuxt-v4`) |
 
-**Husky** + **lint-staged** run checks before every commit:
+The old single-axis key was renamed; a theme still using it is rejected with a message pointing at `themeAxes`. See the [migration guide](./documents/migration/3.x-to-4.0.md) for the exact message and the rewrite.
 
-1. `eslint` & `prettier`
-2. `tsc --noEmit`
-3. `vitest run`
+### Why the `--sg-*` intermediate variables?
 
-### Remote (GitHub Actions)
-
-`lint` → `build:all` → `test`
-
----
-
-## 6. Testing
-
-```bash
-yarn test          # Unit tests
-yarn test:types    # Type tests (*.test-d.ts)
-yarn test:coverage # Coverage report
-```
-
----
-
-## 7. Usage with Tailwind CSS v4
-
-### Plugin file
-
-```typescript
-import {
-  createStyleSystem,
-  defineTheme,
-  defineOptions,
-  Breakpoint,
-} from "@duydpdev/style-generator";
-import themeJson from "../styles/theme.json";
-
-const theme = defineTheme(themeJson);
-
-const options = defineOptions({
-  screens: { md: "800px" },
-  breakpoints: [Breakpoint.MD, Breakpoint.LG],
-  // safelistColors: true,  // include text-*/bg-*/border-* in safelist (default: false)
-});
-
-const { plugin, safelist, themeCss } = createStyleSystem(theme, options);
-
-export default plugin;
-export { safelist, themeCss };
-```
-
-### Import in CSS
+`--sg-*` is an internal layer: it exists to break the circular reference that appears when a theme switches a variable that `@theme inline` also defines.
 
 ```css
-@import "tailwindcss";
-@plugin "./plugins/theme-plugin.ts";
-@source "../styles/safelist.txt";
-```
-
-### Optional: `@theme inline` for v4 auto-utilities
-
-Write `themeCss` to a file to get `bg-primary`, `text-primary`, etc. without safelist:
-
-```typescript
-import fs from "node:fs";
-const { themeCss } = createStyleSystem(theme, options);
-fs.writeFileSync("styles/theme.css", themeCss);
-```
-
-```css
-/* styles/globals.css */
-@import "tailwindcss";
-@import "./theme.css"; /* contains @theme inline { --color-primary: var(--sg-primary); ... } */
-@plugin "./plugins/theme-plugin.ts";
-```
-
----
-
-## 8. Usage with Tailwind CSS v3
-
-```typescript
-import type { Config } from "tailwindcss";
-import {
-  createStylePlugin,
-  defineTheme,
-  Breakpoint,
-} from "@duydpdev/style-generator";
-import themeJson from "./theme.json";
-
-const theme = defineTheme(themeJson);
-
-const config: Config = {
-  content: ["./src/**/*.{ts,tsx}"],
-  plugins: [
-    createStylePlugin(theme, {
-      tailwindVersion: 3,
-      screens: { md: "800px" },
-      breakpoints: [Breakpoint.MD, Breakpoint.LG],
-    }),
-  ],
-};
-
-export default config;
-```
-
----
-
-## 9. Spacing — CSS Custom Properties
-
-Spacing uses CSS custom properties instead of safelist, reducing class count from ~4,800 to 0.
-
-```css
-.sp-p {
-  padding: var(--sp-p);
-}
-@media (min-width: 768px) {
-  .sp-p {
-    padding: var(--sp-p-md, var(--sp-p));
-  }
-}
-```
-
-### Usage in Components
-
-```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator";
-
-const Box = ({ p, px, py, m, mx, my, className, children, ...rest }) => {
-  const spacing = resolveSpacingProps({ p, px, py, m, mx, my });
-  return (
-    <div
-      className={[...spacing.classNames, className].join(" ")}
-      style={{ ...spacing.style, ...rest.style }}
-    >
-      {children}
-    </div>
-  );
-};
-
-<Box p={4} />
-// → class="sp-p" style="--sp-p: 1rem"
-
-<Box p={{ base: 2, md: 4, lg: 8 }} />
-// → class="sp-p" style="--sp-p: 0.5rem; --sp-p-md: 1rem; --sp-p-lg: 2rem"
-```
-
----
-
-## 10. Options Reference
-
-| Option                      | Type                       | Default                 | Description                                                     |
-| :-------------------------- | :------------------------- | :---------------------- | :-------------------------------------------------------------- |
-| `breakpoints`               | `(Breakpoint \| string)[]` | `["md", "lg"]`          | Breakpoints for responsive spacing and safelist.                |
-| `screens`                   | `Record<string, string>`   | Tailwind defaults       | Custom screen widths.                                           |
-| `safelistColors`            | `boolean`                  | `false`                 | Include `text-*`, `bg-*`, `border-*` color classes in safelist. |
-| `tailwindVersion`           | `3 \| 4`                   | auto-detected           | Override Tailwind version detection.                            |
-| `enableResponsive`          | `boolean`                  | `true`                  | Generate responsive spacing rules and safelist variants.        |
-| `responsiveModules`         | `StyleModule[]`            | `["layout", "rounded"]` | Which modules get responsive prefixes.                          |
-| `spacing.useMatchUtilities` | `boolean`                  | `false`                 | Enable JIT spacing (`sp-p-4`, `sp-p-[24px]`).                   |
-| `typography.cssVarDriven`   | `boolean`                  | `false`                 | Drive typography utilities via CSS custom properties.           |
-
----
-
-## 11. Exports API
-
-| Function                | Description                                                              |
-| :---------------------- | :----------------------------------------------------------------------- |
-| `createStyleSystem`     | **Recommended**. Returns `{ plugin, safelist, themeCss, DesignTokens }`. |
-| `createStylePlugin`     | Creates a Tailwind Plugin (v3/v4 auto-detected).                         |
-| `generateSafelist`      | Generates `string[]` safelist (excludes spacing).                        |
-| `generateThemeCss`      | Generates CSS string with `@theme inline` for Tailwind v4.               |
-| `createDesignTokens`    | Generates typed design tokens for consumer apps.                         |
-| `createVariantMapper`   | Helper for mapping tokens to CSS classes for CVA.                        |
-| `resolveSpacingProps`   | Maps multiple spacing props to `{ classNames, style }`.                  |
-| `defineTheme`           | Type-safe theme config helper. Zero runtime cost.                        |
-| `defineOptions`         | Type-safe options helper. Zero runtime cost.                             |
-| `detectTailwindVersion` | Auto-detect installed Tailwind CSS major version.                        |
-
----
-
-## 12. `defineTheme()` — Type-safe Config
-
-```typescript
-import {
-  defineTheme,
-  defineOptions,
-  createStyleSystem,
-  Breakpoint,
-} from "@duydpdev/style-generator";
-
-const theme = defineTheme({
-  colors: {
-    primary: "#3B82F6",
-    background: "#FFFFFF",
-    foreground: "#111827",
-    muted: "#6B7280",
-  },
-  typography: {
-    heading: {
-      fontSize: "32px",
-      lineHeight: "120%",
-      fontWeight: 700,
-      letterSpacing: "-0.02em",
-    },
-    body: {
-      fontSize: "16px",
-      lineHeight: "150%",
-      fontWeight: 400,
-      letterSpacing: "0px",
-    },
-  },
-});
-
-const options = defineOptions({
-  breakpoints: [Breakpoint.MD, Breakpoint.LG],
-});
-
-const { plugin, safelist, themeCss } = createStyleSystem(theme, options);
-```
-
-**TS errors caught at compile time:**
-
-```typescript
-// Missing required field
-defineTheme({});
-// Error: Property 'colors' is missing
-
-// Invalid typography shape
-defineTheme({ colors: {}, typography: { h1: { lineHeight: "1.2" } } });
-// Error: Property 'fontSize' is missing in TypographyConfig
-
-// Minimal valid config (typography is optional)
-defineTheme({ colors: { primary: "#3B82F6" } });
-// OK — only colors is required
-```
-
----
-
-## 13. `generateThemeCss()` — Tailwind v4 Theme CSS
-
-For Tailwind v4, `generateThemeCss()` outputs a CSS string that:
-
-1. Defines `--sg-*` intermediate CSS variables in `:root`
-2. Generates `[data-theme="name"]` override blocks
-3. Maps `--sg-*` → Tailwind v4 namespaces via `@theme inline`
-
-```typescript
-import { generateThemeCss } from "@duydpdev/style-generator";
-import theme from "./styles/theme.json";
-
-const css = generateThemeCss(theme);
-// Output:
-// :root {
-//   --sg-primary: #3B82F6;
-//   --sg-background: #FFFFFF;
-// }
-//
-// [data-theme="dark"] {
-//   --sg-primary: #60A5FA;
-// }
-//
-// @theme inline {
-//   --color-primary: var(--sg-primary);
-//   --color-background: var(--sg-background);
-// }
-```
-
-When you include this CSS, Tailwind v4 automatically generates `bg-primary`, `text-primary`, `border-primary`, etc. — **no safelist needed for colors**.
-
-### Why `--sg-*` intermediate vars?
-
-The `--sg-*` prefix is an **internal implementation detail** — you never use it directly. It exists to break a circular reference:
-
-```css
-/* Without intermediate: circular! */
+/* Without the intermediate layer: circular! */
 @theme inline {
   --color-primary: var(--color-primary);
 }
 
-/* With intermediate: works for theme switching */
+/* With it: theme switching works */
 :root {
   --sg-primary: #3b82f6;
 }
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --sg-primary: #60a5fa;
 }
 @theme inline {
@@ -728,10 +391,10 @@ The `--sg-*` prefix is an **internal implementation detail** — you never use i
 }
 ```
 
-**As a consumer, use standard Tailwind classes and CSS vars:**
+Consumers use standard Tailwind classes and variables, never `--sg-*`:
 
 ```html
-<div class="bg-primary text-foreground">...</div>
+<div class="bg-primary text-foreground">…</div>
 ```
 
 ```css
@@ -740,424 +403,315 @@ The `--sg-*` prefix is an **internal implementation detail** — you never use i
 }
 ```
 
+### Built-in utility name clashes
+
+A theme key whose class equals a Tailwind _static_ utility (`bg-none`, `shadow-none`, `rounded-none`, `border-2`, a typography key that becomes `text-sm`, colors named `transparent`/`current`/`inherit`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`); `style-gen doctor` lists the clashes it recognises.
+
 ---
 
-## 14. Spacing — JIT Mode with `useMatchUtilities`
+## 5. Build-tool integrations
 
-```typescript
-const options = defineOptions({
-  spacing: { enabled: true, useMatchUtilities: true },
+All of them write the same `theme.css` (the output of `generate()`); pick the one that matches your bundler. In each case, `@import` the file next to `@import "tailwindcss"`.
+
+### Vite (and Nuxt) — `styleGenVite`
+
+Emits `theme.css` on dev start, on build and whenever the theme file changes (HMR-friendly). The file is written synchronously in `configResolved`, before Tailwind scans; the examples list it ahead of `@tailwindcss/vite`:
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+import { Breakpoint } from "@duydpdev/style-generator";
+
+export default defineConfig({
+  plugins: [
+    styleGenVite({
+      themePath: "src/theme/theme.json",
+      outDir: "src/theme", // must match the @import path in your CSS
+      options: { breakpoints: [Breakpoint.MD, Breakpoint.LG] },
+    }),
+    tailwindcss(),
+  ],
 });
 ```
 
-```html
-<div class="sp-p-4">padding: 1rem</div>
-<div class="sp-p-[24px]">padding: 24px</div>
-<div class="sp-p-2 md:sp-p-4 lg:sp-p-8">responsive padding</div>
-```
+Nuxt runs on Vite: register the same plugin in `nuxt.config.ts` under `vite.plugins` (see `examples/nuxt-v4`). Add `theme.css` to `.gitignore` if the theme JSON is your source of truth.
 
----
+### Next.js — `styleGenNext`
 
-## 15. Typography — CSS Custom Properties Mode
+Works with webpack and Turbopack and does not import `next`, so it adds no peer dependency:
 
-```typescript
-const options = defineOptions({ typography: { cssVarDriven: true } });
+```ts
+// next.config.ts
+import type { NextConfig } from "next";
+import { styleGenNext } from "@duydpdev/style-generator/next";
+
+const nextConfig: NextConfig = {};
+
+export default styleGenNext({
+  themePath: "app/theme/theme.json",
+  outDir: "app/theme",
+})(nextConfig);
 ```
 
 ```css
-:root {
-  --typography-heading-font-size: 32px;
-  --typography-heading-font-weight: 700;
-}
-.heading {
-  font-size: var(--typography-heading-font-size);
-  font-weight: var(--typography-heading-font-weight);
-}
+/* app/globals.css */
+@import "tailwindcss";
+@import "./theme/theme.css";
 ```
 
----
+It emits `theme.css` whenever Next evaluates the config and watches the theme file in `next dev`; `styleGenNext(opts)(nextConfig)` returns Next's `(phase) => config` function, so export its result as shown. Limitations: `nextConfig` must be a plain object (the function form `(phase, { defaultConfig }) => config` is not supported), and `themePath`/`outDir` are checked against `process.cwd()` by logical path — a symlink inside the project that points outside it is not detected.
 
-## 16. TypeScript for Consumers
+### Anything else — CLI or script
 
-### Typed Design Tokens
+```bash
+npx style-gen generate --watch
+```
+
+or call `generate()` yourself:
 
 ```ts
+import { writeFileSync } from "node:fs";
 import {
-  createDesignTokens,
-  createVariantMapper,
-} from "@duydpdev/style-generator";
-import { theme } from "./styles/theme";
-
-const { DesignTokens } = createDesignTokens(theme, {
-  breakpoints: ["md", "lg"],
-});
-
-// Use with CVA
-const colorMap = createVariantMapper("bg", DesignTokens.Web.variantColor);
-// { primary: "bg-primary", background: "bg-background", ... }
-```
-
-**Tokens in `DesignTokens.Web`:**
-
-| Token                 | Description                      |
-| --------------------- | -------------------------------- |
-| `variantColor`        | All color keys (flat, camelCase) |
-| `variantText`         | Keys of `typography`             |
-| `variantShadow`       | Keys of `shadows`                |
-| `variantBackdropBlur` | Keys of `backDropBlurs`          |
-| `borderOption`        | Keys of `border`                 |
-| `roundedOption`       | Keys of `borderRadius`           |
-| `spacingProperties`   | List of spacing props            |
-| `breakpoints`         | Active breakpoints               |
-
-### Custom Breakpoints Intellisense
-
-```ts
-// types.ts
-import { ResponsiveValue as LibResponsiveValue } from "@duydpdev/style-generator";
-
-export type AppBreakpoints =
-  | "base"
-  | "mobile"
-  | "tablet"
-  | "laptop"
-  | "desktop";
-export type ResponsiveValue<T> = LibResponsiveValue<T, AppBreakpoints>;
-```
-
----
-
-## Migration
-
-### v2 → v3 (breaking)
-
-Nested color objects and `DEFAULT` key are removed — flat camelCase keys only.
-
-```json
-// v2 (old) — nested no longer supported
-{
-  "colors": {
-    "sidebar": { "DEFAULT": "#F9FAFB", "foreground": "#111" }
-  }
-}
-
-// v3 (new) — flat camelCase
-{
-  "colors": {
-    "sidebar": "#F9FAFB",
-    "sidebarForeground": "#111"
-  }
-}
-```
-
-**CVA usage:** Use `createVariantMapper` instead of string interpolation (since `variantColor` returns camelCase keys):
-
-```ts
-// v2 (wrong — class becomes "bg-sidebarForeground")
-acc[c] = `bg-${c}`;
-
-// v3 (correct — auto-converts to "bg-sidebar-foreground")
-createVariantMapper("bg", DesignTokens.Web.variantColor);
-```
-
-### v1 → v2
-
-```json
-// v1 (old)
-{
-  "colors": {
-    "base": { "primary": "#3B82F6" },
-    "text": { "main": "#111827" },
-    "common": { "border": "#E5E7EB" }
-  }
-}
-
-// v2 (new) — flat
-{
-  "colors": {
-    "primary": "#3B82F6",
-    "main": "#111827",
-    "border": "#E5E7EB"
-  }
-}
-```
-
-Options removed: `colorNamingMode`, `disableColorPrefix`, `enableCssVariables`.
-Options added: `safelistColors`, `tailwindVersion`.
-New return from `createStyleSystem`: `themeCss` string.
-
-Run `npx style-gen doctor` to detect old format automatically.
-
-### v3 → v4 (breaking)
-
-Subpath exports added (`/plugin`, `/tokens`, `/cva`, `/spacing`, `/types`). Internal helpers (`addDot`, `extractData`, `toCamelCase`, `toPascalCase`) removed from root barrel. `typography` field is now optional in `ThemeConfig`. `detectTailwindVersion` uses `createRequire` for ESM compatibility.
-
-See `docs/migration/v3-to-v4.md` for full details.
-
----
-
-## Usage by Case
-
-### Case 1: Colors only (simplest setup)
-
-```typescript
-import { createStyleSystem } from "@duydpdev/style-generator";
-
-const { plugin, themeCss } = createStyleSystem({
-  colors: {
-    primary: "#3B82F6",
-    secondary: "#6366F1",
-    background: "#FFFFFF",
-    foreground: "#111827",
-  },
-});
-
-// themeCss → paste into your CSS or write to file
-// plugin → register in Tailwind config
-```
-
-### Case 2: Colors + Typography
-
-```typescript
-import { createStyleSystem, defineTheme } from "@duydpdev/style-generator";
-
-const theme = defineTheme({
-  colors: {
-    primary: "#3B82F6",
-    background: "#FFFFFF",
-  },
-  typography: {
-    heading: {
-      fontSize: "32px",
-      lineHeight: "120%",
-      fontWeight: 700,
-      letterSpacing: "-0.02em",
-    },
-    body: {
-      fontSize: "16px",
-      lineHeight: "150%",
-      fontWeight: 400,
-      letterSpacing: "0px",
-    },
-  },
-});
-
-const { plugin, safelist, themeCss } = createStyleSystem(theme);
-// safelist includes: "heading", "body" typography utility classes
-```
-
-### Case 3: Dark mode / Multi-theme
-
-```typescript
-const theme = defineTheme({
-  colors: { primary: "#3B82F6", background: "#FFFFFF", foreground: "#111827" },
-  themes: {
-    dark: {
-      colors: {
-        primary: "#60A5FA",
-        background: "#111827",
-        foreground: "#F9FAFB",
-      },
-    },
-    ocean: {
-      colors: { primary: "#0EA5E9", background: "#0C4A6E" },
-    },
-  },
-});
-
-const { themeCss } = createStyleSystem(theme, { tailwindVersion: 4 });
-// Generates:
-//   :root { --sg-primary: #3B82F6; ... }
-//   [data-theme="dark"] { --sg-primary: #60A5FA; ... }
-//   [data-theme="ocean"] { --sg-primary: #0EA5E9; ... }
-//   @theme inline { --color-primary: var(--sg-primary); ... }
-```
-
-```html
-<!-- Switch theme at runtime -->
-<html data-theme="dark">
-  ...
-</html>
-<html data-theme="ocean">
-  ...
-</html>
-```
-
-### Case 4: Full design system (all features)
-
-```typescript
-import {
-  createStyleSystem,
+  generate,
   defineTheme,
   defineOptions,
   Breakpoint,
 } from "@duydpdev/style-generator";
+import themeJson from "./theme.json";
 
-const theme = defineTheme({
-  colors: { primary: "#3B82F6", error: "#EF4444", muted: "#6B7280" },
-  typography: {
-    h1: {
-      fontSize: "32px",
-      lineHeight: "40px",
-      fontWeight: 700,
-      letterSpacing: "-0.02em",
-    },
-    body: {
-      fontSize: "16px",
-      lineHeight: "24px",
-      fontWeight: 400,
-      letterSpacing: "0px",
-    },
-  },
-  shadows: {
-    sm: "0 1px 2px rgba(0,0,0,0.05)",
-    lg: "0 10px 15px rgba(0,0,0,0.1)",
-  },
-  borderRadius: { sm: "4px", md: "8px", lg: "12px" },
-  border: { thin: "1px", thick: "2px" },
-  themes: {
-    dark: { colors: { primary: "#60A5FA", error: "#F87171" } },
-  },
-});
+const theme = defineTheme(themeJson); // type-checks AND validates at runtime
+const options = defineOptions({ breakpoints: [Breakpoint.MD, Breakpoint.LG] });
 
-const options = defineOptions({
-  tailwindVersion: 4,
-  breakpoints: [Breakpoint.SM, Breakpoint.MD, Breakpoint.LG],
-  safelistColors: true,
-  spacing: { enabled: true, useMatchUtilities: true },
-  typography: { cssVarDriven: true },
-  responsiveModules: ["layout", "rounded"],
-});
-
-const { plugin, safelist, themeCss, DesignTokens } = createStyleSystem(
-  theme,
-  options,
-);
+const { css, tokens } = generate(theme, options);
+writeFileSync("styles/theme.css", css, "utf8");
 ```
 
-### Case 5: CVA variant mapping
+`defineTheme()` throws a `ZodError` with the offending path for unknown keys or unsafe values, and TypeScript rejects a missing `colors` at compile time.
 
-```typescript
-import {
-  createDesignTokens,
-  createVariantMapper,
-} from "@duydpdev/style-generator";
+---
 
-const { DesignTokens } = createDesignTokens(theme);
+## 6. Spacing — CSS custom properties
 
-// Map color tokens to bg-* classes
-const bgVariants = createVariantMapper("bg", DesignTokens.Web.variantColor);
-// { primary: "bg-primary", error: "bg-error", muted: "bg-muted" }
+Spacing utilities are generated once as `@utility sp-<key>` blocks; components only set inline variables. A `--sg-sp-<key>[-<breakpoint>]` variable is registered with `@property … { syntax: "*"; inherits: false }`, and each utility carries its own breakpoint fallback chain:
 
-// Map to text-* classes
-const textVariants = createVariantMapper("text", DesignTokens.Web.variantColor);
-// { primary: "text-primary", error: "text-error", muted: "text-muted" }
-
-// Use with CVA / class-variance-authority
-import { cva } from "class-variance-authority";
-
-const button = cva("rounded px-4 py-2", {
-  variants: {
-    color: bgVariants,
-  },
-});
-
-button({ color: "primary" }); // → "rounded px-4 py-2 bg-primary"
+```css
+@utility sp-p {
+  padding: var(--sg-sp-p);
+  @media (width >= 768px) {
+    padding: var(--sg-sp-p-md, var(--sg-sp-p));
+  }
+  @media (width >= 1024px) {
+    padding: var(--sg-sp-p-lg, var(--sg-sp-p-md, var(--sg-sp-p)));
+  }
+}
 ```
 
-### Case 6: Responsive spacing in React
+Default keys: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left` (`SpacingKey`). Disable with `spacing: { enabled: false }`; customise with `spacing: { properties: { … } }`.
+
+### Usage in components
 
 ```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator";
+import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
 
-function Box({ p, m, gap, className, style, children, ...rest }) {
-  const spacing = resolveSpacingProps({ p, m, gap });
-
+const Box = ({ p, px, m, className, style, children }) => {
+  const spacing = resolveSpacingProps({ p, px, m });
   return (
     <div
-      className={[...spacing.classNames, className].filter(Boolean).join(" ")}
+      className={[spacing.classNames, className].filter(Boolean).join(" ")}
       style={{ ...spacing.style, ...style }}
-      {...rest}
     >
       {children}
     </div>
   );
-}
-
-// Simple
-<Box p={4}>padding: 1rem</Box>
-
-// Responsive
-<Box p={{ base: 2, md: 4, lg: 8 }}>responsive padding</Box>
-
-// Multiple props
-<Box p={4} m={2} gap={{ base: 2, lg: 4 }}>combined spacing</Box>
-```
-
-### Case 7: Tree-shaking with subpath imports
-
-```typescript
-// Only pulls in the plugin pipeline (~2.6KB gzip)
-import { createStyleSystem } from "@duydpdev/style-generator/plugin";
-
-// Only pulls in token generation (~0.4KB gzip)
-import {
-  createDesignTokens,
-  defineTheme,
-} from "@duydpdev/style-generator/tokens";
-
-// Only pulls in CVA mapper (~0.2KB gzip)
-import { createVariantMapper } from "@duydpdev/style-generator/cva";
-
-// Only pulls in spacing helpers (~0.5KB gzip)
-import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
-
-// Types only — zero runtime
-import type {
-  ThemeConfig,
-  StyleGeneratorOptions,
-} from "@duydpdev/style-generator/types";
-```
-
-Requires `"moduleResolution": "bundler"` or `"node16"` in tsconfig.json.
-
-### Case 8: Tailwind v3 setup
-
-```typescript
-import type { Config } from "tailwindcss";
-import { createStylePlugin, defineTheme } from "@duydpdev/style-generator";
-import themeJson from "./theme.json";
-
-const theme = defineTheme(themeJson);
-
-const config: Config = {
-  content: ["./src/**/*.{ts,tsx}"],
-  plugins: [
-    createStylePlugin(theme, {
-      tailwindVersion: 3,
-      safelistColors: true, // v3 needs this for dynamic class names
-    }),
-  ],
 };
 
-export default config;
+<Box p={4} />;
+// → class="sp-p" style="--sg-sp-p: 1rem"
+
+<Box p={{ base: 2, md: 4, lg: 8 }} />;
+// → class="sp-p" style="--sg-sp-p: 0.5rem; --sg-sp-p-md: 1rem; --sg-sp-p-lg: 2rem"
 ```
 
-### Case 9: Generate safelist file from CLI
+- `classNames` is a **string** (space-joined), not an array.
+- **Same-element rule:** the variables do not inherit, so the class and the `style` variables must be on the **same element**; a parent's `--sg-sp-p` never leaks into a child.
+- Only breakpoints listed in `options.breakpoints` (default `["md","lg"]`) have a fallback chain; a variable for any other breakpoint has no effect.
+- `resolveSpacing(prop, value, unit?)` resolves a single prop; `unit` defaults to `0.25` (rem per step).
+- Responsive values use `ResponsiveValueStrict<T, B>`: a typo like `{ typo: 4 }` is a type error, and `base` is always allowed.
+
+---
+
+## 7. Design tokens & CVA
+
+### Typed design tokens
+
+`generate()` returns them as `tokens`; you can also build them standalone (browser-safe) with `createDesignTokens`:
+
+```ts
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import theme from "./theme.json";
+
+const { DesignTokens } = createDesignTokens(theme, {
+  breakpoints: ["md", "lg"],
+});
+```
+
+**`DesignTokens.Web`:**
+
+| Token                 | Description                                                     |
+| --------------------- | --------------------------------------------------------------- |
+| `variantColor`        | All color keys (flat, camelCase)                                |
+| `variantText`         | Keys of `typography`                                            |
+| `variantShadow`       | Keys of `shadows`                                               |
+| `variantBackdropBlur` | Keys of `backDropBlurs`                                         |
+| `variantFontFamily`   | Keys of `fontFamily`                                            |
+| `borderWidthOption`   | Keys of `borderWidth` (falls back to `0, 1, 2, 4`)              |
+| `roundedOption`       | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES`) |
+| `spacingProperties`   | List of spacing props                                           |
+| `breakpoints`         | Active breakpoints — defaults to `["md", "lg"]`                 |
+| `screens`             | Breakpoint → width map                                          |
+
+### `createVariantMapper` for CVA
+
+`createVariantMapper(prefix, tokens)` returns a flat `Record<token, class>`. Classes are always kebab-cased with the same function the registry uses, so every class it returns is one that `@source inline` emits:
+
+```ts
+import { cva } from "class-variance-authority";
+import {
+  createVariantMapper,
+  COLOR_STATES,
+} from "@duydpdev/style-generator/cva";
+
+const bg = createVariantMapper("bg", DesignTokens.Web.variantColor);
+// { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }
+
+const button = cva("rounded px-4 py-2", { variants: { color: bg } });
+button({ color: "primary" }); // → "rounded px-4 py-2 bg-primary"
+
+// prefix "" yields the bare kebab-case token (typography):
+createVariantMapper("", DesignTokens.Web.variantText); // { text12Mono: "text-12-mono", … }
+
+// several prefixes at once → nested map
+createVariantMapper(
+  ["border-x", "border-y"],
+  DesignTokens.Web.borderWidthOption,
+);
+```
+
+**State classes.** With sibling keys `primaryHover` / `primaryActive` in the theme, `{ states }` collapses them into one class string per base token:
+
+```ts
+const tokens = ["primary", "primaryHover", "primaryActive", "danger"] as const;
+const bgStates = createVariantMapper("bg", tokens, { states: COLOR_STATES });
+// {
+//   primary: "bg-primary hover:bg-primary-hover active:bg-primary-active",
+//   primaryHover: "bg-primary-hover",
+//   primaryActive: "bg-primary-active",
+//   danger: "bg-danger",
+// }
+```
+
+Always pass `COLOR_STATES` rather than hard-coding the array — it is the same list the generated `@source inline` state lines come from.
+
+### Semantic type aliases
+
+Skip the `(typeof DesignTokens.Web.X)[number]` boilerplate:
+
+```ts
+import type {
+  ColorVariant,
+  TextVariant,
+} from "@duydpdev/style-generator/types";
+import themeJson from "./theme.json";
+
+type Theme = typeof themeJson;
+
+interface BoxProps {
+  backgroundColor?: ColorVariant<Theme>;
+}
+interface TextProps {
+  type?: TextVariant<Theme>;
+  color?: ColorVariant<Theme>;
+}
+```
+
+Aliases: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, `FontFamilyVariant`, `BorderWidthVariant`, `RoundedVariant`, plus the mapped type `DesignTokenKeys<T>`.
+
+### Custom breakpoint intellisense
+
+```ts
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
+
+type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop"; // "base" is always allowed
+export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
+```
+
+---
+
+## 8. Options reference
+
+`generate(theme, options)` and the plugins' `options` field take `StyleGeneratorOptions`:
+
+| Option                    | Type                       | Default                      | Description                                                                                                                                                                                |
+| :------------------------ | :------------------------- | :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `breakpoints`             | `(Breakpoint \| string)[]` | `["md", "lg"]`               | Breakpoints for responsive `@source inline` variants, spacing fallback chains and `DesignTokens.Web.breakpoints`.                                                                          |
+| `screens`                 | `Record<string, string>`   | `defaultScreens`             | Custom screen widths (emitted as `@theme { --breakpoint-* }`).                                                                                                                             |
+| `enableResponsive`        | `boolean`                  | `true`                       | Generate responsive spacing fallback chains.                                                                                                                                               |
+| `spacing.enabled`         | `boolean`                  | `true`                       | Emit the `.sp-*` utilities.                                                                                                                                                                |
+| `spacing.properties`      | `SpacingPropertyMap`       | `DEFAULT_SPACING_PROPERTIES` | Override or extend the spacing prop → CSS declaration map.                                                                                                                                 |
+| `typography.cssVarDriven` | `boolean`                  | `false`                      | Emit `--typography-<name>-<prop>` variables in `:root` and reference them from each typography utility, so a single token can be overridden in CSS.                                        |
+| `extraSources`            | `string[]`                 | `[]`                         | Extra `@source inline("<entry>")` lines for classes built at runtime (brace expansion allowed). Entries: non-empty, ≤ 512 characters, none of `"` `'` `\` `;` `@` `<` `>` or a line break. |
+
+Class names built at runtime (a template literal such as `` `bg-${variant}` ``) are invisible to Tailwind's static scan; list them with `extraSources`, e.g. `extraSources: ["hover:bg-{primary,secondary}"]`.
+
+---
+
+## 9. Exports API
+
+| Export                                            | Subpath                                       | Description                                                                                                                                                                        |
+| :------------------------------------------------ | :-------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `generate`                                        | `.`                                           | **Main entry.** Returns `{ css, tokens, schema }` from a Zod-validated theme.                                                                                                      |
+| `defineTheme`, `defineOptions`                    | `.`                                           | Type-safe helpers; `defineTheme` also validates at runtime.                                                                                                                        |
+| `generateThemeCss`                                | `.`                                           | Just `:root` variables, axis overrides and `@theme inline` (`generate()` calls it).                                                                                                |
+| `createDesignTokens`                              | `.`, `./tokens`                               | Typed `DesignTokens.Web.*`.                                                                                                                                                        |
+| `createVariantMapper`, `COLOR_STATES`             | `.`, `./cva` (`COLOR_STATES` also `./tokens`) | Token keys → class names for CVA, optional `{ states }`.                                                                                                                           |
+| `resolveSpacing`, `resolveSpacingProps`           | `.`, `./spacing`                              | Spacing props → `{ className(s), style }`.                                                                                                                                         |
+| `styleGenVite`                                    | `./vite`                                      | Vite plugin writing `theme.css`.                                                                                                                                                   |
+| `styleGenNext`                                    | `./next`                                      | Next.js config wrapper writing `theme.css`.                                                                                                                                        |
+| `Breakpoint`, `defaultScreens`                    | `.`, `./tokens`                               | Breakpoint enum and default widths.                                                                                                                                                |
+| `DEFAULT_ROUNDED_VALUES`, `DEFAULT_BORDER_VALUES` | `.`, `./tokens`                               | Fallback values for `borderRadius` / `borderWidth`.                                                                                                                                |
+| `DEFAULT_SPACING_PROPERTIES`                      | `.`, `./spacing`                              | Default spacing prop → CSS declaration map.                                                                                                                                        |
+| `roundedProperties`, `borderProperties`           | `.`, `./tokens`                               | Class-prefix lists of the `borderRadius` / `borderWidth` categories.                                                                                                               |
+| Types                                             | `./types` (most also `.`)                     | `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `ResponsiveValueStrict`, `SpacingKey` (`./spacing`), the `*Variant<T>` aliases, `DesignTokensResult`. |
+
+---
+
+## 10. Development & CI
+
+### Local (pre-commit)
+
+**Husky** + **lint-staged** run checks before every commit (Husky is installed by `postinstall`):
+
+1. `eslint` & `prettier`
+2. `tsc --noEmit`
+3. `vitest run`
+
+### Remote (GitHub Actions)
+
+`ci.yml` runs commitlint, lint, `prettier:check`, `tsc`, `build:all`, the `check:*` gates and the unit/type tests, a Playwright job, and a leg that re-resolves Tailwind to the 4.1.x peer floor and runs the unit and e2e suites against it. See [`documents/deploy.md`](./documents/deploy.md) and [`documents/testing.md`](./documents/testing.md).
 
 ```bash
-# Interactive setup
-npx style-gen init
-
-# Generate safelist
-npx style-gen safelist
-
-# Watch mode — auto-regenerate on theme.json change
-npx style-gen safelist --watch
-
-# Custom paths
-npx style-gen safelist --theme src/theme.json --out src/safelist.txt
-
-# Validate setup
-npx style-gen doctor
+yarn test          # Unit tests
+yarn test:types    # Type tests (*.test-d.ts)
+yarn test:e2e      # Playwright (Chromium + WebKit)
+yarn test:coverage # Coverage report
 ```
+
+---
+
+## 11. Migration
+
+- **3.x → 4.0.0** (breaking): [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md) — every removed API, the new theme fields, CLI changes and a rollback runbook.
+- **Subpath exports (3.x)**: [`documents/migration/3.x-subpath-exports.md`](./documents/migration/3.x-subpath-exports.md) — historical; explains `moduleResolution` requirements.
+- Older majors: 2 → 3 removed nested color objects and the `DEFAULT` key (flat camelCase keys only, use `createVariantMapper` for CVA); 1 → 2 flattened the `base`/`text`/`common` color buckets.

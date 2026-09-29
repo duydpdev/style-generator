@@ -1,10 +1,10 @@
 import type {
   CamelCase,
   InferColorKeys,
-  InferBorderOptions,
+  InferBorderWidthOptions,
   InferRoundedOptions,
 } from "./inference";
-import type { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 /**
  * Mapped type exposing the derived design-token key unions for a theme.
@@ -21,7 +21,8 @@ export interface DesignTokenKeys<T extends ThemeConfig> {
   backdropBlurKey: CamelCase<
     Extract<keyof NonNullable<T["backDropBlurs"]>, string>
   >;
-  borderKey: CamelCase<InferBorderOptions<T>>;
+  fontFamilyKey: CamelCase<Extract<keyof NonNullable<T["fontFamily"]>, string>>;
+  borderWidthKey: CamelCase<InferBorderWidthOptions<T>>;
   roundedKey: CamelCase<InferRoundedOptions<T>>;
 }
 
@@ -40,9 +41,13 @@ export type ShadowVariant<T extends ThemeConfig> =
 export type BackdropBlurVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["backdropBlurKey"];
 
-/** Border variant union derived from theme.border keys (falls back to defaults). */
-export type BorderVariant<T extends ThemeConfig> =
-  DesignTokenKeys<T>["borderKey"];
+/** Font-family variant union derived from theme.fontFamily keys. */
+export type FontFamilyVariant<T extends ThemeConfig> =
+  DesignTokenKeys<T>["fontFamilyKey"];
+
+/** Border-width variant union derived from theme.borderWidth keys (falls back to defaults). */
+export type BorderWidthVariant<T extends ThemeConfig> =
+  DesignTokenKeys<T>["borderWidthKey"];
 
 /** Rounded variant union derived from theme.borderRadius keys (falls back to defaults). */
 export type RoundedVariant<T extends ThemeConfig> =

@@ -1,47 +1,46 @@
 import { describe, it, expectTypeOf } from "vitest";
 
-// Import via root barrel (v3 back-compat path)
-import * as root from "../index";
+// Import via root barrel
+import type * as root from "../index";
 
 // Import via subpath barrels (v4 new paths — resolved via `src/exports/*`
 // which is how consumers will see them after exports map resolves).
-import * as plugin from "./plugin";
 import * as tokens from "./tokens";
 import * as cva from "./cva";
 import * as spacing from "./spacing";
+import type * as types from "./types";
 
 describe("subpath exports — symbols match root barrel", () => {
-  it("plugin subpath", () => {
-    expectTypeOf(plugin.createStyleSystem).toEqualTypeOf<
-      typeof root.createStyleSystem
-    >();
-    expectTypeOf(plugin.createStylePlugin).toEqualTypeOf<
-      typeof root.createStylePlugin
-    >();
-    expectTypeOf(plugin.generateSafelist).toEqualTypeOf<
-      typeof root.generateSafelist
-    >();
-    expectTypeOf(plugin.generateThemeCss).toEqualTypeOf<
-      typeof root.generateThemeCss
-    >();
-    expectTypeOf(plugin.detectTailwindVersion).toEqualTypeOf<
-      typeof root.detectTailwindVersion
-    >();
-  });
-
   it("tokens subpath", () => {
     expectTypeOf(tokens.createDesignTokens).toEqualTypeOf<
       typeof root.createDesignTokens
     >();
-    expectTypeOf(tokens.defineTheme).toEqualTypeOf<typeof root.defineTheme>();
-    expectTypeOf(tokens.defineOptions).toEqualTypeOf<
-      typeof root.defineOptions
-    >();
+  });
+
+  it("tokens subpath does not re-export defineTheme/defineOptions (root-only, keeps Zod out of the browser-safe bundle)", () => {
+    expectTypeOf<"defineTheme">().not.toExtend<keyof typeof tokens>();
+    expectTypeOf<"defineOptions">().not.toExtend<keyof typeof tokens>();
   });
 
   it("cva subpath", () => {
     expectTypeOf(cva.createVariantMapper).toEqualTypeOf<
       typeof root.createVariantMapper
+    >();
+  });
+
+  it("COLOR_STATES is one shared const across root, tokens and cva", () => {
+    expectTypeOf(tokens.COLOR_STATES).toEqualTypeOf<
+      readonly ["hover", "active"]
+    >();
+    expectTypeOf(cva.COLOR_STATES).toEqualTypeOf<typeof tokens.COLOR_STATES>();
+    expectTypeOf(cva.COLOR_STATES).toEqualTypeOf<typeof root.COLOR_STATES>();
+  });
+
+  it("VariantMapperStatesOptions is exported from root, cva and types", () => {
+    expectTypeOf<cva.VariantMapperStatesOptions>().toEqualTypeOf<root.VariantMapperStatesOptions>();
+    expectTypeOf<types.VariantMapperStatesOptions>().toEqualTypeOf<root.VariantMapperStatesOptions>();
+    expectTypeOf(cva.COLOR_STATES).toExtend<
+      cva.VariantMapperStatesOptions["states"]
     >();
   });
 

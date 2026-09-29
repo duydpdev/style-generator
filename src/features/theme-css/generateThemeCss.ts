@@ -1,27 +1,24 @@
-import { StyleGeneratorOptions } from "../../core/Options";
-import { ThemeConfig, ThemeOverride } from "../../core/ThemeConfig";
-import { flattenToVars } from "../plugin/cssVariables";
+import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
+import { toKebabCase } from "../../shared/helpers";
+import { builtInCategories } from "../registry/builtInCategories";
+import { flattenByCategory } from "../registry/flattenByCategory";
 
 /**
- * Generate intermediate CSS variables from theme config.
- * All values are stored as `--sg-*` intermediate vars.
- * @param {Partial<Pick<ThemeConfig, "colors">> & Pick<ThemeOverride, "shadows" | "backDropBlurs" | "borderRadius">} source - Theme source data
+ * Build intermediate `--sg-*` CSS variables for every registered category
+ * present on the given theme source (base theme or a `themeAxes.<axis>.<variant>` override).
+ * @param {ThemeOverride} source - Theme source data (a base `ThemeConfig` is structurally assignable)
  * @returns {Record<string, string>} CSS variable map
  */
 const buildIntermediateVars = (
-  source: Partial<Pick<ThemeConfig, "colors">> &
-    Pick<ThemeOverride, "shadows" | "backDropBlurs" | "borderRadius">,
+  source: ThemeOverride,
 ): Record<string, string> => {
-  return {
-    ...(source.colors ? flattenToVars("sg", source.colors) : {}),
-    ...(source.shadows ? flattenToVars("sg-shadow", source.shadows) : {}),
-    ...(source.backDropBlurs
-      ? flattenToVars("sg-backdrop-blur", source.backDropBlurs)
-      : {}),
-    ...(source.borderRadius
-      ? flattenToVars("sg-radius", source.borderRadius)
-      : {}),
-  };
+  return builtInCategories.reduce<Record<string, string>>(
+    (acc, category) => ({
+      ...acc,
+      ...flattenByCategory(category, category.select?.(source)),
+    }),
+    {},
+  );
 };
 
 /**
@@ -43,29 +40,23 @@ const formatCssBlock = (
 
 /**
  * Map intermediate `--sg-*` vars to Tailwind v4 `\@theme` namespace vars.
- * Colors → `--color-*`, shadows → `--shadow-*`, radius → `--radius-*`, backdrop-blur → `--backdrop-blur-*`.
- * @param {Record<string, string>} intermediateVars - Intermediate CSS variable map
+ * Each category is flattened from its OWN theme data: prefix-matching a
+ * merged var map would misroute vars, because the colors prefix `--sg-` is
+ * also a prefix of `--sg-shadow-*`, `--sg-radius-*` and `--sg-backdrop-blur-*`.
+ * @param {ThemeConfig} config - Theme configuration (base theme only)
  * @returns {Record<string, string>} Tailwind v4 theme mapping
  */
-const buildThemeMapping = (
-  intermediateVars: Record<string, string>,
-): Record<string, string> => {
+const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
   const mapping: Record<string, string> = {};
 
-  for (const varName of Object.keys(intermediateVars)) {
-    // varName is like "--sg-primary", "--sg-shadow-sm", "--sg-radius-md", "--sg-backdrop-blur-sm"
-    // Strip "--sg-" prefix to get the key
-    const key = varName.slice(5); // "--sg-" is 5 chars → "primary", "shadow-sm", etc.
+  for (const category of builtInCategories) {
+    if (!category.cssVarPrefix || !category.themeNamespace) continue;
+    const varPrefix = `--${category.cssVarPrefix}-`;
+    const vars = flattenByCategory(category, category.select?.(config));
 
-    if (key.startsWith("shadow-")) {
-      mapping[`--${key}`] = `var(${varName})`;
-    } else if (key.startsWith("backdrop-blur-")) {
-      mapping[`--${key}`] = `var(${varName})`;
-    } else if (key.startsWith("radius-")) {
-      mapping[`--${key}`] = `var(${varName})`;
-    } else {
-      // Colors: key is "primary", "blue-500", etc.
-      mapping[`--color-${key}`] = `var(${varName})`;
+    for (const varName of Object.keys(vars)) {
+      const key = varName.slice(varPrefix.length);
+      mapping[`${category.themeNamespace}${key}`] = `var(${varName})`;
     }
   }
 
@@ -77,17 +68,17 @@ const buildThemeMapping = (
  *
  * Output includes:
  * 1. `:root` block with `--sg-*` intermediate CSS variables
- * 2. `[data-theme="<name>"]` blocks for each theme override
+ * 2. `html[data-<axis-kebab>="<variant-kebab>"]` blocks for each `themeAxes`
+ *    axis/variant, in config declaration order (both axes and variants) —
+ *    the selector is pinned to `html` because a `$`-alias `var()` resolves
+ *    to the value computed at the element that DECLARES the custom
+ *    property, so an override on a non-root element wouldn't affect an
+ *    alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules)
  * 3. `\@theme inline` block mapping `--sg-*` → Tailwind v4 namespaces
  * @param {ThemeConfig} config - Theme configuration
- * @param {StyleGeneratorOptions} _options - Generator options
  * @returns {string} CSS string
  */
-export const generateThemeCss = (
-  config: ThemeConfig,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _options: StyleGeneratorOptions = {},
-): string => {
+export const generateThemeCss = (config: ThemeConfig): string => {
   const blocks: string[] = [];
 
   // 1. :root with intermediate vars
@@ -95,22 +86,22 @@ export const generateThemeCss = (
   const rootBlock = formatCssBlock(":root", rootVars);
   if (rootBlock) blocks.push(rootBlock);
 
-  // 2. Theme overrides
-  if (config.themes) {
-    for (const [name, override] of Object.entries<ThemeOverride>(
-      config.themes,
-    )) {
-      const overrideVars = buildIntermediateVars(override);
-      const overrideBlock = formatCssBlock(
-        `[data-theme="${name}"]`,
-        overrideVars,
-      );
-      if (overrideBlock) blocks.push(overrideBlock);
+  // 2. Axis override blocks, in declaration order (axis, then variant)
+  if (config.themeAxes) {
+    for (const [axisName, variants] of Object.entries(config.themeAxes)) {
+      for (const [variantName, override] of Object.entries<ThemeOverride>(
+        variants,
+      )) {
+        const overrideVars = buildIntermediateVars(override);
+        const selector = `html[data-${toKebabCase(axisName)}="${toKebabCase(variantName)}"]`;
+        const overrideBlock = formatCssBlock(selector, overrideVars);
+        if (overrideBlock) blocks.push(overrideBlock);
+      }
     }
   }
 
   // 3. @theme inline mapping (only base theme vars, not overrides)
-  const themeMapping = buildThemeMapping(rootVars);
+  const themeMapping = buildThemeMapping(config);
   if (Object.keys(themeMapping).length > 0) {
     const lines = Object.entries(themeMapping)
       .map(([k, v]) => `  ${k}: ${v};`)

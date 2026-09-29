@@ -37,3 +37,15 @@ export const addDot = (data: Record<string, unknown>) => {
     {},
   );
 };
+
+/**
+ * Tailwind v4 `@utility` names must be a single CSS-ident-safe lowercase
+ * token: start with a lowercase letter, then any run of lowercase
+ * letters/digits/dashes. A kebab-cased key that starts with a digit
+ * (e.g. a top-level `"2xl"` key) or a dash cannot be registered.
+ *
+ * Single source of truth shared by `generateTypographyCss` (runtime CSS
+ * emission) and `themeSchema` (parse-time validation) so both reject the
+ * same set of typography keys.
+ */
+export const UTILITY_NAME_RE = /^[a-z][a-z0-9-]*$/;

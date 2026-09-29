@@ -7,14 +7,14 @@ export type {
   ThemeConfig,
   ThemeOverride,
   TypographyConfig,
-} from "../core/ThemeConfig";
-export type { StyleGeneratorOptions, StyleModule } from "../core/Options";
+} from "../core/themeSchema";
+export type { StyleGeneratorOptions } from "../core/Options";
 export type {
   InferColorKeys,
   InferTypographyKeys,
   InferShadowKeys,
   InferBackdropBlurKeys,
-  InferSafelistClasses,
+  InferFontFamilyKeys,
   DesignTokensResult,
 } from "../core/inference";
 export type {
@@ -23,7 +23,9 @@ export type {
   TextVariant,
   ShadowVariant,
   BackdropBlurVariant,
-  BorderVariant,
+  FontFamilyVariant,
+  BorderWidthVariant,
   RoundedVariant,
 } from "../core/designTokensTypes";
 export type { ResponsiveValueStrict } from "../features/spacing/spacingHelpers";
+export type { VariantMapperStatesOptions } from "../features/cva/createVariantMapper";

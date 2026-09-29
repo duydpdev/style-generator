@@ -1,22 +1,24 @@
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { readFileSync, mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 import type { Plugin, ResolvedConfig } from "vite";
+import { z } from "zod";
 
+import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
-import type { ThemeConfig } from "../../core/ThemeConfig";
-import { generateSafelist } from "../safelist/generateSafelist";
-import { generateThemeCss } from "../theme-css/generateThemeCss";
+import { ThemeSchema, formatZodError } from "../../core/themeSchema";
+import { resolveSafePath } from "../../shared/resolveSafePath";
+import { writeFileAtomic } from "../../shared/writeFileAtomic";
 
 export interface StyleGenViteOptions {
   /** Path to theme JSON, resolved relative to Vite project root. */
   themePath: string;
   /**
-   * Directory to write `theme.css` + `safelist.txt`. Defaults to `dir(themePath)`.
+   * Directory to write `theme.css`. Defaults to `dir(themePath)`.
    * MUST match the path that consumer CSS `@import`s from.
    */
   outDir?: string;
-  /** Forwarded to `createStyleSystem` internals (safelist + themeCss). */
+  /** Forwarded to `generate()` internals (theme CSS). */
   options?: StyleGeneratorOptions;
 }
 
@@ -27,7 +29,6 @@ const activeOutDirs = new Set<string>();
 
 interface Emitted {
   themeCss: string;
-  safelist: string;
 }
 
 const emit = (
@@ -36,16 +37,14 @@ const emit = (
   options: StyleGeneratorOptions,
 ): Emitted => {
   const raw = readFileSync(themePathAbs, "utf8");
-  const theme = JSON.parse(raw) as ThemeConfig;
+  const theme = ThemeSchema.parse(JSON.parse(raw));
 
-  const themeCss = generateThemeCss(theme, options);
-  const safelist = generateSafelist(theme, options).join("\n");
+  const themeCss = generate(theme, options).css;
 
   mkdirSync(outDirAbs, { recursive: true });
-  writeFileSync(resolve(outDirAbs, "theme.css"), themeCss, "utf8");
-  writeFileSync(resolve(outDirAbs, "safelist.txt"), safelist, "utf8");
+  writeFileAtomic(resolve(outDirAbs, "theme.css"), themeCss);
 
-  return { themeCss, safelist };
+  return { themeCss };
 };
 
 const debounce = <Args extends unknown[]>(
@@ -63,15 +62,40 @@ const debounce = <Args extends unknown[]>(
 };
 
 /**
- * Vite plugin that emits `theme.css` + `safelist.txt` from a theme JSON.
- * Replaces the manual `generate-theme.mjs` script step in Tailwind v4 setups.
- * Emit happens in `configResolved` (sync) so files exist before
- * `@tailwindcss/vite`'s `@source` scanner runs. Re-emits on `theme.json` change.
+ * Render a caught `emit()` error for display: `ZodError`s get one
+ * `path → message` line per issue (unknown keys, injection-unsafe values);
+ * anything else (JSON syntax, fs errors) falls back to `.message`. Shared by
+ * `configResolved`, `configureServer`'s re-emit, and `closeBundle` so all
+ * three surfaces report the same detail for the same failure.
+ * @param {unknown} err - The error caught from `emit()`
+ * @returns {string} A human-readable detail string
+ */
+const formatEmitError = (err: unknown): string =>
+  err instanceof z.ZodError ? formatZodError(err) : (err as Error).message;
+
+/**
+ * Vite plugin that emits `theme.css` from a theme JSON. Replaces the
+ * manual `generate-theme.mjs` script step in Tailwind v4 setups. Emit
+ * happens in `configResolved` (sync) so the file exists before
+ * `@tailwindcss/vite`'s `@source` scanner runs. Re-emits on `theme.json`
+ * change.
  *
  * Path traversal guard: `themePath` resolved against project root and rejected
  * if it escapes (`..`).
  *
  * Monorepo: warns once if two plugin instances target the same `outDir`.
+ *
+ * `theme.css` is written atomically (`writeFileAtomic`: sibling temp file +
+ * `renameSync`), so `@tailwindcss/vite` never reads a half-written file.
+ *
+ * **Limitations:**
+ * - **Symlinks are not `realpath`'d.** `resolveSafePath` compares the
+ *   logical (non-dereferenced) path against the project root; it never calls
+ *   `fs.realpathSync`. A `themePath`/`outDir` that is itself a symlink
+ *   living inside the root is accepted even if its TARGET resolves outside
+ *   it — the traversal guard only rejects a literal `..`-escaping input
+ *   path, not a symlink whose target escapes after the filesystem resolves
+ *   it.
  * @param {StyleGenViteOptions} opts - Plugin configuration
  * @returns {Plugin} A Vite plugin instance
  */
@@ -91,26 +115,18 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
       resolvedConfig = config;
       const root = config.root;
 
-      themePathAbs = isAbsolute(opts.themePath)
-        ? opts.themePath
-        : resolve(root, opts.themePath);
-      const themeRel = relative(root, themePathAbs);
-      if (themeRel.startsWith("..") || isAbsolute(themeRel)) {
-        throw new Error(
-          `[${PLUGIN_NAME}] themePath escapes project root: ${opts.themePath}`,
-        );
-      }
+      themePathAbs = resolveSafePath(
+        root,
+        opts.themePath,
+        `[${PLUGIN_NAME}] themePath`,
+      );
 
       const outDirOption = opts.outDir ?? dirname(opts.themePath);
-      outDirAbs = isAbsolute(outDirOption)
-        ? outDirOption
-        : resolve(root, outDirOption);
-      const outRel = relative(root, outDirAbs);
-      if (outRel.startsWith("..") || isAbsolute(outRel)) {
-        throw new Error(
-          `[${PLUGIN_NAME}] outDir escapes project root: ${outDirOption}`,
-        );
-      }
+      outDirAbs = resolveSafePath(
+        root,
+        outDirOption,
+        `[${PLUGIN_NAME}] outDir`,
+      );
 
       // Skip duplicate emit when same plugin instance runs twice (SSR build
       // runs configResolved per environment; module-level guard dedupes).
@@ -126,16 +142,15 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
       try {
         emit(themePathAbs, outDirAbs, generatorOptions);
       } catch (err) {
-        throw new Error(
-          `[${PLUGIN_NAME}] failed to read or parse theme.json: ${(err as Error).message}`,
-          { cause: err },
+        this.error(
+          `[${PLUGIN_NAME}] invalid theme in ${themePathAbs}:\n${formatEmitError(err)}`,
         );
       }
       hasEmitted = true;
 
       config.logger.info(
-        `[${PLUGIN_NAME}] Wrote theme.css + safelist.txt to ${outDirAbs}\n` +
-          `  Tip: add these to .gitignore if theme.json is your source of truth.`,
+        `[${PLUGIN_NAME}] Wrote theme.css to ${outDirAbs}\n` +
+          `  Tip: add this to .gitignore if theme.json is your source of truth.`,
       );
     },
 
@@ -146,7 +161,7 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
           server.ws.send({ type: "full-reload", path: "*" });
         } catch (err) {
           server.config.logger.error(
-            `[${PLUGIN_NAME}] Re-emit failed: ${(err as Error).message}`,
+            `[${PLUGIN_NAME}] Re-emit failed for ${themePathAbs}:\n${formatEmitError(err)}`,
           );
         }
       }, 200);
@@ -159,7 +174,13 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
     closeBundle() {
       // Final write for prod build — captures last-second theme.json edits.
       if (resolvedConfig?.command === "build") {
-        emit(themePathAbs, outDirAbs, generatorOptions);
+        try {
+          emit(themePathAbs, outDirAbs, generatorOptions);
+        } catch (err) {
+          this.error(
+            `[${PLUGIN_NAME}] invalid theme in ${themePathAbs}:\n${formatEmitError(err)}`,
+          );
+        }
       }
     },
   };

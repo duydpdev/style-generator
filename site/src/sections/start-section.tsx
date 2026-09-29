@@ -91,10 +91,10 @@ export function StartSection() {
           />
           <KeyPoint
             badge="02"
-            title={<code>style-gen safelist --watch</code>}
+            title={<code>style-gen generate --watch</code>}
             body={
               <>
-                Regenerates safelist on every save. Pair with the Vite plugin.
+                Regenerates theme.css on every save. Pair with the Vite plugin.
               </>
             }
           />

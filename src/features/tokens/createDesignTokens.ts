@@ -1,19 +1,20 @@
 import {
   DEFAULT_BORDER_VALUES,
+  DEFAULT_BREAKPOINTS,
   DEFAULT_ROUNDED_VALUES,
   DEFAULT_SPACING_PROPERTIES,
-  DEFAULT_ZINDEX_VALUES,
+  type SpacingKey,
 } from "../../shared/defaultOption";
-import {
+import type {
   CamelCase,
   DesignTokensResult,
   InferColorKeys,
-  InferBorderOptions,
+  InferBorderWidthOptions,
   InferRoundedOptions,
-  InferZIndexOptions,
 } from "../../core/inference";
-import { StyleGeneratorOptions, defaultScreens } from "../../core/Options";
-import { ThemeConfig } from "../../core/ThemeConfig";
+import type { StyleGeneratorOptions } from "../../core/Options";
+import { defaultScreens } from "../../core/Options";
+import type { ThemeConfig } from "../../core/themeSchema";
 import { toCamelCase } from "../../shared/helpers";
 
 /**
@@ -27,8 +28,15 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
   config: TTheme,
   options: StyleGeneratorOptions = {},
 ): DesignTokensResult<TTheme> => {
-  const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
-    config;
+  const {
+    colors,
+    typography,
+    shadows,
+    backDropBlurs,
+    borderRadius,
+    borderWidth,
+    fontFamily,
+  } = config;
 
   const variantText = Object.keys(typography ?? {}).map(
     toCamelCase,
@@ -42,11 +50,15 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     toCamelCase,
   ) as CamelCase<Extract<keyof NonNullable<TTheme["backDropBlurs"]>, string>>[];
 
-  const variantBorder = (
-    border
-      ? Object.keys(border).map(toCamelCase)
+  const variantFontFamily = Object.keys(fontFamily ?? {}).map(
+    toCamelCase,
+  ) as CamelCase<Extract<keyof NonNullable<TTheme["fontFamily"]>, string>>[];
+
+  const variantBorderWidth = (
+    borderWidth
+      ? Object.keys(borderWidth).map(toCamelCase)
       : DEFAULT_BORDER_VALUES.map(String)
-  ) as CamelCase<InferBorderOptions<TTheme>>[];
+  ) as CamelCase<InferBorderWidthOptions<TTheme>>[];
 
   const variantColor = Object.keys(colors).map(
     toCamelCase,
@@ -57,22 +69,16 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     ...options.screens,
   };
 
-  const keysToUse = options.breakpoints ?? Object.keys(mergedScreens);
+  const keysToUse = options.breakpoints ?? [...DEFAULT_BREAKPOINTS];
   const spacingProperties = Object.keys(
     options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES,
-  );
+  ) as SpacingKey[];
 
   const roundedValues = (
     borderRadius
       ? Object.keys(borderRadius).map(toCamelCase)
       : [...DEFAULT_ROUNDED_VALUES]
   ) as CamelCase<InferRoundedOptions<TTheme>>[];
-
-  const zIndexValues = (
-    options.zIndex?.enabled === false
-      ? ([] as InferZIndexOptions<TTheme>[])
-      : (options.zIndex?.values ?? [...DEFAULT_ZINDEX_VALUES])
-  ) as InferZIndexOptions<TTheme>[];
 
   return {
     DesignTokens: {
@@ -81,9 +87,9 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
         variantColor,
         variantShadow,
         variantBackdropBlur,
-        borderOption: variantBorder,
+        variantFontFamily,
+        borderWidthOption: variantBorderWidth,
         roundedOption: roundedValues,
-        zIndexOption: zIndexValues,
         spacingProperties,
         breakpoints: keysToUse,
         screens: mergedScreens,

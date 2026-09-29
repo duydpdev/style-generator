@@ -16,9 +16,9 @@ const LABEL_GAP_X = "gapX={{ base: 2, md: 6 }}";
   <section class="border-t py-14">
     <SectionHead num="05 — Responsive" title="Spacing reacts to breakpoints.">
       <template #desc>
-        Pass a ResponsiveValue object to spacing props. Each breakpoint key sets
-        a CSS custom property; the plugin's fallback chain selects the right
-        value at each viewport.
+        Pass a ResponsiveValueStrict object to spacing props. Each breakpoint
+        key sets a CSS custom property; the plugin's fallback chain selects the
+        right value at each viewport.
       </template>
     </SectionHead>
 

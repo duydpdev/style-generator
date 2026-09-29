@@ -96,8 +96,8 @@ export function ThemingSection() {
         Dark mode, <em>in JSON.</em>
       </h2>
       <p className="ch-lede">
-        Add a <code>themes.dark</code> block to your config.{" "}
-        <code>[data-theme="dark"]</code> overrides — including shadows —
+        Add a <code>themeAxes.theme.dark</code> block to your config.{" "}
+        <code>html[data-theme="dark"]</code> overrides — including shadows —
         generate automatically. Switch by toggling one attribute on{" "}
         <code>&lt;html&gt;</code>.
       </p>
@@ -105,7 +105,7 @@ export function ThemingSection() {
       <div className="theme-grid reveal">
         <Preview
           variant="light"
-          tag='[data-theme="light"]'
+          tag='html[data-theme="light"]'
           folio="A · default"
           title="Same markup. Same component."
           swatches={LIGHT_SWATCHES}
@@ -113,7 +113,7 @@ export function ThemingSection() {
         />
         <Preview
           variant="dark"
-          tag='[data-theme="dark"]'
+          tag='html[data-theme="dark"]'
           folio="B · override"
           title={
             <>
@@ -121,7 +121,7 @@ export function ThemingSection() {
             </>
           }
           swatches={DARK_SWATCHES}
-          marker="→ vars resolve to themes.dark in JSON"
+          marker="→ vars resolve to themeAxes.theme.dark in JSON"
         />
       </div>
     </section>

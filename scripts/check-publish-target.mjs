@@ -12,7 +12,7 @@
  *   - .yarnrc.yml scope @duydpdev npmRegistryServer === GitHub Packages
  *   - .yarnrc.yml scope @duydpdev npmPublishRegistry === GitHub Packages
  *
- * Called by prepublishOnly and by CI before `yarn npm publish`.
+ * Called by prepublish and by CI before `yarn npm publish`.
  * Exits 1 on any mismatch.
  */
 import { readFileSync } from "node:fs";

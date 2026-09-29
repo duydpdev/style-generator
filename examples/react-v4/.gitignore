@@ -5,4 +5,3 @@ dist
 
 # Generated theme artifacts
 src/theme/theme.css
-src/theme/safelist.txt

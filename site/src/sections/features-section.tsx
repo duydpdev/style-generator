@@ -10,18 +10,18 @@ interface Feat {
 const FEATS: Feat[] = [
   {
     cls: "feat-1",
-    tag: "/plugin",
-    title: "createStyleSystem()",
+    tag: "/core",
+    title: "generate()",
     body: (
       <>
-        Single entry. Returns <code>plugin</code>, <code>safelist</code>,{" "}
-        <code>themeCss</code>, <code>DesignTokens</code> in one call.
+        Single entry. Returns <code>css</code> (the full Tailwind CSS string)
+        and <code>tokens</code>, typed <code>DesignTokens</code>.
       </>
     ),
   },
   {
     cls: "feat-2",
-    tag: "/tokens",
+    tag: ".",
     title: "defineTheme()",
     body: (
       <>
@@ -66,11 +66,9 @@ const FEATS: Feat[] = [
   {
     cls: "feat-7",
     tag: "CLI",
-    title: "style-gen — init · safelist · doctor",
+    title: "style-gen — init · generate · doctor",
     body: (
-      <>
-        Interactive scaffold, watch-mode safelist regenerator, schema validator.
-      </>
+      <>Interactive scaffold, watch-mode CSS regenerator, schema validator.</>
     ),
   },
 ];

@@ -9,8 +9,8 @@ export {
   resolveSpacingProps,
 } from "../features/spacing/spacingHelpers";
 export type {
-  ResponsiveValue,
   ResponsiveValueStrict,
   DefaultBreakpointKeys,
 } from "../features/spacing/spacingHelpers";
+export type { SpacingKey } from "../shared/defaultOption";
 export { DEFAULT_SPACING_PROPERTIES } from "../shared/defaultOption";

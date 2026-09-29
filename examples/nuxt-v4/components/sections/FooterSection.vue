@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import Box from "~/components/Box.vue";
 import Text from "~/components/Text.vue";
-
-defineProps<{ tailwindVersion: 3 | 4 }>();
 </script>
 
 <template>
@@ -23,7 +21,7 @@ defineProps<{ tailwindVersion: 3 | 4 }>();
         </Text>
       </Box>
       <Text type="text12Mono" color="muted">
-        Vue 3 · Tailwind v{{ tailwindVersion }} · cva · twMerge
+        Vue 3 · Tailwind v4 · cva · twMerge
       </Text>
     </Box>
   </footer>

@@ -23,7 +23,7 @@ import TweaksPanel from "~/components/sections/TweaksPanel.vue";
       <UtilitiesSection />
       <ResponsiveSpacingSection />
       <ButtonSection />
-      <FooterSection :tailwind-version="4" />
+      <FooterSection />
     </Box>
 
     <JsonDrawer />

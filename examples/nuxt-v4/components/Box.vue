@@ -56,7 +56,7 @@ const classes = computed(() =>
       shadow: props.shadow,
       backdropBlur: props.backdropBlur,
     }),
-    ...spacing.value.classNames,
+    spacing.value.classNames,
   ),
 );
 

@@ -1,25 +1,20 @@
 /* ============================================================
-   Alternate palettes (example-only, runtime switching)
+   Cross-axis compound overrides (example-only, hand-written)
    ------------------------------------------------------------
-   Cobalt is the canonical palette baked into theme.json by the
-   library pipeline. Forest / Sunset / Mono live here as static
-   --sg-* overrides on [data-palette="..."], demonstrating that
-   --sg-* is the runtime swap layer in the lib's v4 template.
-   The @theme inline mapping (theme.css) means utilities like
-   bg-primary always reference var(--sg-primary) — overriding
-   here re-skins every component without rebuilding.
+   themeAxes (DEV.6) generates the single-axis blocks below from
+   theme.json — html[data-theme="dark"] and each
+   html[data-palette="forest|sunset|mono"] — but a "dark AND a
+   specific palette at once" override isn't representable by a
+   single ThemeOverride: it needs BOTH data attributes on one
+   selector simultaneously. These 3 compound blocks stay
+   hand-written CSS (outside the 4.0.0 themeAxes scope — see the
+   README's scope table). Their (0,2,0) specificity (two attribute
+   selectors, no type selector) still beats either single-axis
+   html[data-...] rule the library emits (0,1,1), so dark×forest /
+   dark×sunset / dark×mono resolve correctly whenever both
+   attributes are set together on <html>.
    ============================================================ */
 
-[data-palette="forest"] {
-  --sg-primary: #2f5f47;
-  --sg-secondary: #b07c3a;
-  --sg-success: #5c8a4a;
-  --sg-danger: #b84a2e;
-  --sg-background: #f4f1ea;
-  --sg-surface: #fffffe;
-  --sg-foreground: #1a2620;
-  --sg-muted: #6e7570;
-}
 [data-theme="dark"][data-palette="forest"] {
   --sg-primary: #7dba9e;
   --sg-secondary: #e3b47a;
@@ -30,17 +25,6 @@
   --sg-foreground: #eae5d9;
   --sg-muted: #91998f;
 }
-
-[data-palette="sunset"] {
-  --sg-primary: #b23a1b;
-  --sg-secondary: #7a3e47;
-  --sg-success: #5c7a4a;
-  --sg-danger: #991b1b;
-  --sg-background: #faf3ea;
-  --sg-surface: #fffdf8;
-  --sg-foreground: #1f1410;
-  --sg-muted: #8b6e55;
-}
 [data-theme="dark"][data-palette="sunset"] {
   --sg-primary: #f08967;
   --sg-secondary: #c99098;
@@ -50,17 +34,6 @@
   --sg-surface: #251913;
   --sg-foreground: #faeedf;
   --sg-muted: #b59a82;
-}
-
-[data-palette="mono"] {
-  --sg-primary: #0a0a0a;
-  --sg-secondary: #525252;
-  --sg-success: #166534;
-  --sg-danger: #b91c1c;
-  --sg-background: #fafafa;
-  --sg-surface: #ffffff;
-  --sg-foreground: #0a0a0a;
-  --sg-muted: #737373;
 }
 [data-theme="dark"][data-palette="mono"] {
   --sg-primary: #fafafa;

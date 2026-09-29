@@ -1,6 +1,6 @@
 import type { Lang } from "./tokenize";
 
-export type Variant = "v3" | "v4";
+export type Variant = "v4";
 
 export interface ExampleFile {
   path: string;
@@ -15,11 +15,6 @@ export interface ExampleSection {
 
 const v4Raw = import.meta.glob(
   "../../../examples/react-v4/**/*.{ts,tsx,js,jsx,css,json,html}",
-  { query: "?raw", import: "default", eager: true },
-) as Record<string, string>;
-
-const v3Raw = import.meta.glob(
-  "../../../examples/react-v3/**/*.{ts,tsx,js,jsx,css,json,html}",
   { query: "?raw", import: "default", eager: true },
 ) as Record<string, string>;
 
@@ -95,7 +90,6 @@ function buildVariant(
 }
 
 export const EXAMPLE_FILES: Record<Variant, ExampleSection[]> = {
-  v3: buildVariant(v3Raw, "v3"),
   v4: buildVariant(v4Raw, "v4"),
 };
 

@@ -1,6 +1,6 @@
 # React + Tailwind v4 example
 
-Demo app showing `@duydpdev/style-generator` with **Tailwind CSS v4** (`@plugin` + `@theme inline`), Vite, and React 19.
+Demo app showing `@duydpdev/style-generator` with **Tailwind CSS v4** (`generate()` + `@theme inline`), Vite, and React 19.
 
 ## Prerequisites
 
@@ -22,10 +22,9 @@ npm run dev        # starts Vite dev server on http://localhost:5173
 
 `styleGenVite` (registered in `vite.config.ts`) emits the following on dev start, build, and whenever `theme.json` changes:
 
-- `src/theme/theme.css` — `@theme inline` block (consumed by Tailwind v4)
-- `src/theme/safelist.txt` — class safelist (consumed via `@source`)
+- `src/theme/theme.css` — full generated CSS (`:root` vars, `@theme inline`, typography/spacing utilities, `@source inline` utility coverage)
 
-Both generated files are gitignored.
+The generated file is gitignored.
 
 ## Scripts
 
@@ -39,10 +38,12 @@ Both generated files are gitignored.
 
 ## What it demonstrates
 
-1. **Color tokens + theme toggle** — `bg-primary`, `bg-background`, etc. generated via `@theme inline`; toggling sets `document.documentElement.dataset.theme` and swaps `[data-theme="dark"]` overrides.
+1. **Color tokens + theme toggle** — `bg-primary`, `bg-background`, etc. generated via `@theme inline`; toggling sets `document.documentElement.dataset.theme`/`.dataset.palette` and swaps the library-generated `html[data-theme="dark"]`/`html[data-palette="..."]` overrides.
 2. **Typography utilities** — `text-16-medium`, `text-32-bold` emitted from `theme.typography` and consumed by `<Text variant="body|heading">`.
 3. **Spacing helpers** — `<Box p={4} mx={{ base: 2, md: 4 }}>` uses `resolveSpacingProps` from `@duydpdev/style-generator/spacing` to emit `.sp-*` classes + inline CSS variables. No safelist required for spacing.
 4. **CVA mapper + `cn()`** — `<Button>` composes `class-variance-authority` with `createVariantMapper("bg", colors)` from `@duydpdev/style-generator/cva`. Final classes flow through a shadcn-style `cn(clsx, twMerge)` helper.
+
+> Multi-axis scope: `theme.json` declares `themeAxes.theme` (light/dark) and `themeAxes.palette` (cobalt/forest/sunset/mono), each toggled via its own `<html data-*>` attribute. The `dark × palette` compound overrides in `palettes.css` stay hand-written CSS (outside the 4.0.0 `themeAxes` scope) — see `nuxt-v4`'s README for the full scope table.
 
 ## Component layout (template-lib style)
 
@@ -56,7 +57,7 @@ examples/react-v4
 └── src/
     ├── App.tsx                   # header + theme toggle, composed of Box/Text/Button
     ├── main.tsx
-    ├── index.css                 # Tailwind + plugin entry
+    ├── index.css                 # Tailwind + generated theme.css import
     ├── lib/
     │   └── utils.ts              # cn() = twMerge(clsx(...))
     ├── components/
@@ -82,15 +83,5 @@ examples/react-v4
     │   └── cva-demo.tsx
     └── theme/
         ├── theme.json
-        ├── theme-plugin.ts       # Tailwind @plugin entry — runs in plugin loader, exports plugin default
         └── design-tokens.ts      # App-side DesignTokens via /tokens subpath (browser-safe)
 ```
-
-### Why split `theme-plugin.ts` and `design-tokens.ts`?
-
-The root barrel `@duydpdev/style-generator` (used by `createStyleSystem`) pulls in `detectTailwindVersion`, which uses `node:module`. Vite cannot bundle that for the browser. So:
-
-- `theme-plugin.ts` (Tailwind-only, loaded by `@plugin` directive in CSS) keeps using the full barrel.
-- `design-tokens.ts` imports from the `/tokens` subpath which is browser-safe and contains only `createDesignTokens` + its deps.
-
-App code imports `DesignTokens` from `design-tokens.ts` — never from `theme-plugin.ts`.

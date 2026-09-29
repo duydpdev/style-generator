@@ -1,10 +1,10 @@
 import type { ComponentProps, ElementType } from "react";
-import type { ResponsiveValue } from "@duydpdev/style-generator/spacing";
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
 import type {
   ColorVariant,
   ShadowVariant,
   BackdropBlurVariant,
-  BorderVariant,
+  BorderWidthVariant,
   RoundedVariant,
 } from "@duydpdev/style-generator/types";
 
@@ -12,59 +12,59 @@ import type { Theme } from "../../theme/design-tokens";
 
 export interface SpacingProperties {
   /** Padding (all sides) */
-  p?: ResponsiveValue<number>;
+  p?: ResponsiveValueStrict<number>;
   /** Padding horizontal */
-  px?: ResponsiveValue<number>;
+  px?: ResponsiveValueStrict<number>;
   /** Padding vertical */
-  py?: ResponsiveValue<number>;
+  py?: ResponsiveValueStrict<number>;
   /** Padding top */
-  pt?: ResponsiveValue<number>;
+  pt?: ResponsiveValueStrict<number>;
   /** Padding bottom */
-  pb?: ResponsiveValue<number>;
+  pb?: ResponsiveValueStrict<number>;
   /** Padding left */
-  pl?: ResponsiveValue<number>;
+  pl?: ResponsiveValueStrict<number>;
   /** Padding right */
-  pr?: ResponsiveValue<number>;
+  pr?: ResponsiveValueStrict<number>;
   /** Margin (all sides) */
-  m?: ResponsiveValue<number>;
+  m?: ResponsiveValueStrict<number>;
   /** Margin horizontal */
-  mx?: ResponsiveValue<number>;
+  mx?: ResponsiveValueStrict<number>;
   /** Margin vertical */
-  my?: ResponsiveValue<number>;
+  my?: ResponsiveValueStrict<number>;
   /** Margin top */
-  mt?: ResponsiveValue<number>;
+  mt?: ResponsiveValueStrict<number>;
   /** Margin bottom */
-  mb?: ResponsiveValue<number>;
+  mb?: ResponsiveValueStrict<number>;
   /** Margin left */
-  ml?: ResponsiveValue<number>;
+  ml?: ResponsiveValueStrict<number>;
   /** Margin right */
-  mr?: ResponsiveValue<number>;
+  mr?: ResponsiveValueStrict<number>;
   /** Top position offset */
-  top?: ResponsiveValue<number>;
+  top?: ResponsiveValueStrict<number>;
   /** Left position offset */
-  left?: ResponsiveValue<number>;
+  left?: ResponsiveValueStrict<number>;
   /** Right position offset */
-  right?: ResponsiveValue<number>;
+  right?: ResponsiveValueStrict<number>;
   /** Bottom position offset */
-  bottom?: ResponsiveValue<number>;
+  bottom?: ResponsiveValueStrict<number>;
   /** Gap (flex/grid) */
-  gap?: ResponsiveValue<number>;
+  gap?: ResponsiveValueStrict<number>;
   /** Column gap (flex/grid) */
-  gapX?: ResponsiveValue<number>;
+  gapX?: ResponsiveValueStrict<number>;
   /** Row gap (flex/grid) */
-  gapY?: ResponsiveValue<number>;
+  gapY?: ResponsiveValueStrict<number>;
 }
 
 export interface StyleProperties {
   backgroundColor?: ColorVariant<Theme>;
   borderColor?: ColorVariant<Theme>;
-  border?: BorderVariant<Theme>;
-  borderX?: BorderVariant<Theme>;
-  borderY?: BorderVariant<Theme>;
-  borderT?: BorderVariant<Theme>;
-  borderB?: BorderVariant<Theme>;
-  borderL?: BorderVariant<Theme>;
-  borderR?: BorderVariant<Theme>;
+  border?: BorderWidthVariant<Theme>;
+  borderX?: BorderWidthVariant<Theme>;
+  borderY?: BorderWidthVariant<Theme>;
+  borderT?: BorderWidthVariant<Theme>;
+  borderB?: BorderWidthVariant<Theme>;
+  borderL?: BorderWidthVariant<Theme>;
+  borderR?: BorderWidthVariant<Theme>;
   rounded?: RoundedVariant<Theme>;
   roundedT?: RoundedVariant<Theme>;
   roundedB?: RoundedVariant<Theme>;

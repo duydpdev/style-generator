@@ -75,7 +75,7 @@ export function DocsPage() {
   }
 
   const readMin = approxReadMinutes(doc.source);
-  const ghUrl = `https://github.com/duydpdev/style-generator/blob/main/docs/${doc.slug}.md`;
+  const ghUrl = `https://github.com/duydpdev/style-generator/blob/main/documents/${doc.slug}.md`;
 
   return (
     <>
@@ -104,8 +104,9 @@ export function DocsPage() {
                 <em> at a glance.</em>
               </h1>
               <p className="lede">
-                <b>{doc.title}</b> — synced from <code>docs/{doc.slug}.md</code>
-                . All artifacts stay in lockstep with the source.
+                <b>{doc.title}</b> — synced from{" "}
+                <code>documents/{doc.slug}.md</code>. All artifacts stay in
+                lockstep with the source.
               </p>
             </div>
             <div className="doc-meta">
@@ -115,7 +116,7 @@ export function DocsPage() {
               </div>
               <div className="row">
                 <span>FILE</span>
-                <code>docs/{doc.slug}.md</code>
+                <code>documents/{doc.slug}.md</code>
               </div>
               <div className="row">
                 <span>GROUP</span>
@@ -195,7 +196,7 @@ export function DocsPage() {
             { label: "Edit on GitHub", href: ghUrl },
             {
               label: "View raw .md",
-              href: `https://raw.githubusercontent.com/duydpdev/style-generator/main/docs/${doc.slug}.md`,
+              href: `https://raw.githubusercontent.com/duydpdev/style-generator/main/documents/${doc.slug}.md`,
             },
             { label: "See examples", href: "/examples/v4", arr: "→" },
             { label: "Back to top", href: "#top", arr: "↑" },

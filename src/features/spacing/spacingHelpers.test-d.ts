@@ -1,6 +1,9 @@
 import { describe, it, expectTypeOf } from "vitest";
 
-import type { ResponsiveValue, ResponsiveValueStrict } from "./spacingHelpers";
+import type { SpacingKey } from "../../shared/defaultOption";
+
+import { resolveSpacingProps } from "./spacingHelpers";
+import type { ResponsiveValueStrict } from "./spacingHelpers";
 
 describe("ResponsiveValueStrict<T, BKeys>", () => {
   type Strict = ResponsiveValueStrict<number, "base" | "md">;
@@ -22,22 +25,55 @@ describe("ResponsiveValueStrict<T, BKeys>", () => {
   });
 });
 
-describe("ResponsiveValue<T, BKeys> back-compat (still loose)", () => {
-  type Loose = ResponsiveValue<number, "base" | "md">;
+describe("SpacingKey", () => {
+  it("is a literal union of every default spacing property key, not string", () => {
+    expectTypeOf<SpacingKey>().toEqualTypeOf<
+      | "p"
+      | "px"
+      | "py"
+      | "pt"
+      | "pb"
+      | "pl"
+      | "pr"
+      | "m"
+      | "mx"
+      | "my"
+      | "mt"
+      | "mb"
+      | "ml"
+      | "mr"
+      | "gap"
+      | "gap-x"
+      | "gap-y"
+      | "top"
+      | "right"
+      | "bottom"
+      | "left"
+    >();
+  });
+});
 
-  it("accepts unknown keys via (string & {}) fallback", () => {
-    expectTypeOf<{ base: number; typo: number }>().toExtend<Loose>();
+describe("resolveSpacingProps", () => {
+  it("returns { classNames: string; style: Record<string, string> } (already joined)", () => {
+    expectTypeOf(resolveSpacingProps).returns.toEqualTypeOf<{
+      classNames: string;
+      style: Record<string, string>;
+    }>();
   });
 
-  it("still accepts plain T", () => {
-    expectTypeOf<4>().toExtend<Loose>();
-  });
+  it("rejects an unknown SpacingKey and an unknown breakpoint key (compile-time only)", () => {
+    expectTypeOf(resolveSpacingProps)
+      .parameter(0)
+      .toExtend<
+        Partial<
+          Record<string, ResponsiveValueStrict<number> | number | undefined>
+        >
+      >();
 
-  it("keyof loose object branch is wider than 'base' | 'md' due to fallback", () => {
-    type ObjectBranch = Extract<Loose, Record<string, unknown>>;
-    type Keys = keyof ObjectBranch;
-    // Loose collapses to broader key set than Strict — proved via assignability.
-    type AcceptsArbitrary = "anyString" extends Keys ? true : false;
-    expectTypeOf<AcceptsArbitrary>().toEqualTypeOf<true>();
+    // @ts-expect-error "pp" is not a valid SpacingKey
+    resolveSpacingProps({ pp: 4 });
+
+    // @ts-expect-error "tablet" is not a valid default breakpoint key
+    resolveSpacingProps({ p: { tablet: 4 } });
   });
 });

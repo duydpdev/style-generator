@@ -1,132 +1,48 @@
----
-trigger: always_on
----
-
 # Lessons Learned
 
-> **Self-Improvement Loop:** This file tracks mistakes, user corrections, and important project-specific patterns. **Review this file at the start of every session.**
+> **Self-Improvement Loop:** File này ghi lại lỗi đã mắc, các lần user sửa, và pattern riêng của project. **Đọc lại ở đầu mỗi session.**
 
-Whenever the user corrects you on a mistake:
+Khi user sửa một lỗi:
 
-1. Identify the pattern or root cause.
-2. Add a new entry here with the date, description, and the new rule to follow.
+1. Xác định pattern hoặc nguyên nhân gốc.
+2. Thêm một mục mới ở cuối file: ngày, bối cảnh/lỗi, rule mới.
 
----
-
-## Example Entry
-
-### [2026-03-01] - Avoid Hardcoding API Keys
-
-- **Mistake:** Hardcoded development API key in a test file.
-- **New Rule:** ALWAYS use `process.env.TEST_API_KEY` for any test environments. Never commit literal tokens.
+Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không để hai rule mâu thuẫn cùng tồn tại.
 
 ---
 
-_(Add new lessons below this line)_
+### [2026-03-07 → 2026-09-29] - Luôn lập plan vật lý trước khi code, đúng layout
 
-### [2026-03-07] - Luôn lập kế hoạch trước khi code (Always Plan Before Coding)
+- **Mistake (lặp lại 2026-03-07, 03-08, 03-13, 03-16):** code khi chưa có file plan; đặt plan sai thư mục; quên tick `[x]`; user đưa plan trong prompt thì bỏ qua bước tạo file.
+- **New Rule:**
+  1. Mọi task không tầm thường phải có plan directory `documents/plans/YYYY-MM-DD/<plan-slug>/` gồm `plan.md` + `phase-NN-<name>.md`, theo template trong `.claude/rules/validation.md`, TRƯỚC khi code. Không có `task.md` theo ngày.
+  2. User đưa plan inline ("Implement the following plan") vẫn phải materialize plan directory ở bước đầu tiên.
+  3. Xong task nào tick `[x]` ngay trong phase file và cập nhật cột Status của `plan.md` trong cùng thay đổi, trước khi báo cáo.
 
-- **Mistake:** Cứ thế code luôn mà không khởi tạo file kế hoạch và thỏa thuận rõ ràng với user. Đặt file plan sai cấu trúc thư mục (để file markdown trần hoặc tên folder có chứa text).
-- **New Rule:** LUÔN PHẢI lên plan TRƯỚC khi code bất kỳ tính năng lớn/nhỏ nào. Mọi plan mới đều phải xuất hiện dưới dạng Markdown checklist và được MẶC ĐỊNH lưu vào **đúng cấu trúc thư mục** `docs/plans/YYYY-MM-DD/XX-ten-tinh-nang.md` (ví dụ: `docs/plans/2026-03-07/03-refactor-color-system.md`). Thư mục ngày (`YYYY-MM-DD`) phải chứa một file `task.md` để liệt kê thứ tự thực hiện các kế hoạch trong ngày đó. File markdown của plan phải tuân theo **TEMPLATE BẮT BUỘC** sau:
-  - `XX` là số thứ tự thực hiện trong ngày (01, 02, 03...). **LƯU Ý:** Khi chuyển sang thư mục ngày mới (`YYYY-MM-DD`), số thứ tự ĐẢM BẢO phải bắt đầu lại từ `01`.
-  - Tên file không chứa ký tự đặc biệt ngoài gạch nối `-`.
+### [2026-03-07] - Không bao giờ thực thi mã khi chưa được approve plan
 
-```markdown
-# Project Plan: [Tên Task]
+- **Mistake (lặp lại 2026-03-08):** tự nhảy sang implementation khi user chưa duyệt; gộp giải thích lỗi + fix vào cùng một lượt.
+- **New Rule:** DỪNG LẠI CHỜ DUYỆT sau khi nộp plan ("ok", "duyệt", "triển khai" hoặc tương đương). `[ ] Task` chỉ chuyển `[x]` sau khi user đã đồng ý plan và gate đã exit 0.
 
-## 🎯 Overview
+### [2026-03-07] - Đa nền tảng & test tự động
 
-[Mục tiêu ngắn gọn của task]
+- **Mistake:** chỉ fix cho macOS và không phát hiện project thiếu test.
+- **New Rule:** script và code phải chạy trên Linux, Windows, macOS (script Node, không phụ thuộc shell riêng của một OS). Hàm mới phải có test chứng minh hành vi.
 
-## 📱 Project Type
+### [2026-03-07] - Không dùng đường dẫn tuyệt đối trong docs
 
-[WEB / BACKEND / APP / LIBRARY]
+- **Mistake:** dùng `file://` + đường dẫn máy cá nhân trong README/plan — lộ cấu trúc thư mục cá nhân, hỏng link trên máy khác.
+- **New Rule:** mọi liên kết trong tài liệu git của project dùng **đường dẫn tương đối**.
 
-## ✅ Success Criteria
+### [2026-03-07] - Gate trước khi báo hoàn thành
 
-1. [Điều kiện hoàn thành 1]
-2. [Điều kiện hoàn thành 2]
+- **Mistake:** không đọc hướng dẫn skill liên quan trước khi làm và báo hoàn thành khi chưa chạy gate kiểm tra.
+- **New Rule:** TUYỆT ĐỐI không đánh dấu task hoàn thành khi gate trong `.claude/rules/validation.md` chưa exit 0. Đọc skill phù hợp của runtime trước bước implementation.
 
-## 📋 Task Breakdown
+### [2026-03-09] - Chú ý script trên môi trường ESM
 
-### [ ] Task 1: [Tên bước 1]
-
-- **Agent**: [Tên Agent xử lý (nếu có)]
-- **Input**: [Các file bị ảnh hưởng]
-- **Output**: [Kết quả mong muốn]
-- **Verify**: [Cách kiểm tra xem đã xong chưa]
-
-### [ ] Task 2: [Tên bước 2]
-
-...
-```
-
-### [2026-03-07] - Đa nền tảng (Cross-platform) & Kiểm tra Test Automation
-
-- **Mistake:** Chỉ tập trung fix cho macOS (python3) mà quên mất tính đa nền tảng (Windows/Linux) và không phát hiện project thiếu Unit Tests / config test npm scripts.
-- **New Rule:** LUÔN PHẢI đảm bảo scripts và code hoạt động ĐA NỀN TẢNG (Linux, Windows, macOS).
-  - Với Python: Phải có cơ chế kiểm tra lệnh khả dụng (`python3` cho Unix, `python` cho Windows/một số bản Linux) hoặc sử dụng môi trường ảo chuẩn hóa.
-  - Với Tests: Nếu project chưa có tests / framework tests, hãy chủ động đưa vào plan để setup (vd: Vitest cho Vite stack) và viết tests ngay. Bất kỳ function nào làm ra cũng cần test để chứng minh logic hoạt động đúng trên mọi môi trường.
-
-### [2026-03-07] - Không sử dụng đường dẫn tuyệt đối (No Absolute Paths in Docs)
-
-- **Mistake:** Sử dụng đường dẫn tuyệt đối (vd: `file://~/...`) trong file README/Plan của project. Việc này làm lộ cấu trúc thư mục cá nhân và khiến link bị hỏng trên máy người khác.
-- **New Rule:** LUÔN PHẢI sử dụng **đường dẫn tương đối** (relative path) cho mọi liên kết bên trong tài liệu của project. Chỉ sử dụng đường dẫn tuyệt đối khi AI tool yêu cầu cụ thể (vd: trong các artifact nội bộ của AI), nhưng tuyệt đối không đưa vào mã nguồn hoặc tài liệu git của project.
-
-### [2026-03-07] - Tuân thủ Agent & Skill Protocol (Strict Protocol Enforcement)
-
-- **Mistake:** Bỏ qua việc thông báo Agent (`🤖 Applying knowledge...`), không đọc `SKILL.md` trước khi làm, và quan trọng nhất là không chạy `checklist.py` trước khi thông báo hoàn thành.
-- **New Rule:** TUYỆT ĐỐI không được đánh dấu Task hoàn thành nếu chưa chạy `python3 .agent/scripts/checklist.py .` và đạt kết quả PASS (hoặc giải trình lý do chính đáng nếu là Library đặc thù). Luôn phải load và đọc hướng dẫn Agent chuyên biệt trước khi bắt đầu step implementation.
-
-### [2026-03-07] - Đồng bộ hóa Kế hoạch và Kiểm tra Cuối cùng (Syncing Plans & Final Checks)
-
-- **Mistake:** Quên cập nhật trạng thái `[x]` vào file kế hoạch vật lý (`docs/plans/*.md`) và file `task.md` tóm tắt ngày. Không chạy `checklist.py` để verify toàn bộ project trước khi báo cáo hoàn thành.
-- **New Rule:** LUÔN PHẢI cập nhật song song tiến độ vào cả Task Artifact (brain) và các file kế hoạch vật lý (`docs/plans/YYYY-MM-DD/task.md` và `XX-plan.md`). Chỉ được coi là hoàn thành khi đã cập nhật tất cả tài liệu liên quan và lệnh `python3 .agent/scripts/checklist.py .` trả về kết quả đạt (hoặc đã xử lý hết các lỗi nghiêm trọng).
-
-### [2026-03-07] - Không bao giờ thực thi mã (Code) khi chưa được Approve Plan
-
-- **Mistake:** Đã tự ý nhảy sang bước lập trình/thực thi (Phase 4 - Implementation) cho Task 05 khi người dùng chưa đồng ý/approve bản kế hoạch (Phase 3 - Solutioning/Plan). Việc này vi phạm nghiêm trọng phương pháp 4-Phase của dự án.
-- **New Rule:** LUÔN PHẢI dừng lại chờ người dùng xác nhận bằng các câu "ok", "duyệt", "triển khai" sau khi nộp file `.md` kế hoạch. Tuyệt đối không được kích hoạt các tool sửa code ngay sau khi notify_user bằng `BlockedOnUser: true` nếu người dùng chưa hồi đáp thuận tình.
-
-### [2026-03-08] - Tuyệt đối tuân thủ quy trình lập kế hoạch (4-Phase) và cấu trúc thư mục
-
-- **Mistake:** Tiếp tục bỏ qua việc tạo file kế hoạch vật lý (`docs/plans/...`) và không sử dụng đúng template bắt buộc dù đã có lesson trước đó. Ngoài ra còn sử dụng đường dẫn tuyệt đối trong plan.
-- **New Rule:** LUÔN PHẢI kiểm tra `lessons.md` trước khi bắt đầu bất kỳ task nào. Việc tạo plan trong `docs/plans/YYYY-MM-DD/XX-plan.md` là BẮT BUỘC và phải là bước đầu tiên sau khi phân tích. Không được phép "quên" hoặc "sơ suất" vì đây là quy trình vận hành tiêu chuẩn của dự án.
-
-### [2026-03-08] - Không bao giờ thực thi mã (Code) khi chưa được Approve Plan (Lặp lại lỗi)
-
-- **Mistake:** Trong quá trình xử lý bug border, dù đã tạo plan nhưng ngay sau khi giải thích đã tự ý thực thi mã nguồn trước khi user phản hồi phê duyệt. Đây là lặp lại lỗi vi phạm nghiêm trọng Phase 3.
-- **New Rule:** LUÔN PHẢI DỪNG LẠI CHỜ DUYỆT. Tuyệt đối KHÔNG gộp chung bước giải thích lỗi + fix bug vào cùng 1 lượt. `[ ] Task` chỉ được phép chuyển thành `[/]` hoặc `[x]` sau khi có sự đồng ý của user.
-
-### [2026-03-09] - Chú ý xử lý script trên môi trường ESM
-
-- **Mistake**: Chạy script thử nghiệm (`.js`) bằng `node` mà vẫn dùng cú pháp `require()` trong một project đã setup `"type": "module"` trong `package.json`, dẫn tới lỗi `ReferenceError: require is not defined in ES module scope`.
-- **New Rule**: TRƯỚC KHI tạo script chạy bằng Node, LUÔN phải check `package.json` xem đang ở chế độ CommonJS hay ES Module. Nếu là ESM, bắt buộc dùng cú pháp `import` hoặc đổi đuôi file script thành `.cjs` để Node hiểu đúng context.
-
-### [2026-03-13] - Luôn đánh dấu `[x]` vào plan và task.md ngay sau khi hoàn thành
-
-- **Mistake:** Sau khi implement xong tất cả tasks, quên cập nhật checkbox `[x]` trong file plan (`docs/plans/YYYY-MM-DD/XX-plan.md`) và `task.md`. Báo cáo hoàn thành mà tài liệu vật lý vẫn còn `[ ]`.
-- **New Rule:** SAU KHI implement xong mỗi task (test pass, lint sạch), NGAY LẬP TỨC phải:
-  1. Đổi `[ ]` → `[x]` trong file plan tương ứng
-  2. Đổi `[ ]` → `[x]` trong `task.md` của ngày đó
-  - Đây là bước bắt buộc trước khi báo cáo hoàn thành với user. Không được bỏ qua dù "chỉ quên".
-
-### [2026-03-11] - Brainstorm: Cải thiện lib (type safe, bundle size, easy setup)
-
-- **Context:** Phân tích toàn bộ codebase `@duydpdev/style-generator` và đưa ra options cải thiện theo 3 mục tiêu.
-- **Kết quả lưu tại:** `docs/brainstorm/2026-03-11/01-improve-lib.md`
-- **Recommended options:**
-  1. **`defineTheme()` + `satisfies`** — Zero runtime cost, tăng type safety ngay tại config site, effort Low
-  2. **Subpath exports** (`/plugin`, `/tokens`, `/cva`) — Tree-shaking thật sự, giảm 60% import size, effort Medium (breaking → major version)
-  3. **Polish zero-config defaults** — 80% users không cần truyền options, effort Low
-  4. **JSON Schema trong `doctor` command** — Runtime validation theme.json, effort Medium
-  5. **Tailwind v4 CSS plugin format** — Future-proof, effort High (đợi v4 stable)
-- **New Rule:** Khi brainstorm tính năng cho library, LUÔN lưu kết quả vào `docs/brainstorm/YYYY-MM-DD/XX-topic.md` (tương tự cấu trúc `docs/plans/`) và tạo file `session.md` tóm tắt ngày. Cấu trúc thư mục brainstorm phải mirror cấu trúc plans.
-
-### [2026-03-16] - Luôn tạo file plan vật lý dù user đã cung cấp plan trong prompt
-
-- **Mistake:** User nói "Implement the following plan:" kèm nội dung plan chi tiết → tôi implement ngay mà không tạo file `docs/plans/YYYY-MM-DD/XX-plan.md` và `task.md`. File plan vật lý bị bỏ qua hoàn toàn.
-- **New Rule:** Dù user cung cấp plan trực tiếp trong prompt, PHẢI tạo file `docs/plans/YYYY-MM-DD/XX-plan.md` và `task.md` TRƯỚC khi implement. Đây là tài liệu tracking bắt buộc của dự án, không phụ thuộc vào việc plan đến từ đâu. "Implement the following plan" = đã approve plan → vẫn phải tạo file plan vật lý ngay bước đầu tiên.
+- **Mistake:** chạy script `.js` dùng `require()` trong project `"type": "module"` → `ReferenceError: require is not defined in ES module scope`.
+- **New Rule:** trước khi tạo script Node, kiểm `package.json`. ESM thì dùng `import` hoặc đuôi `.cjs`.
 
 ### [2026-06-07] - CI token hết hạn + reusable workflow permissions + GitHub Packages
 
@@ -140,5 +56,13 @@ _(Add new lessons below this line)_
 ### [2026-06-07] - Example workspace KHÔNG được có `postinstall` build hook
 
 - **Mistake:** Thêm `"postinstall": "nuxt prepare"` vào `examples/nuxt-v4/package.json`. CI `yarn install --immutable` chạy hook này trong Link step — TRƯỚC khi lib `dist/` được build — `nuxt.config.ts` import `@duydpdev/style-generator/vite` không resolve được → workspace build fail (exit 1) → cả install fail. Local pass vì `dist/` đã tồn tại.
-- **New Rule:** Trong monorepo, example/consumer workspace TUYỆT ĐỐI không đặt lifecycle hook (`postinstall`/`prepare`) gọi tool cần lib đã build (vd `nuxt prepare`, codegen). `yarn install --immutable` chạy các hook đó trước khi root build → fail. Đổi thành script thủ công (`prepare:nuxt`) hoặc để `dev`/`build`/`typecheck` tự lo. Đối chiếu các example sẵn có (react-v3/v4 KHÔNG có install hook) trước khi thêm script.
+- **New Rule:** Trong monorepo, example/consumer workspace TUYỆT ĐỐI không đặt lifecycle hook (`postinstall`/`prepare`) gọi tool cần lib đã build (vd `nuxt prepare`, codegen). `yarn install --immutable` chạy các hook đó trước khi root build → fail. Đổi thành script thủ công (`prepare:nuxt`) hoặc để `dev`/`build`/`typecheck` tự lo. Đối chiếu các example sẵn có (các example hiện có KHÔNG có install hook) trước khi thêm script.
 - **Liên quan:** `examples/*` mới cũng phải được thêm vào `exclude` của root `tsconfig.json` (pre-commit `tsc --noEmit` ở root sẽ check chúng → lỗi `--jsx`/auto-import nếu không exclude).
+
+### [2026-09-29] - Một cây tài liệu `documents/`; không vendor khung agent/skill; chỉ giữ lịch sử từ v4
+
+- **Context:** Khung agent Antigravity/Gemini (thư mục `.agent` ở root cùng bản sao agents/commands/skills trong `.claude`) lệch pha với runtime và bắt chạy script Python không có trong quy trình của một lib TypeScript. Tài liệu nằm rải ở `docs/` và `plans/` ở root; plan theo file phẳng + `task.md` theo ngày khó theo dõi khi một plan có nhiều phase. Plan/brainstorm trước 2026-09-28 mô tả API đã xoá ở 4.0.0.
+- **New Rule:**
+  1. Nguồn sự thật cho agent là `.claude/CLAUDE.md` + `.claude/rules/*.md`. Không thêm lại thư mục agent/command/skill vào repo; dùng skill của runtime.
+  2. Mọi tài liệu nằm dưới `documents/` theo layout ở mục "Documentation layout" của `.claude/CLAUDE.md`; `.agentkit/config.yaml` trỏ `paths.docs`/`paths.plans` vào đó. Tool nào tạo `docs/` hoặc `plans/` ở root thì chuyển file vào `documents/` trước khi commit và sửa cấu hình của tool đó.
+  3. Lịch sử trước 2026-09-28 tra bằng git history, không khôi phục vào tree.

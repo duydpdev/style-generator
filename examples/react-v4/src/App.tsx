@@ -13,8 +13,6 @@ import { TypographySection } from "./sections/TypographySection";
 import { UtilitiesSection } from "./sections/UtilitiesSection";
 import type { StyleGuideState, TweakSetter } from "./sections/types";
 
-const TAILWIND_VERSION = 4 as const;
-
 const INITIAL: StyleGuideState = {
   palette: "cobalt",
   theme: "light",
@@ -45,7 +43,6 @@ export const App = () => {
     <>
       <Topbar
         theme={state.theme}
-        tailwindVersion={TAILWIND_VERSION}
         onToggleTheme={() => {
           setTweak("theme", state.theme === "dark" ? "light" : "dark");
         }}
@@ -69,7 +66,7 @@ export const App = () => {
         <UtilitiesSection />
         <ResponsiveSpacingSection />
         <ButtonSection />
-        <Footer tailwindVersion={TAILWIND_VERSION} />
+        <Footer />
       </Box>
 
       <JsonDrawer

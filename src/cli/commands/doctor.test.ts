@@ -2,7 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type MockInstance,
+} from "vitest";
 
 import { logger } from "../logger";
 
@@ -25,7 +33,7 @@ const writeProject = (
 describe("doctorCommand", () => {
   let tmp: string;
   let origCwd: string;
-  let logSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: MockInstance<typeof logger.log>;
   let exitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -44,17 +52,14 @@ describe("doctorCommand", () => {
     vi.restoreAllMocks();
   });
 
-  const lines = (): string => {
-    const spy = logSpy as unknown as { mock: { calls: unknown[][] } };
-    return spy.mock.calls.map((c) => String(c[0])).join("\n");
-  };
+  const lines = (): string => logSpy.mock.calls.map((c) => c[0]).join("\n");
 
   it("v3 valid theme + plugin + output → success path", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "styles/theme.json": {
         colors: { primary: "#3B82F6" },
@@ -68,7 +73,7 @@ describe("doctorCommand", () => {
         },
       },
       "plugins/theme-plugin.ts": "// stub",
-      "styles/safelist.txt": "text-primary",
+      "styles/theme.css": "text-primary",
     });
 
     expect(() => {
@@ -80,12 +85,12 @@ describe("doctorCommand", () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
-  it("v1 legacy nested colors → emits migration warning (no exit)", () => {
+  it("v1 nested colors (object values) → schema error naming the offending path, exit 1", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "styles/theme.json": {
         colors: { base: { primary: "#3B82F6" }, text: {}, common: {} },
@@ -103,9 +108,30 @@ describe("doctorCommand", () => {
 
     expect(() => {
       doctorCommand();
-    }).not.toThrow();
-    expect(lines()).toMatch(/old color format/i);
-    expect(exitSpy).not.toHaveBeenCalled();
+    }).toThrow(/__exit_1__/);
+    expect(lines()).toMatch(/colors\.base/);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("misspelled 'colours' key → schema error names the offending path, exit 1", () => {
+    writeProject(tmp, {
+      "style-gen.config.json": {
+        theme: "styles/theme.json",
+        plugin: "plugins/theme-plugin.ts",
+        output: "styles/theme.css",
+      },
+      "styles/theme.json": {
+        colors: { primary: "#3B82F6" },
+        colours: { primary: "#3B82F6" },
+      },
+      "plugins/theme-plugin.ts": "// stub",
+    });
+
+    expect(() => {
+      doctorCommand();
+    }).toThrow(/__exit_1__/);
+    expect(lines()).toMatch(/colours/);
+    expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it("invalid JSON theme → exit 1 with 'Invalid JSON'", () => {
@@ -113,7 +139,7 @@ describe("doctorCommand", () => {
       "style-gen.config.json": {
         theme: "styles/theme.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "styles/theme.json": "{ this is not json",
       "plugins/theme-plugin.ts": "// stub",
@@ -131,7 +157,7 @@ describe("doctorCommand", () => {
       "style-gen.config.json": {
         theme: "styles/missing.json",
         plugin: "plugins/theme-plugin.ts",
-        output: "styles/safelist.txt",
+        output: "styles/theme.css",
       },
       "plugins/theme-plugin.ts": "// stub",
     });
@@ -140,5 +166,98 @@ describe("doctorCommand", () => {
       doctorCommand();
     }).toThrow(/__exit_1__/);
     expect(lines()).toMatch(/Not found/);
+  });
+
+  describe("Tailwind utility collision warnings", () => {
+    const runWithTheme = (theme: object): void => {
+      writeProject(tmp, {
+        "style-gen.config.json": {
+          theme: "styles/theme.json",
+          plugin: "plugins/theme-plugin.ts",
+          output: "styles/theme.css",
+        },
+        "styles/theme.json": theme,
+        "plugins/theme-plugin.ts": "// stub",
+        "styles/theme.css": "x",
+      });
+    };
+
+    const typo = {
+      fontSize: "32px",
+      lineHeight: "40px",
+      fontWeight: 700,
+      letterSpacing: "0",
+    };
+
+    it("warns for every curated collision without failing (no exit, schema still OK)", () => {
+      runWithTheme({
+        colors: {
+          primary: "#3B82F6",
+          none: "#000",
+          transparent: "transparent",
+          current: "currentColor",
+          inherit: "inherit",
+        },
+        shadows: { none: "none" },
+        backDropBlurs: { none: "0" },
+        borderRadius: { none: "0px" },
+        borderWidth: { "0": "0px", "2": "2px", thin: "1px" },
+        typography: { textXs: typo, text2xl: typo, textCenter: typo },
+        themeAxes: { theme: { dark: { colors: { none: "#111" } } } },
+      });
+
+      expect(() => {
+        doctorCommand();
+      }).not.toThrow();
+      const out = lines();
+
+      expect(out).toMatch(/Valid JSON, schema OK/);
+      for (const collision of [
+        "colors.none",
+        "shadows.none",
+        "backDropBlurs.none",
+        "borderRadius.none",
+        "colors.transparent",
+        "colors.current",
+        "colors.inherit",
+        "borderWidth.0",
+        "borderWidth.2",
+        "typography.textXs",
+        "typography.text2xl",
+        "typography.textCenter",
+      ]) {
+        expect(out).toContain(`${collision} →`);
+      }
+      expect(out).not.toContain("borderWidth.thin");
+      expect(out).not.toContain("colors.primary");
+      // Override `none` is reported once via the base record, not duplicated.
+      expect(out.match(/colors\.none →/g)).toHaveLength(1);
+      expect(exitSpy).not.toHaveBeenCalled();
+    });
+
+    it("prints no collision warning for a clean theme", () => {
+      runWithTheme({
+        colors: { primary: "#3B82F6" },
+        borderWidth: { thin: "1px" },
+        typography: { h1: typo, textHeading: typo },
+      });
+
+      doctorCommand();
+
+      expect(lines()).not.toContain("⚠️");
+      expect(exitSpy).not.toHaveBeenCalled();
+    });
+
+    it("still exits 1 on a schema error and prints no collision warnings for it", () => {
+      runWithTheme({
+        colors: { none: "#000" },
+        colours: {},
+      });
+
+      expect(() => {
+        doctorCommand();
+      }).toThrow(/__exit_1__/);
+      expect(lines()).not.toContain("colors.none →");
+    });
   });
 });

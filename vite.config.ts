@@ -13,6 +13,16 @@ const external = [
 
 const r = (p: string) => path.resolve(__dirname, p);
 
+const entries = Object.fromEntries(
+  Object.keys(pkg.exports)
+    .filter((key) => key !== "./package.json")
+    .map((key) => {
+      const name = key === "." ? "index" : key.replace(/^\.\//, "");
+      const srcPath = key === "." ? "./src/index.ts" : `./src/exports/${name}.ts`;
+      return [name, r(srcPath)];
+    }),
+);
+
 export default defineConfig({
   plugins: [
     dts({
@@ -23,15 +33,7 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: {
-        index: r("./src/index.ts"),
-        plugin: r("./src/exports/plugin.ts"),
-        tokens: r("./src/exports/tokens.ts"),
-        cva: r("./src/exports/cva.ts"),
-        spacing: r("./src/exports/spacing.ts"),
-        types: r("./src/exports/types.ts"),
-        vite: r("./src/exports/vite.ts"),
-      },
+      entry: entries,
       formats: ["es", "cjs"],
       fileName: (format, name) =>
         `${name}.${format === "es" ? "js" : "cjs"}`,

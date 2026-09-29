@@ -53,13 +53,16 @@ export type InferBackdropBlurKeys<TTheme extends ThemeConfig> = StringKeysOf<
   NonNullable<TTheme["backDropBlurs"]>
 >;
 
+export type InferFontFamilyKeys<TTheme extends ThemeConfig> = StringKeysOf<
+  NonNullable<TTheme["fontFamily"]>
+>;
+
 // ---- Tokens từ defaults + theme ----
 
-export type InferBorderOptions<TTheme extends ThemeConfig> = TTheme extends {
-  border: infer B;
-}
-  ? Extract<keyof NonNullable<B>, string>
-  : `${DefaultBorderValue}`;
+export type InferBorderWidthOptions<TTheme extends ThemeConfig> =
+  TTheme extends { borderWidth: infer B }
+    ? Extract<keyof NonNullable<B>, string>
+    : `${DefaultBorderValue}`;
 
 export type InferRoundedOptions<TTheme extends ThemeConfig> = TTheme extends {
   borderRadius: infer R;
@@ -82,7 +85,10 @@ export interface DesignTokensWeb<TTheme extends ThemeConfig> {
   variantBackdropBlur: CamelCase<
     Extract<keyof NonNullable<TTheme["backDropBlurs"]>, string>
   >[];
-  borderOption: CamelCase<InferBorderOptions<TTheme>>[];
+  variantFontFamily: CamelCase<
+    Extract<keyof NonNullable<TTheme["fontFamily"]>, string>
+  >[];
+  borderWidthOption: CamelCase<InferBorderWidthOptions<TTheme>>[];
   roundedOption: CamelCase<InferRoundedOptions<TTheme>>[];
   spacingProperties: InferSpacingKeys[];
   breakpoints: string[];

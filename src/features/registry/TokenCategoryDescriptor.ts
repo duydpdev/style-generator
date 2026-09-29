@@ -16,9 +16,7 @@ export interface TokenCategoryDescriptor<K extends string = string> {
    * Bare intermediate CSS variable prefix (no leading/trailing dash), e.g.
    * `"sg"` for colors or `"sg-shadow"` for shadows. Combined with a
    * kebab-cased token key to produce `--<cssVarPrefix>-<key>`.
-   * `undefined` when the category has no CSS variable representation
-   * (e.g. `border`, whose values map directly to Tailwind's built-in
-   * border-width scale).
+   * `undefined` when the category has no CSS variable representation.
    */
   cssVarPrefix?: string;
   /**
@@ -28,8 +26,9 @@ export interface TokenCategoryDescriptor<K extends string = string> {
    * `${themeNamespace}<key>: var(--<cssVarPrefix>-<key>)` inside
    * `@theme inline`, letting Tailwind auto-generate the matching
    * utilities. Omitted for categories the library emits its own
-   * `@utility` rules for (typography) or that have no CSS variable at
-   * all (border).
+   * `@utility` rules for (typography, border width — Tailwind v4 has no
+   * theme namespace for border width) or that have no CSS variable at
+   * all.
    */
   themeNamespace?: string;
   /**
@@ -46,21 +45,21 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];
   /**
    * Typed accessor pulling this category's flat token data out of a theme
-   * source (base `ThemeConfig` or a `themes` override `ThemeOverride` — both
-   * are structurally compatible with the `Pick` below since `ThemeConfig`'s
-   * `colors` is a required narrowing of the optional-with-undefined
-   * `ThemeOverride.colors`). Omitted for categories with no CSS-variable
-   * representation (`typography`, `border`) — `flattenByCategory` never
-   * reads `data` for those, so there is nothing to select.
-   * @param {Pick<ThemeOverride, "colors" | "shadows" | "backDropBlurs" | "borderRadius">} source - Theme source data
+   * source (base `ThemeConfig` or a `themes` override `ThemeOverride` —
+   * `ThemeConfig` is structurally assignable to `ThemeOverride` since
+   * every `ThemeOverride` field it shares is a narrowing of an optional
+   * field, so `flattenByCategory`/`generateThemeCss.ts`'s
+   * `buildIntermediateVars` call this with either). Referencing the
+   * whole `ThemeOverride` type — rather than a `Pick<...>` of individual
+   * category keys — means adding a CSS-var category never touches this
+   * file: it's covered as soon as it's added to `ThemeCssVarShape` in
+   * `themeSchema.ts`. Omitted for categories with no CSS-variable
+   * representation (`typography`) — `flattenByCategory` never reads
+   * `data` for those, so there is nothing to select.
+   * @param {ThemeOverride} source - Theme source data
    * @returns {Record<string, string> | undefined} Flat token data for this category
    */
-  select?: (
-    source: Pick<
-      ThemeOverride,
-      "colors" | "shadows" | "backDropBlurs" | "borderRadius"
-    >,
-  ) => Record<string, string> | undefined;
+  select?: (source: ThemeOverride) => Record<string, string> | undefined;
 }
 
 /**

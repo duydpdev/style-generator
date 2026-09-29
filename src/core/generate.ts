@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { generateSourceInline } from "../features/registry/generateSourceInline";
 import { generateSpacingCss } from "../features/spacing/generateSpacingCss";
+import { generateBorderWidthCss } from "../features/theme-css/generateBorderWidthCss";
 import { generateScreensCss } from "../features/theme-css/generateScreensCss";
 import { generateThemeCss } from "../features/theme-css/generateThemeCss";
 import { createDesignTokens } from "../features/tokens/createDesignTokens";
@@ -71,9 +72,10 @@ export const generate = <TTheme extends ThemeConfig>(
   const css = [
     generateScreensCss(styleOptions),
     generateThemeCss(parsed),
+    generateBorderWidthCss(parsed),
     generateTypographyCss(parsed.typography, styleOptions),
     generateSpacingCss(styleOptions),
-    generateSourceInline(styleOptions),
+    generateSourceInline(parsed, styleOptions),
   ]
     .filter((block) => block.length > 0)
     .join("\n");

@@ -8,7 +8,7 @@ import type {
   CamelCase,
   DesignTokensResult,
   InferColorKeys,
-  InferBorderOptions,
+  InferBorderWidthOptions,
   InferRoundedOptions,
 } from "../../core/inference";
 import type { StyleGeneratorOptions } from "../../core/Options";
@@ -27,8 +27,15 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
   config: TTheme,
   options: StyleGeneratorOptions = {},
 ): DesignTokensResult<TTheme> => {
-  const { colors, typography, shadows, backDropBlurs, borderRadius, border } =
-    config;
+  const {
+    colors,
+    typography,
+    shadows,
+    backDropBlurs,
+    borderRadius,
+    borderWidth,
+    fontFamily,
+  } = config;
 
   const variantText = Object.keys(typography ?? {}).map(
     toCamelCase,
@@ -42,11 +49,15 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     toCamelCase,
   ) as CamelCase<Extract<keyof NonNullable<TTheme["backDropBlurs"]>, string>>[];
 
-  const variantBorder = (
-    border
-      ? Object.keys(border).map(toCamelCase)
+  const variantFontFamily = Object.keys(fontFamily ?? {}).map(
+    toCamelCase,
+  ) as CamelCase<Extract<keyof NonNullable<TTheme["fontFamily"]>, string>>[];
+
+  const variantBorderWidth = (
+    borderWidth
+      ? Object.keys(borderWidth).map(toCamelCase)
       : DEFAULT_BORDER_VALUES.map(String)
-  ) as CamelCase<InferBorderOptions<TTheme>>[];
+  ) as CamelCase<InferBorderWidthOptions<TTheme>>[];
 
   const variantColor = Object.keys(colors).map(
     toCamelCase,
@@ -75,7 +86,8 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
         variantColor,
         variantShadow,
         variantBackdropBlur,
-        borderOption: variantBorder,
+        variantFontFamily,
+        borderWidthOption: variantBorderWidth,
         roundedOption: roundedValues,
         spacingProperties,
         breakpoints: keysToUse,

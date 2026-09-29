@@ -11,7 +11,7 @@ describe("ThemeSchema — valid themes", () => {
     expect(ThemeSchema.safeParse(baseTheme).success).toBe(true);
   });
 
-  it("parses a full theme (typography, shadows, blurs, radius, border, themes)", () => {
+  it("parses a full theme (typography, shadows, blurs, radius, borderWidth, themes)", () => {
     const result = ThemeSchema.safeParse({
       colors: { primary: "#3B82F6", sidebarForeground: "#111827" },
       typography: {
@@ -27,7 +27,7 @@ describe("ThemeSchema — valid themes", () => {
       shadows: { sm: "0 1px 2px rgba(0,0,0,.1)" },
       backDropBlurs: { sm: "4px" },
       borderRadius: { sm: "4px" },
-      border: { hairline: "1px" },
+      borderWidth: { hairline: "1px" },
       themes: {
         dark: {
           colors: { primary: "#60A5FA" },
@@ -102,5 +102,45 @@ describe("ThemeSchema — invalid themes", () => {
       },
     });
     expect(result.success).toBe(false);
+  });
+
+  it("rejects an alias target that doesn't exist", () => {
+    const result = ThemeSchema.safeParse({ colors: { a: "$b" } });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(/references unknown key/);
+  });
+
+  it("rejects an alias cycle", () => {
+    const result = ThemeSchema.safeParse({ colors: { a: "$b", b: "$a" } });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(/cycle detected/);
+  });
+
+  it("rejects a borderWidth key that collides with a colors key", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { primary: "#fff" },
+      borderWidth: { primary: "1px" },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(
+      /collides with a colors key/,
+    );
+  });
+
+  it("rejects a fontFamily key that collides with a Tailwind font-weight utility", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { primary: "#fff" },
+      fontFamily: { bold: "Arial" },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(/font-weight utility/);
+  });
+
+  it("rejects keys in the same record that kebab-case to the same value", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { blue500: "#00f", "blue-500": "#00f" },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(/kebab-case to/);
   });
 });

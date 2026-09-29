@@ -5,7 +5,7 @@ import type {
   KebabCase,
   InferColorKeys,
   DesignTokensWeb,
-  InferBorderOptions,
+  InferBorderWidthOptions,
   InferRoundedOptions,
 } from "./inference";
 import type { ThemeConfig } from "./themeSchema";
@@ -126,7 +126,8 @@ describe("DesignTokensWeb", () => {
     };
     shadows: { md: string; lg: string };
     borderRadius: { sm: string; "2xl": string; "4xl": string };
-    border: { thin: string; thick: string };
+    borderWidth: { thin: string; thick: string };
+    fontFamily: { sans: string };
   }
 
   type Web = DesignTokensWeb<MyTheme>;
@@ -151,8 +152,14 @@ describe("DesignTokensWeb", () => {
     >();
   });
 
-  it("borderOption: inferred from theme border keys", () => {
-    expectTypeOf<Web["borderOption"]>().toEqualTypeOf<("thin" | "thick")[]>();
+  it("borderWidthOption: inferred from theme borderWidth keys", () => {
+    expectTypeOf<Web["borderWidthOption"]>().toEqualTypeOf<
+      ("thin" | "thick")[]
+    >();
+  });
+
+  it("variantFontFamily: inferred from theme fontFamily keys", () => {
+    expectTypeOf<Web["variantFontFamily"]>().toEqualTypeOf<"sans"[]>();
   });
 
   it("variantColor not never with base ThemeConfig", () => {
@@ -164,14 +171,14 @@ describe("DesignTokensWeb", () => {
 
 // ---- InferBorderOptions / InferRoundedOptions fallback ----
 
-describe("InferBorderOptions / InferRoundedOptions defaults", () => {
-  it("falls back to DefaultBorderValue when no border in theme", () => {
+describe("InferBorderWidthOptions / InferRoundedOptions defaults", () => {
+  it("falls back to DefaultBorderValue when no borderWidth in theme", () => {
     interface T {
       colors: Record<string, string>;
       typography: Record<string, never>;
     }
     // No border → should use default type (not never)
-    expectTypeOf<InferBorderOptions<T>>().not.toBeNever();
+    expectTypeOf<InferBorderWidthOptions<T>>().not.toBeNever();
   });
 
   it("falls back to DefaultRoundedValue when no borderRadius in theme", () => {

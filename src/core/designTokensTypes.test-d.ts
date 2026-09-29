@@ -5,7 +5,8 @@ import type {
   TextVariant,
   ShadowVariant,
   RoundedVariant,
-  BorderVariant,
+  BorderWidthVariant,
+  FontFamilyVariant,
   BackdropBlurVariant,
   DesignTokenKeys,
 } from "./designTokensTypes";
@@ -29,7 +30,8 @@ describe("DesignTokenKeys semantic aliases", () => {
     shadows: { sm: string };
     backDropBlurs: { md: string };
     borderRadius: { pill: string };
-    border: { thin: string };
+    borderWidth: { thin: string };
+    fontFamily: { sans: string };
   }
 
   it("ColorVariant<T> equals InferColorKeys<T>", () => {
@@ -60,8 +62,12 @@ describe("DesignTokenKeys semantic aliases", () => {
     expectTypeOf<RoundedVariant<SampleTheme>>().toEqualTypeOf<"pill">();
   });
 
-  it("BorderVariant<T> picks border keys", () => {
-    expectTypeOf<BorderVariant<SampleTheme>>().toEqualTypeOf<"thin">();
+  it("BorderWidthVariant<T> picks borderWidth keys", () => {
+    expectTypeOf<BorderWidthVariant<SampleTheme>>().toEqualTypeOf<"thin">();
+  });
+
+  it("FontFamilyVariant<T> picks fontFamily keys", () => {
+    expectTypeOf<FontFamilyVariant<SampleTheme>>().toEqualTypeOf<"sans">();
   });
 
   it("DesignTokenKeys<T> exposes all six keys", () => {

@@ -65,7 +65,9 @@ describe("resolveSpacingProps", () => {
     expectTypeOf(resolveSpacingProps)
       .parameter(0)
       .toExtend<
-        Partial<Record<string, ResponsiveValueStrict<number> | number>>
+        Partial<
+          Record<string, ResponsiveValueStrict<number> | number | undefined>
+        >
       >();
 
     // @ts-expect-error "pp" is not a valid SpacingKey

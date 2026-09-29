@@ -38,4 +38,19 @@ describe("createVariantMapper return type", () => {
     expectTypeOf(r["2xl"]).toEqualTypeOf<"rounded-2xl">();
     expectTypeOf(r.sm).toEqualTypeOf<"rounded-sm">();
   });
+
+  it("supports the prefixes-array overload — nested per-prefix maps", () => {
+    const map = createVariantMapper(
+      ["bg", "text"] as const,
+      ["primary"] as const,
+    );
+
+    expectTypeOf(map.bg.primary).toEqualTypeOf<"bg-primary">();
+    expectTypeOf(map.text.primary).toEqualTypeOf<"text-primary">();
+  });
+
+  it("kebab-cases digit-boundary typography tokens with the empty prefix", () => {
+    const map = createVariantMapper("", ["text12Mono"] as const);
+    expectTypeOf(map.text12Mono).toEqualTypeOf<"text-12-mono">();
+  });
 });

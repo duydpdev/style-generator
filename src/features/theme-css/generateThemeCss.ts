@@ -5,14 +5,11 @@ import { flattenByCategory } from "../registry/flattenByCategory";
 /**
  * Build intermediate `--sg-*` CSS variables for every registered category
  * present on the given theme source (base theme or a `themes` override).
- * @param {Pick<ThemeOverride, "colors" | "shadows" | "backDropBlurs" | "borderRadius">} source - Theme source data
+ * @param {ThemeOverride} source - Theme source data (a base `ThemeConfig` is structurally assignable)
  * @returns {Record<string, string>} CSS variable map
  */
 const buildIntermediateVars = (
-  source: Pick<
-    ThemeOverride,
-    "colors" | "shadows" | "backDropBlurs" | "borderRadius"
-  >,
+  source: ThemeOverride,
 ): Record<string, string> => {
   return builtInCategories.reduce<Record<string, string>>(
     (acc, category) => ({

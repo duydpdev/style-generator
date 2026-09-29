@@ -6,7 +6,7 @@ import {
   shadowsCategory,
   backDropBlursCategory,
   borderRadiusCategory,
-  borderCategory,
+  typographyCategory,
 } from "./builtInCategories";
 
 describe("flattenByCategory", () => {
@@ -42,8 +42,8 @@ describe("flattenByCategory", () => {
     });
   });
 
-  it("returns {} for categories with no cssVarPrefix (border)", () => {
-    expect(flattenByCategory(borderCategory, { thin: "1px" })).toEqual({});
+  it("returns {} for categories with no cssVarPrefix (typography)", () => {
+    expect(flattenByCategory(typographyCategory, { h1: "12px" })).toEqual({});
   });
 
   it("returns {} when data is undefined", () => {

@@ -1,3 +1,4 @@
+import { ALIAS_VALUE_RE } from "../../core/themeSchema";
 import { toKebabCase } from "../../shared/helpers";
 
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
@@ -9,8 +10,14 @@ import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
  * `buildIntermediateVars` (theme-css) — both did the exact same
  * `--${prefix}-${kebabKey}` computation per category.
  *
- * Categories without a `cssVarPrefix` (e.g. `border`, whose widths map to
- * Tailwind's built-in scale rather than a CSS variable) flatten to `{}`.
+ * A value matching `$<TokenKey>` (see `ALIAS_VALUE_RE`) is resolved to
+ * `var(--<cssVarPrefix>-<kebab-target>)` instead of being emitted
+ * literally — `ThemeSchema`'s alias refinement has already proven the
+ * reference exists (within the same category) and is acyclic, so this
+ * function trusts it without re-validating.
+ *
+ * Categories without a `cssVarPrefix` (e.g. `typography`, which has no
+ * CSS variable at all) flatten to `{}`.
  * @param {TokenCategoryDescriptor} descriptor - Category descriptor
  * @param {Record<string, string> | undefined} data - Flat key-value theme data for this category
  * @returns {Record<string, string>} CSS variable map, e.g. `{ "--sg-primary": "#fff" }`
@@ -23,7 +30,12 @@ export const flattenByCategory = (
 
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(data)) {
-    result[`--${descriptor.cssVarPrefix}-${toKebabCase(key)}`] = value;
+    const aliasTarget = ALIAS_VALUE_RE.exec(value)?.[1];
+    const resolvedValue =
+      aliasTarget === undefined
+        ? value
+        : `var(--${descriptor.cssVarPrefix}-${toKebabCase(aliasTarget)})`;
+    result[`--${descriptor.cssVarPrefix}-${toKebabCase(key)}`] = resolvedValue;
   }
   return result;
 };

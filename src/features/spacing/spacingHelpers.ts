@@ -24,7 +24,7 @@ export type DefaultBreakpointKeys = `${Breakpoint}`;
 export type ResponsiveValueStrict<
   T,
   BKeys extends string = DefaultBreakpointKeys,
-> = T | Partial<Record<BKeys | "base", T>>;
+> = T | Partial<Record<BKeys | "base", T | undefined>>;
 
 /**
  * Resolve a single spacing prop into className + inline style CSS variables.
@@ -50,7 +50,6 @@ export const resolveSpacing = (
     style[`--sg-sp-${prop}`] = `${String(value * unit)}rem`;
   } else {
     for (const [bp, val] of Object.entries(value)) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime JS callers (e.g. object literals built from possibly-undefined variables) can pass `undefined` here despite the declared type; Object.entries(undefined) throws.
       if (val == null) continue;
       const suffix = bp === "base" ? "" : `-${bp}`;
       style[`--sg-sp-${prop}${suffix}`] = `${String(val * unit)}rem`;
@@ -62,7 +61,7 @@ export const resolveSpacing = (
 
 /**
  * Resolve multiple spacing props at once.
- * @param {Partial<Record<SpacingKey, ResponsiveValueStrict<number>>>} props - Object of spacing prop name → value
+ * @param {Partial<Record<SpacingKey, ResponsiveValueStrict<number> | undefined>>} props - Object of spacing prop name → value
  * @returns {{ classNames: string; style: Record<string, string> }} Combined class names (space-joined) and merged CSS variable style map
  * @example
  * resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } })
@@ -72,13 +71,12 @@ export const resolveSpacing = (
  * //   }
  */
 export const resolveSpacingProps = (
-  props: Partial<Record<SpacingKey, ResponsiveValueStrict<number>>>,
+  props: Partial<Record<SpacingKey, ResponsiveValueStrict<number> | undefined>>,
 ): { classNames: string; style: Record<string, string> } => {
   const classNames: string[] = [];
   const style: Record<string, string> = {};
 
   for (const [prop, value] of Object.entries(props)) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime JS callers (e.g. `resolveSpacingProps({ p, px, py })` destructuring optional component props) can pass `undefined` here despite the declared type; Object.entries(undefined) throws.
     if (value == null) continue;
     const result = resolveSpacing(prop as SpacingKey, value);
     classNames.push(result.className);

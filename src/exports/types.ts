@@ -14,6 +14,7 @@ export type {
   InferTypographyKeys,
   InferShadowKeys,
   InferBackdropBlurKeys,
+  InferFontFamilyKeys,
   DesignTokensResult,
 } from "../core/inference";
 export type {
@@ -22,7 +23,8 @@ export type {
   TextVariant,
   ShadowVariant,
   BackdropBlurVariant,
-  BorderVariant,
+  FontFamilyVariant,
+  BorderWidthVariant,
   RoundedVariant,
 } from "../core/designTokensTypes";
 export type { ResponsiveValueStrict } from "../features/spacing/spacingHelpers";

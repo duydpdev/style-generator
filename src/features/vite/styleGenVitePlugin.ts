@@ -1,5 +1,5 @@
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 import type { Plugin, ResolvedConfig } from "vite";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import { z } from "zod";
 import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
+import { resolveSafePath } from "../../shared/resolveSafePath";
 
 export interface StyleGenViteOptions {
   /** Path to theme JSON, resolved relative to Vite project root. */
@@ -101,26 +102,18 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
       resolvedConfig = config;
       const root = config.root;
 
-      themePathAbs = isAbsolute(opts.themePath)
-        ? opts.themePath
-        : resolve(root, opts.themePath);
-      const themeRel = relative(root, themePathAbs);
-      if (themeRel.startsWith("..") || isAbsolute(themeRel)) {
-        throw new Error(
-          `[${PLUGIN_NAME}] themePath escapes project root: ${opts.themePath}`,
-        );
-      }
+      themePathAbs = resolveSafePath(
+        root,
+        opts.themePath,
+        `[${PLUGIN_NAME}] themePath`,
+      );
 
       const outDirOption = opts.outDir ?? dirname(opts.themePath);
-      outDirAbs = isAbsolute(outDirOption)
-        ? outDirOption
-        : resolve(root, outDirOption);
-      const outRel = relative(root, outDirAbs);
-      if (outRel.startsWith("..") || isAbsolute(outRel)) {
-        throw new Error(
-          `[${PLUGIN_NAME}] outDir escapes project root: ${outDirOption}`,
-        );
-      }
+      outDirAbs = resolveSafePath(
+        root,
+        outDirOption,
+        `[${PLUGIN_NAME}] outDir`,
+      );
 
       // Skip duplicate emit when same plugin instance runs twice (SSR build
       // runs configResolved per environment; module-level guard dedupes).

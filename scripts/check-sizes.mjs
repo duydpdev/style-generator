@@ -21,6 +21,9 @@ const budgets = {
   spacing: 1_000,
   types: 200,
   vite: 8_000,
+  // Same shape as `vite` (generate() + ThemeSchema.parse + a chokidar dev
+  // watcher, no `next` types imported) — same budget.
+  next: 8_000,
 };
 
 const exportNames = Object.keys(pkg.exports)

@@ -3,8 +3,8 @@ import type { Rule } from "postcss";
 import postcss from "postcss";
 
 import { generate } from "../core/generate";
-import { defineTheme } from "../core/defineTheme";
 
+import { fixtureTheme } from "./__fixtures__/fixtureTheme";
 import { compileFixtureCss } from "./compileFixtureCss";
 
 /**
@@ -21,24 +21,7 @@ import { compileFixtureCss } from "./compileFixtureCss";
  * This is a regression guard against breaking changes in Tailwind v4 internals.
  */
 describe("integration: Tailwind v4 compile pipeline", () => {
-  const theme = defineTheme({
-    colors: {
-      primary: "#3B82F6",
-      background: "#FFFFFF",
-      sidebarForeground: "#111827",
-    },
-    typography: {
-      h1: {
-        fontSize: "32px",
-        lineHeight: "40px",
-        fontWeight: 700,
-        letterSpacing: "0",
-      },
-    },
-    themes: {
-      dark: { colors: { primary: "#60A5FA", background: "#111827" } },
-    },
-  });
+  const theme = fixtureTheme;
 
   const buildCss = async (
     extraInput = "",
@@ -108,23 +91,77 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     expect(offending).toEqual([]);
   });
 
-  it("build([]) still emits .sp-p (and its @media fallback) via @source inline", async () => {
-    const { css: themeCss } = generate(theme);
+  it("build([]) emits expected classes for all categories and extraSources via @source inline", async () => {
+    const { css: themeCss } = generate(theme, {
+      extraSources: ["hover:bg-{primary,secondary}"],
+    });
     const compiled = await compileFixtureCss(themeCss, []);
-    expect(compiled).toMatch(/\.sp-p\s*\{/);
-    expect(compiled).toMatch(/@media \(width >= 768px\)/);
+
+    const selectors = [
+      ".bg-primary",
+      ".text-primary",
+      ".border-primary",
+      ".text-12-mono",
+      ".shadow-sm",
+      ".backdrop-blur-sm",
+      ".rounded-2xl",
+      ".md\\:rounded-2xl",
+      ".border-thin",
+      ".font-sans",
+      ".sp-p",
+      ".hover\\:bg-primary",
+    ];
+
+    for (const sel of selectors) {
+      expect(compiled).toContain(sel);
+    }
   });
 
-  it("negative control: without @source inline, build([]) never emits .sp-p", async () => {
+  it("negative control: without @source inline, build([]) never emits classes", async () => {
     const { css: themeCss } = generate(theme);
     expect(themeCss).toMatch(/@source inline\(/);
     const withoutSourceInline = themeCss.replace(
-      /@source inline\([^)]*\);\n?/,
+      /@source inline\([^)]*\);\n?/g,
       "",
     );
     expect(withoutSourceInline).not.toMatch(/@source inline/);
 
     const compiled = await compileFixtureCss(withoutSourceInline, []);
-    expect(compiled).not.toMatch(/\.sp-p\s*\{/);
+    expect(compiled).not.toContain(".bg-primary");
+    expect(compiled).not.toContain(".sp-p");
+  });
+
+  it('case @import "./theme.css": candidates still resolve when loading theme css via @import', async () => {
+    const { css: themeCss } = generate(theme, {
+      extraSources: ["hover:bg-primary"],
+    });
+    const input = `@import "tailwindcss";\n@import "./theme.css";`;
+
+    const { compile } = await import("tailwindcss");
+    const result = await compile(input, {
+      base: process.cwd(),
+      // @ts-expect-error -- internal API
+      loadStylesheet: async (id: string, base: string) => {
+        if (id === "./theme.css") return { content: themeCss, base };
+        const fs = await import("fs");
+        const path = await import("path");
+        let resolved: string;
+        if (id === "tailwindcss") {
+          resolved = require.resolve("tailwindcss/index.css");
+        } else if (id.startsWith("tailwindcss/")) {
+          resolved = require.resolve(id);
+        } else {
+          resolved = path.resolve(base, id);
+        }
+        return {
+          content: fs.readFileSync(resolved, "utf-8"),
+          base: path.dirname(resolved),
+        };
+      },
+    });
+
+    const compiled = result.build([]);
+    expect(compiled).toContain(".bg-primary");
+    expect(compiled).toContain(".sp-p");
   });
 });

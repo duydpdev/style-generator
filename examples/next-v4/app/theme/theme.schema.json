@@ -2,9 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "$schema": {
-      "type": "string"
-    },
     "colors": {
       "type": "object",
       "propertyNames": {
@@ -13,38 +10,6 @@
       },
       "additionalProperties": {
         "type": "string"
-      }
-    },
-    "typography": {
-      "type": "object",
-      "propertyNames": {
-        "type": "string",
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-      },
-      "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "fontSize": {
-            "type": "string"
-          },
-          "lineHeight": {
-            "type": "string"
-          },
-          "fontWeight": {
-            "type": "number"
-          },
-          "letterSpacing": {
-            "type": "string"
-          },
-          "fontFamily": {
-            "type": "string"
-          },
-          "fontStyle": {
-            "type": "string"
-          }
-        },
-        "required": ["fontSize", "lineHeight", "fontWeight", "letterSpacing"],
-        "additionalProperties": false
       }
     },
     "shadows": {
@@ -77,7 +42,7 @@
         "type": "string"
       }
     },
-    "border": {
+    "fontFamily": {
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -85,6 +50,51 @@
       },
       "additionalProperties": {
         "type": "string"
+      }
+    },
+    "borderWidth": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "$schema": {
+      "type": "string"
+    },
+    "typography": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "fontSize": {
+            "type": "string"
+          },
+          "lineHeight": {
+            "type": "string"
+          },
+          "fontWeight": {
+            "type": "number"
+          },
+          "letterSpacing": {
+            "type": "string"
+          },
+          "fontFamily": {
+            "type": "string"
+          },
+          "fontStyle": {
+            "type": "string"
+          }
+        },
+        "required": ["fontSize", "lineHeight", "fontWeight", "letterSpacing"],
+        "additionalProperties": false
       }
     },
     "themes": {
@@ -127,6 +137,26 @@
             }
           },
           "borderRadius": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "fontFamily": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "borderWidth": {
             "type": "object",
             "propertyNames": {
               "type": "string",

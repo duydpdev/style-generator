@@ -11,14 +11,15 @@ describe("defineCategory", () => {
 });
 
 describe("builtInCategories", () => {
-  it("registers all 6 built-in categories", () => {
+  it("registers all 7 built-in categories", () => {
     expect(builtInCategories.map((c) => c.key)).toEqual([
       "colors",
       "typography",
       "shadows",
       "backDropBlurs",
       "borderRadius",
-      "border",
+      "fontFamily",
+      "borderWidth",
     ]);
   });
 

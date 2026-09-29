@@ -26,8 +26,10 @@ const theme = defineTheme({
   shadows: { sm: "0px 1px 2px rgba(0, 0, 0, 0.05)" },
   backDropBlurs: { sm: "4px" },
   borderRadius: { sm: "4px" },
-  themes: {
-    dark: { colors: { primary: "#60A5FA", background: "#111827" } },
+  themeAxes: {
+    theme: {
+      dark: { colors: { primary: "#60A5FA", background: "#111827" } },
+    },
   },
 });
 

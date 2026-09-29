@@ -44,13 +44,15 @@ export const themeTemplateDark = `{
     "foreground": "#111827",
     "muted": "#6B7280"
   },
-  "themes": {
-    "dark": {
-      "colors": {
-        "background": "#111827",
-        "surface": "#1F2937",
-        "foreground": "#F9FAFB",
-        "muted": "#9CA3AF"
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "background": "#111827",
+          "surface": "#1F2937",
+          "foreground": "#F9FAFB",
+          "muted": "#9CA3AF"
+        }
       }
     }
   },

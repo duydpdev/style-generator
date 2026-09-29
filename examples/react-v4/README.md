@@ -38,10 +38,12 @@ The generated file is gitignored.
 
 ## What it demonstrates
 
-1. **Color tokens + theme toggle** — `bg-primary`, `bg-background`, etc. generated via `@theme inline`; toggling sets `document.documentElement.dataset.theme` and swaps `[data-theme="dark"]` overrides.
+1. **Color tokens + theme toggle** — `bg-primary`, `bg-background`, etc. generated via `@theme inline`; toggling sets `document.documentElement.dataset.theme`/`.dataset.palette` and swaps the library-generated `html[data-theme="dark"]`/`html[data-palette="..."]` overrides.
 2. **Typography utilities** — `text-16-medium`, `text-32-bold` emitted from `theme.typography` and consumed by `<Text variant="body|heading">`.
 3. **Spacing helpers** — `<Box p={4} mx={{ base: 2, md: 4 }}>` uses `resolveSpacingProps` from `@duydpdev/style-generator/spacing` to emit `.sp-*` classes + inline CSS variables. No safelist required for spacing.
 4. **CVA mapper + `cn()`** — `<Button>` composes `class-variance-authority` with `createVariantMapper("bg", colors)` from `@duydpdev/style-generator/cva`. Final classes flow through a shadcn-style `cn(clsx, twMerge)` helper.
+
+> Multi-axis scope: `theme.json` declares `themeAxes.theme` (light/dark) and `themeAxes.palette` (cobalt/forest/sunset/mono), each toggled via its own `<html data-*>` attribute. The `dark × palette` compound overrides in `palettes.css` stay hand-written CSS (outside the 4.0.0 `themeAxes` scope) — see `nuxt-v4`'s README for the full scope table.
 
 ## Component layout (template-lib style)
 

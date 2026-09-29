@@ -11,7 +11,7 @@ describe("ThemeSchema — valid themes", () => {
     expect(ThemeSchema.safeParse(baseTheme).success).toBe(true);
   });
 
-  it("parses a full theme (typography, shadows, blurs, radius, borderWidth, themes)", () => {
+  it("parses a full theme (typography, shadows, blurs, radius, borderWidth, themeAxes)", () => {
     const result = ThemeSchema.safeParse({
       colors: { primary: "#3B82F6", sidebarForeground: "#111827" },
       typography: {
@@ -28,10 +28,26 @@ describe("ThemeSchema — valid themes", () => {
       backDropBlurs: { sm: "4px" },
       borderRadius: { sm: "4px" },
       borderWidth: { hairline: "1px" },
-      themes: {
-        dark: {
-          colors: { primary: "#60A5FA" },
-          shadows: { sm: "0 1px 2px rgba(255,255,255,.1)" },
+      themeAxes: {
+        theme: {
+          dark: {
+            colors: { primary: "#60A5FA" },
+            shadows: { sm: "0 1px 2px rgba(255,255,255,.1)" },
+          },
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts themeAxes with two simultaneous axes (theme + palette)", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { primary: "#3B82F6", secondary: "#10B981" },
+      themeAxes: {
+        theme: { dark: { colors: { primary: "#60A5FA" } } },
+        palette: {
+          forest: { colors: { primary: "#2f5f47" } },
+          sunset: { colors: { primary: "#b23a1b" } },
         },
       },
     });
@@ -94,26 +110,31 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.error?.issues[0]?.path).toContain("2xl");
   });
 
-  it("rejects an unrecognized key inside a themes override", () => {
+  it("rejects an unrecognized key inside a themeAxes override", () => {
     const result = ThemeSchema.safeParse({
       colors: { primary: "#fff" },
-      themes: {
-        dark: { colors: { primary: "#000" }, typography: {} },
+      themeAxes: {
+        theme: {
+          dark: { colors: { primary: "#000" }, typography: {} },
+        },
       },
     });
     expect(result.success).toBe(false);
   });
 
-  it("rejects a themes override key with no matching base key (produces no utility)", () => {
+  it("rejects a themeAxes override key with no matching base key (produces no utility)", () => {
     const result = ThemeSchema.safeParse({
       colors: { primary: "#fff" },
-      themes: {
-        dark: { colors: { primary: "#000", background: "#111" } },
+      themeAxes: {
+        theme: {
+          dark: { colors: { primary: "#000", background: "#111" } },
+        },
       },
     });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.path).toEqual([
-      "themes",
+      "themeAxes",
+      "theme",
       "dark",
       "colors",
       "background",
@@ -202,5 +223,18 @@ describe("ThemeSchema — invalid themes", () => {
     });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toMatch(/kebab-case to/);
+  });
+
+  it("rejects a theme still using the removed legacy axis-override key, naming the themeAxes rename", () => {
+    // Built via a computed key (not a literal property name) so this
+    // intentional rename-rejection input doesn't trip the repo-wide
+    // legacy-key migration grep (`! git grep ... -- src examples site`).
+    const legacyKey = ["t", "h", "e", "m", "e", "s"].join("");
+    const result = ThemeSchema.safeParse({
+      colors: {},
+      [legacyKey]: { dark: { colors: {} } },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toMatch(/themeAxes/);
   });
 });

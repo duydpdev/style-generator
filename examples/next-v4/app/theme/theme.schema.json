@@ -97,7 +97,7 @@
         "additionalProperties": false
       }
     },
-    "themes": {
+    "themeAxes": {
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -105,69 +105,76 @@
       },
       "additionalProperties": {
         "type": "object",
-        "properties": {
-          "colors": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "shadows": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "backDropBlurs": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "borderRadius": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "fontFamily": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "borderWidth": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
+        "propertyNames": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
         },
-        "additionalProperties": false
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "colors": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "shadows": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "backDropBlurs": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "borderRadius": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "fontFamily": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "borderWidth": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
       }
     }
   },

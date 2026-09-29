@@ -11,7 +11,7 @@ import { compileFixtureCss } from "./compileFixtureCss";
  * End-to-end: feed `css` from generate() into the real Tailwind v4
  * compiler, then build CSS for a candidate class list. Asserts that:
  *   - color CSS variables appear in :root
- *   - data-theme override block emits when `themes` set
+ *   - data-theme override block emits when `themeAxes` set (html-pinned)
  *   - bg-/text- color utilities resolve to var() refs
  *   - generated CSS contains no raw error markers
  *   - no `*` selector rule redeclares a spacing var (D8 fix regression guard)
@@ -37,9 +37,9 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     expect(css).toMatch(/--sg-sidebar-foreground:\s*#111827/i);
   });
 
-  it("emits dark theme override block", async () => {
+  it("emits dark theme override block, pinned to html[data-theme]", async () => {
     const css = await buildCss();
-    expect(css).toMatch(/\[data-theme=["']dark["']\]/);
+    expect(css).toMatch(/html\[data-theme=["']dark["']\]/);
     expect(css).toMatch(/--sg-primary:\s*#60A5FA/i);
   });
 

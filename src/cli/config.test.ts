@@ -114,4 +114,30 @@ describe("resolveConfig", () => {
     expect(config.theme).toBe("styles/theme.json");
     expect(config.breakpoints).toEqual(["sm", "md"]);
   });
+
+  it("passes through extraSources/spacing/typography from style-gen.config.json", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({
+        extraSources: ["hover:bg-primary"],
+        spacing: { enabled: false },
+        typography: { cssVarDriven: true },
+      }),
+    );
+
+    const config = resolveConfig({});
+    expect(config.extraSources).toEqual(["hover:bg-primary"]);
+    expect(config.spacing).toEqual({ enabled: false });
+    expect(config.typography).toEqual({ cssVarDriven: true });
+  });
+
+  it("CLI-flag-style extraSources/spacing/typography override file config", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ extraSources: ["file-only"] }),
+    );
+
+    const config = resolveConfig({ extraSources: ["flag-wins"] });
+    expect(config.extraSources).toEqual(["flag-wins"]);
+  });
 });

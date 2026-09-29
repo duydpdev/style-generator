@@ -53,4 +53,24 @@ describe("createVariantMapper return type", () => {
     const map = createVariantMapper("", ["text12Mono"] as const);
     expectTypeOf(map.text12Mono).toEqualTypeOf<"text-12-mono">();
   });
+
+  it("{ states } overload returns a plain Record<T, string> (widened, not per-key literal)", () => {
+    const tokens = ["primary", "primaryHover", "primaryActive"] as const;
+    const map = createVariantMapper("bg", tokens, {
+      states: ["hover", "active"],
+    });
+
+    expectTypeOf(map).toEqualTypeOf<Record<(typeof tokens)[number], string>>();
+  });
+
+  it("{ states } + prefixes-array overload returns Record<P, Record<T, string>>", () => {
+    const tokens = ["primary", "primaryHover"] as const;
+    const map = createVariantMapper(["bg", "text"] as const, tokens, {
+      states: ["hover"],
+    });
+
+    expectTypeOf(map).toEqualTypeOf<
+      Record<"bg" | "text", Record<(typeof tokens)[number], string>>
+    >();
+  });
 });

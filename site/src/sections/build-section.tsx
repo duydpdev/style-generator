@@ -10,24 +10,26 @@ const THEME_JSON = `{
   "typography": {
     "body": { "fontSize": "16px", "fontWeight": 500 }
   },
-  "themes": {
-    "dark": {
-      "colors": {
-        "primary": "#8FA6FF",
-        "background": "#0B0E1D"
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#8FA6FF",
+          "background": "#0B0E1D"
+        }
       }
     }
   }
 }`;
 
 const THEME_CSS = `/* generated */
-:root {
+::root {
   --sg-primary: #2647D9;
   --sg-background: #FAF7F2;
   --sg-foreground: #0F1530;
 }
 
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --sg-primary: #8FA6FF;
   --sg-background: #0B0E1D;
 }

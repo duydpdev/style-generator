@@ -8,6 +8,8 @@ export const fixtureOptions: StyleGeneratorOptions = {
 export const fixtureTheme = defineTheme({
   colors: {
     primary: "#3B82F6",
+    primaryHover: "#2563EB",
+    primaryActive: "#1D4ED8",
     secondary: "#10B981",
     sidebarForeground: "#111827",
     blue500: "#3B82F6",
@@ -42,11 +44,13 @@ export const fixtureTheme = defineTheme({
     "2xl": "8px",
     zero: "0px",
   },
-  themes: {
-    dark: {
-      colors: {
-        primary: "#60A5FA",
-        background: "#111827",
+  themeAxes: {
+    theme: {
+      dark: {
+        colors: {
+          primary: "#60A5FA",
+          background: "#111827",
+        },
       },
     },
   },

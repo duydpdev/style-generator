@@ -4,7 +4,7 @@ import type {
 } from "../../core/Options";
 import type { ThemeConfig } from "../../core/themeSchema";
 import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
-import { toKebabCase } from "../../shared/helpers";
+import { toKebabCase, toPascalCase } from "../../shared/helpers";
 
 import { builtInCategories } from "./builtInCategories";
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
@@ -81,12 +81,68 @@ const buildCategoryLine = (
 };
 
 /**
+ * Build one `@source inline("...")` state-variant directive PER configured
+ * state (`descriptor.states`) — never a single merged directive across
+ * states, since different states can have different sibling sets (e.g. a
+ * token might declare `primaryHover` but not `primaryActive`). Mixing both
+ * into one shell-style brace group would cross-multiply into invalid
+ * pairings like `hover:bg-primary-active`.
+ *
+ * For a state `s`, only the RAW theme keys that have a matching sibling
+ * (`key` + Pascal-cased `s`, e.g. `primary` + `primaryHover`) contribute —
+ * and they contribute their OWN kebab-cased form (`primary-hover`), the
+ * same class `createVariantMapper(prefix, tokens, { states })` chains onto
+ * the base token. A category with no sibling for a given state emits no
+ * line for it at all (never `{}` empty braces).
+ * @param {TokenCategoryDescriptor} descriptor - Category descriptor
+ * @param {ThemeConfig} theme - Theme configuration
+ * @returns {string[]} Zero or more `@source inline(...)` directives, one per state that has at least one sibling pair
+ */
+const buildStateLines = (
+  descriptor: TokenCategoryDescriptor,
+  theme: ThemeConfig,
+): string[] => {
+  const states = descriptor.states;
+  const prefixes = descriptor.classPrefixes;
+  if (!states || states.length === 0 || !prefixes || prefixes.length === 0) {
+    return [];
+  }
+
+  const record = descriptor.select?.(theme);
+  const rawKeys = record ? Object.keys(record) : [];
+  if (rawKeys.length === 0) return [];
+
+  const rawKeySet = new Set(rawKeys);
+  const isBareKeyCategory = prefixes.length === 1 && prefixes[0] === "";
+  const prefixPart = isBareKeyCategory ? "" : `{${prefixes.join(",")}}-`;
+
+  const lines: string[] = [];
+  for (const state of states) {
+    const siblingSuffix = toPascalCase(state);
+    const siblingKebabKeys = rawKeys
+      .filter((key) => rawKeySet.has(`${key}${siblingSuffix}`))
+      .map((key) => toKebabCase(`${key}${siblingSuffix}`));
+
+    if (siblingKebabKeys.length === 0) continue;
+
+    lines.push(
+      `@source inline("${state}:${prefixPart}{${siblingKebabKeys.join(",")}}");`,
+    );
+  }
+
+  return lines;
+};
+
+/**
  * Generate the `@source inline(...)` directives that cover classes
  * Tailwind's static candidate scan can never see on its own: one line per
  * built-in category (colors, typography, shadows, backdrop blurs, border
- * radius, font family, border width) — see `buildCategoryLine` — every
- * `sp-*` utility the spacing pipeline can produce, plus any caller-supplied
- * `options.extraSources` entries (see `StyleGeneratorOptions.extraSources`).
+ * radius, font family, border width) — see `buildCategoryLine` — one
+ * further line per category `states` entry that has at least one sibling
+ * pair (`hover:{bg,text,border}-{primary-hover}`, see `buildStateLines`) —
+ * every `sp-*` utility the spacing pipeline can produce, plus any
+ * caller-supplied `options.extraSources` entries (see
+ * `StyleGeneratorOptions.extraSources`).
  *
  * Each category gets its OWN line (not one giant merged directive) so a
  * single category exceeding a reasonable brace-expansion size never
@@ -113,6 +169,7 @@ export const generateSourceInline = (
     const keys = resolveCategoryKeys(descriptor, theme);
     const line = buildCategoryLine(descriptor, keys, breakpointKeys);
     if (line) lines.push(line);
+    lines.push(...buildStateLines(descriptor, theme));
   }
 
   if (options.spacing?.enabled !== false) {

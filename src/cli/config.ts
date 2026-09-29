@@ -1,12 +1,25 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import type { SpacingPropertyMap } from "../core/Options";
+
 export interface StyleGenConfig {
   theme: string;
   output: string;
   plugin: string;
   breakpoints?: string[];
   screens?: Record<string, string>;
+  /** Forwarded to `generate()` — see `StyleGeneratorOptions.extraSources`. */
+  extraSources?: string[];
+  /** Forwarded to `generate()` — see `StyleGeneratorOptions.spacing`. */
+  spacing?: {
+    enabled?: boolean;
+    properties?: SpacingPropertyMap;
+  };
+  /** Forwarded to `generate()` — see `StyleGeneratorOptions.typography`. */
+  typography?: {
+    cssVarDriven?: boolean;
+  };
 }
 
 /**
@@ -64,6 +77,15 @@ function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   }
   if (flags.screens !== undefined) {
     sanitized.screens = flags.screens;
+  }
+  if (flags.extraSources !== undefined) {
+    sanitized.extraSources = flags.extraSources;
+  }
+  if (flags.spacing !== undefined) {
+    sanitized.spacing = flags.spacing;
+  }
+  if (flags.typography !== undefined) {
+    sanitized.typography = flags.typography;
   }
 
   return sanitized;

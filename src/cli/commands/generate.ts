@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -73,7 +74,18 @@ export function generateCommand(args: GenerateArgs) {
           fs.mkdirSync(outDir, { recursive: true });
         }
 
-        fs.writeFileSync(outPath, css, "utf8");
+        // Atomic write: render to a sibling temp file, then `renameSync`
+        // over the real target (same pattern as `styleGenNext`'s `emit`).
+        // `rename(2)` is atomic on POSIX/NTFS as long as source and
+        // destination share a filesystem — the temp file lives in
+        // `outDir`, same as `outPath` — so a concurrent reader never
+        // observes a partially-written file.
+        const tmpFile = path.join(
+          outDir,
+          `.${path.basename(outPath)}.${String(process.pid)}.${randomUUID()}.tmp`,
+        );
+        fs.writeFileSync(tmpFile, css, "utf8");
+        fs.renameSync(tmpFile, outPath);
         logger.success(`CSS written to ${options.output}`);
       } catch (error) {
         if (error instanceof z.ZodError) {

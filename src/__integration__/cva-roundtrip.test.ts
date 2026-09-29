@@ -5,7 +5,7 @@ import postcss from "postcss";
 import { generate } from "../core/generate";
 import { builtInCategories } from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
-import { toKebabCase } from "../shared/helpers";
+import { toKebabCase, toPascalCase } from "../shared/helpers";
 
 import { fixtureTheme, fixtureOptions } from "./__fixtures__/fixtureTheme";
 import { compileFixtureCss } from "./compileFixtureCss";
@@ -103,6 +103,58 @@ const buildRoundTripCases = (): RoundTripCase[] => {
   return cases;
 };
 
+/**
+ * One (category, class-prefix, raw token) triple to round-trip through the
+ * `{ states }` overload: `createVariantMapper(prefix, keys, { states
+ * })[key]` chains `state:`-prefixed classes onto `key` for every configured
+ * state that has a matching sibling (`key` + Pascal-cased state, e.g.
+ * `primary` + `"hover"` -> `primaryHover`). Only built-in descriptors that
+ * declare `states` (currently `colors`) contribute cases.
+ */
+interface StateRoundTripCase {
+  category: string;
+  prefix: string;
+  key: string;
+  keys: readonly string[];
+  states: readonly string[];
+  cssVarPrefix: string | undefined;
+}
+
+/**
+ * Every built-in descriptor that declares `states`, crossed with every
+ * class prefix and every fixture key of that category.
+ * @returns {StateRoundTripCase[]} Every (category, prefix, key) triple to check
+ */
+const buildStateRoundTripCases = (): StateRoundTripCase[] => {
+  const cases: StateRoundTripCase[] = [];
+
+  for (const descriptor of builtInCategories) {
+    const prefixes = descriptor.classPrefixes;
+    const states = descriptor.states;
+    if (!prefixes || prefixes.length === 0 || !states || states.length === 0)
+      continue;
+
+    const record = descriptor.select?.(fixtureTheme);
+    const keys = record ? Object.keys(record) : [];
+    if (keys.length === 0) continue;
+
+    for (const prefix of prefixes) {
+      for (const key of keys) {
+        cases.push({
+          category: descriptor.key,
+          prefix,
+          key,
+          keys,
+          states,
+          cssVarPrefix: descriptor.cssVarPrefix,
+        });
+      }
+    }
+  }
+
+  return cases;
+};
+
 describe("integration: createVariantMapper round-trip through cva + compiled Tailwind CSS", () => {
   const cases = buildRoundTripCases();
   let selectors: Set<string>;
@@ -165,6 +217,58 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
       const expectedVarRef = `var(--${cssVarPrefix}-${toKebabCase(key)})`;
       const bodies = ruleBodiesBySelector.get(selector) ?? [];
       expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
+    },
+  );
+
+  it("covers at least one built-in category declaring states", () => {
+    expect(buildStateRoundTripCases().length).toBeGreaterThan(0);
+  });
+
+  it.each(buildStateRoundTripCases())(
+    "$category: createVariantMapper($prefix, keys, { states })[$key] — base + state: classes all resolve in compiled CSS; state classes reference the sibling's var",
+    ({ prefix, key, keys, states, cssVarPrefix }) => {
+      const value = createVariantMapper(prefix, keys, { states })[key];
+      if (value === undefined) {
+        throw new Error(`no mapped value for key ${key}`);
+      }
+      const classes = value.split(" ");
+
+      const keySet = new Set(keys);
+      const expectedStates = states.filter((state) =>
+        keySet.has(`${key}${toPascalCase(state)}`),
+      );
+      expect(classes.length).toBe(1 + expectedStates.length);
+
+      const base = classes[0];
+      if (base === undefined) {
+        throw new Error("empty classes array");
+      }
+      const baseSelector = `.${escapeClassName(base)}`;
+      expect(selectors.has(baseSelector)).toBe(true);
+      if (cssVarPrefix !== undefined) {
+        const expectedVarRef = `var(--${cssVarPrefix}-${toKebabCase(key)})`;
+        const bodies = ruleBodiesBySelector.get(baseSelector) ?? [];
+        expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
+      }
+
+      expectedStates.forEach((state, i) => {
+        const siblingKey = `${key}${toPascalCase(state)}`;
+        const prefixPart = prefix === "" ? "" : `${prefix}-`;
+        const expectedCls = `${state}:${prefixPart}${toKebabCase(siblingKey)}`;
+        const cls = classes[1 + i];
+        if (cls === undefined) {
+          throw new Error(`missing state class for state ${state}`);
+        }
+        expect(cls).toBe(expectedCls);
+
+        const selector = `.${escapeClassName(cls)}`;
+        expect(selectors.has(selector)).toBe(true);
+        if (cssVarPrefix === undefined) return;
+
+        const expectedVarRef = `var(--${cssVarPrefix}-${toKebabCase(siblingKey)})`;
+        const bodies = ruleBodiesBySelector.get(selector) ?? [];
+        expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
+      });
     },
   );
 });

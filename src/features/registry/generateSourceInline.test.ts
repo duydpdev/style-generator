@@ -46,4 +46,43 @@ describe("generateSourceInline", () => {
     expect(css).toMatch(/@source inline.*rounded/);
     expect(css).toMatch(/@source inline.*border/);
   });
+
+  it("emits one @source inline state line per state that has a sibling pair", () => {
+    const theme: ThemeConfig = {
+      colors: {
+        primary: "#fff",
+        primaryHover: "#eee",
+        primaryActive: "#ddd",
+        danger: "#f00",
+      },
+    };
+    const css = generateSourceInline(theme, { spacing: { enabled: false } });
+    const lines = css.trim().split("\n");
+
+    expect(lines).toContain(
+      '@source inline("hover:{bg,text,border}-{primary-hover}");',
+    );
+    expect(lines).toContain(
+      '@source inline("active:{bg,text,border}-{primary-active}");',
+    );
+  });
+
+  it("never mixes different states' pairs into one line (no hover:...-primary-active)", () => {
+    const theme: ThemeConfig = {
+      colors: { primary: "#fff", primaryHover: "#eee" },
+    };
+    const css = generateSourceInline(theme, { spacing: { enabled: false } });
+
+    expect(css).toMatch(
+      /@source inline\("hover:\{bg,text,border\}-\{primary-hover\}"\);/,
+    );
+    expect(css).not.toMatch(/active:/);
+  });
+
+  it("omits a state line entirely when no token has a sibling for it", () => {
+    const theme: ThemeConfig = { colors: { primary: "#fff", danger: "#f00" } };
+    const css = generateSourceInline(theme, { spacing: { enabled: false } });
+
+    expect(css).not.toMatch(/hover:|active:/);
+  });
 });

@@ -19,6 +19,15 @@ export const colorsCategory = defineCategory({
   cssVarPrefix: "sg",
   themeNamespace: "--color-",
   classPrefixes: ["bg", "text", "border"],
+  /**
+   * Sibling state tokens: a flat key `t` + Pascal-cased state (e.g.
+   * `primary` + `primaryHover`/`primaryActive`) opts a token into the
+   * `hover:`/`active:` variant classes `createVariantMapper(prefix,
+   * tokens, { states })` generates and the `@source inline` state lines
+   * `generateSourceInline` emits for it. See `consumer-app/packages/
+   * theme/theme.json`'s flat-sibling convention this mirrors.
+   */
+  states: ["hover", "active"] as const,
   select: (source) => source.colors,
 });
 

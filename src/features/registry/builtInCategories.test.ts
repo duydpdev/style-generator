@@ -28,4 +28,9 @@ describe("builtInCategories", () => {
       expect(category.classPrefixes?.length).toBeGreaterThan(0);
     }
   });
+
+  it("colors declares hover/active states for sibling-token variant classes", () => {
+    const colors = builtInCategories.find((c) => c.key === "colors");
+    expect(colors?.states).toEqual(["hover", "active"]);
+  });
 });

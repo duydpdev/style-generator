@@ -43,7 +43,7 @@ export const COMPARE_ROWS: CompareRow[] = [
     ),
     us: (
       <>
-        <code>themes.dark</code> in JSON → overrides generated.
+        <code>themeAxes.theme.dark</code> in JSON → overrides generated.
       </>
     ),
   },

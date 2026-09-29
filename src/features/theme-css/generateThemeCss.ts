@@ -1,10 +1,11 @@
 import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
+import { toKebabCase } from "../../shared/helpers";
 import { builtInCategories } from "../registry/builtInCategories";
 import { flattenByCategory } from "../registry/flattenByCategory";
 
 /**
  * Build intermediate `--sg-*` CSS variables for every registered category
- * present on the given theme source (base theme or a `themes` override).
+ * present on the given theme source (base theme or a `themeAxes.<axis>.<variant>` override).
  * @param {ThemeOverride} source - Theme source data (a base `ThemeConfig` is structurally assignable)
  * @returns {Record<string, string>} CSS variable map
  */
@@ -67,7 +68,12 @@ const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
  *
  * Output includes:
  * 1. `:root` block with `--sg-*` intermediate CSS variables
- * 2. `[data-theme="<name>"]` blocks for each theme override
+ * 2. `html[data-<axis-kebab>="<variant-kebab>"]` blocks for each `themeAxes`
+ *    axis/variant, in config declaration order (both axes and variants) —
+ *    the selector is pinned to `html` because a `$`-alias `var()` resolves
+ *    to the value computed at the element that DECLARES the custom
+ *    property, so an override on a non-root element wouldn't affect an
+ *    alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules)
  * 3. `\@theme inline` block mapping `--sg-*` → Tailwind v4 namespaces
  * @param {ThemeConfig} config - Theme configuration
  * @returns {string} CSS string
@@ -80,17 +86,17 @@ export const generateThemeCss = (config: ThemeConfig): string => {
   const rootBlock = formatCssBlock(":root", rootVars);
   if (rootBlock) blocks.push(rootBlock);
 
-  // 2. Theme overrides
-  if (config.themes) {
-    for (const [name, override] of Object.entries<ThemeOverride>(
-      config.themes,
-    )) {
-      const overrideVars = buildIntermediateVars(override);
-      const overrideBlock = formatCssBlock(
-        `[data-theme="${name}"]`,
-        overrideVars,
-      );
-      if (overrideBlock) blocks.push(overrideBlock);
+  // 2. Axis override blocks, in declaration order (axis, then variant)
+  if (config.themeAxes) {
+    for (const [axisName, variants] of Object.entries(config.themeAxes)) {
+      for (const [variantName, override] of Object.entries<ThemeOverride>(
+        variants,
+      )) {
+        const overrideVars = buildIntermediateVars(override);
+        const selector = `html[data-${toKebabCase(axisName)}="${toKebabCase(variantName)}"]`;
+        const overrideBlock = formatCssBlock(selector, overrideVars);
+        if (overrideBlock) blocks.push(overrideBlock);
+      }
     }
   }
 

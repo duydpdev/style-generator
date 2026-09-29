@@ -80,9 +80,9 @@ describe("initCommand (non-interactive)", () => {
 
     const theme = JSON.parse(
       fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8"),
-    ) as { themes?: Record<string, unknown> };
-    expect(theme).toHaveProperty("themes");
-    expect(theme.themes).toHaveProperty("dark");
+    ) as { themeAxes?: { theme?: Record<string, unknown> } };
+    expect(theme).toHaveProperty("themeAxes");
+    expect(theme.themeAxes?.theme).toHaveProperty("dark");
   });
 
   it("uses src/ prefix when src directory exists", async () => {

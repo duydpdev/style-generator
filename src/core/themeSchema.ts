@@ -352,13 +352,14 @@ const validateCategoryAliasGraph = (
 
 /**
  * Reject a `theme.borderWidth` key that also names a `theme.colors` key
- * within the same scope (base theme, or a single `themes.<name>`
- * override) — the two categories' utility classes would otherwise be easy
- * to confuse (e.g. a `borderWidth.primary` alongside `colors.primary`).
+ * within the same scope (base theme, or a single axis/variant override
+ * merged on top of base) — the two categories' utility classes would
+ * otherwise be easy to confuse (e.g. a `borderWidth.primary` alongside
+ * `colors.primary`).
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} colors - `colors` record for this scope
  * @param {Record<string, string> | undefined} borderWidth - `borderWidth` record for this scope
- * @param {(string | number)[]} pathPrefix - Path segments to prepend (`[]` for base, `["themes", name]` for an override)
+ * @param {(string | number)[]} pathPrefix - Path segments to prepend (`[]` for base, `["themeAxes", axis, variant]` for an override)
  * @returns {void}
  */
 const checkBorderWidthColorCollision = (
@@ -385,7 +386,7 @@ const checkBorderWidthColorCollision = (
  * {@link TAILWIND_FONT_WEIGHT_UTILITY_NAMES}).
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} fontFamily - `fontFamily` record for this scope
- * @param {(string | number)[]} pathPrefix - Path segments to prepend (`[]` for base, `["themes", name]` for an override)
+ * @param {(string | number)[]} pathPrefix - Path segments to prepend (`[]` for base, `["themeAxes", axis, variant]` for an override)
  * @returns {void}
  */
 const checkFontFamilyWeightNames = (
@@ -428,28 +429,29 @@ const validateBaseCategories = (
 };
 
 /**
- * Validate a single `themes.<name>` override: kebab-key uniqueness on its
- * own records, that every override key already exists in the matching base
- * record (an override-only key never maps into `@theme inline`/`@utility`
- * output — it produces no class, see `flattenByCategory.ts`/
- * `generateThemeCss.ts`, both of which only ever iterate base keys), the
- * alias grammar/cycle graph merged with the base theme, and the
- * borderWidth/colors collision check scoped to this override.
+ * Validate a single `themeAxes.<axis>.<variant>` override: kebab-key
+ * uniqueness on its own records, that every override key already exists in
+ * the matching base record (an override-only key never maps into
+ * `@theme inline`/`@utility` output — it produces no class, see
+ * `flattenByCategory.ts`/`generateThemeCss.ts`, both of which only ever
+ * iterate base keys), the alias grammar/cycle graph merged with the base
+ * theme, and the borderWidth/colors collision check scoped to this
+ * override.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {ThemeCssVarSource} baseTheme - Base theme (for the alias merge)
- * @param {string} themeName - Override name (`themes.<themeName>`)
+ * @param {(string | number)[]} pathPrefix - Issue path prefix for this override (`["themeAxes", axisName, variantName]`)
  * @param {Partial<ThemeCssVarSource>} override - The override's own records
  * @returns {void}
  */
 const validateThemeOverride = (
   ctx: z.RefinementCtx,
   baseTheme: ThemeCssVarSource,
-  themeName: string,
+  pathPrefix: (string | number)[],
   override: Partial<ThemeCssVarSource>,
 ): void => {
   for (const category of ALIAS_CATEGORIES) {
     const overrideRecord = override[category];
-    reportKebabCollisions(ctx, overrideRecord, ["themes", themeName, category]);
+    reportKebabCollisions(ctx, overrideRecord, [...pathPrefix, category]);
     if (!overrideRecord) continue;
 
     const baseRecord = baseTheme[category];
@@ -457,7 +459,7 @@ const validateThemeOverride = (
       if (baseRecord && Object.hasOwn(baseRecord, key)) continue;
       ctx.addIssue({
         code: "custom",
-        path: ["themes", themeName, category, key],
+        path: [...pathPrefix, category, key],
         message:
           `Override key "${key}" has no base value in theme.${category} — ` +
           "it produces no utility; declare it in the base theme instead.",
@@ -466,18 +468,58 @@ const validateThemeOverride = (
 
     const merged = { ...baseTheme[category], ...overrideRecord };
     validateCategoryAliasGraph(ctx, merged, overrideRecord, (key) => [
-      "themes",
-      themeName,
+      ...pathPrefix,
       category,
       key,
     ]);
   }
 
-  checkBorderWidthColorCollision(ctx, override.colors, override.borderWidth, [
-    "themes",
-    themeName,
-  ]);
-  checkFontFamilyWeightNames(ctx, override.fontFamily, ["themes", themeName]);
+  checkBorderWidthColorCollision(
+    ctx,
+    override.colors,
+    override.borderWidth,
+    pathPrefix,
+  );
+  checkFontFamilyWeightNames(ctx, override.fontFamily, pathPrefix);
+};
+
+/**
+ * `themeAxes` — replaces the single-axis `themes` field. Outer key is the
+ * axis name (e.g. `"theme"`, `"palette"`), inner key is the variant name
+ * within that axis (e.g. `"dark"`, `"forest"`) — both use the
+ * {@link TokenKey} grammar, so neither can inject an unsafe
+ * selector/attribute-value character. Multiple axes can be declared and
+ * toggled independently (`html[data-theme]` + `html[data-palette]`, ...);
+ * `generateThemeCss.ts` emits one `html[data-<axis-kebab>="<variant-kebab>"]`
+ * block per variant, in declaration order, after `:root`.
+ */
+const ThemeAxesSchema = z.record(
+  TokenKey,
+  z.record(TokenKey, ThemeOverrideSchema),
+);
+
+/**
+ * Detect the removed `themes` key (single-axis, pre-DEV.6) on the RAW
+ * input, before the strict object shape check runs, and replace the
+ * generic `unrecognized_keys` issue it would otherwise produce with a
+ * rename hint. Runs as a `z.preprocess` step ahead of `ThemeSchemaShape` —
+ * `ZodPipe` skips the right-hand schema once the left-hand transform has
+ * added an issue, so a `themes` key never *also* triggers
+ * `unrecognized_keys` for itself.
+ * @param {unknown} raw - Raw (pre-Zod) input
+ * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
+ * @returns {unknown} `raw`, unchanged
+ */
+const rejectLegacyThemesKey = (raw: unknown, ctx: z.RefinementCtx): unknown => {
+  if (raw !== null && typeof raw === "object" && "themes" in raw) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["themes"],
+      message:
+        '"themes" was renamed to "themeAxes"; move themes.<name> to themeAxes.theme.<name>',
+    });
+  }
+  return raw;
 };
 
 /**
@@ -488,30 +530,45 @@ const validateThemeOverride = (
  * produces a value consumers should trust.
  *
  * Cross-field validation (kebab-key uniqueness, `$key` alias grammar/cycle
- * detection, `borderWidth` vs `colors` key collisions, `fontFamily`
- * vs Tailwind font-weight name collisions) runs in the trailing
- * `.superRefine()`, after every individual field has already passed its
- * own `TokenKey`/`TokenValue` grammar check.
+ * detection, `borderWidth` vs `colors` key collisions, `fontFamily` vs
+ * Tailwind font-weight name collisions, per-axis-variant override
+ * validation) runs in the trailing `.superRefine()`, after every
+ * individual field has already passed its own `TokenKey`/`TokenValue`
+ * grammar check.
  */
-export const ThemeSchema = ThemeCssVarShape.extend({
+const ThemeSchemaShape = ThemeCssVarShape.extend({
   $schema: z.string().optional(),
   typography: TypographyRecordSchema.optional(),
-  themes: z.record(TokenKey, ThemeOverrideSchema).optional(),
+  themeAxes: ThemeAxesSchema.optional(),
 }).superRefine((theme, ctx) => {
   validateBaseCategories(ctx, theme);
   checkBorderWidthColorCollision(ctx, theme.colors, theme.borderWidth, []);
   checkFontFamilyWeightNames(ctx, theme.fontFamily, []);
 
-  if (!theme.themes) return;
-  for (const [themeName, override] of Object.entries(theme.themes)) {
-    validateThemeOverride(
-      ctx,
-      theme,
-      themeName,
-      override as Partial<ThemeCssVarSource>,
-    );
+  if (!theme.themeAxes) return;
+  for (const [axisName, variants] of Object.entries(theme.themeAxes)) {
+    for (const [variantName, override] of Object.entries(variants)) {
+      validateThemeOverride(
+        ctx,
+        theme,
+        ["themeAxes", axisName, variantName],
+        override as Partial<ThemeCssVarSource>,
+      );
+    }
   }
 });
+
+/**
+ * Wraps {@link ThemeSchemaShape} in `z.preprocess` ({@link rejectLegacyThemesKey})
+ * so a theme still using the removed `themes` key gets a rename hint
+ * instead of a generic unrecognized-key error — see that function's doc
+ * for why this also takes precedence over any other issue on the same
+ * input.
+ */
+export const ThemeSchema = z.preprocess(
+  rejectLegacyThemesKey,
+  ThemeSchemaShape,
+);
 
 /**
  * Configuration for the theme, inferred from {@link ThemeSchema}.

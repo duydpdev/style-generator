@@ -64,22 +64,62 @@
     "lg": "16px",
     "pill": "999px"
   },
-  "themes": {
-    "dark": {
-      "colors": {
-        "primary": "#8FA6FF",
-        "secondary": "#A89AFF",
-        "success": "#6BBF93",
-        "danger": "#F08369",
-        "background": "#0B0E1D",
-        "surface": "#161A2D",
-        "foreground": "#F2EFE9",
-        "muted": "#8A8FA8"
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#8FA6FF",
+          "secondary": "#A89AFF",
+          "success": "#6BBF93",
+          "danger": "#F08369",
+          "background": "#0B0E1D",
+          "surface": "#161A2D",
+          "foreground": "#F2EFE9",
+          "muted": "#8A8FA8"
+        },
+        "shadows": {
+          "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
+          "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+          "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+        }
+      }
+    },
+    "palette": {
+      "forest": {
+        "colors": {
+          "primary": "#2f5f47",
+          "secondary": "#b07c3a",
+          "success": "#5c8a4a",
+          "danger": "#b84a2e",
+          "background": "#f4f1ea",
+          "surface": "#fffffe",
+          "foreground": "#1a2620",
+          "muted": "#6e7570"
+        }
       },
-      "shadows": {
-        "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
-        "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
-        "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+      "sunset": {
+        "colors": {
+          "primary": "#b23a1b",
+          "secondary": "#7a3e47",
+          "success": "#5c7a4a",
+          "danger": "#991b1b",
+          "background": "#faf3ea",
+          "surface": "#fffdf8",
+          "foreground": "#1f1410",
+          "muted": "#8b6e55"
+        }
+      },
+      "mono": {
+        "colors": {
+          "primary": "#0a0a0a",
+          "secondary": "#525252",
+          "success": "#166534",
+          "danger": "#b91c1c",
+          "background": "#fafafa",
+          "surface": "#ffffff",
+          "foreground": "#0a0a0a",
+          "muted": "#737373"
+        }
       }
     }
   }

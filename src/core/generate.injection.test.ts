@@ -57,10 +57,10 @@ const injectionCases: { label: string; theme: ThemeConfig }[] = [
     theme: { colors: { primary: "</style><script>" } },
   },
   {
-    label: "empty axis-key inside themes",
+    label: "empty axis name inside themeAxes",
     theme: {
       colors: { primary: "#fff" },
-      themes: { "": { colors: { primary: "#000" } } },
+      themeAxes: { "": { dark: { colors: { primary: "#000" } } } },
     },
   },
 ];

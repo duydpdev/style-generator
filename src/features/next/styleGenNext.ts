@@ -136,6 +136,24 @@ const startDevWatcher = (
  * Path traversal guard: `themePath`/`outDir` resolved against
  * `process.cwd()` and rejected if either escapes it (`..`, or an absolute
  * path outside the project).
+ *
+ * **Limitations:**
+ * - **Function-form Next config is unsupported.** `nextConfig` MUST be a
+ *   plain config object, not Next's alternate `(phase, { defaultConfig })
+ *   => config` function form. The wrapper returned by `styleGenNext(opts)`
+ *   already IS that phase function — it just `return`s `nextConfig`
+ *   verbatim as the final config once emission is done, so if `nextConfig`
+ *   is itself a function, Next receives that function as the resolved
+ *   config object instead of calling it a second time with
+ *   `(phase, { defaultConfig })`. Pass a plain object (call your own
+ *   function-form config yourself first, if you have one) instead.
+ * - **Symlinks are not `realpath`'d.** `resolveSafePath` compares the
+ *   logical (non-dereferenced) path against `root`; it never calls
+ *   `fs.realpathSync`. A `themePath`/`outDir` that is itself a symlink
+ *   living inside `root` is accepted even if its TARGET resolves outside
+ *   `root` — the traversal guard only rejects a literal `..`-escaping
+ *   input path, not a symlink whose target escapes after the filesystem
+ *   resolves it.
  * @param {StyleGenNextOptions} opts - Plugin configuration
  * @returns {(nextConfig: unknown) => (phase: string) => unknown} A function
  *   that takes the consumer's Next config and returns the phase-aware

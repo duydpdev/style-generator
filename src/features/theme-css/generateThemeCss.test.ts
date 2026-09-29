@@ -56,15 +56,63 @@ describe("generateThemeCss", () => {
           letterSpacing: "0",
         },
       },
-      themes: {
-        dark: {
-          colors: { primary: "#0A84FF" },
+      themeAxes: {
+        theme: {
+          dark: {
+            colors: { primary: "#0A84FF" },
+          },
         },
       },
     };
     const css = generateThemeCss(config);
-    expect(css).toContain('[data-theme="dark"]');
+    expect(css).toContain('html[data-theme="dark"]');
     expect(css).toContain("--sg-primary: #0A84FF;");
+  });
+
+  it("emits multiple axes after :root, in declaration order (both axes and variants)", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF", secondary: "#FF9500" },
+      themeAxes: {
+        theme: {
+          dark: { colors: { primary: "#0A84FF" } },
+        },
+        palette: {
+          forest: { colors: { primary: "#2f5f47" } },
+          sunset: { colors: { primary: "#b23a1b" } },
+        },
+      },
+    };
+    const css = generateThemeCss(config);
+    const rootIndex = css.indexOf(":root");
+    const themeIndex = css.indexOf('html[data-theme="dark"]');
+    const forestIndex = css.indexOf('html[data-palette="forest"]');
+    const sunsetIndex = css.indexOf('html[data-palette="sunset"]');
+    expect(rootIndex).toBeGreaterThanOrEqual(0);
+    expect(themeIndex).toBeGreaterThan(rootIndex);
+    expect(forestIndex).toBeGreaterThan(themeIndex);
+    expect(sunsetIndex).toBeGreaterThan(forestIndex);
+  });
+
+  it("reversing axis/variant declaration order reverses the output order", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      themeAxes: {
+        palette: {
+          sunset: { colors: { primary: "#b23a1b" } },
+          forest: { colors: { primary: "#2f5f47" } },
+        },
+        theme: {
+          dark: { colors: { primary: "#0A84FF" } },
+        },
+      },
+    };
+    const css = generateThemeCss(config);
+    const sunsetIndex = css.indexOf('html[data-palette="sunset"]');
+    const forestIndex = css.indexOf('html[data-palette="forest"]');
+    const themeIndex = css.indexOf('html[data-theme="dark"]');
+    expect(sunsetIndex).toBeGreaterThanOrEqual(0);
+    expect(forestIndex).toBeGreaterThan(sunsetIndex);
+    expect(themeIndex).toBeGreaterThan(forestIndex);
   });
 
   it("should generate shadow namespace vars", () => {

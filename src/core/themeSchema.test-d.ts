@@ -14,4 +14,25 @@ describe("ThemeSchema type inference", () => {
       colors: { primary: string };
     }>();
   });
+
+  it("ThemeConfig.themeAxes accepts two or more simultaneous axis keys", () => {
+    expectTypeOf<ThemeConfig>().toHaveProperty("themeAxes");
+    const theme = defineTheme({
+      colors: { primary: "#fff" },
+      themeAxes: {
+        theme: { dark: { colors: { primary: "#000" } } },
+        palette: {
+          forest: { colors: { primary: "#0f0" } },
+          sunset: { colors: { primary: "#f00" } },
+        },
+      },
+    });
+    expectTypeOf(theme.themeAxes).toExtend<{
+      theme: { dark: { colors?: { primary?: string } } };
+      palette: {
+        forest: { colors: { primary: string } };
+        sunset: { colors: { primary: string } };
+      };
+    }>();
+  });
 });

@@ -54,7 +54,11 @@ function splitBlocks(css) {
     const ch = css[i];
     if (ch === "/" && css[i + 1] === "*") {
       const end = css.indexOf("*/", i + 2);
-      i = end < 0 ? css.length : end + 2;
+      const next = end < 0 ? css.length : end + 2;
+      // A comment between top-level blocks (e.g. the `/*! tailwindcss … */`
+      // banner) is not part of the next prelude: advance `start` past it.
+      if (depth === 0 && css.slice(start, i).trim() === "") start = next;
+      i = next;
       continue;
     }
     if (ch === '"' || ch === "'") {

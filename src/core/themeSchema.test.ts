@@ -110,6 +110,57 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.success).toBe(false);
   });
 
+  describe("underscore in token keys (D-S3)", () => {
+    const messages = (result: { error?: { issues: unknown[] } }): string =>
+      JSON.stringify(result.error?.issues);
+
+    it.each([
+      ["a color", { colors: { primary_active: "#fff" } }],
+      [
+        "a shadow",
+        { colors: { primary: "#fff" }, shadows: { drop_soft: "0 1px #000" } },
+      ],
+      [
+        "a themeAxes axis name",
+        {
+          colors: { primary: "#fff" },
+          themeAxes: { high_contrast: { dark: { primary: "#000" } } },
+        },
+      ],
+      [
+        "a themeAxes variant name",
+        {
+          colors: { primary: "#fff" },
+          themeAxes: { theme: { dark_mode: { primary: "#000" } } },
+        },
+      ],
+      [
+        "an override key",
+        {
+          colors: { primary: "#fff" },
+          themeAxes: { theme: { dark: { primary_x: "#000" } } },
+        },
+      ],
+      [
+        "an alias target",
+        { colors: { primary: "$blue_500", blue500: "#00f" } },
+      ],
+    ])("rejects `_` in %s", (_label, theme) => {
+      const result = ThemeSchema.safeParse(theme);
+      expect(result.success).toBe(false);
+    });
+
+    it("suggests camelCase or kebab-case in the error message", () => {
+      const result = ThemeSchema.safeParse({
+        colors: { primary_active: "#fff" },
+      });
+      expect(result.success).toBe(false);
+      expect(messages(result)).toContain("`_` is not allowed");
+      expect(messages(result)).toContain("camelCase");
+      expect(messages(result)).toContain("kebab-case");
+    });
+  });
+
   it.each(["red;}body{color:red", "red\n", "url(x)@import", "red/*", '"Inter'])(
     "rejects malformed token value %j",
     (value) => {

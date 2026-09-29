@@ -112,7 +112,7 @@ export function createVariantMapper<
         for (const state of opts.states) {
           const siblingKey = `${token}${toPascalCase(state)}`;
           if (tokenSet.has(siblingKey)) {
-            parts.push(`${state}:${mapClass(prefix, siblingKey)}`);
+            parts.push(`${toKebabCase(state)}:${mapClass(prefix, siblingKey)}`);
           }
         }
         return [token, parts.join(" ")];

@@ -94,6 +94,9 @@ const buildCategoryLine = (
  * `k` contributes when `k` + Pascal-cased `s` (e.g. `primary` +
  * `primaryHover`) is also present, and it emits the kebab-cased sibling
  * (`primary-hover`) — the same class the mapper chains onto the base token.
+ * The state itself is emitted kebab-cased (`focusVisible` → `focus-visible:`)
+ * so it is a valid Tailwind variant name; the sibling lookup still uses the
+ * Pascal-cased state.
  * A category with no sibling for a given state emits no line for it at all
  * (never `{}` empty braces).
  * @param {TokenCategoryDescriptor} descriptor - Category descriptor
@@ -129,7 +132,7 @@ const buildStateLines = (
     if (siblingKebabKeys.length === 0) continue;
 
     lines.push(
-      `@source inline("${state}:${prefixPart}{${siblingKebabKeys.join(",")}}");`,
+      `@source inline("${toKebabCase(state)}:${prefixPart}{${siblingKebabKeys.join(",")}}");`,
     );
   }
 

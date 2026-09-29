@@ -4,17 +4,20 @@ import { UTILITY_NAME_RE, toKebabCase } from "../shared/helpers";
 
 /**
  * Bare regex source (no anchors) for a single theme record key: must start
- * with an alphanumeric character, then any run of alphanumerics, `_`, `-`.
+ * with an alphanumeric character, then any run of alphanumerics and `-`.
+ * `_` is rejected on purpose: `toKebabCase` preserves it (`bg-primary_active`)
+ * while the typed tokens camelCase it away (`primaryActive`), so the class a
+ * mapper emits would not exist. Relaxing this later is non-breaking.
  * Shared between {@link TokenKey} (key grammar) and {@link ALIAS_VALUE_RE}
  * (alias sigil target grammar) so both accept exactly the same key shape.
  */
-const TOKEN_KEY_SOURCE = "[A-Za-z0-9][A-Za-z0-9_-]*";
+const TOKEN_KEY_SOURCE = "[A-Za-z0-9][A-Za-z0-9-]*";
 
 /**
  * Key grammar shared by every theme record (colors, typography, shadows,
  * backdrop blurs, border radius, border width, font family, theme override
- * names): must start with an alphanumeric character, then any run of
- * alphanumerics, `_`, `-`. Rejects accidental typos like `"colours"` only
+ * names, theme axis and variant names): must start with an alphanumeric
+ * character, then any run of alphanumerics and `-`. Rejects accidental typos like `"colours"` only
  * via `strictObject` unknown key checks — this regex instead guards
  * against structurally unsafe keys (spaces, leading dashes, semicolons,
  * ...) that could otherwise be echoed into `generate().css` as a CSS
@@ -24,7 +27,7 @@ export const TokenKey = z
   .string()
   .regex(
     new RegExp(`^${TOKEN_KEY_SOURCE}$`),
-    "Key must start with a letter/digit and contain only letters, digits, `_`, `-`",
+    "Key must start with a letter/digit and contain only letters, digits, `-` (`_` is not allowed: use camelCase, e.g. `primaryActive`, or kebab-case, e.g. `primary-active`)",
   );
 
 /**

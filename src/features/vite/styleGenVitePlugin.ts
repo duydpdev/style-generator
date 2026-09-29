@@ -1,4 +1,4 @@
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 import type { Plugin, ResolvedConfig } from "vite";
@@ -8,6 +8,7 @@ import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { resolveSafePath } from "../../shared/resolveSafePath";
+import { writeFileAtomic } from "../../shared/writeFileAtomic";
 
 export interface StyleGenViteOptions {
   /** Path to theme JSON, resolved relative to Vite project root. */
@@ -41,7 +42,7 @@ const emit = (
   const themeCss = generate(theme, options).css;
 
   mkdirSync(outDirAbs, { recursive: true });
-  writeFileSync(resolve(outDirAbs, "theme.css"), themeCss, "utf8");
+  writeFileAtomic(resolve(outDirAbs, "theme.css"), themeCss);
 
   return { themeCss };
 };
@@ -83,6 +84,18 @@ const formatEmitError = (err: unknown): string =>
  * if it escapes (`..`).
  *
  * Monorepo: warns once if two plugin instances target the same `outDir`.
+ *
+ * `theme.css` is written atomically (`writeFileAtomic`: sibling temp file +
+ * `renameSync`), so `@tailwindcss/vite` never reads a half-written file.
+ *
+ * **Limitations:**
+ * - **Symlinks are not `realpath`'d.** `resolveSafePath` compares the
+ *   logical (non-dereferenced) path against the project root; it never calls
+ *   `fs.realpathSync`. A `themePath`/`outDir` that is itself a symlink
+ *   living inside the root is accepted even if its TARGET resolves outside
+ *   it — the traversal guard only rejects a literal `..`-escaping input
+ *   path, not a symlink whose target escapes after the filesystem resolves
+ *   it.
  * @param {StyleGenViteOptions} opts - Plugin configuration
  * @returns {Plugin} A Vite plugin instance
  */

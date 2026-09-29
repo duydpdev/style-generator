@@ -71,6 +71,18 @@ describe("createVariantMapper", () => {
       expect(map.primary).toBe("bg-primary hover:bg-primary-hover");
     });
 
+    it("kebab-cases a camelCase state name into a valid Tailwind variant prefix", () => {
+      const map = createVariantMapper(
+        "bg",
+        ["primary", "primaryFocusVisible"] as const,
+        { states: ["focusVisible"] },
+      );
+
+      expect(map.primary).toBe(
+        "bg-primary focus-visible:bg-primary-focus-visible",
+      );
+    });
+
     it("supports the prefixes-array overload together with states", () => {
       const map = createVariantMapper(
         ["bg", "text"] as const,

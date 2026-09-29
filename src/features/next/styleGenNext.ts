@@ -1,5 +1,4 @@
-import { randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 import { watch, type FSWatcher } from "chokidar";
@@ -9,6 +8,7 @@ import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { resolveSafePath } from "../../shared/resolveSafePath";
+import { writeFileAtomic } from "../../shared/writeFileAtomic";
 
 export interface StyleGenNextOptions {
   /** Path to theme JSON, resolved relative to `process.cwd()`. */
@@ -49,10 +49,8 @@ const debounce = <Args extends unknown[]>(
 };
 
 /**
- * Parse+generate `theme.css` and write it atomically: render to a sibling
- * temp file, then `renameSync` over the real target. `rename(2)` is atomic
- * on POSIX/NTFS as long as source and destination share a filesystem (the
- * temp file lives in `outDirAbs`, same as the target) — readers (webpack's
+ * Parse+generate `theme.css` and write it atomically (`writeFileAtomic`:
+ * sibling temp file + `renameSync`), so readers (webpack's
  * `@tailwindcss/postcss`, Turbopack's CSS loader) never observe a
  * partially-written file.
  * @param {string} themePathAbs - Absolute path to the theme JSON.
@@ -70,13 +68,7 @@ const emit = (
   const themeCss = generate(theme, options).css;
 
   mkdirSync(outDirAbs, { recursive: true });
-  const outFile = resolve(outDirAbs, "theme.css");
-  const tmpFile = resolve(
-    outDirAbs,
-    `.theme.css.${String(process.pid)}.${randomUUID()}.tmp`,
-  );
-  writeFileSync(tmpFile, themeCss, "utf8");
-  renameSync(tmpFile, outFile);
+  writeFileAtomic(resolve(outDirAbs, "theme.css"), themeCss);
 };
 
 /**

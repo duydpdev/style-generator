@@ -5,7 +5,7 @@
 # and publishes the static bundle to GitHub Pages.
 #
 # Triggers:
-#   - push to main affecting site/, docs/, examples/, src/
+#   - push to main affecting site/, documents/, examples/, src/
 #   - manual via workflow_dispatch
 #
 # Independent from release.yml / deploy.yml (npm publish).
@@ -17,7 +17,7 @@ on:
     branches: [main]
     paths:
       - "site/**"
-      - "docs/**"
+      - "documents/**"
       - "examples/**"
       - "src/**"
       - "package.json"

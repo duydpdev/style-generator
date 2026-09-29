@@ -4,7 +4,7 @@ TypeScript library + CLI that turns a theme JSON into a complete **design system
 
 Published on **GitHub Packages** as `@duydpdev/style-generator` (private — requires access, see Installation).
 
-> **Upgrading from 3.x?** 4.0.0 is a breaking release (Tailwind v4 only, `generate()` instead of a plugin + safelist, strict theme schema, `themeAxes`). Read [`docs/migration/3.x-to-4.0.md`](docs/migration/3.x-to-4.0.md).
+> **Upgrading from 3.x?** 4.0.0 is a breaking release (Tailwind v4 only, `generate()` instead of a plugin + safelist, strict theme schema, `themeAxes`). Read [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md).
 
 ## Features
 
@@ -87,7 +87,7 @@ import { styleGenVite } from "@duydpdev/style-generator/vite";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 ```
 
-Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node16"`, or `"nodenext"`. See [`docs/migration/3.x-subpath-exports.md`](docs/migration/3.x-subpath-exports.md) for the background and [`docs/migration/3.x-to-4.0.md`](docs/migration/3.x-to-4.0.md) for what changed in 4.0.0.
+Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node16"`, or `"nodenext"`. See [`documents/migration/3.x-subpath-exports.md`](./documents/migration/3.x-subpath-exports.md) for the background and [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md) for what changed in 4.0.0.
 
 ---
 
@@ -367,7 +367,7 @@ Rules:
 | compound `[data-theme="dark"][data-palette="…"]`     | cross-axis override (dark × a specific palette)                                      | Hand-written CSS: its `(0,2,0)` specificity beats either single-axis `html[data-…]` rule `(0,1,1)` regardless of source order              |
 | `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, and a nested `.sg-glass-target` child rule | Hand-written CSS: variables outside `--sg-*` and nested-child selectors are not representable by a theme override (see `examples/nuxt-v4`) |
 
-The old single-axis key was renamed; a theme still using it is rejected with a message pointing at `themeAxes`. See the [migration guide](docs/migration/3.x-to-4.0.md) for the exact message and the rewrite.
+The old single-axis key was renamed; a theme still using it is rejected with a message pointing at `themeAxes`. See the [migration guide](./documents/migration/3.x-to-4.0.md) for the exact message and the rewrite.
 
 ### Why the `--sg-*` intermediate variables?
 
@@ -699,7 +699,7 @@ Class names built at runtime (a template literal such as `` `bg-${variant}` ``) 
 
 ### Remote (GitHub Actions)
 
-`ci.yml` runs commitlint, lint, `prettier:check`, `tsc`, `build:all`, the `check:*` gates and the unit/type tests, a Playwright job, and a leg that re-resolves Tailwind to the 4.1.x peer floor and runs the unit and e2e suites against it. See [`docs/deploy.md`](docs/deploy.md) and [`docs/testing.md`](docs/testing.md).
+`ci.yml` runs commitlint, lint, `prettier:check`, `tsc`, `build:all`, the `check:*` gates and the unit/type tests, a Playwright job, and a leg that re-resolves Tailwind to the 4.1.x peer floor and runs the unit and e2e suites against it. See [`documents/deploy.md`](./documents/deploy.md) and [`documents/testing.md`](./documents/testing.md).
 
 ```bash
 yarn test          # Unit tests
@@ -712,6 +712,6 @@ yarn test:coverage # Coverage report
 
 ## 11. Migration
 
-- **3.x → 4.0.0** (breaking): [`docs/migration/3.x-to-4.0.md`](docs/migration/3.x-to-4.0.md) — every removed API, the new theme fields, CLI changes and a rollback runbook.
-- **Subpath exports (3.x)**: [`docs/migration/3.x-subpath-exports.md`](docs/migration/3.x-subpath-exports.md) — historical; explains `moduleResolution` requirements.
+- **3.x → 4.0.0** (breaking): [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md) — every removed API, the new theme fields, CLI changes and a rollback runbook.
+- **Subpath exports (3.x)**: [`documents/migration/3.x-subpath-exports.md`](./documents/migration/3.x-subpath-exports.md) — historical; explains `moduleResolution` requirements.
 - Older majors: 2 → 3 removed nested color objects and the `DEFAULT` key (flat camelCase keys only, use `createVariantMapper` for CVA); 1 → 2 flattened the `base`/`text`/`common` color buckets.

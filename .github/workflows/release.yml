@@ -5,7 +5,7 @@
 # Flow:
 #   1. Semantic-release tạo tag & version bump
 #   2. Detect tag mới (so sánh trước/sau)
-#   3. Gọi deploy.yml để build & publish lên npm public
+#   3. Gọi deploy.yml để build & publish lên GitHub Packages
 #   4. Gọi back-merge.yml nếu là stable tag trên main
 # ─────────────────────────────────────────────────────
 name: Release

@@ -14,13 +14,13 @@
 - Find root causes — no hacky/temporary fixes
 - Minimal impact: only touch what is necessary
 - Testing mandatory: Unit > Integration > E2E (AAA pattern)
-- Performance: measure first, adhere to Core Web Vitals 2025
+- Performance: measure first; for this library that means generated CSS size and `yarn check:sizes` budgets
 
 ### Read → Understand → Apply
 
 Before coding, answer:
 
-1. What is the GOAL of this agent/skill?
+1. What is the GOAL of this task?
 2. What PRINCIPLES must I apply?
 3. How does this DIFFER from generic output?
 
@@ -28,7 +28,7 @@ Before coding, answer:
 
 ### Verification Before Done
 
-- NEVER mark a task complete without proving it works
+- NEVER mark a task complete without proving it works: the gate in `.claude/rules/validation.md` exits 0
 - Run tests, check logs, demonstrate correctness
 - Challenge your own work: "Would a staff engineer approve this?"
 
@@ -37,16 +37,6 @@ Before coding, answer:
 - For non-trivial changes: pause and ask "Is there a more elegant way?"
 - Refactor hacky fixes: implement the elegant solution
 - Skip for simple, obvious fixes
-
-### Project Type Routing
-
-| Project Type                       | Primary Agent         |
-| ---------------------------------- | --------------------- |
-| MOBILE (iOS, Android, RN, Flutter) | `mobile-developer`    |
-| WEB (Next.js, React web)           | `frontend-specialist` |
-| BACKEND (API, server, DB)          | `backend-specialist`  |
-
-> 🔴 Mobile + `frontend-specialist` = WRONG.
 
 ### Socratic Gate (For Complex Requests)
 
@@ -61,12 +51,3 @@ STOP and ASK before implementing:
 | Direct "Proceed"    | Still ask 2 "Edge Case" questions            |
 
 > Never assume. If even 1% is unclear, ASK. Do NOT invoke subagents or write code until user clears the gate.
-
-## TIER 2: Design Rules
-
-For design work, read the specialist agent file:
-
-| Task         | Agent                                   |
-| ------------ | --------------------------------------- |
-| Web UI/UX    | `.claude/agents/frontend-specialist.md` |
-| Mobile UI/UX | `.claude/agents/mobile-developer.md`    |

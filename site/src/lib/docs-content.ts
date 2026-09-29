@@ -9,11 +9,14 @@ export interface DocEntry {
   badge?: string;
 }
 
-const raw = import.meta.glob("../../../docs/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
+const raw = import.meta.glob(
+  ["../../../documents/*.md", "!../../../documents/README.md"],
+  {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  },
+) as Record<string, string>;
 
 const META: Record<
   string,

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────
-# Deploy — Build & publish package lên npm public registry
+# Deploy — Build & publish package lên GitHub Packages (npm.pkg.github.com)
 #
 # Reusable workflow, được gọi từ release.yml
 # Input: tag name (e.g. v1.2.0 hoặc v1.2.0-DEV.1)

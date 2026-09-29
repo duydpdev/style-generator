@@ -1,6 +1,6 @@
 # Examples
 
-Working consumer apps that link `@duydpdev/style-generator` through the Yarn workspace (`workspace:*`) and exercise the public API end-to-end. Each one wires the library the 4.0.0 way: a generated `theme.css` that the app `@import`s next to `@import "tailwindcss"` — no `@plugin`, no safelist file. Upgrading an existing project? See [`../docs/migration/3.x-to-4.0.md`](../docs/migration/3.x-to-4.0.md).
+Working consumer apps that link `@duydpdev/style-generator` through the Yarn workspace (`workspace:*`) and exercise the public API end-to-end. Each one wires the library the 4.0.0 way: a generated `theme.css` that the app `@import`s next to `@import "tailwindcss"` — no `@plugin`, no safelist file. Upgrading an existing project? See [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md).
 
 | Example                  | Stack                           | Highlights                                                         |
 | ------------------------ | ------------------------------- | ------------------------------------------------------------------ |

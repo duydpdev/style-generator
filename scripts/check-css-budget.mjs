@@ -67,7 +67,11 @@ for (const file of files) {
 }
 
 const verdict = total <= maxGzip ? "OK" : "OVER BUDGET";
+const delta =
+  total <= maxGzip
+    ? `${maxGzip - total} B headroom`
+    : `${total - maxGzip} B over`;
 console.log(
-  `${verdict}: ${total} B gzip across ${files.length} file(s), budget ${maxGzip} B (${total <= maxGzip ? `${maxGzip - total} B headroom` : `${total - maxGzip} B over`})`,
+  `${verdict}: ${total} B gzip across ${files.length} file(s), budget ${maxGzip} B (${delta})`,
 );
 process.exit(total <= maxGzip ? 0 : 1);

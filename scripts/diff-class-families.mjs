@@ -4,8 +4,11 @@
  * the proxy CSS no longer has.
  *
  * Usage:
- *   node scripts/diff-class-families.mjs <baseline-classes.txt> <proxy.css> \
+ *   node scripts/diff-class-families.mjs <baseline-classes.txt> <css file|dir> \
  *     [--allow <allowlist.txt>] [--all] [--list-classes]
+ *
+ * A directory is walked recursively and every `.css` file in it is read
+ * (Next emits `.next/static/css/*.css`).
  *
  * Family = the utility prefix before the token value, with variants split
  * into their own column:
@@ -20,11 +23,15 @@
  * 1 = a baseline family is absent from the proxy and not allowlisted,
  * 2 = usage / unreadable input / malformed allowlist.
  *
- * Allowlist lines: `family | reason | replacement` (all three non-empty);
- * blank lines and `#` comments are ignored.
+ * Allowlist lines: `key | reason | replacement` (all three non-empty);
+ * blank lines and `#` comments are ignored. `key` is either a family
+ * (`content-`: the whole family may be absent) or a `variant:family` pair
+ * (`md:text-`: only that variant of a family that is otherwise present may be
+ * absent). Prefer pairs: allowlisting a present family (`text-`) would hide the
+ * loss of token-driven utilities such as `text-primary`.
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const flagValue = (name) => {
@@ -41,7 +48,7 @@ const listClasses = args.includes("--list-classes");
 
 if (!baselinePath || !cssPath || (args.includes("--allow") && !allowPath)) {
   console.error(
-    "Usage: diff-class-families.mjs <baseline-classes.txt> <proxy.css> [--allow <allowlist.txt>] [--all] [--list-classes]",
+    "Usage: diff-class-families.mjs <baseline-classes.txt> <css file|dir> [--allow <allowlist.txt>] [--all] [--list-classes]",
   );
   process.exit(2);
 }
@@ -55,6 +62,35 @@ function readOrExit(path) {
     );
     process.exit(2);
   }
+}
+
+/** Concatenated text of a css file, or of every `.css` file under a directory. */
+function readCssInput(path) {
+  const abs = resolve(path);
+  let stat;
+  try {
+    stat = statSync(abs);
+  } catch (error) {
+    console.error(
+      `Cannot read ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.exit(2);
+  }
+  if (!stat.isDirectory()) return readOrExit(abs);
+  const walk = (dir) =>
+    readdirSync(dir, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .flatMap((entry) => {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) return walk(full);
+        return entry.name.endsWith(".css") ? [full] : [];
+      });
+  const files = walk(abs);
+  if (files.length === 0) {
+    console.error(`No .css files found under ${path}`);
+    process.exit(2);
+  }
+  return files.map((f) => readOrExit(f)).join("\n");
 }
 
 /** Split on `sep` only outside `[...]` (arbitrary values/variants may contain it). */
@@ -188,7 +224,7 @@ const baselineClasses = readOrExit(baselinePath)
   .split("\n")
   .map((l) => l.trim())
   .filter(Boolean);
-const proxyClasses = classesFromCss(readOrExit(cssPath));
+const proxyClasses = classesFromCss(readCssInput(cssPath));
 const allow = allowPath
   ? parseAllowlist(readOrExit(allowPath), allowPath)
   : new Map();
@@ -257,15 +293,20 @@ const variantPairs = (classNames) => {
   return pairs;
 };
 const proxyPairs = variantPairs(proxyClasses);
-const missingPairs = [...variantPairs(baselineClasses).entries()]
+const lostPairs = [...variantPairs(baselineClasses).entries()]
   .filter(
-    ([key, { family }]) =>
-      !proxyPairs.has(key) && proxyFamilies.has(family) && !allow.has(family),
+    ([key, { family }]) => !proxyPairs.has(key) && proxyFamilies.has(family),
   )
   .map(([, pair]) => pair);
+const missingPairs = lostPairs.filter(
+  ({ variant, family }) =>
+    !allow.has(family) && !allow.has(`${variant}:${family}`),
+);
 
-const stale = [...allow.keys()].filter(
-  (family) => !missing.some((r) => r.family === family),
+const stale = [...allow.keys()].filter((key) =>
+  key.includes(":")
+    ? !lostPairs.some(({ variant, family }) => `${variant}:${family}` === key)
+    : !missing.some((r) => r.family === key),
 );
 if (stale.length) {
   console.log(

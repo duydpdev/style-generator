@@ -3,14 +3,14 @@ import type {
   SpacingPropertyMap,
 } from "../../core/Options";
 import type { ThemeConfig } from "../../core/themeSchema";
-import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
+import {
+  DEFAULT_BREAKPOINTS,
+  DEFAULT_SPACING_PROPERTIES,
+} from "../../shared/defaultOption";
 import { toCamelCase, toKebabCase, toPascalCase } from "../../shared/helpers";
 
 import { builtInCategories } from "./builtInCategories";
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
-
-/** Breakpoint keys used for a `responsive: true` category when the caller doesn't configure `options.breakpoints` — matches `generateSpacingCss`'s own default. */
-const DEFAULT_RESPONSIVE_BREAKPOINTS = ["md", "lg"];
 
 /**
  * Resolve the ordered list of class-name-suffix keys a category should
@@ -164,9 +164,7 @@ export const generateSourceInline = (
   options: StyleGeneratorOptions = {},
 ): string => {
   const lines: string[] = [];
-  const breakpointKeys = (
-    options.breakpoints ?? DEFAULT_RESPONSIVE_BREAKPOINTS
-  ).map((bp) => bp);
+  const breakpointKeys = options.breakpoints ?? DEFAULT_BREAKPOINTS;
 
   for (const descriptor of builtInCategories) {
     const keys = resolveCategoryKeys(descriptor, theme);

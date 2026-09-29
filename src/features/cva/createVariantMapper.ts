@@ -92,16 +92,7 @@ export function createVariantMapper<
   prefixOrPrefixes: P | readonly P[],
   tokens: readonly T[],
   opts?: VariantMapperStatesOptions,
-):
-  | VariantMap<T, P>
-  | MultiVariantMap<T, P>
-  | Record<T, string>
-  | Record<P, Record<T, string>> {
-  const prefixes: readonly P[] =
-    typeof prefixOrPrefixes === "string"
-      ? [prefixOrPrefixes]
-      : prefixOrPrefixes;
-
+): Record<string, string> | Record<string, Record<string, string>> {
   const mapClass = (prefix: P, token: string): string => {
     const kebab = toKebabCase(token);
     return prefix === "" ? kebab : `${prefix}-${kebab}`;
@@ -129,15 +120,10 @@ export function createVariantMapper<
     );
   };
 
-  const byPrefix: Record<string, Record<string, string>> = Object.fromEntries(
-    prefixes.map((prefix) => [prefix, buildForPrefix(prefix)]),
+  if (typeof prefixOrPrefixes === "string") {
+    return buildForPrefix(prefixOrPrefixes);
+  }
+  return Object.fromEntries(
+    prefixOrPrefixes.map((prefix) => [prefix, buildForPrefix(prefix)]),
   );
-
-  return (
-    typeof prefixOrPrefixes === "string" ? byPrefix[prefixOrPrefixes] : byPrefix
-  ) as
-    | VariantMap<T, P>
-    | MultiVariantMap<T, P>
-    | Record<T, string>
-    | Record<P, Record<T, string>>;
 }

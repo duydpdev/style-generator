@@ -3,7 +3,10 @@ import type {
   SpacingPropertyMap,
 } from "../../core/Options";
 import { defaultScreens } from "../../core/Options";
-import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
+import {
+  DEFAULT_BREAKPOINTS,
+  DEFAULT_SPACING_PROPERTIES,
+} from "../../shared/defaultOption";
 
 interface SortedBreakpoint {
   key: string;
@@ -23,7 +26,7 @@ const resolveSortedBreakpoints = (
 ): SortedBreakpoint[] => {
   if (options.enableResponsive === false) return [];
 
-  const breakpointKeys = options.breakpoints ?? ["md", "lg"];
+  const breakpointKeys = options.breakpoints ?? DEFAULT_BREAKPOINTS;
   const mergedScreens: Record<string, string> = {
     ...defaultScreens,
     ...options.screens,

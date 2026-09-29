@@ -77,6 +77,8 @@ Only `colors` is required in `ThemeConfig`. All other fields (`typography`, `sha
 
 **Aliases**: a category value of the form `"$<key>"` (matching `^\$<TokenKey>$`, the raw key — not its kebab-case form) resolves to `var(--<cssVarPrefix>-<kebab-target>)` instead of being emitted literally — e.g. `shadows.card: "$base"` → `var(--sg-shadow-base)`. `ThemeSchema`'s `.superRefine()` validates the target exists (every base key of that category — a `themeAxes.<axis>.<variant>` override's own keys are always a subset of the base keys, see Theme/Color Rules) and the alias graph is acyclic (DFS) before any CSS is generated. Aliases are not supported inside `typography` (a `$`-prefixed typography value is rejected at parse time).
 
+**Default breakpoints**: one shared constant, `DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`), is what `generateSourceInline` (responsive `@source inline` variants), `generateSpacingCss` (spacing `@media` chains) and `createDesignTokens` (`DesignTokens.Web.breakpoints`) all fall back to when `options.breakpoints` is unset. It is `["md","lg"]` — not every `screens` key — because (a) the v3 baseline emitted only `md:` and `lg:` variants (`docs/migration/v4-baseline-classes.txt`: 89 `md:`, 89 `lg:`, zero `sm:`/`xl:`/`2xl:`), and (b) the consumer app passes exactly `[Breakpoint.MD, Breakpoint.LG]`. Previously `createDesignTokens` defaulted to all five `screens` keys, so `DesignTokens.Web.breakpoints` advertised variants (`sm:`, `xl:`, `2xl:`) that no `@source inline` line covered. Override via `options.breakpoints`.
+
 ### Source Layout
 
 - `src/core/` — `generate.ts` (main entry), `defineTheme`/`defineOptions` (`defineTheme.ts`, zero-runtime type-safe helpers), `Options.ts` (`StyleGeneratorOptions`, `Breakpoint`), `themeSchema.ts` (`ThemeConfig`/`ThemeOverride`, the Zod schema + alias/injection-safety refinements), `inference.ts`/`designTokensTypes.ts` (+ `*.test-d.ts` for `DesignTokens.Web.*` / `ColorVariant<T>` etc. shape inference).
@@ -134,6 +136,8 @@ Internal helpers (`toCamelCase`, `toPascalCase`, `toKebabCase`, `extractData`, `
 ### CLI Tool (`style-gen`)
 
 Built separately by `tsdown` to `dist/cli/index.mjs` (bin entry). Commands: `init` (scaffold theme + plugin file, interactive or `--dark`), `generate [--watch]` (validate theme, write `theme.css`; `--watch` via `chokidar` — replaced the old `safelist` command), `doctor` (validate config + theme parse), `schema` (write `theme.schema.json` from `z.toJSONSchema(ThemeSchema)`, for editor autocomplete). Config resolution order: **CLI flags → `style-gen.config.json` → `package.json["style-gen"]` → built-in defaults**.
+
+`doctor` also prints `⚠️` warnings (never errors, exit code unchanged — `src/cli/commands/utilityCollisions.ts`) for schema-valid keys that collide with a Tailwind static utility: `none` in `colors`/`shadows`/`backDropBlurs`/`borderRadius`; digit-only `borderWidth` keys (`border-2`); `typography` keys whose kebab form is `text-{xs…9xl,left,center,right,justify,start,end,wrap,nowrap,balance,pretty,ellipsis,clip}`; `colors` keys `transparent`/`current`/`inherit`. `themeAxes` overrides need no separate check (an override key must already exist in the base theme).
 
 ### Build Outputs
 

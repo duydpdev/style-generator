@@ -56,6 +56,16 @@ export const DEFAULT_ROUNDED_VALUES = [
 /** Default border width values for safelist. */
 export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
 
+/**
+ * Breakpoint keys used when `options.breakpoints` is not set — the single
+ * default shared by the `@source inline` responsive variants, the spacing
+ * `@media` chains, and `DesignTokens.Web.breakpoints`. `md`/`lg` are the only
+ * responsive variants the v3 baseline emitted (`v4-baseline-classes.txt`:
+ * 89 `md:` + 89 `lg:` classes, no `sm:`/`xl:`/`2xl:`), and the consumer app
+ * passes exactly `[Breakpoint.MD, Breakpoint.LG]`.
+ */
+export const DEFAULT_BREAKPOINTS: readonly string[] = ["md", "lg"];
+
 // ---- Type helpers for defaults (used in type inference) ----
 
 /**

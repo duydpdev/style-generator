@@ -1,5 +1,6 @@
 import {
   DEFAULT_BORDER_VALUES,
+  DEFAULT_BREAKPOINTS,
   DEFAULT_ROUNDED_VALUES,
   DEFAULT_SPACING_PROPERTIES,
   type SpacingKey,
@@ -68,7 +69,7 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
     ...options.screens,
   };
 
-  const keysToUse = options.breakpoints ?? Object.keys(mergedScreens);
+  const keysToUse = options.breakpoints ?? [...DEFAULT_BREAKPOINTS];
   const spacingProperties = Object.keys(
     options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES,
   ) as SpacingKey[];

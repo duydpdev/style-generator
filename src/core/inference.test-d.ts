@@ -1,5 +1,7 @@
 import { describe, it, expectTypeOf } from "vitest";
 
+import type { kebabParityCases } from "../__integration__/__fixtures__/kebabParityCases";
+
 import type {
   CamelCase,
   KebabCase,
@@ -64,6 +66,24 @@ describe("KebabCase", () => {
   it("converts letter+digit shorthand: h1 → h-1, h2 → h-2 (matches runtime toKebabCase)", () => {
     expectTypeOf<KebabCase<"h1">>().toEqualTypeOf<"h-1">();
     expectTypeOf<KebabCase<"h2">>().toEqualTypeOf<"h-2">();
+  });
+
+  it("does not dash between consecutive capitals: primaryFG → primary-fg (matches runtime)", () => {
+    expectTypeOf<KebabCase<"primaryFG">>().toEqualTypeOf<"primary-fg">();
+    expectTypeOf<KebabCase<"HTMLParser">>().toEqualTypeOf<"htmlparser">();
+  });
+
+  it("dashes digit→uppercase and letter→digit: text12Mono → text-12-mono, 500Blue → 500-blue", () => {
+    expectTypeOf<KebabCase<"text12Mono">>().toEqualTypeOf<"text-12-mono">();
+    expectTypeOf<KebabCase<"500Blue">>().toEqualTypeOf<"500-blue">();
+    expectTypeOf<KebabCase<"text2xl">>().toEqualTypeOf<"text-2xl">();
+  });
+
+  it("equals the runtime toKebabCase for every row of the shared parity table", () => {
+    type Case = (typeof kebabParityCases)[number];
+    expectTypeOf<{
+      [C in Case as C["key"]]: KebabCase<C["key"]>;
+    }>().toEqualTypeOf<{ [C in Case as C["key"]]: C["kebab"] }>();
   });
 });
 

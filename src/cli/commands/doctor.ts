@@ -5,6 +5,8 @@ import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
 
+import { findUtilityCollisions } from "./utilityCollisions";
+
 const padStr = (str: string) => {
   const minLen = 30;
   return str.length < minLen ? str.padEnd(minLen, " ") : str + " ";
@@ -39,6 +41,11 @@ function checkTheme(cwd: string, optionsTheme: string): boolean {
       logger.log(
         `  Theme   (${padStr(optionsTheme)}) ✅ Valid JSON, schema OK`,
       );
+      // Warnings only: a collision can be deliberate, and must not fail the
+      // exit code (hasErrors stays false).
+      for (const warning of findUtilityCollisions(result.data)) {
+        logger.log(`  Theme   ⚠️  ${warning}`);
+      }
     } else {
       logger.log(`  Theme   (${padStr(optionsTheme)}) ❌ Invalid schema`);
       logger.log(formatZodError(result.error));

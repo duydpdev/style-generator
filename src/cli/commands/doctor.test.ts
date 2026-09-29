@@ -167,4 +167,97 @@ describe("doctorCommand", () => {
     }).toThrow(/__exit_1__/);
     expect(lines()).toMatch(/Not found/);
   });
+
+  describe("Tailwind utility collision warnings", () => {
+    const runWithTheme = (theme: object): void => {
+      writeProject(tmp, {
+        "style-gen.config.json": {
+          theme: "styles/theme.json",
+          plugin: "plugins/theme-plugin.ts",
+          output: "styles/theme.css",
+        },
+        "styles/theme.json": theme,
+        "plugins/theme-plugin.ts": "// stub",
+        "styles/theme.css": "x",
+      });
+    };
+
+    const typo = {
+      fontSize: "32px",
+      lineHeight: "40px",
+      fontWeight: 700,
+      letterSpacing: "0",
+    };
+
+    it("warns for every curated collision without failing (no exit, schema still OK)", () => {
+      runWithTheme({
+        colors: {
+          primary: "#3B82F6",
+          none: "#000",
+          transparent: "transparent",
+          current: "currentColor",
+          inherit: "inherit",
+        },
+        shadows: { none: "none" },
+        backDropBlurs: { none: "0" },
+        borderRadius: { none: "0px" },
+        borderWidth: { "0": "0px", "2": "2px", thin: "1px" },
+        typography: { textXs: typo, text2xl: typo, textCenter: typo },
+        themeAxes: { theme: { dark: { colors: { none: "#111" } } } },
+      });
+
+      expect(() => {
+        doctorCommand();
+      }).not.toThrow();
+      const out = lines();
+
+      expect(out).toMatch(/Valid JSON, schema OK/);
+      for (const collision of [
+        "colors.none",
+        "shadows.none",
+        "backDropBlurs.none",
+        "borderRadius.none",
+        "colors.transparent",
+        "colors.current",
+        "colors.inherit",
+        "borderWidth.0",
+        "borderWidth.2",
+        "typography.textXs",
+        "typography.text2xl",
+        "typography.textCenter",
+      ]) {
+        expect(out).toContain(`${collision} →`);
+      }
+      expect(out).not.toContain("borderWidth.thin");
+      expect(out).not.toContain("colors.primary");
+      // Override `none` is reported once via the base record, not duplicated.
+      expect(out.match(/colors\.none →/g)).toHaveLength(1);
+      expect(exitSpy).not.toHaveBeenCalled();
+    });
+
+    it("prints no collision warning for a clean theme", () => {
+      runWithTheme({
+        colors: { primary: "#3B82F6" },
+        borderWidth: { thin: "1px" },
+        typography: { h1: typo, textHeading: typo },
+      });
+
+      doctorCommand();
+
+      expect(lines()).not.toContain("⚠️");
+      expect(exitSpy).not.toHaveBeenCalled();
+    });
+
+    it("still exits 1 on a schema error and prints no collision warnings for it", () => {
+      runWithTheme({
+        colors: { none: "#000" },
+        colours: {},
+      });
+
+      expect(() => {
+        doctorCommand();
+      }).toThrow(/__exit_1__/);
+      expect(lines()).not.toContain("colors.none →");
+    });
+  });
 });

@@ -16,17 +16,36 @@ export type CamelCase<S extends string> = S extends `${infer P1}-${infer P2}`
 
 type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 
-// Converts camelCase to kebab-case.
-// Adds a dash at uppercase-letter boundaries AND at letter→digit transitions
-// so that e.g. "blue500" → "blue-500" and "2xl" → "2xl" (digit-prefix untouched).
-export type KebabCase<S extends string> = S extends `${infer T}${infer U}`
-  ? U extends `${Digit}${string}`
+type IsLetter<C extends string> =
+  Lowercase<C> extends Uppercase<C> ? false : true;
+type IsLower<C extends string> =
+  IsLetter<C> extends true ? (C extends Lowercase<C> ? true : false) : false;
+type IsUpper<C extends string> =
+  IsLetter<C> extends true ? (C extends Uppercase<C> ? true : false) : false;
+
+// Dash inserted between adjacent characters `T` then `N`. Mirrors the three
+// `toKebabCase` regexes in `shared/helpers.ts` exactly:
+//   ([a-z])([A-Z]) → dash   (lower→upper; NOT upper→upper, so "primaryFG" → "primary-fg")
+//   (\d)([A-Z])    → dash   (digit→upper)
+//   ([A-Za-z])(\d) → dash   (letter→digit; digit→digit and digit→lower get none)
+type KebabBoundary<T extends string, N extends string> = N extends Digit
+  ? IsLetter<T> extends true
+    ? "-"
+    : ""
+  : IsUpper<N> extends true
     ? T extends Digit
-      ? `${T}${KebabCase<U>}` // digit→digit: no dash (e.g. "500" stays "500")
-      : `${Uncapitalize<T>}-${KebabCase<U>}` // letter→digit: add dash (e.g. "blue5" → "blue-5")
-    : U extends Uncapitalize<U>
-      ? `${Uncapitalize<T>}${KebabCase<U>}` // same case: no dash
-      : `${Uncapitalize<T>}-${KebabCase<U>}` // camelCase boundary: add dash
+      ? "-"
+      : IsLower<T> extends true
+        ? "-"
+        : ""
+    : "";
+
+// Type-level twin of the runtime `toKebabCase`: "blue500" → "blue-500",
+// "2xl" → "2xl", "text12Mono" → "text-12-mono", "primaryFG" → "primary-fg".
+export type KebabCase<S extends string> = S extends `${infer T}${infer U}`
+  ? U extends `${infer N}${string}`
+    ? `${Lowercase<T>}${KebabBoundary<T, N>}${KebabCase<U>}`
+    : Lowercase<S>
   : S;
 
 type KeysOf<T> = T extends object ? keyof T : never;

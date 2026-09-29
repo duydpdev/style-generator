@@ -85,7 +85,7 @@ Key màu là **camelCase** (hoặc kebab-case); lib tự đổi sang kebab-case 
 | `primary`           | `--color-primary`            | `text-primary`            |
 
 - Letter→digit thêm dash (`blue500` → `blue-500`); key bắt đầu bằng số giữ nguyên (`2xl`). Hai key cùng kebab-case về một tên (`blue500` và `blue-500`) bị từ chối.
-- Key chỉ gồm chữ, số và `-`, bắt đầu bằng chữ hoặc số. **`_` bị từ chối ở mọi vị trí tên** (token, tên axis, tên variant): dùng `primaryActive` hoặc `primary-active`. Nguyên nhân: `toKebabCase` giữ `_` còn token có kiểu camelCase bỏ `_`, nên class do mapper sinh ra sẽ không tồn tại. Lưu ý CLI in lỗi này là `colors.primary_active → Invalid key in record`; câu gợi ý nằm ở `issues[0].message` lồng bên trong `ZodError`.
+- Key chỉ gồm chữ, số và `-`, bắt đầu bằng chữ hoặc số. **`_` bị từ chối ở mọi vị trí tên** (token, tên axis, tên variant): dùng `primaryActive` hoặc `primary-active`. Nguyên nhân: `toKebabCase` giữ `_` còn token có kiểu camelCase bỏ `_`, nên class do mapper sinh ra sẽ không tồn tại. CLI in lỗi dạng `colors.primary_active → … camelCase … kebab-case …`.
 - Giá trị không được chứa `;`, `{`, `}`, `<`, `@`, `\`, `/*` hay xuống dòng, và dấu nháy phải cân.
 - Key typography phải kebab-case thành tên `@utility` hợp lệ (không bắt đầu bằng số hay dash): `heading1` → `.heading-1`.
 - Key `fontFamily` không được trùng tên độ đậm của Tailwind (`thin`, `light`, `normal`, `medium`, `bold`, `black`, …).

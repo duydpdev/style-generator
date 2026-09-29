@@ -247,7 +247,7 @@ const { css } = generate({
 
 ### Key grammar
 
-Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. (Zod reports a bad record key as `invalid_key`, so the CLI prints `Invalid key in record`; the camelCase/kebab hint is on the nested `issues[0].message` of the thrown `ZodError`.) Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, and quotes must be balanced.
+Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, and quotes must be balanced.
 
 ### Categories
 

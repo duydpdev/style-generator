@@ -160,7 +160,7 @@ export default styleGenNext({
 
 **Alias `$key`:** `flattenByCategory` đổi `"$blue500"` thành `var(--sg-blue-500)` (theo `cssVarPrefix` của chính category). `ThemeSchema` đã chứng minh target tồn tại và đồ thị không có chu trình trước khi emit.
 
-**Vì sao cấm `_` trong key:** `toKebabCase` giữ nguyên `_` (`primary_active` → `bg-primary_active`) trong khi `createDesignTokens` camelCase bỏ `_` (`primaryActive`), nên `createVariantMapper` sẽ sinh `bg-primary-active` — một class không tồn tại. Schema từ chối `_` ở mọi vị trí tên token (color/typography/…, tên axis và variant); nới lỏng sau này không breaking, siết chặt sau này thì có. Lưu ý: Zod báo key sai dạng `invalid_key`, nên CLI in `Invalid key in record`; gợi ý camelCase/kebab nằm ở `issues[0].message` lồng bên trong.
+**Vì sao cấm `_` trong key:** `toKebabCase` giữ nguyên `_` (`primary_active` → `bg-primary_active`) trong khi `createDesignTokens` camelCase bỏ `_` (`primaryActive`), nên `createVariantMapper` sẽ sinh `bg-primary-active` — một class không tồn tại. Schema từ chối `_` ở mọi vị trí tên token (color/typography/…, tên axis và variant); nới lỏng sau này không breaking, siết chặt sau này thì có. `formatZodError` mở lớp `invalid_key` của Zod nên CLI/plugin in thẳng gợi ý camelCase/kebab trên đúng path.
 
 **State kebab-case:** tên state được kebab-case ở cả `createVariantMapper` lẫn `generateSourceInline` (`focusVisible` → `focus-visible:`) vì Tailwind chỉ nhận tên variant dạng kebab; việc tìm sibling vẫn dùng dạng Pascal (`primary` + `primaryFocusVisible`).
 

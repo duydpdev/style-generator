@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { ThemeSchema } from "./themeSchema";
+import { ThemeSchema, formatZodError } from "./themeSchema";
 
 const baseTheme = {
   colors: { primary: "#3B82F6" },
@@ -158,6 +158,16 @@ describe("ThemeSchema — invalid themes", () => {
       expect(messages(result)).toContain("`_` is not allowed");
       expect(messages(result)).toContain("camelCase");
       expect(messages(result)).toContain("kebab-case");
+    });
+
+    it("formatZodError prints the key-grammar hint, not Zod's generic record-key message", () => {
+      const result = ThemeSchema.safeParse({
+        colors: { primary_active: "#fff" },
+      });
+      if (result.success) throw new Error("expected failure");
+      const text = formatZodError(result.error);
+      expect(text).toMatch(/^colors\.primary_active → .*`_` is not allowed/m);
+      expect(text).not.toContain("Invalid key in record");
     });
   });
 

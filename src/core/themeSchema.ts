@@ -636,18 +636,24 @@ export type TypographyConfig = z.infer<typeof TypographyStyleSchema>;
  * print to a terminal or throw as a plain `Error` message — every CLI/Vite
  * consumer that catches a `ZodError` from `ThemeSchema.parse()` funnels it
  * through this instead of dumping the raw (deeply nested) `ZodError` object.
+ * Record-key grammar failures arrive as `invalid_key` wrappers whose useful
+ * message (e.g. the `_` hint) lives in the nested issues, so those are
+ * surfaced instead of Zod's generic "Invalid key in record".
  * @param {z.ZodError} error - The `ZodError` to format
  * @returns {string} One formatted line per issue, joined with `\n`
  */
 export const formatZodError = (error: z.ZodError): string =>
   error.issues
-    .flatMap((issue) =>
-      issue.code === "unrecognized_keys"
-        ? issue.keys.map(
-            (key) => `${[...issue.path, key].join(".")} → ${issue.message}`,
-          )
-        : [
-            `${issue.path.length > 0 ? issue.path.join(".") : "(root)"} → ${issue.message}`,
-          ],
-    )
+    .flatMap((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
+      if (issue.code === "unrecognized_keys") {
+        return issue.keys.map(
+          (key) => `${[...issue.path, key].join(".")} → ${issue.message}`,
+        );
+      }
+      if (issue.code === "invalid_key" && issue.issues.length > 0) {
+        return issue.issues.map((inner) => `${path} → ${inner.message}`);
+      }
+      return [`${path} → ${issue.message}`];
+    })
     .join("\n");

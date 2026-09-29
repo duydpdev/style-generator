@@ -8,13 +8,12 @@ export type {
   ThemeOverride,
   TypographyConfig,
 } from "../core/themeSchema";
-export type { StyleGeneratorOptions, StyleModule } from "../core/Options";
+export type { StyleGeneratorOptions } from "../core/Options";
 export type {
   InferColorKeys,
   InferTypographyKeys,
   InferShadowKeys,
   InferBackdropBlurKeys,
-  InferSafelistClasses,
   DesignTokensResult,
 } from "../core/inference";
 export type {

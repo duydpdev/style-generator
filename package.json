@@ -88,6 +88,7 @@
     "@types/node": "^25.3.3",
     "@typescript-eslint/parser": "^8.56.1",
     "@vitest/coverage-v8": "^4.0.18",
+    "class-variance-authority": "^0.7.0",
     "commitlint": "^20.4.3",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",

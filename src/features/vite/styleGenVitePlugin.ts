@@ -7,17 +7,16 @@ import { z } from "zod";
 import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
-import { generateSafelist } from "../safelist/generateSafelist";
 
 export interface StyleGenViteOptions {
   /** Path to theme JSON, resolved relative to Vite project root. */
   themePath: string;
   /**
-   * Directory to write `theme.css` + `safelist.txt`. Defaults to `dir(themePath)`.
+   * Directory to write `theme.css`. Defaults to `dir(themePath)`.
    * MUST match the path that consumer CSS `@import`s from.
    */
   outDir?: string;
-  /** Forwarded to `generate()` internals (theme CSS) and `generateSafelist`. */
+  /** Forwarded to `generate()` internals (theme CSS). */
   options?: StyleGeneratorOptions;
 }
 
@@ -28,7 +27,6 @@ const activeOutDirs = new Set<string>();
 
 interface Emitted {
   themeCss: string;
-  safelist: string;
 }
 
 const emit = (
@@ -40,13 +38,11 @@ const emit = (
   const theme = ThemeSchema.parse(JSON.parse(raw));
 
   const themeCss = generate(theme, options).css;
-  const safelist = generateSafelist(theme, options).join("\n");
 
   mkdirSync(outDirAbs, { recursive: true });
   writeFileSync(resolve(outDirAbs, "theme.css"), themeCss, "utf8");
-  writeFileSync(resolve(outDirAbs, "safelist.txt"), safelist, "utf8");
 
-  return { themeCss, safelist };
+  return { themeCss };
 };
 
 const debounce = <Args extends unknown[]>(
@@ -76,10 +72,11 @@ const formatEmitError = (err: unknown): string =>
   err instanceof z.ZodError ? formatZodError(err) : (err as Error).message;
 
 /**
- * Vite plugin that emits `theme.css` + `safelist.txt` from a theme JSON.
- * Replaces the manual `generate-theme.mjs` script step in Tailwind v4 setups.
- * Emit happens in `configResolved` (sync) so files exist before
- * `@tailwindcss/vite`'s `@source` scanner runs. Re-emits on `theme.json` change.
+ * Vite plugin that emits `theme.css` from a theme JSON. Replaces the
+ * manual `generate-theme.mjs` script step in Tailwind v4 setups. Emit
+ * happens in `configResolved` (sync) so the file exists before
+ * `@tailwindcss/vite`'s `@source` scanner runs. Re-emits on `theme.json`
+ * change.
  *
  * Path traversal guard: `themePath` resolved against project root and rejected
  * if it escapes (`..`).
@@ -146,8 +143,8 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
       hasEmitted = true;
 
       config.logger.info(
-        `[${PLUGIN_NAME}] Wrote theme.css + safelist.txt to ${outDirAbs}\n` +
-          `  Tip: add these to .gitignore if theme.json is your source of truth.`,
+        `[${PLUGIN_NAME}] Wrote theme.css to ${outDirAbs}\n` +
+          `  Tip: add this to .gitignore if theme.json is your source of truth.`,
       );
     },
 

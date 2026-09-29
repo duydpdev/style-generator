@@ -16,7 +16,6 @@ export default defineConfig({
       outDir: "src/theme",
       options: {
         breakpoints: [Breakpoint.MD, Breakpoint.LG],
-        safelistColors: true,
       },
     }),
     tailwindcss(),

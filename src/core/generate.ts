@@ -17,6 +17,21 @@ import { ThemeSchema, type ThemeConfig } from "./themeSchema";
 const themeJsonSchema = z.toJSONSchema(ThemeSchema);
 
 /**
+ * Grammar for a single `extraSources` entry: non-empty, bounded length, and
+ * free of characters that could escape the `@source inline("<entry>")`
+ * string literal and inject an arbitrary at-rule (e.g. closing the quote
+ * then opening `@import`).
+ */
+const ExtraSourceEntry = z
+  .string()
+  .min(1, "extraSources entries must not be empty")
+  .max(512, "extraSources entries must be at most 512 characters")
+  .refine(
+    (v) => !/["'\\;@<>\n\r]/.test(v),
+    "extraSources entries must not contain \", ', \\, ;, @, <, >, or a line break",
+  );
+
+/**
  * Generate the complete registry-driven CSS string (breakpoint `@theme`
  * override + theme vars + `@theme inline` mapping + typography/spacing
  * `@utility` blocks) and typed design tokens for a theme. Returns a single
@@ -46,6 +61,10 @@ export const generate = <TTheme extends ThemeConfig>(
   const parsed = ThemeSchema.parse(theme) as TTheme;
 
   const styleOptions: StyleGeneratorOptions = options ?? {};
+
+  if (styleOptions.extraSources) {
+    z.array(ExtraSourceEntry).parse(styleOptions.extraSources);
+  }
 
   const { DesignTokens } = createDesignTokens<TTheme>(parsed, styleOptions);
 

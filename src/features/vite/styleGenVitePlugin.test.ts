@@ -144,7 +144,7 @@ describe("styleGenVite plugin", () => {
     expect(plugin.enforce).toBe("pre");
   });
 
-  it("emits theme.css + safelist.txt to dir(themePath) by default", () => {
+  it("emits theme.css to dir(themePath) by default", () => {
     writeTheme();
     const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
     const logger = makeLogger();
@@ -153,12 +153,9 @@ describe("styleGenVite plugin", () => {
     callConfigResolved(plugin, cfg);
 
     const cssPath = join(tmp, "src/theme/theme.css");
-    const slPath = join(tmp, "src/theme/safelist.txt");
     expect(existsSync(cssPath)).toBe(true);
-    expect(existsSync(slPath)).toBe(true);
     expect(readFileSync(cssPath, "utf8")).toMatch(/--sg-primary/);
     expect(readFileSync(cssPath, "utf8")).toMatch(/@utility body \{/);
-    expect(readFileSync(slPath, "utf8")).toMatch(/sp-p/);
     expect(logger.info).toHaveBeenCalledOnce();
   });
 
@@ -176,25 +173,6 @@ describe("styleGenVite plugin", () => {
     } as StubConfig);
 
     expect(existsSync(join(tmp, "generated/theme.css"))).toBe(true);
-    expect(existsSync(join(tmp, "generated/safelist.txt"))).toBe(true);
-  });
-
-  it("forwards generator options (safelistColors=true emits color classes)", () => {
-    writeTheme();
-    const plugin = styleGenVite({
-      themePath: "src/theme/theme.json",
-      options: { safelistColors: true },
-    });
-    const logger = makeLogger();
-    callConfigResolved(plugin, {
-      root: tmp,
-      command: "serve",
-      logger,
-    } as StubConfig);
-
-    const sl = readFileSync(join(tmp, "src/theme/safelist.txt"), "utf8");
-    expect(sl).toMatch(/bg-primary/);
-    expect(sl).toMatch(/text-foreground/);
   });
 
   it("rejects themePath that escapes project root", () => {

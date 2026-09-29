@@ -1,10 +1,10 @@
-// Emits `app/theme/theme.css` + `app/theme/safelist.txt` from `theme.json`.
-// Next.js runs on webpack/turbopack (no Vite), so the `styleGenVite` plugin
-// used by the Vite examples does not apply. This script is the Next-equivalent:
-// it calls the same programmatic API and runs in a Node context.
+// Emits `app/theme/theme.css` from `theme.json`. Next.js runs on
+// webpack/turbopack (no Vite), so the `styleGenVite` plugin used by the
+// Vite examples does not apply. This script is the Next-equivalent: it
+// calls the same programmatic API and runs in a Node context.
 //
 // Chained into the `dev` / `build` scripts (`yarn generate:theme && ...`) so
-// the generated files always exist before Tailwind's `@import "./theme/theme.css"`
+// the generated file always exists before Tailwind's `@import "./theme/theme.css"`
 // + `@source` run. (Yarn Berry does not honour `pre`/`post` script hooks, so the
 // chaining must be explicit — do not rely on a `prebuild` hook here.)
 
@@ -14,7 +14,6 @@ import { fileURLToPath } from "node:url";
 
 import {
   generate,
-  generateSafelist,
   defineTheme,
   defineOptions,
   Breakpoint,
@@ -28,14 +27,11 @@ const outDir = resolve(here, "../app/theme");
 const theme = defineTheme(themeJson);
 const options = defineOptions({
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
-  safelistColors: true,
 });
 
 const { css } = generate(theme, options);
-const safelist = generateSafelist(theme, options).join("\n");
 
 mkdirSync(outDir, { recursive: true });
 writeFileSync(resolve(outDir, "theme.css"), css, "utf8");
-writeFileSync(resolve(outDir, "safelist.txt"), safelist, "utf8");
 
-console.log(`[generate-theme] wrote theme.css + safelist.txt to ${outDir}`);
+console.log(`[generate-theme] wrote theme.css to ${outDir}`);

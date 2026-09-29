@@ -822,6 +822,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:^8.56.1"
     "@vitest/coverage-v8": "npm:^4.0.18"
     chokidar: "npm:^5.0.0"
+    class-variance-authority: "npm:^0.7.0"
     commitlint: "npm:^20.4.3"
     eslint: "npm:^10.0.2"
     eslint-config-prettier: "npm:^10.1.8"

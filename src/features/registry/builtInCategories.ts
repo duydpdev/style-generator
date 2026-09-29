@@ -62,7 +62,7 @@ export const backDropBlursCategory = defineCategory({
 
 /**
  * `borderRadius` — named radius presets, responsive (`md:rounded-sm`, …)
- * to match the pre-registry `responsiveModules` default of
+ * to match the pre-registry safelist's default responsive module set of
  * `["layout", "rounded"]`.
  */
 export const borderRadiusCategory = defineCategory({

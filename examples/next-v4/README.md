@@ -55,7 +55,7 @@ examples/next-v4
 ├── postcss.config.mjs            # @tailwindcss/postcss
 ├── package.json                  # predev/prebuild → scripts/generate-theme.mjs
 ├── scripts/
-│   └── generate-theme.mjs        # Node prebuild: generate() + generateSafelist
+│   └── generate-theme.mjs        # Node prebuild: generate()
 └── app/
     ├── layout.tsx                # <html data-*> defaults + Google Fonts
     ├── page.tsx                  # renders <StyleGuide/>

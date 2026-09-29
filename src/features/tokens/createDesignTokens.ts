@@ -1,9 +1,8 @@
-import type { SpacingKey } from "../../shared/defaultOption";
 import {
   DEFAULT_BORDER_VALUES,
   DEFAULT_ROUNDED_VALUES,
   DEFAULT_SPACING_PROPERTIES,
-  DEFAULT_ZINDEX_VALUES,
+  type SpacingKey,
 } from "../../shared/defaultOption";
 import type {
   CamelCase,
@@ -11,7 +10,6 @@ import type {
   InferColorKeys,
   InferBorderOptions,
   InferRoundedOptions,
-  InferZIndexOptions,
 } from "../../core/inference";
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { defaultScreens } from "../../core/Options";
@@ -70,12 +68,6 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
       : [...DEFAULT_ROUNDED_VALUES]
   ) as CamelCase<InferRoundedOptions<TTheme>>[];
 
-  const zIndexValues = (
-    options.zIndex?.enabled === false
-      ? ([] as InferZIndexOptions<TTheme>[])
-      : (options.zIndex?.values ?? [...DEFAULT_ZINDEX_VALUES])
-  ) as InferZIndexOptions<TTheme>[];
-
   return {
     DesignTokens: {
       Web: {
@@ -85,7 +77,6 @@ export const createDesignTokens = <TTheme extends ThemeConfig>(
         variantBackdropBlur,
         borderOption: variantBorder,
         roundedOption: roundedValues,
-        zIndexOption: zIndexValues,
         spacingProperties,
         breakpoints: keysToUse,
         screens: mergedScreens,

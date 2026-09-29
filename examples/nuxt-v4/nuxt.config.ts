@@ -21,7 +21,6 @@ export default defineNuxtConfig({
         outDir: "theme",
         options: {
           breakpoints: [Breakpoint.MD, Breakpoint.LG],
-          safelistColors: true,
         },
       }),
       tailwindcss(),

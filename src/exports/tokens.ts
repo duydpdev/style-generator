@@ -7,10 +7,7 @@
 export { createDesignTokens } from "../features/tokens/createDesignTokens";
 export {
   DEFAULT_BORDER_VALUES,
-  DEFAULT_LAYOUT_CLASSES,
-  DEFAULT_OPACITY_VALUES,
   DEFAULT_ROUNDED_VALUES,
-  DEFAULT_ZINDEX_VALUES,
 } from "../shared/defaultOption";
 export {
   borderProperties,

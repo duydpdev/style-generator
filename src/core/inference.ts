@@ -1,11 +1,9 @@
 import type {
   DefaultBorderValue,
   DefaultRoundedValue,
-  DefaultZIndexValue,
   SpacingKey,
 } from "../shared/defaultOption";
 
-import type { StyleModule } from "./Options";
 import type { ThemeConfig } from "./themeSchema";
 
 // ---- Basic utilities ----
@@ -69,110 +67,7 @@ export type InferRoundedOptions<TTheme extends ThemeConfig> = TTheme extends {
   ? Extract<keyof NonNullable<R>, string>
   : DefaultRoundedValue;
 
-export type InferZIndexOptions<TTheme extends ThemeConfig> = TTheme extends {
-  zIndex: infer Z;
-}
-  ? Extract<keyof NonNullable<Z>, string>
-  : `${DefaultZIndexValue}`;
-
 export type InferSpacingKeys = SpacingKey;
-
-// ---- Responsive options inference ----
-
-type DefaultBreakpointKey = "md" | "lg";
-
-type InferBreakpointKeys<TOptions> = TOptions extends {
-  breakpoints?: (infer B)[];
-}
-  ? B extends string
-    ? B
-    : never
-  : DefaultBreakpointKey;
-
-type InferResponsiveModules<TOptions> = TOptions extends {
-  responsiveModules?: (infer M)[];
-}
-  ? M extends StyleModule
-    ? M
-    : never
-  : "layout" | "rounded";
-
-type IsResponsiveEnabled<TOptions> = TOptions extends {
-  enableResponsive?: false;
-}
-  ? false
-  : true;
-
-type ResponsivePrefixForModule<TOptions, M extends StyleModule> =
-  IsResponsiveEnabled<TOptions> extends true
-    ? M extends InferResponsiveModules<TOptions>
-      ? `${InferBreakpointKeys<TOptions>}:`
-      : never
-    : never;
-
-type WithResponsive<TOptions, M extends StyleModule, C extends string> =
-  | C
-  | `${ResponsivePrefixForModule<TOptions, M>}${C}`;
-
-// ---- Safelist classes inferred from theme + options ----
-
-type ColorClasses<TTheme extends ThemeConfig> =
-  | `text-${KebabCase<InferColorKeys<TTheme>>}`
-  | `bg-${KebabCase<InferColorKeys<TTheme>>}`
-  | `border-${KebabCase<InferColorKeys<TTheme>>}`;
-
-type TypographyClasses<TTheme extends ThemeConfig> = KebabCase<
-  Extract<keyof NonNullable<TTheme["typography"]>, string>
->;
-
-type ShadowClasses<TTheme extends ThemeConfig> =
-  `shadow-${KebabCase<InferShadowKeys<TTheme>>}`;
-
-type BackdropClasses<TTheme extends ThemeConfig> =
-  `backdrop-blur-${KebabCase<InferBackdropBlurKeys<TTheme>>}`;
-
-type ThemeDerivedClasses<TTheme extends ThemeConfig> =
-  | ColorClasses<TTheme>
-  | TypographyClasses<TTheme>
-  | ShadowClasses<TTheme>
-  | BackdropClasses<TTheme>;
-
-type ThemeDerivedResponsiveClasses<TTheme extends ThemeConfig, TOptions> =
-  | WithResponsive<TOptions, "colors", ColorClasses<TTheme>>
-  | WithResponsive<TOptions, "typography", TypographyClasses<TTheme>>
-  | WithResponsive<TOptions, "shadows", ShadowClasses<TTheme>>
-  | WithResponsive<TOptions, "backdrop", BackdropClasses<TTheme>>;
-
-type DynamicSafelistClass = string & { __type?: "DynamicSafelistClass" };
-
-// ---- Spacing classes ----
-
-type InferSpacingPropertyKeys<TOptions> = TOptions extends {
-  spacing?: { properties?: infer P };
-}
-  ? P extends Record<infer K, unknown>
-    ? Extract<K, string>
-    : SpacingKey
-  : SpacingKey;
-
-type SpacingClasses<TOptions> = TOptions extends {
-  spacing?: { enabled?: false };
-}
-  ? never
-  : `sp-${InferSpacingPropertyKeys<TOptions>}`;
-
-/**
- * Inferred safelist classes dựa trên ThemeConfig + StyleGeneratorOptions.
- * Phần bắt nguồn từ theme được typed chi tiết, phần còn lại dùng branded string
- * cho các class hoàn toàn động (dynamicClasses, layout cố định, ...).
- *
- * `sp-*` spacing classes are non-responsive — see SpacingClasses.
- */
-export type InferSafelistClasses<TTheme extends ThemeConfig, TOptions> =
-  | ThemeDerivedClasses<TTheme>
-  | ThemeDerivedResponsiveClasses<TTheme, TOptions>
-  | SpacingClasses<TOptions>
-  | DynamicSafelistClass;
 
 // ---- DesignTokens result types ----
 
@@ -189,7 +84,6 @@ export interface DesignTokensWeb<TTheme extends ThemeConfig> {
   >[];
   borderOption: CamelCase<InferBorderOptions<TTheme>>[];
   roundedOption: CamelCase<InferRoundedOptions<TTheme>>[];
-  zIndexOption: InferZIndexOptions<TTheme>[];
   spacingProperties: InferSpacingKeys[];
   breakpoints: string[];
   screens: Record<string, string>;

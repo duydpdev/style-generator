@@ -28,9 +28,9 @@ export const COMPARE_ROWS: CompareRow[] = [
     us: (
       <>
         <b>
-          <code>safelistColors: true</code>
+          <code>@source inline(...)</code>
         </b>{" "}
-        — done.
+        — auto-generated.
       </>
     ),
   },

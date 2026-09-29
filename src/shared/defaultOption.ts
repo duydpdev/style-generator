@@ -40,64 +40,6 @@ export const DEFAULT_SPACING_PROPERTIES = {
   left: { left: "var(--sg-sp-left)" },
 } as const satisfies SpacingPropertyMap;
 
-/**
- * Default layout utility classes for safelist.
- * Needed for responsive patterns like `md:hidden`, `lg:flex`.
- */
-export const DEFAULT_LAYOUT_CLASSES = [
-  // Display
-  "hidden",
-  "block",
-  "flex",
-  "inline-flex",
-  "grid",
-  "inline-grid",
-  "inline-block",
-  "inline",
-  // Flex direction & wrap
-  "flex-row",
-  "flex-col",
-  "flex-col-reverse",
-  "flex-row-reverse",
-  "flex-wrap",
-  "flex-nowrap",
-  "flex-wrap-reverse",
-  // Align items
-  "items-start",
-  "items-end",
-  "items-center",
-  "items-baseline",
-  "items-stretch",
-  // Justify content
-  "justify-start",
-  "justify-end",
-  "justify-center",
-  "justify-between",
-  "justify-around",
-  "justify-evenly",
-  // Align self
-  "self-auto",
-  "self-start",
-  "self-end",
-  "self-center",
-  "self-stretch",
-  "self-baseline",
-  // Align content
-  "content-center",
-  "content-start",
-  "content-end",
-  "content-between",
-  "content-around",
-  "content-evenly",
-  // Text align
-  "text-left",
-  "text-center",
-  "text-right",
-  "text-justify",
-  "text-start",
-  "text-end",
-] as const;
-
 /** Default border radius values for safelist. */
 export const DEFAULT_ROUNDED_VALUES = [
   "none",
@@ -114,15 +56,6 @@ export const DEFAULT_ROUNDED_VALUES = [
 /** Default border width values for safelist. */
 export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
 
-/** Default opacity values for safelist. */
-export const DEFAULT_OPACITY_VALUES = [
-  0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
-  100,
-] as const;
-
-/** Default z-index values for safelist. */
-export const DEFAULT_ZINDEX_VALUES = [0, 10, 20, 30, 40, 50, "auto"] as const;
-
 // ---- Type helpers for defaults (used in type inference) ----
 
 /**
@@ -136,5 +69,3 @@ export type SpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
 export type DefaultRoundedValue = (typeof DEFAULT_ROUNDED_VALUES)[number];
 
 export type DefaultBorderValue = (typeof DEFAULT_BORDER_VALUES)[number];
-
-export type DefaultZIndexValue = (typeof DEFAULT_ZINDEX_VALUES)[number];

@@ -89,4 +89,29 @@ describe("generate", () => {
     });
     expect(css).not.toMatch(/@utility/);
   });
+
+  it("extraSources: emits one @source inline(...) per entry after the sp-* line", () => {
+    const { css } = generate(theme, {
+      extraSources: ["hover:bg-{primary,secondary}", "md:flex"],
+    });
+    expect(css).toMatch(
+      /@source inline\("hover:bg-\{primary,secondary\}"\);\n@source inline\("md:flex"\);/,
+    );
+  });
+
+  it('extraSources: throws on an entry that tries to escape the inline("…") string', () => {
+    expect(() =>
+      generate(theme, { extraSources: ['x")@import "evil'] }),
+    ).toThrow();
+  });
+
+  it("extraSources: throws on an empty entry", () => {
+    expect(() => generate(theme, { extraSources: [""] })).toThrow();
+  });
+
+  it("extraSources: throws on an entry longer than 512 characters", () => {
+    expect(() =>
+      generate(theme, { extraSources: ["a".repeat(513)] }),
+    ).toThrow();
+  });
 });

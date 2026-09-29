@@ -14,30 +14,6 @@ export const defaultScreens: Record<Breakpoint, string> = {
   [Breakpoint.XXL]: "1536px",
 };
 
-export type StyleModule =
-  | "spacing"
-  | "layout"
-  | "typography"
-  | "colors"
-  | "borders"
-  | "shadows"
-  | "backdrop"
-  | "opacity"
-  | "zIndex"
-  | "rounded";
-
-/**
- * Configuration for a utility module (safelist-based).
- */
-export interface ModuleConfig<V = number | string> {
-  /** Set of values to generate. Falls back to defaults if not set. */
-  values?: V[];
-  /** Properties to generate. Falls back to defaults if not set. */
-  properties?: string[];
-  /** Disable this module entirely. Defaults to true. */
-  enabled?: boolean;
-}
-
 /**
  * Mapping of spacing property keys to their CSS property declarations.
  * Key: prop name (e.g. 'p', 'mx')
@@ -59,15 +35,7 @@ export interface StyleGeneratorOptions {
   screens?: Record<Breakpoint | string, string>;
 
   /**
-   * Include color classes (text-*, bg-*, border-*) in the safelist.
-   * Default is false — Tailwind v4's `@theme` auto-generates these utilities.
-   * Set to true if you need explicit safelist for dynamic class names.
-   * @default false
-   */
-  safelistColors?: boolean;
-
-  /**
-   * Enable responsive class generation in safelist and spacing CSS rules.
+   * Enable responsive class generation in spacing CSS rules.
    * Set to false if your project only targets a single viewport.
    * @default true
    */
@@ -86,11 +54,12 @@ export interface StyleGeneratorOptions {
     cssVarDriven?: boolean;
   };
 
-  // --- Spacing (CSS custom properties, zero safelist) ---
+  // --- Spacing (CSS custom properties, no safelist) ---
 
   /**
-   * Spacing configuration. Uses CSS custom properties instead of safelist.
-   * Plugin generates fixed `.sp-*` utility classes with `var()` fallback chains.
+   * Spacing configuration. Uses CSS custom properties instead of a static
+   * safelist. Plugin generates fixed `.sp-*` utility classes with `var()`
+   * fallback chains.
    */
   spacing?: {
     /** Disable spacing CSS rule generation entirely. Defaults to true. */
@@ -99,33 +68,17 @@ export interface StyleGeneratorOptions {
     properties?: SpacingPropertyMap;
   };
 
-  // --- Module configs (safelist-based) ---
-
-  /** Layout classes config (hidden, flex, items-center, etc.). */
-  layout?: ModuleConfig<string>;
-  /** Border width config. */
-  border?: ModuleConfig<number>;
-  /** Border radius config. */
-  rounded?: ModuleConfig<string>;
-  /** Opacity config. */
-  opacity?: ModuleConfig<number>;
-  /** Z-index config. */
-  zIndex?: ModuleConfig;
-
   /**
-   * Extra dynamic classes to add to safelist.
-   * Use for classes that are constructed at runtime and cannot be scanned by Tailwind.
+   * Extra Tailwind v4 `@source inline(...)` entries appended to the
+   * generated CSS, for classes built at runtime that Tailwind's static
+   * candidate scan can never see (e.g. a template-literal class name).
+   * Each entry is emitted verbatim inside `@source inline("<entry>")` —
+   * Tailwind's brace-expansion syntax (`{a,b,c}`) is supported.
+   *
+   * Validated by `generate()`: each entry must be non-empty, at most 512
+   * characters, and must not contain `"`, `'`, `\`, `;`, `@`, `<`, `>`, or
+   * a line break — those characters could escape the `inline("…")` string
+   * and inject an arbitrary at-rule.
    */
-  dynamicClasses?: string[];
-
-  /**
-   * List of modules that should have responsive variants in the safelist.
-   * @default ["layout", "rounded"]
-   */
-  responsiveModules?: StyleModule[];
-
-  /**
-   * @deprecated Use individual module configs instead (spacing, layout, border, rounded, etc.).
-   */
-  modules?: StyleModule[];
+  extraSources?: string[];
 }

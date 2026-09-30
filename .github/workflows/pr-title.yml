@@ -1,0 +1,50 @@
+# ─────────────────────────────────────────────────────
+# PR Title — lint tiêu đề PR bằng commitlint.config.ts
+#
+# Feature → develop được squash-merge, nên tiêu đề PR trở thành commit
+# message trên develop (squash_merge_commit_title = PR_TITLE). Tiêu đề sai
+# format = commit sai format mà không gì sửa được sau khi đã publish.
+# `edited` bắt được cả khi chỉ sửa tiêu đề (ci.yml không chạy lại khi đó).
+# ─────────────────────────────────────────────────────
+name: PR Title
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    name: PR title (commitlint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        env:
+          HUSKY: "0"
+        run: yarn install --immutable
+
+      - name: Lint PR title
+        # The title goes through env, never interpolated into the script, so a
+        # crafted title cannot inject shell. commitlint.pr-title.config.ts turns
+        # off the default ignores, so `Revert "…"` / `Merge …` titles fail too.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | yarn commitlint --config commitlint.pr-title.config.ts --verbose

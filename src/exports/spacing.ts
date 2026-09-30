@@ -1,0 +1,16 @@
+/**
+ * Subpath: `@duydpdev/style-generator/spacing`
+ *
+ * Runtime spacing helpers + default property table. Use in React/Vue components
+ * that build inline-style spacing without bundling the full library.
+ */
+export {
+  resolveSpacing,
+  resolveSpacingProps,
+} from "../features/spacing/spacingHelpers";
+export type {
+  ResponsiveValueStrict,
+  DefaultBreakpointKeys,
+} from "../features/spacing/spacingHelpers";
+export type { SpacingKey } from "../shared/defaultOption";
+export { DEFAULT_SPACING_PROPERTIES } from "../shared/defaultOption";

@@ -1,20 +1,40 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { StyleModule } from "../core/Options";
+import type { SpacingPropertyMap } from "../core/Options";
 
 export interface StyleGenConfig {
   theme: string;
   output: string;
   plugin: string;
   breakpoints?: string[];
-  responsiveModules?: StyleModule[];
   screens?: Record<string, string>;
+  /** Forwarded to `generate()` — see `StyleGeneratorOptions.extraSources`. */
+  extraSources?: string[];
+  /** Forwarded to `generate()` — see `StyleGeneratorOptions.spacing`. */
+  spacing?: {
+    enabled?: boolean;
+    properties?: SpacingPropertyMap;
+  };
+  /** Forwarded to `generate()` — see `StyleGeneratorOptions.typography`. */
+  typography?: {
+    cssVarDriven?: boolean;
+  };
 }
+
+/**
+ * Raw CLI/programmatic flags input: unlike {@link StyleGenConfig}, each
+ * field may be explicitly `undefined` (e.g. an unset `parseArgs` flag, or
+ * a caller spreading an optional value) — `sanitizeFlags` strips those
+ * before merging with file config and defaults.
+ */
+export type StyleGenConfigFlags = {
+  [K in keyof StyleGenConfig]?: StyleGenConfig[K] | undefined;
+};
 
 export const defaultConfig: StyleGenConfig = {
   theme: "styles/theme.json",
-  output: "styles/safelist.txt",
+  output: "styles/theme.css",
   plugin: "plugins/theme-plugin.ts",
 };
 
@@ -37,12 +57,10 @@ export function normalizePath(p: string): string {
 
 /**
  * Sanitizes the flags to remove undefined values
- * @param {Partial<StyleGenConfig>} flags - The flags to sanitize
+ * @param {StyleGenConfigFlags} flags - The flags to sanitize
  * @returns {Partial<StyleGenConfig>} The sanitized flags
  */
-function sanitizeFlags(
-  flags: Partial<StyleGenConfig>,
-): Partial<StyleGenConfig> {
+function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   const sanitized: Partial<StyleGenConfig> = {};
 
   if (flags.theme !== undefined) {
@@ -57,11 +75,17 @@ function sanitizeFlags(
   if (flags.breakpoints !== undefined) {
     sanitized.breakpoints = flags.breakpoints;
   }
-  if (flags.responsiveModules !== undefined) {
-    sanitized.responsiveModules = flags.responsiveModules;
-  }
   if (flags.screens !== undefined) {
     sanitized.screens = flags.screens;
+  }
+  if (flags.extraSources !== undefined) {
+    sanitized.extraSources = flags.extraSources;
+  }
+  if (flags.spacing !== undefined) {
+    sanitized.spacing = flags.spacing;
+  }
+  if (flags.typography !== undefined) {
+    sanitized.typography = flags.typography;
   }
 
   return sanitized;
@@ -109,10 +133,10 @@ function loadFileConfig(cwd: string): Partial<StyleGenConfig> {
 
 /**
  * Resolves CLI configuration from file arguments and defaults
- * @param {Partial<StyleGenConfig>} flags - The command line flags
+ * @param {StyleGenConfigFlags} flags - The command line flags
  * @returns {StyleGenConfig} The resolved StyleGen configuration
  */
-export function resolveConfig(flags: Partial<StyleGenConfig>): StyleGenConfig {
+export function resolveConfig(flags: StyleGenConfigFlags): StyleGenConfig {
   const sanitizedFlags = sanitizeFlags(flags);
   const fileConfig = loadFileConfig(process.cwd());
 

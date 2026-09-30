@@ -8,3 +8,11 @@ CHANGELOG.md
 **/*.config.*
 __tests__/reports
 **/generations/*
+# Handlebars changelog template: prettier's glimmer parser reflows it into
+# invalid markdown (`###` and `-` split from their text).
+changelog-template.hbs
+
+# Raw @tailwindcss/node compile() capture — must stay byte-identical to the
+# real compiler output (reformatting can alter semantics, e.g. hex color
+# casing), see src/__integration__/registry-refactor-parity.test.ts.
+src/__integration__/__fixtures__/dev1-baseline-compiled.css

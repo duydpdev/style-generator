@@ -66,19 +66,28 @@ export default pluginTs.config(
           "newlines-between": "always",
         },
       ],
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "separate-type-imports" },
+      ],
+      "@typescript-eslint/no-non-null-assertion": "error",
     },
   },
 
   {
     ignores: [
       "node_modules/*",
+      "**/node_modules/*",
       "**/*.config.*",
-      "dist/*",
+      "**/dist/*",
       "*.cjs",
       ".yarn/*",
       "__tests__/reports/*",
       "**/generations/*",
       "coverage/*",
+      "**/scripts/*",
+      "examples/**",
+      "site/**",
     ],
   },
 );

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { ThemeConfig } from "../../core/ThemeConfig";
+import type { ThemeConfig } from "../../core/themeSchema";
+import { generateSourceInline } from "../registry/generateSourceInline";
 
 import { createDesignTokens } from "./createDesignTokens";
 
@@ -62,5 +63,17 @@ describe("createDesignTokens", () => {
     const result = createDesignTokens(mockTheme, { breakpoints: ["md"] });
     expect(result.DesignTokens.Web.breakpoints).toEqual(["md"]);
     expect(result.DesignTokens.Web.screens).toHaveProperty("md");
+  });
+
+  it("defaults breakpoints to the same keys the `@source inline` responsive variants cover", () => {
+    const { breakpoints } = createDesignTokens(mockTheme).DesignTokens.Web;
+    const sourceInline = generateSourceInline({
+      colors: { primary: "#007AFF" },
+      borderRadius: { sm: "2px" },
+    });
+
+    expect(breakpoints).toEqual(["md", "lg"]);
+    const variantGroup = breakpoints.map((bp) => bp + ":").join(",");
+    expect(sourceInline).toContain('@source inline("{' + variantGroup + ",}");
   });
 });

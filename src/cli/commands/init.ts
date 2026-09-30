@@ -12,7 +12,6 @@ import {
 } from "../templates";
 
 export interface InitArgs {
-  tw?: string;
   theme?: string;
   plugin?: string;
   dark?: boolean;
@@ -92,15 +91,6 @@ async function getInteractiveConfig(
   const defaultPlugin = hasSrc
     ? "src/plugins/theme-plugin.ts"
     : "plugins/theme-plugin.ts";
-
-  const twRes = await p.select({
-    message: "Tailwind version?",
-    options: [
-      { value: "v4", label: "v4 (recommended)" },
-      { value: "v3", label: "v3" },
-    ],
-  });
-  handleCancel(twRes);
 
   const themeRes = await p.text({
     message: "Theme file location?",
@@ -200,7 +190,7 @@ export async function initCommand(args: InitArgs): Promise<void> {
 
   /* ---------- Config file ---------- */
 
-  const outLoc = `${path.dirname(themeLoc)}/safelist.txt`;
+  const outLoc = `${path.dirname(themeLoc)}/theme.css`;
   const configContent = {
     theme: themeLoc,
     plugin: pluginLoc,
@@ -214,14 +204,15 @@ export async function initCommand(args: InitArgs): Promise<void> {
 
   /* ---------- Next steps ---------- */
 
-  logger.info("✅ Tailwind configuration scaffolded successfully");
+  logger.info("✅ Tailwind v4 configuration scaffolded successfully");
 
   logger.info(
     `📝 Next steps:
-   1. Import ${pluginLoc} into your Tailwind config or css file
-   2. Edit ${themeLoc} with your design tokens
-   3. Run: npx style-gen safelist
-   4. Start your dev server`,
+   1. Edit ${themeLoc} with your design tokens
+   2. Run ${pluginLoc} (e.g. \`npx tsx ${pluginLoc}\`) to generate theme.css
+   3. Add \`@import "./theme.css";\` to your CSS entry point, next to \`@import "tailwindcss";\`
+   4. Run: npx style-gen generate
+   5. Start your dev server`,
   );
 
   if (isInteractive) {

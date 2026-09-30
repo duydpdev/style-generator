@@ -1,14 +1,16 @@
 import { describe, it, expectTypeOf } from "vitest";
 
-import {
+import type { kebabParityCases } from "../__integration__/__fixtures__/kebabParityCases";
+
+import type {
   CamelCase,
   KebabCase,
   InferColorKeys,
   DesignTokensWeb,
-  InferBorderOptions,
+  InferBorderWidthOptions,
   InferRoundedOptions,
 } from "./inference";
-import type { ThemeConfig } from "./ThemeConfig";
+import type { ThemeConfig } from "./themeSchema";
 
 // ---- Base type helpers ----
 
@@ -64,6 +66,24 @@ describe("KebabCase", () => {
   it("converts letter+digit shorthand: h1 → h-1, h2 → h-2 (matches runtime toKebabCase)", () => {
     expectTypeOf<KebabCase<"h1">>().toEqualTypeOf<"h-1">();
     expectTypeOf<KebabCase<"h2">>().toEqualTypeOf<"h-2">();
+  });
+
+  it("does not dash between consecutive capitals: primaryFG → primary-fg (matches runtime)", () => {
+    expectTypeOf<KebabCase<"primaryFG">>().toEqualTypeOf<"primary-fg">();
+    expectTypeOf<KebabCase<"HTMLParser">>().toEqualTypeOf<"htmlparser">();
+  });
+
+  it("dashes digit→uppercase and letter→digit: text12Mono → text-12-mono, 500Blue → 500-blue", () => {
+    expectTypeOf<KebabCase<"text12Mono">>().toEqualTypeOf<"text-12-mono">();
+    expectTypeOf<KebabCase<"500Blue">>().toEqualTypeOf<"500-blue">();
+    expectTypeOf<KebabCase<"text2xl">>().toEqualTypeOf<"text-2xl">();
+  });
+
+  it("equals the runtime toKebabCase for every row of the shared parity table", () => {
+    type Case = (typeof kebabParityCases)[number];
+    expectTypeOf<{
+      [C in Case as C["key"]]: KebabCase<C["key"]>;
+    }>().toEqualTypeOf<{ [C in Case as C["key"]]: C["kebab"] }>();
   });
 });
 
@@ -126,7 +146,8 @@ describe("DesignTokensWeb", () => {
     };
     shadows: { md: string; lg: string };
     borderRadius: { sm: string; "2xl": string; "4xl": string };
-    border: { thin: string; thick: string };
+    borderWidth: { thin: string; thick: string };
+    fontFamily: { sans: string };
   }
 
   type Web = DesignTokensWeb<MyTheme>;
@@ -151,8 +172,14 @@ describe("DesignTokensWeb", () => {
     >();
   });
 
-  it("borderOption: inferred from theme border keys", () => {
-    expectTypeOf<Web["borderOption"]>().toEqualTypeOf<("thin" | "thick")[]>();
+  it("borderWidthOption: inferred from theme borderWidth keys", () => {
+    expectTypeOf<Web["borderWidthOption"]>().toEqualTypeOf<
+      ("thin" | "thick")[]
+    >();
+  });
+
+  it("variantFontFamily: inferred from theme fontFamily keys", () => {
+    expectTypeOf<Web["variantFontFamily"]>().toEqualTypeOf<"sans"[]>();
   });
 
   it("variantColor not never with base ThemeConfig", () => {
@@ -164,14 +191,14 @@ describe("DesignTokensWeb", () => {
 
 // ---- InferBorderOptions / InferRoundedOptions fallback ----
 
-describe("InferBorderOptions / InferRoundedOptions defaults", () => {
-  it("falls back to DefaultBorderValue when no border in theme", () => {
+describe("InferBorderWidthOptions / InferRoundedOptions defaults", () => {
+  it("falls back to DefaultBorderValue when no borderWidth in theme", () => {
     interface T {
       colors: Record<string, string>;
       typography: Record<string, never>;
     }
     // No border → should use default type (not never)
-    expectTypeOf<InferBorderOptions<T>>().not.toBeNever();
+    expectTypeOf<InferBorderWidthOptions<T>>().not.toBeNever();
   });
 
   it("falls back to DefaultRoundedValue when no borderRadius in theme", () => {

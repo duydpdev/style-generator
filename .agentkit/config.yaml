@@ -1,0 +1,10 @@
+# AgentKit project config — every kit-generated document lands under documents/.
+# Plans:    documents/plans/YYYY-MM-DD/<slug>/   (plan.md + phase-NN-*.md)
+# Journals: documents/plans/journals/            (ak journal create)
+# Docs:     documents/                           (ak:docs)
+paths:
+  docs: documents
+  plans: documents/plans
+plan:
+  naming_format: "{date}/{slug}"
+  date_format: "YYYY-MM-DD"

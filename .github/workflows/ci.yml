@@ -35,21 +35,16 @@ jobs:
         run: yarn install --immutable
 
       - name: Commitlint (PR commits)
-        # A PR into main (the promote PR) carries all of develop's history, which
-        # was linted when it landed on develop and cannot be rewritten. Lint only
-        # the commits develop does not have yet: the promote merge commit, or the
-        # commits of a PR opened straight into main (hotfix).
+        # A feature is cut from main and lands on develop and on main as the
+        # same commits (merge commits, never squash), so base..head is exactly
+        # the feature's commits for either base. Their headers decide the
+        # release, so lint every one of them.
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          FROM="$BASE_SHA"
-          if [ "$BASE_REF" = "main" ]; then
-            FROM="$(git merge-base origin/develop "$HEAD_SHA")"
-          fi
-          echo "Linting commits $FROM..$HEAD_SHA"
-          yarn commitlint --from "$FROM" --to "$HEAD_SHA"
+          echo "Linting commits $BASE_SHA..$HEAD_SHA"
+          yarn commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
 
       - name: Lint
         run: yarn lint

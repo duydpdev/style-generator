@@ -3,6 +3,31 @@
  */
 
 const fs = require("node:fs");
+const { execFileSync } = require("node:child_process");
+
+// Features land on develop and on main separately (documents/deploy.md), so
+// main is not an ancestor of develop. A DEV release that committed
+// package.json/CHANGELOG.md to develop would make every back-merge of a stable
+// release conflict on those lines (documents/plans/2026-09-30/
+// feature-from-main-flow/reports/phase-01-dry-run.md). Only a release on main
+// commits them; deploy.yml sets the published version from the tag. Any branch
+// value other than exactly "main" (develop, HEAD, a PR ref) means no commit, so
+// a detection failure costs a CHANGELOG entry, never a commit on develop.
+function currentBranch() {
+  if (process.env.GITHUB_REF_NAME) return process.env.GITHUB_REF_NAME;
+  try {
+    return execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    return "";
+  }
+}
+const branch = currentBranch();
+const commitsRelease = branch === "main";
+console.log(
+  `[release.config] branch=${branch || "<unknown>"} commitsRelease=${commitsRelease}`,
+);
 
 const template = fs.readFileSync("./changelog-template.hbs", "utf8");
 
@@ -61,21 +86,25 @@ module.exports = {
         },
       },
     ],
-    "@semantic-release/changelog",
+    ...(commitsRelease ? ["@semantic-release/changelog"] : []),
     [
       "@semantic-release/npm",
       {
         npmPublish: false,
       },
     ],
-    [
-      "@semantic-release/git",
-      {
-        assets: ["package.json", "CHANGELOG.md"],
-        message:
-          "[chore] release ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
-      },
-    ],
+    ...(commitsRelease
+      ? [
+          [
+            "@semantic-release/git",
+            {
+              assets: ["package.json", "CHANGELOG.md"],
+              message:
+                "[chore] release ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+            },
+          ],
+        ]
+      : []),
     [
       "@semantic-release/github",
       {

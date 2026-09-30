@@ -2,9 +2,12 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
-    # Dependabot reads this file from the default branch (main) and opens PRs
-    # against it unless told otherwise; changes land on develop first.
-    target-branch: develop
+    # Dependabot cuts its branch from the target branch. A feature must be cut
+    # from main (documents/deploy.md), so target main: the branch is then a
+    # clean feature branch. Land it on develop first with a second PR from the
+    # same branch (`gh pr create --base develop --head <dependabot branch>`),
+    # then merge Dependabot's own PR into main.
+    target-branch: main
     schedule:
       interval: monthly
     groups:

@@ -1,0 +1,425 @@
+/* ============================================================
+   Style Guide — design tokens & component styles
+   ------------------------------------------------------------
+   Owns: font families, derived color tokens (line / soft),
+   voice / geometry / surface tweaks, and the bespoke chrome
+   (topbar, hero, json drawer, tweaks panel) that the library
+   components do not natively render.
+   Color, shadow, radius, blur are owned by the lib + palettes.
+   ============================================================ */
+
+:root {
+  /* font stacks (Voice tweak swaps --f-display + --f-sans) */
+  --f-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --f-display: "Instrument Serif", "Geist", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --display-style: italic;
+  --display-weight: 400;
+
+  /* derived color tokens — color-mix lets these track the active palette */
+  --c-primary-soft: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  --c-secondary-soft: color-mix(
+    in srgb,
+    var(--color-secondary) 8%,
+    transparent
+  );
+  --c-success-soft: color-mix(in srgb, var(--color-success) 8%, transparent);
+  --c-danger-soft: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  --c-line: color-mix(in srgb, var(--color-foreground) 8%, transparent);
+  --c-line-strong: color-mix(in srgb, var(--color-foreground) 14%, transparent);
+}
+
+/* ===== Voice tweak — typography pairing ===== */
+[data-voice="industrial"] {
+  --f-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --f-display: "Space Grotesk", sans-serif;
+  --display-style: normal;
+  --display-weight: 600;
+}
+[data-voice="humanist"] {
+  --f-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --f-display: "DM Serif Display", "DM Sans", serif;
+  --display-style: normal;
+  --display-weight: 400;
+}
+
+/* ===== Geometry tweak — radius scale ===== */
+[data-geometry="sharp"] {
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --sg-radius-sm: 0px;
+  --sg-radius-md: 2px;
+  --sg-radius-lg: 4px;
+}
+[data-geometry="pillowy"] {
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --sg-radius-sm: 12px;
+  --sg-radius-md: 20px;
+  --sg-radius-lg: 32px;
+}
+
+/* ===== Surface tweak — depth treatment ===== */
+[data-surface="flat"] {
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --sg-shadow-sm: none;
+  --sg-shadow-md: none;
+  --sg-shadow-lg: none;
+  --c-line: var(--c-line-strong);
+}
+[data-surface="flat"] .sg-glass-target {
+  border-width: 1.5px;
+  border-color: var(--c-line-strong);
+}
+[data-surface="glass"] .sg-glass-target {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  backdrop-filter: saturate(160%) blur(18px);
+  -webkit-backdrop-filter: saturate(160%) blur(18px);
+}
+
+/* ===== Body & selection ===== */
+body {
+  font-family: var(--f-sans);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11";
+  line-height: 1.5;
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
+}
+::selection {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+/* ===== Utility classes used by the App ===== */
+.sg-font-display {
+  font-family: var(--f-display);
+  font-style: var(--display-style);
+  font-weight: var(--display-weight);
+}
+.sg-font-mono {
+  font-family: var(--f-mono);
+}
+
+/* Display title accent (italic primary em). Industrial voice swaps italic for an underline. */
+.sg-hero-title em {
+  color: var(--color-primary);
+  font-style: var(--display-style);
+  font-weight: var(--display-weight);
+  display: inline-block;
+}
+[data-voice="industrial"] .sg-hero-title em {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+  text-decoration-color: var(--color-primary);
+}
+
+/* Eyebrow: small caps mono with trailing rule */
+.sg-eyebrow {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.sg-eyebrow::after {
+  content: "";
+  width: 80px;
+  height: 1px;
+  background: var(--c-line-strong);
+}
+
+/* Numbered section header eyebrow */
+.sg-section-num {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.sg-section-num::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+/* Brand mark */
+.sg-brand-mark {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.sg-brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  background: var(--color-surface);
+  border-radius: 3px;
+  opacity: 0.92;
+}
+
+/* Sticky topbar */
+.sg-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--c-line);
+}
+
+/* Color card hover lift + tone strip */
+.sg-color-card {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.sg-color-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.sg-tone-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  display: flex;
+}
+.sg-tone-strip > span {
+  flex: 1;
+}
+
+/* Spacing bar */
+.sg-spacing-bar {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary),
+    color-mix(in srgb, var(--color-primary) 60%, var(--color-secondary))
+  );
+}
+
+/* Palette pick pill */
+.sg-palette-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--c-line);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.1s,
+    box-shadow 0.2s;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-foreground);
+}
+.sg-palette-pick:hover {
+  border-color: var(--c-line-strong);
+}
+.sg-palette-pick[aria-pressed="true"] {
+  border-color: var(--color-foreground);
+  box-shadow: var(--shadow-sm);
+}
+.sg-palette-pick:active {
+  transform: translateY(1px);
+}
+.sg-palette-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid var(--color-surface);
+  margin-left: -4px;
+}
+.sg-palette-dot:first-child {
+  margin-left: 0;
+}
+
+/* Chip */
+.sg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--c-line-strong);
+  font-size: 11px;
+  font-family: var(--f-mono);
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+
+/* JSON drawer */
+.sg-json-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 92vw);
+  background: var(--color-surface);
+  border-left: 1px solid var(--c-line-strong);
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+.sg-json-drawer[data-open="true"] {
+  transform: translateX(0);
+}
+.sg-json-body {
+  flex: 1;
+  overflow: auto;
+  padding: 18px 22px 28px;
+  font-family: var(--f-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.sg-json-body pre {
+  margin: 0;
+  white-space: pre;
+  color: var(--color-foreground);
+}
+.sg-json-k {
+  color: var(--color-primary);
+}
+.sg-json-s {
+  color: var(--color-success);
+}
+.sg-json-n {
+  color: var(--color-secondary);
+}
+
+/* Tweaks panel (floating bottom-right) */
+.sg-tweaks-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  width: min(340px, calc(100vw - 40px));
+  background: var(--color-surface);
+  border: 1px solid var(--c-line-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+  font-family: var(--f-sans);
+  transform: translateY(20px) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.2s;
+}
+.sg-tweaks-panel[data-open="true"] {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+.sg-tweak-opt {
+  font-family: inherit;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-foreground);
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+  padding: 10px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    transform 0.1s;
+}
+.sg-tweak-opt:hover {
+  border-color: var(--c-line-strong);
+}
+.sg-tweak-opt:active {
+  transform: translateY(1px);
+}
+.sg-tweak-opt[aria-pressed="true"] {
+  border-color: var(--color-foreground);
+  background: var(--c-primary-soft);
+}
+.sg-tweak-shape {
+  display: block;
+  width: 24px;
+  height: 24px;
+  background: var(--color-primary);
+}
+.sg-tweak-surf {
+  display: block;
+  width: 32px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--color-surface);
+}
+.sg-tweak-surf-flat {
+  border: 1.5px solid var(--color-foreground);
+}
+.sg-tweak-surf-lifted {
+  border: 1px solid var(--c-line);
+  box-shadow:
+    0 4px 8px -2px rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.sg-tweak-surf-glass {
+  border: 1px solid var(--c-line);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-surface) 60%, transparent),
+    color-mix(in srgb, var(--color-primary) 18%, transparent)
+  );
+  backdrop-filter: blur(6px);
+}
+
+/* Inline <code> */
+code {
+  font-family: var(--f-mono);
+  font-size: 0.88em;
+  background: var(--c-line);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--color-foreground);
+}
+
+/* Small ic icon */
+.sg-ic {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  fill: none;
+}

@@ -1,4 +1,5 @@
 export const themeTemplate = `{
+  "$schema": "./theme.schema.json",
   "colors": {
     "primary": "#3B82F6",
     "secondary": "#6366F1",
@@ -34,6 +35,7 @@ export const themeTemplate = `{
 `;
 
 export const themeTemplateDark = `{
+  "$schema": "./theme.schema.json",
   "colors": {
     "primary": "#3B82F6",
     "secondary": "#6366F1",
@@ -42,13 +44,15 @@ export const themeTemplateDark = `{
     "foreground": "#111827",
     "muted": "#6B7280"
   },
-  "themes": {
-    "dark": {
-      "colors": {
-        "background": "#111827",
-        "surface": "#1F2937",
-        "foreground": "#F9FAFB",
-        "muted": "#9CA3AF"
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "background": "#111827",
+          "surface": "#1F2937",
+          "foreground": "#F9FAFB",
+          "muted": "#9CA3AF"
+        }
       }
     }
   },
@@ -80,47 +84,43 @@ export const themeTemplateDark = `{
 
 export const getPluginTemplate = (
   themeRelPath: string,
-) => `import { createStyleSystem, defineTheme, defineOptions, Breakpoint } from "@duydpdev/style-generator";
+) => `import { writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { generate, defineTheme, defineOptions, Breakpoint } from "@duydpdev/style-generator";
 import themeJson from "${themeRelPath}";
 
-// defineTheme() provides full TypeScript type-checking on your theme config (zero runtime cost)
+// defineTheme() type-checks your theme config AND validates it at runtime,
+// throwing a ZodError with the offending key/value if the theme is invalid
 const theme = defineTheme(themeJson);
 
 const options = defineOptions({
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
   enableResponsive: true,
 
-  // safelistColors: true,  // Include color classes in safelist (default: false)
-  // tailwindVersion: 4,    // Override auto-detection if needed
-
   spacing: {
     enabled: true,
-    // useMatchUtilities: true,  // Enable JIT: sp-p-4, sp-p-[24px] (in addition to .sp-p)
   },
 
   // typography: {
   //   cssVarDriven: true,  // Inject --typography-* vars into :root; override via CSS
   // },
 
-  layout: {
-    enabled: true,
-    values: ["hidden", "block", "flex", "grid", "inline-block", "inline-flex", "items-center", "justify-center", "justify-between", "text-center"],
-  },
-
-  border: { enabled: true },
-  rounded: { enabled: true },
-  opacity: { enabled: true },
-  zIndex: { enabled: true },
-
-  responsiveModules: ["layout", "rounded"],
-  dynamicClasses: [],
+  // Classes built at runtime (e.g. \`bg-\${variant}\`) that Tailwind's static
+  // candidate scan can never see — emitted as @source inline(...) instead:
+  // extraSources: ["hover:bg-{primary,secondary}"],
 });
 
-const { plugin, safelist, themeCss, DesignTokens } = createStyleSystem(theme, options);
+const { css, tokens } = generate(theme, options);
 
-export default plugin;
+// Write theme.css next to this script. Import it from your CSS entry point
+// alongside Tailwind itself:
+//   @import "tailwindcss";
+//   @import "./theme.css";
+const outDir = dirname(fileURLToPath(import.meta.url));
+writeFileSync(resolve(outDir, "theme.css"), css, "utf8");
 
-// Safelist is managed by CLI: npx style-gen safelist
-// themeCss: CSS string with @theme inline block for Tailwind v4 users
-export { safelist, themeCss, DesignTokens };
+// Regenerate on demand: npx style-gen generate --watch
+export { tokens };
 `;

@@ -13,14 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # Use the auto-generated GITHUB_TOKEN so this workflow runs without
-  # approval for all PR authors (including bots / Copilot).
-  # The PAT (CI_WORKER_REPOSITORY_TOKEN) is only needed for publishing
-  # and is kept in release.yml / deploy.yml.
-  CI_WORKER_REPOSITORY_TOKEN: ${{ github.token }}
-  CI_SERVICE_REPOSITORY_NPM_PUBLIC_URL: "https://npm.pkg.github.com"
-
 jobs:
   check:
     name: Build & Lint Check
@@ -29,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,14 +34,162 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Commitlint (PR commits)
+        # A PR into main (the promote PR) carries all of develop's history, which
+        # was linted when it landed on develop and cannot be rewritten. Lint only
+        # the commits develop does not have yet: the promote merge commit, or the
+        # commits of a PR opened straight into main (hotfix).
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          FROM="$BASE_SHA"
+          if [ "$BASE_REF" = "main" ]; then
+            FROM="$(git merge-base origin/develop "$HEAD_SHA")"
+          fi
+          echo "Linting commits $FROM..$HEAD_SHA"
+          yarn commitlint --from "$FROM" --to "$HEAD_SHA"
+
       - name: Lint
         run: yarn lint
+
+      - name: Prettier check
+        run: yarn prettier:check
 
       - name: Type Check
         run: yarn tsc --noEmit
 
+      - name: Script syntax check
+        run: |
+          for f in scripts/*.mjs; do
+            node --check "$f"
+          done
+
       - name: Build
         run: yarn build:all
 
+      - name: Check externals
+        run: yarn check:externals
+
+      - name: Check browser-safe subpaths
+        run: yarn check:browser-safe
+
+      - name: Check size budgets
+        run: yarn check:sizes
+
       - name: Test
         run: yarn test
+
+      - name: Type tests
+        run: yarn test:types
+
+  # e2e and tailwind-floor cost two runners of ~2 min each and test compiled
+  # CSS, which documents/** cannot change. Every other path counts as code.
+  changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Diff against the PR base
+        id: diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # The diff runs outside the pipe so `bash -e` aborts if it fails
+        # (fail closed); an empty diff counts as code.
+        run: |
+          files="$(git diff --name-only "$BASE_SHA...$HEAD_SHA")"
+          if [ -z "$files" ] || grep -qvE '^documents/' <<<"$files"; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Only documents/** changed: e2e and tailwind-floor are skipped."
+          fi
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps chromium webkit
+
+      - name: Run e2e tests
+        run: yarn test:e2e
+
+  # The published peer range is `tailwindcss >=4.1.0`, but the lockfile pins
+  # 4.3.0, so the floor is otherwise never exercised. This leg re-resolves the
+  # Tailwind packages to the latest 4.1.x via `resolutions` (edited in this
+  # runner's checkout only — the committed package.json/yarn.lock are not
+  # changed) and runs the unit + e2e suites against it.
+  tailwind-floor:
+    name: Tailwind peer floor (4.1.x)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Pin Tailwind packages to the 4.1.x floor
+        run: |
+          jq '.resolutions += {
+            "tailwindcss": "~4.1.0",
+            "@tailwindcss/node": "~4.1.0",
+            "@tailwindcss/vite": "~4.1.0",
+            "@tailwindcss/postcss": "~4.1.0"
+          }' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          yarn install --no-immutable
+          yarn why tailwindcss
+          yarn why @tailwindcss/node
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps chromium webkit
+
+      - name: Unit tests
+        run: yarn test
+
+      - name: E2E tests
+        run: yarn test:e2e

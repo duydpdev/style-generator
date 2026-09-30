@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { ThemeConfig } from "../../core/ThemeConfig";
+import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
+
+import { findUtilityCollisions } from "./utilityCollisions";
 
 const padStr = (str: string) => {
   const minLen = 30;
@@ -11,7 +13,12 @@ const padStr = (str: string) => {
 };
 
 /**
- * Validates the theme schema.
+ * Validates the theme file: JSON syntax first, then `ThemeSchema`. Schema
+ * violations (unknown keys, injection-unsafe values, ...) are printed as
+ * `path → message` lines via `formatZodError` instead of a hand-rolled
+ * shape check — the strict schema already covers what the old "legacy v1
+ * nested colors" warning used to catch (colors.<key> as a nested object),
+ * now as a proper error with the offending path named.
  * @param {string} cwd - Current working directory
  * @param {string} optionsTheme - Path to theme file
  * @returns {boolean} True if there are errors, false otherwise
@@ -21,30 +28,27 @@ function checkTheme(cwd: string, optionsTheme: string): boolean {
   const themePath = path.resolve(cwd, normalizePath(optionsTheme));
 
   if (fs.existsSync(themePath)) {
+    let raw: unknown;
     try {
-      const parsedTheme = JSON.parse(fs.readFileSync(themePath, "utf-8")) as
-        | (Partial<ThemeConfig> & { colors?: Record<string, unknown> })
-        | null;
-      if (parsedTheme?.colors && parsedTheme.typography) {
-        logger.log(
-          `  Theme   (${padStr(optionsTheme)}) ✅ Valid JSON, schema OK`,
-        );
-
-        // Warn about old v1 format (colors.base/text/common)
-        const colors = parsedTheme.colors as Record<string, unknown>;
-        if (colors.base || colors.text || colors.common) {
-          logger.log(
-            `  ⚠️  Detected old color format (colors.base/text/common). v2 uses flat colors. Migrate to: { "colors": { "primary": "#...", ... } }`,
-          );
-        }
-      } else {
-        logger.log(
-          `  Theme   (${padStr(optionsTheme)}) ❌ Invalid schema (missing 'colors' or 'typography')`,
-        );
-        hasErrors = true;
-      }
+      raw = JSON.parse(fs.readFileSync(themePath, "utf-8"));
     } catch {
       logger.log(`  Theme   (${padStr(optionsTheme)}) ❌ Invalid JSON`);
+      return true;
+    }
+
+    const result = ThemeSchema.safeParse(raw);
+    if (result.success) {
+      logger.log(
+        `  Theme   (${padStr(optionsTheme)}) ✅ Valid JSON, schema OK`,
+      );
+      // Warnings only: a collision can be deliberate, and must not fail the
+      // exit code (hasErrors stays false).
+      for (const warning of findUtilityCollisions(result.data)) {
+        logger.log(`  Theme   ⚠️  ${warning}`);
+      }
+    } else {
+      logger.log(`  Theme   (${padStr(optionsTheme)}) ❌ Invalid schema`);
+      logger.log(formatZodError(result.error));
       hasErrors = true;
     }
   } else {
@@ -111,7 +115,7 @@ export function doctorCommand() {
     logger.log("💡 Everything looks good!\n");
   } else {
     logger.log(
-      "💡 Setup looks complete! Generate your safelist by running: npx style-gen safelist\n",
+      "💡 Setup looks complete! Generate your CSS by running: npx style-gen generate\n",
     );
   }
 }

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────
-# Deploy — Build & publish package lên npm public registry
+# Deploy — Build & publish package lên GitHub Packages (npm.pkg.github.com)
 #
 # Reusable workflow, được gọi từ release.yml
 # Input: tag name (e.g. v1.2.0 hoặc v1.2.0-DEV.1)
@@ -14,12 +14,9 @@ on:
         required: true
         type: string
 
-env:
-  CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
-  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
 permissions:
   contents: read
+  packages: write
 
 jobs:
   deploy:
@@ -36,7 +33,7 @@ jobs:
         with:
           node-version: "22"
           cache: "yarn"
-          registry-url: "https://registry.npmjs.org"
+          registry-url: "https://npm.pkg.github.com"
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -44,7 +41,31 @@ jobs:
       - name: Build
         run: yarn build:all
 
-      - name: Publish to npm
+      - name: Verify externals (dist must not inline peer/dep packages)
+        run: yarn check:externals
+
+      - name: Verify browser-safe subpaths
+        run: yarn check:browser-safe
+
+      - name: Verify publish target = GitHub Packages (npm.pkg.github.com)
+        run: yarn check:publish-target
+
+      - name: Publish dry-run (assert registry from output)
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: yarn npm publish --access public
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          OUT=$(yarn npm publish --dry-run 2>&1)
+          echo "$OUT"
+          echo "$OUT" | grep -F "npm.pkg.github.com" \
+            || { echo "::error::Dry-run did not target npm.pkg.github.com"; exit 1; }
+
+      - name: Publish to GitHub Packages
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ inputs.tag }}" == *-* ]]; then
+            yarn npm publish --tag DEV
+          else
+            yarn npm publish
+          fi

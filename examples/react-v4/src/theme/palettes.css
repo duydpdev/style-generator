@@ -1,0 +1,47 @@
+/* ============================================================
+   Cross-axis compound overrides (example-only, hand-written)
+   ------------------------------------------------------------
+   themeAxes (DEV.6) generates the single-axis blocks below from
+   theme.json — html[data-theme="dark"] and each
+   html[data-palette="forest|sunset|mono"] — but a "dark AND a
+   specific palette at once" override isn't representable by a
+   single ThemeOverride: it needs BOTH data attributes on one
+   selector simultaneously. These 3 compound blocks stay
+   hand-written CSS (outside the 4.0.0 themeAxes scope — see the
+   README's scope table). Their (0,2,0) specificity (two attribute
+   selectors, no type selector) still beats either single-axis
+   html[data-...] rule the library emits (0,1,1), so dark×forest /
+   dark×sunset / dark×mono resolve correctly whenever both
+   attributes are set together on <html>.
+   ============================================================ */
+
+[data-theme="dark"][data-palette="forest"] {
+  --sg-primary: #7dba9e;
+  --sg-secondary: #e3b47a;
+  --sg-success: #9dcc85;
+  --sg-danger: #e8866a;
+  --sg-background: #0f1612;
+  --sg-surface: #1a2520;
+  --sg-foreground: #eae5d9;
+  --sg-muted: #91998f;
+}
+[data-theme="dark"][data-palette="sunset"] {
+  --sg-primary: #f08967;
+  --sg-secondary: #c99098;
+  --sg-success: #9dba8a;
+  --sg-danger: #e36868;
+  --sg-background: #1a0f0a;
+  --sg-surface: #251913;
+  --sg-foreground: #faeedf;
+  --sg-muted: #b59a82;
+}
+[data-theme="dark"][data-palette="mono"] {
+  --sg-primary: #fafafa;
+  --sg-secondary: #a3a3a3;
+  --sg-success: #6ee7b7;
+  --sg-danger: #f87171;
+  --sg-background: #0a0a0a;
+  --sg-surface: #141414;
+  --sg-foreground: #fafafa;
+  --sg-muted: #a3a3a3;
+}

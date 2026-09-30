@@ -805,7 +805,31 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@duydpdev/style-generator@workspace:*, @duydpdev/style-generator@workspace:.":
+"@duydpdev/style-generator@link:../..::locator=next-v4-example%40workspace%3Aexamples%2Fnext-v4":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:../..::locator=next-v4-example%40workspace%3Aexamples%2Fnext-v4"
+  languageName: node
+  linkType: soft
+
+"@duydpdev/style-generator@link:../..::locator=nuxt-v4-example%40workspace%3Aexamples%2Fnuxt-v4":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:../..::locator=nuxt-v4-example%40workspace%3Aexamples%2Fnuxt-v4"
+  languageName: node
+  linkType: soft
+
+"@duydpdev/style-generator@link:../..::locator=react-v4-example%40workspace%3Aexamples%2Freact-v4":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:../..::locator=react-v4-example%40workspace%3Aexamples%2Freact-v4"
+  languageName: node
+  linkType: soft
+
+"@duydpdev/style-generator@link:..::locator=site%40workspace%3Asite":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:..::locator=site%40workspace%3Asite"
+  languageName: node
+  linkType: soft
+
+"@duydpdev/style-generator@workspace:.":
   version: 0.0.0-use.local
   resolution: "@duydpdev/style-generator@workspace:."
   dependencies:
@@ -11341,7 +11365,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "next-v4-example@workspace:examples/next-v4"
   dependencies:
-    "@duydpdev/style-generator": "workspace:*"
+    "@duydpdev/style-generator": "link:../.."
     "@tailwindcss/postcss": "npm:^4.2.0"
     "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^19.0.0"
@@ -11870,7 +11894,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "nuxt-v4-example@workspace:examples/nuxt-v4"
   dependencies:
-    "@duydpdev/style-generator": "workspace:*"
+    "@duydpdev/style-generator": "link:../.."
     "@tailwindcss/vite": "npm:^4.2.0"
     class-variance-authority: "npm:^0.7.0"
     clsx: "npm:^2.1.0"
@@ -13437,7 +13461,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "react-v4-example@workspace:examples/react-v4"
   dependencies:
-    "@duydpdev/style-generator": "workspace:*"
+    "@duydpdev/style-generator": "link:../.."
     "@tailwindcss/vite": "npm:^4.2.0"
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"
@@ -14506,7 +14530,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "site@workspace:site"
   dependencies:
-    "@duydpdev/style-generator": "workspace:*"
+    "@duydpdev/style-generator": "link:.."
     "@tailwindcss/vite": "npm:^4.2.0"
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"

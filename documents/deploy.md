@@ -13,7 +13,10 @@ Quy trình deploy thư viện `@duydpdev/style-generator`.
     - [`release.yml` — Semantic Release Orchestrator](#releaseyml--semantic-release-orchestrator)
     - [`deploy.yml` — Build \& Publish](#deployyml--build--publish)
     - [`back-merge.yml` — Back-merge](#back-mergeyml--back-merge)
+    - [`drift.yml` — Drift check](#driftyml--drift-check)
   - [Branching Strategy](#branching-strategy)
+    - [Luồng một feature](#luồng-một-feature)
+    - [Gỡ feature bị reject](#gỡ-feature-bị-reject)
   - [Release Process](#release-process)
     - [Quy trình đúng](#quy-trình-đúng)
   - [Commit Format](#commit-format)
@@ -24,13 +27,14 @@ Quy trình deploy thư viện `@duydpdev/style-generator`.
 ## CI/CD Overview
 
 ```mermaid
-flowchart TD
-    PR["Pull Request → main/develop"] --> CI["ci.yml\nLint + Build + Test + E2E"]
-    CI -->|Pass| Merge["Merge vào main/develop"]
-    Merge --> Release["release.yml\nSemantic Release"]
-    Release -->|New tag created| Deploy["deploy.yml\nBuild & Publish to GitHub Packages"]
-    Release -->|Stable tag trên main| BackMerge["back-merge.yml\nBack-merge main → develop"]
+flowchart LR
+    M[main] -->|cắt| F["feature/x"]
+    F -->|PR, merge commit| D["develop → vX.Y.Z-DEV.N"]
+    F -->|PR, merge commit, sau khi duyệt| M2["main → vX.Y.Z"]
+    M2 -.->|back-merge sau mọi push vào main| D
 ```
+
+Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có tag mới thì `deploy.yml` publish lên GitHub Packages. Mọi push vào `main` (có hoặc không có release) kết thúc bằng `back-merge.yml`, merge `main` về `develop`. `drift.yml` chạy mỗi giờ, cảnh báo khi `develop` vẫn thiếu commit của `main`.
 
 ---
 
@@ -43,7 +47,7 @@ flowchart TD
 **Các job** (Node 22):
 
 - `check`: `yarn install --immutable` → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs` → `yarn build:all` → `yarn workspace site build` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn test` → `yarn test:types`.
-  - Commitlint range: PR vào `develop` lint `base..head`. PR vào `main` chỉ lint các commit mà `develop` chưa có (`merge-base(origin/develop, head)..head`): với promote PR đó là merge commit `[release] …`, với hotfix PR thẳng vào `main` là các commit hotfix. Lịch sử đã nằm trên `develop` không bị lint lại (đã lint lúc vào `develop`, không viết lại được).
+  - Commitlint range: `base..head` cho cả PR vào `develop` lẫn `main`. Feature được cắt từ `main` và vào hai nhánh bằng cùng các commit (merge commit, không squash), nên range này đúng bằng các commit của feature. Header của chúng quyết định loại release, nên commit nào cũng bị lint.
 - `changes`: `git diff --name-only base...head`; `code=false` khi PR chỉ đổi `documents/**`.
 - `e2e`: chỉ chạy khi `changes.code == 'true'`. `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
 - `tailwind-floor`: chỉ chạy khi `changes.code == 'true'`. Ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
@@ -54,21 +58,24 @@ Browser Playwright **không** được cache, và đây là quyết định có 
 
 **Trigger:** Pull Request vào `main` hoặc `develop`, `opened`, `edited`, `synchronize`, `reopened` (`edited` bắt cả lần chỉ sửa tiêu đề).
 
-Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR. Config này dùng lại `commitlint.config.ts` và chỉ tắt `defaultIgnores`, để tiêu đề `Revert "…"` (mặc định của GitHub khi revert PR) hay `Merge …` cũng fail. Range lint trong `ci.yml` vẫn dùng config chung vì ở đó có merge commit thật. Lý do cần lint tiêu đề: feature → `develop` được squash-merge và `squash_merge_commit_title = PR_TITLE`, nên tiêu đề PR **là** commit trên `develop`. Commit `282287b` (`Feat/add example (#67)`) lọt vào vì trước đây không có gì kiểm tra tiêu đề.
+Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR. Config này dùng lại `commitlint.config.ts` và chỉ tắt `defaultIgnores`, để tiêu đề `Revert "…"` (mặc định của GitHub khi revert PR) hay `Merge …` cũng fail. Range lint trong `ci.yml` vẫn dùng config chung vì ở đó có merge commit thật. Từ khi feature vào `develop` bằng merge commit, tiêu đề PR **không** còn quyết định release: dòng đầu của merge commit là `Merge pull request #N from …` (analyzer bỏ qua), tiêu đề PR chỉ nằm trong body. Check này giữ lại để tiêu đề PR dễ đọc và khớp với header của commit.
 
 ### Pull Request & merge convention
 
 GitHub Free + repo private: không có branch protection, mọi check chỉ là cảnh báo. Người merge phải tự dừng khi check đỏ; lưới cuối là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag.
 
-| PR                         | Merge method                     | Ghi chú                                                                                                                                                        |
-| -------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Feature → `develop`        | **Squash and merge**             | Tiêu đề PR = commit. Body bị bỏ (`squash_merge_commit_message = BLANK`), nên major phải là `[release] …` trên tiêu đề, không dựa vào footer `BREAKING CHANGE`. |
-| Promote `develop` → `main` | **Create a merge commit**        | Giữ nguyên lịch sử `develop` làm tổ tiên của `main` để back-merge sạch.                                                                                        |
-| Rebase                     | Tắt (`allow_rebase_merge=false`) | Rebase đổi SHA, phá quan hệ tổ tiên giữa `main` và `develop`.                                                                                                  |
+| PR                  | Merge method                                                 | Ghi chú                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature → `develop` | **Create a merge commit**                                    | Feature giữ nguyên SHA. Khi feature vào `main`, back-merge nhận ra các commit đó đã có trên `develop`, nên merge sạch và DEV sau đó không phân tích lại. |
+| Feature → `main`    | **Create a merge commit**                                    | Cùng nhánh feature, mở PR thứ hai sau khi đã duyệt trên `develop`.                                                                                       |
+| `develop` → `main`  | **Không dùng**                                               | `develop` chứa cả feature chưa duyệt; promote cả nhánh là ship thứ chưa duyệt.                                                                           |
+| Squash / Rebase     | Tắt (`allow_squash_merge=false`, `allow_rebase_merge=false`) | Squash tạo bản sao khác SHA: DEV phân tích lại feature đã ship và feature phụ thuộc bị conflict (đo trong plan `feature-from-main-flow`, phase 01).      |
 
-`delete_branch_on_merge` giữ `false`: `develop` không được bảo vệ, bật lên thì một PR `develop` → `main` sẽ xoá `develop` sau khi merge.
+**Setting chịu tải:** `merge_commit_title = MERGE_MESSAGE` (dòng đầu `Merge pull request #N …`) và `merge_commit_message = PR_TITLE`. Đổi dòng đầu thành tiêu đề PR thì merge commit mang header `[type]`, và mọi merge commit chỉ có trên `develop` bị tính lại sau mỗi back-merge. Không đổi.
 
-Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng thành **một** PR gộp (`groups`) nhắm vào `develop` (`target-branch`), với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`). Dependabot chỉ đọc file này trên nhánh mặc định `main`, nên sửa cấu hình chỉ có hiệu lực sau khi promote.
+`delete_branch_on_merge` giữ `false`: nhánh feature còn cần cho PR thứ hai vào `main`.
+
+Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng thành **một** PR gộp (`groups`) nhắm vào `main` (`target-branch`), với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`). Dependabot cắt nhánh từ nhánh đích, nên nhắm `main` thì nhánh của nó là một feature branch sạch. Land vào `develop` trước bằng PR thứ hai từ cùng nhánh (`gh pr create --base develop --head <nhánh dependabot>`), rồi mới merge PR của Dependabot vào `main`. Dependabot chỉ đọc file này trên nhánh mặc định `main`.
 
 ---
 
@@ -93,7 +100,9 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 2. Chạy `semantic-release` → tự động tăng version, tạo git tag, cập nhật CHANGELOG
 3. So sánh tags trước/sau để phát hiện tag mới
 4. Nếu có tag mới → trigger `deploy.yml`
-5. Nếu tag stable (không có `-`) và ở `main` → trigger `back-merge.yml`
+5. Trên `main`, sau khi job release thành công (có hoặc không có tag, `deploy` thành công hoặc bị skip) → trigger `back-merge.yml`
+
+`release.config.cjs` chỉ bật `@semantic-release/changelog` và `@semantic-release/git` khi nhánh là đúng `main`, và in `[release.config] branch=<b> commitsRelease=<bool>` vào log. Release DEV trên `develop` chỉ tạo tag, không commit `package.json`/`CHANGELOG.md`: nếu commit, `develop` và `main` sửa cùng dòng version/changelog và mọi back-merge sau stable release sẽ conflict.
 
 ---
 
@@ -106,12 +115,13 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 1. Checkout tại tag mới
 2. Node 22 với `registry-url: https://npm.pkg.github.com`
 3. `yarn install --immutable`
-4. `yarn build:all`
-5. `yarn check:externals`
-6. `yarn check:browser-safe`
-7. `yarn check:publish-target`
-8. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
-9. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in
+4. `npm pkg set version=<tag bỏ v>` rồi assert khớp tag (fail nếu tag rỗng). Bắt buộc cho DEV, vì `package.json` tại tag DEV vẫn là version stable gần nhất; trên `main` là no-op. Không commit.
+5. `yarn build:all`
+6. `yarn check:externals`
+7. `yarn check:browser-safe`
+8. `yarn check:publish-target`
+9. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
+10. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in
 
 Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package.
 
@@ -119,22 +129,44 @@ Test không chạy lại ở đây: `release.yml` đã test đúng commit này t
 
 ### `back-merge.yml` — Back-merge
 
-**Trigger:** Được gọi từ `release.yml` sau stable release trên `main`
+**Trigger:** Được gọi từ `release.yml` sau mọi push vào `main` (input `version` rỗng khi push đó không ra release)
 
-**Mục đích:** Tự động merge code từ `main` về `develop` sau mỗi stable release, đảm bảo `develop` luôn có đủ commit từ `main`.
+**Mục đích:** Merge `main` về `develop` để `develop` luôn chứa mọi commit của `main`: commit release, và feature `[ci]`/`[docs]` không tạo release.
 
-Merge thường, **không** `-X theirs` (option đó chọn phía `main` cho mọi hunk conflict và âm thầm bỏ code mới hơn của `develop`). Bình thường `main` chỉ có commit của `develop` cộng commit release, nên merge sạch. Khi conflict (ví dụ `develop` đã cắt một `-DEV.N` trong lúc stable release chạy, hoặc hotfix trên `main` đụng cùng dòng), job liệt kê file conflict, `git merge --abort` và fail. Release và publish đã xong; merge `main` vào `develop` bằng tay theo lệnh in trong log.
+Merge thường, **không** `-X theirs` (option đó chọn phía `main` cho mọi hunk conflict và âm thầm bỏ code mới hơn của `develop`). Feature vào `develop` trước `main` bằng cùng các commit, và DEV không commit gì, nên merge bình thường sạch. Khi conflict, job liệt kê file conflict, `git merge --abort` và fail; merge `main` vào `develop` bằng tay theo lệnh in trong log. Nếu push bị từ chối vì `develop` vừa có commit mới, job fetch lại, merge lại từ đỉnh mới và thử tối đa 3 lần. Message có `[skip ci]` nên không tạo DEV mới.
+
+### `drift.yml` — Drift check
+
+**Trigger:** mỗi giờ (`schedule`) và `workflow_dispatch`.
+
+Fail khi `git rev-list --count origin/develop..origin/main` > 0 và đỉnh `main` đã cũ hơn 60 phút (bỏ qua lúc một run release/back-merge đang chạy), in ra các commit bị thiếu. Giới hạn: số đếm không bắt được "revert trap" (xem [Gỡ feature bị reject](#gỡ-feature-bị-reject)).
 
 ---
 
 ## Branching Strategy
 
-| Branch      | Mục đích                                         |
-| ----------- | ------------------------------------------------ |
-| `main`      | Stable releases. Mọi push → trigger release flow |
-| `develop`   | Development. Pre-release versions (DEV suffix)   |
-| `feature/*` | Feature branches → mở PR vào `develop`           |
-| `hotfix/*`  | Hotfix → PR vào cả `main` và `develop`           |
+| Branch        | Mục đích                                                                       |
+| ------------- | ------------------------------------------------------------------------------ |
+| `main`        | Stable releases. Mọi push → release flow + back-merge                          |
+| `develop`     | Tích hợp và test. Pre-release versions (DEV suffix, dist-tag `DEV`)            |
+| `feature/*`   | Cắt từ `main`. PR vào `develop`, rồi PR riêng vào `main` sau khi duyệt         |
+| `hotfix/*`    | Như feature: cắt từ `main`, vào `develop` trước rồi mới vào `main`             |
+| `integrate/*` | Nhánh tạm để resolve conflict của một feature với `develop`; chỉ vào `develop` |
+
+### Luồng một feature
+
+1. `git fetch origin && git switch -c feature/x origin/main`. Không bao giờ cắt từ `develop`.
+2. **Một commit, header đúng.** Loại release do header của các commit trong nhánh quyết định (merge commit bị analyzer bỏ qua). Trước PR đầu tiên, gom nhánh thành một commit `[type] subject` và dùng đúng header đó làm tiêu đề cả hai PR. Một commit `[feat] wip` sót lại sẽ thành minor dù PR tên `[fix] …`. Major: `[release] …`.
+3. PR `feature/x` → `develop`, **Create a merge commit**. Kết quả là `vX.Y.Z-DEV.N` trên dist-tag `DEV`. Consumer test bằng version chính xác (`@duydpdev/style-generator@4.1.0-DEV.3`), không dùng range: `^4.1.0-DEV.3` resolve lên `4.1.0` stable, có thể thiếu feature khác đang ở `develop`.
+4. Duyệt xong: PR `feature/x` → `main`, **Create a merge commit**. Release stable, publish `latest`, back-merge.
+5. **Phụ thuộc feature khác:** cắt từ nhánh feature kia, ghi rõ trong PR, và feature kia phải vào `main` trước.
+6. **Conflict khi vào `develop`:** **không** dùng nút "Resolve conflicts" hay "Update branch" của GitHub: cả hai merge `develop` vào `feature/x`, và PR vào `main` sau đó sẽ mang theo feature chưa duyệt. Thay vào đó: `git switch -c integrate/x origin/develop && git merge feature/x`, resolve, mở PR `integrate/x` → `develop` (merge commit), rồi xoá nhánh. `feature/x` giữ sạch cho `main`. Cập nhật `feature/x` chỉ bằng `git merge origin/main`.
+
+### Gỡ feature bị reject
+
+- **Khỏi `develop`:** PR `[revert] <feature>` (`git revert -m 1 <merge-commit>`), tạo một DEV patch mới. Không force-push `develop`.
+- **Revert trap:** commit của feature đã là tổ tiên của `develop`. Nếu sau đó merge lại đúng các commit đó (vào `develop` hay `main`), git coi là đã có: `develop` thiếu code mà `drift.yml` vẫn báo 0 (đo trong plan `feature-from-main-flow`, phase 01). Luật: trước khi feature đã bị revert land lại ở bất kỳ đâu, chạy `git rebase --force-rebase origin/main` trên nhánh để các commit có SHA mới.
+- **Khỏi `main`:** PR `[revert] <feature>` vào `develop` rồi vào `main`, ra một patch release. Version cũ đã publish vẫn nằm trên registry.
 
 ---
 
@@ -146,15 +178,14 @@ Merge thường, **không** `-X theirs` (option đó chọn phía `main` cho m�
 
 ### Quy trình đúng
 
-1. Code thay đổi trên feature branch
-2. Commit theo format `[type] subject` (xem bên dưới)
-3. Mở Pull Request vào `develop` (pre-release) hoặc `main` (stable release)
-4. CI check pass → merge PR
-5. `release.yml` tự động:
-   - Tính version mới
-   - Tạo git tag (`vX.Y.Z`)
-   - Cập nhật `CHANGELOG.md`
+1. Cắt `feature/x` từ `main` (xem [Luồng một feature](#luồng-một-feature))
+2. Một commit theo format `[type] subject` (xem bên dưới)
+3. PR vào `develop`, CI pass → **Create a merge commit** → `release.yml` cắt `vX.Y.Z-DEV.N` (chỉ tag, không commit) và publish dist-tag `DEV`
+4. Duyệt xong → PR cùng nhánh vào `main`, CI pass → **Create a merge commit** → `release.yml`:
+   - Tính version mới từ header các commit của feature
+   - Commit `package.json` + `CHANGELOG.md` (`[chore] release x [skip ci]`) và tạo tag `vX.Y.Z`
    - Trigger `deploy.yml` để publish lên GitHub Packages
+   - Trigger `back-merge.yml` merge `main` về `develop`
 
 ### Required Secrets
 

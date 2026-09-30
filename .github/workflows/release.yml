@@ -6,7 +6,7 @@
 #   1. Semantic-release tạo tag & version bump
 #   2. Detect tag mới (so sánh trước/sau)
 #   3. Gọi deploy.yml để build & publish lên GitHub Packages
-#   4. Gọi back-merge.yml nếu là stable tag trên main
+#   4. Gọi back-merge.yml sau mọi push vào main (kể cả khi không có release)
 # ─────────────────────────────────────────────────────
 name: Release
 
@@ -97,14 +97,19 @@ jobs:
       tag: ${{ needs.release.outputs.new_release_tag }}
     secrets: inherit
 
-  # ── 3. Back-merge (chỉ khi stable tag trên main) ──
+  # ── 3. Back-merge (mọi push vào main, có hay không có release) ──
+  # Features land on develop and main separately, so a push to main that cuts
+  # no release (a [ci]/[docs] feature) still leaves main ahead of develop.
+  # Run after every successful release job on main; deploy may be skipped (no
+  # tag) but must not have failed.
   back-merge:
     name: Back-merge
     needs: [release, deploy]
     if: |
-      needs.release.outputs.new_release_published == 'true' &&
+      always() &&
       github.ref == 'refs/heads/main' &&
-      !contains(needs.release.outputs.new_release_tag, '-')
+      needs.release.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.deploy.result)
     uses: ./.github/workflows/back-merge.yml
     with:
       version: ${{ needs.release.outputs.new_release_tag }}

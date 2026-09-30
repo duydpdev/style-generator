@@ -9,9 +9,15 @@ Mục lục toàn bộ tài liệu của `@duydpdev/style-generator`. Tra cứu 
 | [`architecture.md`](./architecture.md) | Kiến trúc 4.0.0: data flow, registry, `themeAxes`, spacing, exports, site    |
 | [`guide.md`](./guide.md)               | Hướng dẫn tích hợp từng bước (tiếng Việt), link sang README cho bảng tra cứu |
 | [`testing.md`](./testing.md)           | Các lớp test, vì sao tồn tại, chạy ở đâu                                     |
-| [`deploy.md`](./deploy.md)             | CI, release, publish GitHub Packages, deploy site                            |
+| [`deploy.md`](./deploy.md)             | Git flow (feature cắt từ `main`), CI, release, publish GitHub Packages       |
 
 Site render mọi file `documents/*.md` cấp cao nhất trừ file này (`site/src/lib/docs-content.ts`).
+
+## Standards (không hiển thị trên site)
+
+| File                                                               | Nội dung                                                                                                   |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| [`standards/git-workflow-app.md`](./standards/git-workflow-app.md) | Chuẩn git cho app có 4 nhánh môi trường (`develop` → `staging` → `pre-release` → `release`), dùng cho team |
 
 ## Migration
 

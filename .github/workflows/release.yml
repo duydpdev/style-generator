@@ -20,8 +20,13 @@ permissions:
   pull-requests: write
   packages: write
 
-env:
-  CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
+# One release run per branch at a time. A running release is never cancelled
+# (that could leave a tag pushed without its publish); GitHub keeps one pending
+# run per group, so a newer push replaces an older pending one, and that newer
+# run releases a superset of the commits.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   # ── 1. Tạo tag ────────────────────────────────────
@@ -50,6 +55,14 @@ jobs:
         env:
           HUSKY: "0"
         run: yarn install --immutable
+
+      # Nothing blocks a merge while CI is red (GitHub Free, no branch
+      # protection), so test the pushed commit before a tag is cut for it.
+      - name: Test
+        run: yarn test
+
+      - name: Type tests
+        run: yarn test:types
 
       - name: Save tags before release
         run: git tag > /tmp/tags_before.txt

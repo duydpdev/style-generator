@@ -14,9 +14,6 @@ on:
         required: true
         type: string
 
-env:
-  CI_WORKER_REPOSITORY_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
-
 permissions:
   contents: read
   packages: write

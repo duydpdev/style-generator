@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    # With only `/`, Dependabot reads .github/workflows/* and never the
+    # composite action under .github/actions/.
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: monthly
+    commit-message:
+      # Trailing space on purpose: GitHub inserts a colon after a prefix that
+      # ends with `]`, and `[ci]: bump …` fails the `[type] subject` header rule
+      # that the PR title check and commitlint enforce.
+      prefix: "[ci] "

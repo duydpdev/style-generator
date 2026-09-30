@@ -1,12 +1,6 @@
 import type { UserConfig } from "@commitlint/types";
 
 const config: UserConfig = {
-  // Commit 282287b on `develop` is PR #67 squash-merged with GitHub's default title
-  // ("Feat/add example (#67)", derived from the branch name), which does not follow
-  // `[type] subject`. History on `develop` is published and cannot be rewritten, and
-  // every PR into `main` re-lints it (`main..head`). Ignore that one message only.
-  // Prevention: set the squash-merge title to `[type] subject` when merging.
-  ignores: [(message: string) => /^Feat\/add example \(#67\)(\n|$)/.test(message)],
   parserPreset: {
     parserOpts: {
       headerPattern: /^\[(\w+)\] ([^:].+)/,

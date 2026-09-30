@@ -35,11 +35,23 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      # No `-X theirs`: it resolves every conflicting hunk to main's side, which
+      # silently drops develop's newer code when a hotfix on main touched the
+      # same lines. Normally main only holds develop's commits plus the release
+      # commit, so this merge is clean; a conflict means a human must look.
       - name: Merge main into develop
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
           git fetch origin main
-          git merge origin/main -X theirs --no-edit \
-            -m "[chore] merge main (${{ inputs.version }}) into develop [skip ci]"
+          if ! git merge origin/main --no-edit \
+            -m "[chore] merge main (${VERSION}) into develop [skip ci]"; then
+            echo "Conflicting files:"
+            git diff --name-only --diff-filter=U
+            git merge --abort || true
+            echo "::error::Back-merge of ${VERSION} conflicts. The release and publish already succeeded; merge main into develop by hand: git switch develop && git merge origin/main -m \"[chore] merge main (${VERSION}) into develop [skip ci]\", resolve, push."
+            exit 1
+          fi
 
       - name: Push
         run: git push origin develop

@@ -81,8 +81,7 @@
     "test:e2e": "playwright test",
     "site:dev": "yarn workspace site dev",
     "site:build": "yarn build:all && yarn workspace site build",
-    "site:preview": "yarn workspace site preview",
-    "site:deploy:manual": "yarn site:build && npx gh-pages -d site/dist"
+    "site:preview": "yarn workspace site preview"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^20.4.3",

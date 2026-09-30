@@ -39,13 +39,13 @@ jobs:
       new_release_tag: ${{ steps.check.outputs.new_release_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: "yarn"

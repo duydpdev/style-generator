@@ -236,10 +236,10 @@ Danh sách đầy đủ nằm trong `src/index.ts` và `src/exports/*`; những 
 
 ## Landing Site (`site/`)
 
-Top-level `site/` là landing page riêng (React + Vite + Tailwind v4) dogfood thư viện qua yarn workspace `workspace:*`.
+Top-level `site/` là landing page riêng (React + Vite + Tailwind v4) dogfood thư viện qua dependency `link:..` (xem [`deploy.md`](./deploy.md#vì-sao-link-thay-vì-workspace)).
 
 - **Path:** `site/`
-- **Stack:** React 19, Vite 7, Tailwind v4, `@duydpdev/style-generator` (workspace), `styleGenVite()`
+- **Stack:** React 19, Vite 7, Tailwind v4, `@duydpdev/style-generator` (`link:..`), `styleGenVite()`
 - **Theme:** Cobalt palette (`site/src/theme/theme.json`) — `site/src/theme/theme.css` được sinh bởi `styleGenVite`; `site/src/theme/theme.schema.json` là bản schema commit sẵn
 - **Scripts:** `yarn workspace site {dev,build,typecheck,lint}`; dev port mặc định 5174 để không xung đột với examples
 - **Workspace setup:** root `package.json` khai báo `workspaces: ["site", "examples/*"]` + `resolutions.vite` để chỉ có một instance Vite
@@ -257,7 +257,7 @@ Top-level `site/` là landing page riêng (React + Vite + Tailwind v4) dogfood t
 
 ### Examples catalog (`examples/*`)
 
-3 consumer app (link lib qua `workspace:*`, cùng `theme.json` + palettes + cva configs + demo section):
+3 consumer app (link lib qua `link:../..`, cùng `theme.json` + palettes + cva configs + demo section):
 
 | Example    | Stack                           | Theme wiring                                                                                                                                       |
 | ---------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -269,7 +269,6 @@ Chỉ `react-v4` được nhúng vào landing site; `next-v4`/`nuxt-v4` là stan
 
 ### Deploy pipelines
 
-| Target                    | Workflow                     | See                                                               |
-| ------------------------- | ---------------------------- | ----------------------------------------------------------------- |
-| Package → GitHub Packages | `release.yml` + `deploy.yml` | [`documents/deploy.md`](./deploy.md)                              |
-| GitHub Pages (site)       | `deploy-site.yml`            | [`documents/deploy.md`](./deploy.md#site-deployment-github-pages) |
+| Target                    | Workflow                     | See                                  |
+| ------------------------- | ---------------------------- | ------------------------------------ |
+| Package → GitHub Packages | `release.yml` + `deploy.yml` | [`documents/deploy.md`](./deploy.md) |

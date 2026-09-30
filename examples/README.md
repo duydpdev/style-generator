@@ -1,6 +1,6 @@
 # Examples
 
-Working consumer apps that link `@duydpdev/style-generator` through the Yarn workspace (`workspace:*`) and exercise the public API end-to-end. Each one wires the library the 4.0.0 way: a generated `theme.css` that the app `@import`s next to `@import "tailwindcss"` — no `@plugin`, no safelist file. Upgrading an existing project? See [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md).
+Working consumer apps that link `@duydpdev/style-generator` through a Yarn `link:../..` dependency (`workspace:*` is not linked for the root package; see `documents/deploy.md`) and exercise the public API end-to-end. Each one wires the library the 4.0.0 way: a generated `theme.css` that the app `@import`s next to `@import "tailwindcss"` — no `@plugin`, no safelist file. Upgrading an existing project? See [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md).
 
 | Example                  | Stack                           | Highlights                                                         |
 | ------------------------ | ------------------------------- | ------------------------------------------------------------------ |
@@ -24,7 +24,7 @@ yarn build
 
 ```bash
 cd examples/react-v4   # or next-v4 / nuxt-v4
-yarn install           # workspace:* link resolves from the repo-root install
+yarn install           # link:../.. is created by the repo-root install
 yarn dev
 ```
 

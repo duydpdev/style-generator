@@ -66,3 +66,8 @@ Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không
   1. Nguồn sự thật cho agent là `.claude/CLAUDE.md` + `.claude/rules/*.md`. Không thêm lại thư mục agent/command/skill vào repo; dùng skill của runtime.
   2. Mọi tài liệu nằm dưới `documents/` theo layout ở mục "Documentation layout" của `.claude/CLAUDE.md`; `.agentkit/config.yaml` trỏ `paths.docs`/`paths.plans` vào đó. Tool nào tạo `docs/` hoặc `plans/` ở root thì chuyển file vào `documents/` trước khi commit và sửa cấu hình của tool đó.
   3. Lịch sử trước 2026-09-28 tra bằng git history, không khôi phục vào tree.
+
+### [2026-09-30] - "Local build green" is not proof when node_modules holds hand-made links
+
+- **Mistake:** Reported `yarn site:build` green in a gate. It passed only because of a stale hand-made symlink `node_modules/@duydpdev/style-generator -> ../..`. On a clean install Yarn never creates that link (root package = library, so `workspace:*` from site/examples is a dropped self-reference), and `Deploy Site` failed on the first push to `main`.
+- **New Rule:** Prove build or resolution claims for workspace consumers in a clean worktree (`git worktree add --detach <tmp> HEAD && yarn install --immutable && …`), or in CI. Consumers of the root package use `link:`, not `workspace:*`.

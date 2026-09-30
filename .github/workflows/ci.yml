@@ -69,6 +69,12 @@ jobs:
       - name: Build
         run: yarn build:all
 
+      - name: Build site
+        # site/ and examples/react-v4 dogfood the library through `link:` deps,
+        # and the site renders documents/*.md, so this runs for docs-only PRs too.
+        # It is the only check that builds them; nothing deploys the site.
+        run: yarn workspace site build
+
       - name: Check externals
         run: yarn check:externals
 

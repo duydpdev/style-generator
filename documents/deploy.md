@@ -42,7 +42,7 @@ flowchart TD
 
 **Các job** (Node 22):
 
-- `check`: `yarn install --immutable` → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs` → `yarn build:all` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn test` → `yarn test:types`.
+- `check`: `yarn install --immutable` → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs` → `yarn build:all` → `yarn workspace site build` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn test` → `yarn test:types`.
   - Commitlint range: PR vào `develop` lint `base..head`. PR vào `main` chỉ lint các commit mà `develop` chưa có (`merge-base(origin/develop, head)..head`): với promote PR đó là merge commit `[release] …`, với hotfix PR thẳng vào `main` là các commit hotfix. Lịch sử đã nằm trên `develop` không bị lint lại (đã lint lúc vào `develop`, không viết lại được).
 - `changes`: `git diff --name-only base...head`; `code=false` khi PR chỉ đổi `documents/**`.
 - `e2e`: chỉ chạy khi `changes.code == 'true'`. `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
@@ -68,7 +68,7 @@ GitHub Free + repo private: không có branch protection, mọi check chỉ là 
 
 `delete_branch_on_merge` giữ `false`: `develop` không được bảo vệ, bật lên thì một PR `develop` → `main` sẽ xoá `develop` sau khi merge.
 
-Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`).
+Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng thành **một** PR gộp (`groups`) nhắm vào `develop` (`target-branch`), với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`). Dependabot chỉ đọc file này trên nhánh mặc định `main`, nên sửa cấu hình chỉ có hiệu lực sau khi promote.
 
 ---
 
@@ -182,45 +182,20 @@ Xem: [`commitlint.config.ts`](../commitlint.config.ts) và [`release.config.cjs`
 
 ---
 
-## Site Deployment (GitHub Pages)
+## Site (landing + examples)
 
-Landing site (`site/`) deploy độc lập với package release. Hai pipeline tách biệt:
+Landing site (`site/`) và `examples/react-v4` dùng thư viện qua dependency `link:`. Site **không được deploy**: repo private trên GitHub Free không có GitHub Pages (Pages cho repo private cần Pro/Team/Enterprise: https://docs.github.com/pages/quickstart). `deploy-site.yml` và `site:deploy:manual` đã bị xoá (2026-09-30). Muốn bật lại cần nâng gói hoặc host ở nơi khác, qua một plan riêng.
 
-| Pipeline                      | Workflow                     | Trigger                                                                | Target                                                              |
-| ----------------------------- | ---------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| **Package → GitHub Packages** | `release.yml` → `deploy.yml` | Push `main` / `develop` (qua semantic-release tag)                     | `https://npm.pkg.github.com` (`@duydpdev/style-generator`, private) |
-| **Site → GH Pages**           | `deploy-site.yml`            | Push `main` (paths `site/**`, `documents/**`, `examples/**`, `src/**`) | `https://<owner>.github.io/<repo>/`                                 |
+Site vẫn được build trên mọi PR: job `check` của `ci.yml` chạy `yarn workspace site build` ngay sau `yarn build:all`, kể cả với PR chỉ đổi `documents/**`, vì site render `documents/*.md`. `yarn workspace site build` chạy `build:examples` (build `examples/react-v4` với base `./`, copy `examples/react-v4/dist` vào `site/public/examples/v4`), rồi Vite build site.
 
-### Workflow `deploy-site.yml`
+### Vì sao `link:` thay vì `workspace:*`
 
-Job `build`:
-
-1. Checkout + setup Node 22 + enable Corepack.
-2. `yarn install --immutable`.
-3. `yarn build:all` — biên dịch library (cần thiết vì site dogfood qua `workspace:*`).
-4. `yarn workspace site build` — chạy `build:examples` (build `examples/react-v4` với `EXAMPLE_BASE`), copy `examples/react-v4/dist` vào `site/public/examples/v4`, rồi Vite build site.
-5. Upload `site/dist` qua `actions/upload-pages-artifact@v3`.
-
-Job `deploy`: `actions/deploy-pages@v4` xuất bản artifact.
-
-Env quan trọng: `VITE_BASE=/${{ github.event.repository.name }}/` ensures asset URLs khớp với GH Pages subpath. Cả `site/vite.config.ts` lẫn `site/scripts/build-examples.mjs` đọc biến này.
-
-### Manual deploy
-
-```bash
-# Build + deploy site lên gh-pages branch (cần gh-pages package)
-VITE_BASE=/style-generator/ yarn site:deploy:manual
-```
-
-### Repo settings (one-off)
-
-GitHub repo → Settings → Pages → **Source: GitHub Actions**. Lần đầu workflow chạy thành công sẽ tạo deployment environment `github-pages` tự động.
+Gói root chính là thư viện `@duydpdev/style-generator`. Với `nodeLinker: node-modules`, Yarn hoist một dependency `workspace:*` trỏ về root lên `node_modules` của root, coi đó là self-reference và bỏ đi. Kết quả là sau một lần `yarn install` sạch, không có `node_modules/@duydpdev/style-generator` ở đâu cả (`nmSelfReferences` không áp dụng cho trường hợp này). `link:..` (site) và `link:../..` (examples) tạo symlink trong `node_modules` của từng workspace. Không alias gói trong Vite: example phải đi qua `exports` thật của package.
 
 ### Script aliases (root)
 
-| Script                    | Description                                           |
-| ------------------------- | ----------------------------------------------------- |
-| `yarn site:dev`           | Vite dev server site (port 5174)                      |
-| `yarn site:build`         | Library build → site build → dist tại `site/dist/`    |
-| `yarn site:preview`       | Vite preview server đọc `site/dist/`                  |
-| `yarn site:deploy:manual` | Build + push lên `gh-pages` branch qua `gh-pages` npm |
+| Script              | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `yarn site:dev`     | Vite dev server site (port 5174)                   |
+| `yarn site:build`   | Library build → site build → dist tại `site/dist/` |
+| `yarn site:preview` | Vite preview server đọc `site/dist/`               |

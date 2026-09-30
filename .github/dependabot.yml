@@ -2,8 +2,15 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    # Dependabot reads this file from the default branch (main) and opens PRs
+    # against it unless told otherwise; changes land on develop first.
+    target-branch: develop
     schedule:
       interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     commit-message:
       # Trailing space on purpose: GitHub inserts a colon after a prefix that
       # ends with `]`, and `[ci]: bump …` fails the `[type] subject` header rule

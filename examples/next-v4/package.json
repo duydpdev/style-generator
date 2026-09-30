@@ -19,7 +19,7 @@
     "tailwind-merge": "^3.0.0"
   },
   "devDependencies": {
-    "@duydpdev/style-generator": "workspace:*",
+    "@duydpdev/style-generator": "link:../..",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",

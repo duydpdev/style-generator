@@ -1,3 +1,101 @@
+# [4.0.0]() (2026-09-30)
+
+### Bug Fixes
+
+- align default breakpoints and kebab types, warn on Tailwind utility collisions ([59b2221]())
+- correct --sg-sp-* custom-property inheritance in spacing utilities ([0e82feb]())
+- print key-grammar hint for invalid record keys ([18debfc]())
+- reject underscores in token keys, kebab state prefixes, atomic writes ([082379c]())
+- skip comments in CSS block extractor and regenerate baseline class list ([4910a8c]())
+- skip undefined optional typography fields in generated CSS ([4e49bf8]())
+- tighten alias/override validation and make cva round-trip probative ([bf9090a]())
+- unify tailwind engine, align state source lines with tokens, guard axis key order ([8024ecd]())
+
+### Code Refactoring
+
+- enable strict TypeScript flags repo-wide, remove unsafe casts ([8f8a84c]())
+
+### Features
+
+- add $schema to example themes + committed theme.schema.json + AC6 proof ([cf892e8]())
+- add next-v4 and nuxt-v4 examples ([#68](https://github.com/duydpdev/style-generator-private/issues/68)) ([c69de63]())
+- add strict Zod 4 theme schema as single source of truth ([52ba9c1]())
+- add strict Zod theme schema ([3f5cbc2]())
+- add style-gen generate command ([29cd84f]())
+- add token aliases, fontFamily/borderWidth, registry [@source](https://github.com/source) inline, styleGenNext and flat variant mapper ([97a9952]())
+- add token category registry and generate() core ([9def0f2]())
+- alias tokens, fontFamily/borderWidth categories, [@source](https://github.com/source) inline ([503ddb8]())
+- multi-axis themeAxes and registry-driven state palette classes ([4c8b70d]())
+- update lib v4 ([#66](https://github.com/duydpdev/style-generator-private/issues/66)) ([8e25647]())
+- validate always via ThemeSchema in generate/CLI/Vite + schema command ([0954929]())
+
+### Performance Improvements
+
+- lock CSS output size budget and class-family coverage checks ([ff73c3f]())
+
+### release
+
+- introduce token category registry and generate() core ([cd664dd]())
+- promote 4.0.0 to main ([2377c27]())
+
+### BREAKING CHANGES
+
+- 4.0.0 drops Tailwind v3 and the JS plugin API in
+favour of generate() + generated CSS with @source inline, a strict Zod
+theme schema, themeAxes, strict spacing types and the new
+createVariantMapper; see documents/migration/3.x-to-4.0.md.
+- ThemeConfig.themes is replaced by themeAxes
+(Record<axisName, Record<variantName, ThemeOverride>>); a theme that
+still uses `themes` is rejected with a rename hint. Axis override
+blocks are emitted after :root, in config declaration order, and are
+scoped to `html[data-<axis>="<value>"]`. createVariantMapper accepts
+`{ states }` and returns state classes (e.g. hover:bg-primary-hover)
+for flat sibling tokens, so components no longer hand-author them.
+Cross-axis compound overrides stay hand-written CSS.
+- generateSafelist(), the CLI `safelist` command and
+the options safelistColors, layout, border, rounded, opacity, zIndex,
+dynamicClasses, responsiveModules and modules are removed; runtime-built
+classes go through the new `extraSources` option. Utility coverage is
+provided by registry-generated `@source inline(...)` directives inside
+the generated CSS, so safelist.txt is gone. createVariantMapper() drops
+isKeepFormat and always kebab-cases like the registry. The CLI gains
+`style-gen generate [--watch]`, and a new `./next` subpath
+(styleGenNext) writes the generated CSS for Next.js. The theme key
+`border` is renamed to `borderWidth`.
+- noUncheckedIndexedAccess and exactOptionalPropertyTypes
+are enabled at the root tsconfig with no module overrides. The loose
+ResponsiveValue type (which accepted arbitrary breakpoint keys) is
+removed; ResponsiveValueStrict is the sole responsive-value type.
+resolveSpacing/resolveSpacingProps now accept only SpacingKey props,
+and resolveSpacingProps() returns `classNames: string` (already joined)
+instead of `classNames: string[]`.
+- ThemeConfig is now inferred from a strict Zod schema.
+Unknown keys and CSS-injection characters in token keys/values are
+rejected. defineTheme() now validates at runtime, returns the parsed
+theme, and is exported only from the root entry (removed from
+`./tokens`, which stays browser-safe). generate(), the CLI and the
+Vite plugin always validate the theme. A new `style-gen schema`
+command generates theme.schema.json for editor autocomplete.
+- spacing CSS variables move from --tw-sp-* (which
+squatted Tailwind's internal --tw- namespace and leaked parent
+breakpoint values to children via unregistered custom-property
+inheritance) and the inline --sp-* variables to --sg-sp-*, with an
+explicit `@property syntax:"*" inherits:false` declaration per
+property/breakpoint. The global `*` rule is removed; fallback chains
+now live inside each @utility sp-*. Consumers reading --tw-sp-* or
+--sp-* directly must switch to --sg-sp-*.
+- notes as valid markdown, and drop the orphan
+shared/utils.index.ts barrel.
+- removes createStylePlugin, detectTailwindVersion,
+the tailwindVersion option, spacing.useMatchUtilities, and the
+`./plugin` subpath export. Tailwind v3 support is dropped and the
+tailwindcss peer floor is now >=4.1.0. createStyleSystem() is replaced
+by generate(), which returns a single generated CSS string instead of a
+JS plugin object; styleGenVite now writes generate().css to theme.css.
+Consumers must replace `@plugin "...theme-plugin"` with a plain CSS
+`@import` of the generated file (full guide: docs/migration/3.x-to-4.0.md,
+written in the 4.0.0 stable phase).
+
 # [4.0.0-DEV.1]() (2026-09-29)
 
 ### Bug Fixes

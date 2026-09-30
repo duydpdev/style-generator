@@ -1,9 +1,10 @@
 # ─────────────────────────────────────────────────────
 # PR Title — lint tiêu đề PR bằng commitlint.config.ts
 #
-# Feature → develop được squash-merge, nên tiêu đề PR trở thành commit
-# message trên develop (squash_merge_commit_title = PR_TITLE). Tiêu đề sai
-# format = commit sai format mà không gì sửa được sau khi đã publish.
+# Feature vào develop và main bằng merge commit: dòng đầu là
+# `Merge pull request #N …` (analyzer bỏ qua), tiêu đề PR chỉ nằm trong body.
+# Header của các commit trong nhánh mới quyết định release (lint trong ci.yml).
+# Check này giữ tiêu đề PR dễ đọc và khớp với header đó.
 # `edited` bắt được cả khi chỉ sửa tiêu đề (ci.yml không chạy lại khi đó).
 # ─────────────────────────────────────────────────────
 name: PR Title

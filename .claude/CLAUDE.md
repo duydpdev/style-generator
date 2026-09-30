@@ -55,7 +55,7 @@ Custom format `[type] subject` (NOT standard conventional-commits prefix), parse
 | `[fix]` `[perf]` `[revert]` `[style]` `[refactor]` | patch   |
 | `[chore]` `[docs]` `[test]` `[build]` `[ci]`       | none    |
 
-Merges to `main` (stable) or `develop` (pre-release `DEV` dist-tag) trigger Semantic Release → tag → publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`, private). Stable release on `main` back-merges to `develop`. Details: `documents/deploy.md`.
+Features are cut from `main` and land twice, both as merge commits (never squash): a PR into `develop` (pre-release `DEV` dist-tag), then, once approved, a PR from the same branch into `main` (stable). There is no `develop` → `main` promote PR. Each merge triggers Semantic Release → tag → publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`, private); the release type comes from the feature's commit headers. Every push to `main` back-merges to `develop`. Details: `documents/deploy.md`.
 
 ## Architecture
 

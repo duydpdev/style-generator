@@ -38,6 +38,24 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      # A DEV release commits nothing to develop (release.config.cjs), so the
+      # package.json at a DEV tag still carries the last stable version. Set the
+      # version from the tag for every channel (a no-op on main, where the
+      # release commit already has it); the change stays in the runner.
+      - name: Set version from tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -z "$TAG" ]; then echo "::error::inputs.tag is empty"; exit 1; fi
+          VERSION="${TAG#v}"
+          npm pkg set version="$VERSION"
+          ACTUAL="$(node -p "require('./package.json').version")"
+          if [ "$ACTUAL" != "$VERSION" ]; then
+            echo "::error::package.json version $ACTUAL does not match tag $TAG"
+            exit 1
+          fi
+          echo "Publishing version $VERSION"
+
       - name: Build
         run: yarn build:all
 

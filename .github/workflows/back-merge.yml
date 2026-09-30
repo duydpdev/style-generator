@@ -1,8 +1,8 @@
 # ─────────────────────────────────────────────────────
-# Back-merge — Merge main ngược về develop sau khi release stable
+# Back-merge — Merge main ngược về develop sau mọi push vào main
 #
 # Reusable workflow, được gọi từ release.yml
-# Chỉ chạy khi release stable tag trên main
+# Chạy sau mọi push vào main, có hoặc không có release (version rỗng)
 # Commit message chứa [skip ci] để KHÔNG tạo tag mới trên develop
 # ─────────────────────────────────────────────────────
 name: Back-merge
@@ -11,8 +11,9 @@ on:
   workflow_call:
     inputs:
       version:
-        description: "Release tag (e.g. v1.2.0)"
-        required: true
+        description: "Release tag (e.g. v1.2.0); empty when the push to main cut no release"
+        required: false
+        default: ""
         type: string
 
 permissions:
@@ -36,22 +37,39 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       # No `-X theirs`: it resolves every conflicting hunk to main's side, which
-      # silently drops develop's newer code when a hotfix on main touched the
-      # same lines. Normally main only holds develop's commits plus the release
-      # commit, so this merge is clean; a conflict means a human must look.
-      - name: Merge main into develop
+      # silently drops develop's newer code. Features land on develop before
+      # main as the same commits (merge commits, never squash), and the DEV
+      # release commits nothing, so this merge is normally clean; a conflict
+      # means a human must look. A rejected push (develop moved after the
+      # fetch) is retried from the new develop tip, up to 3 attempts.
+      - name: Merge main into develop and push
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          git fetch origin main
-          if ! git merge origin/main --no-edit \
-            -m "[chore] merge main (${VERSION}) into develop [skip ci]"; then
-            echo "Conflicting files:"
-            git diff --name-only --diff-filter=U
-            git merge --abort || true
-            echo "::error::Back-merge of ${VERSION} conflicts. The release and publish already succeeded; merge main into develop by hand: git switch develop && git merge origin/main -m \"[chore] merge main (${VERSION}) into develop [skip ci]\", resolve, push."
-            exit 1
+          if [ -n "$VERSION" ]; then
+            MSG="[chore] merge main (${VERSION}) into develop [skip ci]"
+          else
+            MSG="[chore] merge main into develop [skip ci]"
           fi
-
-      - name: Push
-        run: git push origin develop
+          for attempt in 1 2 3; do
+            git fetch origin main develop
+            git reset -q --hard origin/develop
+            # --no-ff: even when develop is an ancestor of main, record a
+            # `[skip ci]` merge commit instead of fast-forwarding develop onto
+            # main's tip (a plain "Merge pull request" tip would start a
+            # Release run on develop).
+            if ! git merge --no-ff origin/main --no-edit -m "$MSG"; then
+              echo "Conflicting files:"
+              git diff --name-only --diff-filter=U
+              git merge --abort || true
+              echo "::error::Back-merge of main${VERSION:+ ($VERSION)} conflicts. The release and publish already succeeded; merge main into develop by hand: git switch develop && git merge --no-ff origin/main -m \"$MSG\", resolve, push."
+              exit 1
+            fi
+            if git push origin HEAD:develop; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); develop moved, retrying"
+            sleep 5
+          done
+          echo "::error::Back-merge push failed 3 times"
+          exit 1

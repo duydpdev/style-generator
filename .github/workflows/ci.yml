@@ -140,7 +140,7 @@ jobs:
         run: yarn build:all
 
       - name: Install Playwright browsers
-        uses: ./.github/actions/playwright-browsers
+        run: yarn playwright install --with-deps chromium webkit
 
       - name: Run e2e tests
         run: yarn test:e2e
@@ -186,7 +186,7 @@ jobs:
         run: yarn build:all
 
       - name: Install Playwright browsers
-        uses: ./.github/actions/playwright-browsers
+        run: yarn playwright install --with-deps chromium webkit
 
       - name: Unit tests
         run: yarn test

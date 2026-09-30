@@ -45,8 +45,10 @@ flowchart TD
 - `check`: `yarn install --immutable` → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs` → `yarn build:all` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn test` → `yarn test:types`.
   - Commitlint range: PR vào `develop` lint `base..head`. PR vào `main` chỉ lint các commit mà `develop` chưa có (`merge-base(origin/develop, head)..head`): với promote PR đó là merge commit `[release] …`, với hotfix PR thẳng vào `main` là các commit hotfix. Lịch sử đã nằm trên `develop` không bị lint lại (đã lint lúc vào `develop`, không viết lại được).
 - `changes`: `git diff --name-only base...head`; `code=false` khi PR chỉ đổi `documents/**`.
-- `e2e`: chỉ chạy khi `changes.code == 'true'`. `yarn build:all` → Playwright browsers (composite action `.github/actions/playwright-browsers`: cache `~/.cache/ms-playwright` theo version `@playwright/test`, hit thì chỉ cài OS deps) → `yarn test:e2e`.
-- `tailwind-floor`: chỉ chạy khi `changes.code == 'true'`. Ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → Playwright browsers (cùng composite action) → `yarn test` → `yarn test:e2e`.
+- `e2e`: chỉ chạy khi `changes.code == 'true'`. `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
+- `tailwind-floor`: chỉ chạy khi `changes.code == 'true'`. Ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
+
+Browser Playwright **không** được cache, và đây là quyết định có đo đạc (PR #73). Khi hit, bước install mất 42 s; không có cache là 49–52 s; khi miss là 56–75 s, cộng 5–8 s để lưu cache, và mỗi ref PR tốn 383 MB. Cache không bỏ được bước `install-deps` (apt), vốn chiếm phần lớn thời gian. `ci.yml` chỉ chạy trên `pull_request`, nên không có cache của nhánh base để PR mới dùng lại. Kết quả là mọi PR mới đều chậm hơn. Dùng container `mcr.microsoft.com/playwright` chỉ đáng xem lại khi e2e trở thành nút cổ chai.
 
 ### `pr-title.yml` — PR title lint
 
@@ -66,7 +68,7 @@ GitHub Free + repo private: không có branch protection, mọi check chỉ là 
 
 `delete_branch_on_merge` giữ `false`: `develop` không được bảo vệ, bật lên thì một PR `develop` → `main` sẽ xoá `develop` sau khi merge.
 
-Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng cho `/` và `/.github/actions/*` (chỉ `/` thì composite action không được quét), với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`).
+Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`).
 
 ---
 

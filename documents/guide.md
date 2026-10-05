@@ -314,8 +314,9 @@ const Box = ({ p, px, py, m, mx, my, className, style, children }) => {
 - `classNames` là **chuỗi** (nối bằng dấu cách), không phải mảng.
 - **Quy tắc cùng phần tử:** biến `--sg-sp-*` được đăng ký với `inherits: false`, nên class `sp-*` chỉ đọc biến khai báo trên chính phần tử đó; giá trị của phần tử cha không rò xuống con.
 - Prop hợp lệ là `SpacingKey`: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`. `resolveSpacing(prop, value, unit?)` xử lý một prop; `unit` mặc định `0.25` rem.
-- Chỉ breakpoint trong `options.breakpoints` (mặc định `["md", "lg"]`) mới có chuỗi fallback.
+- Chỉ breakpoint trong `options.breakpoints` (mặc định `["md", "lg"]`) mới có chuỗi fallback. Kiểu mặc định cũng chỉ nhận `md`/`lg` (`DefaultBreakpointKeys`); khi đặt `options.breakpoints` khác, truyền cùng các key đó làm tham số kiểu: `resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`.
 - Tắt bằng `spacing: { enabled: false }`; tuỳ chỉnh bằng `spacing: { properties: { … } }` (map prop → khai báo CSS).
+- `generate()` kiểm tra mọi option đi vào CSS và ném `ZodError` kèm path: phần tử `breakpoints`, key của `screens` và `spacing.properties` theo ngữ pháp key của theme (chữ, số, `-`); giá trị `screens` theo ngữ pháp giá trị; tên thuộc tính CSS trong `spacing.properties` phải viết thường (`padding`, `column-gap`, `--custom`).
 
 ---
 

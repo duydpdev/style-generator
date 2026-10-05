@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { UTILITY_NAME_RE, toKebabCase } from "../shared/helpers";
+import { UTILITY_NAME_RE, toCamelCase, toKebabCase } from "../shared/helpers";
 
 /**
  * Bare regex source (no anchors) for a single theme record key: must start
@@ -12,6 +12,7 @@ import { UTILITY_NAME_RE, toKebabCase } from "../shared/helpers";
  * (alias sigil target grammar) so both accept exactly the same key shape.
  */
 const TOKEN_KEY_SOURCE = "[A-Za-z0-9][A-Za-z0-9-]*";
+export const TOKEN_KEY_RE = new RegExp(`^${TOKEN_KEY_SOURCE}$`);
 
 /**
  * Key grammar shared by every theme record (colors, typography, shadows,
@@ -22,13 +23,31 @@ const TOKEN_KEY_SOURCE = "[A-Za-z0-9][A-Za-z0-9-]*";
  * against structurally unsafe keys (spaces, leading dashes, semicolons,
  * ...) that could otherwise be echoed into `generate().css` as a CSS
  * custom-property name or selector.
+ *
+ * A key must also keep its class through the typed tokens: the registry
+ * emits `toKebabCase(key)` while `createDesignTokens` exposes
+ * `toCamelCase(key)`, which `createVariantMapper` kebab-cases again. A
+ * leading uppercase run breaks that round trip (`CTA` → `bg-cta`, but token
+ * `cTA` → `bg-c-ta`), so such keys are rejected with the rename that keeps
+ * the registry class.
  */
 export const TokenKey = z
   .string()
   .regex(
-    new RegExp(`^${TOKEN_KEY_SOURCE}$`),
+    TOKEN_KEY_RE,
     "Key must start with a letter/digit and contain only letters, digits, `-` (`_` is not allowed: use camelCase, e.g. `primaryActive`, or kebab-case, e.g. `primary-active`)",
-  );
+  )
+  .superRefine((key, ctx) => {
+    if (!TOKEN_KEY_RE.test(key)) return;
+    const registryClass = toKebabCase(key);
+    const mapperClass = toKebabCase(toCamelCase(key));
+    if (mapperClass !== registryClass) {
+      ctx.addIssue({
+        code: "custom",
+        message: `Key "${key}" yields class "${registryClass}" in the CSS but "${mapperClass}" through the typed tokens; rename it to "${toCamelCase(registryClass)}" (a leading uppercase run is not round-trip safe)`,
+      });
+    }
+  });
 
 /**
  * A `"` and `'` are only safe when balanced — an odd count means the value
@@ -356,9 +375,10 @@ const validateCategoryAliasGraph = (
 /**
  * Reject a `theme.borderWidth` key that also names a `theme.colors` key
  * within the same scope (base theme, or a single axis/variant override
- * merged on top of base) — the two categories' utility classes would
- * otherwise be easy to confuse (e.g. a `borderWidth.primary` alongside
- * `colors.primary`).
+ * merged on top of base) — both emit `border-<kebab-key>`, so the two
+ * utilities would share a class (e.g. `borderWidth.primary` alongside
+ * `colors.primary`). Keys are compared by kebab-case form, the class they
+ * emit: `thinLine` and `thin-line` collide.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} colors - `colors` record for this scope
  * @param {Record<string, string> | undefined} borderWidth - `borderWidth` record for this scope
@@ -373,12 +393,13 @@ const checkBorderWidthColorCollision = (
 ): void => {
   if (!colors || !borderWidth) return;
 
+  const colorClasses = new Set(Object.keys(colors).map(toKebabCase));
   for (const key of Object.keys(borderWidth)) {
-    if (!Object.hasOwn(colors, key)) continue;
+    if (!colorClasses.has(toKebabCase(key))) continue;
     ctx.addIssue({
       code: "custom",
       path: [...pathPrefix, "borderWidth", key],
-      message: `borderWidth key "${key}" collides with a colors key of the same name — rename one.`,
+      message: `borderWidth key "${key}" collides with a colors key emitting the same class "border-${toKebabCase(key)}" — rename one.`,
     });
   }
 };

@@ -1,4 +1,8 @@
-import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
+import {
+  ThemeSchema,
+  type ThemeConfig,
+  type ThemeOverride,
+} from "../../core/themeSchema";
 import { toKebabCase } from "../../shared/helpers";
 import { builtInCategories } from "../registry/builtInCategories";
 import { flattenByCategory } from "../registry/flattenByCategory";
@@ -75,10 +79,22 @@ const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
  *    property, so an override on a non-root element wouldn't affect an
  *    alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules)
  * 3. `\@theme inline` block mapping `--sg-*` → Tailwind v4 namespaces
+ *
+ * Parses `config` with `ThemeSchema` first, like `generate()`, so an invalid
+ * or injection-unsafe theme throws a `ZodError` instead of reaching the CSS.
  * @param {ThemeConfig} config - Theme configuration
  * @returns {string} CSS string
  */
-export const generateThemeCss = (config: ThemeConfig): string => {
+export const generateThemeCss = (config: ThemeConfig): string =>
+  buildThemeCss(ThemeSchema.parse(config));
+
+/**
+ * {@link generateThemeCss} without validation, for `generate()`, which has
+ * already parsed the theme. Not exported from any public barrel.
+ * @param {ThemeConfig} config - Theme already parsed by `ThemeSchema`
+ * @returns {string} CSS string
+ */
+export const buildThemeCss = (config: ThemeConfig): string => {
   const blocks: string[] = [];
 
   // 1. :root with intermediate vars

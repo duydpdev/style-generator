@@ -64,7 +64,7 @@ export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
  * 89 `md:` + 89 `lg:` classes, no `sm:`/`xl:`/`2xl:`), and the consumer app
  * passes exactly `[Breakpoint.MD, Breakpoint.LG]`.
  */
-export const DEFAULT_BREAKPOINTS: readonly string[] = ["md", "lg"];
+export const DEFAULT_BREAKPOINTS = ["md", "lg"] as const;
 
 // ---- Type helpers for defaults (used in type inference) ----
 

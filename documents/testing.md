@@ -29,7 +29,7 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # một fil
 
 Test nằm cạnh code (`*.test.ts`). Nhóm chính:
 
-- `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên số nguyên), `defineTheme`, kiểm tra `extraSources`, thử inject.
+- `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên số nguyên, key không round-trip, va chạm `borderWidth`/`colors`), `defineTheme`, kiểm tra option (`extraSources`, `screens`, `breakpoints`, `spacing.properties`), thử inject (cả `generateThemeCss`).
 - `src/features/registry/*` — descriptor, `flattenByCategory`, `generateSourceInline` (kể cả state lines).
 - `src/features/{theme-css,typography,spacing}/*` — từng khối CSS được sinh.
 - `src/features/{tokens,cva}/*` — `createDesignTokens`, `createVariantMapper` (`{ states }`).

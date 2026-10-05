@@ -3,11 +3,13 @@ import { cva } from "class-variance-authority";
 import postcss from "postcss";
 
 import { generate } from "../core/generate";
+import { ThemeSchema } from "../core/themeSchema";
 import { builtInCategories } from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
 import { toCamelCase, toKebabCase, toPascalCase } from "../shared/helpers";
 
 import { fixtureTheme, fixtureOptions } from "./__fixtures__/fixtureTheme";
+import { kebabParityCases } from "./__fixtures__/kebabParityCases";
 import { compileFixtureCss } from "./compileFixtureCss";
 
 /**
@@ -274,4 +276,49 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
       });
     },
   );
+});
+
+describe("integration: every color key the schema accepts maps to a class Tailwind emits", () => {
+  // The parity table covers every casing shape toKebabCase handles; the
+  // leading-uppercase keys are the ones whose camelCased token kebab-cases
+  // to a different class than the registry emits.
+  const candidateKeys = [
+    ...kebabParityCases.map(({ key }) => key),
+    "CTA",
+    "ABtn",
+    "primaryCTA",
+    "Blue",
+  ];
+  const accepted = candidateKeys.filter(
+    (key) => ThemeSchema.safeParse({ colors: { [key]: "#123456" } }).success,
+  );
+
+  it("rejects exactly the keys that would not round-trip", () => {
+    expect(candidateKeys.filter((key) => !accepted.includes(key))).toEqual([
+      "HTMLParser",
+      "a_B",
+      "CTA",
+      "ABtn",
+    ]);
+  });
+
+  it("every mapped bg-* class of an accepted key exists in the compiled CSS", async () => {
+    const theme = {
+      colors: Object.fromEntries(accepted.map((key) => [key, "#123456"])),
+    };
+    const { css, tokens } = generate(theme);
+    const mapped = Object.values(
+      createVariantMapper("bg", tokens.Web.variantColor),
+    );
+    const compiled = await compileFixtureCss(css, []);
+    const selectors = new Set<string>();
+    postcss.parse(compiled).walkRules((rule) => {
+      for (const selector of rule.selectors) selectors.add(selector.trim());
+    });
+
+    expect(mapped).toHaveLength(accepted.length);
+    for (const cls of mapped) {
+      expect(selectors, cls).toContain(`.${escapeClassName(cls)}`);
+    }
+  });
 });

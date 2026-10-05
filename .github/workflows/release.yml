@@ -14,11 +14,15 @@ on:
   push:
     branches: [main, develop]
 
+# Least privilege for the built-in GITHUB_TOKEN: read by default, and only
+# `deploy` widens it. `release` and `back-merge` push with the
+# CI_WORKER_REPOSITORY_TOKEN PAT (checkout `token:` + semantic-release env), so
+# they never write through GITHUB_TOKEN. A reusable workflow's token can never
+# exceed its caller job's grant, so `deploy` grants `packages: write` here.
+# `@semantic-release/github` has its issue/PR comments and labels disabled,
+# so no job needs `issues`/`pull-requests`.
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  packages: write
+  contents: read
 
 # One release run per branch at a time. A running release is never cancelled
 # (that could leave a tag pushed without its publish); GitHub keeps one pending
@@ -33,6 +37,9 @@ jobs:
   release:
     name: Create Release Tag
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     outputs:
       new_release_published: ${{ steps.check.outputs.new_release_published }}
@@ -91,11 +98,15 @@ jobs:
   deploy:
     name: Deploy
     needs: release
+    permissions:
+      contents: read
+      packages: write
     if: needs.release.outputs.new_release_published == 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       tag: ${{ needs.release.outputs.new_release_tag }}
-    secrets: inherit
+    # No `secrets: inherit`: deploy publishes with the built-in GITHUB_TOKEN,
+    # which every called workflow receives, and must not see the write PAT.
 
   # ── 3. Back-merge (mọi push vào main, có hay không có release) ──
   # Features land on develop and main separately, so a push to main that cuts
@@ -105,6 +116,8 @@ jobs:
   back-merge:
     name: Back-merge
     needs: [release, deploy]
+    permissions:
+      contents: read
     if: |
       always() &&
       github.ref == 'refs/heads/main' &&

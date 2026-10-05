@@ -1,10 +1,10 @@
-# [{{version}}]({{compareUrl}}) ({{date}})
+{{#if @root.previousTag}}# [{{version}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/compare/{{@root.previousTag}}...{{@root.currentTag}}) ({{date}}){{else}}# {{version}} ({{date}}){{/if}}
 
 {{#each commitGroups}}
 ### {{title}}
 
 {{#each commits}}
-- {{#if scope}}**{{scope}}:** {{/if}}{{subject}} ([{{shortHash}}]({{commitUrl}}))
+- {{#if scope}}**{{scope}}:** {{/if}}{{subject}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}}))
 {{/each}}
 
 {{/each}}

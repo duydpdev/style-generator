@@ -1,3 +1,9 @@
+# [4.0.1](https://github.com/duydpdev/style-generator/compare/v4.0.0...v4.0.1) (2026-10-05)
+
+### Bug Fixes
+
+- exit non-zero on failed generate, fix --version and release tag detection ([5469736](https://github.com/duydpdev/style-generator/commit/5469736fb048bb57742eca987aa84ef43e21f3a6))
+
 # [4.0.0]() (2026-09-30)
 
 ### Bug Fixes

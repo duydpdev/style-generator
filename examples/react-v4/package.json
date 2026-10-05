@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "doctor": "npx style-gen doctor"
+    "doctor": "node ../../dist/cli/index.mjs doctor"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",

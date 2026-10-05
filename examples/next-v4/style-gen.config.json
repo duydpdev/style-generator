@@ -1,0 +1,4 @@
+{
+  "theme": "app/theme/theme.json",
+  "output": "app/theme/theme.css"
+}

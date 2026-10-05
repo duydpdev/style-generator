@@ -72,17 +72,13 @@ export function ToolingSection() {
           <KeyPoint
             badge="C1"
             title={<code>style-gen init</code>}
-            body={
-              <>
-                Interactive scaffold — version, paths, optional dark template.
-              </>
-            }
+            body={<>Interactive scaffold — paths, optional dark template.</>}
           />
           <KeyPoint
             badge="C2"
             title={<code>style-gen doctor</code>}
             body={
-              <>Validates schema, checks wiring, warns on legacy v1 configs.</>
+              <>Validates config and schema, warns on utility name clashes.</>
             }
           />
         </div>

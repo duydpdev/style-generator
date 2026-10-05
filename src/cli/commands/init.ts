@@ -11,6 +11,8 @@ import {
   getPluginTemplate,
 } from "../templates";
 
+import { schemaCommand } from "./schema";
+
 export interface InitArgs {
   theme?: string;
   plugin?: string;
@@ -100,7 +102,7 @@ async function getInteractiveConfig(
   handleCancel(themeRes);
 
   const pluginRes = await p.text({
-    message: "Plugin file location?",
+    message: "Generator script location?",
     initialValue: defaultPlugin,
     placeholder: defaultPlugin,
   });
@@ -158,7 +160,7 @@ export async function initCommand(args: InitArgs): Promise<void> {
   if (fs.existsSync(themeAbsPath) || fs.existsSync(pluginAbsPath)) {
     if (isInteractive) {
       const overwrite = await p.confirm({
-        message: "Theme or plugin files already exist. Overwrite?",
+        message: "Theme or generator script already exists. Overwrite?",
         initialValue: false,
       });
       handleCancel(overwrite);
@@ -174,27 +176,38 @@ export async function initCommand(args: InitArgs): Promise<void> {
     }
   }
 
-  /* ---------- Theme file ---------- */
+  /* ---------- Theme file + JSON Schema ---------- */
 
   writeFile(themeAbsPath, includeDark ? themeTemplateDark : themeTemplate);
 
   logger.success(`Created ${themeLoc}`);
 
-  /* ---------- Plugin file ---------- */
+  // The theme template references "./theme.schema.json" via "$schema".
+  schemaCommand({
+    out: path.join(path.dirname(themeLoc), "theme.schema.json"),
+  });
 
-  const importPath = toImportPath(pluginAbsPath, themeAbsPath);
+  /* ---------- Generator script ---------- */
 
-  writeFile(pluginAbsPath, getPluginTemplate(importPath));
+  const outLoc = path.join(path.dirname(themeLoc), "theme.css");
+  const outAbsPath = path.resolve(cwd, outLoc);
+
+  writeFile(
+    pluginAbsPath,
+    getPluginTemplate(
+      toImportPath(pluginAbsPath, themeAbsPath),
+      toImportPath(pluginAbsPath, outAbsPath),
+    ),
+  );
 
   logger.success(`Created ${pluginLoc}`);
 
   /* ---------- Config file ---------- */
 
-  const outLoc = `${path.dirname(themeLoc)}/theme.css`;
   const configContent = {
-    theme: themeLoc,
-    plugin: pluginLoc,
-    output: outLoc,
+    theme: themeLoc.replaceAll("\\", "/"),
+    plugin: pluginLoc.replaceAll("\\", "/"),
+    output: outLoc.replaceAll("\\", "/"),
   };
   writeFile(
     path.resolve(cwd, "style-gen.config.json"),
@@ -208,11 +221,10 @@ export async function initCommand(args: InitArgs): Promise<void> {
 
   logger.info(
     `📝 Next steps:
-   1. Edit ${themeLoc} with your design tokens
-   2. Run ${pluginLoc} (e.g. \`npx tsx ${pluginLoc}\`) to generate theme.css
+   1. Edit ${configContent.theme} with your design tokens
+   2. Generate ${configContent.output}: \`node ${configContent.plugin}\` (Node 24+) or \`npx style-gen generate\` — both write the same file
    3. Add \`@import "./theme.css";\` to your CSS entry point, next to \`@import "tailwindcss";\`
-   4. Run: npx style-gen generate
-   5. Start your dev server`,
+   4. Start your dev server`,
   );
 
   if (isInteractive) {

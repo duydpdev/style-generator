@@ -18,7 +18,7 @@ const options = {
   },
   plugin: {
     type: "string",
-    description: "Path to plugin file (init only)",
+    description: "Path to the generator script (init only)",
   },
   dark: {
     type: "boolean",
@@ -107,8 +107,8 @@ ${Object.entries(options)
 /**
  * Executes the `init` CLI command.
  *
- * Scaffolds the required project files based on the provided CLI options,
- * including the theme configuration and optional plugin file.
+ * Scaffolds the required project files based on the provided CLI options:
+ * the theme JSON, its JSON Schema, the generator script and the config file.
  * @param {CLIValues} values Parsed CLI option values.
  */
 async function runInit(values: CLIValues): Promise<void> {

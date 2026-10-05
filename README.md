@@ -99,7 +99,7 @@ Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node1
 npx style-gen init
 ```
 
-The wizard asks for the theme file location (default `styles/theme.json`), the location of the generator script (default `plugins/theme-plugin.ts`) and whether to include a dark-mode template. Non-interactive: `npx style-gen init --dark`. It writes the theme, a small script that calls `generate()`, and `style-gen.config.json`.
+The wizard asks for the theme file location (default `styles/theme.json`), the location of the generator script (default `plugins/theme-plugin.ts`) and whether to include a dark-mode template. Non-interactive: `npx style-gen init --dark`. It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), a small script that calls `generate()`, and `style-gen.config.json`. The script and `style-gen generate` write the same file, `theme.css` next to the theme; run either one (`node plugins/theme-plugin.ts` needs Node 24, which strips the types). Type-checking the script needs `"module": "esnext"`, `"nodenext"` or `"preserve"` with `resolveJsonModule`, because it imports the theme `with { type: "json" }`.
 
 ### Step 2. Edit the theme
 
@@ -155,7 +155,7 @@ Prefer no CLI step? Use [`styleGenVite`](#5-build-tool-integrations) or [`styleG
 
 #### `style-gen init`
 
-Scaffold the theme JSON, a generator script and `style-gen.config.json`.
+Scaffold the theme JSON, its JSON Schema, a generator script and `style-gen.config.json`.
 
 ```bash
 npx style-gen init            # Interactive mode
@@ -198,7 +198,7 @@ npx style-gen schema --out styles/theme.schema.json
 
 #### `style-gen doctor`
 
-Check the setup: config file, JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), generator script and output file. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind static utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, or typography keys such as `textSm`).
+Check the setup: config file (a malformed `style-gen.config.json` or `package.json["style-gen"]` is an error; `generate` warns and uses the defaults), JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), the generator script when `plugin` is configured, and the output file. A `styleGenVite`/`styleGenNext` or CLI-only setup needs no `plugin` entry. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, or typography keys such as `textSm`, `h1` → `h-1`, `italic`).
 
 ```bash
 npx style-gen doctor
@@ -220,7 +220,7 @@ Print the installed CLI version.
 }
 ```
 
-`breakpoints`, `screens`, `extraSources`, `spacing` and `typography` are forwarded to `generate()`. The CLI resolves configuration in this order:
+`breakpoints`, `screens`, `extraSources`, `spacing` and `typography` are forwarded to `generate()`. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. The CLI resolves configuration in this order:
 
 1. command flags
 2. `style-gen.config.json`
@@ -405,7 +405,7 @@ Consumers use standard Tailwind classes and variables, never `--sg-*`:
 
 ### Built-in utility name clashes
 
-A theme key whose class equals a Tailwind _static_ utility (`bg-none`, `shadow-none`, `rounded-none`, `border-2`, a typography key that becomes `text-sm`, colors named `transparent`/`current`/`inherit`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`); `style-gen doctor` lists the clashes it recognises.
+A theme key whose class equals a Tailwind utility (`bg-none`, `shadow-none`, `rounded-none`, `border-2`, a typography key that becomes `text-sm`, `h-1` from `h1`, or `italic`, colors named `transparent`/`current`/`inherit`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the clashes it recognises.
 
 ---
 

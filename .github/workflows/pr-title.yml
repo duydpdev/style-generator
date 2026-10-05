@@ -25,6 +25,7 @@ jobs:
   title:
     name: PR title (commitlint)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout

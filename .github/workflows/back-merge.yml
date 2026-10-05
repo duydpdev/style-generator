@@ -16,13 +16,16 @@ on:
         default: ""
         type: string
 
+# Pushes with the CI_WORKER_REPOSITORY_TOKEN PAT (checkout `token:`), not with
+# GITHUB_TOKEN. Must not exceed the caller job's grant in release.yml.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   back-merge:
     name: Merge main into develop
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout develop
         uses: actions/checkout@v7

@@ -9,9 +9,12 @@ Quy trình deploy thư viện `@duydpdev/style-generator`.
   - [CI/CD Overview](#cicd-overview)
   - [GitHub Actions Workflows](#github-actions-workflows)
     - [`ci.yml` — PR Check](#ciyml--pr-check)
+    - [`pr-title.yml` — PR title lint](#pr-titleyml--pr-title-lint)
+    - [Pull Request \& merge convention](#pull-request--merge-convention)
     - [Local (Pre-commit) — Husky](#local-pre-commit--husky)
     - [`release.yml` — Semantic Release Orchestrator](#releaseyml--semantic-release-orchestrator)
     - [`deploy.yml` — Build \& Publish](#deployyml--build--publish)
+      - [Publish lại một tag đã push nhưng chưa publish](#publish-lại-một-tag-đã-push-nhưng-chưa-publish)
     - [`back-merge.yml` — Back-merge](#back-mergeyml--back-merge)
     - [`drift.yml` — Drift check](#driftyml--drift-check)
   - [Branching Strategy](#branching-strategy)
@@ -19,8 +22,12 @@ Quy trình deploy thư viện `@duydpdev/style-generator`.
     - [Gỡ feature bị reject](#gỡ-feature-bị-reject)
   - [Release Process](#release-process)
     - [Quy trình đúng](#quy-trình-đúng)
+    - [Required Secrets](#required-secrets)
   - [Commit Format](#commit-format)
     - [Config](#config)
+  - [Site (landing + examples)](#site-landing--examples)
+    - [Vì sao `link:` thay vì `workspace:*`](#vì-sao-link-thay-vì-workspace)
+    - [Script aliases (root)](#script-aliases-root)
 
 ---
 
@@ -83,9 +90,9 @@ Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.ym
 
 Dự án sử dụng **Husky** và **lint-staged** để chặn các commit không đạt tiêu chuẩn:
 
-- Tự động chạy `lint` và `prettier` cho các file đang thay đổi.
+- `lint-staged` chạy `eslint --fix` và `prettier --write` **chỉ trên các file đang stage** (cấu hình duy nhất: `lint-staged.config.js`).
 - Chạy `tsc --noEmit` để đảm bảo không lỗi type.
-- Chạy `vitest run` cho các unit tests liên quan.
+- Chạy toàn bộ `yarn test` (`vitest run`).
 - Hook được cài qua `postinstall: husky` (Yarn Berry không chạy `prepare`); `pinst` tắt `postinstall` trong tarball publish; release CI đặt `HUSKY=0`.
 
 ---
@@ -97,7 +104,7 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 **Các bước:**
 
 1. `yarn test` + `yarn test:types` trên commit vừa push, trước khi cắt tag
-2. Chạy `semantic-release` → tự động tăng version, tạo git tag, cập nhật CHANGELOG
+2. Chạy `semantic-release` → tự động tính version, tạo git tag; chỉ trên `main` mới commit `package.json` + `CHANGELOG.md`
 3. So sánh tags trước/sau để phát hiện tag mới
 4. Nếu có tag mới → trigger `deploy.yml`
 5. Trên `main`, sau khi job release thành công (có hoặc không có tag, `deploy` thành công hoặc bị skip) → trigger `back-merge.yml`
@@ -108,12 +115,12 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 
 ### `deploy.yml` — Build & Publish
 
-**Trigger:** Được gọi từ `release.yml` (workflow_call) khi có release mới
+**Trigger:** Được gọi từ `release.yml` (workflow_call) khi có release mới, hoặc chạy tay (`workflow_dispatch`, input `tag`) để publish lại một tag. Checkout dùng `persist-credentials: false` (không có thao tác git nào sau đó).
 
 **Các bước:**
 
 1. Checkout tại tag mới
-2. Node 22 với `registry-url: https://npm.pkg.github.com`
+2. Node 22 (Yarn Berry đọc registry từ `.yarnrc.yml`, không từ `.npmrc`)
 3. `yarn install --immutable`
 4. `npm pkg set version=<tag bỏ v>` rồi assert khớp tag (fail nếu tag rỗng). Bắt buộc cho DEV, vì `package.json` tại tag DEV vẫn là version stable gần nhất; trên `main` là no-op. Không commit.
 5. `yarn build:all`
@@ -124,6 +131,17 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 10. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in
 
 Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package.
+
+#### Publish lại một tag đã push nhưng chưa publish
+
+semantic-release push tag trước khi chạy các plugin publish (GitHub release), nên một job `release` fail sau bước đó để lại tag mà không có package; chạy lại job sẽ không thấy tag mới. Publish tag đó bằng tay:
+
+```bash
+gh workflow run deploy.yml --ref main -f tag=v4.0.1   # hoặc v4.0.1-DEV.1
+gh run watch "$(gh run list --workflow=deploy.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
+```
+
+`workflow_dispatch` chỉ chạy được với bản `deploy.yml` đã có trên `main`. Một version đã publish thì registry từ chối publish lại (409); không unpublish.
 
 ---
 
@@ -189,23 +207,25 @@ Fail khi `git rev-list --count origin/develop..origin/main` > 0 và đỉnh `mai
 
 ### Required Secrets
 
-- `CI_WORKER_REPOSITORY_TOKEN`: token có quyền push release commit và tag về GitHub repo. Không còn khai báo ở mức workflow `env`, và `deploy.yml` không nhận token này. Nó được truyền cho checkout + semantic-release trong `release.yml` và checkout trong `back-merge.yml`. Lưu ý: `actions/checkout` với `token:` và `persist-credentials` mặc định `true` ghi token vào `.git/config`, nên các step sau trong cùng job (install, test) vẫn đọc được. Tắt `persist-credentials` sẽ làm hỏng `git fetch --tags` ở bước phát hiện tag mới, nên chưa làm.
-- Publish dùng `GITHUB_TOKEN` built-in — không cần secret npm. `release.yml` khai `packages: write` để reusable workflow `deploy.yml` được quyền publish.
+- `CI_WORKER_REPOSITORY_TOKEN`: PAT có quyền push release commit và tag về GitHub repo. Không khai báo ở mức workflow `env`; chỉ được truyền cho checkout + semantic-release (env `GITHUB_TOKEN`) trong `release.yml` và checkout trong `back-merge.yml` (job gọi nó dùng `secrets: inherit`). `deploy.yml` không nhận nó (job `deploy` không dùng `secrets: inherit`). Lưu ý: `actions/checkout` với `token:` và `persist-credentials` mặc định `true` ghi token vào `.git/config`, nên các step sau trong cùng job (install, test) đọc được. semantic-release tự đưa env `GITHUB_TOKEN` vào URL push, nên không cần token trong `.git/config`; job `release` vẫn giữ mặc định chỉ vì bước "Check for new release" còn `git fetch --tags` trên repo private (bỏ cùng lúc sửa bước đó).
+- Publish dùng `GITHUB_TOKEN` built-in — không cần secret npm. `GITHUB_TOKEN` mặc định chỉ `contents: read` trong cả `release.yml`; chỉ job `deploy` mở `packages: write` (quyền của reusable workflow không vượt quá job gọi nó). `release` và `back-merge` push bằng PAT nên không cần `contents: write` trên `GITHUB_TOKEN`.
 
 ---
 
 ## Commit Format
 
-Commit message format: `[type] subject`
+Commit message format: `[type] subject`, type viết thường (`[Feat] …` bị commitlint từ chối, vì analyzer chỉ map type viết thường và sẽ không release).
 
-| Type                                   | Version bump    | Ví dụ                                |
-| -------------------------------------- | --------------- | ------------------------------------ |
-| `release`                              | Major (`2.0.0`) | `[release] ship public v2 API`       |
-| `feat`                                 | Minor (`1.1.0`) | `[feat] add multi-theme support`     |
-| `fix`                                  | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
-| `perf`                                 | Patch (`1.0.1`) | `[perf] reduce generated CSS size`   |
-| `refactor`, `style`, `revert`          | Patch (`1.0.1`) | `[refactor] simplify registry walk`  |
-| `docs`, `chore`, `test`, `build`, `ci` | Không bump      | `[docs] update architecture guide`   |
+| Type                                                          | Version bump    | Ví dụ                                |
+| ------------------------------------------------------------- | --------------- | ------------------------------------ |
+| `release`                                                     | Major (`2.0.0`) | `[release] ship public v2 API`       |
+| `feat`                                                        | Minor (`1.1.0`) | `[feat] add multi-theme support`     |
+| `fix`                                                         | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
+| `perf`                                                        | Patch (`1.0.1`) | `[perf] reduce generated CSS size`   |
+| `refactor`, `style`, `revert`                                 | Patch (`1.0.1`) | `[refactor] simplify registry walk`  |
+| `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | Không bump      | `[docs] update architecture guide`   |
+
+Release notes dùng preset `conventionalcommits` (khai trong `devDependencies`) với template `changelog-template.hbs`; các section theo thứ tự: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Type không bump không vào notes.
 
 ### Config
 

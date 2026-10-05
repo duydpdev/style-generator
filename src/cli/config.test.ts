@@ -4,7 +4,7 @@ import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { normalizePath, resolveConfig } from "./config";
+import { normalizePath, readConfigFile, resolveConfig } from "./config";
 
 describe("normalizePath", () => {
   it("trims whitespace", () => {
@@ -37,11 +37,11 @@ describe("resolveConfig", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  it("returns defaults when no file config exists", () => {
+  it("returns defaults when no file config exists, with no generator script", () => {
     const config = resolveConfig({});
     expect(config.theme).toBe("styles/theme.json");
     expect(config.output).toBe("styles/theme.css");
-    expect(config.plugin).toBe("plugins/theme-plugin.ts");
+    expect(config.plugin).toBeUndefined();
   });
 
   it("merges style-gen.config.json when present", () => {
@@ -53,8 +53,7 @@ describe("resolveConfig", () => {
     const config = resolveConfig({});
     expect(config.theme).toBe("custom/theme.json");
     expect(config.output).toBe("custom/out.txt");
-    // Default plugin remains
-    expect(config.plugin).toBe("plugins/theme-plugin.ts");
+    expect(config.plugin).toBeUndefined();
   });
 
   it("falls back to package.json style-gen key", () => {
@@ -80,19 +79,46 @@ describe("resolveConfig", () => {
     expect(config.theme).toBe("cli/theme.json");
   });
 
-  it("handles malformed style-gen.config.json gracefully", () => {
+  it("falls back to defaults on a malformed style-gen.config.json and reports it", () => {
     fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "not json{{{");
 
-    const config = resolveConfig({});
-    // Falls back to defaults
-    expect(config.theme).toBe("styles/theme.json");
+    expect(resolveConfig({}).theme).toBe("styles/theme.json");
+    const file = readConfigFile(tmp);
+    expect(file.source).toBe("style-gen.config.json");
+    expect(file.error).toMatch(/style-gen\.config\.json is not valid JSON/);
   });
 
-  it("handles malformed package.json gracefully", () => {
+  it("falls back to defaults on a malformed package.json and reports it", () => {
     fs.writeFileSync(path.join(tmp, "package.json"), "broken json!!!");
 
-    const config = resolveConfig({});
-    expect(config.theme).toBe("styles/theme.json");
+    expect(resolveConfig({}).theme).toBe("styles/theme.json");
+    expect(readConfigFile(tmp).error).toMatch(
+      /package\.json is not valid JSON/,
+    );
+  });
+
+  it("reports a non-object config instead of merging it", () => {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "test", "style-gen": "styles/theme.json" }),
+    );
+
+    expect(resolveConfig({}).theme).toBe("styles/theme.json");
+    expect(readConfigFile(tmp).error).toMatch(
+      /package\.json "style-gen" must be a JSON object/,
+    );
+  });
+
+  it("reports a style-gen.config.json that is not a JSON object", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify(["styles/theme.json"]),
+    );
+
+    expect(resolveConfig({}).theme).toBe("styles/theme.json");
+    expect(readConfigFile(tmp).error).toBe(
+      "style-gen.config.json must contain a JSON object",
+    );
   });
 
   it("ignores package.json without style-gen key", () => {

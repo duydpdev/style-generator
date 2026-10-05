@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
-import { resolveConfig, normalizePath } from "../config";
+import { readConfigFile, resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
 
 import { findUtilityCollisions } from "./utilityCollisions";
@@ -61,23 +61,28 @@ function checkTheme(cwd: string, optionsTheme: string): boolean {
 /**
  * Executes the `doctor` CLI command.
  * Checks the setup status and validates the configuration and theme schema.
+ * The generator script is checked only when `plugin` is configured: a
+ * `styleGenVite`/`styleGenNext` or CLI-only setup has none.
  */
 export function doctorCommand() {
   const cwd = process.cwd();
-  const configPath = path.resolve(cwd, "style-gen.config.json");
-  const options = resolveConfig({});
+  const configFile = readConfigFile(cwd);
+  const options = resolveConfig({}, configFile);
 
   logger.log("\n🩺 style-gen doctor\n");
 
   let hasErrors = false;
 
   // 1. Check Config
-  const hasConfig = fs.existsSync(configPath);
-  if (hasConfig) {
-    logger.log(`  Config  (style-gen.config.json)        ✅ Found`);
+  if (configFile.error) {
+    logger.log(`  Config  (${padStr(configFile.source ?? "")}) ❌ Ignored`);
+    logger.log(`    ${configFile.error}`);
+    hasErrors = true;
+  } else if (configFile.source) {
+    logger.log(`  Config  (${padStr(configFile.source)}) ✅ Found`);
   } else {
     logger.log(
-      `  Config  (style-gen.config.json)        ⚠️  Not found (using defaults either style-gen.config.json or package.json)`,
+      `  Config  (${padStr("style-gen.config.json")}) ⚠️  Not found (using defaults)`,
     );
   }
 
@@ -85,13 +90,15 @@ export function doctorCommand() {
   const themeErrors = checkTheme(cwd, options.theme);
   if (themeErrors) hasErrors = true;
 
-  // 3. Check Plugin
-  const pluginPath = path.resolve(cwd, normalizePath(options.plugin));
-  if (fs.existsSync(pluginPath)) {
-    logger.log(`  Plugin  (${padStr(options.plugin)}) ✅ Found`);
-  } else {
-    logger.log(`  Plugin  (${padStr(options.plugin)}) ❌ Not found`);
-    hasErrors = true;
+  // 3. Check the generator script, only when one is configured
+  if (options.plugin !== undefined) {
+    const pluginPath = path.resolve(cwd, normalizePath(options.plugin));
+    if (fs.existsSync(pluginPath)) {
+      logger.log(`  Script  (${padStr(options.plugin)}) ✅ Found`);
+    } else {
+      logger.log(`  Script  (${padStr(options.plugin)}) ❌ Not found`);
+      hasErrors = true;
+    }
   }
 
   // 4. Check Output

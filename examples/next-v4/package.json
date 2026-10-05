@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "doctor": "yarn style-gen doctor"
+    "doctor": "node ../../dist/cli/index.mjs doctor"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",

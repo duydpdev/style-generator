@@ -59,6 +59,28 @@ describe("generateCommand", () => {
     expect(content).toMatch(/shadow-sm/);
   });
 
+  it("warns about a malformed style-gen.config.json and still generates with defaults", () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify(sampleTheme),
+    );
+    fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "{ not json");
+    const warnSpy = vi
+      .spyOn(logger, "warn")
+      .mockImplementation(() => undefined);
+
+    generateCommand({});
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^Ignoring style-gen\.config\.json is not valid JSON .*; using defaults$/,
+      ),
+    );
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(true);
+    expect(process.exitCode).toBeUndefined();
+  });
+
   it("writes atomically: the output path is only ever produced by renameSync from a sibling temp file", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(

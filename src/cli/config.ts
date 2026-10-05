@@ -6,7 +6,11 @@ import type { SpacingPropertyMap } from "../core/Options";
 export interface StyleGenConfig {
   theme: string;
   output: string;
-  plugin: string;
+  /**
+   * Generator script scaffolded by `style-gen init`. Optional: `doctor`
+   * checks it only when it is configured.
+   */
+  plugin?: string;
   breakpoints?: string[];
   screens?: Record<string, string>;
   /** Forwarded to `generate()` — see `StyleGeneratorOptions.extraSources`. */
@@ -35,7 +39,6 @@ export type StyleGenConfigFlags = {
 export const defaultConfig: StyleGenConfig = {
   theme: "styles/theme.json",
   output: "styles/theme.css",
-  plugin: "plugins/theme-plugin.ts",
 };
 
 /**
@@ -91,58 +94,89 @@ function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   return sanitized;
 }
 
+/** File-based configuration and where it came from. */
+export interface ConfigFile {
+  config: Partial<StyleGenConfig>;
+  /** `style-gen.config.json` or `package.json`, when one was read. */
+  source?: string;
+  /** Why the file was ignored (malformed JSON, non-object config). */
+  error?: string;
+}
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 /**
- * Loads the file config from the current working directory
+ * Reads `style-gen.config.json`, else `package.json#style-gen`, from `cwd`.
+ * A malformed file is ignored (defaults apply) and reported through `error`
+ * so callers can warn (`generate`) or fail (`doctor`).
  * @param {string} cwd - The current working directory
- * @returns {Partial<StyleGenConfig>} The loaded file config
+ * @returns {ConfigFile} The file config, its source and any error
  */
-function loadFileConfig(cwd: string): Partial<StyleGenConfig> {
+export function readConfigFile(cwd: string): ConfigFile {
   const configPath = path.resolve(cwd, "style-gen.config.json");
 
   if (fs.existsSync(configPath)) {
+    const source = "style-gen.config.json";
     try {
-      return JSON.parse(
-        fs.readFileSync(configPath, "utf-8"),
-      ) as Partial<StyleGenConfig>;
-    } catch {
-      return {};
+      const parsed: unknown = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      return isPlainObject(parsed)
+        ? { config: parsed as Partial<StyleGenConfig>, source }
+        : { config: {}, source, error: `${source} must contain a JSON object` };
+    } catch (error) {
+      return {
+        config: {},
+        source,
+        error: `${source} is not valid JSON (${(error as Error).message})`,
+      };
     }
   }
 
   const pkgPath = path.resolve(cwd, "package.json");
 
   if (!fs.existsSync(pkgPath)) {
-    return {};
+    return { config: {} };
   }
 
+  const source = "package.json";
+  let pkg: unknown;
   try {
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8")) as Record<
-      string,
-      unknown
-    >;
-
-    if ("style-gen" in pkg) {
-      return pkg["style-gen"] as Partial<StyleGenConfig>;
-    }
-  } catch {
-    // Ignore
+    pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+  } catch (error) {
+    return {
+      config: {},
+      source,
+      error: `${source} is not valid JSON (${(error as Error).message})`,
+    };
   }
 
-  return {};
+  if (!isPlainObject(pkg) || !("style-gen" in pkg)) {
+    return { config: {} };
+  }
+
+  const section = pkg["style-gen"];
+  return isPlainObject(section)
+    ? { config: section as Partial<StyleGenConfig>, source }
+    : {
+        config: {},
+        source,
+        error: `${source} "style-gen" must be a JSON object`,
+      };
 }
 
 /**
- * Resolves CLI configuration from file arguments and defaults
+ * Resolves CLI configuration: flags over file config over defaults.
  * @param {StyleGenConfigFlags} flags - The command line flags
+ * @param {ConfigFile} [file] - File config; read from `process.cwd()` when omitted
  * @returns {StyleGenConfig} The resolved StyleGen configuration
  */
-export function resolveConfig(flags: StyleGenConfigFlags): StyleGenConfig {
-  const sanitizedFlags = sanitizeFlags(flags);
-  const fileConfig = loadFileConfig(process.cwd());
-
+export function resolveConfig(
+  flags: StyleGenConfigFlags,
+  file: ConfigFile = readConfigFile(process.cwd()),
+): StyleGenConfig {
   return {
     ...defaultConfig,
-    ...fileConfig,
-    ...sanitizedFlags,
+    ...file.config,
+    ...sanitizeFlags(flags),
   };
 }

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { generate } from "../../core/generate";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { writeFileAtomic } from "../../shared/writeFileAtomic";
-import { resolveConfig, normalizePath } from "../config";
+import { readConfigFile, resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
 
 export interface GenerateArgs {
@@ -39,7 +39,11 @@ export function generateCommand(args: GenerateArgs) {
       configFlags.output = args.out;
     }
 
-    const options = resolveConfig(configFlags);
+    const configFile = readConfigFile(process.cwd());
+    if (configFile.error) {
+      logger.warn(`Ignoring ${configFile.error}; using defaults`);
+    }
+    const options = resolveConfig(configFlags, configFile);
 
     const themePath = path.resolve(process.cwd(), normalizePath(options.theme));
 

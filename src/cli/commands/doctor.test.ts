@@ -54,7 +54,7 @@ describe("doctorCommand", () => {
 
   const lines = (): string => logSpy.mock.calls.map((c) => c[0]).join("\n");
 
-  it("v3 valid theme + plugin + output → success path", () => {
+  it("valid theme + configured generator script + output → success path", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
@@ -83,6 +83,54 @@ describe("doctorCommand", () => {
     expect(out).toMatch(/Valid JSON, schema OK/);
     expect(out).toMatch(/Everything looks good/);
     expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it("passes a CLI-only/plugin setup: no generator script configured, none checked", () => {
+    writeProject(tmp, {
+      "style-gen.config.json": {
+        theme: "styles/theme.json",
+        output: "styles/theme.css",
+      },
+      "styles/theme.json": { colors: { primary: "#3B82F6" } },
+      "styles/theme.css": "x",
+    });
+
+    doctorCommand();
+
+    const out = lines();
+    expect(out).not.toContain("Script");
+    expect(out).toMatch(/Everything looks good/);
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it("configured generator script that does not exist → exit 1", () => {
+    writeProject(tmp, {
+      "style-gen.config.json": {
+        theme: "styles/theme.json",
+        plugin: "plugins/theme-plugin.ts",
+        output: "styles/theme.css",
+      },
+      "styles/theme.json": { colors: { primary: "#3B82F6" } },
+    });
+
+    expect(() => {
+      doctorCommand();
+    }).toThrow(/__exit_1__/);
+    expect(lines()).toMatch(
+      /Script {2}\(plugins\/theme-plugin\.ts\s*\) ❌ Not found/,
+    );
+  });
+
+  it("malformed style-gen.config.json → reported as an error, exit 1", () => {
+    writeProject(tmp, {
+      "style-gen.config.json": "{ not json",
+      "styles/theme.json": { colors: { primary: "#3B82F6" } },
+    });
+
+    expect(() => {
+      doctorCommand();
+    }).toThrow(/__exit_1__/);
+    expect(lines()).toMatch(/style-gen\.config\.json is not valid JSON/);
   });
 
   it("v1 nested colors (object values) → schema error naming the offending path, exit 1", () => {
@@ -202,7 +250,14 @@ describe("doctorCommand", () => {
         backDropBlurs: { none: "0" },
         borderRadius: { none: "0px" },
         borderWidth: { "0": "0px", "2": "2px", thin: "1px" },
-        typography: { textXs: typo, text2xl: typo, textCenter: typo },
+        typography: {
+          textXs: typo,
+          text2xl: typo,
+          textCenter: typo,
+          h1: typo,
+          p2: typo,
+          italic: typo,
+        },
         themeAxes: { theme: { dark: { colors: { none: "#111" } } } },
       });
 
@@ -225,6 +280,9 @@ describe("doctorCommand", () => {
         "typography.textXs",
         "typography.text2xl",
         "typography.textCenter",
+        "typography.h1",
+        "typography.p2",
+        "typography.italic",
       ]) {
         expect(out).toContain(`${collision} →`);
       }
@@ -239,7 +297,7 @@ describe("doctorCommand", () => {
       runWithTheme({
         colors: { primary: "#3B82F6" },
         borderWidth: { thin: "1px" },
-        typography: { h1: typo, textHeading: typo },
+        typography: { heading1: typo, textHeading: typo, body: typo },
       });
 
       doctorCommand();

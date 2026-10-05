@@ -82,14 +82,22 @@ export const themeTemplateDark = `{
 }
 `;
 
+/**
+ * Generator script scaffolded by `style-gen init`. Runs as-is under Node 24
+ * (built-in type stripping) and writes the same file as `style-gen generate`.
+ * @param {string} themeRelPath - Theme JSON path relative to the script
+ * @param {string} outputRelPath - `theme.css` path relative to the script
+ * @returns {string} Script source
+ */
 export const getPluginTemplate = (
   themeRelPath: string,
-) => `import { writeFileSync } from "node:fs";
+  outputRelPath: string,
+) => `import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { generate, defineTheme, defineOptions, Breakpoint } from "@duydpdev/style-generator";
-import themeJson from "${themeRelPath}";
+import themeJson from "${themeRelPath}" with { type: "json" };
 
 // defineTheme() type-checks your theme config AND validates it at runtime,
 // throwing a ZodError with the offending key/value if the theme is invalid
@@ -114,13 +122,13 @@ const options = defineOptions({
 
 const { css, tokens } = generate(theme, options);
 
-// Write theme.css next to this script. Import it from your CSS entry point
-// alongside Tailwind itself:
+// Same file as \`style-gen generate\` (the "output" in style-gen.config.json).
+// Import it from your CSS entry point alongside Tailwind itself:
 //   @import "tailwindcss";
 //   @import "./theme.css";
-const outDir = dirname(fileURLToPath(import.meta.url));
-writeFileSync(resolve(outDir, "theme.css"), css, "utf8");
+const outFile = resolve(dirname(fileURLToPath(import.meta.url)), "${outputRelPath}");
+mkdirSync(dirname(outFile), { recursive: true });
+writeFileSync(outFile, css, "utf8");
 
-// Regenerate on demand: npx style-gen generate --watch
 export { tokens };
 `;

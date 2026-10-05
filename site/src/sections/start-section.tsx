@@ -9,40 +9,36 @@ const TERM_LINES: TermLine[] = [
     html: '<span class="prompt">$</span> <span class="acc">npx style-gen init</span>',
     delay: 250,
   },
-  { html: '<span class="dim">┌  @duydpdev/style-generator</span>', delay: 250 },
+  { html: '<span class="dim">┌  style-gen init</span>', delay: 250 },
   { html: '<span class="dim">│</span>', delay: 50 },
   {
-    html: '<span class="dim">◇</span>  Tailwind version?  <span class="acc">v4</span>',
+    html: '<span class="dim">◇</span>  Theme file location?  <span class="acc">src/styles/theme.json</span>',
     delay: 380,
   },
   {
-    html: '<span class="dim">◇</span>  Theme path?  <span class="acc">src/theme/theme.json</span>',
+    html: '<span class="dim">◇</span>  Generator script location?  <span class="acc">src/plugins/theme-plugin.ts</span>',
     delay: 380,
   },
   {
-    html: '<span class="dim">◇</span>  Plugin path?  <span class="acc">src/theme/plugin.ts</span>',
-    delay: 380,
-  },
-  {
-    html: '<span class="dim">◇</span>  Dark template?  <span class="acc">yes</span>',
+    html: '<span class="dim">◇</span>  Include dark mode template?  <span class="acc">yes</span>',
     delay: 380,
   },
   { html: '<span class="dim">│</span>', delay: 50 },
   {
-    html: '<span class="good">✓</span>  wrote <span class="acc">theme.json</span>',
+    html: '<span class="good">✓</span>  wrote <span class="acc">theme.json</span> + <span class="acc">theme.schema.json</span>',
     delay: 220,
   },
   {
-    html: '<span class="good">✓</span>  wrote <span class="acc">plugin.ts</span>',
+    html: '<span class="good">✓</span>  wrote <span class="acc">theme-plugin.ts</span>',
     delay: 220,
   },
   {
-    html: '<span class="good">✓</span>  wired <span class="acc">styleGenVite()</span> in vite.config.ts',
+    html: '<span class="good">✓</span>  wrote <span class="acc">style-gen.config.json</span>',
     delay: 280,
   },
   { html: '<span class="dim">│</span>', delay: 50 },
   {
-    html: '<span class="dim">└</span>  <span class="good">Setup complete</span> · <span class="dim">run <span class="acc">yarn dev</span></span>',
+    html: '<span class="dim">└</span>  <span class="good">You\'re all set!</span> · <span class="dim">run <span class="acc">style-gen generate</span></span>',
     delay: 350,
   },
   {
@@ -84,8 +80,8 @@ export function StartSection() {
             title={<code>npx style-gen init</code>}
             body={
               <>
-                Interactive wizard. Pick v3 or v4, target paths, dark template —
-                ~10s.
+                Interactive wizard. Theme and script paths, optional dark
+                template — writes the theme, its JSON Schema and the config.
               </>
             }
           />

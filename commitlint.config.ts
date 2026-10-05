@@ -1,4 +1,23 @@
-import type { UserConfig } from "@commitlint/types";
+import type { SyncRule, UserConfig } from "@commitlint/types";
+
+const headerMatchTeamPattern: SyncRule = ({ type, subject }) => {
+  if (!type || !subject) {
+    return [
+      false,
+      "header must be in format '[type] subject' (no colon after bracket)",
+    ];
+  }
+  return [true, ""];
+};
+
+// Case-sensitive on purpose: release.config.cjs maps lowercase types only, so
+// `[Feat] x` would pass a case-insensitive check and then cut no release.
+const typeEnum: SyncRule<string[]> = ({ type }, _when, expectedValue = []) => {
+  if (type && !expectedValue.includes(type)) {
+    return [false, `type must be one of ${expectedValue} (lowercase)`];
+  }
+  return [true, ""];
+};
 
 const config: UserConfig = {
   parserPreset: {
@@ -10,28 +29,8 @@ const config: UserConfig = {
   plugins: [
     {
       rules: {
-        "header-match-team-pattern": (parsed: any) => {
-          const { type, subject } = parsed;
-          if (!type || !subject) {
-            return [
-              false,
-              "header must be in format '[type] subject' (no colon after bracket)",
-            ];
-          }
-          return [true, ""];
-        },
-        "type-enum": (parsed: any, _when: any, expectedValue: any) => {
-          const { type } = parsed;
-          if (
-            type &&
-            !expectedValue
-              .map((v: string) => v.toLowerCase())
-              .includes(type.toLowerCase())
-          ) {
-            return [false, `type must be one of ${expectedValue}`];
-          }
-          return [true, ""];
-        },
+        "header-match-team-pattern": headerMatchTeamPattern,
+        "type-enum": typeEnum,
       },
     },
   ],
@@ -118,6 +117,7 @@ const config: UserConfig = {
         /**
          * Temporary commits
          * Short-lived commits not meant for production history
+         * No release
          */
         "temp",
 
@@ -125,13 +125,15 @@ const config: UserConfig = {
          * Configuration changes
          * Updates to project configuration files
          * Example: eslint, tsconfig, vite, tailwind
+         * No release
          */
         "conf",
 
         /**
          * Work in progress
-         * Partial or experimental changes
-         * Should usually be squashed before merging
+         * Partial or experimental changes. No release; the header of every
+         * commit counts, so collapse the branch into one `[type] subject`
+         * commit before the first PR (documents/deploy.md).
          */
         "wip",
       ],

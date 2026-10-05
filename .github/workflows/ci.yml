@@ -17,6 +17,7 @@ jobs:
   check:
     name: Build & Lint Check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -90,6 +91,7 @@ jobs:
   changes:
     name: Detect code changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       code: ${{ steps.diff.outputs.code }}
 
@@ -118,6 +120,7 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
 
@@ -154,6 +157,7 @@ jobs:
   tailwind-floor:
     name: Tailwind peer floor (4.1.x)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
 

@@ -97,6 +97,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "class-variance-authority": "^0.7.0",
     "commitlint": "^20.4.3",
+    "conventional-changelog-conventionalcommits": "^9.3.0",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -138,10 +139,6 @@
   "publishConfig": {
     "access": "restricted",
     "registry": "https://npm.pkg.github.com"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": "eslint --fix --no-warn-ignored --max-warnings 0",
-    "*.{json,md,yml,yaml,css}": "prettier --write"
   },
   "packageManager": "yarn@4.10.3",
   "license": "MIT",

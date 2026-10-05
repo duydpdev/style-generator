@@ -538,7 +538,7 @@ const Box = ({ p, px, m, className, style, children }) => {
 - **Same-element rule:** the variables do not inherit, so the class and the `style` variables must be on the **same element**; a parent's `--sg-sp-p` never leaks into a child.
 - Only breakpoints listed in `options.breakpoints` (default `["md","lg"]`) have a fallback chain; a variable for any other breakpoint has no effect.
 - `resolveSpacing(prop, value, unit?)` resolves a single prop; `unit` defaults to `0.25` (rem per step).
-- Responsive values use `ResponsiveValueStrict<T, B>`: a typo like `{ typo: 4 }` is a type error, and `base` is always allowed.
+- Responsive values use `ResponsiveValueStrict<T, B>`: a typo like `{ typo: 4 }` is a type error, and `base` is always allowed. `B` defaults to `md | lg`, the breakpoints the default spacing CSS covers; with custom `options.breakpoints`, pass the same keys as the type argument (`resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`).
 
 ---
 
@@ -665,6 +665,8 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 
 Class names built at runtime (a template literal such as `` `bg-${variant}` ``) are invisible to Tailwind's static scan; list them with `extraSources`, e.g. `extraSources: ["hover:bg-{primary,secondary}"]`.
 
+`generate()` validates every option that reaches the CSS and throws a `ZodError` naming its path: `breakpoints` entries, `screens` and `spacing.properties` keys follow the theme key grammar (letters, digits, `-`); `screens` values follow the theme value grammar; the CSS property names inside `spacing.properties` must be lowercase (`padding`, `column-gap`, `--custom`).
+
 ---
 
 ## 9. Exports API
@@ -673,7 +675,7 @@ Class names built at runtime (a template literal such as `` `bg-${variant}` ``) 
 | :------------------------------------------------ | :-------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `generate`                                        | `.`                                           | **Main entry.** Returns `{ css, tokens, schema }` from a Zod-validated theme.                                                                                                      |
 | `defineTheme`, `defineOptions`                    | `.`                                           | Type-safe helpers; `defineTheme` also validates at runtime.                                                                                                                        |
-| `generateThemeCss`                                | `.`                                           | Just `:root` variables, axis overrides and `@theme inline` (`generate()` calls it).                                                                                                |
+| `generateThemeCss`                                | `.`                                           | Just `:root` variables, axis overrides and `@theme inline`; validates the theme like `generate()`.                                                                                 |
 | `createDesignTokens`                              | `.`, `./tokens`                               | Typed `DesignTokens.Web.*`.                                                                                                                                                        |
 | `createVariantMapper`, `COLOR_STATES`             | `.`, `./cva` (`COLOR_STATES` also `./tokens`) | Token keys → class names for CVA, optional `{ states }`.                                                                                                                           |
 | `resolveSpacing`, `resolveSpacingProps`           | `.`, `./spacing`                              | Spacing props → `{ className(s), style }`.                                                                                                                                         |

@@ -81,16 +81,16 @@ Source layout, public exports per subpath and CLI commands: `documents/architect
 
 - `colors` is the only **required** field in `ThemeConfig`; all others (`typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`) are optional.
 - Colors are a **flat camelCase** object. Nested color objects and `DEFAULT` key are unsupported.
-- Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`). Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` is rejected in every token-name position** (`toKebabCase` keeps `_` while typed tokens camelCase it, so the mapper would emit a non-existent class). `formatZodError` prints the hint on the offending path.
+- Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`). Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` and a leading uppercase run (`CTA`, `ABtn`) are rejected in every token-name position**: the camelCased token would map to a class the registry never emits. `formatZodError` prints the hint on the path.
 - `themeAxes: Record<axisName, Record<variantName, ThemeOverride>>` — independent axes (e.g. `theme.dark` and `palette.forest` at once), each activated via `html[data-<axis-kebab>="<variant-kebab>"]`. Selectors are pinned to `html` because a `$`-alias `var()` resolves where the custom property is declared (`:root`). Blocks emit after `:root` in declaration order, so for a token overridden by two axes the axis declared **last** wins.
 - An override key must already exist in the matching base category — override-only keys are rejected (they would produce no utility).
 - Axis and variant names must NOT be canonical integers (`/^(0|[1-9]\d*)$/`) — JS enumerates integer-like keys first, which would silently invert "last declared wins". `007`/`2xl` are fine.
 - Alias `"$<key>"` resolves within the SAME category to `var(--sg-<key>)`; existence and acyclicity are validated at parse time. Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`.
-- `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`) is the single state list for the registry's `@source inline` state lines and for `createVariantMapper(prefix, tokens, { states: COLOR_STATES })`. Sibling detection runs on camelCased keys (`primary-hover` ≡ `primaryHover`); state names emit kebab-cased (`focusVisible` → `focus-visible:`).
-- A theme key whose class equals a Tailwind _static_ utility (`bg-none`, `border-2`, typography `text-sm`, …) is not rejected, but Tailwind decides which rule wins — rename it (`clear`, `flat`, `zero`). `style-gen doctor` warns on the collisions it knows (`src/cli/commands/utilityCollisions.ts`).
-- `fontFamily` keys must not kebab-case to a font-_weight_ utility name (`thin` … `black`) — both share the `font-` prefix.
-- `borderWidth` replaces the old `border` option; omitting it falls back to Tailwind's `border-0/1/2/4` via `@source inline`.
-- Runtime-built class names Tailwind cannot scan go through `extraSources: string[]` (non-empty, ≤512 chars, no `"`, `'`, `\`, `;`, `@`, `<`, `>`, or line break).
+- `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`) is the single state list for the registry's `@source inline` state lines and `createVariantMapper(prefix, tokens, { states: COLOR_STATES })`. Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`); states emit kebab-cased (`focusVisible` → `focus-visible:`).
+- A theme key whose class equals a Tailwind _static_ utility (`bg-none`, `border-2`, typography `text-sm`, …) is not rejected, but Tailwind picks the winner — rename it (`clear`, `flat`, `zero`). `style-gen doctor` warns on known collisions (`src/cli/commands/utilityCollisions.ts`).
+- `fontFamily` keys must not kebab-case to a font-_weight_ name (`thin` … `black`) — both share the `font-` prefix.
+- `borderWidth` replaces `border` (omitted → Tailwind's `border-0/1/2/4`); a key sharing a color's `border-*` class (`thinLine`/`thin-line`) is invalid.
+- `generate()` validates options: `breakpoints`/`screens`/`spacing.properties` keys use the key grammar. `extraSources`: non-empty, ≤512 chars, no `"'\;@<>`/line break.
 
 ## Testing
 

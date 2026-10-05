@@ -2,8 +2,12 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, it, expect } from "vitest";
+import { z } from "zod";
+
+import { generateThemeCss } from "../features/theme-css/generateThemeCss";
 
 import { generate } from "./generate";
+import type { StyleGeneratorOptions } from "./Options";
 import { ThemeSchema, type ThemeConfig } from "./themeSchema";
 
 const repoRoot = join(__dirname, "..", "..");
@@ -65,10 +69,71 @@ const injectionCases: { label: string; theme: ThemeConfig }[] = [
   },
 ];
 
+const optionInjectionCases: {
+  label: string;
+  path: string;
+  options: StyleGeneratorOptions;
+}[] = [
+  {
+    label: "screens value closes @theme then @imports an external resource",
+    path: "screens.md",
+    options: { screens: { md: "1px;}@import url(evil.css);" } },
+  },
+  {
+    label: "screens key closes the declaration",
+    path: 'screens.x:1}@plugin "x"{',
+    options: { screens: { 'x:1}@plugin "x"{': "1px" } },
+  },
+  {
+    label: "spacing.properties CSS property injects an @plugin at-rule",
+    path: 'spacing.properties.p.padding:0}@plugin "x";a{b',
+    options: {
+      spacing: {
+        properties: { p: { 'padding:0}@plugin "x";a{b': "var(--sg-sp-p)" } },
+      },
+    },
+  },
+  {
+    label: "spacing.properties key breaks out of the @utility name",
+    path: "spacing.properties.p{}@plugin x;",
+    options: {
+      spacing: { properties: { "p{}@plugin x;": { padding: "0" } } },
+    },
+  },
+  {
+    label: "breakpoint key injects an @plugin at-rule into the spacing vars",
+    path: "breakpoints.0",
+    options: { breakpoints: ['md,x){}@plugin "x";'] },
+  },
+];
+
 describe("generate() — CSS injection guard", () => {
   it.each(injectionCases)("rejects: $label", ({ theme }) => {
     expect(() => generate(theme)).toThrow();
   });
+
+  it.each(injectionCases)(
+    "generateThemeCss() rejects it too: $label",
+    ({ theme }) => {
+      expect(() => generateThemeCss(theme)).toThrow();
+    },
+  );
+
+  it.each(optionInjectionCases)(
+    "rejects option: $label",
+    ({ options, path }) => {
+      let error: unknown;
+      try {
+        generate({ colors: { primary: "#fff" } }, options);
+      } catch (caught) {
+        error = caught;
+      }
+      expect(error).toBeInstanceOf(z.ZodError);
+      expect(
+        (error as z.ZodError).issues.map((i) => i.path.join(".")),
+      ).toContain(path);
+    },
+  );
 
   it.each(workspaceThemeFiles)(
     "%s: generate().css never emits an at-rule that loads an external resource",

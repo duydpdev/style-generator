@@ -4,13 +4,18 @@ import { generateSourceInline } from "../features/registry/generateSourceInline"
 import { generateSpacingCss } from "../features/spacing/generateSpacingCss";
 import { generateBorderWidthCss } from "../features/theme-css/generateBorderWidthCss";
 import { generateScreensCss } from "../features/theme-css/generateScreensCss";
-import { generateThemeCss } from "../features/theme-css/generateThemeCss";
+import { buildThemeCss } from "../features/theme-css/generateThemeCss";
 import { createDesignTokens } from "../features/tokens/createDesignTokens";
 import { generateTypographyCss } from "../features/typography/generateTypographyCss";
 
 import type { DesignTokensResult } from "./inference";
 import type { StyleGeneratorOptions } from "./Options";
-import { ThemeSchema, type ThemeConfig } from "./themeSchema";
+import {
+  TOKEN_KEY_RE,
+  ThemeSchema,
+  TokenValue,
+  type ThemeConfig,
+} from "./themeSchema";
 
 // Computed once at module scope — `z.toJSONSchema` walks the whole schema
 // tree, and `ThemeSchema` never changes at runtime, so recomputing it on
@@ -32,10 +37,43 @@ const ExtraSourceEntry = z
     "extraSources entries must not contain \", ', \\, ;, @, <, >, or a line break",
   );
 
-// Wrapped in an object so a failing entry reports `extraSources.<i>`, not a
-// bare index that reads like a theme path.
-const ExtraSourcesOption = z.object({
-  extraSources: z.array(ExtraSourceEntry),
+/**
+ * Option names echoed into the CSS (`--breakpoint-<key>`, `md:` variants,
+ * `sp-<key>`, `--sg-sp-<key>-<bp>`) use the theme key grammar, without the
+ * typed-token round-trip check (options never become typed tokens).
+ */
+const OptionKey = z
+  .string()
+  .regex(
+    TOKEN_KEY_RE,
+    "Key must start with a letter/digit and contain only letters, digits, `-`",
+  );
+
+/** A CSS property name (`padding`, `column-gap`, `--custom`). */
+const CssPropertyName = z
+  .string()
+  .regex(
+    /^-{0,2}[a-z][a-z0-9-]*$/,
+    "CSS property name must be lowercase letters, digits and `-`",
+  );
+
+/**
+ * Validates every option that reaches `generate().css`, with the same
+ * injection guarantees as `ThemeSchema`. Unknown and purely behavioural
+ * options (`enableResponsive`, `typography`, `spacing.enabled`) pass through;
+ * the result is only checked, never used.
+ */
+const StyleGeneratorOptionsSchema = z.object({
+  breakpoints: z.array(OptionKey).optional(),
+  screens: z.record(OptionKey, TokenValue).optional(),
+  spacing: z
+    .object({
+      properties: z
+        .record(OptionKey, z.record(CssPropertyName, TokenValue))
+        .optional(),
+    })
+    .optional(),
+  extraSources: z.array(ExtraSourceEntry).optional(),
 });
 
 /**
@@ -68,16 +106,13 @@ export const generate = <TTheme extends ThemeConfig>(
   const parsed = ThemeSchema.parse(theme) as TTheme;
 
   const styleOptions: StyleGeneratorOptions = options ?? {};
-
-  if (styleOptions.extraSources) {
-    ExtraSourcesOption.parse({ extraSources: styleOptions.extraSources });
-  }
+  StyleGeneratorOptionsSchema.parse(styleOptions);
 
   const { DesignTokens } = createDesignTokens<TTheme>(parsed, styleOptions);
 
   const css = [
     generateScreensCss(styleOptions),
-    generateThemeCss(parsed),
+    buildThemeCss(parsed),
     generateBorderWidthCss(parsed),
     generateTypographyCss(parsed.typography, styleOptions),
     generateSpacingCss(styleOptions),

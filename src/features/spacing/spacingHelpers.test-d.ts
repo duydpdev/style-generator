@@ -2,7 +2,7 @@ import { describe, it, expectTypeOf } from "vitest";
 
 import type { SpacingKey } from "../../shared/defaultOption";
 
-import { resolveSpacingProps } from "./spacingHelpers";
+import { resolveSpacing, resolveSpacingProps } from "./spacingHelpers";
 import type { ResponsiveValueStrict } from "./spacingHelpers";
 
 describe("ResponsiveValueStrict<T, BKeys>", () => {
@@ -75,5 +75,25 @@ describe("resolveSpacingProps", () => {
 
     // @ts-expect-error "tablet" is not a valid default breakpoint key
     resolveSpacingProps({ p: { tablet: 4 } });
+  });
+});
+
+describe("default breakpoint keys match the CSS (md/lg)", () => {
+  it("accepts md/lg and rejects xl/sm by default", () => {
+    expectTypeOf(
+      resolveSpacing("p", { base: 4, md: 8, lg: 16 }),
+    ).toHaveProperty("className");
+    // @ts-expect-error the default spacing CSS has no xl rule
+    resolveSpacing("p", { base: 4, xl: 16 });
+    // @ts-expect-error the default spacing CSS has no sm rule
+    resolveSpacingProps({ p: { sm: 4 } });
+  });
+
+  it("accepts custom keys through an explicit BKeys, and still rejects others", () => {
+    expectTypeOf(
+      resolveSpacing<"md" | "lg" | "xl">("p", { base: 4, xl: 16 }),
+    ).toHaveProperty("className");
+    // @ts-expect-error "lg" is not in the explicit BKeys
+    resolveSpacingProps<"md" | "xl">({ p: { lg: 4 } });
   });
 });

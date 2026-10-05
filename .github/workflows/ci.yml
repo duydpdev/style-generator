@@ -58,7 +58,7 @@ jobs:
 
       - name: Script syntax check
         run: |
-          for f in scripts/*.mjs; do
+          for f in scripts/*.mjs site/scripts/*.mjs; do
             node --check "$f"
           done
 
@@ -70,6 +70,16 @@ jobs:
         # and the site renders documents/*.md, so this runs for docs-only PRs too.
         # It is the only check that builds them; nothing deploys the site.
         run: yarn workspace site build
+
+      - name: Typecheck examples
+        # The examples consume the built library through `link:../..`.
+        run: yarn workspaces foreach -A --include '*-example' run typecheck
+
+      - name: Build examples
+        # react-v4 is already built by the site build above.
+        run: |
+          yarn workspace next-v4-example build
+          yarn workspace nuxt-v4-example build
 
       - name: Check externals
         run: yarn check:externals

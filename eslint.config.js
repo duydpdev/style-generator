@@ -82,8 +82,6 @@ export default pluginTs.config(
       "**/dist/*",
       "*.cjs",
       ".yarn/*",
-      "__tests__/reports/*",
-      "**/generations/*",
       "coverage/*",
       "**/scripts/*",
       "examples/**",

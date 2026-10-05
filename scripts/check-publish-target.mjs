@@ -49,17 +49,25 @@ if (access !== "restricted" && access !== "public") {
   pass(`publishConfig.access = ${access}`);
 }
 
-// --- .yarnrc.yml checks (string-based; no YAML parser dep) ---
+// --- .yarnrc.yml checks (line-based; no YAML parser dep) ---
 const yarnrc = readFileSync(resolve(root, ".yarnrc.yml"), "utf8");
+const lines = yarnrc.split(/\r?\n/);
+const indentOf = (line) => line.length - line.trimStart().length;
+const valueOf = (line, key) => {
+  const m = line.match(new RegExp(`^\\s*${key}:\\s*"?([^"#]*?)"?\\s*(#.*)?$`));
+  return m ? m[1].trim() : null;
+};
 
+// Top-level key only: an indented scope entry with the same name is not it.
 const scanLine = (key, required = true) => {
-  const re = new RegExp(`^\\s*${key}:\\s*"?([^"\\n]+)"?\\s*$`, "m");
-  const m = yarnrc.match(re);
-  if (!m) {
-    if (required) fail(`.yarnrc.yml missing ${key}`);
-    return null;
+  for (const line of lines) {
+    if (indentOf(line) === 0) {
+      const v = valueOf(line, key);
+      if (v !== null) return v;
+    }
   }
-  return m[1].trim();
+  if (required) fail(`.yarnrc.yml missing ${key}`);
+  return null;
 };
 
 // Global registry must stay on npmjs so dependency installs keep working.
@@ -73,13 +81,27 @@ if (globalRegistry && globalRegistry !== EXPECTED_GLOBAL) {
 }
 
 // Scope block must point at GitHub Packages for both resolve + publish.
+// Field inside the `npmScopes.<scope>` block only: stops at the next line
+// indented at or above the scope key, so a sibling scope cannot satisfy it.
 const scopeField = (field) => {
-  const re = new RegExp(
-    `npmScopes:[\\s\\S]*?${EXPECTED_SCOPE}:[\\s\\S]*?${field}:\\s*"?([^"\\n]+)"?`,
-    "m",
-  );
-  const m = yarnrc.match(re);
-  return m ? m[1].trim() : null;
+  const start = lines.findIndex((l) => /^npmScopes:\s*$/.test(l));
+  if (start === -1) return null;
+  let scopeIndent = -1;
+  for (const line of lines.slice(start + 1)) {
+    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
+    const indent = indentOf(line);
+    if (indent === 0) break;
+    if (scopeIndent === -1) {
+      if (new RegExp(`^\\s*${EXPECTED_SCOPE}:\\s*$`).test(line)) {
+        scopeIndent = indent;
+      }
+      continue;
+    }
+    if (indent <= scopeIndent) break;
+    const v = valueOf(line, field);
+    if (v !== null) return v;
+  }
+  return null;
 };
 
 for (const field of ["npmRegistryServer", "npmPublishRegistry"]) {

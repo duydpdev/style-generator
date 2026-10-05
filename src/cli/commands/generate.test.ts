@@ -35,6 +35,7 @@ describe("generateCommand", () => {
     process.chdir(origCwd);
     fs.rmSync(tmp, { recursive: true, force: true });
     vi.restoreAllMocks();
+    process.exitCode = undefined;
   });
 
   it("writes theme.css with theme-derived CSS", () => {
@@ -111,6 +112,7 @@ describe("generateCommand", () => {
     });
 
     expect(fs.readdirSync(path.join(tmp, "styles"))).toEqual(["theme.json"]);
+    expect(process.exitCode).toBe(1);
   });
 
   it("threads extraSources/spacing/typography from style-gen.config.json into generate()", () => {
@@ -175,17 +177,20 @@ describe("generateCommand", () => {
     expect(fs.existsSync(path.join(tmp, "dist/nested/theme.css"))).toBe(true);
   });
 
-  it("passes breakpoints from args", () => {
+  it("threads breakpoints from style-gen.config.json into generate()", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, "styles/theme.json"),
       JSON.stringify(sampleTheme),
     );
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ breakpoints: ["sm", "lg"] }),
+    );
 
     generateCommand({
       theme: "styles/theme.json",
       out: "styles/theme.css",
-      breakpoints: "sm,lg",
     });
 
     const content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
@@ -193,17 +198,69 @@ describe("generateCommand", () => {
     expect(content).toMatch(/--breakpoint-lg/);
   });
 
-  it("handles malformed theme JSON gracefully", () => {
+  it("exits 1 without writing output when the theme JSON is malformed", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(path.join(tmp, "styles/theme.json"), "not valid json{");
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
 
-    // Should not throw — logs error internally
-    expect(() => {
-      generateCommand({
-        theme: "styles/theme.json",
-        out: "styles/theme.css",
-      });
-    }).not.toThrow();
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+    });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Failed to generate CSS:/);
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
+  });
+
+  it("exits 1 without writing output when the theme fails validation", () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify({ colors: { primary_x: "#fff" } }),
+    );
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
+
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+    });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+      /^Invalid theme \(styles\/theme\.json\):\ncolors\.primary_x → /,
+    );
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
+  });
+
+  it("reports an invalid extraSources entry as an options error with its path", () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify(sampleTheme),
+    );
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ extraSources: ["bg-primary", "bad;entry"] }),
+    );
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
+
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+    });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+      /^Invalid options:\nextraSources\.1 → /,
+    );
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
   });
 
   it("watch mode: regenerates theme.css when theme.json changes", async () => {
@@ -242,7 +299,33 @@ describe("generateCommand", () => {
     );
 
     await delay(400);
-    const content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
+    let content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
     expect(content).toMatch(/#FF0000/);
+
+    // An invalid edit is logged, keeps the last good output, does not mark
+    // the process failed, and watching continues.
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify({ colors: { primary_x: "#00FF00" } }),
+    );
+    await delay(400);
+    expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid theme /);
+    expect(process.exitCode).toBeUndefined();
+    content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
+    expect(content).toMatch(/#FF0000/);
+
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify({
+        ...sampleTheme,
+        colors: { ...sampleTheme.colors, primary: "#0000FF" },
+      }),
+    );
+    await delay(400);
+    content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
+    expect(content).toMatch(/#0000FF/);
   });
 });

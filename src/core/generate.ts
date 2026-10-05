@@ -32,6 +32,12 @@ const ExtraSourceEntry = z
     "extraSources entries must not contain \", ', \\, ;, @, <, >, or a line break",
   );
 
+// Wrapped in an object so a failing entry reports `extraSources.<i>`, not a
+// bare index that reads like a theme path.
+const ExtraSourcesOption = z.object({
+  extraSources: z.array(ExtraSourceEntry),
+});
+
 /**
  * Generate the complete registry-driven CSS string (breakpoint `@theme`
  * override + theme vars + `@theme inline` mapping + typography/spacing
@@ -64,7 +70,7 @@ export const generate = <TTheme extends ThemeConfig>(
   const styleOptions: StyleGeneratorOptions = options ?? {};
 
   if (styleOptions.extraSources) {
-    z.array(ExtraSourceEntry).parse(styleOptions.extraSources);
+    ExtraSourcesOption.parse({ extraSources: styleOptions.extraSources });
   }
 
   const { DesignTokens } = createDesignTokens<TTheme>(parsed, styleOptions);

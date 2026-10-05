@@ -13,7 +13,6 @@ import { logger } from "../logger";
 export interface GenerateArgs {
   theme?: string;
   out?: string;
-  breakpoints?: string;
   watch?: boolean;
 }
 
@@ -23,6 +22,9 @@ export interface GenerateArgs {
  * `@source inline` blocks) to disk. Replaces the removed `safelist` command —
  * consumers `@import` the written file directly instead of feeding a
  * safelist to Tailwind's content scanner.
+ *
+ * A failed one-shot generation sets `process.exitCode = 1` so scripts and CI
+ * stop; in watch mode a failure is logged and watching continues.
  * @param {GenerateArgs} args - Generate arguments from CLI
  */
 export function generateCommand(args: GenerateArgs) {
@@ -35,10 +37,6 @@ export function generateCommand(args: GenerateArgs) {
 
     if (args.out !== undefined) {
       configFlags.output = args.out;
-    }
-
-    if (args.breakpoints) {
-      configFlags.breakpoints = args.breakpoints.split(",");
     }
 
     const options = resolveConfig(configFlags);
@@ -62,11 +60,15 @@ export function generateCommand(args: GenerateArgs) {
 
     const outPath = path.resolve(process.cwd(), options.output);
 
-    const performGenerate = () => {
+    const performGenerate = (): boolean => {
+      // The theme is parsed here, so a ZodError thrown by `generate()` comes
+      // from the options (e.g. `extraSources`), not from the theme.
+      let stage: "theme" | "options" = "theme";
       try {
         const theme = ThemeSchema.parse(
           JSON.parse(fs.readFileSync(themePath, "utf8")),
         );
+        stage = "options";
         const { css } = generate(theme, options);
 
         const outDir = path.dirname(outPath);
@@ -76,16 +78,20 @@ export function generateCommand(args: GenerateArgs) {
 
         writeFileAtomic(outPath, css);
         logger.success(`CSS written to ${options.output}`);
+        return true;
       } catch (error) {
         if (error instanceof z.ZodError) {
           logger.error(
-            `Invalid theme (${options.theme}):\n${formatZodError(error)}`,
+            stage === "theme"
+              ? `Invalid theme (${options.theme}):\n${formatZodError(error)}`
+              : `Invalid options:\n${formatZodError(error)}`,
           );
         } else if (error instanceof Error) {
           logger.error(`Failed to generate CSS: ${error.message}`);
         } else {
           logger.error(`Unknown error occurred.`);
         }
+        return false;
       }
     };
 
@@ -112,8 +118,8 @@ export function generateCommand(args: GenerateArgs) {
         logger.info("Theme file changed. Regenerating...");
         debouncedGenerate();
       });
-    } else {
-      performGenerate();
+    } else if (!performGenerate()) {
+      process.exitCode = 1;
     }
   } catch (error) {
     if (error instanceof Error) {

@@ -1,5 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
 import { parseArgs } from "node:util";
 
 import { doctorCommand } from "./commands/doctor";
@@ -7,6 +5,7 @@ import { generateCommand } from "./commands/generate";
 import { initCommand } from "./commands/init";
 import { schemaCommand } from "./commands/schema";
 import { logger } from "./logger";
+import { readCliVersion } from "./version";
 
 const args = process.argv.slice(2);
 
@@ -190,14 +189,7 @@ async function main(): Promise<void> {
   const command = positionals[0];
 
   if (values.version) {
-    try {
-      const pkgPath = path.resolve(__dirname, "../../package.json");
-      const pkgStr = fs.readFileSync(pkgPath, "utf-8");
-      const pkg = JSON.parse(pkgStr) as { version: string };
-      logger.log(`style-gen v${pkg.version}`);
-    } catch {
-      logger.log(`style-gen vUnknown`);
-    }
+    logger.log(`style-gen v${readCliVersion()}`);
     process.exit(0);
   }
 

@@ -148,7 +148,7 @@ export default styleGenNext({
 
 ### CLI
 
-`style-gen` (build riêng bằng `tsdown` → `dist/cli/index.mjs`): `init`, `generate [--watch]`, `schema`, `doctor`. Thứ tự resolve config: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định. `generate` ghi CSS bằng `writeFileAtomic`. `init` vẫn sinh một script nhỏ (cờ `--plugin` đặt đường dẫn) gọi `generate()` — không còn là Tailwind plugin. `doctor` validate theme bằng `ThemeSchema` và in cảnh báo (không đổi exit code) khi key trùng utility tĩnh của Tailwind (`src/cli/commands/utilityCollisions.ts`).
+`style-gen` (build riêng bằng `tsdown` → `dist/cli/index.mjs`): `init`, `generate [--watch]`, `schema`, `doctor`. Thứ tự resolve config: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định. `generate` ghi CSS bằng `writeFileAtomic`; theme/option không hợp lệ hoặc lỗi ghi file đặt `process.exitCode = 1` (ở `--watch` chỉ log rồi tiếp tục theo dõi). `--version` đọc `package.json` qua `import.meta.url` (`src/cli/version.ts`), vì `__dirname` không tồn tại trong bundle ESM. `init` vẫn sinh một script nhỏ (cờ `--plugin` đặt đường dẫn) gọi `generate()` — không còn là Tailwind plugin. `doctor` validate theme bằng `ThemeSchema` và in cảnh báo (không đổi exit code) khi key trùng utility tĩnh của Tailwind (`src/cli/commands/utilityCollisions.ts`).
 
 ---
 

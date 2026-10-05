@@ -185,7 +185,7 @@ npx style-gen generate --theme ./theme.json --out ./theme.css --watch
 | `--out`         | `string`  | `styles/theme.css`  | Path to the output CSS file          |
 | `-w`, `--watch` | `boolean` | `false`             | Watch mode — auto-regenerate on save |
 
-Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically.
+Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically. An invalid theme (`Invalid theme (<path>):`), an invalid option such as an `extraSources` entry (`Invalid options:`, path `extraSources.<i>`) or a write error leaves the output untouched and exits with code 1; in `--watch` mode the error is logged and watching continues.
 
 #### `style-gen schema`
 

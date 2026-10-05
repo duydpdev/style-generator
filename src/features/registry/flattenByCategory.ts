@@ -6,9 +6,8 @@ import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
 /**
  * Flatten a theme category's flat key-value data into intermediate CSS
  * variable declarations, using the category descriptor's `cssVarPrefix`.
- * Replaces the old duplicated `buildCssVars` (plugin) /
- * `buildIntermediateVars` (theme-css) — both did the exact same
- * `--${prefix}-${kebabKey}` computation per category.
+ * One registry-driven `--${prefix}-${kebabKey}` computation shared by every
+ * category.
  *
  * A value matching `$<TokenKey>` (see `ALIAS_VALUE_RE`) is resolved to
  * `var(--<cssVarPrefix>-<kebab-target>)` instead of being emitted

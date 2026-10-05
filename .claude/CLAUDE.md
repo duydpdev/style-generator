@@ -67,15 +67,15 @@ theme.json → generate(theme, options) → { css, tokens, schema }
 
 Pipelines, all driven by the category registry:
 
-1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`); `generateSourceInline.ts` emits one `@source inline(...)` per category, replacing the removed safelist.
+1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`); `generateSourceInline.ts` emits one `@source inline(...)` per category.
 2. **theme-css** (`src/features/theme-css/`) — `:root` `--sg-*` vars, `html[data-<axis>="<variant>"]` overrides, `@theme inline` mapping; `generateBorderWidthCss.ts` (explicit `@utility border-*-<key>`), `generateScreensCss.ts` (custom breakpoints).
 3. **tokens**, **typography** (`@utility <kebab-key>`), **spacing** (`.sp-*` utilities over `var(--sg-sp-*)`), **cva**, **vite**, **next** under `src/features/`.
 
-`DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants, spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only: the v3 baseline (`documents/migration/v4-baseline-classes.txt`) emitted only `md:`/`lg:` and the consumer passes `[Breakpoint.MD, Breakpoint.LG]`; defaulting to every `screens` key advertised breakpoints no `@source inline` line covered. `src/shared/safelistProperties.ts` holds the `roundedProperties`/`borderProperties` class-prefix lists (name predates the safelist removal).
+`DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants, spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only: the pre-v4 baseline (`documents/migration/v4-baseline-classes.txt`) emitted only `md:`/`lg:` and the consumer passes `[Breakpoint.MD, Breakpoint.LG]`; defaulting to every `screens` key advertised breakpoints no `@source inline` line covered. `src/shared/safelistProperties.ts` holds the `roundedProperties`/`borderProperties` class-prefix lists (legacy filename).
 
 Build outputs: `dist/{index,tokens,cva,spacing,types,vite,next}.{js,cjs,d.ts}` (7 subpaths, Vite lib multi-entry) + `dist/cli/index.mjs` (tsdown). Shared hashed chunks are internal. Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/check-sizes.mjs`.
 
-Source layout, public exports per subpath and CLI commands: `documents/architecture.md`. Internal helpers (`toCamelCase`, `toPascalCase`, `toKebabCase`, `extractData`, `addDot`) are not public API — not exported from any barrel. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`.
+Source layout, public exports per subpath and CLI commands: `documents/architecture.md`. Internal helpers (`toCamelCase`, `toPascalCase`, `toKebabCase`) are not exported from any barrel. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`.
 
 ## Theme / Color Rules (current v4 API)
 
@@ -120,6 +120,7 @@ documents/
 ├── README.md                     # index of everything below
 ├── architecture.md guide.md testing.md deploy.md   # rendered by the site (documents/*.md)
 ├── migration/                    # upgrade guides + v4 measurement proofs
+├── standards/                    # cross-repo standards (git-workflow-app.md)
 ├── brainstorm/YYYY-MM-DD/<topic>.md
 └── plans/
     ├── YYYY-MM-DD/<plan-slug>/   # plan.md + phase-NN-<name>.md (+ reports/)

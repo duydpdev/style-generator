@@ -10,12 +10,13 @@ interface Feat {
 const FEATS: Feat[] = [
   {
     cls: "feat-1",
-    tag: "/core",
+    tag: ".",
     title: "generate()",
     body: (
       <>
-        Single entry. Returns <code>css</code> (the full Tailwind CSS string)
-        and <code>tokens</code>, typed <code>DesignTokens</code>.
+        Single entry. Returns <code>css</code> (the full Tailwind v4 CSS
+        string), <code>tokens</code> (typed <code>DesignTokens</code>) and the
+        theme's JSON <code>schema</code>.
       </>
     ),
   },
@@ -25,8 +26,8 @@ const FEATS: Feat[] = [
     title: "defineTheme()",
     body: (
       <>
-        Type-safe theme config. Compile-time errors if you forget a required
-        field.
+        Type-checks the theme at compile time and validates it with the same
+        schema at runtime.
       </>
     ),
   },

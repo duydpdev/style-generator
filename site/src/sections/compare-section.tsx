@@ -1,3 +1,4 @@
+import { VERSION } from "../data/version";
 import { COMPARE_ROWS } from "./compare-rows";
 
 /**
@@ -32,10 +33,10 @@ export function CompareSection() {
             <tr>
               <th style={{ width: "26%" }}>Capability</th>
               <th className="col-tw" style={{ width: "37%" }}>
-                Bare Tailwind<small>v3 or v4</small>
+                Bare Tailwind<small>v4</small>
               </th>
               <th className="col-us" style={{ width: "37%" }}>
-                + style-generator<small>v3.0</small>
+                + style-generator<small>v{VERSION}</small>
               </th>
             </tr>
           </thead>

@@ -20,7 +20,7 @@ export const Footer = () => {
           </Text>
         </Box>
         <Text type="text12Mono" color="muted">
-          React 18 · Tailwind v4 · cva · twMerge
+          React 19 · Tailwind v4 · cva · twMerge
         </Text>
       </Box>
     </footer>

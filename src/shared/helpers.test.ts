@@ -1,12 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import {
-  toKebabCase,
-  toCamelCase,
-  toPascalCase,
-  extractData,
-  addDot,
-} from "./helpers";
+import { toKebabCase, toCamelCase, toPascalCase } from "./helpers";
 
 describe("toKebabCase", () => {
   it("camelCase → kebab", () => {
@@ -53,27 +47,5 @@ describe("toPascalCase", () => {
   });
   it("lowercase → capitalised", () => {
     expect(toPascalCase("primary")).toBe("Primary");
-  });
-});
-
-describe("extractData", () => {
-  it("kebab-cases keys preserving values", () => {
-    expect(
-      extractData({ primaryForeground: "#fff", blue500: "#00f" }),
-    ).toStrictEqual({ "primary-foreground": "#fff", "blue-500": "#00f" });
-  });
-  it("empty object → empty", () => {
-    expect(extractData({})).toStrictEqual({});
-  });
-});
-
-describe("addDot", () => {
-  it("prefixes each key with '.' + kebab-case", () => {
-    expect(addDot({ heading1: { fontSize: "32px" } })).toStrictEqual({
-      ".heading-1": { fontSize: "32px" },
-    });
-  });
-  it("empty object → empty", () => {
-    expect(addDot({})).toStrictEqual({});
   });
 });

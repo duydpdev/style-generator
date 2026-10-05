@@ -4,8 +4,8 @@ import type { ThemeOverride } from "../../core/themeSchema";
  * Describes how a single theme token category (colors, shadows, typography,
  * etc.) is flattened into CSS variables and which utility classes it feeds.
  * This is the single source of truth the registry-driven pipelines
- * (`flattenByCategory`, `generateThemeCss`, future `@source inline`
- * emission) read from instead of hard-coding per-category branches.
+ * (`flattenByCategory`, `generateThemeCss`, `generateSourceInline`) read
+ * from instead of hard-coding per-category branches.
  * @template K Literal union of valid category keys (unused at runtime,
  * kept for call-site type narrowing).
  */
@@ -45,7 +45,7 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];
   /**
    * Typed accessor pulling this category's flat token data out of a theme
-   * source (base `ThemeConfig` or a `themes` override `ThemeOverride` —
+   * source (base `ThemeConfig` or a `themeAxes` variant `ThemeOverride` —
    * `ThemeConfig` is structurally assignable to `ThemeOverride` since
    * every `ThemeOverride` field it shares is a narrowing of an optional
    * field, so `flattenByCategory`/`generateThemeCss.ts`'s

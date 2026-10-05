@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 
+import { VERSION } from "../data/version";
 import { docs, groupedDocs } from "../lib/docs-content";
 
 interface Props {
@@ -42,7 +43,7 @@ export function DocsSidebar({ activeSlug }: Props) {
         <div className="rail-foot">
           <div className="row">
             <span>VERSION</span>
-            <span>v3.0.0</span>
+            <span>v{VERSION}</span>
           </div>
           <div className="row">
             <span>LICENSE</span>

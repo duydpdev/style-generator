@@ -1,3 +1,5 @@
+import { VERSION } from "../data/version";
+
 /**
  *
  */
@@ -12,18 +14,17 @@ export function CtaFooter() {
             Start shipping the design.
           </h3>
           <p>
-            One install, one JSON file, one pipeline. Tailwind v3 and v4. MIT
-            licensed.
+            One install, one JSON file, one pipeline. Tailwind v4. MIT licensed.
           </p>
         </div>
         <div className="cta-row">
           <a
             className="btn btn-primary btn-lg"
-            href="https://www.npmjs.com/package/@duydpdev/style-generator"
+            href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Install from npm ↗
+            Install from GitHub Packages ↗
           </a>
           <a
             className="btn btn-outline btn-lg"
@@ -42,7 +43,7 @@ export function CtaFooter() {
             <div className="brand-mark" />
             <div className="brand-meta">
               <b>@duydpdev/style-generator</b>
-              <span>v3.0 · MIT · 2026</span>
+              <span>v{VERSION} · MIT · 2026</span>
             </div>
           </div>
           <p style={{ marginTop: 12 }}>
@@ -52,11 +53,11 @@ export function CtaFooter() {
         </div>
         <div className="footer-meta">
           <a
-            href="https://www.npmjs.com/package/@duydpdev/style-generator"
+            href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
             target="_blank"
             rel="noopener noreferrer"
           >
-            npm ↗
+            package ↗
           </a>
           <a
             href="https://github.com/duydpdev/style-generator"

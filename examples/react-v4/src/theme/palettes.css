@@ -1,7 +1,7 @@
 /* ============================================================
    Cross-axis compound overrides (example-only, hand-written)
    ------------------------------------------------------------
-   themeAxes (DEV.6) generates the single-axis blocks below from
+   themeAxes generates the single-axis blocks in theme.css from
    theme.json — html[data-theme="dark"] and each
    html[data-palette="forest|sunset|mono"] — but a "dark AND a
    specific palette at once" override isn't representable by a

@@ -171,6 +171,76 @@ describe("ThemeSchema — invalid themes", () => {
     });
   });
 
+  describe("leading-uppercase keys (review M3, D2)", () => {
+    it.each([
+      ["CTA", "cta"],
+      ["ABtn", "abtn"],
+      ["HTMLParser", "htmlparser"],
+    ])("rejects %j with the rename that keeps its class", (key, rename) => {
+      const result = ThemeSchema.safeParse({ colors: { [key]: "#fff" } });
+      if (result.success) throw new Error("expected failure");
+      expect(formatZodError(result.error)).toMatch(
+        new RegExp(
+          `^colors\\.${key} → Key "${key}" .*rename it to "${rename}"`,
+          "m",
+        ),
+      );
+    });
+
+    it.each([
+      [
+        "a typography key",
+        (k: string) => ({
+          colors: { primary: "#fff" },
+          typography: {
+            [k]: {
+              fontSize: "1rem",
+              lineHeight: "1.5",
+              fontWeight: 400,
+              letterSpacing: "0",
+            },
+          },
+        }),
+        "typography",
+      ],
+      [
+        "a themeAxes axis name",
+        (k: string) => ({
+          colors: { primary: "#fff" },
+          themeAxes: { [k]: { on: { colors: { primary: "#000" } } } },
+        }),
+        "themeAxes",
+      ],
+    ])(
+      "rejects them in %s, where the lowercase form parses",
+      (_l, build, path) => {
+        expect(ThemeSchema.safeParse(build("hc")).success).toBe(true);
+        const result = ThemeSchema.safeParse(build("HC"));
+        if (result.success) throw new Error("expected failure");
+        expect(formatZodError(result.error)).toMatch(
+          new RegExp(`^${path}\\.HC → Key "HC" .*rename it to "hc"`, "m"),
+        );
+      },
+    );
+
+    it.each(["primaryCTA", "Blue", "primaryFG", "2xl", "blue500"])(
+      "accepts %j, whose class survives the camelCase round trip",
+      (key) => {
+        expect(
+          ThemeSchema.safeParse({ colors: { [key]: "#fff" } }).success,
+        ).toBe(true);
+      },
+    );
+
+    it("reports a malformed key once, with the grammar message only", () => {
+      const result = ThemeSchema.safeParse({ colors: { Bad_Key: "#fff" } });
+      if (result.success) throw new Error("expected failure");
+      const lines = formatZodError(result.error).split("\n");
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain("`_` is not allowed");
+    });
+  });
+
   it.each(["red;}body{color:red", "red\n", "url(x)@import", "red/*", '"Inter'])(
     "rejects malformed token value %j",
     (value) => {
@@ -273,6 +343,16 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.error?.issues[0]?.message).toMatch(
       /collides with a colors key/,
     );
+  });
+
+  it("rejects a borderWidth key whose class equals a colors key's class (thin-line vs thinLine)", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { "thin-line": "#fff" },
+      borderWidth: { thinLine: "1px" },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["borderWidth", "thinLine"]);
+    expect(result.error?.issues[0]?.message).toMatch(/border-thin-line/);
   });
 
   it("rejects a fontFamily key that collides with a Tailwind font-weight utility", () => {

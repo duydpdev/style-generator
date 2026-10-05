@@ -1,10 +1,14 @@
-import type { Breakpoint } from "../../core/Options";
-import type { SpacingKey } from "../../shared/defaultOption";
+import type {
+  DEFAULT_BREAKPOINTS,
+  SpacingKey,
+} from "../../shared/defaultOption";
 
 /**
- * Mặc định các breakpoint chuẩn theo Option của thư viện
+ * Breakpoint keys the spacing CSS covers by default (`DEFAULT_BREAKPOINTS`,
+ * `md`/`lg`). A project that sets `options.breakpoints` passes its own keys
+ * as `BKeys`, e.g. `ResponsiveValueStrict<number, "sm" | "md" | "xl">`.
  */
-export type DefaultBreakpointKeys = `${Breakpoint}`;
+export type DefaultBreakpointKeys = (typeof DEFAULT_BREAKPOINTS)[number];
 
 /**
  * Responsive value type: simple value or per-breakpoint object.
@@ -27,21 +31,34 @@ export type ResponsiveValueStrict<
 > = T | Partial<Record<BKeys | "base", T | undefined>>;
 
 /**
+ * Blocks inference of `T` at a use site, like the built-in `NoInfer` — which
+ * needs TypeScript 5.4 while the `typescript` peer range starts at 5.0.
+ */
+type NoInferBKeys<T> = [T][T extends unknown ? 0 : never];
+
+/**
  * Resolve a single spacing prop into className + inline style CSS variables.
+ * Breakpoint keys default to the ones the spacing CSS emits (`md`/`lg`); pass
+ * `BKeys` when `options.breakpoints` adds others. `BKeys` is never inferred
+ * from the value ({@link NoInferBKeys}), so a typo such as `{ tablet: 4 }` stays an error.
+ * @template BKeys - Breakpoint keys accepted in `value` (default `md | lg`)
  * @param {SpacingKey} prop - Spacing property name (e.g. 'p', 'mx', 'gap')
- * @param {ResponsiveValueStrict<number>} value - Simple number or responsive object
+ * @param {ResponsiveValueStrict<number, BKeys>} value - Simple number or responsive object
  * @param {number} unit - Rem multiplier (default: 0.25, matching Tailwind's spacing scale)
  * @returns {{ className: string; style: Record<string, string> }} Resolved class name and CSS variable style map
  * @example
  * resolveSpacing('p', 4)
  * // → { className: 'sp-p', style: { '--sg-sp-p': '1rem' } }
  * @example
- * resolveSpacing('p', { base: 4, md: 8, xl: 16 })
- * // → { className: 'sp-p', style: { '--sg-sp-p': '1rem', '--sg-sp-p-md': '2rem', '--sg-sp-p-xl': '4rem' } }
+ * resolveSpacing('p', { base: 4, md: 8, lg: 16 })
+ * // → { className: 'sp-p', style: { '--sg-sp-p': '1rem', '--sg-sp-p-md': '2rem', '--sg-sp-p-lg': '4rem' } }
+ * @example
+ * // With options.breakpoints: ["md", "lg", "xl"]
+ * resolveSpacing<"md" | "lg" | "xl">('p', { base: 4, xl: 16 })
  */
-export const resolveSpacing = (
+export const resolveSpacing = <BKeys extends string = DefaultBreakpointKeys>(
   prop: SpacingKey,
-  value: ResponsiveValueStrict<number>,
+  value: ResponsiveValueStrict<number, NoInferBKeys<BKeys>>,
   unit = 0.25,
 ): { className: string; style: Record<string, string> } => {
   const style: Record<string, string> = {};
@@ -61,7 +78,8 @@ export const resolveSpacing = (
 
 /**
  * Resolve multiple spacing props at once.
- * @param {Partial<Record<SpacingKey, ResponsiveValueStrict<number> | undefined>>} props - Object of spacing prop name → value
+ * @template BKeys - Breakpoint keys accepted in each value (default `md | lg`)
+ * @param {Partial<Record<SpacingKey, ResponsiveValueStrict<number, BKeys> | undefined>>} props - Object of spacing prop name → value
  * @returns {{ classNames: string; style: Record<string, string> }} Combined class names (space-joined) and merged CSS variable style map
  * @example
  * resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } })
@@ -70,15 +88,22 @@ export const resolveSpacing = (
  * //     style: { '--sg-sp-p': '1rem', '--sg-sp-mx': '0.5rem', '--sg-sp-mx-md': '1rem' }
  * //   }
  */
-export const resolveSpacingProps = (
-  props: Partial<Record<SpacingKey, ResponsiveValueStrict<number> | undefined>>,
+export const resolveSpacingProps = <
+  BKeys extends string = DefaultBreakpointKeys,
+>(
+  props: Partial<
+    Record<
+      SpacingKey,
+      ResponsiveValueStrict<number, NoInferBKeys<BKeys>> | undefined
+    >
+  >,
 ): { classNames: string; style: Record<string, string> } => {
   const classNames: string[] = [];
   const style: Record<string, string> = {};
 
   for (const [prop, value] of Object.entries(props)) {
     if (value == null) continue;
-    const result = resolveSpacing(prop as SpacingKey, value);
+    const result = resolveSpacing<BKeys>(prop as SpacingKey, value);
     classNames.push(result.className);
     Object.assign(style, result.style);
   }

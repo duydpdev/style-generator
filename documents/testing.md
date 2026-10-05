@@ -8,7 +8,7 @@ Hệ thống kiểm tra hai lớp:
 
 1. **Local (pre-commit):** `Husky` + `lint-staged` chạy `eslint`, `prettier`, `tsc --noEmit` và `vitest run` trước khi commit. Husky được cài qua `postinstall` (Yarn Berry không chạy `prepare`).
 2. **Remote (GitHub Actions, `.github/workflows/ci.yml`, PR vào `main`/`develop`):**
-   - job `check`: commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp `scripts/*.mjs` → `build:all` → `check:externals` → `check:browser-safe` → `check:sizes` → `yarn test` → `yarn test:types`;
+   - job `check`: commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp `scripts/*.mjs` và `site/scripts/*.mjs` → `build:all` → build site → typecheck 3 example, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `yarn test` → `yarn test:types`;
    - job `e2e`: Playwright trên Chromium và WebKit;
    - job `tailwind-floor`: pin các package Tailwind về `~4.1.0` (chỉ trong checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`, để peer `tailwindcss >=4.1.0` thực sự được kiểm — lockfile đang giải ở bản 4.3.x nên nếu không có job này ngưỡng dưới không bao giờ được chạm tới.
 
@@ -94,7 +94,7 @@ Chạy sau `yarn build:all`, cũng nằm trong `prepublish`:
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `yarn check:externals`                                | `dist/` không inline bất kỳ dependency/peer nào                                                                       |
 | `yarn check:browser-safe`                             | `./tokens`, `./cva`, `./spacing`, `./types` không kéo Zod, Node built-in hay `@tailwindcss/*` (kể cả qua chunk chung) |
-| `yarn check:sizes`                                    | ngân sách gzip cho từng subpath trong `package.json#exports`                                                          |
+| `yarn check:sizes`                                    | ngân sách gzip cho từng subpath trong `package.json#exports`, tính cả mọi chunk mà entry import (transitive)          |
 | `yarn check:publish-target`                           | publish đúng GitHub Packages                                                                                          |
 | `scripts/check-css-budget.mjs` (không có yarn script) | ngân sách gzip cho CSS đã biên dịch của một app tiêu dùng; script thuần Node, copy được sang repo khác                |
 

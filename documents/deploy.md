@@ -128,7 +128,7 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 7. `yarn check:browser-safe`
 8. `yarn check:publish-target`
 9. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
-10. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in
+10. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
 
 Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package.
 

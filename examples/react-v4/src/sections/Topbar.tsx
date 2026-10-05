@@ -30,7 +30,7 @@ export const Topbar = ({
               @duydpdev/style-generator
             </Text>
             <Text type="text12Mono" color="muted">
-              v0.2 · tokens → tailwind v4
+              tokens → tailwind v4
             </Text>
           </Box>
         </Box>

@@ -1,6 +1,6 @@
 # Testing Guide
 
-Tài liệu mô tả cách kiểm thử `@duydpdev/style-generator` 4.0.0. Code test là nguồn sự thật cho _từng ca_; tài liệu này chỉ giữ _các lớp test_, _vì sao_ mỗi lớp tồn tại và _chạy ở đâu_.
+Tài liệu mô tả cách kiểm thử `@duydpdev/style-generator` 4.x. Code test là nguồn sự thật cho _từng ca_; tài liệu này chỉ giữ _các lớp test_, _vì sao_ mỗi lớp tồn tại và _chạy ở đâu_.
 
 ## CI/CD Pipeline
 
@@ -8,9 +8,10 @@ Hệ thống kiểm tra hai lớp:
 
 1. **Local (pre-commit):** `Husky` + `lint-staged` chạy `eslint`, `prettier`, `tsc --noEmit` và `vitest run` trước khi commit. Husky được cài qua `postinstall` (Yarn Berry không chạy `prepare`).
 2. **Remote (GitHub Actions, `.github/workflows/ci.yml`, PR vào `main`/`develop`):**
-   - job `check`: commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp `scripts/*.mjs` và `site/scripts/*.mjs` → `build:all` → build site → typecheck 3 example, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `yarn test` → `yarn test:types`;
-   - job `e2e`: Playwright trên Chromium và WebKit;
+   - job `check`: commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp `scripts/*.mjs` và `site/scripts/*.mjs` → `build:all` → build site (`yarn workspace site build`) → typecheck 3 example, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `yarn test` → `yarn test:types`;
+   - job `e2e`: Playwright trên Chromium và WebKit (`build:all` → cài browser → `yarn test:e2e`);
    - job `tailwind-floor`: pin các package Tailwind về `~4.1.0` (chỉ trong checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`, để peer `tailwindcss >=4.1.0` thực sự được kiểm — lockfile đang giải ở bản 4.3.x nên nếu không có job này ngưỡng dưới không bao giờ được chạm tới.
+   - `e2e` và `tailwind-floor` chỉ chạy khi PR đổi file ngoài `documents/**` (job `changes`); PR chỉ đổi tài liệu bỏ qua cả hai.
 
 `check:publish-target` chạy trong `prepublish` và trong workflow publish (`deploy.yml`), xem [`deploy.md`](./deploy.md).
 
@@ -69,6 +70,7 @@ Các mối quan tâm được khoá ở đây:
 - Parity `toKebabCase` giữa runtime và kiểu (`kebab-parity`).
 - `themeAxes` nhiều trục trên theme thật của `examples/nuxt-v4`.
 - Mọi `theme.json` trong `examples/`/`site/` đều qua `ThemeSchema` strict và các `theme.schema.json` đã commit khớp `z.toJSONSchema(ThemeSchema)`.
+- Mẫu `THEME_JSON`/`THEME_CSS` trên landing site (`site-build-sample.test.ts`) là theme hợp lệ và là đoạn trích đúng thứ tự của `generate().css` thật.
 - Các script đo/kiểm ngân sách CSS (`measure-css-output`, `diff-class-families`, `check-css-budget`) có test riêng.
 
 ### 4. E2E (Playwright, Chromium + WebKit)

@@ -129,8 +129,7 @@ const buildPropertyBlocks = (
 };
 
 /**
- * Generate static CSS for `.sp-*` spacing utilities — replaces the old
- * JS-plugin `generateSpacingRules` (`api.addBase` + `api.addUtilities`).
+ * Generate static CSS for `.sp-*` spacing utilities.
  * Each `.sp-<key>` is emitted as `@utility sp-<key> { ... }` (never a bare
  * `.class {}` rule) so Tailwind's variant engine still applies
  * `hover:`/`md:` modifiers to it from raw CSS-text input.

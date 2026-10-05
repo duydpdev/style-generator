@@ -24,13 +24,17 @@ export const COMPARE_ROWS: CompareRow[] = [
   },
   {
     label: "Dynamic colors",
-    tw: <>Hand-rolled safelist regex.</>,
+    tw: (
+      <>
+        Hand-written <code>@source inline()</code> lists, kept in sync by hand.
+      </>
+    ),
     us: (
       <>
         <b>
           <code>@source inline(...)</code>
         </b>{" "}
-        — auto-generated.
+        — generated per token category and state.
       </>
     ),
   },
@@ -51,13 +55,13 @@ export const COMPARE_ROWS: CompareRow[] = [
     label: "Responsive spacing",
     tw: (
       <>
-        <span className="pill pill-warn">~4 800 classes</span>All axis × size ×
-        bp shipped.
+        <span className="pill pill-warn">~4 800 classes</span>Every axis × size
+        × bp safelisted.
       </>
     ),
     us: (
       <>
-        <span className="pill pill-good">0 classes</span>
+        <span className="pill pill-good">21 utilities</span>
         <code>.sp-p</code> + CSS custom-property chains.
       </>
     ),
@@ -85,12 +89,12 @@ export const COMPARE_ROWS: CompareRow[] = [
     ),
   },
   {
-    label: "Tailwind v3 ↔ v4",
-    tw: <>Two parallel codebases.</>,
+    label: "Theme validation",
+    tw: <>None. A typo in a token name fails silently in CSS.</>,
     us: (
       <>
-        <span className="pill pill-info">auto-detect</span>Same JSON. Plugin
-        morphs.
+        <span className="pill pill-info">build-time</span>Unknown keys and
+        unsafe values rejected by the schema.
       </>
     ),
   },
@@ -109,8 +113,8 @@ export const COMPARE_ROWS: CompareRow[] = [
   },
   {
     label: "Bundle impact",
-    tw: <>Wire plugin from node_modules manually.</>,
-    us: <>~3.7 kB · subpath imports · side-effect free.</>,
+    tw: <>Glue code for each feature lives in your app.</>,
+    us: <>7 subpath imports · gzip-budgeted · side-effect free.</>,
   },
   {
     label: "Scaffolding",

@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 
+import { VERSION } from "../data/version";
 import { Sun } from "./icon";
 
 export type ActiveRoute = "landing" | "docs" | "examples";
@@ -27,7 +28,7 @@ export function Topbar({
             <div className="brand-mark" />
             <div className="brand-meta">
               <b>@duydpdev/style-generator</b>
-              <span>v3.0 · tailwind v3 + v4</span>
+              <span>v{VERSION} · tailwind v4</span>
             </div>
           </Link>
           <nav className="topbar-nav">
@@ -97,11 +98,11 @@ export function Topbar({
           </a>
           <a
             className="btn btn-primary"
-            href="https://www.npmjs.com/package/@duydpdev/style-generator"
+            href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
             target="_blank"
             rel="noopener noreferrer"
           >
-            npm ↗
+            package ↗
           </a>
         </div>
       </div>

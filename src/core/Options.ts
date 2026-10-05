@@ -54,12 +54,13 @@ export interface StyleGeneratorOptions {
     cssVarDriven?: boolean;
   };
 
-  // --- Spacing (CSS custom properties, no safelist) ---
+  // --- Spacing (CSS custom properties) ---
 
   /**
-   * Spacing configuration. Uses CSS custom properties instead of a static
-   * safelist. Plugin generates fixed `.sp-*` utility classes with `var()`
-   * fallback chains.
+   * Spacing configuration. `generate()` emits one static
+   * `@utility sp-<key>` block per spacing key; each declaration reads a
+   * `var(--sg-sp-<key>)` custom property, with a per-breakpoint `var()`
+   * fallback chain inside nested `@media` rules.
    */
   spacing?: {
     /** Disable spacing CSS rule generation entirely. Defaults to true. */

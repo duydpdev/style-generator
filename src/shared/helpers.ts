@@ -18,26 +18,6 @@ export const toPascalCase = (str: string) => {
     .replace(/^(.)/, (_, c: string) => c.toUpperCase());
 };
 
-export const extractData = (data: Record<string, unknown>) => {
-  return Object.entries(data).reduce<Record<string, unknown>>(
-    (acc, [key, value]) => {
-      acc[toKebabCase(key)] = value;
-      return acc;
-    },
-    {},
-  );
-};
-
-export const addDot = (data: Record<string, unknown>) => {
-  return Object.entries(data).reduce<Record<string, unknown>>(
-    (acc, [key, value]) => {
-      acc[`.${toKebabCase(key)}`] = value;
-      return acc;
-    },
-    {},
-  );
-};
-
 /**
  * Tailwind v4 `@utility` names must be a single CSS-ident-safe lowercase
  * token: start with a lowercase letter, then any run of lowercase

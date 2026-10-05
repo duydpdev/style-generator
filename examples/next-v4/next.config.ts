@@ -2,10 +2,7 @@ import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 import { Breakpoint } from "@duydpdev/style-generator";
 
-const nextConfig: NextConfig = {
-  // Set EXAMPLE_BASE to host the demo under a sub-path (e.g. GitHub Pages).
-  basePath: process.env.EXAMPLE_BASE || undefined,
-};
+const nextConfig: NextConfig = {};
 
 // Next.js runs on webpack/Turbopack (no Vite), so the Vite-only
 // `styleGenVite` plugin used by the React/Nuxt examples does not apply.

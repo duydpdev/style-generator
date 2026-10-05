@@ -19,9 +19,8 @@ export interface GenerateArgs {
 /**
  * Generate command handler: reads the theme, validates it, runs `generate()`,
  * and writes the resulting CSS (`@theme`/`@theme inline`/typography/spacing/
- * `@source inline` blocks) to disk. Replaces the removed `safelist` command —
- * consumers `@import` the written file directly instead of feeding a
- * safelist to Tailwind's content scanner.
+ * `@source inline` blocks) to disk. Consumers `@import` the written file
+ * directly next to `@import "tailwindcss";`.
  *
  * A failed one-shot generation sets `process.exitCode = 1` so scripts and CI
  * stop; in watch mode a failure is logged and watching continues.

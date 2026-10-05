@@ -2,7 +2,8 @@ import type { SpacingPropertyMap } from "../core/Options";
 
 /**
  * Default spacing properties → CSS property mapping.
- * Used by plugin to generate `.sp-*` utility classes with CSS custom properties.
+ * `generateSpacingCss` turns each entry into an `@utility sp-<key>` block
+ * whose declarations read `var(--sg-sp-<key>)`.
  */
 export const DEFAULT_SPACING_PROPERTIES = {
   p: { padding: "var(--sg-sp-p)" },
@@ -40,7 +41,7 @@ export const DEFAULT_SPACING_PROPERTIES = {
   left: { left: "var(--sg-sp-left)" },
 } as const satisfies SpacingPropertyMap;
 
-/** Default border radius values for safelist. */
+/** Default border radius values, used when `theme.borderRadius` is omitted. */
 export const DEFAULT_ROUNDED_VALUES = [
   "none",
   "xs",
@@ -53,16 +54,16 @@ export const DEFAULT_ROUNDED_VALUES = [
   "full",
 ] as const;
 
-/** Default border width values for safelist. */
+/** Default border width values, used when `theme.borderWidth` is omitted. */
 export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
 
 /**
  * Breakpoint keys used when `options.breakpoints` is not set — the single
  * default shared by the `@source inline` responsive variants, the spacing
- * `@media` chains, and `DesignTokens.Web.breakpoints`. `md`/`lg` are the only
- * responsive variants the v3 baseline emitted (`v4-baseline-classes.txt`:
- * 89 `md:` + 89 `lg:` classes, no `sm:`/`xl:`/`2xl:`), and the consumer app
- * passes exactly `[Breakpoint.MD, Breakpoint.LG]`.
+ * `@media` chains, and `DesignTokens.Web.breakpoints`. `md`/`lg` match the
+ * only responsive variants the pre-v4 baseline emitted
+ * (`documents/migration/v4-baseline-classes.txt`: 89 `md:` + 89 `lg:`
+ * classes, no `sm:`/`xl:`/`2xl:`).
  */
 export const DEFAULT_BREAKPOINTS = ["md", "lg"] as const;
 

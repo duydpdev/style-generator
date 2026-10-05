@@ -21,6 +21,5 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src", "examples", "scripts", "e2e"],
-  "exclude": ["examples/react-v4", "examples/next-v4", "examples/nuxt-v4"]
+  "include": ["src", "e2e"]
 }

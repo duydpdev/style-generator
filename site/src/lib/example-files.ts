@@ -21,7 +21,7 @@ const v4Raw = import.meta.glob(
 const EXCLUDE_PATTERNS = [
   /node_modules\//,
   /\/dist\//,
-  /package-lock\.json$/,
+  /\/theme\/theme\.css$/,
   /tsconfig\.[^.]*\.json$/,
 ];
 

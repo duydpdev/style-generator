@@ -105,7 +105,7 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 
 1. `yarn test` + `yarn test:types` trên commit vừa push, trước khi cắt tag
 2. Chạy `semantic-release` → tự động tính version, tạo git tag; chỉ trên `main` mới commit `package.json` + `CHANGELOG.md`
-3. So sánh tags trước/sau để phát hiện tag mới
+3. Phát hiện tag của chính run: tag trên `HEAD`, chưa có trong snapshot trước khi chạy `semantic-release`, và đúng kênh của nhánh (`main`: `vX.Y.Z`; `develop`: `vX.Y.Z-DEV.N`). semantic-release fetch mọi tag remote trước khi chạy, nên tag do run của nhánh khác vừa push cũng xuất hiện local; so snapshot trước/sau như cũ có thể chọn nhầm tag đó. Đúng một tag → release; không có → không release (in `::warning` nếu nhánh remote đã đi tiếp, vì semantic-release bỏ qua nhánh bị tụt sau remote); nhiều hơn một → job fail, publish bằng tay theo [runbook](#publish-lại-một-tag-đã-push-nhưng-chưa-publish).
 4. Nếu có tag mới → trigger `deploy.yml`
 5. Trên `main`, sau khi job release thành công (có hoặc không có tag, `deploy` thành công hoặc bị skip) → trigger `back-merge.yml`
 
@@ -207,7 +207,7 @@ Fail khi `git rev-list --count origin/develop..origin/main` > 0 và đỉnh `mai
 
 ### Required Secrets
 
-- `CI_WORKER_REPOSITORY_TOKEN`: PAT có quyền push release commit và tag về GitHub repo. Không khai báo ở mức workflow `env`; chỉ được truyền cho checkout + semantic-release (env `GITHUB_TOKEN`) trong `release.yml` và checkout trong `back-merge.yml` (job gọi nó dùng `secrets: inherit`). `deploy.yml` không nhận nó (job `deploy` không dùng `secrets: inherit`). Lưu ý: `actions/checkout` với `token:` và `persist-credentials` mặc định `true` ghi token vào `.git/config`, nên các step sau trong cùng job (install, test) đọc được. semantic-release tự đưa env `GITHUB_TOKEN` vào URL push, nên không cần token trong `.git/config`; job `release` vẫn giữ mặc định chỉ vì bước "Check for new release" còn `git fetch --tags` trên repo private (bỏ cùng lúc sửa bước đó).
+- `CI_WORKER_REPOSITORY_TOKEN`: PAT có quyền push release commit và tag về GitHub repo. Không khai báo ở mức workflow `env`; chỉ được truyền cho checkout + semantic-release (env `GITHUB_TOKEN`) trong `release.yml` và checkout trong `back-merge.yml` (job gọi nó dùng `secrets: inherit`). `deploy.yml` không nhận nó (job `deploy` không dùng `secrets: inherit`). Checkout của job `release` dùng `persist-credentials: false`, nên token không nằm trong `.git/config` lúc `yarn install`/test chạy: semantic-release tự đưa env `GITHUB_TOKEN` vào URL mọi lệnh fetch/push của nó, và bước phát hiện tag chỉ đọc tag local. `back-merge.yml` vẫn để mặc định (`true`) vì chính nó `git fetch`/`git push` sau checkout, và không cài dependency.
 - Publish dùng `GITHUB_TOKEN` built-in — không cần secret npm. `GITHUB_TOKEN` mặc định chỉ `contents: read` trong cả `release.yml`; chỉ job `deploy` mở `packages: write` (quyền của reusable workflow không vượt quá job gọi nó). `release` và `back-merge` push bằng PAT nên không cần `contents: write` trên `GITHUB_TOKEN`.
 
 ---

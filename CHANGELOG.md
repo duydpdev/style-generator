@@ -1,3 +1,9 @@
+# [4.0.2](https://github.com/duydpdev/style-generator/compare/v4.0.1...v4.0.2) (2026-10-05)
+
+### Bug Fixes
+
+- keep schema, options and typed helpers consistent with the emitted CSS ([35c2d5f](https://github.com/duydpdev/style-generator/commit/35c2d5f74005fba1dd475d264277f4f9e20f6625))
+
 # [4.0.1](https://github.com/duydpdev/style-generator/compare/v4.0.0...v4.0.1) (2026-10-05)
 
 ### Bug Fixes

@@ -43,9 +43,8 @@ const definedEntries = (
 };
 
 /**
- * Generate static CSS for `theme.typography`: replaces the old JS-plugin
- * `addUtilities(addDot(typography))` / `buildTypographyCssVarDriven` pair
- * with plain `@utility` CSS text, fed straight into `generate().css`.
+ * Generate static CSS for `theme.typography` as plain `@utility` CSS text,
+ * fed straight into `generate().css`.
  *
  * Emitted as `@utility <name> { ... }` (never a bare `.class {}` rule) so
  * Tailwind's variant engine (`hover:`, `md:`, ...) recognizes it — a plain
@@ -91,8 +90,7 @@ export const generateTypographyCss = (
       blocks.push(`@utility ${utilityName} {\n${lines.join("\n")}\n}`);
     }
   } else {
-    // Default mode: literal declaration values, same class names/values as
-    // the old addUtilities(addDot(typography)) output.
+    // Default mode: literal declaration values.
     for (const [name, styles] of Object.entries(typography)) {
       const utilityName = toKebabCase(name);
       assertValidUtilityName(utilityName, name);

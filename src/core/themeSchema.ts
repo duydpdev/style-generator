@@ -338,7 +338,7 @@ const findAliasCycle = (
 
 /**
  * Validate one category's alias graph for one theme pass (base, or a
- * single `themes.<name>` override merged on top of base): alias
+ * single `themeAxes.<axis>.<variant>` override merged on top of base): alias
  * grammar/target-existence for `ownEntries`, then a cycle check over the
  * full `merged` graph. Reports at most one cycle issue, anchored at
  * whichever cycle member is actually declared in `ownEntries` (falling

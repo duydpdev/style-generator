@@ -40,7 +40,7 @@ describe("generateTypographyCss", () => {
     expect(generateTypographyCss({})).toBe("");
   });
 
-  it("emits @utility <kebab-key> with literal declarations, matching the old addUtilities(addDot(typography)) output", () => {
+  it("emits @utility <kebab-key> with literal declarations", () => {
     const css = generateTypographyCss(typography);
     expect(parseUtilities(css)).toEqual({
       "text-12-mono": {

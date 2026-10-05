@@ -1,3 +1,9 @@
+# [4.0.3](https://github.com/duydpdev/style-generator/compare/v4.0.2...v4.0.3) (2026-10-05)
+
+### Bug Fixes
+
+- make init scaffold one working setup and doctor check only what it uses ([eaa7cef](https://github.com/duydpdev/style-generator/commit/eaa7cef9d8f873a04fbebc336e2965b7033539ed))
+
 # [4.0.2](https://github.com/duydpdev/style-generator/compare/v4.0.1...v4.0.2) (2026-10-05)
 
 ### Bug Fixes

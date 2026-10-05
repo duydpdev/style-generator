@@ -8,9 +8,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(here, "..");
 const repoRoot = resolve(siteRoot, "..");
 
-// Examples are built with a relative base so the prebuilt index.html
-// references `./assets/...` and works under any deploy base (dev `/`,
-// GitHub Pages `/style-generator/`, custom domain root, etc.).
+// The react example is built with a relative base so the prebuilt index.html
+// references `./assets/...` and works wherever the site serves public/examples.
 const EXAMPLE_BASE = "./";
 
 const EXAMPLES = [

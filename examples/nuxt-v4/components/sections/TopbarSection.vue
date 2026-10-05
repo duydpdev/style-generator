@@ -21,9 +21,7 @@ const { jsonOpen, tweaksOpen } = useDrawers();
           <Text type="text14Regular" class="font-medium">
             @duydpdev/style-generator
           </Text>
-          <Text type="text12Mono" color="muted">
-            v0.2 · tokens → tailwind v4
-          </Text>
+          <Text type="text12Mono" color="muted"> tokens → tailwind v4 </Text>
         </Box>
       </Box>
       <Box :gap="2" class="flex items-center">

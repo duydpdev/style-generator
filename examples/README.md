@@ -1,6 +1,6 @@
 # Examples
 
-Working consumer apps that link `@duydpdev/style-generator` through a Yarn `link:../..` dependency (`workspace:*` is not linked for the root package; see `documents/deploy.md`) and exercise the public API end-to-end. Each one wires the library the 4.0.0 way: a generated `theme.css` that the app `@import`s next to `@import "tailwindcss"` — no `@plugin`, no safelist file. Upgrading an existing project? See [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md).
+Working consumer apps that link `@duydpdev/style-generator` through a Yarn `link:../..` dependency (see `documents/deploy.md` for why it is `link:`) and exercise the public API end-to-end. Each one wires the library the 4.0.0 way: a generated `theme.css` that the app `@import`s next to `@import "tailwindcss"`, with no `@plugin` and no safelist file. Upgrading an existing project? See [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md).
 
 | Example                  | Stack                           | Highlights                                                         |
 | ------------------------ | ------------------------------- | ------------------------------------------------------------------ |
@@ -12,24 +12,23 @@ All apps share the same `theme.json` (with `"$schema"` and two `themeAxes`: `the
 
 ## Prerequisites
 
-Build the local library first (the examples consume the built `dist/` through the workspace link):
+Build the local library and the CLI first (the examples consume the built `dist/` through the `link:../..` dependency; `yarn doctor` runs `dist/cli/index.mjs`). The examples are workspaces of the repo root, so the root install also installs them:
 
 ```bash
 # From repo root
 yarn install
-yarn build
+yarn build:all
 ```
 
 ## Run an example
 
 ```bash
 cd examples/react-v4   # or next-v4 / nuxt-v4
-yarn install           # link:../.. is created by the repo-root install
 yarn dev
 ```
 
-Each example exposes `dev`, `build` and `typecheck`. Preview the production build with `yarn preview` (`react-v4`, `nuxt-v4`) or `yarn start` (`next-v4`).
+Each example exposes `dev`, `build`, `typecheck` and `doctor` (`node ../../dist/cli/index.mjs doctor`, which reads that example's `style-gen.config.json`). Preview the production build with `yarn preview` (`react-v4`, `nuxt-v4`) or `yarn start` (`next-v4`).
 
 ## Other files in this folder
 
-`shadcn-theme.json` and `theme.json` are standalone theme samples; both must parse with the strict `ThemeSchema` (checked by the example-theme integration test under `src/__integration__/`). `v4-index.css` and `test-cva.ts` are small development snippets unrelated to the apps above.
+`shadcn-theme.json` and `theme.json` are standalone theme samples; both must parse with the strict `ThemeSchema` (checked by the example-theme integration test under `src/__integration__/`).

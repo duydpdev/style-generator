@@ -25,9 +25,9 @@ export const ResponsiveSpacingSection = () => {
   return (
     <section className="border-t py-14">
       <SectionHead
-        num="Responsive"
-        title="Spacing reacts to breakpoints"
-        desc="Pass a ResponsiveValueStrict object to spacing props. Each breakpoint key sets a CSS custom property; the plugin's fallback chain selects the right value at each viewport."
+        num="05 — Responsive"
+        title="Spacing reacts to breakpoints."
+        desc="Pass a ResponsiveValueStrict object to spacing props. Each breakpoint key sets a CSS custom property; the generated .sp-* utility resolves the right value at each viewport through an @media fallback chain."
       />
 
       <div className="grid gap-8">

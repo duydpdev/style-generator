@@ -28,7 +28,6 @@ export default defineNuxtConfig({
   },
 
   app: {
-    baseURL: process.env.EXAMPLE_BASE || "/",
     head: {
       title: "style-generator · Nuxt + Tailwind v4 Example",
       htmlAttrs: {

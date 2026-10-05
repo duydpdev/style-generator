@@ -3,6 +3,9 @@ import path from "node:path";
 import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { z } from "zod";
+
+import { ThemeSchema } from "../../core/themeSchema";
 
 import { initCommand } from "./init";
 
@@ -33,7 +36,7 @@ describe("initCommand (non-interactive)", () => {
     vi.restoreAllMocks();
   });
 
-  it("scaffolds theme.json, plugin file, and style-gen.config.json", async () => {
+  it("scaffolds theme.json, its schema, the generator script and style-gen.config.json", async () => {
     await initCommand({
       theme: "styles/theme.json",
       plugin: "plugins/theme-plugin.ts",
@@ -56,19 +59,26 @@ describe("initCommand (non-interactive)", () => {
     expect(parsed).toHaveProperty("colors");
     expect(parsed).toHaveProperty("typography");
 
-    // Script must import generate() and never the removed v3 @plugin API
-    const pluginSrc = fs.readFileSync(plugin, "utf8");
-    expect(pluginSrc).toMatch(/generate\(/);
-    expect(pluginSrc).not.toMatch(/@plugin/);
-    expect(pluginSrc).toMatch(/@duydpdev\/style-generator/);
+    // The theme's "$schema" reference resolves to the written JSON Schema
+    const schemaPath = path.resolve(
+      path.dirname(theme),
+      parsed.$schema as string,
+    );
+    expect(JSON.parse(fs.readFileSync(schemaPath, "utf8"))).toEqual(
+      z.toJSONSchema(ThemeSchema),
+    );
 
-    // Config must point at the scaffolded files
+    // One output location: the theme's directory, shared by script and CLI
     const cfg = JSON.parse(fs.readFileSync(config, "utf8")) as {
       theme: string;
       plugin: string;
+      output: string;
     };
-    expect(cfg.theme).toBe("styles/theme.json");
-    expect(cfg.plugin).toBe("plugins/theme-plugin.ts");
+    expect(cfg).toEqual({
+      theme: "styles/theme.json",
+      plugin: "plugins/theme-plugin.ts",
+      output: "styles/theme.css",
+    });
   });
 
   it("includes dark mode variant when dark=true", async () => {

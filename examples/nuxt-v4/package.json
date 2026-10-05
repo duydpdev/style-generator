@@ -10,7 +10,7 @@
     "preview": "nuxt preview",
     "prepare:nuxt": "nuxt prepare",
     "typecheck": "nuxt typecheck",
-    "doctor": "yarn style-gen doctor"
+    "doctor": "node ../../dist/cli/index.mjs doctor"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",

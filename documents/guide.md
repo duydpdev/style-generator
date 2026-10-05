@@ -171,13 +171,15 @@ Chạy được với webpack lẫn Turbopack, không import `next` nên không 
 ### Cách 3: CLI
 
 ```bash
-npx style-gen init                 # scaffold theme + script generate() + style-gen.config.json
+npx style-gen init                 # scaffold theme + theme.schema.json + script generate() + style-gen.config.json
 npx style-gen generate             # ghi styles/theme.css
 npx style-gen generate --watch     # sinh lại khi lưu
 npx style-gen doctor               # kiểm tra cấu hình, schema và cảnh báo va chạm utility
 ```
 
-Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định (`styles/theme.json` → `styles/theme.css`).
+Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định (`styles/theme.json` → `styles/theme.css`). File config hỏng: `generate` cảnh báo rồi dùng mặc định, `doctor` báo lỗi.
+
+Script do `init` sinh và `style-gen generate` ghi cùng một file (`output` trong config); chạy một trong hai (`node plugins/theme-plugin.ts` cần Node 24). `doctor` chỉ kiểm tra script khi config có `plugin` — setup `styleGenVite`/`styleGenNext` hay chỉ dùng CLI không cần.
 
 ### Cách 4: Script tự viết
 
@@ -212,7 +214,7 @@ generate(theme, { extraSources: ["hover:bg-{primary,secondary}"] });
 
 ### Class bị trùng utility có sẵn của Tailwind
 
-Key có class trùng utility tĩnh của Tailwind (`none` trong `colors`/`shadows`/`borderRadius`, `borderWidth` toàn số, key typography thành `text-sm`, màu `transparent`/`current`/`inherit`) không bị schema từ chối, nhưng rule nào thắng do Tailwind quyết định. Đặt tên khác (`clear`, `flat`, `zero`); `style-gen doctor` liệt kê các va chạm nó nhận ra được (chỉ là cảnh báo).
+Key có class trùng utility của Tailwind (`none` trong `colors`/`shadows`/`borderRadius`, `borderWidth` toàn số, key typography thành `text-sm`, `h-1` (từ `h1`), `italic`…, màu `transparent`/`current`/`inherit`) không bị schema từ chối, nhưng rule nào thắng do Tailwind quyết định. Đặt tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các va chạm nó nhận ra được (chỉ là cảnh báo).
 
 ---
 

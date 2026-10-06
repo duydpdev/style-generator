@@ -1,3 +1,16 @@
+# [4.1.2](https://github.com/duydpdev/style-generator/compare/v4.1.1...v4.1.2) (2026-10-06)
+
+### Bug Fixes
+
+- config: update peer matrix to reflect tested support ([20b1b79](https://github.com/duydpdev/style-generator/commit/20b1b791c454016a11b06ddb31256476e27b20c1))
+
+  Peer ranges now follow the CI peer-matrix job (latest release of each
+  major: example build, Vite dev server, example and dist .d.ts typecheck).
+  vite: ^5 || ^6 || ^7 || ^8 (Vite 8 is now accepted).
+  typescript: ^5 || ^6 (TypeScript 6 is now accepted).
+  TypeScript 7 (native port) is not supported yet. Nothing is narrowed;
+  no migration needed.
+
 # [4.1.1](https://github.com/duydpdev/style-generator/compare/v4.1.0...v4.1.1) (2026-10-06)
 
 ### Bug Fixes

@@ -21,6 +21,14 @@ export interface GenerateArgs {
   watch?: boolean;
 }
 
+/** Handle on a `--watch` run, so callers can stop it. */
+export interface GenerateWatchHandle {
+  /** Resolves once the theme-file watcher is attached. */
+  ready: Promise<void>;
+  /** Cancel any pending regeneration and stop watching. */
+  close: () => Promise<void>;
+}
+
 /**
  * Generate command handler: reads the theme, validates it, runs `generate()`,
  * and writes the resulting CSS (`@theme`/`@theme inline`/typography/spacing/
@@ -30,8 +38,11 @@ export interface GenerateArgs {
  * A failed one-shot generation sets `process.exitCode = 1` so scripts and CI
  * stop; in watch mode a failure is logged and watching continues.
  * @param {GenerateArgs} args - Generate arguments from CLI
+ * @returns {GenerateWatchHandle | undefined} The watch handle in `--watch` mode, else `undefined`
  */
-export function generateCommand(args: GenerateArgs) {
+export function generateCommand(
+  args: GenerateArgs,
+): GenerateWatchHandle | undefined {
   try {
     const configFlags: Parameters<typeof resolveConfig>[0] = {};
 
@@ -115,7 +126,7 @@ export function generateCommand(args: GenerateArgs) {
     if (args.watch) {
       logger.info(`Watching for changes in ${options.theme}...`);
 
-      let timeout: NodeJS.Timeout;
+      let timeout: NodeJS.Timeout | undefined;
       const debouncedGenerate = () => {
         clearTimeout(timeout);
         timeout = setTimeout(() => {
@@ -135,9 +146,27 @@ export function generateCommand(args: GenerateArgs) {
         logger.info("Theme file changed. Regenerating...");
         debouncedGenerate();
       });
-    } else if (!performGenerate()) {
+
+      // Plain executor: the repo's ES2022 lib has no Promise.withResolvers.
+      let markReady: () => void = () => undefined;
+      const ready = new Promise<void>((resolve) => {
+        markReady = resolve;
+      });
+      watcher.once("ready", markReady);
+      return {
+        ready,
+        close: () => {
+          clearTimeout(timeout);
+          // chokidar never emits `ready` once closed; don't leave awaiters hanging.
+          markReady();
+          return watcher.close();
+        },
+      };
+    }
+    if (!performGenerate()) {
       process.exitCode = 1;
     }
+    return undefined;
   } catch (error) {
     if (error instanceof Error) {
       logger.error(`Configuration error: ${error.message}`);

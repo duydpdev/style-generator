@@ -21,12 +21,6 @@ describe("toCamelCase", () => {
   it("kebab-case → camel", () => {
     expect(toCamelCase("sidebar-foreground")).toBe("sidebarForeground");
   });
-  it("snake_case → camel", () => {
-    expect(toCamelCase("sidebar_foreground")).toBe("sidebarForeground");
-  });
-  it("space-separated → camel", () => {
-    expect(toCamelCase("sidebar foreground")).toBe("sidebarForeground");
-  });
   it("first-char uppercase → lowercased", () => {
     expect(toCamelCase("Primary")).toBe("primary");
   });

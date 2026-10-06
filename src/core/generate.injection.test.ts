@@ -39,35 +39,58 @@ const workspaceThemeFiles = [
   join(repoRoot, "site", "src", "theme", "theme.json"),
 ].filter((path, index, all) => all.indexOf(path) === index);
 
-const injectionCases: { label: string; theme: ThemeConfig }[] = [
+const injectionCases: { label: string; path: string; theme: ThemeConfig }[] = [
   {
     label: "key closes a rule and opens a selector (x}body{)",
+    path: "colors.x}body{",
     theme: { colors: { "x}body{": "red" } },
   },
   {
     label: "key starting with -- (custom-property syntax)",
+    path: "colors.--x",
     theme: { colors: { "--x": "red" } },
   },
   {
     label: "value closes the rule then @imports an external resource",
+    path: "colors.primary",
     theme: { colors: { primary: "red;}@import url(evil.css);" } },
   },
   {
     label: "value closes the rule then injects an @plugin at-rule",
+    path: "colors.primary",
     theme: { colors: { primary: 'red}\n@plugin "x"' } },
   },
   {
     label: "value breaks out of the declaration into a script tag",
+    path: "colors.primary",
     theme: { colors: { primary: "</style><script>" } },
   },
   {
     label: "empty axis name inside themeAxes",
+    path: "themeAxes.",
     theme: {
       colors: { primary: "#fff" },
       themeAxes: { "": { dark: { colors: { primary: "#000" } } } },
     },
   },
 ];
+
+/**
+ * Run `fn` and return the issue paths of the `ZodError` it throws; fails the
+ * test when it throws anything else or nothing at all.
+ * @param {() => unknown} fn - Call expected to throw a `ZodError`
+ * @returns {string[]} The issue paths, joined with `.`
+ */
+const zodIssuePaths = (fn: () => unknown): string[] => {
+  let error: unknown;
+  try {
+    fn();
+  } catch (caught) {
+    error = caught;
+  }
+  expect(error).toBeInstanceOf(z.ZodError);
+  return (error as z.ZodError).issues.map((i) => i.path.join("."));
+};
 
 const optionInjectionCases: {
   label: string;
@@ -108,29 +131,22 @@ const optionInjectionCases: {
 ];
 
 describe("generate() — CSS injection guard", () => {
-  it.each(injectionCases)("rejects: $label", ({ theme }) => {
-    expect(() => generate(theme)).toThrow();
+  it.each(injectionCases)("rejects: $label", ({ theme, path }) => {
+    expect(zodIssuePaths(() => generate(theme))).toContain(path);
   });
 
   it.each(injectionCases)(
     "generateThemeCss() rejects it too: $label",
-    ({ theme }) => {
-      expect(() => generateThemeCss(theme)).toThrow();
+    ({ theme, path }) => {
+      expect(zodIssuePaths(() => generateThemeCss(theme))).toContain(path);
     },
   );
 
   it.each(optionInjectionCases)(
     "rejects option: $label",
     ({ options, path }) => {
-      let error: unknown;
-      try {
-        generate({ colors: { primary: "#fff" } }, options);
-      } catch (caught) {
-        error = caught;
-      }
-      expect(error).toBeInstanceOf(z.ZodError);
       expect(
-        (error as z.ZodError).issues.map((i) => i.path.join(".")),
+        zodIssuePaths(() => generate({ colors: { primary: "#fff" } }, options)),
       ).toContain(path);
     },
   );

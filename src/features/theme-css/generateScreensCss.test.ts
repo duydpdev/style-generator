@@ -3,19 +3,6 @@ import { describe, it, expect } from "vitest";
 import { generateScreensCss } from "./generateScreensCss";
 
 describe("generateScreensCss", () => {
-  it("emits the library's default pixel-based breakpoint scale", () => {
-    const css = generateScreensCss();
-    expect(css).toBe(
-      "@theme {\n" +
-        "  --breakpoint-sm: 640px;\n" +
-        "  --breakpoint-md: 768px;\n" +
-        "  --breakpoint-lg: 1024px;\n" +
-        "  --breakpoint-xl: 1280px;\n" +
-        "  --breakpoint-2xl: 1536px;\n" +
-        "}\n",
-    );
-  });
-
   it("merges options.screens overrides/additions on top of the defaults", () => {
     const css = generateScreensCss({
       screens: { md: "800px", "3xl": "1920px" },

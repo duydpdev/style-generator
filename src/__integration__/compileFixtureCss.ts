@@ -1,4 +1,22 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+
 import { compile } from "@tailwindcss/node";
+
+/**
+ * Inside the repo so Tailwind's module resolution still walks up to
+ * `node_modules/tailwindcss` from the temp base directory.
+ */
+const IMPORTS_ROOT = resolve(process.cwd(), "node_modules/.cache/sg-compile");
+
+export interface CompileFixtureOptions {
+  /**
+   * Files to make importable from `css`, keyed by path relative to the
+   * compile base (e.g. `{ "theme.css": css }` for `@import "./theme.css";`).
+   * Written to a throwaway directory that becomes the compile `base`.
+   */
+  imports?: Record<string, string>;
+}
 
 /**
  * Single isolation point for calling the real Tailwind v4 compiler
@@ -13,16 +31,42 @@ import { compile } from "@tailwindcss/node";
  * utility-class candidate list.
  * @param {string} css - `generate().css` output (optionally with extra CSS appended by the caller)
  * @param {string[]} candidates - Utility class names to build (empty array is valid — see `@source inline` tests)
+ * @param {CompileFixtureOptions} [options] - Extra files `css` can `@import`
  * @returns {Promise<string>} Compiled CSS for the given candidates
  */
 export async function compileFixtureCss(
   css: string,
   candidates: string[],
+  options: CompileFixtureOptions = {},
 ): Promise<string> {
   const input = `@import "tailwindcss";\n${css}`;
-  const result = await compile(input, {
-    base: process.cwd(),
-    onDependency: () => undefined,
-  });
-  return result.build(candidates);
+  const { imports } = options;
+  if (!imports) {
+    const result = await compile(input, {
+      base: process.cwd(),
+      onDependency: () => undefined,
+    });
+    return result.build(candidates);
+  }
+
+  mkdirSync(IMPORTS_ROOT, { recursive: true });
+  const base = mkdtempSync(join(IMPORTS_ROOT, "fixture-"));
+  try {
+    for (const [file, content] of Object.entries(imports)) {
+      const target = resolve(base, file);
+      const rel = relative(base, target);
+      if (rel.startsWith("..") || isAbsolute(rel)) {
+        throw new Error(`compileFixtureCss: import "${file}" escapes the base`);
+      }
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, content, "utf8");
+    }
+    const result = await compile(input, {
+      base,
+      onDependency: () => undefined,
+    });
+    return result.build(candidates);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
 }

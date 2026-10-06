@@ -1,7 +1,25 @@
 import { describe, it, expect } from "vitest";
+import { z } from "zod";
 
 import { defineTheme } from "./defineTheme";
 import { generate } from "./generate";
+
+/**
+ * Run `fn` and return the issue paths of the `ZodError` it throws; fails the
+ * test when it throws anything else or nothing at all.
+ * @param {() => unknown} fn - Call expected to throw a `ZodError`
+ * @returns {string[]} The issue paths, joined with `.`
+ */
+const zodIssuePaths = (fn: () => unknown): string[] => {
+  let error: unknown;
+  try {
+    fn();
+  } catch (caught) {
+    error = caught;
+  }
+  expect(error).toBeInstanceOf(z.ZodError);
+  return (error as z.ZodError).issues.map((i) => i.path.join("."));
+};
 
 const theme = defineTheme({
   colors: {
@@ -51,7 +69,9 @@ describe("generate", () => {
   });
 
   it("throws before generating CSS when the theme contains an injection-unsafe value", () => {
-    expect(() => generate({ colors: { a: "red;}" } })).toThrow();
+    expect(zodIssuePaths(() => generate({ colors: { a: "red;}" } }))).toContain(
+      "colors.a",
+    );
   });
 
   it("css contains the :root intermediate vars block", () => {
@@ -75,6 +95,18 @@ describe("generate", () => {
   it("css never contains a bare top-level .class{} rule", () => {
     const { css } = generate(theme);
     expect(css).not.toMatch(/^\.[A-Za-z]/m);
+  });
+
+  it("rejects an alias cycle that only exists once an override is merged on the base", () => {
+    // Base alone is acyclic (b → a); the dark override turns a into $b.
+    expect(
+      zodIssuePaths(() =>
+        generate({
+          colors: { a: "#fff", b: "$a" },
+          themeAxes: { theme: { dark: { colors: { a: "$b" } } } },
+        }),
+      ),
+    ).toEqual(["themeAxes.theme.dark.colors.a"]);
   });
 
   it("tokens reflect the theme (typography/color/shadow/blur/rounded variants)", () => {
@@ -102,18 +134,22 @@ describe("generate", () => {
   });
 
   it('extraSources: throws on an entry that tries to escape the inline("…") string', () => {
-    expect(() =>
-      generate(theme, { extraSources: ['x")@import "evil'] }),
-    ).toThrow();
+    expect(
+      zodIssuePaths(() =>
+        generate(theme, { extraSources: ['x")@import "evil'] }),
+      ),
+    ).toContain("extraSources.0");
   });
 
   it("extraSources: throws on an empty entry", () => {
-    expect(() => generate(theme, { extraSources: [""] })).toThrow();
+    expect(
+      zodIssuePaths(() => generate(theme, { extraSources: [""] })),
+    ).toContain("extraSources.0");
   });
 
   it("extraSources: throws on an entry longer than 512 characters", () => {
-    expect(() =>
-      generate(theme, { extraSources: ["a".repeat(513)] }),
-    ).toThrow();
+    expect(
+      zodIssuePaths(() => generate(theme, { extraSources: ["a".repeat(513)] })),
+    ).toContain("extraSources.0");
   });
 });

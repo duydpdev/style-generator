@@ -6,17 +6,24 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { EventEmitter } from "node:events";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { watch } from "chokidar";
-import type * as ChokidarModule from "chokidar";
 
-vi.mock("chokidar", async (importOriginal) => {
-  const actual = await importOriginal<typeof ChokidarModule>();
-  return { ...actual, watch: vi.fn(actual.watch) };
-});
+// A fake watcher per `watch()` call: this suite proves the singleton and the
+// change → debounced re-emit wiring. chokidar's `ready` fires before macOS
+// arms the kqueue watch, so a real-fs write right after it can be lost; real
+// fs delivery is covered by the CLI watch test in `generate.test.ts`.
+vi.mock("chokidar", () => ({
+  watch: vi.fn(() =>
+    Object.assign(new EventEmitter(), {
+      close: vi.fn(() => Promise.resolve()),
+    }),
+  ),
+}));
 
 import { styleGenNext, __resetForTests } from "./styleGenNext";
 
@@ -32,13 +39,6 @@ const sampleTheme = {
   },
 };
 
-// Real delay, not a fake-timer advance: this awaits a genuine chokidar fs
-// watcher (real OS file-change events), so there is no deterministic hook
-// to await instead. Plain executor, not `Promise.withResolvers()` — repo
-// tsconfig targets ES2022, which has no types for it.
-const delay = (ms: number): Promise<void> =>
-  new Promise((res) => setTimeout(res, ms));
-
 describe("styleGenNext", () => {
   let tmp: string;
   let origCwd: string;
@@ -52,6 +52,7 @@ describe("styleGenNext", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     __resetForTests();
     process.chdir(origCwd);
     rmSync(tmp, { recursive: true, force: true });
@@ -116,6 +117,25 @@ describe("styleGenNext", () => {
     }).toThrow(/invalid theme/);
   });
 
+  it("wraps a non-Zod emit failure with the theme path and keeps it as cause", () => {
+    const themeAbs = writeTheme();
+    // outDir is an existing file → mkdirSync throws ENOTDIR/EEXIST, not a ZodError.
+    writeFileSync(join(tmp, "blocked"), "", "utf8");
+    let thrown: unknown;
+    try {
+      styleGenNext({ themePath: "theme.json", outDir: "blocked" })({})(
+        "phase-production-build",
+      );
+    } catch (caught) {
+      thrown = caught;
+    }
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toContain(themeAbs);
+    expect(((thrown as Error).cause as NodeJS.ErrnoException).code).toMatch(
+      /^E(EXIST|NOTDIR)$/,
+    );
+  });
+
   it("does not start a watcher outside phase-development-server", () => {
     writeTheme();
 
@@ -124,7 +144,8 @@ describe("styleGenNext", () => {
     expect(watch).not.toHaveBeenCalled();
   });
 
-  it("starts exactly one chokidar watcher even when Next evaluates the config twice", async () => {
+  it("starts exactly one chokidar watcher even when Next evaluates the config twice", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const themeAbs = writeTheme();
     const wrap = styleGenNext({ themePath: "theme.json" });
 
@@ -138,13 +159,7 @@ describe("styleGenNext", () => {
       persistent: false,
     });
 
-    // Real delays: let the just-started watcher finish attaching before the
-    // write (native watch handles need a tick to subscribe), then give the
-    // debounced re-emit real wall-clock time to land — proves the single
-    // surviving watcher still reacts to a genuine fs event, racing against
-    // chokidar's own real-time polling with no promise/event this test
-    // could await instead.
-    await delay(200);
+    const watcher = vi.mocked(watch).mock.results[0]?.value as EventEmitter;
     writeFileSync(
       themeAbs,
       JSON.stringify({
@@ -152,10 +167,13 @@ describe("styleGenNext", () => {
         colors: { ...sampleTheme.colors, primary: "#FF0000" },
       }),
     );
-    await delay(800);
+    watcher.emit("change", themeAbs);
 
-    const css = readFileSync(join(tmp, "theme.css"), "utf8");
-    expect(css).toMatch(/#FF0000/);
+    const cssPath = join(tmp, "theme.css");
+    vi.advanceTimersByTime(199);
+    expect(readFileSync(cssPath, "utf8")).not.toMatch(/#FF0000/);
+    vi.advanceTimersByTime(1);
+    expect(readFileSync(cssPath, "utf8")).toMatch(/#FF0000/);
   });
 
   describe("phase gating (X-08)", () => {

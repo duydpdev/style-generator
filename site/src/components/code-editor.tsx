@@ -45,27 +45,30 @@ export function CodeEditor({
         {openTabs.map((t) => {
           const name = t.path.split("/").pop();
           return (
-            <button
+            <div
               key={t.path}
-              type="button"
               className={`code-tab${t.path === activePath ? " active" : ""}`}
-              onClick={() => {
-                onPick(t.path);
-              }}
             >
-              <span>{name}</span>
-              <span
+              <button
+                type="button"
+                className="code-tab-pick"
+                onClick={() => {
+                  onPick(t.path);
+                }}
+              >
+                {name}
+              </button>
+              <button
+                type="button"
                 className="close"
-                role="button"
-                tabIndex={-1}
-                onClick={(e) => {
-                  e.stopPropagation();
+                aria-label={`Close ${name ?? t.path}`}
+                onClick={() => {
                   onClose(t.path);
                 }}
               >
                 ×
-              </span>
-            </button>
+              </button>
+            </div>
           );
         })}
       </div>

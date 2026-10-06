@@ -9,6 +9,7 @@
     "build": "yarn build:examples && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "check:links": "node scripts/check-doc-links.mjs",
     "lint": "yarn run --top-level prettier --check ."
   },
   "dependencies": {

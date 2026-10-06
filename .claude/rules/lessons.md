@@ -49,7 +49,7 @@ Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không
 - **Mistake/Context:** Release CI fail vì PAT `CI_WORKER_REPOSITORY_TOKEN` hết hạn (checkout "could not read Username") và npm publish 404 do `NPM_TOKEN` hết hạn. Khi chuyển sang GitHub Packages, suýt bỏ sót `packages: write` ở caller workflow.
 - **New Rule:**
   1. Ưu tiên `GITHUB_TOKEN` built-in (tự hết hạn theo job, không cần xoay tay) thay PAT/npm-token có hạn cho CI publish/checkout. Nếu buộc dùng PAT → đặt expiry dài + lịch nhắc gia hạn.
-  2. **Reusable workflow (`workflow_call`)**: token permissions ⊆ caller. Muốn job con (vd `deploy.yml`) có `packages: write` thì PHẢI khai quyền đó ở **caller** (`release.yml` top-level `permissions`), không chỉ ở file con.
+  2. **Reusable workflow (`workflow_call`)**: token permissions ⊆ caller job. Muốn job con (vd `deploy.yml`) có `packages: write` thì PHẢI khai quyền đó ở **job gọi** trong `release.yml` (job `deploy`, `permissions: { contents: read, packages: write }`), không chỉ ở file con. Top-level `permissions` của `release.yml` giữ `contents: read` (least privilege), không nâng lên `packages: write`.
   3. Yarn Berry auth lấy từ `.yarnrc.yml` (`npmScopes.<scope>.npmAuthToken` interpolate env), KHÔNG từ `.npmrc` mà `setup-node registry-url` tạo. Set đúng env `YARN_NPM_AUTH_TOKEN`.
   4. GitHub Packages trên private repo: chỉ collaborator/được-grant cài được, kể cả có PAT `read:packages` → muốn share người lạ phải invite hoặc dùng org.
 
@@ -57,7 +57,7 @@ Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không
 
 - **Mistake:** Thêm `"postinstall": "nuxt prepare"` vào `examples/nuxt-v4/package.json`. CI `yarn install --immutable` chạy hook này trong Link step — TRƯỚC khi lib `dist/` được build — `nuxt.config.ts` import `@duydpdev/style-generator/vite` không resolve được → workspace build fail (exit 1) → cả install fail. Local pass vì `dist/` đã tồn tại.
 - **New Rule:** Trong monorepo, example/consumer workspace TUYỆT ĐỐI không đặt lifecycle hook (`postinstall`/`prepare`) gọi tool cần lib đã build (vd `nuxt prepare`, codegen). `yarn install --immutable` chạy các hook đó trước khi root build → fail. Đổi thành script thủ công (`prepare:nuxt`) hoặc để `dev`/`build`/`typecheck` tự lo. Đối chiếu các example sẵn có (các example hiện có KHÔNG có install hook) trước khi thêm script.
-- **Liên quan:** `examples/*` mới cũng phải được thêm vào `exclude` của root `tsconfig.json` (pre-commit `tsc --noEmit` ở root sẽ check chúng → lỗi `--jsx`/auto-import nếu không exclude).
+- **Liên quan:** root `tsconfig.json` dùng `"include": ["src", "e2e"]`, nên `examples/*` mới không nằm trong phạm vi `tsc --noEmit` của pre-commit và không cần thêm vào `exclude`. Mỗi example tự typecheck bằng script của chính nó (CI `peer-matrix` build/typecheck `examples/react-v4`).
 
 ### [2026-09-29] - Một cây tài liệu `documents/`; không vendor khung agent/skill; chỉ giữ lịch sử từ v4
 
@@ -78,3 +78,4 @@ Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không
 - **New Rule:**
   1. Never write to a watched file synchronously after `ready`. Unit-test watcher wiring (singleton, debounce, error logging) with a fake `EventEmitter` watcher and fake timers. Keep a single real-chokidar test, and make sure it waits for an observable result (e.g. the initial debounced write) before its first mutation.
   2. Keep a `vi.waitFor` timeout (≤ 2000) below the test timeout.
+  3. On Linux (`fs.watch`), `ready` fires after the root scan, before subdirectories are watched, so a write right after it can still be lost. Gate the first mutation on `server.watcher.getWatched()` listing the target file, bounded by a timeout that dumps the watched dirs on failure. Never retry-write to mask the race: it hides the bug and makes the test pass for the wrong reason (evidence: `documents/plans/2026-10-06/issue-register-execution/phase-05-peer-matrix.md`, task 05.4).

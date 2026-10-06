@@ -24,7 +24,19 @@ This package is published to **GitHub Packages** under a **private** repository.
 To install you must be a repository collaborator and authenticate with a GitHub
 Personal Access Token (classic) that has the `read:packages` scope.
 
-**1. Configure the `@duydpdev` scope** — add to your project `.npmrc`:
+**1. Configure the `@duydpdev` scope** — use the file your package manager reads. Yarn Berry (v2 and later) reads `.yarnrc.yml` and ignores `.npmrc`.
+
+Yarn Berry — add to your project `.yarnrc.yml`:
+
+```yaml
+npmScopes:
+  duydpdev:
+    npmRegistryServer: "https://npm.pkg.github.com"
+    npmAlwaysAuth: true
+    npmAuthToken: "${GITHUB_PAT}"
+```
+
+npm, pnpm and Yarn Classic — add to your project `.npmrc`:
 
 ```ini
 @duydpdev:registry=https://npm.pkg.github.com
@@ -225,12 +237,14 @@ Print the installed CLI version.
 }
 ```
 
-`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography` and `extraSources` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, or a legacy 3.x key such as `responsiveModules` — is rejected; only `$schema`, `theme`, `output` and `plugin` are accepted besides the forwarded keys. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. The CLI resolves configuration in this order:
+`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography` and `extraSources` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, or a legacy 3.x key such as `responsiveModules` — is rejected; only `$schema`, `theme`, `output` and `plugin` are accepted besides the forwarded keys. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. The CLI resolves configuration in this order, per key:
 
 1. command flags
 2. `style-gen.config.json`
 3. `package.json["style-gen"]`
 4. built-in defaults
+
+The two file sources are alternatives, not layers: the CLI reads `style-gen.config.json` when it exists and `package.json["style-gen"]` only when it does not, and never merges the two (a malformed `style-gen.config.json` is reported, not replaced by the `package.json` section). Flags override single keys of whichever file was read, and defaults fill the keys left unset.
 
 ---
 
@@ -253,6 +267,24 @@ const { css } = generate({
 ### Key grammar
 
 Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Two keys in different categories that produce the same CSS variable (`colors.shadowPrimary` and `shadows.primary` both give `--sg-shadow-primary`) are rejected, and color keys may not produce a `--sg-sp-*` variable (that namespace is reserved for spacing, for example `spP`). Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, quotes must be balanced, and so must parentheses and brackets (`rgb(0 0 0` is rejected at its path).
+
+### Key rules
+
+Everything the schema rejects about a name, in one place (every rule is reported as `path → message`):
+
+| Rule                                                                                                                                                                             | Applies to                                   | Rejected                                                            | Accepted                             |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------ |
+| Start with a letter or digit, then only letters, digits or `-`                                                                                                                   | every token, axis and variant name           | `-primary`, `my color`                                              | `primary`, `2xl`, `primary-active`   |
+| `_` is never allowed                                                                                                                                                             | every token, axis and variant name           | `primary_active`                                                    | `primaryActive`, `primary-active`    |
+| No leading run of two or more uppercase letters: the class the typed tokens produce (`cTA` → `c-ta`) would differ from the class the CSS emits (`cta`). A single capital is fine | every token, axis and variant name           | `CTA`, `ABtn`, `HTMLParser` (rename to `cta`, `abtn`, `htmlparser`) | `Blue`, `primaryCTA`, `primaryFG`    |
+| Keys of one record that kebab-case to the same name                                                                                                                              | each category and `typography`               | `blue500` + `blue-500`                                              | `blue500` + `blue600`                |
+| A `typography` key must kebab-case to a valid Tailwind `@utility` name: lowercase letter first, so no leading digit or dash                                                      | `typography`                                 | `2xl`, `12Mono`                                                     | `text2xl`, `heading1`                |
+| `fontFamily` keys may not kebab-case to a Tailwind font-weight name (`thin`, `extralight`, `light`, `normal`, `medium`, `semibold`, `bold`, `extrabold`, `black`)                | `fontFamily` (also in `themeAxes` overrides) | `bold`, `extrabold`                                                 | `sans`, `display`                    |
+| A `borderWidth` key may not kebab-case to a `colors` key (both emit `border-<key>`)                                                                                              | `borderWidth` vs `colors`, per scope         | `colors.thinLine` + `borderWidth.thin-line`                         | `colors.line` + `borderWidth.thin`   |
+| Two categories may not produce the same CSS variable, and `--sg-sp-*` is reserved for spacing                                                                                    | across categories                            | `colors.shadowPrimary` + `shadows.primary`, `colors.spP`            | `colors.primary` + `shadows.primary` |
+| Axis and variant names may not be canonical integers                                                                                                                             | `themeAxes`                                  | `100`, `2024`                                                       | `contrast100`, `007`                 |
+
+The CLI, `styleGenVite` and `styleGenNext` print the rename hint on the offending path (for example `colors.CTA → Key "CTA" yields class "cta" in the CSS but "c-ta" through the typed tokens; rename it to "cta" …`).
 
 ### Categories
 
@@ -281,7 +313,7 @@ Keys use **camelCase** (or kebab-case); the library converts them to kebab-case 
 
 ### Aliases (`$key`)
 
-A value `"$<key>"` refers to another key **in the same category** and is emitted as `var(--sg-<key>)`:
+A value `"$<key>"` refers to another key **in the same category** and is emitted as `var(--<cssVarPrefix>-<kebab-key>)`, where the prefix belongs to the category (`sg` for `colors`, `sg-shadow` for `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`), not always `--sg-<key>`:
 
 ```json
 {
@@ -290,7 +322,16 @@ A value `"$<key>"` refers to another key **in the same category** and is emitted
 }
 ```
 
-The target is the raw key (`$blue500`, not `$blue-500`), it must exist, and the alias graph must be acyclic. Aliases are not allowed inside `typography`.
+The target is the raw key (`$blue500`, not `$blue-500`), it must exist, and the alias graph must be acyclic. Aliases are not allowed inside `typography`. The example above emits:
+
+```css
+:root {
+  --sg-blue-500: #3b82f6;
+  --sg-primary: var(--sg-blue-500);
+  --sg-shadow-base: 0 1px 2px rgb(0 0 0 / 0.1);
+  --sg-shadow-card: var(--sg-shadow-base);
+}
+```
 
 ### Interactive states (`primaryHover`, `primaryActive`)
 
@@ -374,9 +415,9 @@ Rules:
 
 The old single-axis key was renamed; a theme still using it is rejected with a message pointing at `themeAxes`. See the [migration guide](./documents/migration/3.x-to-4.0.md) for the exact message and the rewrite.
 
-### Why the `--sg-*` intermediate variables?
+### The `--sg-*` intermediate variables
 
-`--sg-*` is an internal layer: it exists to break the circular reference that appears when a theme switches a variable that `@theme inline` also defines.
+`--sg-*` is an intermediate layer: it exists to break the circular reference that appears when a theme switches a variable that `@theme inline` also defines.
 
 ```css
 /* Without the intermediate layer: circular! */
@@ -396,7 +437,7 @@ html[data-theme="dark"] {
 }
 ```
 
-Consumers use standard Tailwind classes and variables, never `--sg-*`:
+Prefer standard Tailwind classes and the `--color-*` variables in application code:
 
 ```html
 <div class="bg-primary text-foreground">…</div>
@@ -407,6 +448,8 @@ Consumers use standard Tailwind classes and variables, never `--sg-*`:
   color: var(--color-primary);
 }
 ```
+
+**Public contract.** The variables the generator emits (`--sg-<color>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, and the inline `--sg-sp-*` spacing variables) are part of the public output in 4.x: aliases resolve to them, and hand-written CSS may read or override them. Throughout 4.x they keep their names. The 5.0 major renames the color variables to `--sg-color-<key>` and will list that rename as a breaking change; existing `var(--sg-<color>)` references will need to be updated then.
 
 ### Built-in utility name clashes
 
@@ -529,9 +572,22 @@ Default keys: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `m
 ### Usage in components
 
 ```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
+import {
+  resolveSpacingProps,
+  type ResponsiveValueStrict,
+} from "@duydpdev/style-generator/spacing";
+import type { CSSProperties, ReactNode } from "react";
 
-const Box = ({ p, px, m, className, style, children }) => {
+interface BoxProps {
+  p?: ResponsiveValueStrict<number>;
+  px?: ResponsiveValueStrict<number>;
+  m?: ResponsiveValueStrict<number>;
+  className?: string;
+  style?: CSSProperties;
+  children?: ReactNode;
+}
+
+const Box = ({ p, px, m, className, style, children }: BoxProps) => {
   const spacing = resolveSpacingProps({ p, px, m });
   return (
     <div
@@ -562,7 +618,7 @@ const Box = ({ p, px, m, className, style, children }) => {
 
 ### Typed design tokens
 
-`generate()` returns them as `tokens`; you can also build them standalone (browser-safe) with `createDesignTokens`:
+`generate()` returns them as `tokens`, the `{ Web }` object; you can also build the same object standalone (browser-safe) with `createDesignTokens`, which returns it as `DesignTokens`:
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
@@ -659,7 +715,9 @@ Aliases: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, 
 ```ts
 import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
 
-type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop"; // "base" is always allowed
+// "base" is always allowed; every other key must be declared in `options.breakpoints`
+// and exist in `screens` (or `defaultScreens`), or it has no CSS behind it.
+type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop";
 export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 ```
 

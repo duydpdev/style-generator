@@ -501,17 +501,12 @@ body.examples-mode {
 .code-tab {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 11px 16px;
+  gap: 2px;
   font-family: var(--f-mono);
   font-size: 11.5px;
   color: #777c95;
   border-right: 1px solid #1b1f36;
-  cursor: pointer;
   background: transparent;
-  border-top: 0;
-  border-bottom: 0;
-  border-left: 0;
   white-space: nowrap;
   position: relative;
   transition:
@@ -534,9 +529,18 @@ body.examples-mode {
   top: 0;
   height: 2px;
   background: #8fa6ff;
+  pointer-events: none;
+}
+.code-tab-pick {
+  padding: 11px 0 11px 16px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 .code-tab .close {
-  margin-left: 2px;
+  margin: 0 12px 0 2px;
   padding: 1px 4px;
   color: #777c95;
   border-radius: 3px;

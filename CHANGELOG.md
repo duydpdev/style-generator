@@ -1,3 +1,9 @@
+# [4.1.1](https://github.com/duydpdev/style-generator/compare/v4.1.0...v4.1.1) (2026-10-06)
+
+### Bug Fixes
+
+- CLI scaffolding guards, Vite/Next integration phases and Node engines ([4426496](https://github.com/duydpdev/style-generator/commit/4426496566c47f32a2f28f9fba5dd8fbff7f5d1e))
+
 # [4.1.0](https://github.com/duydpdev/style-generator/compare/v4.0.3...v4.1.0) (2026-10-06)
 
 ### Features

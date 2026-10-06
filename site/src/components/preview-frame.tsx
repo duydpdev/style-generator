@@ -5,7 +5,7 @@ interface Props {
   title: string;
 }
 
-export function PreviewFrame({ src, pathLabel, meta, title }: Props) {
+export function PreviewFrame({ src, pathLabel, meta, title }: Readonly<Props>) {
   return (
     <div className="preview-stage">
       <div className="preview-frame-wrap">

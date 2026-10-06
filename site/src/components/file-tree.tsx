@@ -13,7 +13,7 @@ function fileNameOf(path: string): string {
 }
 
 function extOf(name: string): string {
-  return name.includes(".") ? name.split(".").pop()! : "";
+  return name.includes(".") ? (name.split(".").pop() ?? "") : "";
 }
 
 function folderOf(path: string): string {
@@ -45,14 +45,16 @@ interface FolderProps {
   onOpen: (path: string) => void;
 }
 
-function Folder({ folder, files, activePath, onOpen }: FolderProps) {
+function Folder({ folder, files, activePath, onOpen }: Readonly<FolderProps>) {
   const [open, setOpen] = useState(true);
   return (
     <>
       <button
         type="button"
         className={`tree-folder${open ? " open" : ""}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
       >
         <span className="chev">▸</span>
         <FolderIcon />
@@ -64,7 +66,9 @@ function Folder({ folder, files, activePath, onOpen }: FolderProps) {
             key={f.path}
             type="button"
             className={`tree-file${f.path === activePath ? " active" : ""}`}
-            onClick={() => onOpen(f.path)}
+            onClick={() => {
+              onOpen(f.path);
+            }}
           >
             <FileIcon />
             <span className="file-name">{f.name}</span>
@@ -76,7 +80,7 @@ function Folder({ folder, files, activePath, onOpen }: FolderProps) {
   );
 }
 
-export function FileTree({ sections, activePath, onOpen }: Props) {
+export function FileTree({ sections, activePath, onOpen }: Readonly<Props>) {
   return (
     <>
       {sections.map((sec) => {
@@ -88,8 +92,10 @@ export function FileTree({ sections, activePath, onOpen }: Props) {
           const folder = folderOf(f.path);
           const name = fileNameOf(f.path);
           const ext = extOf(name);
-          if (!byFolder.has(folder)) byFolder.set(folder, []);
-          byFolder.get(folder)!.push({ path: f.path, ext, name });
+          const entry = { path: f.path, ext, name };
+          const list = byFolder.get(folder);
+          if (list) list.push(entry);
+          else byFolder.set(folder, [entry]);
         }
         return (
           <div key={sec.section} className="tree-section">

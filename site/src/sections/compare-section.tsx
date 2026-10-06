@@ -1,4 +1,5 @@
 import { VERSION } from "../data/version";
+
 import { COMPARE_ROWS } from "./compare-rows";
 
 /**

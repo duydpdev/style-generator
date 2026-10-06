@@ -53,18 +53,29 @@ if (!baselinePath || !cssPath || (args.includes("--allow") && !allowPath)) {
   process.exit(2);
 }
 
+/**
+ * Read a file, or exit 2 with the error.
+ * @param {string} path - File path
+ * @returns {string} File contents
+ */
 function readOrExit(path) {
+  let text;
   try {
-    return readFileSync(resolve(path), "utf8");
+    text = readFileSync(resolve(path), "utf8");
   } catch (error) {
     console.error(
       `Cannot read ${path}: ${error instanceof Error ? error.message : String(error)}`,
     );
     process.exit(2);
   }
+  return text;
 }
 
-/** Concatenated text of a css file, or of every `.css` file under a directory. */
+/**
+ * Concatenated text of a css file, or of every `.css` file under a directory.
+ * @param {string} path - A `.css` file or a directory
+ * @returns {string} CSS text
+ */
 function readCssInput(path) {
   const abs = resolve(path);
   let stat;
@@ -93,7 +104,12 @@ function readCssInput(path) {
   return files.map((f) => readOrExit(f)).join("\n");
 }
 
-/** Split on `sep` only outside `[...]` (arbitrary values/variants may contain it). */
+/**
+ * Split on `sep` only outside `[...]` (arbitrary values/variants may contain it).
+ * @param {string} text - Class name or fragment
+ * @param {string} sep - Single-character separator
+ * @returns {string[]} Parts, including empty ones
+ */
 function splitTopLevel(text, sep) {
   const parts = [];
   let depth = 0;
@@ -130,12 +146,29 @@ const DIRECTION = new Set([
 ]);
 const TWO_PART_LEADS = new Set(["min", "max"]);
 
-/** @returns {{ family: string, variants: string[] }} */
+/**
+ * Strip leading and trailing `!` (Tailwind's important modifier).
+ * @param {string} text - Class base
+ * @returns {string} `text` without surrounding `!`
+ */
+function trimImportant(text) {
+  let start = 0;
+  let end = text.length;
+  while (text[start] === "!") start++;
+  while (end > start && text[end - 1] === "!") end--;
+  return text.slice(start, end);
+}
+
+/**
+ * The family a class belongs to (`top-`, `rounded-tl-`, `min-w-`, …) and its variants.
+ * @param {string} className - Unescaped class name
+ * @returns {{ family: string, variants: string[] }} Family key and variant prefixes
+ */
 function classify(className) {
   const pieces = splitTopLevel(className, ":");
   const rawBase = pieces.pop() ?? "";
   const variants = pieces;
-  const base = rawBase.replace(/^!+|!+$/g, "").replace(/^-/, "");
+  const base = trimImportant(rawBase).replace(/^-/, "");
   if (base.startsWith("[")) return { family: "[arbitrary-property]", variants };
 
   // Cut an arbitrary value (`top-[14px]`, `w-[calc(1-2)]`) before segmenting.
@@ -155,7 +188,11 @@ function classify(className) {
   return { family, variants };
 }
 
-/** Class names appearing in selector preludes (declaration values are ignored). */
+/**
+ * Class names appearing in selector preludes (declaration values are ignored).
+ * @param {string} css - CSS text
+ * @returns {Set<string>} Unescaped class names
+ */
 function classesFromCss(css) {
   const found = new Set();
   const source = css.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -182,6 +219,12 @@ function classesFromCss(css) {
   return found;
 }
 
+/**
+ * Parse `family | reason | replacement` lines; exit 2 on a malformed line.
+ * @param {string} text - Allowlist file contents
+ * @param {string} path - Allowlist path, for error messages
+ * @returns {Map<string, { reason: string, replacement: string }>} Entries by family
+ */
 function parseAllowlist(text, path) {
   const entries = new Map();
   const errors = [];
@@ -204,7 +247,11 @@ function parseAllowlist(text, path) {
   return entries;
 }
 
-/** @param {Iterable<string>} classNames */
+/**
+ * Group class names by family, collecting the variants seen per family.
+ * @param {Iterable<string>} classNames - Unescaped class names
+ * @returns {Map<string, { classes: Set<string>, variants: Set<string> }>} Families
+ */
 function groupByFamily(classNames) {
   const families = new Map();
   for (const name of classNames) {

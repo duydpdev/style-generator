@@ -13,7 +13,7 @@ interface Props {
  * @param root0.title
  * @param root0.body
  */
-export function KeyPoint({ badge, title, body }: Props) {
+export function KeyPoint({ badge, title, body }: Readonly<Props>) {
   return (
     <div className="kp">
       <span className="badge">{badge}</span>

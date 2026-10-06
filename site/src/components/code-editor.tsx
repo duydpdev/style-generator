@@ -17,7 +17,12 @@ const LANG_LABEL: Record<string, string> = {
   text: "Plain Text",
 };
 
-export function CodeEditor({ openTabs, activePath, onPick, onClose }: Props) {
+export function CodeEditor({
+  openTabs,
+  activePath,
+  onPick,
+  onClose,
+}: Readonly<Props>) {
   const active = openTabs.find((f) => f.path === activePath) ?? null;
 
   const html = useMemo(
@@ -44,7 +49,9 @@ export function CodeEditor({ openTabs, activePath, onPick, onClose }: Props) {
               key={t.path}
               type="button"
               className={`code-tab${t.path === activePath ? " active" : ""}`}
-              onClick={() => onPick(t.path)}
+              onClick={() => {
+                onPick(t.path);
+              }}
             >
               <span>{name}</span>
               <span
@@ -88,7 +95,9 @@ export function CodeEditor({ openTabs, activePath, onPick, onClose }: Props) {
           <span>
             <b>{active ? (LANG_LABEL[active.lang] ?? "Plain") : "—"}</b>
           </span>
-          <span>{lineCount > 0 ? `${lineCount} lines` : "0 lines"}</span>
+          <span>
+            {lineCount > 0 ? `${String(lineCount)} lines` : "0 lines"}
+          </span>
         </div>
       </div>
     </div>

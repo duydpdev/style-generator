@@ -37,21 +37,23 @@ export function ExamplesPage() {
 
   useEffect(() => {
     document.body.classList.add("examples-mode");
-    return () => document.body.classList.remove("examples-mode");
+    return () => {
+      document.body.classList.remove("examples-mode");
+    };
   }, []);
 
   // Bootstrap / reset tabs whenever the variant changes
   useEffect(() => {
-    if (!variant || variant !== "v4") return;
-    const first = flatFiles(variant as Variant)[0];
+    if (variant !== "v4") return;
+    const first = flatFiles(variant).at(0);
     setOpenTabs(first ? [first] : []);
-    setActivePath(first?.path ?? null);
+    setActivePath(first ? first.path : null);
     setView("preview");
   }, [variant]);
 
   if (variant !== "v4") return <Navigate to="/examples/v4" replace />;
 
-  const v = variant as Variant;
+  const v = variant;
   const meta = META[v];
   const iframeSrc = `${BASE}/examples/${v}/index.html`;
 
@@ -90,21 +92,27 @@ export function ExamplesPage() {
           <div className="version-switch">
             <div className="version-switch-label">Tailwind version</div>
             <div className="version-pills" role="tablist">
-              {(Object.keys(META) as Variant[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  role="tab"
-                  aria-selected={key === v}
-                  className={`version-pill${key === v ? " active" : ""}`}
-                  onClick={() => navigate(`/examples/${key}`)}
-                >
-                  <span>{META[key].label}</span>
-                  {META[key].badge ? (
-                    <span className="badge">{META[key].badge}</span>
-                  ) : null}
-                </button>
-              ))}
+              {(Object.keys(META) as Variant[]).map((key) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Variant is a single-member union today; the comparison must stay so the switcher keeps working when more variants are added
+                const isActive = key === v;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`version-pill${isActive ? " active" : ""}`}
+                    onClick={() => {
+                      void navigate(`/examples/${key}`);
+                    }}
+                  >
+                    <span>{META[key].label}</span>
+                    {META[key].badge ? (
+                      <span className="badge">{META[key].badge}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -158,7 +166,9 @@ export function ExamplesPage() {
                 role="tab"
                 aria-selected={view === "preview"}
                 className={`view-tab${view === "preview" ? " active" : ""}`}
-                onClick={() => setView("preview")}
+                onClick={() => {
+                  setView("preview");
+                }}
               >
                 <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
                   <rect x="1.5" y="3" width="13" height="10" rx="1.5" />
@@ -172,7 +182,9 @@ export function ExamplesPage() {
                 role="tab"
                 aria-selected={view === "code"}
                 className={`view-tab${view === "code" ? " active" : ""}`}
-                onClick={() => setView("code")}
+                onClick={() => {
+                  setView("code");
+                }}
               >
                 <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
                   <path d="M5.5 11.5L2 8l3.5-3.5M10.5 4.5L14 8l-3.5 3.5" />

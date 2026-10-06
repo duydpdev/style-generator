@@ -28,10 +28,15 @@ mkdirSync(targetRoot, { recursive: true });
 for (const ex of EXAMPLES) {
   console.log(`[build-examples] ${ex.name} → base ${EXAMPLE_BASE}`);
 
+  // Yarn puts its own `yarn` shim first on PATH for every `yarn run`; on
+  // Windows that shim is `yarn.cmd`, which spawn only finds through a shell.
+  // The arguments are fixed strings, so the shell sees nothing to expand.
+  // eslint-disable-next-line sonarjs/no-os-command-from-path -- must be the PATH `yarn` (Yarn's own shim under `yarn run`)
   const result = spawnSync("yarn", ["workspace", ex.workspace, "build"], {
     cwd: repoRoot,
     stdio: "inherit",
     env: { ...process.env, EXAMPLE_BASE },
+    shell: process.platform === "win32",
   });
   if (result.status !== 0) {
     console.error(`[build-examples] ${ex.name} build failed`);

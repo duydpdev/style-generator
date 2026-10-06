@@ -58,7 +58,9 @@ export function HeroSection() {
             <button
               type="button"
               className="copy-btn"
-              onClick={() => copy(INSTALL_CMD)}
+              onClick={() => {
+                void copy(INSTALL_CMD);
+              }}
             >
               {copied ? "Copied" : "Copy"}
             </button>
@@ -73,9 +75,7 @@ export function HeroSection() {
         {STATS.map((s) => (
           <div key={s.k} className="stat">
             <span className="k">{s.k}</span>
-            <span className={`v${"accent" in s && s.accent ? " accent" : ""}`}>
-              {s.v}
-            </span>
+            <span className={`v${"accent" in s ? " accent" : ""}`}>{s.v}</span>
             <span className="m">{s.m}</span>
           </div>
         ))}
@@ -84,7 +84,7 @@ export function HeroSection() {
       <div className="marquee" aria-hidden="true">
         <div className="marquee-track">
           {[...MARQUEE_TOKENS, ...MARQUEE_TOKENS].map((t, i) => (
-            <span key={`${t}-${i}`}>{t}</span>
+            <span key={`${t}-${String(i)}`}>{t}</span>
           ))}
         </div>
       </div>

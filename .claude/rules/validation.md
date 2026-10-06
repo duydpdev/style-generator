@@ -10,14 +10,14 @@ yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:
 
 Add the rows that match the change:
 
-| When the change touches                                                       | Also run                                                                                                             |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `src/**`, `package.json`, `vite.config.ts`, `scripts/*.mjs`                   | `yarn build:all && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target` |
-| Spacing, generated CSS, `@source inline`, `themeAxes`                         | `yarn build:all && yarn test:e2e`                                                                                    |
-| `documents/*.md`, `site/**`, `examples/**`                                    | `yarn site:build`                                                                                                    |
-| Release/publish config (`release.config.cjs`, `.github/workflows/deploy.yml`) | `yarn build:all && yarn npm publish --dry-run` — output must contain `npm.pkg.github.com`                            |
+| When the change touches                                                         | Also run                                                                                                                                                           |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/**`, `package.json`, `vite.config.ts`, `tsdown.config.ts`, `scripts/*.mjs` | `yarn typecheck:scripts && yarn build:all && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target && yarn check:smoke` |
+| Spacing, generated CSS, `@source inline`, `themeAxes`                           | `yarn build:all && yarn test:e2e`                                                                                                                                  |
+| `documents/*.md`, `site/**`, `examples/**`                                      | `yarn site:build`                                                                                                                                                  |
+| Release/publish config (`release.config.cjs`, `.github/workflows/deploy.yml`)   | `yarn build:all && yarn npm publish --dry-run` — output must contain `npm.pkg.github.com`                                                                          |
 
-The pre-commit hook (Husky + lint-staged) runs eslint → prettier → `tsc --noEmit` → `vitest run`. It does not replace the gate above: it skips `test:types`, `check:*`, e2e and the site build.
+The pre-commit hook (Husky + lint-staged) runs, on the staged snapshot of the staged code files: eslint → prettier → `tsc --noEmit` → `vitest related --run` (only tests that import a staged file). It does not replace the gate above: it skips the rest of `yarn test`, `test:types`, `check:*`, e2e and the site build.
 
 ## Plan Protocol (4-Phase)
 

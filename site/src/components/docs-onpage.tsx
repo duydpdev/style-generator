@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import type { RefObject } from "react";
 
 interface Heading {
@@ -11,14 +10,14 @@ interface Heading {
 interface Props {
   contentRef: RefObject<HTMLElement | null>;
   rawMarkdown: string;
-  quicklinks?: Array<{ label: string; href: string; arr?: string }>;
+  quicklinks?: { label: string; href: string; arr?: string }[];
 }
 
 export function DocsOnPage({
   contentRef,
   rawMarkdown,
   quicklinks = [],
-}: Props) {
+}: Readonly<Props>) {
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -32,12 +31,14 @@ export function DocsOnPage({
         el.querySelectorAll("h2[id], h3[id]"),
       ).map((h) => ({
         id: h.id,
-        text: (h.textContent ?? "").replace(/`/g, ""),
+        text: h.textContent.replace(/`/g, ""),
         level: h.tagName === "H3" ? 3 : 2,
       }));
       setHeadings(list);
     });
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
   }, [contentRef, rawMarkdown]);
 
   // Scroll spy + progress fill
@@ -87,8 +88,10 @@ export function DocsOnPage({
           {headings.map((h) => (
             <li
               key={h.id}
-              className={`h${h.level}${h.id === activeId ? " active" : ""}`}
-              onClick={() => jump(h.id)}
+              className={`h${String(h.level)}${h.id === activeId ? " active" : ""}`}
+              onClick={() => {
+                jump(h.id);
+              }}
             >
               {h.text}
             </li>
@@ -100,7 +103,7 @@ export function DocsOnPage({
           <span className="toc-progress-track">
             <span
               className="toc-progress-fill"
-              style={{ transform: `scaleX(${progress})` }}
+              style={{ transform: `scaleX(${String(progress)})` }}
             />
           </span>
           <span>{Math.round(progress * 100)}%</span>

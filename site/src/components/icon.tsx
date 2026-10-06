@@ -11,7 +11,7 @@ interface Props {
  * @param root0.children
  * @param root0.className
  */
-export function Icon({ children, className = "ic" }: Props) {
+export function Icon({ children, className = "ic" }: Readonly<Props>) {
   return (
     <svg className={className} viewBox="0 0 16 16" aria-hidden="true">
       {children}

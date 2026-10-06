@@ -16,6 +16,14 @@ export default defineConfig({
         "**/*.d.ts",
         "src/__integration__/**",
       ],
+      // Floor ~1 point under the measured totals (2026-10-06: 95.23 / 89.55 /
+      // 95.95 / 95.68). CI runs `yarn test:coverage`, so a drop fails the build.
+      thresholds: {
+        statements: 94,
+        branches: 88,
+        functions: 94,
+        lines: 94,
+      },
     },
     // Type tests (*.test-d.ts) run only via `yarn test:types`; enabling
     // typecheck here would type-check them again on every `yarn test`.

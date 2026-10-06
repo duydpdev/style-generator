@@ -86,6 +86,7 @@
     "site:dev": "yarn workspace site dev",
     "site:build": "yarn build:all && yarn workspace site build",
     "site:preview": "yarn workspace site preview",
+    "typecheck:dist": "tsc -p tsconfig.dts-check.json",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json"
   },
   "devDependencies": {
@@ -125,8 +126,8 @@
   },
   "peerDependencies": {
     "tailwindcss": ">=4.1.0",
-    "typescript": "^5.0.0",
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+    "typescript": "^5.0.0 || ^6.0.0",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
     "typescript": {

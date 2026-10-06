@@ -48,14 +48,16 @@ npm install @duydpdev/style-generator
 > Access is granted per collaborator. If install returns `404`/`401`, your token
 > lacks `read:packages` or you have not been added to the repository.
 
-Peer dependencies your project must provide:
+Peer dependencies (`typescript` and `vite` are optional: install them only if you type-check against the package or use `styleGenVite`):
 
-| Peer          | Range                           | Notes                                                                            |
-| ------------- | ------------------------------- | -------------------------------------------------------------------------------- |
-| `node`        | `^20.19.0 \|\| >=22.12.0`       | Unflagged `require(esm)`, so the CJS entries can load the ESM-only `chokidar@5`. |
-| `tailwindcss` | `>=4.1.0`                       | Tailwind v3 is not supported. `@source inline(...)` needs 4.1+.                  |
-| `typescript`  | `^5.0.0`                        |                                                                                  |
-| `vite`        | `^5 \|\| ^6 \|\| ^7` (optional) | Only for `styleGenVite` (also used by Nuxt).                                     |
+| Peer          | Range                                   | Tested in CI                      | Notes                                                                                             |
+| ------------- | --------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `node`        | `^20.19.0 \|\| >=22.12.0`               | 20.19.0 (built-package smoke), 22 | Unflagged `require(esm)`, so the CJS entries can load the ESM-only `chokidar@5`.                  |
+| `tailwindcss` | `>=4.1.0`                               | 4.1.x, 4.3.0                      | Tailwind v3 is not supported. `@source inline(...)` needs 4.1+.                                   |
+| `typescript`  | `^5 \|\| ^6` (optional)                 | 5.9, 6.0                          | For type-checking against the package's `.d.ts`. TypeScript 7 (native port) is not supported yet. |
+| `vite`        | `^5 \|\| ^6 \|\| ^7 \|\| ^8` (optional) | 5.4, 6.4, 7.3, 8.3                | Only for `styleGenVite` (also used by Nuxt).                                                      |
+
+CI runs the latest release of each major in "Tested in CI"; the floor of a range (for example `vite@5.0.0`) is not tested. The `check` job covers the lockfile versions (Vite 7.3, TypeScript 5.9). The `peer-matrix` job covers Vite 5, 6 and 8 and TypeScript 6: it builds `examples/react-v4`, runs a Vite dev server that re-emits on a theme edit, and type-checks the example and `dist/*.d.ts`. A failing leg for a published major fails CI. TypeScript 7 runs as an experimental leg that may fail; it currently stops at install, because Yarn's built-in `compat/typescript` patch does not apply to `typescript@7`, so it makes no compatibility claim either way (see [`documents/testing.md`](./documents/testing.md)).
 
 `zod` is a regular dependency of the package; you do not install it yourself.
 
@@ -716,7 +718,7 @@ Class names built at runtime (a template literal such as `` `bg-${variant}` ``) 
 
 ### Remote (GitHub Actions)
 
-`ci.yml` runs commitlint, lint, `prettier:check`, `tsc`, `build:all`, the `check:*` gates and the unit/type tests, a Playwright job, and a leg that re-resolves Tailwind to the 4.1.x peer floor and runs the unit and e2e suites against it. See [`documents/deploy.md`](./documents/deploy.md) and [`documents/testing.md`](./documents/testing.md).
+`ci.yml` runs commitlint, lint, `prettier:check`, `tsc`, `build:all`, the `check:*` gates and the unit/type tests, a Playwright job, a leg that re-resolves Tailwind to the 4.1.x peer floor and runs the unit and e2e suites against it, a Node 20.19.0 smoke leg, and the `peer-matrix` legs (Vite 5/6/8 and TypeScript 6 gate CI; TypeScript 7 is experimental). See [`documents/deploy.md`](./documents/deploy.md) and [`documents/testing.md`](./documents/testing.md).
 
 ```bash
 yarn test          # Unit tests

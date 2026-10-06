@@ -20,14 +20,14 @@ yarn add <package>
 ```bash
 # Build
 yarn build          # Vite library build (ESM + CJS + .d.ts via vite-plugin-dts)
-yarn build:cli      # tsdown bundle of CLI → dist/cli/index.mjs (with node shebang)
+yarn build:cli      # tsdown (tsdown.config.ts) → dist/cli/index.mjs + map, node shebang, no .d.mts
 yarn build:all      # Both
 
 # Test
 yarn test           # Vitest run, unit (*.test.ts)
 yarn test:watch     # Watch mode
 yarn test:coverage  # v8 coverage; excludes test files and dist/
-yarn test:types     # vitest typecheck — runs *.test-d.ts (expectTypeOf)
+yarn test:types     # vitest run --typecheck.only — *.test-d.ts (expectTypeOf); `yarn test` does not run them
 yarn test:e2e       # Playwright (Chromium + WebKit) — spacing inheritance, compiled CSS
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single file
 
@@ -37,12 +37,13 @@ yarn lint:fix
 yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn prettier:fix writes
 yarn tsc --noEmit   # Type check
 yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (also run by prepublish + CI)
+yarn check:smoke    # after build:all: import+require every subpath, run the CLI and the init-scaffolded script (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
 ```
 
 The gate a task must pass before it is reported done lives in `.claude/rules/validation.md`.
 
-Pre-commit (Husky): lint-staged (staged files only) → tsc --noEmit → vitest run. Yarn Berry never runs `prepare`, so Husky is installed via `postinstall: husky` (verify with `git config core.hooksPath` → `.husky/_`). `pinst` (`prepack: pinst --disable`, `postpack: pinst --enable`) renames `postinstall` to `_postinstall` inside the published tarball so consumers never run Husky. Release CI sets `HUSKY=0`.
+Pre-commit (Husky): `.husky/pre-commit` runs only `yarn lint-staged`, which works on the staged snapshot: eslint --fix → prettier → `tsc --noEmit` → `vitest related --run` (`lint-staged.config.js`). Yarn Berry never runs `prepare`, so Husky is installed via `postinstall: husky` (verify with `git config core.hooksPath` → `.husky/_`). `pinst` (`prepack: pinst --disable`, `postpack: pinst --enable`) renames `postinstall` to `_postinstall` inside the published tarball so consumers never run Husky. Release CI sets `HUSKY=0`.
 
 ## Commit Convention
 
@@ -100,7 +101,7 @@ Vitest (Node env) with colocated `*.test.ts`; type tests in `*.test-d.ts` via `y
 ## Publishing guards
 
 - `yarn check:publish-target` (`prepublish` + CI) locks the registry to `npm.pkg.github.com`; CI also runs `yarn npm publish --dry-run` and asserts that host. Yarn Berry runs `prepublish`, not `prepublishOnly`, on `yarn npm publish`.
-- `yarn check:externals` fails if `dist/` inlines a peer/dependency; `yarn check:sizes` enforces gzip budgets (`scripts/check-sizes.mjs`); `yarn check:browser-safe` keeps browser subpaths free of Node/Zod.
+- `yarn check:externals` fails if any `dist/**/*.map` lists a peer/dependency under `node_modules/` (or a JS file ships without a map); `yarn check:sizes` enforces gzip budgets incl. the `cli` bundle (`scripts/check-sizes.mjs`); `yarn check:browser-safe` keeps browser subpaths free of Node/Zod. Negative controls: `src/__integration__/publish-gates.test.ts`.
 - Only `@duydpdev` resolves to GitHub Packages; consumers need a PAT with `read:packages` + repo access.
 
 ## Project-Specific Workflow Rules

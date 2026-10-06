@@ -35,6 +35,14 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Audit production dependencies
+        # Hard gate: anything a consumer installs with the package.
+        run: yarn npm audit --recursive --severity high --environment production
+
+      - name: Audit all dependencies (report only)
+        # Dev tooling, examples and the site are not shipped; log, never fail.
+        run: yarn npm audit --all --recursive || true
+
       - name: Commitlint (PR commits)
         # A feature is cut from main and lands on develop and on main as the
         # same commits (merge commits, never squash), so base..head is exactly
@@ -56,11 +64,13 @@ jobs:
       - name: Type Check
         run: yarn tsc --noEmit
 
-      - name: Script syntax check
+      - name: Script syntax and type check
+        # tsconfig.scripts.json: checkJs over scripts/ and site/scripts/.
         run: |
           for f in scripts/*.mjs site/scripts/*.mjs; do
             node --check "$f"
           done
+          yarn typecheck:scripts
 
       - name: Build
         run: yarn build:all
@@ -90,14 +100,19 @@ jobs:
       - name: Check size budgets
         run: yarn check:sizes
 
+      - name: Smoke-run built artifacts
+        # Loads every subpath via import + require, runs the CLI and the
+        # TypeScript generator script that `style-gen init` scaffolds.
+        run: yarn check:smoke
+
       - name: Test
         run: yarn test
 
       - name: Type tests
         run: yarn test:types
 
-  # e2e and tailwind-floor cost two runners of ~2 min each and test compiled
-  # CSS, which documents/** cannot change. Every other path counts as code.
+  # e2e, tailwind-floor and node-floor cost a runner each and test built
+  # output, which documents/** cannot change. Every other path counts as code.
   changes:
     name: Detect code changes
     runs-on: ubuntu-latest
@@ -124,7 +139,7 @@ jobs:
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
             echo "code=false" >> "$GITHUB_OUTPUT"
-            echo "Only documents/** changed: e2e and tailwind-floor are skipped."
+            echo "Only documents/** changed: e2e, tailwind-floor and node-floor are skipped."
           fi
 
   e2e:
@@ -208,3 +223,35 @@ jobs:
 
       - name: E2E tests
         run: yarn test:e2e
+
+  # `engines.node` is `^20.19.0 || >=22.12.0`, while every other job runs
+  # Node 22. This leg loads the built package on the floor release: every
+  # subpath via import + require (the CJS entries `require` ESM-only
+  # chokidar 5, unflagged only from 20.19) and the CLI. The init-scaffolded
+  # TypeScript script is skipped here; it needs Node >= 22.18.
+  node-floor:
+    name: Node engines floor (20.19.0)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20.19.0"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Smoke-run built artifacts
+        run: yarn check:smoke

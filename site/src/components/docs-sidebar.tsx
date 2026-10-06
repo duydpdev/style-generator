@@ -7,7 +7,7 @@ interface Props {
   activeSlug?: string;
 }
 
-export function DocsSidebar({ activeSlug }: Props) {
+export function DocsSidebar({ activeSlug }: Readonly<Props>) {
   const groups = groupedDocs();
   let counter = 0;
 

@@ -5,6 +5,11 @@
 
 {{#each commits}}
 - {{#if scope}}**{{scope}}:** {{/if}}{{subject}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}}))
+{{#if details}}
+
+{{details}}
+
+{{/if}}
 {{/each}}
 
 {{/each}}

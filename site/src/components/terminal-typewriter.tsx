@@ -19,7 +19,7 @@ interface Props {
 export function TerminalTypewriter({
   lines,
   filename = "~/my-app · zsh",
-}: Props) {
+}: Readonly<Props>) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState<TermLine[]>([]);
   const [started, setStarted] = useState(false);

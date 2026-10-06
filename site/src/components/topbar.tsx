@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
 
 import { VERSION } from "../data/version";
+
 import { Sun } from "./icon";
 
 export type ActiveRoute = "landing" | "docs" | "examples";
@@ -17,7 +18,7 @@ export function Topbar({
   onToggleTheme,
   activeRoute = "landing",
   showSearchPill = false,
-}: Props) {
+}: Readonly<Props>) {
   const showReading = activeChapter !== null;
 
   return (

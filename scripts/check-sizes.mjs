@@ -2,7 +2,9 @@
 /**
  * Per-subpath gzip size budget, measured as consumers load it: the entry
  * file plus every relative chunk it imports, transitively (each chunk counted
- * once per entry). Fails if an export exceeds its budget. Run after `yarn build`.
+ * once per entry). Fails if an export exceeds its budget. The CLI bundle
+ * (`dist/cli/index.mjs`, budget `cli`) is checked the same way. Run after
+ * `yarn build:all`.
  */
 import { readFileSync, existsSync } from "node:fs";
 import { gzipSync } from "node:zlib";
@@ -19,7 +21,8 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // cva 713, spacing 894, types 55, vite 8443, next 8243. Re-measured
 // 2026-10-06 (4.1.0: strict options/config schemas, cross-category
 // variable check): index 9288, vite 9309, next 9109; the other subpaths are
-// unchanged. Budgets = measured + ~10% headroom.
+// unchanged. Re-measured 2026-10-06 (CLI bundle via tsdown): cli 31750.
+// Budgets = measured + ~10% headroom.
 const budgets = {
   index: 10_200,
   tokens: 1_700,
@@ -28,13 +31,18 @@ const budgets = {
   types: 100,
   vite: 10_200,
   next: 10_000,
+  cli: 35_000,
 };
 
+// Budgeted files that are not `package.json#exports` subpaths.
+const extraFiles = { cli: "dist/cli/index.mjs" };
+
 // Static `import … from "./x.js"`, `export … from "./x.js"` and bare
-// `import "./x.js"` of a sibling build chunk. Package imports are externals
-// (see `check:externals`) and not counted.
+// `import "./x.js"` of a sibling build chunk (`.js`, `.mjs` or `.cjs`).
+// Package imports are externals (see `check:externals`) and not counted.
 const RELATIVE_IMPORT_RE =
-  /(?:^|[\s;])(?:import|export)\s*(?:[^'"`;]*?\s*from\s*)?["'](\.{1,2}\/[^"']+\.js)["']/g;
+  // eslint-disable-next-line sonarjs/slow-regex -- runs on our own build output, never on untrusted input
+  /(?:^|[\s;])(?:import|export)\s*(?:[^'"`;]*?\s*from\s*)?["'](\.{1,2}\/[^"']+\.[cm]?js)["']/g;
 
 /**
  * Collect the entry file and every relative chunk it reaches.
@@ -67,8 +75,13 @@ const exportNames = Object.keys(pkg.exports)
   .filter((key) => key !== "./package.json")
   .map((key) => (key === "." ? "index" : key.replace(/^\.\//, "")));
 
+const targets = [
+  ...exportNames.map((name) => [name, `dist/${name}.js`]),
+  ...Object.entries(extraFiles),
+];
+
 let ok = true;
-for (const name of exportNames) {
+for (const [name, rel] of targets) {
   const limit = budgets[name];
   if (limit === undefined) {
     console.error(`\u2717 no size budget configured for export: ${name}`);
@@ -76,7 +89,6 @@ for (const name of exportNames) {
     continue;
   }
 
-  const rel = `dist/${name}.js`;
   const file = resolve(root, rel);
   if (!existsSync(file)) {
     console.error(`\u2717 missing: ${rel}`);

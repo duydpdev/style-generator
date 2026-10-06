@@ -51,13 +51,14 @@ Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có t
 
 **Trigger:** Pull Request vào `main` hoặc `develop`
 
-**Các job** (Node 22):
+**Các job** (Node 22, trừ `node-floor`):
 
-- `check`: `yarn install --immutable` → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` → `yarn build:all` → `yarn workspace site build` → typecheck 3 example (`yarn workspaces foreach -A --include '*-example' run typecheck`) → build `next-v4-example` và `nuxt-v4-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn test` → `yarn test:types`.
+- `check`: `yarn install --immutable` → `yarn npm audit --recursive --severity high --environment production` (chặn khi dependency production có lỗ hổng high/critical) → `yarn npm audit --all --recursive || true` (chỉ in log, tooling dev/example/site không được ship) → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` + `yarn typecheck:scripts` → `yarn build:all` → `yarn workspace site build` → typecheck 3 example (`yarn workspaces foreach -A --include '*-example' run typecheck`) → build `next-v4-example` và `nuxt-v4-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn check:smoke` → `yarn test` → `yarn test:types`.
   - Commitlint range: `base..head` cho cả PR vào `develop` lẫn `main`. Feature được cắt từ `main` và vào hai nhánh bằng cùng các commit (merge commit, không squash), nên range này đúng bằng các commit của feature. Header của chúng quyết định loại release, nên commit nào cũng bị lint.
 - `changes`: `git diff --name-only base...head`; `code=false` khi PR chỉ đổi `documents/**`.
 - `e2e`: chỉ chạy khi `changes.code == 'true'`. `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
 - `tailwind-floor`: chỉ chạy khi `changes.code == 'true'`. Ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
+- `node-floor`: chỉ chạy khi `changes.code == 'true'`. Node `20.19.0` (sàn của `engines.node`) → `yarn install --immutable` → `yarn build:all` → `yarn check:smoke`; bước chạy script TypeScript do `init` sinh ra bị bỏ qua vì Node 20 không strip được type (script đó cần Node >= 22.18).
 
 Browser Playwright **không** được cache, và đây là quyết định có đo đạc (PR #73). Khi hit, bước install mất 42 s; không có cache là 49–52 s; khi miss là 56–75 s, cộng 5–8 s để lưu cache, và mỗi ref PR tốn 383 MB. Cache không bỏ được bước `install-deps` (apt), vốn chiếm phần lớn thời gian. `ci.yml` chỉ chạy trên `pull_request`, nên không có cache của nhánh base để PR mới dùng lại. Kết quả là mọi PR mới đều chậm hơn. Dùng container `mcr.microsoft.com/playwright` chỉ đáng xem lại khi e2e trở thành nút cổ chai.
 
@@ -84,15 +85,17 @@ GitHub Free + repo private: không có branch protection, mọi check chỉ là 
 
 Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng thành **một** PR gộp (`groups`) nhắm vào `main` (`target-branch`), với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`). Dependabot cắt nhánh từ nhánh đích, nên nhắm `main` thì nhánh của nó là một feature branch sạch. Land vào `develop` trước bằng PR thứ hai từ cùng nhánh (`gh pr create --base develop --head <nhánh dependabot>`), rồi mới merge PR của Dependabot vào `main`. Dependabot chỉ đọc file này trên nhánh mặc định `main`.
 
+Mục `npm` cùng file chạy hàng tuần với cùng flow (nhắm `main`, prefix `"[ci] "`, tối đa 5 PR mở). Nó gộp bump của example/site (`next`, `nuxt`, `react`, `vue`, …) thành nhóm `examples` và devDependency thành nhóm `dev-tooling`. Nó không bao giờ đề xuất major cho `tailwindcss`, `@tailwindcss/*` và `zod`: các dòng này (và sàn peer) được theo dõi bằng tay, có job `tailwind-floor` kiểm.
+
 ---
 
 ### Local (Pre-commit) — Husky
 
 Dự án sử dụng **Husky** và **lint-staged** để chặn các commit không đạt tiêu chuẩn:
 
-- `lint-staged` chạy `eslint --fix` và `prettier --write` **chỉ trên các file đang stage** (cấu hình duy nhất: `lint-staged.config.js`).
-- Chạy `tsc --noEmit` để đảm bảo không lỗi type.
-- Chạy toàn bộ `yarn test` (`vitest run`).
+- `.husky/pre-commit` chỉ gọi `yarn lint-staged` (cấu hình duy nhất: `lint-staged.config.js`). lint-staged ẩn thay đổi chưa stage trước, nên mọi bước chỉ thấy snapshot đã stage.
+- Với file code được stage: `eslint --fix` → `prettier --write` trên chính các file đó → `tsc --noEmit` cho cả project → `vitest related --run` (chỉ test import file được stage). File `json`/`md`/`yml`/`css` chỉ qua `prettier --write`.
+- Toàn bộ `yarn test`, `yarn test:types` và các gate `check:*` chạy ở CI, không chạy trong hook.
 - Hook được cài qua `postinstall: husky` (Yarn Berry không chạy `prepare`); `pinst` tắt `postinstall` trong tarball publish; release CI đặt `HUSKY=0`.
 
 ---
@@ -125,12 +128,13 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 4. `npm pkg set version=<tag bỏ v>` rồi assert khớp tag (fail nếu tag rỗng). Bắt buộc cho DEV, vì `package.json` tại tag DEV vẫn là version stable gần nhất; trên `main` là no-op. Không commit.
 5. `yarn build:all`
 6. `yarn check:externals`
-7. `yarn check:browser-safe`
-8. `yarn check:publish-target`
-9. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
-10. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
+7. `yarn check:smoke` (build của tag chạy được: mọi subpath load ở ESM/CJS, `style-gen --version` in đúng version vừa set ở bước 4)
+8. `yarn check:browser-safe`
+9. `yarn check:publish-target`
+10. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
+11. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
 
-Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package.
+Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package. `check:smoke` thì khác: nó kiểm build mang version của tag, là thứ duy nhất được publish.
 
 #### Publish lại một tag đã push nhưng chưa publish
 
@@ -225,7 +229,7 @@ Commit message format: `[type] subject`, type viết thường (`[Feat] …` b�
 | `refactor`, `style`, `revert`                                 | Patch (`1.0.1`) | `[refactor] simplify registry walk`  |
 | `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | Không bump      | `[docs] update architecture guide`   |
 
-Release notes dùng preset `conventionalcommits` (khai trong `devDependencies`) với template `changelog-template.hbs`; các section theo thứ tự: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Type không bump không vào notes.
+Release notes dùng preset `conventionalcommits` (khai trong `devDependencies`) với template `changelog-template.hbs`; các section theo thứ tự: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Type không bump không vào notes. Body của commit `[fix]` được in thụt lề ngay dưới entry (`finalizeContext` trong `release.config.cjs`). Vì `[fix]` thường siết validation, hãy viết body nói rõ cái gì giờ bị từ chối và cách chuyển đổi. Body của các type khác không vào notes.
 
 ### Config
 

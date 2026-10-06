@@ -7,11 +7,11 @@ interface Props {
  * @param root0
  * @param root0.progress
  */
-export function ScrollProgress({ progress }: Props) {
+export function ScrollProgress({ progress }: Readonly<Props>) {
   return (
     <div
       className="scroll-progress"
-      style={{ transform: `scaleX(${progress})` }}
+      style={{ transform: `scaleX(${String(progress)})` }}
     />
   );
 }

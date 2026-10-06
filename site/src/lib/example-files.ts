@@ -13,10 +13,10 @@ export interface ExampleSection {
   files: ExampleFile[];
 }
 
-const v4Raw = import.meta.glob(
+const v4Raw = import.meta.glob<string>(
   "../../../examples/react-v4/**/*.{ts,tsx,js,jsx,css,json,html}",
   { query: "?raw", import: "default", eager: true },
-) as Record<string, string>;
+);
 
 const EXCLUDE_PATTERNS = [
   /node_modules\//,
@@ -31,8 +31,8 @@ function shouldInclude(path: string): boolean {
 
 function langFromExt(path: string): Lang {
   if (/\.(tsx|jsx|ts|js)$/.test(path)) return "ts";
-  if (/\.css$/.test(path)) return "css";
-  if (/\.json$/.test(path)) return "json";
+  if (path.endsWith(".css")) return "css";
+  if (path.endsWith(".json")) return "json";
   return "text";
 }
 
@@ -71,22 +71,20 @@ function buildVariant(
     if (!shouldInclude(fullPath)) continue;
     const rel = relativePath(fullPath, variant);
     const section = classify(rel);
-    if (!sections.has(section)) sections.set(section, []);
-    sections.get(section)!.push({
-      path: rel,
-      code,
-      lang: langFromExt(rel),
-    });
+    const entry = { path: rel, code, lang: langFromExt(rel) };
+    const list = sections.get(section);
+    if (list) list.push(entry);
+    else sections.set(section, [entry]);
   }
 
   for (const list of sections.values()) {
     list.sort((a, b) => a.path.localeCompare(b.path));
   }
 
-  return SECTION_ORDER.filter((s) => sections.has(s)).map((section) => ({
-    section,
-    files: sections.get(section)!,
-  }));
+  return SECTION_ORDER.flatMap((section) => {
+    const files = sections.get(section);
+    return files ? [{ section, files }] : [];
+  });
 }
 
 export const EXAMPLE_FILES: Record<Variant, ExampleSection[]> = {

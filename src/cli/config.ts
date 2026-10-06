@@ -1,30 +1,55 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { SpacingPropertyMap } from "../core/Options";
+import { z } from "zod";
 
-export interface StyleGenConfig {
-  theme: string;
-  output: string;
+import type { StyleGeneratorOptions } from "../core/Options";
+import {
+  StyleGeneratorOptionsShape,
+  refineStyleGeneratorOptions,
+} from "../core/optionsSchema";
+import { formatZodError } from "../core/themeSchema";
+
+/**
+ * CLI-only config keys, layered on the strict `generate()` options shape so
+ * `style-gen.config.json` gets the same unknown-key, flag and screen checks
+ * as `generate()` itself.
+ */
+const cliKeys = {
+  /** Editors add it for autocompletion; a strict object would reject it. */
+  $schema: z.string().optional(),
+  /** Theme JSON path, relative to the project root. */
+  theme: z.string().min(1),
+  /** Generated CSS path, relative to the project root. */
+  output: z.string().min(1),
   /**
    * Generator script scaffolded by `style-gen init`. Optional: `doctor`
    * checks it only when it is configured.
    */
-  plugin?: string;
-  breakpoints?: string[];
-  screens?: Record<string, string>;
-  /** Forwarded to `generate()` — see `StyleGeneratorOptions.extraSources`. */
-  extraSources?: string[];
-  /** Forwarded to `generate()` — see `StyleGeneratorOptions.spacing`. */
-  spacing?: {
-    enabled?: boolean;
-    properties?: SpacingPropertyMap;
-  };
-  /** Forwarded to `generate()` — see `StyleGeneratorOptions.typography`. */
-  typography?: {
-    cssVarDriven?: boolean;
-  };
-}
+  plugin: z.string().min(1).optional(),
+};
+
+/**
+ * Resolved CLI configuration: the CLI-only keys plus every `generate()`
+ * option (`breakpoints`, `screens`, `enableResponsive`, `spacing`,
+ * `typography`, `extraSources`), forwarded through
+ * {@link toGeneratorOptions}.
+ */
+export const StyleGenConfigSchema = StyleGeneratorOptionsShape.extend(
+  cliKeys,
+).superRefine(refineStyleGeneratorOptions);
+
+export type StyleGenConfig = z.infer<typeof StyleGenConfigSchema>;
+
+/**
+ * The file form of {@link StyleGenConfigSchema}: `theme`/`output` may be
+ * omitted (the defaults apply).
+ */
+const StyleGenConfigFileSchema = StyleGeneratorOptionsShape.extend({
+  ...cliKeys,
+  theme: cliKeys.theme.optional(),
+  output: cliKeys.output.optional(),
+}).superRefine(refineStyleGeneratorOptions);
 
 /**
  * Raw CLI/programmatic flags input: unlike {@link StyleGenConfig}, each
@@ -58,53 +83,59 @@ export function normalizePath(p: string): string {
   return path.normalize(normalized);
 }
 
+const CONFIG_KEYS = StyleGenConfigSchema.keyof().options;
+
 /**
- * Sanitizes the flags to remove undefined values
- * @param {StyleGenConfigFlags} flags - The flags to sanitize
- * @returns {Partial<StyleGenConfig>} The sanitized flags
+ * Drops `undefined` values so a flag or file key that is unset never
+ * overrides a lower layer (file config or defaults). The key list comes from
+ * {@link StyleGenConfigSchema}, so a new option is carried through
+ * automatically.
+ * @param {StyleGenConfigFlags} flags - The flags or file config to sanitize
+ * @returns {Partial<StyleGenConfig>} The sanitized values
  */
 function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
-  const sanitized: Partial<StyleGenConfig> = {};
-
-  if (flags.theme !== undefined) {
-    sanitized.theme = flags.theme;
+  const sanitized: Record<string, unknown> = {};
+  for (const key of CONFIG_KEYS) {
+    if (flags[key] !== undefined) sanitized[key] = flags[key];
   }
-  if (flags.output !== undefined) {
-    sanitized.output = flags.output;
-  }
-  if (flags.plugin !== undefined) {
-    sanitized.plugin = flags.plugin;
-  }
-  if (flags.breakpoints !== undefined) {
-    sanitized.breakpoints = flags.breakpoints;
-  }
-  if (flags.screens !== undefined) {
-    sanitized.screens = flags.screens;
-  }
-  if (flags.extraSources !== undefined) {
-    sanitized.extraSources = flags.extraSources;
-  }
-  if (flags.spacing !== undefined) {
-    sanitized.spacing = flags.spacing;
-  }
-  if (flags.typography !== undefined) {
-    sanitized.typography = flags.typography;
-  }
-
-  return sanitized;
+  return sanitized as Partial<StyleGenConfig>;
 }
+
+/** `style-gen.config.json` contents: every key optional (defaults apply). */
+export type StyleGenFileConfig = z.infer<typeof StyleGenConfigFileSchema>;
 
 /** File-based configuration and where it came from. */
 export interface ConfigFile {
-  config: Partial<StyleGenConfig>;
+  config: StyleGenFileConfig;
   /** `style-gen.config.json` or `package.json`, when one was read. */
   source?: string;
   /** Why the file was ignored (malformed JSON, non-object config). */
   error?: string;
+  /**
+   * Schema violations, one `path → message` line each; the file is not
+   * merged.
+   */
+  issues?: string;
 }
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * Validate a file config object against the strict config schema.
+ * @param {Record<string, unknown>} value - The parsed config object
+ * @param {string} source - Where it was read from
+ * @returns {ConfigFile} The parsed config, or no config plus the formatted issues
+ */
+const validateFileConfig = (
+  value: Record<string, unknown>,
+  source: string,
+): ConfigFile => {
+  const result = StyleGenConfigFileSchema.safeParse(value);
+  return result.success
+    ? { config: result.data, source }
+    : { config: {}, source, issues: formatZodError(result.error) };
+};
 
 /**
  * Reads `style-gen.config.json`, else `package.json#style-gen`, from `cwd`.
@@ -121,7 +152,7 @@ export function readConfigFile(cwd: string): ConfigFile {
     try {
       const parsed: unknown = JSON.parse(fs.readFileSync(configPath, "utf-8"));
       return isPlainObject(parsed)
-        ? { config: parsed as Partial<StyleGenConfig>, source }
+        ? validateFileConfig(parsed, source)
         : { config: {}, source, error: `${source} must contain a JSON object` };
     } catch (error) {
       return {
@@ -156,12 +187,32 @@ export function readConfigFile(cwd: string): ConfigFile {
 
   const section = pkg["style-gen"];
   return isPlainObject(section)
-    ? { config: section as Partial<StyleGenConfig>, source }
+    ? validateFileConfig(section, source)
     : {
         config: {},
         source,
         error: `${source} "style-gen" must be a JSON object`,
       };
+}
+
+const GENERATOR_OPTION_KEYS = StyleGeneratorOptionsShape.keyof().options;
+
+/**
+ * Pick the `generate()` options out of a resolved config, dropping the
+ * CLI-only keys (`theme`, `output`, `plugin`, `$schema`) that the strict
+ * options schema would reject. The key list comes from
+ * `StyleGeneratorOptionsShape`, so a new option is forwarded automatically.
+ * @param {StyleGenConfig} config - Resolved CLI configuration
+ * @returns {StyleGeneratorOptions} The options to pass to `generate()`
+ */
+export function toGeneratorOptions(
+  config: StyleGenConfig,
+): StyleGeneratorOptions {
+  const picked: Record<string, unknown> = {};
+  for (const key of GENERATOR_OPTION_KEYS) {
+    if (config[key] !== undefined) picked[key] = config[key];
+  }
+  return picked as StyleGeneratorOptions;
 }
 
 /**
@@ -176,7 +227,7 @@ export function resolveConfig(
 ): StyleGenConfig {
   return {
     ...defaultConfig,
-    ...file.config,
+    ...sanitizeFlags(file.config),
     ...sanitizeFlags(flags),
   };
 }

@@ -93,7 +93,7 @@
             "type": "string"
           }
         },
-        "required": ["fontSize", "lineHeight", "fontWeight", "letterSpacing"],
+        "required": ["fontSize", "lineHeight", "fontWeight"],
         "additionalProperties": false
       }
     },

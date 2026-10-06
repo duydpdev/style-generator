@@ -167,3 +167,76 @@ describe("resolveConfig", () => {
     expect(config.extraSources).toEqual(["flag-wins"]);
   });
 });
+
+describe("readConfigFile schema validation (X-04)", () => {
+  let tmp: string;
+  let origCwd: string;
+
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-config-"));
+    origCwd = process.cwd();
+    process.chdir(tmp);
+  });
+
+  afterEach(() => {
+    process.chdir(origCwd);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  const writeConfig = (cfg: unknown): void => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify(cfg),
+    );
+  };
+
+  it.each([
+    [{ breakpoint: ["xl"], outptu: "x.css" }, /^breakpoint → /m],
+    [{ theme: 123 }, /^theme → /m],
+    [{ breakpoints: "md" }, /^breakpoints → /m],
+    [{ breakpoints: ["tablet"] }, /^breakpoints\.0 → /m],
+    [
+      { typography: { cssVarDriven: "false" } },
+      /^typography\.cssVarDriven → /m,
+    ],
+  ])("reports %o as issues and merges nothing", (cfg, line) => {
+    writeConfig(cfg);
+    const file = readConfigFile(tmp);
+    expect(file.issues).toMatch(line);
+    expect(file.config).toEqual({});
+    expect(file.source).toBe("style-gen.config.json");
+  });
+
+  it('validates package.json["style-gen"] the same way', () => {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "x", "style-gen": { outptu: "x.css" } }),
+    );
+    const file = readConfigFile(tmp);
+    expect(file.issues).toMatch(/^outptu → /m);
+    expect(file.source).toBe("package.json");
+  });
+
+  it("accepts every option key, including enableResponsive", () => {
+    const cfg = {
+      theme: "a/theme.json",
+      output: "a/theme.css",
+      plugin: "p.ts",
+      breakpoints: ["md"],
+      screens: { md: "800px" },
+      enableResponsive: false,
+      spacing: { enabled: true },
+      typography: { cssVarDriven: true },
+      extraSources: ["bg-x"],
+    };
+    writeConfig(cfg);
+    const file = readConfigFile(tmp);
+    expect(file.issues).toBeUndefined();
+    expect(file.config).toEqual(cfg);
+  });
+
+  it("accepts the editor $schema key", () => {
+    writeConfig({ $schema: "./node_modules/x.json", breakpoints: ["md"] });
+    expect(readConfigFile(tmp).issues).toBeUndefined();
+  });
+});

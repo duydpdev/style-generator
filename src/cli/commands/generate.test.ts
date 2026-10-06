@@ -259,7 +259,7 @@ describe("generateCommand", () => {
     expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
   });
 
-  it("reports an invalid extraSources entry as an options error with its path", () => {
+  it("reports an invalid extraSources entry in style-gen.config.json as a config error with its path", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, "styles/theme.json"),
@@ -280,7 +280,59 @@ describe("generateCommand", () => {
 
     expect(process.exitCode).toBe(1);
     expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-      /^Invalid options:\nextraSources\.1 → /,
+      /^Invalid config \(style-gen\.config\.json\):\nextraSources\.1 → /,
+    );
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
+  });
+
+  it("exits 1 on a misspelled config key (breakpoint) without writing output", () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify(sampleTheme),
+    );
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ breakpoint: ["xl"] }),
+    );
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
+
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+    });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+      /^Invalid config \(style-gen\.config\.json\):\nbreakpoint → /,
+    );
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
+  });
+
+  it("exits 1 when config breakpoints is not an array", () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify(sampleTheme),
+    );
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ breakpoints: "md" }),
+    );
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
+
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+    });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+      /^Invalid config \(style-gen\.config\.json\):\nbreakpoints → /,
     );
     expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
   });

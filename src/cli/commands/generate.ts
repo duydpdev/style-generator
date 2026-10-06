@@ -7,7 +7,12 @@ import { z } from "zod";
 import { generate } from "../../core/generate";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { writeFileAtomic } from "../../shared/writeFileAtomic";
-import { readConfigFile, resolveConfig, normalizePath } from "../config";
+import {
+  readConfigFile,
+  resolveConfig,
+  normalizePath,
+  toGeneratorOptions,
+} from "../config";
 import { logger } from "../logger";
 
 export interface GenerateArgs {
@@ -42,6 +47,15 @@ export function generateCommand(args: GenerateArgs) {
     if (configFile.error) {
       logger.warn(`Ignoring ${configFile.error}; using defaults`);
     }
+    if (configFile.issues) {
+      // Read once at startup (not watched), like the missing-theme check
+      // below, so this also ends a `--watch` run.
+      logger.error(
+        `Invalid config (${configFile.source ?? "style-gen.config.json"}):\n${configFile.issues}`,
+      );
+      process.exitCode = 1;
+      return;
+    }
     const options = resolveConfig(configFlags, configFile);
 
     const themePath = path.resolve(process.cwd(), normalizePath(options.theme));
@@ -72,7 +86,7 @@ export function generateCommand(args: GenerateArgs) {
           JSON.parse(fs.readFileSync(themePath, "utf8")),
         );
         stage = "options";
-        const { css } = generate(theme, options);
+        const { css } = generate(theme, toGeneratorOptions(options));
 
         const outDir = path.dirname(outPath);
         if (!fs.existsSync(outDir)) {

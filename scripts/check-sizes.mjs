@@ -16,16 +16,18 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // transitive closure. `check:sizes` fails if an export in
 // `package.json#exports` has no budget entry here.
 // Measured 2026-10-05 (v4.0.3, transitive gzip): index 8408, tokens 1508,
-// cva 713, spacing 894, types 55, vite 8443, next 8243. Budgets = measured
-// + ~10% headroom.
+// cva 713, spacing 894, types 55, vite 8443, next 8243. Re-measured
+// 2026-10-06 (4.1.0: strict options/config schemas, cross-category
+// variable check): index 9288, vite 9309, next 9109; the other subpaths are
+// unchanged. Budgets = measured + ~10% headroom.
 const budgets = {
-  index: 9_300,
+  index: 10_200,
   tokens: 1_700,
   cva: 800,
   spacing: 1_000,
   types: 100,
-  vite: 9_400,
-  next: 9_200,
+  vite: 10_200,
+  next: 10_000,
 };
 
 // Static `import … from "./x.js"`, `export … from "./x.js"` and bare

@@ -8,7 +8,7 @@ Hệ thống kiểm tra hai lớp:
 
 1. **Local (pre-commit):** `Husky` + `lint-staged` chạy trên snapshot đã stage của các file code được stage: `eslint --fix` → `prettier --write` → `tsc --noEmit` → `vitest related --run` (chỉ test import file được stage). Husky được cài qua `postinstall` (Yarn Berry không chạy `prepare`).
 2. **Remote (GitHub Actions, `.github/workflows/ci.yml`, PR vào `main`/`develop`):**
-   - job `check`: audit dependency production (chặn high/critical) và audit toàn bộ (chỉ log) → commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp (`node --check`) và type (`yarn typecheck:scripts`) của `scripts/*.mjs` và `site/scripts/*.mjs` → `build:all` → build site (`yarn workspace site build`) → typecheck 3 example, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `check:smoke` → smoke dev-server Vite (`node scripts/vite-dev-smoke.mjs`: sửa theme của `examples/react-v4` dưới dev server thật, chờ `theme.css` được ghi lại + `full-reload`) → `yarn typecheck:dist` (`tsconfig.dts-check.json`: `dist/*.d.ts` với `skipLibCheck: false`) → `yarn test` → `yarn test:types`;
+   - job `check`: audit dependency production (chặn high/critical) và audit toàn bộ (chỉ log) → commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp (`node --check`) và type (`yarn typecheck:scripts`) của `scripts/*.mjs` và `site/scripts/*.mjs` → `build:all` → build site (`yarn workspace site build`) → `yarn workspace site check:links` (link tương đối và `#anchor` trong markdown mà site render) → typecheck 3 example, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `check:smoke` → smoke dev-server Vite (`node scripts/vite-dev-smoke.mjs`: sửa theme của `examples/react-v4` dưới dev server thật, chờ `theme.css` được ghi lại + `full-reload`) → `yarn typecheck:dist` (`tsconfig.dts-check.json`: `dist/*.d.ts` với `skipLibCheck: false`) → `yarn test:coverage` (fail nếu coverage tụt dưới `coverage.thresholds` trong `vitest.config.ts`) → `yarn test:types`;
    - job `e2e`: Playwright trên Chromium và WebKit (`build:all` → cài browser → `yarn test:e2e`);
    - job `tailwind-floor`: pin các package Tailwind về `~4.1.0` (chỉ trong checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`, để peer `tailwindcss >=4.1.0` thực sự được kiểm — lockfile đang giải ở bản 4.3.x nên nếu không có job này ngưỡng dưới không bao giờ được chạm tới.
    - job `node-floor`: build và chạy `check:smoke` trên Node `20.19.0`, sàn của `engines.node` (các job khác chạy Node 22);
@@ -26,7 +26,7 @@ Hệ thống kiểm tra hai lớp:
 ```bash
 yarn test                                                   # toàn bộ *.test.ts
 yarn test:watch                                             # chế độ watch
-yarn test:coverage                                          # v8 coverage
+yarn test:coverage                                          # v8 coverage; fail dưới coverage.thresholds (vitest.config.ts)
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # một file
 ```
 

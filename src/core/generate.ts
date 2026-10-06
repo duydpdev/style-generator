@@ -5,12 +5,13 @@ import { generateSpacingCss } from "../features/spacing/generateSpacingCss";
 import { generateBorderWidthCss } from "../features/theme-css/generateBorderWidthCss";
 import { generateScreensCss } from "../features/theme-css/generateScreensCss";
 import { buildThemeCss } from "../features/theme-css/generateThemeCss";
-import { createDesignTokens } from "../features/tokens/createDesignTokens";
+import { buildDesignTokens } from "../features/tokens/createDesignTokens";
 import { generateTypographyCss } from "../features/typography/generateTypographyCss";
 
 import type { DesignTokensResult } from "./inference";
 import type { StyleGeneratorOptions } from "./Options";
 import { StyleGeneratorOptionsSchema } from "./optionsSchema";
+import { resolveOptions } from "./resolveOptions";
 import { ThemeSchema, type ThemeConfig } from "./themeSchema";
 
 // Computed once at module scope — `z.toJSONSchema` walks the whole schema
@@ -49,16 +50,17 @@ export const generate = <TTheme extends ThemeConfig>(
 
   const styleOptions: StyleGeneratorOptions = options ?? {};
   StyleGeneratorOptionsSchema.parse(styleOptions);
+  const resolved = resolveOptions(styleOptions);
 
-  const { DesignTokens } = createDesignTokens<TTheme>(parsed, styleOptions);
+  const { DesignTokens } = buildDesignTokens<TTheme>(parsed, resolved);
 
   const css = [
-    generateScreensCss(styleOptions),
+    generateScreensCss(resolved),
     buildThemeCss(parsed),
     generateBorderWidthCss(parsed),
-    generateTypographyCss(parsed.typography, styleOptions),
-    generateSpacingCss(styleOptions),
-    generateSourceInline(parsed, styleOptions),
+    generateTypographyCss(parsed.typography, resolved),
+    generateSpacingCss(resolved),
+    generateSourceInline(parsed, resolved),
   ]
     .filter((block) => block.length > 0)
     .join("\n");

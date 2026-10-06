@@ -2,7 +2,16 @@ import type { AtRule, Declaration, Rule } from "postcss";
 import postcss from "postcss";
 import { describe, it, expect } from "vitest";
 
-import { generateTypographyCss } from "./generateTypographyCss";
+import type { StyleGeneratorOptions } from "../../core/Options";
+import { resolveOptions } from "../../core/resolveOptions";
+import type { TypographyConfig } from "../../core/themeSchema";
+
+import { generateTypographyCss as generateResolved } from "./generateTypographyCss";
+
+const generateTypographyCss = (
+  typography: Record<string, TypographyConfig> | undefined,
+  options: StyleGeneratorOptions = {},
+): string => generateResolved(typography, resolveOptions(options));
 
 const typography = {
   text12Mono: {

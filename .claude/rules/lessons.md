@@ -79,3 +79,8 @@ Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không
   1. Never write to a watched file synchronously after `ready`. Unit-test watcher wiring (singleton, debounce, error logging) with a fake `EventEmitter` watcher and fake timers. Keep a single real-chokidar test, and make sure it waits for an observable result (e.g. the initial debounced write) before its first mutation.
   2. Keep a `vi.waitFor` timeout (≤ 2000) below the test timeout.
   3. On Linux (`fs.watch`), `ready` fires after the root scan, before subdirectories are watched, so a write right after it can still be lost. Gate the first mutation on `server.watcher.getWatched()` listing the target file, bounded by a timeout that dumps the watched dirs on failure. Never retry-write to mask the race: it hides the bug and makes the test pass for the wrong reason (evidence: `documents/plans/2026-10-06/issue-register-execution/phase-05-peer-matrix.md`, task 05.4).
+
+### [2026-10-07] - Type tests against Zod types must spell `| undefined` on optional props
+
+- **Mistake:** A `*.test-d.ts` compared `z.input<…>` with `toEqualTypeOf<{ prefixes?: string[]; … }>()`. Zod's `.optional()` infers `prefixes?: string[] | undefined`, and with `exactOptionalPropertyTypes: true` those are different types. TS 5.9 let it pass, but the TS 6 peer-matrix leg failed (`Expected 1 arguments, but got 0`) on PR #123.
+- **New Rule:** When a type test mirrors a Zod-inferred type, write the expected optional props as `prop?: T | undefined`. Hand-written public types (e.g. `CoverageRule`) keep `prop?: T`. Reproduce a peer-matrix failure in a temporary worktree pinned through `resolutions` instead of loosening the assertion (`toExtend`) or making the leg non-blocking.

@@ -1,7 +1,13 @@
 import { z } from "zod";
 
-import { defaultScreens } from "./Options";
-import { TOKEN_KEY_RE, TokenValue } from "./themeSchema";
+import {
+  builtInCategories,
+  isCssVarCategory,
+} from "../features/registry/builtInCategories";
+import type { CategoryKey } from "../features/registry/builtInCategories";
+
+import { mergeScreens } from "./resolveTokenOptions";
+import { TOKEN_KEY_RE, TokenValue } from "./tokenGrammar";
 
 /**
  * Grammar for a single `extraSources` entry: non-empty, bounded length, and
@@ -54,6 +60,72 @@ const ScreenValue = z
   );
 
 /**
+ * The category keys `coverage` accepts: exactly the registry's
+ * `CategoryKey` union, derived from the descriptors so a new category cannot
+ * be forgotten here.
+ */
+const CoverageCategoryKey = z.enum(
+  // `map` loses the tuple type z.enum needs; the registry is never empty.
+  builtInCategories.map((descriptor) => descriptor.key) as [
+    CategoryKey,
+    ...CategoryKey[],
+  ],
+);
+
+/**
+ * Per-category `@source inline` coverage. A bare boolean switches the
+ * category on/off; the object form narrows it to some class prefixes
+ * and/or to the alias holders. Every `prefixes` entry must be a real class
+ * prefix of that category (`bg`, `rounded-t`, …): a typo would otherwise
+ * silently drop the category's coverage.
+ */
+const CoverageSchema = z
+  .partialRecord(
+    CoverageCategoryKey,
+    z.union(
+      [
+        z.boolean(),
+        z.strictObject({
+          prefixes: z.array(z.string()).min(1).optional(),
+          keys: z.enum(["aliased", "all"]).optional(),
+        }),
+      ],
+      {
+        error:
+          'Expected a boolean or { prefixes?: string[] (non-empty), keys?: "aliased" | "all" }',
+      },
+    ),
+  )
+  .superRefine((coverage, ctx) => {
+    for (const descriptor of builtInCategories) {
+      const rule = coverage[descriptor.key];
+      if (typeof rule !== "object") continue;
+
+      if (!isCssVarCategory(descriptor) && rule.keys === "aliased") {
+        ctx.addIssue({
+          code: "custom",
+          path: [descriptor.key, "keys"],
+          message: `"${descriptor.key}" has no \`$\` aliases, so \`keys: "aliased"\` would drop all its coverage; use \`false\` to drop it deliberately`,
+        });
+      }
+      if (!rule.prefixes) continue;
+
+      const valid: readonly string[] = descriptor.classPrefixes;
+      rule.prefixes.forEach((prefix, index) => {
+        if (!("bareClassName" in descriptor) && valid.includes(prefix)) return;
+        ctx.addIssue({
+          code: "custom",
+          path: [descriptor.key, "prefixes", index],
+          message:
+            "bareClassName" in descriptor
+              ? `"${descriptor.key}" has no class prefixes (its keys are the class names); drop \`prefixes\` or use \`keys\``
+              : `Unknown class prefix "${prefix}" for "${descriptor.key}"; expected one of: ${valid.join(", ")}`,
+        });
+      });
+    }
+  });
+
+/**
  * Strict shape of `StyleGeneratorOptions`, without the cross-field
  * refinement: unknown keys (also inside `spacing`/`typography`) are
  * rejected, behavioural flags must be booleans, and every option that
@@ -76,10 +148,11 @@ export const StyleGeneratorOptionsShape = z.strictObject({
     })
     .optional(),
   extraSources: z.array(ExtraSourceEntry).optional(),
+  coverage: CoverageSchema.optional(),
 });
 
 /**
- * Cross-field checks on `screens` merged with the px {@link defaultScreens}:
+ * Cross-field checks on `screens` merged with the px `defaultScreens`:
  * (1) every merged screen uses the same unit — Tailwind sorts breakpoints by
  * value, so mixing `rem` with the px defaults orders the variants wrongly;
  * (2) every `breakpoints` entry names a merged screen. The fields are typed
@@ -95,11 +168,11 @@ export const refineStyleGeneratorOptions = (
   options: { breakpoints?: unknown; screens?: unknown },
   ctx: z.RefinementCtx,
 ): void => {
-  const screens =
+  const screens: Record<string, unknown> =
     typeof options.screens === "object" && options.screens !== null
-      ? options.screens
+      ? Object.fromEntries(Object.entries(options.screens))
       : {};
-  const merged: Record<string, unknown> = { ...defaultScreens, ...screens };
+  const merged: Record<string, unknown> = mergeScreens(screens);
 
   const keysByUnit = new Map<string, string[]>();
   for (const [key, value] of Object.entries(merged)) {

@@ -237,7 +237,7 @@ Print the installed CLI version.
 }
 ```
 
-`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography` and `extraSources` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, or a legacy 3.x key such as `responsiveModules` — is rejected; only `$schema`, `theme`, `output` and `plugin` are accepted besides the forwarded keys. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. The CLI resolves configuration in this order, per key:
+`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `extraSources` and `coverage` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, or a legacy 3.x key such as `responsiveModules` — is rejected; only `$schema`, `theme`, `output` and `plugin` are accepted besides the forwarded keys. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. The CLI resolves configuration in this order, per key:
 
 1. command flags
 2. `style-gen.config.json`
@@ -296,7 +296,7 @@ The CLI, `styleGenVite` and `styleGenNext` print the rename hint on the offendin
 | `backDropBlurs` | `backdrop-blur-*`                                                        |                                                                                                                                                                        |
 | `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)          | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                                                                |
 | `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                             | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                                                                      |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l` utilities backed by `--sg-border-width-*` | Falls back to Tailwind's own `0/1/2/4` scale when omitted. Replaces the 3.x `border` key.                                                                              |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l` utilities backed by `--sg-border-width-*` | Falls back to Tailwind's own `0/1/2/4` scale when omitted or empty (`{}`). Replaces the 3.x `border` key.                                                              |
 
 ### Colors — camelCase keys
 
@@ -631,18 +631,18 @@ const { DesignTokens } = createDesignTokens(theme, {
 
 **`DesignTokens.Web`:**
 
-| Token                 | Description                                                     |
-| --------------------- | --------------------------------------------------------------- |
-| `variantColor`        | All color keys (flat, camelCase)                                |
-| `variantText`         | Keys of `typography`                                            |
-| `variantShadow`       | Keys of `shadows`                                               |
-| `variantBackdropBlur` | Keys of `backDropBlurs`                                         |
-| `variantFontFamily`   | Keys of `fontFamily`                                            |
-| `borderWidthOption`   | Keys of `borderWidth` (falls back to `0, 1, 2, 4`)              |
-| `roundedOption`       | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES`) |
-| `spacingProperties`   | List of spacing props                                           |
-| `breakpoints`         | Active breakpoints — defaults to `["md", "lg"]`                 |
-| `screens`             | Breakpoint → width map                                          |
+| Token                 | Description                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| `variantColor`        | All color keys (flat, camelCase)                                                      |
+| `variantText`         | Keys of `typography`                                                                  |
+| `variantShadow`       | Keys of `shadows`                                                                     |
+| `variantBackdropBlur` | Keys of `backDropBlurs`                                                               |
+| `variantFontFamily`   | Keys of `fontFamily`                                                                  |
+| `borderWidthOption`   | Keys of `borderWidth` (falls back to `0, 1, 2, 4` when omitted or empty)              |
+| `roundedOption`       | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES` when omitted or empty) |
+| `spacingProperties`   | List of spacing props                                                                 |
+| `breakpoints`         | Active breakpoints — defaults to `["md", "lg"]`                                       |
+| `screens`             | Breakpoint → width map                                                                |
 
 ### `createVariantMapper` for CVA
 
@@ -727,40 +727,65 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 
 `generate(theme, options)` and the plugins' `options` field take `StyleGeneratorOptions`:
 
-| Option                    | Type                       | Default                      | Description                                                                                                                                                                                |
-| :------------------------ | :------------------------- | :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `breakpoints`             | `(Breakpoint \| string)[]` | `["md", "lg"]`               | Breakpoints for responsive `@source inline` variants, spacing fallback chains and `DesignTokens.Web.breakpoints`.                                                                          |
-| `screens`                 | `Record<string, string>`   | `defaultScreens`             | Custom screen widths (emitted as `@theme { --breakpoint-* }`).                                                                                                                             |
-| `enableResponsive`        | `boolean`                  | `true`                       | Generate responsive spacing fallback chains.                                                                                                                                               |
-| `spacing.enabled`         | `boolean`                  | `true`                       | Emit the `.sp-*` utilities.                                                                                                                                                                |
-| `spacing.properties`      | `SpacingPropertyMap`       | `DEFAULT_SPACING_PROPERTIES` | Override or extend the spacing prop → CSS declaration map.                                                                                                                                 |
-| `typography.cssVarDriven` | `boolean`                  | `false`                      | Emit `--typography-<name>-<prop>` variables in `:root` and reference them from each typography utility, so a single token can be overridden in CSS.                                        |
-| `extraSources`            | `string[]`                 | `[]`                         | Extra `@source inline("<entry>")` lines for classes built at runtime (brace expansion allowed). Entries: non-empty, ≤ 512 characters, none of `"` `'` `\` `;` `@` `<` `>` or a line break. |
+| Option                    | Type                                                    | Default                      | Description                                                                                                                                                                                |
+| :------------------------ | :------------------------------------------------------ | :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `breakpoints`             | `(Breakpoint \| string)[]`                              | `["md", "lg"]`               | Breakpoints for responsive `@source inline` variants, spacing fallback chains and `DesignTokens.Web.breakpoints`.                                                                          |
+| `screens`                 | `Record<string, string>`                                | `defaultScreens`             | Custom screen widths (emitted as `@theme { --breakpoint-* }`).                                                                                                                             |
+| `enableResponsive`        | `boolean`                                               | `true`                       | Generate responsive spacing fallback chains.                                                                                                                                               |
+| `spacing.enabled`         | `boolean`                                               | `true`                       | Emit the `.sp-*` utilities.                                                                                                                                                                |
+| `spacing.properties`      | `SpacingPropertyMap`                                    | `DEFAULT_SPACING_PROPERTIES` | Override or extend the spacing prop → CSS declaration map.                                                                                                                                 |
+| `typography.cssVarDriven` | `boolean`                                               | `false`                      | Emit `--typography-<name>-<prop>` variables in `:root` and reference them from each typography utility, so a single token can be overridden in CSS.                                        |
+| `extraSources`            | `string[]`                                              | `[]`                         | Extra `@source inline("<entry>")` lines for classes built at runtime (brace expansion allowed). Entries: non-empty, ≤ 512 characters, none of `"` `'` `\` `;` `@` `<` `>` or a line break. |
+| `coverage`                | `Partial<Record<CategoryKey, boolean \| CoverageRule>>` | all categories fully covered | Trim a category's `@source inline` lines: `false`, `{ prefixes }`, `{ keys: "aliased" }`. See [`coverage`](#coverage-trim-the-source-inline-lines-per-category).                           |
 
 Class names built at runtime (a template literal such as `` `bg-${variant}` ``) are invisible to Tailwind's static scan; list them with `extraSources`, e.g. `extraSources: ["hover:bg-{primary,secondary}"]`.
 
 `generate()` validates every option that reaches the CSS and throws a `ZodError` naming its path: unknown option keys (also inside `spacing` and `typography`) are rejected; `enableResponsive`, `spacing.enabled` and `typography.cssVarDriven` must be booleans; `breakpoints` entries, `screens` and `spacing.properties` keys follow the theme key grammar (letters, digits, `-`); `screens` values must be one length in px, rem or em, and the map merged with the px `defaultScreens` must use a single unit (reported at `screens`); every `breakpoints` entry must name a screen in `defaultScreens` or `screens` (reported at `breakpoints.<i>`); the CSS property names inside `spacing.properties` must be lowercase (`padding`, `column-gap`, `--custom`).
 
+#### `coverage`: trim the `@source inline` lines per category
+
+By default every category gets a `@source inline` line covering all its keys (and every `bg-`/`text-`/`border-` prefix for colors). That is the safe default, but a large palette makes the line big. `coverage` trims it, per category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
+
+| `coverage.<category>` | Effect                                                                                                                                                                                                                                                                                                      |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| absent, `true`, `{}`  | Today's output, byte for byte.                                                                                                                                                                                                                                                                              |
+| `false`               | No `@source inline` line for the category, and none of its state lines (`hover:`, `active:`).                                                                                                                                                                                                               |
+| `{ prefixes: [...] }` | Keep only the listed class prefixes (`bg`, `rounded-t`, …). Each must be a prefix of that category, else `generate()` throws; typography has no prefixes (its keys are the class names).                                                                                                                    |
+| `{ keys: "aliased" }` | Keep only the keys whose value is a `"$<key>"` alias (the alias holders), in the base record or in any `themeAxes` override. The primitives they point to need no class. The state lines follow: `hover:bg-x-hover` survives only when both `x` and `xHover` do. Not allowed for `typography` (no aliases). |
+| `{ keys: "all" }`     | The default: every key.                                                                                                                                                                                                                                                                                     |
+
+`prefixes` and `keys` combine; a `prefixes` list must be non-empty. With `keys: "aliased"` and no alias holder in the category (or no declared keys at all), nothing is emitted: the built-in defaults are never aliases. `coverage` only trims `@source inline`: `@theme inline`, `@utility` blocks and the typed `DesignTokens` are unchanged, so a class you still use that is no longer covered must appear literally in your source or in `extraSources`.
+
+```ts
+generate(theme, {
+  coverage: {
+    colors: { prefixes: ["bg", "text"], keys: "aliased" },
+    borderRadius: { prefixes: ["rounded"] },
+    shadows: false,
+  },
+});
+```
+
 ---
 
 ## 9. Exports API
 
-| Export                                            | Subpath                                       | Description                                                                                                                                                                        |
-| :------------------------------------------------ | :-------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `generate`                                        | `.`                                           | **Main entry.** Returns `{ css, tokens, schema }` from a Zod-validated theme.                                                                                                      |
-| `defineTheme`, `defineOptions`                    | `.`                                           | Type-safe helpers; `defineTheme` also validates at runtime.                                                                                                                        |
-| `formatZodError`                                  | `.`                                           | Formats a `ZodError` thrown by `generate()`/`defineTheme()` as one `path → message` line per issue.                                                                                |
-| `generateThemeCss`                                | `.`                                           | Just `:root` variables, axis overrides and `@theme inline`; validates the theme like `generate()`.                                                                                 |
-| `createDesignTokens`                              | `.`, `./tokens`                               | Typed `DesignTokens.Web.*`.                                                                                                                                                        |
-| `createVariantMapper`, `COLOR_STATES`             | `.`, `./cva` (`COLOR_STATES` also `./tokens`) | Token keys → class names for CVA, optional `{ states }`.                                                                                                                           |
-| `resolveSpacing`, `resolveSpacingProps`           | `.`, `./spacing`                              | Spacing props → `{ className(s), style }`.                                                                                                                                         |
-| `styleGenVite`                                    | `./vite`                                      | Vite plugin writing `theme.css`.                                                                                                                                                   |
-| `styleGenNext`                                    | `./next`                                      | Next.js config wrapper writing `theme.css`.                                                                                                                                        |
-| `Breakpoint`, `defaultScreens`                    | `.`, `./tokens`                               | Breakpoint enum and default widths.                                                                                                                                                |
-| `DEFAULT_ROUNDED_VALUES`, `DEFAULT_BORDER_VALUES` | `.`, `./tokens`                               | Fallback values for `borderRadius` / `borderWidth`.                                                                                                                                |
-| `DEFAULT_SPACING_PROPERTIES`                      | `.`, `./spacing`                              | Default spacing prop → CSS declaration map.                                                                                                                                        |
-| `roundedProperties`, `borderProperties`           | `.`, `./tokens`                               | Class-prefix lists of the `borderRadius` / `borderWidth` categories.                                                                                                               |
-| Types                                             | `./types` (most also `.`)                     | `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `ResponsiveValueStrict`, `SpacingKey` (`./spacing`), the `*Variant<T>` aliases, `DesignTokensResult`. |
+| Export                                            | Subpath                                       | Description                                                                                                                                                                                                                           |
+| :------------------------------------------------ | :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `generate`                                        | `.`                                           | **Main entry.** Returns `{ css, tokens, schema }` from a Zod-validated theme.                                                                                                                                                         |
+| `defineTheme`, `defineOptions`                    | `.`                                           | Type-safe helpers; `defineTheme` also validates at runtime.                                                                                                                                                                           |
+| `formatZodError`                                  | `.`                                           | Formats a `ZodError` thrown by `generate()`/`defineTheme()` as one `path → message` line per issue.                                                                                                                                   |
+| `generateThemeCss`                                | `.`                                           | Just `:root` variables, axis overrides and `@theme inline`; validates the theme like `generate()`.                                                                                                                                    |
+| `createDesignTokens`                              | `.`, `./tokens`                               | Typed `DesignTokens.Web.*`.                                                                                                                                                                                                           |
+| `createVariantMapper`, `COLOR_STATES`             | `.`, `./cva` (`COLOR_STATES` also `./tokens`) | Token keys → class names for CVA, optional `{ states }`.                                                                                                                                                                              |
+| `resolveSpacing`, `resolveSpacingProps`           | `.`, `./spacing`                              | Spacing props → `{ className(s), style }`.                                                                                                                                                                                            |
+| `styleGenVite`                                    | `./vite`                                      | Vite plugin writing `theme.css`.                                                                                                                                                                                                      |
+| `styleGenNext`                                    | `./next`                                      | Next.js config wrapper writing `theme.css`.                                                                                                                                                                                           |
+| `Breakpoint`, `defaultScreens`                    | `.`, `./tokens`                               | Breakpoint enum and default widths.                                                                                                                                                                                                   |
+| `DEFAULT_ROUNDED_VALUES`, `DEFAULT_BORDER_VALUES` | `.`, `./tokens`                               | Fallback values for `borderRadius` / `borderWidth`.                                                                                                                                                                                   |
+| `DEFAULT_SPACING_PROPERTIES`                      | `.`, `./spacing`                              | Default spacing prop → CSS declaration map.                                                                                                                                                                                           |
+| `roundedProperties`, `borderProperties`           | `.`, `./tokens`                               | Class-prefix lists of the `borderRadius` / `borderWidth` categories.                                                                                                                                                                  |
+| Types                                             | `./types` (most also `.`)                     | `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `CoverageRule`, `CategoryKey`, `CategoryTokenKey`, `ResponsiveValueStrict`, `SpacingKey` (`./spacing`), the `*Variant<T>` aliases, `DesignTokensResult`. |
 
 ---
 

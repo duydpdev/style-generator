@@ -1,17 +1,30 @@
-import type { ThemeOverride } from "../../core/themeSchema";
-
 /**
  * Describes how a single theme token category (colors, shadows, typography,
- * etc.) is flattened into CSS variables and which utility classes it feeds.
- * This is the single source of truth the registry-driven pipelines
- * (`flattenByCategory`, `generateThemeCss`, `generateSourceInline`) read
- * from instead of hard-coding per-category branches.
- * @template K Literal union of valid category keys (unused at runtime,
- * kept for call-site type narrowing).
+ * etc.) is flattened into CSS variables, which utility classes it feeds and
+ * which typed-token names it surfaces as. This is the single source of
+ * truth the registry-driven pipelines (`flattenByCategory`,
+ * `generateThemeCss`, `generateSourceInline`, `createDesignTokens`) and the
+ * `DesignTokensWeb` / `DesignTokenKeys` types read from instead of
+ * hard-coding per-category branches.
+ *
+ * Token data is read with `theme[descriptor.key]` (`key` is the
+ * `ThemeConfig` field name), so a descriptor carries no accessor of its own.
+ * @template K Literal union of valid category keys, kept for call-site type
+ * narrowing (`builtInCategories` is `as const satisfies` this interface).
  */
 export interface TokenCategoryDescriptor<K extends string = string> {
   /** Stable identifier for the category (matches the `ThemeConfig` key). */
   key: K;
+  /**
+   * Field name of this category's typed token array in
+   * `DesignTokens.Web` (e.g. `"variantColor"`).
+   */
+  tokenName: string;
+  /**
+   * Name of this category's key-union alias in `DesignTokenKeys`
+   * (e.g. `"colorKey"`).
+   */
+  tokenKeyName: string;
   /**
    * Bare intermediate CSS variable prefix (no leading/trailing dash), e.g.
    * `"sg"` for colors or `"sg-shadow"` for shadows. Combined with a
@@ -33,44 +46,21 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   themeNamespace?: string;
   /**
    * Utility class prefixes this category's tokens participate in, e.g.
-   * `["bg", "text", "border"]` for colors. An empty-string entry (`[""]`)
-   * means the token key itself is the full class name (typography).
+   * `["bg", "text", "border"]` for colors. Every entry is non-empty except
+   * for a `bareClassName` category, whose single entry is `""`.
    */
   classPrefixes?: readonly string[];
+  /**
+   * `true` when the token key itself is the full class name (typography:
+   * `.text-12-mono` comes from the key `text12Mono`), so `classPrefixes`
+   * is the single empty-string entry and `@source inline` emits bare keys
+   * instead of `<prefix>-<key>`.
+   */
+  bareClassName?: boolean;
   /** Whether this category gets responsive (`md:`, `lg:`, …) variants. */
   responsive?: boolean;
   /** Interactive state suffixes this category supports (e.g. `["hover"]`). */
   states?: readonly string[];
   /** Fallback values used when the theme config omits this category. */
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];
-  /**
-   * Typed accessor pulling this category's flat token data out of a theme
-   * source (base `ThemeConfig` or a `themeAxes` variant `ThemeOverride` —
-   * `ThemeConfig` is structurally assignable to `ThemeOverride` since
-   * every `ThemeOverride` field it shares is a narrowing of an optional
-   * field, so `flattenByCategory`/`generateThemeCss.ts`'s
-   * `buildIntermediateVars` call this with either). Referencing the
-   * whole `ThemeOverride` type — rather than a `Pick<...>` of individual
-   * category keys — means adding a CSS-var category never touches this
-   * file: it's covered as soon as it's added to `ThemeCssVarShape` in
-   * `themeSchema.ts`. Omitted for categories with no CSS-variable
-   * representation (`typography`) — `flattenByCategory` never reads
-   * `data` for those, so there is nothing to select.
-   * @param {ThemeOverride} source - Theme source data
-   * @returns {Record<string, string> | undefined} Flat token data for this category
-   */
-  select?: (source: ThemeOverride) => Record<string, string> | undefined;
-}
-
-/**
- * Identity helper for defining a `TokenCategoryDescriptor` with inferred
- * literal types. Zero runtime cost — mirrors `defineTheme`/`defineOptions`.
- * @template K Literal category key type
- * @param {TokenCategoryDescriptor<K>} descriptor - Category descriptor
- * @returns {TokenCategoryDescriptor<K>} The same descriptor object
- */
-export function defineCategory<K extends string>(
-  descriptor: TokenCategoryDescriptor<K>,
-): TokenCategoryDescriptor<K> {
-  return descriptor;
 }

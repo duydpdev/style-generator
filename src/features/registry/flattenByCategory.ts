@@ -1,4 +1,4 @@
-import { ALIAS_VALUE_RE } from "../../core/themeSchema";
+import { ALIAS_VALUE_RE } from "../../core/tokenGrammar";
 import { toKebabCase } from "../../shared/helpers";
 
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";

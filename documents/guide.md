@@ -237,6 +237,29 @@ Mọi màu luôn có `bg-*`/`text-*`/`border-*` nhờ `@source inline` do regist
 generate(theme, { extraSources: ["hover:bg-{primary,secondary}"] });
 ```
 
+### Thu hẹp `@source inline` theo category (`coverage`)
+
+Mặc định mỗi category có một dòng `@source inline` phủ mọi key (màu: đủ ba tiền tố `bg-`/`text-`/`border-`). Bảng màu lớn làm dòng này dài; `coverage` thu hẹp nó theo từng category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
+
+| `coverage.<category>` | Tác dụng                                                                                                                                                                                                                                                                                      |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| vắng, `true`, `{}`    | Đầu ra như cũ, giống từng byte.                                                                                                                                                                                                                                                               |
+| `false`               | Không phát dòng `@source inline` của category, kể cả dòng state (`hover:`, `active:`).                                                                                                                                                                                                        |
+| `{ prefixes: [...] }` | Chỉ giữ các tiền tố class liệt kê (`bg`, `rounded-t`, …). Mỗi tiền tố phải thuộc category đó, nếu không `generate()` ném lỗi; typography không có tiền tố (key chính là class).                                                                                                               |
+| `{ keys: "aliased" }` | Chỉ giữ các key có giá trị là alias `"$<key>"` (key _giữ alias_) ở bản gốc hoặc ở bất kỳ override `themeAxes` nào; primitive mà chúng trỏ tới không cần class. Dòng state theo sau: `hover:bg-x-hover` chỉ còn khi cả `x` và `xHover` còn. Không dùng được cho `typography` (không có alias). |
+| `{ keys: "all" }`     | Mặc định: mọi key.                                                                                                                                                                                                                                                                            |
+
+`prefixes` và `keys` kết hợp được; danh sách `prefixes` phải không rỗng. Với `keys: "aliased"` mà category không có key giữ alias nào (hoặc không khai báo key) thì không phát gì: giá trị mặc định không phải alias. `coverage` chỉ cắt `@source inline`: `@theme inline`, `@utility` và `DesignTokens` có kiểu giữ nguyên, nên class còn dùng mà không còn được phủ phải xuất hiện literal trong source hoặc khai báo qua `extraSources`.
+
+```typescript
+generate(theme, {
+  coverage: {
+    colors: { prefixes: ["bg", "text"], keys: "aliased" },
+    shadows: false,
+  },
+});
+```
+
 ### Class bị trùng utility có sẵn của Tailwind
 
 Key có class trùng utility của Tailwind (`none` trong `colors`/`shadows`/`borderRadius`, `borderWidth` toàn số, key typography thành `text-sm`, `h-1` (từ `h1`), `italic`…, màu `transparent`/`current`/`inherit`) không bị schema từ chối, nhưng rule nào thắng do Tailwind quyết định. Đặt tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các va chạm nó nhận ra được (chỉ là cảnh báo).
@@ -401,18 +424,18 @@ const button = cva("base-class", {
 
 **Tokens trong `DesignTokens.Web`:**
 
-| Token                 | Mô tả                                                      |
-| --------------------- | ---------------------------------------------------------- |
-| `variantColor`        | Tất cả key màu (flat, camelCase)                           |
-| `variantText`         | Key của `typography`                                       |
-| `variantShadow`       | Key của `shadows`                                          |
-| `variantBackdropBlur` | Key của `backDropBlurs`                                    |
-| `variantFontFamily`   | Key của `fontFamily`                                       |
-| `borderWidthOption`   | Key của `borderWidth` (mặc định `0, 1, 2, 4`)              |
-| `roundedOption`       | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES`) |
-| `spacingProperties`   | Danh sách spacing props                                    |
-| `breakpoints`         | Breakpoint đang dùng — mặc định `["md", "lg"]`             |
-| `screens`             | Bản đồ breakpoint → độ rộng                                |
+| Token                 | Mô tả                                                                         |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `variantColor`        | Tất cả key màu (flat, camelCase)                                              |
+| `variantText`         | Key của `typography`                                                          |
+| `variantShadow`       | Key của `shadows`                                                             |
+| `variantBackdropBlur` | Key của `backDropBlurs`                                                       |
+| `variantFontFamily`   | Key của `fontFamily`                                                          |
+| `borderWidthOption`   | Key của `borderWidth` (mặc định `0, 1, 2, 4` khi vắng hoặc `{}`)              |
+| `roundedOption`       | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES` khi vắng hoặc `{}`) |
+| `spacingProperties`   | Danh sách spacing props                                                       |
+| `breakpoints`         | Breakpoint đang dùng — mặc định `["md", "lg"]`                                |
+| `screens`             | Bản đồ breakpoint → độ rộng                                                   |
 
 ### Class trạng thái
 

@@ -40,7 +40,7 @@ export const generateBorderWidthCss = (theme: ThemeConfig): string => {
   const borderWidth = theme.borderWidth;
   if (!borderWidth || Object.keys(borderWidth).length === 0) return "";
 
-  const cssVarPrefix = borderWidthCategory.cssVarPrefix ?? "sg-border-width";
+  const cssVarPrefix = borderWidthCategory.cssVarPrefix;
 
   const blocks: string[] = [];
   for (const key of Object.keys(borderWidth)) {

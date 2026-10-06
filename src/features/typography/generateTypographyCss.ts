@@ -1,4 +1,5 @@
-import type { StyleGeneratorOptions } from "../../core/Options";
+import { resolveOptions } from "../../core/resolveOptions";
+import type { ResolvedOptions } from "../../core/resolveOptions";
 import type { TypographyConfig } from "../../core/themeSchema";
 import { UTILITY_NAME_RE, toKebabCase } from "../../shared/helpers";
 
@@ -53,18 +54,18 @@ const definedEntries = (
  * selector fed as raw CSS-text input is invisible to Tailwind's candidate
  * matcher, only CSS-first `@utility` declarations register a utility name.
  * @param {Record<string, TypographyConfig> | undefined} typography - Typography config keyed by utility name
- * @param {StyleGeneratorOptions} [options] - Generator options (`typography.cssVarDriven`)
+ * @param {Pick<ResolvedOptions, "typographyCssVarDriven">} [options] - Resolved generator options (`typographyCssVarDriven`)
  * @returns {string} CSS string, empty when there is no typography config
  */
 export const generateTypographyCss = (
   typography: Record<string, TypographyConfig> | undefined,
-  options: StyleGeneratorOptions = {},
+  options: Pick<ResolvedOptions, "typographyCssVarDriven"> = resolveOptions(),
 ): string => {
   if (!typography || Object.keys(typography).length === 0) return "";
 
   const blocks: string[] = [];
 
-  if (options.typography?.cssVarDriven) {
+  if (options.typographyCssVarDriven) {
     // Var-driven mode: tokens live in :root (@layer base, matching the old
     // api.addBase({ ":root": ... }) layer) and each utility references its
     // own var instead of a literal value.

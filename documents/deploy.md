@@ -230,7 +230,7 @@ Commit message format: `[type] subject`, type viết thường (`[Feat] …` b�
 | `refactor`, `style`, `revert`                                 | Patch (`1.0.1`) | `[refactor] simplify registry walk`  |
 | `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | Không bump      | `[docs] update architecture guide`   |
 
-Release notes dùng preset `conventionalcommits` (khai trong `devDependencies`) với template `changelog-template.hbs`; các section theo thứ tự: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Type không bump không vào notes. Body của commit `[fix]` được in thụt lề ngay dưới entry (`finalizeContext` trong `release.config.cjs`). Vì `[fix]` thường siết validation, hãy viết body nói rõ cái gì giờ bị từ chối và cách chuyển đổi. Body của các type khác không vào notes.
+Release notes dùng preset `conventionalcommits` (khai trong `devDependencies`) với template `changelog-template.hbs`; các section theo thứ tự: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Type không bump không vào notes. Body của commit `[feat]` và `[fix]` được in thụt lề ngay dưới entry (`finalizeContext` trong `release.config.cjs`). Vì `[fix]` thường siết validation, hãy viết body nói rõ cái gì giờ bị từ chối và cách chuyển đổi; body của `[feat]` liệt kê các thay đổi hành vi người dùng cần biết (default mới, ngữ nghĩa mới). Body của các type khác không vào notes.
 
 ### Config
 

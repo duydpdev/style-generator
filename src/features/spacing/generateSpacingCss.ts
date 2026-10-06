@@ -1,47 +1,8 @@
+import { resolveOptions } from "../../core/resolveOptions";
 import type {
-  StyleGeneratorOptions,
-  SpacingPropertyMap,
-} from "../../core/Options";
-import { defaultScreens } from "../../core/Options";
-import {
-  DEFAULT_BREAKPOINTS,
-  DEFAULT_SPACING_PROPERTIES,
-} from "../../shared/defaultOption";
-
-interface SortedBreakpoint {
-  key: string;
-  value: string;
-  numericValue: number;
-}
-
-/**
- * Resolve the ascending breakpoint list to generate fallback chains for.
- * Empty when `enableResponsive` is `false` — no `@media`/`@property`
- * breakpoint variants are emitted in that case, only the base value.
- * @param {StyleGeneratorOptions} options - Generator options
- * @returns {SortedBreakpoint[]} Ascending breakpoints (by resolved width)
- */
-const resolveSortedBreakpoints = (
-  options: StyleGeneratorOptions,
-): SortedBreakpoint[] => {
-  if (options.enableResponsive === false) return [];
-
-  const breakpointKeys = options.breakpoints ?? DEFAULT_BREAKPOINTS;
-  const mergedScreens: Record<string, string> = {
-    ...defaultScreens,
-    ...options.screens,
-  };
-
-  return breakpointKeys
-    .map((bp) => {
-      const value = mergedScreens[bp];
-      return value === undefined
-        ? undefined
-        : { key: bp, value, numericValue: Number.parseInt(value, 10) };
-    })
-    .filter((entry): entry is SortedBreakpoint => entry !== undefined)
-    .sort((a, b) => a.numericValue - b.numericValue);
-};
+  ResolvedBreakpoint,
+  ResolvedOptions,
+} from "../../core/resolveOptions";
 
 /**
  * Build the ascending `var(--sg-sp-<key>-<bp>, ...)` fallback chain for a
@@ -53,13 +14,13 @@ const resolveSortedBreakpoints = (
  * rather than only its own override, or a wider viewport could silently
  * fall back past a narrower breakpoint's value.
  * @param {string} key - Spacing property key (e.g. `"p"`)
- * @param {SortedBreakpoint[]} sortedBreakpoints - Ascending breakpoints
+ * @param {readonly ResolvedBreakpoint[]} sortedBreakpoints - Ascending breakpoints
  * @param {number} uptoIndex - Inclusive index into `sortedBreakpoints`
  * @returns {string} `var(--sg-sp-<key>...)` fallback chain
  */
 const buildFallbackChain = (
   key: string,
-  sortedBreakpoints: SortedBreakpoint[],
+  sortedBreakpoints: readonly ResolvedBreakpoint[],
   uptoIndex: number,
 ): string => {
   let chain = `var(--sg-sp-${key})`;
@@ -79,13 +40,13 @@ const buildFallbackChain = (
  * up `hover:`/`md:` modifiers on classes defined via `@utility`.
  * @param {string} key - Spacing property key
  * @param {Record<string, string>} cssProps - CSS property → `var()` template map for this key
- * @param {SortedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
+ * @param {readonly ResolvedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
  * @returns {string} `@utility sp-<key> { ... }` block
  */
 const buildUtilityBlock = (
   key: string,
   cssProps: Record<string, string>,
-  sortedBreakpoints: SortedBreakpoint[],
+  sortedBreakpoints: readonly ResolvedBreakpoint[],
 ): string => {
   const cssPropNames = Object.keys(cssProps);
   const baseSection = cssPropNames
@@ -112,12 +73,12 @@ const buildUtilityBlock = (
  * fallback)` chain fall through to its fallback instead of resolving to
  * an empty string (the root cause of the pre-fix bug this block replaces).
  * @param {string} key - Spacing property key
- * @param {SortedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
+ * @param {readonly ResolvedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
  * @returns {string[]} One `@property` block per (key, base|breakpoint) pair
  */
 const buildPropertyBlocks = (
   key: string,
-  sortedBreakpoints: SortedBreakpoint[],
+  sortedBreakpoints: readonly ResolvedBreakpoint[],
 ): string[] => {
   const names = [
     `--sg-sp-${key}`,
@@ -139,18 +100,20 @@ const buildPropertyBlocks = (
  * var is registered via `@property` so it participates correctly in the
  * cascade instead of leaking a parent's value into children via
  * unregistered custom-property inheritance.
- * @param {StyleGeneratorOptions} [options] - Generator options
+ * @param {Pick<ResolvedOptions, "spacing" | "sortedBreakpoints">} [options] - Resolved generator options (`spacing`, ascending `sortedBreakpoints`)
  * @returns {string} CSS string, empty when spacing generation is disabled
  */
 export const generateSpacingCss = (
-  options: StyleGeneratorOptions = {},
+  options: Pick<
+    ResolvedOptions,
+    "spacing" | "sortedBreakpoints"
+  > = resolveOptions(),
 ): string => {
-  if (options.spacing?.enabled === false) return "";
+  if (!options.spacing.enabled) return "";
 
-  const spacingProps: SpacingPropertyMap =
-    options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES;
+  const spacingProps = options.spacing.properties;
   const spacingKeys = Object.keys(spacingProps);
-  const sortedBreakpoints = resolveSortedBreakpoints(options);
+  const sortedBreakpoints = options.sortedBreakpoints;
 
   const utilityBlocks = spacingKeys.flatMap((key) => {
     const cssProps = spacingProps[key];

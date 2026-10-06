@@ -76,4 +76,22 @@ describe("createDesignTokens", () => {
     const variantGroup = breakpoints.map((bp) => bp + ":").join(",");
     expect(sourceInline).toContain('@source inline("{' + variantGroup + ",}");
   });
+
+  it("treats an empty category record like an omitted one: default keys, as in @source inline", () => {
+    const omitted = createDesignTokens({ colors: { primary: "#fff" } });
+    const empty = createDesignTokens({
+      colors: { primary: "#fff" },
+      borderWidth: {},
+      borderRadius: {},
+    });
+    expect(empty.DesignTokens.Web.borderWidthOption).toEqual([
+      "0",
+      "1",
+      "2",
+      "4",
+    ]);
+    expect(empty.DesignTokens.Web.roundedOption).toEqual(
+      omitted.DesignTokens.Web.roundedOption,
+    );
+  });
 });

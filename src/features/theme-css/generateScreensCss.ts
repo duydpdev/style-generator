@@ -1,5 +1,5 @@
-import type { StyleGeneratorOptions } from "../../core/Options";
-import { defaultScreens } from "../../core/Options";
+import { resolveOptions } from "../../core/resolveOptions";
+import type { ResolvedOptions } from "../../core/resolveOptions";
 
 /**
  * Generate a `@theme { --breakpoint-<key>: <value>; ... }` block overriding
@@ -13,16 +13,13 @@ import { defaultScreens } from "../../core/Options";
  *
  * Emitted unconditionally, independent of `enableResponsive`, which only
  * gates the spacing breakpoint var chain.
- * @param {StyleGeneratorOptions} [options] - Generator options (`options.screens`)
+ * @param {Pick<ResolvedOptions, "screens">} [options] - Resolved generator options (`screens`)
  * @returns {string} `@theme { ... }` block
  */
 export const generateScreensCss = (
-  options: StyleGeneratorOptions = {},
+  options: Pick<ResolvedOptions, "screens"> = resolveOptions(),
 ): string => {
-  const allScreens: Record<string, string> = {
-    ...defaultScreens,
-    ...options.screens,
-  };
+  const allScreens = options.screens;
 
   const lines = Object.entries(allScreens).map(
     ([key, value]) => `  --breakpoint-${key}: ${value};`,

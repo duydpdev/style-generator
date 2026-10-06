@@ -22,10 +22,16 @@ describe("schemaCommand", () => {
     vi.restoreAllMocks();
   });
 
-  it("writes theme.schema.json by default, matching ThemeSchema's JSON Schema", () => {
+  it("writes theme.schema.json to the configured theme's directory by default", () => {
+    fs.mkdirSync(path.join(tmp, "custom"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ theme: "custom/theme.json" }),
+    );
+
     schemaCommand({});
 
-    const outPath = path.join(tmp, "theme.schema.json");
+    const outPath = path.join(tmp, "custom/theme.schema.json");
     expect(fs.existsSync(outPath)).toBe(true);
 
     const schema: unknown = JSON.parse(fs.readFileSync(outPath, "utf8"));
@@ -41,5 +47,36 @@ describe("schemaCommand", () => {
 
     const outPath = path.join(tmp, "generated/theme.schema.json");
     expect(fs.existsSync(outPath)).toBe(true);
+  });
+
+  it("exits with code 1 and writes nothing when the config file has schema issues", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ theme: "custom/theme.json", breakpoint: ["xl"] }),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const origExitCode = process.exitCode;
+
+    try {
+      schemaCommand({});
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = origExitCode;
+    }
+    expect(fs.existsSync(path.join(tmp, "custom"))).toBe(false);
+    expect(fs.existsSync(path.join(tmp, "styles"))).toBe(false);
+  });
+
+  it("keeps a leading-slash theme path inside the project, like generate", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ theme: "/custom/theme.json" }),
+    );
+
+    schemaCommand({});
+
+    expect(fs.existsSync(path.join(tmp, "custom/theme.schema.json"))).toBe(
+      true,
+    );
   });
 });

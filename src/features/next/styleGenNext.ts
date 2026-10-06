@@ -24,6 +24,24 @@ export interface StyleGenNextOptions {
 
 const PLUGIN_NAME = "style-gen-next";
 
+/** Next phases that need `theme.css` on disk: dev server and production build. */
+const EMIT_PHASES = new Set([
+  "phase-development-server",
+  "phase-production-build",
+]);
+
+/** Second argument Next passes to a function-form config. */
+interface NextConfigContext {
+  defaultConfig: Record<string, unknown>;
+}
+
+/**
+ * The config Next ends up with: a function-form config's return value, else
+ * the object itself. `never[]` parameters match a function whatever it
+ * annotates `ctx` as.
+ */
+type ResolvedNextConfig<T> = T extends (...args: never[]) => infer R ? R : T;
+
 /**
  * Module-scoped dev watcher. `next.config.*` can be evaluated more than
  * once per process (Next re-reads it for phase detection, then again for
@@ -129,16 +147,14 @@ const startDevWatcher = (
  * `process.cwd()` and rejected if either escapes it (`..`, or an absolute
  * path outside the project).
  *
- * **Limitations:**
- * - **Function-form Next config is unsupported.** `nextConfig` MUST be a
- *   plain config object, not Next's alternate `(phase, { defaultConfig })
- *   => config` function form. The wrapper returned by `styleGenNext(opts)`
- *   already IS that phase function — it just `return`s `nextConfig`
- *   verbatim as the final config once emission is done, so if `nextConfig`
- *   is itself a function, Next receives that function as the resolved
- *   config object instead of calling it a second time with
- *   `(phase, { defaultConfig })`. Pass a plain object (call your own
- *   function-form config yourself first, if you have one) instead.
+ * Only `phase-development-server` and `phase-production-build` read the
+ * theme and write `theme.css`; every other phase (`phase-production-server`,
+ * `phase-export`, `phase-info`, `phase-test`) returns the config without
+ * touching the disk, so a production container need not ship the theme JSON.
+ * A function-form Next config is called with `(phase, ctx)` and its result
+ * is returned.
+ *
+ * **Limitation:**
  * - **Symlinks are not `realpath`'d.** `resolveSafePath` compares the
  *   logical (non-dereferenced) path against `root`; it never calls
  *   `fs.realpathSync`. A `themePath`/`outDir` that is itself a symlink
@@ -147,14 +163,34 @@ const startDevWatcher = (
  *   input path, not a symlink whose target escapes after the filesystem
  *   resolves it.
  * @param {StyleGenNextOptions} opts - Plugin configuration
- * @returns {(nextConfig: unknown) => (phase: string) => unknown} A function
- *   that takes the consumer's Next config and returns the phase-aware
- *   config function Next.js expects from `next.config.*`.
+ * @returns {(nextConfig: unknown) => (phase: string, ctx?: object) => unknown}
+ *   A function that takes the consumer's Next config and returns the
+ *   phase-aware config function Next.js expects from `next.config.*`.
  */
 export const styleGenNext =
   (opts: StyleGenNextOptions) =>
-  <TConfig>(nextConfig: TConfig): ((phase: string) => TConfig) =>
-  (phase: string): TConfig => {
+  <TConfig>(
+    nextConfig: TConfig,
+  ): ((
+    phase: string,
+    ctx?: NextConfigContext,
+  ) => ResolvedNextConfig<TConfig>) =>
+  (
+    phase: string,
+    ctx: NextConfigContext = { defaultConfig: {} },
+  ): ResolvedNextConfig<TConfig> => {
+    const resolvedConfig = (
+      typeof nextConfig === "function"
+        ? (
+            nextConfig as (
+              phase: string,
+              ctx: NextConfigContext,
+            ) => ResolvedNextConfig<TConfig>
+          )(phase, ctx)
+        : nextConfig
+    ) as ResolvedNextConfig<TConfig>;
+    if (!EMIT_PHASES.has(phase)) return resolvedConfig;
+
     const root = process.cwd();
     const generatorOptions: StyleGeneratorOptions = opts.options ?? {};
 
@@ -183,7 +219,7 @@ export const styleGenNext =
       startDevWatcher(themePathAbs, outDirAbs, generatorOptions);
     }
 
-    return nextConfig;
+    return resolvedConfig;
   };
 
 /** Test-only: reset module-level state. Not part of public API. */

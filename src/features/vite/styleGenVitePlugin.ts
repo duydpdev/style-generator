@@ -142,8 +142,10 @@ export const styleGenVite = (opts: StyleGenViteOptions): Plugin => {
       try {
         emit(themePathAbs, outDirAbs, generatorOptions);
       } catch (err) {
-        this.error(
+        // Vite 5/6 call configResolved unbound: `this.error` is unavailable.
+        throw new Error(
           `[${PLUGIN_NAME}] invalid theme in ${themePathAbs}:\n${formatEmitError(err)}`,
+          { cause: err },
         );
       }
       hasEmitted = true;

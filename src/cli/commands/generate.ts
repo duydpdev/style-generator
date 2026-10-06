@@ -62,7 +62,7 @@ export function generateCommand(args: GenerateArgs) {
 
     if (!fs.existsSync(themePath)) {
       logger.error(
-        `Theme file not found at ${options.theme} (resolved: ${themePath})\n💡 Run: npx style-gen init`,
+        `Theme file not found at ${options.theme} (resolved: ${themePath})\n💡 Run: yarn style-gen init`,
       );
       process.exit(1);
     }

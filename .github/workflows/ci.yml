@@ -105,6 +105,15 @@ jobs:
         # TypeScript generator script that `style-gen init` scaffolds.
         run: yarn check:smoke
 
+      - name: Vite dev-server smoke (styleGenVite configureServer)
+        # `vite build` never runs configureServer; this edits the example
+        # theme under a real dev server and expects a re-emit + full-reload.
+        run: node scripts/vite-dev-smoke.mjs
+
+      - name: Type-check dist/*.d.ts with library checking on
+        # tsconfig.dts-check.json; the examples set skipLibCheck.
+        run: yarn typecheck:dist
+
       - name: Test
         run: yarn test
 
@@ -255,3 +264,85 @@ jobs:
 
       - name: Smoke-run built artifacts
         run: yarn check:smoke
+
+  # The `vite` and `typescript` peer ranges (CI-05). Each leg re-resolves ONE
+  # peer to the latest release of one major via `resolutions` (this runner's
+  # checkout only), after the library is built with the committed toolchain,
+  # so a red leg names exactly one major. The leg then runs what a consumer on
+  # that major runs: the react-v4 example built through `styleGenVite`, a dev
+  # server re-emitting on a theme edit, the example and `dist/*.d.ts`
+  # type-checked and, for TypeScript, the type tests. Legs for published
+  # majors must pass; `experimental` legs probe a major that is not in the
+  # range yet and may fail. The `check` job covers the lockfile's Vite 7/TS 5.
+  peer-matrix:
+    name: Peer matrix (${{ matrix.peer }} ${{ matrix.major }}${{ matrix.experimental && ', experimental' || '' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    continue-on-error: ${{ matrix.experimental == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { peer: vite, major: 5 }
+          - { peer: vite, major: 6 }
+          - { peer: vite, major: 8 }
+          - { peer: typescript, major: 6 }
+          # Not published: Yarn 4.10's TypeScript compat patch cannot install
+          # the native TS 7 (phase 11 follow-up).
+          - { peer: typescript, major: 7, experimental: true }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Re-resolve ${{ matrix.peer }} to the latest ${{ matrix.major }}.x
+        env:
+          PEER: ${{ matrix.peer }}
+          MAJOR: ${{ matrix.major }}
+        run: |
+          jq --arg peer "$PEER" --arg range "^$MAJOR.0.0" \
+            '.resolutions[$peer] = $range' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          yarn install --no-immutable
+          yarn why "$PEER"
+          # A red leg must mean "this major fails", never "the old copy ran":
+          # the version seen from the root and from the example must be N.x.
+          for ws in . examples/react-v4; do
+            got=$(cd "$ws" && node -p "require('$PEER/package.json').version")
+            echo "$ws: $PEER $got"
+            case "$got" in "$MAJOR".*) ;; *) echo "::error::$ws resolved $PEER $got, expected $MAJOR.x"; exit 1 ;; esac
+          done
+
+      - name: Build the react-v4 example (styleGenVite)
+        run: yarn workspace react-v4-example build
+
+      - name: Vite dev-server smoke (styleGenVite configureServer)
+        if: matrix.peer == 'vite'
+        run: node scripts/vite-dev-smoke.mjs
+
+      - name: Type-check the react-v4 example against dist
+        run: yarn workspace react-v4-example typecheck
+
+      - name: Type-check dist/*.d.ts with library checking on
+        # The example sets skipLibCheck, so it never checks the package's own
+        # declarations (or the vite/zod types they reference).
+        run: yarn typecheck:dist
+
+      - name: Type tests
+        if: matrix.peer == 'typescript'
+        run: yarn test:types

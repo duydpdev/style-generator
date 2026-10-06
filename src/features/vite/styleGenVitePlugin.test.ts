@@ -52,9 +52,9 @@ interface StubPluginContext {
 }
 
 /**
- * Real Rollup/Vite binds `this` inside `configResolved`/`closeBundle` to a
- * `PluginContext` whose `.error()` always throws. Mirror that here so the
- * plugin's `this.error(...)` calls behave the same way under test.
+ * Rollup binds `this` inside `closeBundle` to a `PluginContext` whose
+ * `.error()` always throws. Mirror that here so the plugin's `this.error(...)`
+ * call behaves the same way under test.
  * @returns {StubPluginContext} A minimal plugin context stub
  */
 const makePluginContext = (): StubPluginContext => ({
@@ -63,14 +63,16 @@ const makePluginContext = (): StubPluginContext => ({
   },
 });
 
-const callConfigResolved = (
-  plugin: Plugin,
-  cfg: StubConfig,
-  ctx: StubPluginContext = makePluginContext(),
-): void => {
+/**
+ * Vite 5/6 call `configResolved` unbound (`this` is `undefined`); call it the
+ * same way so a `this.error(...)` in that hook fails under test.
+ * @param {Plugin} plugin - Plugin under test
+ * @param {StubConfig} cfg - Resolved config stub
+ */
+const callConfigResolved = (plugin: Plugin, cfg: StubConfig): void => {
   const fn = plugin.configResolved as HookFn<Plugin, "configResolved">;
   // Cast cfg through unknown — stub omits fields styleGenVite does not touch.
-  (fn as (cfg: unknown) => void).call(ctx, cfg);
+  (fn as (cfg: unknown) => void).call(undefined, cfg);
 };
 
 const callConfigureServer = (plugin: Plugin, server: StubServer): void => {
@@ -324,7 +326,7 @@ describe("styleGenVite plugin", () => {
     );
   });
 
-  it("configResolved throws via this.error naming the theme file path on invalid JSON", () => {
+  it("configResolved throws a plain Error naming the theme file path on invalid JSON (unbound this, Vite 5/6)", () => {
     const themeAbs = writeTheme();
     writeFileSync(themeAbs, "{ not valid json", "utf8");
     const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
@@ -335,10 +337,10 @@ describe("styleGenVite plugin", () => {
         command: "serve",
         logger: makeLogger(),
       } as StubConfig);
-    }).toThrow(themeAbs);
+    }).toThrow(`[style-gen-vite] invalid theme in ${themeAbs}`);
   });
 
-  it("configResolved throws formatted Zod issues naming the offending key (colours typo)", () => {
+  it("configResolved throws a plain Error with formatted Zod issues naming the offending key (unbound this, Vite 5/6)", () => {
     const themeAbs = writeTheme();
     writeFileSync(
       themeAbs,
@@ -354,6 +356,24 @@ describe("styleGenVite plugin", () => {
         logger: makeLogger(),
       } as StubConfig);
     }).toThrow(/colours/);
+  });
+
+  it("configResolved error keeps the original error as cause", () => {
+    const themeAbs = writeTheme();
+    writeFileSync(themeAbs, "{", "utf8");
+    const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
+    let thrown: unknown;
+    try {
+      callConfigResolved(plugin, {
+        root: tmp,
+        command: "serve",
+        logger: makeLogger(),
+      } as StubConfig);
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).cause).toBeInstanceOf(SyntaxError);
   });
 
   it("closeBundle re-emits in build command", () => {

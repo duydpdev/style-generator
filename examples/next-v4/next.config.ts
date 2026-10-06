@@ -8,8 +8,9 @@ const nextConfig: NextConfig = {};
 // `styleGenVite` plugin used by the React/Nuxt examples does not apply.
 // `styleGenNext` is the Next-equivalent: it does not import `next`, so it
 // works identically under both bundlers. It writes `app/theme/theme.css`
-// whenever Next evaluates this config (every `dev`/`build`/`start`), and
-// additionally watches `theme.json` for changes during `phase-development-server`.
+// when Next loads this config in `phase-development-server` (`next dev`,
+// which also watches `theme.json`) or `phase-production-build` (`next build`);
+// other phases such as `next start` return the config without reading it.
 export default styleGenNext({
   themePath: "app/theme/theme.json",
   outDir: "app/theme",

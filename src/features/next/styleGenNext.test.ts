@@ -157,4 +157,53 @@ describe("styleGenNext", () => {
     const css = readFileSync(join(tmp, "theme.css"), "utf8");
     expect(css).toMatch(/#FF0000/);
   });
+
+  describe("phase gating (X-08)", () => {
+    it.each(["phase-development-server", "phase-production-build"])(
+      "emits theme.css in %s",
+      (phase) => {
+        writeTheme();
+        styleGenNext({ themePath: "theme.json" })({})(phase);
+        expect(existsSync(join(tmp, "theme.css"))).toBe(true);
+      },
+    );
+
+    it.each([
+      "phase-production-server",
+      "phase-export",
+      "phase-info",
+      "phase-test",
+    ])("returns the config untouched and writes nothing in %s", (phase) => {
+      writeTheme();
+      const nextConfig = { reactStrictMode: true };
+      const result = styleGenNext({ themePath: "theme.json" })(nextConfig)(
+        phase,
+      );
+      expect(result).toBe(nextConfig);
+      expect(existsSync(join(tmp, "theme.css"))).toBe(false);
+    });
+
+    it("does not throw on a missing theme file during phase-production-server", () => {
+      expect(() =>
+        styleGenNext({ themePath: "missing.json" })({})(
+          "phase-production-server",
+        ),
+      ).not.toThrow();
+    });
+
+    it("calls a function-form config with the phase and Next's context and returns its result", () => {
+      writeTheme();
+      const ctx = { defaultConfig: { poweredByHeader: true } };
+      const fn = vi.fn((_phase: string, c: typeof ctx) => ({
+        poweredByHeader: !c.defaultConfig.poweredByHeader,
+      }));
+      const result = styleGenNext({ themePath: "theme.json" })(fn)(
+        "phase-production-build",
+        ctx,
+      );
+      expect(fn).toHaveBeenCalledWith("phase-production-build", ctx);
+      expect(result).toEqual({ poweredByHeader: false });
+      expect(existsSync(join(tmp, "theme.css"))).toBe(true);
+    });
+  });
 });

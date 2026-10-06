@@ -6,7 +6,7 @@ import {
 
 const TERM_LINES: TermLine[] = [
   {
-    html: '<span class="prompt">$</span> <span class="acc">npx style-gen init</span>',
+    html: '<span class="prompt">$</span> <span class="acc">yarn style-gen init</span>',
     delay: 250,
   },
   { html: '<span class="dim">┌  style-gen init</span>', delay: 250 },
@@ -77,7 +77,7 @@ export function StartSection() {
         <div className="kp-list">
           <KeyPoint
             badge="01"
-            title={<code>npx style-gen init</code>}
+            title={<code>yarn style-gen init</code>}
             body={
               <>
                 Interactive wizard. Theme and script paths, optional dark

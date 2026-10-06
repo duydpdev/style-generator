@@ -121,7 +121,7 @@ export const COMPARE_ROWS: CompareRow[] = [
     tw: <>Copy-paste from docs.</>,
     us: (
       <>
-        <code>npx style-gen init</code> — interactive wizard.
+        <code>yarn style-gen init</code> — interactive wizard.
       </>
     ),
   },

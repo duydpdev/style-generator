@@ -83,7 +83,7 @@ export const themeTemplateDark = `{
 `;
 
 /**
- * Generator script scaffolded by `style-gen init`. Runs as-is under Node 24
+ * Generator script scaffolded by `style-gen init`. Runs as-is under Node >= 22.18
  * (built-in type stripping) and writes the same file as `style-gen generate`.
  * @param {string} themeRelPath - Theme JSON path relative to the script
  * @param {string} outputRelPath - `theme.css` path relative to the script

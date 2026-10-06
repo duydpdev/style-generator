@@ -89,11 +89,16 @@ export function DocsOnPage({
             <li
               key={h.id}
               className={`h${String(h.level)}${h.id === activeId ? " active" : ""}`}
-              onClick={() => {
-                jump(h.id);
-              }}
             >
-              {h.text}
+              <button
+                type="button"
+                aria-current={h.id === activeId ? "location" : undefined}
+                onClick={() => {
+                  jump(h.id);
+                }}
+              >
+                {h.text}
+              </button>
             </li>
           ))}
         </ol>

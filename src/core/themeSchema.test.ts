@@ -116,39 +116,61 @@ describe("ThemeSchema — invalid themes", () => {
       JSON.stringify(result.error?.issues);
 
     it.each([
-      ["a color", { colors: { primary_active: "#fff" } }],
+      [
+        "a color",
+        "colors.primary_active",
+        { colors: { primary_active: "#fff" } },
+      ],
       [
         "a shadow",
+        "shadows.drop_soft",
         { colors: { primary: "#fff" }, shadows: { drop_soft: "0 1px #000" } },
       ],
       [
         "a themeAxes axis name",
+        "themeAxes.high_contrast",
         {
           colors: { primary: "#fff" },
-          themeAxes: { high_contrast: { dark: { primary: "#000" } } },
+          themeAxes: {
+            high_contrast: { dark: { colors: { primary: "#000" } } },
+          },
         },
       ],
       [
         "a themeAxes variant name",
+        "themeAxes.theme.dark_mode",
         {
           colors: { primary: "#fff" },
-          themeAxes: { theme: { dark_mode: { primary: "#000" } } },
+          themeAxes: { theme: { dark_mode: { colors: { primary: "#000" } } } },
         },
       ],
       [
         "an override key",
+        "themeAxes.theme.dark.colors.primary_x",
         {
-          colors: { primary: "#fff" },
-          themeAxes: { theme: { dark: { primary_x: "#000" } } },
+          colors: { primary: "#fff", primary_x: "#111" },
+          themeAxes: { theme: { dark: { colors: { primary_x: "#000" } } } },
         },
       ],
-      [
-        "an alias target",
-        { colors: { primary: "$blue_500", blue500: "#00f" } },
-      ],
-    ])("rejects `_` in %s", (_label, theme) => {
+    ])("rejects `_` in %s at its own path", (_label, path, theme) => {
       const result = ThemeSchema.safeParse(theme);
-      expect(result.success).toBe(false);
+      if (result.success) throw new Error("expected failure");
+      const lines = formatZodError(result.error).split("\n");
+      expect(
+        lines.filter(
+          (l) => l.startsWith(`${path} → `) && l.includes("`_` is not allowed"),
+        ),
+      ).toHaveLength(1);
+    });
+
+    it("rejects `_` in an alias target by the alias grammar, not as a missing target", () => {
+      const result = ThemeSchema.safeParse({
+        colors: { primary: "$blue_500", blue500: "#00f" },
+      });
+      if (result.success) throw new Error("expected failure");
+      expect(formatZodError(result.error)).toMatch(
+        /^colors\.primary → Alias value "\$blue_500" must match/m,
+      );
     });
 
     it("suggests camelCase or kebab-case in the error message", () => {

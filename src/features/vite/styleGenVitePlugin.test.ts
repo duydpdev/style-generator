@@ -129,6 +129,7 @@ describe("styleGenVite plugin", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     rmSync(tmp, { recursive: true, force: true });
   });
 
@@ -249,7 +250,8 @@ describe("styleGenVite plugin", () => {
     expect(log2.info).not.toHaveBeenCalled();
   });
 
-  it("re-emits + sends full-reload on theme.json change (debounced)", async () => {
+  it("re-emits + sends full-reload on theme.json change (debounced)", () => {
+    vi.useFakeTimers();
     const themeAbs = writeTheme();
     const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
     const logger = makeLogger();
@@ -273,8 +275,13 @@ describe("styleGenVite plugin", () => {
       "utf8",
     );
     handler?.(themeAbs);
+    handler?.(themeAbs);
 
-    await new Promise((r) => setTimeout(r, 250));
+    vi.advanceTimersByTime(199);
+    expect(server.ws.send).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+
+    expect(server.ws.send).toHaveBeenCalledTimes(1);
 
     expect(server.ws.send).toHaveBeenCalledWith({
       type: "full-reload",
@@ -285,7 +292,8 @@ describe("styleGenVite plugin", () => {
     );
   });
 
-  it("ignores changes to unrelated files", async () => {
+  it("ignores changes to unrelated files", () => {
+    vi.useFakeTimers();
     writeTheme();
     const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
     const logger = makeLogger();
@@ -299,12 +307,13 @@ describe("styleGenVite plugin", () => {
 
     const handler = server.watcher.handlers.get("change");
     handler?.(join(tmp, "src/random.tsx"));
-    await new Promise((r) => setTimeout(r, 250));
+    vi.advanceTimersByTime(200);
 
     expect(server.ws.send).not.toHaveBeenCalled();
   });
 
-  it("logs error if re-emit fails (invalid JSON)", async () => {
+  it("logs error if re-emit fails (invalid JSON)", () => {
+    vi.useFakeTimers();
     const themeAbs = writeTheme();
     const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
     const logger = makeLogger();
@@ -319,7 +328,7 @@ describe("styleGenVite plugin", () => {
     writeFileSync(themeAbs, "{ not valid json", "utf8");
     const handler = server.watcher.handlers.get("change");
     handler?.(themeAbs);
-    await new Promise((r) => setTimeout(r, 250));
+    vi.advanceTimersByTime(200);
 
     expect(logger.error).toHaveBeenCalledWith(
       expect.stringMatching(/Re-emit failed/),
@@ -376,8 +385,8 @@ describe("styleGenVite plugin", () => {
     expect((thrown as Error).cause).toBeInstanceOf(SyntaxError);
   });
 
-  it("closeBundle re-emits in build command", () => {
-    writeTheme();
+  it("closeBundle re-emits the latest theme in build command", () => {
+    const themeAbs = writeTheme();
     const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
     const logger = makeLogger();
     callConfigResolved(plugin, {
@@ -385,9 +394,40 @@ describe("styleGenVite plugin", () => {
       command: "build",
       logger,
     } as StubConfig);
+    writeFileSync(
+      themeAbs,
+      JSON.stringify({
+        ...minimalTheme,
+        colors: { ...minimalTheme.colors, primary: "#FF0000" },
+      }),
+      "utf8",
+    );
     callCloseBundle(plugin);
 
-    expect(existsSync(join(tmp, "src/theme/theme.css"))).toBe(true);
+    expect(readFileSync(join(tmp, "src/theme/theme.css"), "utf8")).toMatch(
+      /#FF0000/,
+    );
+  });
+
+  it("closeBundle fails the build with the formatted issue when the theme turned invalid", () => {
+    const themeAbs = writeTheme();
+    const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
+    callConfigResolved(plugin, {
+      root: tmp,
+      command: "build",
+      logger: makeLogger(),
+    } as StubConfig);
+    const before = readFileSync(join(tmp, "src/theme/theme.css"), "utf8");
+    writeFileSync(
+      themeAbs,
+      JSON.stringify({ colors: { primary: "red;}" } }),
+      "utf8",
+    );
+
+    expect(() => {
+      callCloseBundle(plugin);
+    }).toThrow(/invalid theme in .*theme\.json:\ncolors\.primary → /);
+    expect(readFileSync(join(tmp, "src/theme/theme.css"), "utf8")).toBe(before);
   });
 
   it("closeBundle is no-op in serve command", () => {

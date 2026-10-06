@@ -8,6 +8,24 @@ import { fixtureTheme } from "./__fixtures__/fixtureTheme";
 import { compileFixtureCss } from "./compileFixtureCss";
 
 /**
+ * Declarations of every rule whose selector is exactly `selector`, as
+ * `prop → value`. Later declarations win, as in the cascade.
+ * @param {string} css - Compiled CSS
+ * @param {string} selector - Exact rule selector to collect
+ * @returns {Map<string, string>} Declarations found under that selector
+ */
+const declsOf = (css: string, selector: string): Map<string, string> => {
+  const decls = new Map<string, string>();
+  postcss.parse(css).walkRules((rule) => {
+    if (rule.selector !== selector) return;
+    rule.walkDecls((decl) => {
+      decls.set(decl.prop, decl.value);
+    });
+  });
+  return decls;
+};
+
+/**
  * End-to-end: feed `css` from generate() into the real Tailwind v4
  * compiler, then build CSS for a candidate class list. Asserts that:
  *   - color CSS variables appear in :root
@@ -31,23 +49,24 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     return compileFixtureCss(`${themeCss}\n${extraInput}`, candidates);
   };
 
-  it("emits :root with --sg-primary intermediate var", async () => {
-    const css = await buildCss();
-    expect(css).toMatch(/--sg-primary:\s*#3B82F6/i);
-    expect(css).toMatch(/--sg-sidebar-foreground:\s*#111827/i);
+  it("emits :root with --sg-* intermediate vars", async () => {
+    const root = declsOf(await buildCss(), ":root");
+    expect(root.get("--sg-primary")).toMatch(/^#3B82F6$/i);
+    expect(root.get("--sg-sidebar-foreground")).toMatch(/^#111827$/i);
   });
 
   it("emits dark theme override block, pinned to html[data-theme]", async () => {
-    const css = await buildCss();
-    expect(css).toMatch(/html\[data-theme=["']dark["']\]/);
-    expect(css).toMatch(/--sg-primary:\s*#60A5FA/i);
+    const dark = declsOf(await buildCss(), 'html[data-theme="dark"]');
+    expect(dark.get("--sg-primary")).toMatch(/^#60A5FA$/i);
   });
 
   it("resolves utilities through @theme inline mapping to --sg-* vars", async () => {
     const css = await buildCss();
-    expect(css).toMatch(/\.bg-primary\s*\{[^}]*var\(--sg-primary\)/);
-    expect(css).toMatch(
-      /\.text-sidebar-foreground\s*\{[^}]*var\(--sg-sidebar-foreground\)/,
+    expect(declsOf(css, ".bg-primary").get("background-color")).toBe(
+      "var(--sg-primary)",
+    );
+    expect(declsOf(css, ".text-sidebar-foreground").get("color")).toBe(
+      "var(--sg-sidebar-foreground)",
     );
   });
 
@@ -132,36 +151,22 @@ describe("integration: Tailwind v4 compile pipeline", () => {
   });
 
   it('case @import "./theme.css": candidates still resolve when loading theme css via @import', async () => {
+    // `underline` is a Tailwind static utility the registry never emits, so
+    // it only shows up if the imported file's `@source inline` is honoured.
     const { css: themeCss } = generate(theme, {
-      extraSources: ["hover:bg-primary"],
-    });
-    const input = `@import "tailwindcss";\n@import "./theme.css";`;
-
-    const { compile } = await import("tailwindcss");
-    const result = await compile(input, {
-      base: process.cwd(),
-      // @ts-expect-error -- internal API
-      loadStylesheet: async (id: string, base: string) => {
-        if (id === "./theme.css") return { content: themeCss, base };
-        const fs = await import("fs");
-        const path = await import("path");
-        let resolved: string;
-        if (id === "tailwindcss") {
-          resolved = require.resolve("tailwindcss/index.css");
-        } else if (id.startsWith("tailwindcss/")) {
-          resolved = require.resolve(id);
-        } else {
-          resolved = path.resolve(base, id);
-        }
-        return {
-          content: fs.readFileSync(resolved, "utf-8"),
-          base: path.dirname(resolved),
-        };
-      },
+      extraSources: ["underline"],
     });
 
-    const compiled = result.build([]);
-    expect(compiled).toContain(".bg-primary");
+    const compiled = await compileFixtureCss('@import "./theme.css";', [], {
+      imports: { "theme.css": themeCss },
+    });
+
+    expect(declsOf(compiled, ".bg-primary").get("background-color")).toBe(
+      "var(--sg-primary)",
+    );
+    expect(declsOf(compiled, ".underline").get("text-decoration-line")).toBe(
+      "underline",
+    );
     expect(compiled).toContain(".sp-p");
   });
 });

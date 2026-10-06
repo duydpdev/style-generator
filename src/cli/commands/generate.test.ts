@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import { logger } from "../logger";
 
-import { generateCommand } from "./generate";
+import { generateCommand, type GenerateWatchHandle } from "./generate";
 
 const sampleTheme = {
   colors: { primary: "#3B82F6", background: "#FFFFFF" },
@@ -24,6 +24,7 @@ const sampleTheme = {
 describe("generateCommand", () => {
   let tmp: string;
   let origCwd: string;
+  let watchHandle: GenerateWatchHandle | undefined;
 
   beforeEach(() => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-generate-"));
@@ -31,7 +32,10 @@ describe("generateCommand", () => {
     process.chdir(tmp);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    vi.useRealTimers();
+    await watchHandle?.close();
+    watchHandle = undefined;
     process.chdir(origCwd);
     fs.rmSync(tmp, { recursive: true, force: true });
     vi.restoreAllMocks();
@@ -207,7 +211,7 @@ describe("generateCommand", () => {
     );
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({ breakpoints: ["sm", "lg"] }),
+      JSON.stringify({ breakpoints: ["sm", "xl"] }),
     );
 
     generateCommand({
@@ -215,9 +219,15 @@ describe("generateCommand", () => {
       out: "styles/theme.css",
     });
 
+    // `@theme` always lists every screen, so only the breakpoint-driven
+    // output (spacing fallback chains) tells the configured list apart from
+    // the `["md", "lg"]` default.
     const content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
-    expect(content).toMatch(/--breakpoint-sm/);
-    expect(content).toMatch(/--breakpoint-lg/);
+    expect(content).toContain("@media (width >= 640px)");
+    expect(content).toContain("--sg-sp-p-sm");
+    expect(content).toContain("--sg-sp-p-xl");
+    expect(content).not.toContain("--sg-sp-p-md");
+    expect(content).not.toContain("--sg-sp-p-lg");
   });
 
   it("exits 1 without writing output when the theme JSON is malformed", () => {
@@ -337,69 +347,99 @@ describe("generateCommand", () => {
     expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
   });
 
-  it("watch mode: regenerates theme.css when theme.json changes", async () => {
-    // Real delays, not fake timers: this drives a genuine chokidar fs
-    // watcher plus the command's own setTimeout debounce, both racing
-    // against real OS file-change events — there is no promise/event this
-    // test can await instead, and mocking the clock would desync from
-    // chokidar's own real-time polling.
-    // Repo tsconfig targets ES2022 (no Promise.withResolvers types), so a
-    // plain executor is used here instead.
-    const delay = (ms: number): Promise<void> =>
-      new Promise((resolve) => setTimeout(resolve, ms));
+  it(
+    "watch mode: regenerates theme.css when theme.json changes",
+    {
+      // Four sequential waits of up to 2000ms each: keep the test timeout
+      // above their sum so a miss reports the assertion, not a timeout.
+      timeout: 10_000,
+    },
+    async () => {
+      // A genuine chokidar watcher reacting to real fs events: `ready` says
+      // when it is attached, and `vi.waitFor` polls for each debounced write.
+      const themePath = path.join(tmp, "styles/theme.json");
+      const cssPath = path.join(tmp, "styles/theme.css");
+      const readCss = (): string => fs.readFileSync(cssPath, "utf8");
+      // Each wait stays well below the 10s test timeout so a miss reports the assertion.
+      const waitOptions = { timeout: 2000, interval: 25 };
 
+      fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+      fs.writeFileSync(themePath, JSON.stringify(sampleTheme));
+
+      watchHandle = generateCommand({
+        theme: "styles/theme.json",
+        out: "styles/theme.css",
+        watch: true,
+      });
+      expect(watchHandle).toBeDefined();
+      await watchHandle?.ready;
+
+      // Initial (debounced) generation.
+      await vi.waitFor(() => {
+        expect(readCss()).toMatch(/#3B82F6/);
+      }, waitOptions);
+
+      fs.writeFileSync(
+        themePath,
+        JSON.stringify({
+          ...sampleTheme,
+          colors: { ...sampleTheme.colors, primary: "#FF0000" },
+        }),
+      );
+      await vi.waitFor(() => {
+        expect(readCss()).toMatch(/#FF0000/);
+      }, waitOptions);
+
+      // An invalid edit is logged, keeps the last good output, does not mark
+      // the process failed, and watching continues.
+      const errorSpy = vi
+        .spyOn(logger, "error")
+        .mockImplementation(() => undefined);
+      fs.writeFileSync(
+        themePath,
+        JSON.stringify({ colors: { primary_x: "#00FF00" } }),
+      );
+      await vi.waitFor(() => {
+        expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid theme /);
+      }, waitOptions);
+      expect(process.exitCode).toBeUndefined();
+      expect(readCss()).toMatch(/#FF0000/);
+
+      fs.writeFileSync(
+        themePath,
+        JSON.stringify({
+          ...sampleTheme,
+          colors: { ...sampleTheme.colors, primary: "#0000FF" },
+        }),
+      );
+      await vi.waitFor(() => {
+        expect(readCss()).toMatch(/#0000FF/);
+      }, waitOptions);
+    },
+  );
+
+  it("watch mode: close() cancels the pending debounced generation", async () => {
+    const cssPath = path.join(tmp, "styles/theme.css");
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, "styles/theme.json"),
       JSON.stringify(sampleTheme),
     );
 
-    generateCommand({
+    // Fake only the command's debounce timer; restore before awaiting
+    // chokidar's own async close.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const handle = generateCommand({
       theme: "styles/theme.json",
       out: "styles/theme.css",
       watch: true,
     });
+    watchHandle = handle;
+    const closing = handle?.close();
+    vi.advanceTimersByTime(200);
+    vi.useRealTimers();
+    await closing;
 
-    // Initial (debounced) generation.
-    await delay(300);
-    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(true);
-
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify({
-        ...sampleTheme,
-        colors: { ...sampleTheme.colors, primary: "#FF0000" },
-      }),
-    );
-
-    await delay(400);
-    let content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
-    expect(content).toMatch(/#FF0000/);
-
-    // An invalid edit is logged, keeps the last good output, does not mark
-    // the process failed, and watching continues.
-    const errorSpy = vi
-      .spyOn(logger, "error")
-      .mockImplementation(() => undefined);
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify({ colors: { primary_x: "#00FF00" } }),
-    );
-    await delay(400);
-    expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid theme /);
-    expect(process.exitCode).toBeUndefined();
-    content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
-    expect(content).toMatch(/#FF0000/);
-
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify({
-        ...sampleTheme,
-        colors: { ...sampleTheme.colors, primary: "#0000FF" },
-      }),
-    );
-    await delay(400);
-    content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
-    expect(content).toMatch(/#0000FF/);
+    expect(fs.existsSync(cssPath)).toBe(false);
   });
 });

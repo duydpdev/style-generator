@@ -71,3 +71,10 @@ Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không
 
 - **Mistake:** Reported `yarn site:build` green in a gate. It passed only because of a stale hand-made symlink `node_modules/@duydpdev/style-generator -> ../..`. On a clean install Yarn never creates that link (root package = library, so `workspace:*` from site/examples is a dropped self-reference), and `Deploy Site` failed on the first push to `main`.
 - **New Rule:** Prove build or resolution claims for workspace consumers in a clean worktree (`git worktree add --detach <tmp> HEAD && yarn install --immutable && …`), or in CI. Consumers of the root package use `link:`, not `workspace:*`.
+
+### [2026-10-06] - chokidar `ready` does not mean the OS watch is armed
+
+- **Mistake:** Replaced a test's `delay(200)` with `await once(watcher, "ready")` and wrote to the watched file right after. On macOS the change was never delivered (0/10), and the test hit Vitest's 5000 ms timeout because `vi.waitFor` also used `timeout: 5000`, so the real assertion was never reported.
+- **New Rule:**
+  1. Never write to a watched file synchronously after `ready`. Unit-test watcher wiring (singleton, debounce, error logging) with a fake `EventEmitter` watcher and fake timers. Keep a single real-chokidar test, and make sure it waits for an observable result (e.g. the initial debounced write) before its first mutation.
+  2. Keep a `vi.waitFor` timeout (≤ 2000) below the test timeout.

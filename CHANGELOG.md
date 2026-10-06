@@ -1,3 +1,9 @@
+# [4.1.0](https://github.com/duydpdev/style-generator/compare/v4.0.3...v4.1.0) (2026-10-06)
+
+### Features
+
+- validate options, config and cross-category theme variables ([2e30cb1](https://github.com/duydpdev/style-generator/commit/2e30cb1ee3630cba1645b9d2d61a3bb6d78c2113))
+
 # [4.0.3](https://github.com/duydpdev/style-generator/compare/v4.0.2...v4.0.3) (2026-10-05)
 
 ### Bug Fixes

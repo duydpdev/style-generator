@@ -83,6 +83,41 @@ describe("generateThemeCss", () => {
     );
   });
 
+  it("resolves one alias per category to the same category's --sg var", () => {
+    // Distinct target keys per category, so a lookup in the wrong category
+    // cannot produce the expected var by accident.
+    const config: ThemeConfig = {
+      colors: { brand: "#00f", primary: "$brand" },
+      shadows: { soft: "0 1px #000", card: "$soft" },
+      backDropBlurs: { light: "4px", panel: "$light" },
+      borderRadius: { round: "4px", card: "$round" },
+      fontFamily: { sans: "Inter", body: "$sans" },
+      borderWidth: { hairline: "1px", card: "$hairline" },
+    };
+    const root = generateThemeCss(config).split(":root {")[1]?.split("}")[0];
+    expect(root).toContain("--sg-primary: var(--sg-brand);");
+    expect(root).toContain("--sg-shadow-card: var(--sg-shadow-soft);");
+    expect(root).toContain(
+      "--sg-backdrop-blur-panel: var(--sg-backdrop-blur-light);",
+    );
+    expect(root).toContain("--sg-radius-card: var(--sg-radius-round);");
+    expect(root).toContain("--sg-font-body: var(--sg-font-sans);");
+    expect(root).toContain(
+      "--sg-border-width-card: var(--sg-border-width-hairline);",
+    );
+  });
+
+  it("kebab-cases axis and variant names in html selectors", () => {
+    const css = generateThemeCss({
+      colors: { primary: "#fff" },
+      themeAxes: { highContrast: { onDark: { colors: { primary: "#000" } } } },
+    });
+    expect(css).toMatch(
+      /^html\[data-high-contrast="on-dark"\] \{\s*--sg-primary: #000;\s*\}/m,
+    );
+    expect(css).not.toMatch(/highContrast|onDark/);
+  });
+
   it("emits multiple axes after :root, in declaration order (both axes and variants)", () => {
     const config: ThemeConfig = {
       colors: { primary: "#007AFF", secondary: "#FF9500" },

@@ -33,7 +33,7 @@
 
 ### Bug Fixes
 
-- keep schema, options and typed helpers consistent with the emitted CSS ([35c2d5f](https://github.com/duydpdev/style-generator/commit/35c2d5f74005fba1dd475d264277f4f9e20f6625))
+- keep schema, options and typed helpers consistent with the emitted CSS ([35c2d5f](https://github.com/duydpdev/style-generator/commit/35c2d5f74005fba1dd475d264277f4f9e20f6625)) (see [4.0.2 — stricter validation](./documents/migration/3.x-to-4.0.md#402--stricter-validation))
 
 # [4.0.1](https://github.com/duydpdev/style-generator/compare/v4.0.0...v4.0.1) (2026-10-05)
 
@@ -127,8 +127,6 @@ explicit `@property syntax:"*" inherits:false` declaration per
 property/breakpoint. The global `*` rule is removed; fallback chains
 now live inside each @utility sp-*. Consumers reading --tw-sp-* or
 --sp-* directly must switch to --sg-sp-*.
-- notes as valid markdown, and drop the orphan
-shared/utils.index.ts barrel.
 - removes createStylePlugin, detectTailwindVersion,
 the tailwindVersion option, spacing.useMatchUtilities, and the
 `./plugin` subpath export. Tailwind v3 support is dropped and the
@@ -136,8 +134,7 @@ tailwindcss peer floor is now >=4.1.0. createStyleSystem() is replaced
 by generate(), which returns a single generated CSS string instead of a
 JS plugin object; styleGenVite now writes generate().css to theme.css.
 Consumers must replace `@plugin "...theme-plugin"` with a plain CSS
-`@import` of the generated file (full guide: docs/migration/3.x-to-4.0.md,
-written in the 4.0.0 stable phase).
+`@import` of the generated file (full guide: documents/migration/3.x-to-4.0.md).
 
 # 4.0.0-DEV.1 (2026-09-29)
 
@@ -218,8 +215,6 @@ explicit `@property syntax:"*" inherits:false` declaration per
 property/breakpoint. The global `*` rule is removed; fallback chains
 now live inside each @utility sp-*. Consumers reading --tw-sp-* or
 --sp-* directly must switch to --sg-sp-*.
-- notes as valid markdown, and drop the orphan
-shared/utils.index.ts barrel.
 - removes createStylePlugin, detectTailwindVersion,
 the tailwindVersion option, spacing.useMatchUtilities, and the
 `./plugin` subpath export. Tailwind v3 support is dropped and the
@@ -227,280 +222,176 @@ tailwindcss peer floor is now >=4.1.0. createStyleSystem() is replaced
 by generate(), which returns a single generated CSS string instead of a
 JS plugin object; styleGenVite now writes generate().css to theme.css.
 Consumers must replace `@plugin "...theme-plugin"` with a plain CSS
-`@import` of the generated file (full guide: docs/migration/3.x-to-4.0.md,
-written in the 4.0.0 stable phase).
+`@import` of the generated file (full guide: documents/migration/3.x-to-4.0.md).
 
 # 3.1.0-DEV.2 (2026-06-07)
 
-  ###
-  Features
+### Features
 
-    -
-    add next-v4 and nuxt-v4 examples ([#68](https://github.com/duydpdev/style-generator-private/issues/68))
-    (c69de63)
+- add next-v4 and nuxt-v4 examples ([#68](https://github.com/duydpdev/style-generator-private/issues/68)) (c69de63)
 
 # 3.1.0-DEV.1 (2026-06-07)
 
-  ###
-  Features
+### Features
 
-    -
-    update lib v4 ([#66](https://github.com/duydpdev/style-generator-private/issues/66))
-    (8e25647)
+- update lib v4 ([#66](https://github.com/duydpdev/style-generator-private/issues/66)) (8e25647)
 
 # 3.0.0 (2026-03-30)
 
-  ###
-  Features
+### Features
 
-    -
-    update lib ([#64](https://github.com/duydpdev/style-generator-private/issues/64))
-    (a2661d5)
+- update lib ([#64](https://github.com/duydpdev/style-generator-private/issues/64)) (a2661d5)
 
 # 2.1.0-DEV.1 (2026-03-30)
 
-  ###
-  Features
+### Features
 
-    -
-    update lib ([#64](https://github.com/duydpdev/style-generator-private/issues/64))
-    (a2661d5)
+- update lib ([#64](https://github.com/duydpdev/style-generator-private/issues/64)) (a2661d5)
 
 # 2.0.0 (2026-03-30)
 
-  ###
-  Features
+### Features
 
-    -
-    change publish package to npm ([#62](https://github.com/duydpdev/style-generator-private/issues/62))
-    (5ce9fad)
+- change publish package to npm ([#62](https://github.com/duydpdev/style-generator-private/issues/62)) (5ce9fad)
 
 # 1.7.0-DEV.1 (2026-03-30)
 
-  ###
-  Features
+### Features
 
-    -
-    change publish package to npm ([#62](https://github.com/duydpdev/style-generator-private/issues/62))
-    (5ce9fad)
+- change publish package to npm ([#62](https://github.com/duydpdev/style-generator-private/issues/62)) (5ce9fad)
 
 # 1.6.0 (2026-03-30)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix gensafelist border ([#53](https://github.com/duydpdev/style-generator-private/issues/53))
-    (6a654c0)
-    -
-    fix interface zindex ([#57](https://github.com/duydpdev/style-generator-private/issues/57))
-    (8ca4f43)
-    -
-    fix repsonsive ([#54](https://github.com/duydpdev/style-generator-private/issues/54))
-    (4e41e8f)
-    -
-    fix spacing css gen ([#49](https://github.com/duydpdev/style-generator-private/issues/49))
-    (4ed7916)
-    -
-    fix tempalte gen plugins ([#55](https://github.com/duydpdev/style-generator-private/issues/55))
-    (72dead0)
-    -
-    update logic gen plugin, safelist, design token ([#58](https://github.com/duydpdev/style-generator-private/issues/58))
-    (0047ebf)
+- fix gensafelist border ([#53](https://github.com/duydpdev/style-generator-private/issues/53)) (6a654c0)
+- fix interface zindex ([#57](https://github.com/duydpdev/style-generator-private/issues/57)) (8ca4f43)
+- fix repsonsive ([#54](https://github.com/duydpdev/style-generator-private/issues/54)) (4e41e8f)
+- fix spacing css gen ([#49](https://github.com/duydpdev/style-generator-private/issues/49)) (4ed7916)
+- fix tempalte gen plugins ([#55](https://github.com/duydpdev/style-generator-private/issues/55)) (72dead0)
+- update logic gen plugin, safelist, design token ([#58](https://github.com/duydpdev/style-generator-private/issues/58)) (0047ebf)
 
-  ###
-  Features
+### Features
 
-    -
-    add api gen cva function ([#50](https://github.com/duydpdev/style-generator-private/issues/50))
-    (53770f5)
-    -
-    upadate lib with new doc tailwind ([#60](https://github.com/duydpdev/style-generator-private/issues/60))
-    (0031e0f)
-    -
-    update claude code setting ([#56](https://github.com/duydpdev/style-generator-private/issues/56))
-    (e9e8c4d)
-    -
-    update cli ([#48](https://github.com/duydpdev/style-generator-private/issues/48))
-    (09a1b54)
-    -
-    update gen design token cammelCase ([#51](https://github.com/duydpdev/style-generator-private/issues/51))
-    (9c6454e)
-    -
-    update plan imrovement lib ([#59](https://github.com/duydpdev/style-generator-private/issues/59))
-    (287b712)
-    -
-    update type responsiveValue ([#52](https://github.com/duydpdev/style-generator-private/issues/52))
-    (49d6761)
+- add api gen cva function ([#50](https://github.com/duydpdev/style-generator-private/issues/50)) (53770f5)
+- upadate lib with new doc tailwind ([#60](https://github.com/duydpdev/style-generator-private/issues/60)) (0031e0f)
+- update claude code setting ([#56](https://github.com/duydpdev/style-generator-private/issues/56)) (e9e8c4d)
+- update cli ([#48](https://github.com/duydpdev/style-generator-private/issues/48)) (09a1b54)
+- update gen design token cammelCase ([#51](https://github.com/duydpdev/style-generator-private/issues/51)) (9c6454e)
+- update plan imrovement lib ([#59](https://github.com/duydpdev/style-generator-private/issues/59)) (287b712)
+- update type responsiveValue ([#52](https://github.com/duydpdev/style-generator-private/issues/52)) (49d6761)
 
 # 1.6.0-DEV.13 (2026-03-17)
 
-  ###
-  Features
+### Features
 
-    -
-    upadate lib with new doc tailwind ([#60](https://github.com/duydpdev/style-generator-private/issues/60))
-    (0031e0f)
+- upadate lib with new doc tailwind ([#60](https://github.com/duydpdev/style-generator-private/issues/60)) (0031e0f)
 
 # 1.6.0-DEV.12 (2026-03-13)
 
-  ###
-  Features
+### Features
 
-    -
-    update plan imrovement lib ([#59](https://github.com/duydpdev/style-generator-private/issues/59))
-    (287b712)
+- update plan imrovement lib ([#59](https://github.com/duydpdev/style-generator-private/issues/59)) (287b712)
 
 # 1.6.0-DEV.11 (2026-03-13)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    update logic gen plugin, safelist, design token ([#58](https://github.com/duydpdev/style-generator-private/issues/58))
-    (0047ebf)
+- update logic gen plugin, safelist, design token ([#58](https://github.com/duydpdev/style-generator-private/issues/58)) (0047ebf)
 
 # 1.6.0-DEV.10 (2026-03-12)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix interface zindex ([#57](https://github.com/duydpdev/style-generator-private/issues/57))
-    (8ca4f43)
+- fix interface zindex ([#57](https://github.com/duydpdev/style-generator-private/issues/57)) (8ca4f43)
 
 # 1.6.0-DEV.9 (2026-03-12)
 
-  ###
-  Features
+### Features
 
-    -
-    update claude code setting ([#56](https://github.com/duydpdev/style-generator-private/issues/56))
-    (e9e8c4d)
+- update claude code setting ([#56](https://github.com/duydpdev/style-generator-private/issues/56)) (e9e8c4d)
 
 # 1.6.0-DEV.8 (2026-03-09)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix tempalte gen plugins ([#55](https://github.com/duydpdev/style-generator-private/issues/55))
-    (72dead0)
+- fix tempalte gen plugins ([#55](https://github.com/duydpdev/style-generator-private/issues/55)) (72dead0)
 
 # 1.6.0-DEV.7 (2026-03-09)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix repsonsive ([#54](https://github.com/duydpdev/style-generator-private/issues/54))
-    (4e41e8f)
+- fix repsonsive ([#54](https://github.com/duydpdev/style-generator-private/issues/54)) (4e41e8f)
 
 # 1.6.0-DEV.6 (2026-03-08)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix gensafelist border ([#53](https://github.com/duydpdev/style-generator-private/issues/53))
-    (6a654c0)
+- fix gensafelist border ([#53](https://github.com/duydpdev/style-generator-private/issues/53)) (6a654c0)
 
 # 1.6.0-DEV.5 (2026-03-08)
 
-  ###
-  Features
+### Features
 
-    -
-    update type responsiveValue ([#52](https://github.com/duydpdev/style-generator-private/issues/52))
-    (49d6761)
+- update type responsiveValue ([#52](https://github.com/duydpdev/style-generator-private/issues/52)) (49d6761)
 
 # 1.6.0-DEV.4 (2026-03-08)
 
-  ###
-  Features
+### Features
 
-    -
-    update gen design token cammelCase ([#51](https://github.com/duydpdev/style-generator-private/issues/51))
-    (9c6454e)
+- update gen design token cammelCase ([#51](https://github.com/duydpdev/style-generator-private/issues/51)) (9c6454e)
 
 # 1.6.0-DEV.3 (2026-03-08)
 
-  ###
-  Features
+### Features
 
-    -
-    add api gen cva function ([#50](https://github.com/duydpdev/style-generator-private/issues/50))
-    (53770f5)
+- add api gen cva function ([#50](https://github.com/duydpdev/style-generator-private/issues/50)) (53770f5)
 
 # 1.6.0-DEV.2 (2026-03-08)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix spacing css gen ([#49](https://github.com/duydpdev/style-generator-private/issues/49))
-    (4ed7916)
+- fix spacing css gen ([#49](https://github.com/duydpdev/style-generator-private/issues/49)) (4ed7916)
 
 # 1.6.0-DEV.1 (2026-03-07)
 
-  ###
-  Features
+### Features
 
-    -
-    update cli ([#48](https://github.com/duydpdev/style-generator-private/issues/48))
-    (09a1b54)
+- update cli ([#48](https://github.com/duydpdev/style-generator-private/issues/48)) (09a1b54)
 
 # 1.5.0 (2026-03-07)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix readme docs ([#46](https://github.com/duydpdev/style-generator-private/issues/46))
-    (58e84c8)
+- fix readme docs ([#46](https://github.com/duydpdev/style-generator-private/issues/46)) (58e84c8)
 
-  ###
-  Features
+### Features
 
-    -
-    Add option to disable color prefixing for CSS variables and introduce new test files for safelist, design tokens, and CSS variables. ([#45](https://github.com/duydpdev/style-generator-private/issues/45))
-    (27e8c18)
+- Add option to disable color prefixing for CSS variables and introduce new test files for safelist, design tokens, and CSS variables. ([#45](https://github.com/duydpdev/style-generator-private/issues/45)) (27e8c18)
 
 # 1.5.0-DEV.2 (2026-03-07)
 
-  ###
-  Bug Fixes
+### Bug Fixes
 
-    -
-    fix readme docs ([#46](https://github.com/duydpdev/style-generator-private/issues/46))
-    (58e84c8)
+- fix readme docs ([#46](https://github.com/duydpdev/style-generator-private/issues/46)) (58e84c8)
 
 # 1.5.0-DEV.1 (2026-03-07)
 
-  ###
-  Features
+### Features
 
-    -
-    Add option to disable color prefixing for CSS variables and introduce new test files for safelist, design tokens, and CSS variables. ([#45](https://github.com/duydpdev/style-generator-private/issues/45))
-    (27e8c18)
+- Add option to disable color prefixing for CSS variables and introduce new test files for safelist, design tokens, and CSS variables. ([#45](https://github.com/duydpdev/style-generator-private/issues/45)) (27e8c18)
 
 # 1.4.0 (2026-03-06)
 
-  ###
-  Features
+### Features
 
-    -
-    update agent & refactore code ([#43](https://github.com/duydpdev/style-generator-private/issues/43))
-    (2bc3725)
+- update agent & refactore code ([#43](https://github.com/duydpdev/style-generator-private/issues/43)) (2bc3725)
 
 # 1.4.0-DEV.1 (2026-03-06)
 
-  ###
-  Features
+### Features
 
-    -
-    update agent & refactore code ([#43](https://github.com/duydpdev/style-generator-private/issues/43))
-    (2bc3725)
+- update agent & refactore code ([#43](https://github.com/duydpdev/style-generator-private/issues/43)) (2bc3725)
 
 # 1.3.0 (2026-03-06)
 
@@ -508,32 +399,18 @@ written in the 4.0.0 stable phase).
 
 Bug Fixes
 
-    -
-    fix cicd 3 ([#33](https://github.com/duydpdev/style-generator-private/issues/33))
-    (9ff24ea)
-    -
-    fix cicd 4 ([#34](https://github.com/duydpdev/style-generator-private/issues/34))
-    (e8374da)
-    -
-    remove code
-    (cf51a03)
-    -
-    remove code
-    (e90c0b8)
-    -
-    update version node for cicd ([#41](https://github.com/duydpdev/style-generator-private/issues/41))
-    (fe2c3a7)
+- fix cicd 3 ([#33](https://github.com/duydpdev/style-generator-private/issues/33)) (9ff24ea)
+- fix cicd 4 ([#34](https://github.com/duydpdev/style-generator-private/issues/34)) (e8374da)
+- remove code (cf51a03)
+- remove code (e90c0b8)
+- update version node for cicd ([#41](https://github.com/duydpdev/style-generator-private/issues/41)) (fe2c3a7)
 
 ###
 
 Features
 
-    -
-    implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator-private/issues/31))
-    (88c327a)
-    -
-    merge develop into main
-    (090961d)
+- implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator-private/issues/31)) (88c327a)
+- merge develop into main (090961d)
 
 # 1.3.0-DEV.5 (2026-03-06)
 
@@ -541,15 +418,9 @@ Features
 
 Bug Fixes
 
-    -
-    remove code
-    (cf51a03)
-    -
-    remove code
-    (e90c0b8)
-    -
-    update version node for cicd ([#41](https://github.com/duydpdev/style-generator-private/issues/41))
-    (fe2c3a7)
+- remove code (cf51a03)
+- remove code (e90c0b8)
+- update version node for cicd ([#41](https://github.com/duydpdev/style-generator-private/issues/41)) (fe2c3a7)
 
 # 1.3.0-DEV.4 (2026-03-05)
 
@@ -557,9 +428,7 @@ Bug Fixes
 
 Bug Fixes
 
-    -
-    fix cicd 4 ([#34](https://github.com/duydpdev/style-generator-private/issues/34))
-    (e8374da)
+- fix cicd 4 ([#34](https://github.com/duydpdev/style-generator-private/issues/34)) (e8374da)
 
 # 1.3.0-DEV.3 (2026-03-05)
 
@@ -567,9 +436,7 @@ Bug Fixes
 
 Bug Fixes
 
-    -
-    fix cicd 3 ([#33](https://github.com/duydpdev/style-generator-private/issues/33))
-    (9ff24ea)
+- fix cicd 3 ([#33](https://github.com/duydpdev/style-generator-private/issues/33)) (9ff24ea)
 
 # 1.3.0-DEV.2 (2026-03-05)
 
@@ -579,9 +446,7 @@ Bug Fixes
 
 Features
 
-    -
-    implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator-private/issues/31))
-    (88c327a)
+- implement cli for lib phase 1 ([#31](https://github.com/duydpdev/style-generator-private/issues/31)) (88c327a)
 
 # 1.2.0 (2026-03-04)
 
@@ -589,58 +454,30 @@ Features
 
 Bug Fixes
 
-    -
-    apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator-private/issues/13))
-    (c47a7be)
-    -
-    CI auto-run for all PRs + squash-merge compatibility ([#23](https://github.com/duydpdev/style-generator-private/issues/23))
-    (d4e80e9)
-    -
-    Dedup CHANGELOG, fix Yarn token interpolation, add CI permissions, add wip commitlint type ([#25](https://github.com/duydpdev/style-generator-private/issues/25))
-    (26bb85d)
-    -
-    fix cicd ([#28](https://github.com/duydpdev/style-generator-private/issues/28))
-    (004335c)
-    -
-    fix cicd 2
-    (74bbb2d)
-    -
-    fix conflict ([#19](https://github.com/duydpdev/style-generator-private/issues/19))
-    (5d5718c)
-    -
-    fix conflict 1 ([#20](https://github.com/duydpdev/style-generator-private/issues/20))
-    (83ce268)
-    -
-    fix conflict 2 ([#21](https://github.com/duydpdev/style-generator-private/issues/21))
-    (40e1062)
-    -
-    remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator-private/issues/27))
-    (eec4eff)
+- apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator-private/issues/13)) (c47a7be)
+- CI auto-run for all PRs + squash-merge compatibility ([#23](https://github.com/duydpdev/style-generator-private/issues/23)) (d4e80e9)
+- Dedup CHANGELOG, fix Yarn token interpolation, add CI permissions, add wip commitlint type ([#25](https://github.com/duydpdev/style-generator-private/issues/25)) (26bb85d)
+- fix cicd ([#28](https://github.com/duydpdev/style-generator-private/issues/28)) (004335c)
+- fix cicd 2 (74bbb2d)
+- fix conflict ([#19](https://github.com/duydpdev/style-generator-private/issues/19)) (5d5718c)
+- fix conflict 1 ([#20](https://github.com/duydpdev/style-generator-private/issues/20)) (83ce268)
+- fix conflict 2 ([#21](https://github.com/duydpdev/style-generator-private/issues/21)) (40e1062)
+- remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator-private/issues/27)) (eec4eff)
 
 ###
 
 Features
 
-    -
-    merge develop into main
-    (cc33ced)
-    -
-    merge develop into main ([#26](https://github.com/duydpdev/style-generator-private/issues/26))
-    (fe58f86)
-    -
-    update safe typescript safelist
-    (2631b60)
-    -
-    update yarnrc ([#17](https://github.com/duydpdev/style-generator-private/issues/17))
-    (72833a0)
+- merge develop into main (cc33ced)
+- merge develop into main ([#26](https://github.com/duydpdev/style-generator-private/issues/26)) (fe58f86)
+- update safe typescript safelist (2631b60)
+- update yarnrc ([#17](https://github.com/duydpdev/style-generator-private/issues/17)) (72833a0)
 
 ###
 
 Reverts
 
-    -
-    Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator-private/issues/14))" ([#15](https://github.com/duydpdev/style-generator-private/issues/15))
-    (9a986da)
+- Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator-private/issues/14))" ([#15](https://github.com/duydpdev/style-generator-private/issues/15)) (9a986da)
 
 # 1.2.0-DEV.1 (2026-03-04)
 
@@ -648,58 +485,30 @@ Reverts
 
 Bug Fixes
 
-    -
-    apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator-private/issues/13))
-    (c47a7be)
-    -
-    CI auto-run for all PRs + squash-merge compatibility ([#23](https://github.com/duydpdev/style-generator-private/issues/23))
-    (d4e80e9)
-    -
-    Dedup CHANGELOG, fix Yarn token interpolation, add CI permissions, add wip commitlint type ([#25](https://github.com/duydpdev/style-generator-private/issues/25))
-    (26bb85d)
-    -
-    fix cicd ([#28](https://github.com/duydpdev/style-generator-private/issues/28))
-    (004335c)
-    -
-    fix cicd 2
-    (74bbb2d)
-    -
-    fix conflict ([#19](https://github.com/duydpdev/style-generator-private/issues/19))
-    (5d5718c)
-    -
-    fix conflict 1 ([#20](https://github.com/duydpdev/style-generator-private/issues/20))
-    (83ce268)
-    -
-    fix conflict 2 ([#21](https://github.com/duydpdev/style-generator-private/issues/21))
-    (40e1062)
-    -
-    remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator-private/issues/27))
-    (eec4eff)
+- apply review feedback: circular imports, docs, types, border wiring ([#13](https://github.com/duydpdev/style-generator-private/issues/13)) (c47a7be)
+- CI auto-run for all PRs + squash-merge compatibility ([#23](https://github.com/duydpdev/style-generator-private/issues/23)) (d4e80e9)
+- Dedup CHANGELOG, fix Yarn token interpolation, add CI permissions, add wip commitlint type ([#25](https://github.com/duydpdev/style-generator-private/issues/25)) (26bb85d)
+- fix cicd ([#28](https://github.com/duydpdev/style-generator-private/issues/28)) (004335c)
+- fix cicd 2 (74bbb2d)
+- fix conflict ([#19](https://github.com/duydpdev/style-generator-private/issues/19)) (5d5718c)
+- fix conflict 1 ([#20](https://github.com/duydpdev/style-generator-private/issues/20)) (83ce268)
+- fix conflict 2 ([#21](https://github.com/duydpdev/style-generator-private/issues/21)) (40e1062)
+- remove check title PR cicd ([#27](https://github.com/duydpdev/style-generator-private/issues/27)) (eec4eff)
 
 ###
 
 Features
 
-    -
-    merge develop into main ([#26](https://github.com/duydpdev/style-generator-private/issues/26))
-    (fe58f86)
-    -
-    update safe typescript safelist
-    (2631b60)
-    -
-    update yarnrc ([#17](https://github.com/duydpdev/style-generator-private/issues/17))
-    (72833a0)
-    -
-    update safelist & token
-    (612e3f0)
+- merge develop into main ([#26](https://github.com/duydpdev/style-generator-private/issues/26)) (fe58f86)
+- update safe typescript safelist (2631b60)
+- update yarnrc ([#17](https://github.com/duydpdev/style-generator-private/issues/17)) (72833a0)
+- update safelist & token (612e3f0)
 
 ###
 
 Reverts
 
-    -
-    Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator-private/issues/14))" ([#15](https://github.com/duydpdev/style-generator-private/issues/15))
-    (9a986da)
+- Revert "Initial plan ([#14](https://github.com/duydpdev/style-generator-private/issues/14))" ([#15](https://github.com/duydpdev/style-generator-private/issues/15)) (9a986da)
 
 # 1.2.0-DEV.6 (2026-03-04)
 

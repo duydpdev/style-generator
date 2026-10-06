@@ -77,3 +77,15 @@ body::after {
   mix-blend-mode: screen;
   opacity: 0.08;
 }
+
+/* Later stylesheets set these animations at equal specificity, hence !important. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .marquee-track,
+  .terminal-body .cursor,
+  .arrow-anim {
+    animation: none !important;
+  }
+}

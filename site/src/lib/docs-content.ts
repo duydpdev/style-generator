@@ -4,13 +4,21 @@ export interface DocEntry {
   slug: string;
   title: string;
   source: string;
+  /** Path of the markdown file relative to the repository root (POSIX). */
+  repoPath: string;
   group: DocGroup;
   order: number;
   badge?: string;
 }
 
+// Keep in sync with DOC_GLOBS in `scripts/check-doc-links.mjs`.
 const raw = import.meta.glob<string>(
-  ["../../../documents/*.md", "!../../../documents/README.md"],
+  [
+    "../../../documents/*.md",
+    "!../../../documents/README.md",
+    "../../../README.md",
+    "../../../documents/migration/3.x-to-4.0.md",
+  ],
   {
     query: "?raw",
     import: "default",
@@ -18,14 +26,36 @@ const raw = import.meta.glob<string>(
   },
 );
 
-const META: Record<
-  string,
-  { title: string; group: DocGroup; order: number; badge?: string } | undefined
-> = {
-  architecture: { title: "Architecture", group: "Overview", order: 1 },
-  guide: { title: "Guide", group: "Overview", order: 2 },
-  deploy: { title: "Deploy", group: "Operations", order: 1 },
-  testing: { title: "Testing", group: "Operations", order: 2 },
+interface DocMeta {
+  slug?: string;
+  title: string;
+  group: DocGroup;
+  order: number;
+  badge?: string;
+}
+
+/** Per-file presentation, keyed by `repoPath`. Files not listed here fall back to their basename and first heading. */
+const META: Record<string, DocMeta | undefined> = {
+  "documents/architecture.md": {
+    title: "Architecture",
+    group: "Overview",
+    order: 1,
+  },
+  "documents/guide.md": { title: "Guide", group: "Overview", order: 2 },
+  "documents/deploy.md": { title: "Deploy", group: "Operations", order: 1 },
+  "documents/testing.md": { title: "Testing", group: "Operations", order: 2 },
+  "README.md": {
+    slug: "reference",
+    title: "Reference",
+    group: "Reference",
+    order: 1,
+  },
+  "documents/migration/3.x-to-4.0.md": {
+    slug: "migration-3x-to-4",
+    title: "Migration 3.x → 4.0",
+    group: "Reference",
+    order: 2,
+  },
 };
 
 function firstHeading(md: string): string | null {
@@ -33,18 +63,18 @@ function firstHeading(md: string): string | null {
   return m ? m[1].trim() : null;
 }
 
-function slugFromPath(p: string): string {
-  return p.replace(/^.*\//, "").replace(/\.md$/, "");
-}
-
 export const docs: DocEntry[] = Object.entries(raw)
-  .map(([path, source]): DocEntry => {
-    const slug = slugFromPath(path);
-    const meta = META[slug];
+  .map(([key, source]): DocEntry => {
+    // `../../../documents/guide.md` → `documents/guide.md`
+    const repoPath = key.replace(/^(?:\.\.\/)+/, "");
+    const meta = META[repoPath];
+    const slug =
+      meta?.slug ?? repoPath.replace(/^.*\//, "").replace(/\.md$/, "");
     return {
       slug,
       title: meta?.title ?? firstHeading(source) ?? slug,
       source,
+      repoPath,
       group: meta?.group ?? "Reference",
       order: meta?.order ?? 99,
       badge: meta?.badge,
@@ -64,6 +94,33 @@ export const docs: DocEntry[] = Object.entries(raw)
 
 export function getDoc(slug: string): DocEntry | undefined {
   return docs.find((d) => d.slug === slug);
+}
+
+export const REPO_BLOB_URL =
+  "https://github.com/duydpdev/style-generator/blob/main/";
+
+export type DocLink =
+  /** In-page `#anchor` or absolute URL: render untouched. */
+  | { kind: "native"; href: string }
+  /** Another doc the site renders: client-side route (`/docs/<slug>#anchor`). */
+  | { kind: "internal"; to: string }
+  /** Any other repo file: its GitHub blob URL. */
+  | { kind: "repo"; href: string };
+
+/** Classify a markdown link `href` found in the doc at `fromRepoPath`. */
+export function resolveDocLink(href: string, fromRepoPath: string): DocLink {
+  if (href.startsWith("#") || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) {
+    return { kind: "native", href };
+  }
+  const url = new URL(href, `https://repo.invalid/${fromRepoPath}`);
+  const repoPath = url.pathname.slice(1);
+  const target = docs.find((d) => d.repoPath === decodeURIComponent(repoPath));
+  if (target)
+    return { kind: "internal", to: `/docs/${target.slug}${url.hash}` };
+  return {
+    kind: "repo",
+    href: `${REPO_BLOB_URL}${repoPath}${url.search}${url.hash}`,
+  };
 }
 
 export interface DocGroupEntry {

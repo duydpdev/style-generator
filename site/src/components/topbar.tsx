@@ -10,14 +10,12 @@ interface Props {
   activeChapter: { num: string; label: string } | null;
   onToggleTheme: () => void;
   activeRoute?: ActiveRoute;
-  showSearchPill?: boolean;
 }
 
 export function Topbar({
   activeChapter,
   onToggleTheme,
   activeRoute = "landing",
-  showSearchPill = false,
 }: Readonly<Props>) {
   const showReading = activeChapter !== null;
 
@@ -66,21 +64,6 @@ export function Topbar({
         </div>
 
         <div className="topbar-actions">
-          {showSearchPill ? (
-            <div
-              className="search-pill"
-              role="button"
-              tabIndex={0}
-              aria-label="Search docs (placeholder)"
-            >
-              <svg className="ic" viewBox="0 0 16 16">
-                <circle cx="7" cy="7" r="4.5" />
-                <path d="M10.5 10.5l3 3" />
-              </svg>
-              <span>Search docs…</span>
-              <span className="kbd-hint">⌘K</span>
-            </div>
-          ) : null}
           <button
             type="button"
             className="btn btn-ghost"

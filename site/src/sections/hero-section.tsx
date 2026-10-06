@@ -1,4 +1,5 @@
-import { useCopy } from "../lib/use-copy";
+import { Link } from "react-router-dom";
+
 import { ArrowRight } from "../components/icon";
 
 const INSTALL_CMD = "yarn add @duydpdev/style-generator";
@@ -26,8 +27,6 @@ const MARQUEE_TOKENS = [
  *
  */
 export function HeroSection() {
-  const { copied, copy } = useCopy();
-
   return (
     <section
       id="hero"
@@ -52,19 +51,11 @@ export function HeroSection() {
           source of truth. No safelist file to maintain.
         </p>
         <div className="hero-cta">
-          <div className="install">
+          <Link className="install" to="/docs/reference#1-installation">
             <span className="prompt">$</span>
             <span>{INSTALL_CMD}</span>
-            <button
-              type="button"
-              className="copy-btn"
-              onClick={() => {
-                void copy(INSTALL_CMD);
-              }}
-            >
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
+            <span className="install-go">Install guide →</span>
+          </Link>
           <a className="btn btn-primary btn-lg" href="#start">
             Get started <ArrowRight />
           </a>

@@ -17,13 +17,32 @@ Hướng dẫn tích hợp `@duydpdev/style-generator` 4.0.0 vào dự án **Tai
 
 ## Cài đặt
 
-Package được publish lên GitHub Packages (private); cấu hình `.npmrc` theo mục Installation của [`README.md`](../README.md), rồi:
+Package được publish lên GitHub Packages (private). Cấu hình scope `@duydpdev` trong file mà package manager của bạn đọc (Yarn Berry đọc `.yarnrc.yml` và bỏ qua `.npmrc`); cách tạo PAT `read:packages` nằm ở mục Installation của [`README.md`](../README.md#1-installation).
+
+Yarn Berry — `.yarnrc.yml`:
+
+```yaml
+npmScopes:
+  duydpdev:
+    npmRegistryServer: "https://npm.pkg.github.com"
+    npmAlwaysAuth: true
+    npmAuthToken: "${GITHUB_PAT}"
+```
+
+npm, pnpm, Yarn Classic — `.npmrc`:
+
+```ini
+@duydpdev:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_PAT}
+```
+
+Rồi cài:
 
 ```bash
 yarn add @duydpdev/style-generator
 ```
 
-**Peer dependencies:** `tailwindcss >=4.1.0` (Tailwind v3 không còn được hỗ trợ), `typescript ^5`, và `vite` (tuỳ chọn, chỉ khi dùng `styleGenVite`). `zod` là dependency thường của package — không cần cài riêng.
+**Peer dependencies:** `tailwindcss >=4.1.0` (Tailwind v3 không còn được hỗ trợ); `typescript ^5 || ^6` (tuỳ chọn, để type-check theo `.d.ts` của package) và `vite ^5 || ^6 || ^7 || ^8` (tuỳ chọn, chỉ khi dùng `styleGenVite`). Bản đã được CI kiểm: bảng peer trong [`README.md`](../README.md). `zod` là dependency thường của package — không cần cài riêng.
 
 ```bash
 yarn add tailwindcss typescript
@@ -90,10 +109,13 @@ Key màu là **camelCase** (hoặc kebab-case); lib tự đổi sang kebab-case 
 - Key typography phải kebab-case thành tên `@utility` hợp lệ (không bắt đầu bằng số hay dash): `heading1` → `.heading-1`.
 - Key `fontFamily` không được trùng tên độ đậm của Tailwind (`thin`, `light`, `normal`, `medium`, `bold`, `black`, …).
 - Hai key ở hai category khác nhau mà cho ra cùng một biến CSS bị từ chối (`colors.shadowPrimary` và `shadows.primary` đều thành `--sg-shadow-primary`; lỗi báo ở key khai báo sau và nêu tên cả hai). Namespace `--sg-sp-*` dành riêng cho spacing: key màu như `spP` (thành `--sg-sp-p`) bị từ chối.
+- Key có chuỗi chữ hoa mở đầu từ hai ký tự trở lên (`CTA`, `ABtn`, `HTMLParser`) bị từ chối kèm gợi ý đổi tên (`cta`): class do typed token sinh ra (`c-ta`) khác class trong CSS (`cta`). Một chữ hoa đơn (`Blue`) hoặc chuỗi hoa ở giữa (`primaryCTA`) vẫn hợp lệ.
+- Key `borderWidth` không được kebab-case trùng một key `colors` (cả hai cùng sinh class `border-<key>`).
+- Bảng tóm tắt mọi quy tắc đặt tên, kèm ví dụ bị từ chối và hợp lệ: [Key rules trong README](../README.md#key-rules).
 
 ### Alias `$key`
 
-Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phát thành `var(--sg-<key>)`, nên không phải lặp mã hex:
+Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phát thành `var(--<cssVarPrefix>-<kebab-key>)`, nên không phải lặp mã hex. Prefix thuộc về category (`sg` cho `colors`, `sg-shadow` cho `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`), nên alias `"$base"` trong `shadows` thành `var(--sg-shadow-base)` chứ không phải `var(--sg-base)`:
 
 ```json
 {
@@ -180,9 +202,9 @@ yarn style-gen doctor               # kiểm tra cấu hình, schema và cảnh 
 
 Không chạy CLI qua `npx`: tên `style-gen` chưa có ai giữ trên npm public nên `npx` có thể tải nhầm package lạ. Dùng npm thì chạy `npm exec --no -- style-gen`.
 
-Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định (`styles/theme.json` → `styles/theme.css`). File config được validate bằng cùng schema với option của `generate()`: gõ sai key (`breakpoint` thay vì `breakpoints`) hay giá trị không hợp lệ thì `generate` in `Invalid config (<file>):` kèm từng dòng `path → message`, không ghi file và thoát với mã 1; `doctor` báo `Config (<file>) ❌ Invalid` và cũng thoát với mã 1. File config không parse được JSON (hỏng) thì `generate` cảnh báo rồi dùng mặc định.
+Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình, theo từng key: flags → file config → mặc định (`styles/theme.json` → `styles/theme.css`). File config là một trong hai nguồn, chọn theo kiểu _hoặc_: `style-gen.config.json` nếu nó tồn tại, nếu không thì `package.json["style-gen"]`; hai nguồn không bao giờ được merge (`style-gen.config.json` hỏng thì bị báo lỗi chứ không rơi sang `package.json`). File config được validate bằng cùng schema với option của `generate()`: gõ sai key (`breakpoint` thay vì `breakpoints`) hay giá trị không hợp lệ thì `generate` in `Invalid config (<file>):` kèm từng dòng `path → message`, không ghi file và thoát với mã 1; `doctor` báo `Config (<file>) ❌ Invalid` và cũng thoát với mã 1. File config không parse được JSON (hỏng) thì `generate` cảnh báo rồi dùng mặc định.
 
-Script do `init` sinh và `style-gen generate` ghi cùng một file (`output` trong config); chạy một trong hai (`node plugins/theme-plugin.ts` cần Node 24). `doctor` chỉ kiểm tra script khi config có `plugin` — setup `styleGenVite`/`styleGenNext` hay chỉ dùng CLI không cần.
+Script do `init` sinh và `style-gen generate` ghi cùng một file (`output` trong config); chạy một trong hai (`node plugins/theme-plugin.ts` cần Node >= 22.18). `doctor` chỉ kiểm tra script khi config có `plugin` — setup `styleGenVite`/`styleGenNext` hay chỉ dùng CLI không cần.
 
 ### Cách 4: Script tự viết
 
@@ -277,7 +299,7 @@ Quy tắc cần nhớ:
 - **Key override phải có ở base** — key chỉ có ở override không tạo utility nên bị từ chối lúc parse.
 - **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay; bảng phạm vi ở `examples/nuxt-v4/README.md`.
 
-`--sg-*` là lớp biến trung gian nội bộ để tránh vòng tham chiếu khi đổi theme; code của bạn chỉ dùng class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`, không dùng `--sg-*` trực tiếp.
+`--sg-*` là lớp biến trung gian để tránh vòng tham chiếu khi đổi theme. Trong code ứng dụng, ưu tiên class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`. Các biến lib phát ra (`--sg-<màu>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là output công khai của 4.x: alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; tên được giữ nguyên suốt 4.x. Bản 5.0 đổi tên biến màu thành `--sg-color-<key>` và sẽ ghi đó là breaking change.
 
 ---
 
@@ -286,9 +308,35 @@ Quy tắc cần nhớ:
 Lib sinh sẵn các utility `.sp-*` (một `@utility` cho mỗi key, chuỗi fallback breakpoint nằm trong chính utility) — không cần safelist theo từng giá trị. Component chỉ set biến inline `--sg-sp-*` bằng `resolveSpacingProps`:
 
 ```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
+import {
+  resolveSpacingProps,
+  type ResponsiveValueStrict,
+} from "@duydpdev/style-generator/spacing";
+import type { CSSProperties, ReactNode } from "react";
 
-const Box = ({ p, px, py, m, mx, my, className, style, children }) => {
+interface BoxProps {
+  p?: ResponsiveValueStrict<number>;
+  px?: ResponsiveValueStrict<number>;
+  py?: ResponsiveValueStrict<number>;
+  m?: ResponsiveValueStrict<number>;
+  mx?: ResponsiveValueStrict<number>;
+  my?: ResponsiveValueStrict<number>;
+  className?: string;
+  style?: CSSProperties;
+  children?: ReactNode;
+}
+
+const Box = ({
+  p,
+  px,
+  py,
+  m,
+  mx,
+  my,
+  className,
+  style,
+  children,
+}: BoxProps) => {
   const spacing = resolveSpacingProps({ p, px, py, m, mx, my });
 
   return (
@@ -439,7 +487,9 @@ Các alias có sẵn: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropB
 ```typescript
 import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
 
-type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop"; // "base" luôn hợp lệ
+// "base" luôn hợp lệ; mọi key còn lại phải được khai báo trong `options.breakpoints`
+// và có mặt trong `screens` (hoặc `defaultScreens`), nếu không sẽ không có CSS tương ứng.
+type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop";
 export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 ```
 

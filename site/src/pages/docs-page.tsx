@@ -1,15 +1,14 @@
 import { useEffect, useRef } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
-import rehypeHighlight from "rehype-highlight";
-import rehypeSlug from "rehype-slug";
-import remarkGfm from "remark-gfm";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 
+import { DocMarkdown } from "../components/doc-markdown";
 import { DocsOnPage } from "../components/docs-onpage";
 import { DocsSidebar } from "../components/docs-sidebar";
 import { Topbar } from "../components/topbar";
-import { adjacentDocs, docs, getDoc } from "../lib/docs-content";
+import { adjacentDocs, docs, getDoc, REPO_BLOB_URL } from "../lib/docs-content";
 import { useTheme } from "../lib/use-theme";
+
+import { NotFound } from "./not-found";
 
 function approxReadMinutes(source: string): number {
   const words = source.trim().split(/\s+/).length;
@@ -18,12 +17,22 @@ function approxReadMinutes(source: string): number {
 
 export function DocsPage() {
   const { slug } = useParams<{ slug?: string }>();
+  const { hash } = useLocation();
   const { toggle } = useTheme();
   const contentRef = useRef<HTMLElement | null>(null);
 
+  // New doc → top; `#anchor` (in-page or from another doc) → that heading.
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [slug]);
+    let id = hash.slice(1);
+    try {
+      id = decodeURIComponent(id);
+    } catch {
+      // Malformed escape in the URL: look the raw fragment up as-is.
+    }
+    const target = id ? document.getElementById(id) : null;
+    if (target) target.scrollIntoView();
+    else window.scrollTo(0, 0);
+  }, [slug, hash]);
 
   // Tag the in-content "Mục lục" block so docs.css can restyle it to match
   // the landing-page TOC look. Match by heading text (resilient to rehype-slug
@@ -54,39 +63,21 @@ export function DocsPage() {
   const doc = getDoc(slug);
   const { prev, next } = adjacentDocs(slug);
 
-  if (!doc) {
-    return (
-      <>
-        <Topbar
-          activeChapter={null}
-          activeRoute="docs"
-          onToggleTheme={toggle}
-          showSearchPill
-        />
-        <div className="docs-shell">
-          <DocsSidebar />
-          <main className="docs-content">
-            <h1>Not found</h1>
-            <p>
-              Doc <code>{slug}</code> does not exist.
-            </p>
-          </main>
-        </div>
-      </>
-    );
-  }
+  if (!doc) return <NotFound missingDoc={slug} />;
 
-  const readMin = approxReadMinutes(doc.source);
-  const ghUrl = `https://github.com/duydpdev/style-generator/blob/main/documents/${doc.slug}.md`;
+  // The page header already renders the title as an <h1>; drop the file's own.
+  const lines = doc.source.split("\n");
+  const titleAt = lines.findIndex((l) => l.trim() !== "");
+  const body =
+    titleAt >= 0 && lines[titleAt].startsWith("# ")
+      ? lines.slice(titleAt + 1).join("\n")
+      : doc.source;
+  const readMin = approxReadMinutes(body);
+  const ghUrl = `${REPO_BLOB_URL}${doc.repoPath}`;
 
   return (
     <>
-      <Topbar
-        activeChapter={null}
-        activeRoute="docs"
-        onToggleTheme={toggle}
-        showSearchPill
-      />
+      <Topbar activeChapter={null} activeRoute="docs" onToggleTheme={toggle} />
       <div className="docs-shell">
         <DocsSidebar activeSlug={doc.slug} />
 
@@ -106,9 +97,8 @@ export function DocsPage() {
                 <em> at a glance.</em>
               </h1>
               <p className="lede">
-                <b>{doc.title}</b> — synced from{" "}
-                <code>documents/{doc.slug}.md</code>. All artifacts stay in
-                lockstep with the source.
+                <b>{doc.title}</b> — synced from <code>{doc.repoPath}</code>.
+                All artifacts stay in lockstep with the source.
               </p>
             </div>
             <div className="doc-meta">
@@ -118,7 +108,7 @@ export function DocsPage() {
               </div>
               <div className="row">
                 <span>FILE</span>
-                <code>documents/{doc.slug}.md</code>
+                <code>{doc.repoPath}</code>
               </div>
               <div className="row">
                 <span>GROUP</span>
@@ -132,12 +122,7 @@ export function DocsPage() {
           </header>
 
           <article className="doc-body">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeSlug, rehypeHighlight]}
-            >
-              {doc.source}
-            </ReactMarkdown>
+            <DocMarkdown source={body} repoPath={doc.repoPath} />
           </article>
 
           <div className="doc-footer">
@@ -195,16 +180,8 @@ export function DocsPage() {
 
         <DocsOnPage
           contentRef={contentRef}
-          rawMarkdown={doc.source}
-          quicklinks={[
-            { label: "Edit on GitHub", href: ghUrl },
-            {
-              label: "View raw .md",
-              href: `https://raw.githubusercontent.com/duydpdev/style-generator/main/documents/${doc.slug}.md`,
-            },
-            { label: "See examples", href: "/examples/v4", arr: "→" },
-            { label: "Back to top", href: "#top", arr: "↑" },
-          ]}
+          rawMarkdown={body}
+          quicklinks={[{ label: "Edit on GitHub", href: ghUrl }]}
         />
       </div>
     </>

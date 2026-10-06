@@ -14,7 +14,9 @@ function readInitial(): ThemeMode {
 }
 
 /**
- *
+ * Theme state is local to each caller (every page mounts its own); callers stay
+ * in sync only through `localStorage`, which `readInitial` reads on mount. The
+ * inline script in `index.html` applies the stored theme before first paint.
  */
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeMode>(readInitial);

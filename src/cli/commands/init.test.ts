@@ -125,4 +125,88 @@ describe("initCommand (non-interactive)", () => {
 
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
+
+  it("merges theme/plugin/output into an existing style-gen.config.json while keeping its other keys", async () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ breakpoints: ["xl"], extraSources: ["bg-x"] }),
+    );
+
+    await initCommand({ theme: "a/theme.json", plugin: "p.ts", dark: false });
+
+    const cfg: unknown = JSON.parse(
+      fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+    );
+    expect(cfg).toEqual({
+      theme: "a/theme.json",
+      plugin: "p.ts",
+      output: "a/theme.css",
+      breakpoints: ["xl"],
+      extraSources: ["bg-x"],
+    });
+  });
+
+  it("exits with code 1 and leaves the file untouched if theme.schema.json already exists", async () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "styles/theme.schema.json"), '{"x":1}');
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("__exit__");
+    }) as never);
+
+    await expect(initCommand({ theme: "styles/theme.json" })).rejects.toThrow(
+      "__exit__",
+    );
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(
+      fs.readFileSync(path.join(tmp, "styles/theme.schema.json"), "utf8"),
+    ).toBe('{"x":1}');
+  });
+
+  it("starts from package.json's style-gen section when there is no style-gen.config.json", async () => {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({
+        name: "app",
+        "style-gen": { breakpoints: ["xl"], output: "old/theme.css" },
+      }),
+    );
+
+    await initCommand({ theme: "a/theme.json", plugin: "p.ts", dark: false });
+
+    const cfg: unknown = JSON.parse(
+      fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+    );
+    expect(cfg).toEqual({
+      theme: "a/theme.json",
+      plugin: "p.ts",
+      output: "a/theme.css",
+      breakpoints: ["xl"],
+    });
+  });
+
+  it.each([
+    ["invalid JSON", "{ nope"],
+    ["a JSON array", "[1]"],
+  ])(
+    "exits with code 1 before writing anything when style-gen.config.json is %s",
+    async (_label, content) => {
+      fs.writeFileSync(path.join(tmp, "style-gen.config.json"), content);
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
+        throw new Error("__exit__");
+      }) as never);
+      vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+      await expect(
+        initCommand({ theme: "a/theme.json", plugin: "p.ts", dark: false }),
+      ).rejects.toThrow("__exit__");
+
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      expect(fs.existsSync(path.join(tmp, "a"))).toBe(false);
+      expect(fs.existsSync(path.join(tmp, "p.ts"))).toBe(false);
+      expect(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      ).toBe(content);
+    },
+  );
 });

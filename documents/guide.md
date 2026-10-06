@@ -111,7 +111,7 @@ Khai báo key anh em cạnh màu gốc: `primary`, `primaryHover`, `primaryActiv
 ### Autocomplete trong editor
 
 ```bash
-npx style-gen schema        # ghi theme.schema.json
+yarn style-gen schema        # ghi theme.schema.json cạnh file theme
 ```
 
 Thêm `"$schema": "./theme.schema.json"` vào theme để editor gợi ý key và cảnh báo key lạ.
@@ -167,16 +167,18 @@ export default styleGenNext({
 })(nextConfig);
 ```
 
-Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Giới hạn: `nextConfig` phải là object thường (dạng hàm `(phase, { defaultConfig })` không được hỗ trợ) và guard đường dẫn không `realpath` symlink. Xem `examples/next-v4`.
+Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả config mà không đọc theme. `nextConfig` có thể là object hoặc dạng hàm `(phase, { defaultConfig }) => config` (được gọi với đúng tham số của Next). Giới hạn: guard đường dẫn không `realpath` symlink. Xem `examples/next-v4`.
 
 ### Cách 3: CLI
 
 ```bash
-npx style-gen init                 # scaffold theme + theme.schema.json + script generate() + style-gen.config.json
-npx style-gen generate             # ghi styles/theme.css
-npx style-gen generate --watch     # sinh lại khi lưu
-npx style-gen doctor               # kiểm tra cấu hình, schema và cảnh báo va chạm utility
+yarn style-gen init                 # scaffold theme + theme.schema.json + script generate() + style-gen.config.json
+yarn style-gen generate             # ghi styles/theme.css
+yarn style-gen generate --watch     # sinh lại khi lưu
+yarn style-gen doctor               # kiểm tra cấu hình, schema và cảnh báo va chạm utility
 ```
+
+Không chạy CLI qua `npx`: tên `style-gen` chưa có ai giữ trên npm public nên `npx` có thể tải nhầm package lạ. Dùng npm thì chạy `npm exec --no -- style-gen`.
 
 Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định (`styles/theme.json` → `styles/theme.css`). File config được validate bằng cùng schema với option của `generate()`: gõ sai key (`breakpoint` thay vì `breakpoints`) hay giá trị không hợp lệ thì `generate` in `Invalid config (<file>):` kèm từng dòng `path → message`, không ghi file và thoát với mã 1; `doctor` báo `Config (<file>) ❌ Invalid` và cũng thoát với mã 1. File config không parse được JSON (hỏng) thì `generate` cảnh báo rồi dùng mặc định.
 

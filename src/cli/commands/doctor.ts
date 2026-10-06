@@ -117,7 +117,7 @@ export function doctorCommand() {
 
   if (hasErrors) {
     logger.log(
-      "💡 Fix errors above or start fresh by running: npx style-gen init\n",
+      "💡 Fix errors above or start fresh by running: yarn style-gen init\n",
     );
     process.exit(1);
   }
@@ -126,7 +126,7 @@ export function doctorCommand() {
     logger.log("💡 Everything looks good!\n");
   } else {
     logger.log(
-      "💡 Setup looks complete! Generate your CSS by running: npx style-gen generate\n",
+      "💡 Setup looks complete! Generate your CSS by running: yarn style-gen generate\n",
     );
   }
 }

@@ -46,7 +46,7 @@ Coverage dùng provider v8 và loại trừ `dist/` cùng file test; không có 
 yarn test:types      # vitest typecheck --run src/**/*.test-d.ts
 ```
 
-Dùng `expectTypeOf` để khoá suy luận kiểu: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, chữ ký `createVariantMapper` (một `true` sót lại ở tham số thứ ba phải là lỗi TS), `resolveSpacing`/`ResponsiveValueStrict`, và các subpath export (`src/exports/subpath-exports.test-d.ts`).
+Dùng `expectTypeOf` để khoá suy luận kiểu: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, chữ ký `createVariantMapper` (một `true` sót lại ở tham số thứ ba phải là lỗi TS), `resolveSpacing`/`ResponsiveValueStrict`, kiểu config mà `styleGenNext` trả về (object hay dạng hàm), và các subpath export (`src/exports/subpath-exports.test-d.ts`).
 
 ```typescript
 import { describe, it, expectTypeOf } from "vitest";

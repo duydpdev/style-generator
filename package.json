@@ -1,6 +1,9 @@
 {
   "name": "@duydpdev/style-generator",
   "version": "4.1.0",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "type": "module",
   "workspaces": [
     "site",

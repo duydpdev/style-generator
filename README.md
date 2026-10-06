@@ -50,11 +50,12 @@ npm install @duydpdev/style-generator
 
 Peer dependencies your project must provide:
 
-| Peer          | Range                           | Notes                                                           |
-| ------------- | ------------------------------- | --------------------------------------------------------------- |
-| `tailwindcss` | `>=4.1.0`                       | Tailwind v3 is not supported. `@source inline(...)` needs 4.1+. |
-| `typescript`  | `^5.0.0`                        |                                                                 |
-| `vite`        | `^5 \|\| ^6 \|\| ^7` (optional) | Only for `styleGenVite` (also used by Nuxt).                    |
+| Peer          | Range                           | Notes                                                                            |
+| ------------- | ------------------------------- | -------------------------------------------------------------------------------- |
+| `node`        | `^20.19.0 \|\| >=22.12.0`       | Unflagged `require(esm)`, so the CJS entries can load the ESM-only `chokidar@5`. |
+| `tailwindcss` | `>=4.1.0`                       | Tailwind v3 is not supported. `@source inline(...)` needs 4.1+.                  |
+| `typescript`  | `^5.0.0`                        |                                                                                  |
+| `vite`        | `^5 \|\| ^6 \|\| ^7` (optional) | Only for `styleGenVite` (also used by Nuxt).                                     |
 
 `zod` is a regular dependency of the package; you do not install it yourself.
 
@@ -96,10 +97,12 @@ Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node1
 ### Step 1. Scaffold
 
 ```bash
-npx style-gen init
+yarn style-gen init
 ```
 
-The wizard asks for the theme file location (default `styles/theme.json`), the location of the generator script (default `plugins/theme-plugin.ts`) and whether to include a dark-mode template. Non-interactive: `npx style-gen init --dark`. It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), a small script that calls `generate()`, and `style-gen.config.json`. The script and `style-gen generate` write the same file, `theme.css` next to the theme; run either one (`node plugins/theme-plugin.ts` needs Node 24, which strips the types). Type-checking the script needs `"module": "esnext"`, `"nodenext"` or `"preserve"` with `resolveJsonModule`, because it imports the theme `with { type: "json" }`.
+> **Warning:** Install the package first and always run the CLI through your package manager (`yarn style-gen …`). Never run it through `npx`: the `style-gen` name is unclaimed on the public npm registry, so `npx` can fetch an unrelated package. With npm, use `npm exec --no -- style-gen` so it only resolves your local installation.
+
+The wizard asks for the theme file location (default `styles/theme.json`), the location of the generator script (default `plugins/theme-plugin.ts`) and whether to include a dark-mode template. Non-interactive: `yarn style-gen init --dark`. It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), a small script that calls `generate()`, and `style-gen.config.json` (merging `theme`, `plugin` and `output` into an existing one and keeping its other keys). If the theme, its schema or the script already exists, it asks before overwriting (non-interactive: exits with code 1). The script and `style-gen generate` write the same file, `theme.css` next to the theme; run either one (`node plugins/theme-plugin.ts` needs Node >= 22.18, which strips the types). Type-checking the script needs `"module": "esnext"`, `"nodenext"` or `"preserve"` with `resolveJsonModule`, because it imports the theme `with { type: "json" }`.
 
 ### Step 2. Edit the theme
 
@@ -131,9 +134,9 @@ Colors are a **flat object**; only `colors` is required:
 ### Step 3. Generate the CSS
 
 ```bash
-npx style-gen generate            # writes styles/theme.css
-npx style-gen generate --watch    # regenerate on save
-npx style-gen schema              # writes theme.schema.json (editor autocomplete)
+yarn style-gen generate            # writes styles/theme.css
+yarn style-gen generate --watch    # regenerate on save
+yarn style-gen schema              # writes theme.schema.json next to the theme (editor autocomplete)
 ```
 
 ### Step 4. Import it next to Tailwind
@@ -158,8 +161,8 @@ Prefer no CLI step? Use [`styleGenVite`](#5-build-tool-integrations) or [`styleG
 Scaffold the theme JSON, its JSON Schema, a generator script and `style-gen.config.json`.
 
 ```bash
-npx style-gen init            # Interactive mode
-npx style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
+yarn style-gen init            # Interactive mode
+yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
 ```
 
 | Flag       | Type      | Default                   | Description                         |
@@ -175,8 +178,8 @@ npx style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark tem
 Validate the theme and write the complete CSS (`@theme`, `:root` variables, axis overrides, `@theme inline`, `@utility` blocks, `@source inline`).
 
 ```bash
-npx style-gen generate
-npx style-gen generate --theme ./theme.json --out ./theme.css --watch
+yarn style-gen generate
+yarn style-gen generate --theme ./theme.json --out ./theme.css --watch
 ```
 
 | Flag            | Type      | Default             | Description                          |
@@ -189,11 +192,11 @@ Positional `style-gen generate <theme> <out>` also works; flags take precedence.
 
 #### `style-gen schema`
 
-Write the theme's JSON Schema (from `z.toJSONSchema(ThemeSchema)`) so editors can autocomplete keys and flag unknown ones when the theme declares `"$schema"`.
+Write the theme's JSON Schema (from `z.toJSONSchema(ThemeSchema)`) so editors can autocomplete keys and flag unknown ones when the theme declares `"$schema"`. Without `--out` it writes `theme.schema.json` next to the configured `theme` (default `styles/theme.json`), where `"$schema": "./theme.schema.json"` looks for it; the config file is then read as `generate` reads it, so a schema-invalid config exits with code 1 and writes nothing.
 
 ```bash
-npx style-gen schema                            # → theme.schema.json
-npx style-gen schema --out styles/theme.schema.json
+yarn style-gen schema                            # → styles/theme.schema.json (next to the theme)
+yarn style-gen schema --out styles/theme.schema.json
 ```
 
 #### `style-gen doctor`
@@ -201,7 +204,7 @@ npx style-gen schema --out styles/theme.schema.json
 Check the setup: config file (a malformed `style-gen.config.json` or `package.json["style-gen"]` is an error — `generate` warns and uses the defaults — and so is a schema-invalid one: config keys and option values are validated with the same schema as `generate()`, so both commands give the same verdict, and `doctor` prints `Config (<file>) ❌ Invalid` followed by the issues), JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), the generator script when `plugin` is configured, and the output file. A `styleGenVite`/`styleGenNext` or CLI-only setup needs no `plugin` entry. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, or typography keys such as `textSm`, `h1` → `h-1`, `italic`).
 
 ```bash
-npx style-gen doctor
+yarn style-gen doctor
 ```
 
 #### `style-gen --version`
@@ -461,12 +464,12 @@ export default styleGenNext({
 @import "./theme/theme.css";
 ```
 
-It emits `theme.css` whenever Next evaluates the config and watches the theme file in `next dev`; `styleGenNext(opts)(nextConfig)` returns Next's `(phase) => config` function, so export its result as shown. Limitations: `nextConfig` must be a plain object (the function form `(phase, { defaultConfig }) => config` is not supported), and `themePath`/`outDir` are checked against `process.cwd()` by logical path — a symlink inside the project that points outside it is not detected.
+It emits `theme.css` only when Next loads the config in `phase-development-server` (`next dev`, which also watches the theme file) or `phase-production-build` (`next build`, and other commands that load the config in that phase); every other phase (`next start`, export, info, test) returns the config without reading the theme, so a production image need not ship it. `styleGenNext(opts)(nextConfig)` returns Next's `(phase, ctx) => config` function, so export its result as shown. `nextConfig` may be a plain object or the function form `(phase, { defaultConfig }) => config`, which is called with Next's arguments. Limitation: `themePath`/`outDir` are checked against `process.cwd()` by logical path — a symlink inside the project that points outside it is not detected.
 
 ### Anything else — CLI or script
 
 ```bash
-npx style-gen generate --watch
+yarn style-gen generate --watch
 ```
 
 or call `generate()` yourself:

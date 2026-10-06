@@ -185,7 +185,7 @@ npx style-gen generate --theme ./theme.json --out ./theme.css --watch
 | `--out`         | `string`  | `styles/theme.css`  | Path to the output CSS file          |
 | `-w`, `--watch` | `boolean` | `false`             | Watch mode — auto-regenerate on save |
 
-Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically. An invalid theme (`Invalid theme (<path>):`), an invalid option such as an `extraSources` entry (`Invalid options:`, path `extraSources.<i>`) or a write error leaves the output untouched and exits with code 1; in `--watch` mode the error is logged and watching continues.
+Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically. An invalid theme (`Invalid theme (<path>):`), an invalid config file (`Invalid config (<file>):` followed by one `path → message` line per issue, for example `extraSources.<i>` for a bad `extraSources` entry or `breakpoint` for a typo) or a write error leaves the output untouched and exits with code 1. A config file is read once at startup, so an invalid one also ends `--watch`; once watching has started, a theme or write error is logged and watching continues.
 
 #### `style-gen schema`
 
@@ -198,7 +198,7 @@ npx style-gen schema --out styles/theme.schema.json
 
 #### `style-gen doctor`
 
-Check the setup: config file (a malformed `style-gen.config.json` or `package.json["style-gen"]` is an error; `generate` warns and uses the defaults), JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), the generator script when `plugin` is configured, and the output file. A `styleGenVite`/`styleGenNext` or CLI-only setup needs no `plugin` entry. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, or typography keys such as `textSm`, `h1` → `h-1`, `italic`).
+Check the setup: config file (a malformed `style-gen.config.json` or `package.json["style-gen"]` is an error — `generate` warns and uses the defaults — and so is a schema-invalid one: config keys and option values are validated with the same schema as `generate()`, so both commands give the same verdict, and `doctor` prints `Config (<file>) ❌ Invalid` followed by the issues), JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), the generator script when `plugin` is configured, and the output file. A `styleGenVite`/`styleGenNext` or CLI-only setup needs no `plugin` entry. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, or typography keys such as `textSm`, `h1` → `h-1`, `italic`).
 
 ```bash
 npx style-gen doctor
@@ -220,7 +220,7 @@ Print the installed CLI version.
 }
 ```
 
-`breakpoints`, `screens`, `extraSources`, `spacing` and `typography` are forwarded to `generate()`. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. The CLI resolves configuration in this order:
+`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography` and `extraSources` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, or a legacy 3.x key such as `responsiveModules` — is rejected; only `$schema`, `theme`, `output` and `plugin` are accepted besides the forwarded keys. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. The CLI resolves configuration in this order:
 
 1. command flags
 2. `style-gen.config.json`
@@ -247,19 +247,19 @@ const { css } = generate({
 
 ### Key grammar
 
-Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, and quotes must be balanced.
+Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Two keys in different categories that produce the same CSS variable (`colors.shadowPrimary` and `shadows.primary` both give `--sg-shadow-primary`) are rejected, and color keys may not produce a `--sg-sp-*` variable (that namespace is reserved for spacing, for example `spP`). Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, quotes must be balanced, and so must parentheses and brackets (`rgb(0 0 0` is rejected at its path).
 
 ### Categories
 
-| Theme key       | Generates                                                                | Notes                                                                                                                   |
-| --------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `colors`        | `bg-*`, `text-*`, `border-*` via `@theme inline` (`--color-*`)           | Required. Flat, camelCase.                                                                                              |
-| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)              | Entry: `fontSize`, `lineHeight`, `fontWeight` (number), `letterSpacing`, optional `fontFamily`/`fontStyle`. No aliases. |
-| `shadows`       | `shadow-*`                                                               |                                                                                                                         |
-| `backDropBlurs` | `backdrop-blur-*`                                                        |                                                                                                                         |
-| `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)          | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                 |
-| `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                             | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                       |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l` utilities backed by `--sg-border-width-*` | Falls back to Tailwind's own `0/1/2/4` scale when omitted. Replaces the 3.x `border` key.                               |
+| Theme key       | Generates                                                                | Notes                                                                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `colors`        | `bg-*`, `text-*`, `border-*` via `@theme inline` (`--color-*`)           | Required. Flat, camelCase.                                                                                                                                             |
+| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)              | Entry: `fontSize`, `lineHeight`, `fontWeight` (number), optional `letterSpacing`/`fontFamily`/`fontStyle`; an absent `letterSpacing` emits no declaration. No aliases. |
+| `shadows`       | `shadow-*`                                                               |                                                                                                                                                                        |
+| `backDropBlurs` | `backdrop-blur-*`                                                        |                                                                                                                                                                        |
+| `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)          | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                                                                |
+| `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                             | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                                                                      |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l` utilities backed by `--sg-border-width-*` | Falls back to Tailwind's own `0/1/2/4` scale when omitted. Replaces the 3.x `border` key.                                                                              |
 
 ### Colors — camelCase keys
 
@@ -488,7 +488,18 @@ const { css, tokens } = generate(theme, options);
 writeFileSync("styles/theme.css", css, "utf8");
 ```
 
-`defineTheme()` throws a `ZodError` with the offending path for unknown keys or unsafe values, and TypeScript rejects a missing `colors` at compile time.
+`defineTheme()` throws a `ZodError` with the offending path for unknown keys or unsafe values, and TypeScript rejects a missing `colors` at compile time. `formatZodError` turns that error into one `path → message` line per issue:
+
+```ts
+import { ZodError } from "zod";
+
+try {
+  generate(theme, options);
+} catch (e) {
+  if (e instanceof ZodError) console.error(formatZodError(e));
+  throw e;
+}
+```
 
 ---
 
@@ -665,7 +676,7 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 
 Class names built at runtime (a template literal such as `` `bg-${variant}` ``) are invisible to Tailwind's static scan; list them with `extraSources`, e.g. `extraSources: ["hover:bg-{primary,secondary}"]`.
 
-`generate()` validates every option that reaches the CSS and throws a `ZodError` naming its path: `breakpoints` entries, `screens` and `spacing.properties` keys follow the theme key grammar (letters, digits, `-`); `screens` values follow the theme value grammar; the CSS property names inside `spacing.properties` must be lowercase (`padding`, `column-gap`, `--custom`).
+`generate()` validates every option that reaches the CSS and throws a `ZodError` naming its path: unknown option keys (also inside `spacing` and `typography`) are rejected; `enableResponsive`, `spacing.enabled` and `typography.cssVarDriven` must be booleans; `breakpoints` entries, `screens` and `spacing.properties` keys follow the theme key grammar (letters, digits, `-`); `screens` values must be one length in px, rem or em, and the map merged with the px `defaultScreens` must use a single unit (reported at `screens`); every `breakpoints` entry must name a screen in `defaultScreens` or `screens` (reported at `breakpoints.<i>`); the CSS property names inside `spacing.properties` must be lowercase (`padding`, `column-gap`, `--custom`).
 
 ---
 
@@ -675,6 +686,7 @@ Class names built at runtime (a template literal such as `` `bg-${variant}` ``) 
 | :------------------------------------------------ | :-------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `generate`                                        | `.`                                           | **Main entry.** Returns `{ css, tokens, schema }` from a Zod-validated theme.                                                                                                      |
 | `defineTheme`, `defineOptions`                    | `.`                                           | Type-safe helpers; `defineTheme` also validates at runtime.                                                                                                                        |
+| `formatZodError`                                  | `.`                                           | Formats a `ZodError` thrown by `generate()`/`defineTheme()` as one `path → message` line per issue.                                                                                |
 | `generateThemeCss`                                | `.`                                           | Just `:root` variables, axis overrides and `@theme inline`; validates the theme like `generate()`.                                                                                 |
 | `createDesignTokens`                              | `.`, `./tokens`                               | Typed `DesignTokens.Web.*`.                                                                                                                                                        |
 | `createVariantMapper`, `COLOR_STATES`             | `.`, `./cva` (`COLOR_STATES` also `./tokens`) | Token keys → class names for CVA, optional `{ states }`.                                                                                                                           |
@@ -715,5 +727,6 @@ yarn test:coverage # Coverage report
 ## 11. Migration
 
 - **3.x → 4.0.0** (breaking): [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md) — every removed API, the new theme fields, CLI changes and a rollback runbook.
+- **4.0 → 4.1** (stricter validation): [`documents/migration/4.0-to-4.1.md`](./documents/migration/4.0-to-4.1.md)
 - **Subpath exports (3.x)**: [`documents/migration/3.x-subpath-exports.md`](./documents/migration/3.x-subpath-exports.md) — historical; explains `moduleResolution` requirements.
 - Older majors: 2 → 3 removed nested color objects and the `DEFAULT` key (flat camelCase keys only, use `createVariantMapper` for CVA); 1 → 2 flattened the `base`/`text`/`common` color buckets.

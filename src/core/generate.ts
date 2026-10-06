@@ -10,71 +10,13 @@ import { generateTypographyCss } from "../features/typography/generateTypography
 
 import type { DesignTokensResult } from "./inference";
 import type { StyleGeneratorOptions } from "./Options";
-import {
-  TOKEN_KEY_RE,
-  ThemeSchema,
-  TokenValue,
-  type ThemeConfig,
-} from "./themeSchema";
+import { StyleGeneratorOptionsSchema } from "./optionsSchema";
+import { ThemeSchema, type ThemeConfig } from "./themeSchema";
 
 // Computed once at module scope — `z.toJSONSchema` walks the whole schema
 // tree, and `ThemeSchema` never changes at runtime, so recomputing it on
 // every `generate()` call would be pure waste.
 const themeJsonSchema = z.toJSONSchema(ThemeSchema);
-
-/**
- * Grammar for a single `extraSources` entry: non-empty, bounded length, and
- * free of characters that could escape the `@source inline("<entry>")`
- * string literal and inject an arbitrary at-rule (e.g. closing the quote
- * then opening `@import`).
- */
-const ExtraSourceEntry = z
-  .string()
-  .min(1, "extraSources entries must not be empty")
-  .max(512, "extraSources entries must be at most 512 characters")
-  .refine(
-    (v) => !/["'\\;@<>\n\r]/.test(v),
-    "extraSources entries must not contain \", ', \\, ;, @, <, >, or a line break",
-  );
-
-/**
- * Option names echoed into the CSS (`--breakpoint-<key>`, `md:` variants,
- * `sp-<key>`, `--sg-sp-<key>-<bp>`) use the theme key grammar, without the
- * typed-token round-trip check (options never become typed tokens).
- */
-const OptionKey = z
-  .string()
-  .regex(
-    TOKEN_KEY_RE,
-    "Key must start with a letter/digit and contain only letters, digits, `-`",
-  );
-
-/** A CSS property name (`padding`, `column-gap`, `--custom`). */
-const CssPropertyName = z
-  .string()
-  .regex(
-    /^-{0,2}[a-z][a-z0-9-]*$/,
-    "CSS property name must be lowercase letters, digits and `-`",
-  );
-
-/**
- * Validates every option that reaches `generate().css`, with the same
- * injection guarantees as `ThemeSchema`. Unknown and purely behavioural
- * options (`enableResponsive`, `typography`, `spacing.enabled`) pass through;
- * the result is only checked, never used.
- */
-const StyleGeneratorOptionsSchema = z.object({
-  breakpoints: z.array(OptionKey).optional(),
-  screens: z.record(OptionKey, TokenValue).optional(),
-  spacing: z
-    .object({
-      properties: z
-        .record(OptionKey, z.record(CssPropertyName, TokenValue))
-        .optional(),
-    })
-    .optional(),
-  extraSources: z.array(ExtraSourceEntry).optional(),
-});
 
 /**
  * Generate the complete registry-driven CSS string (breakpoint `@theme`

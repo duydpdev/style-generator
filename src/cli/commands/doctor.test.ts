@@ -318,4 +318,20 @@ describe("doctorCommand", () => {
       expect(lines()).not.toContain("colors.none →");
     });
   });
+
+  it.each([
+    [{ breakpoints: "md" }, /breakpoints → /],
+    [{ breakpoints: ["tablet"] }, /breakpoints\.0 → /],
+  ])("schema-invalid config %o → issue printed, exit 1", (cfg, line) => {
+    writeProject(tmp, {
+      "style-gen.config.json": cfg,
+      "styles/theme.json": { colors: { primary: "#3B82F6" } },
+      "styles/theme.css": "",
+    });
+
+    expect(() => {
+      doctorCommand();
+    }).toThrow(/__exit_1__/);
+    expect(lines()).toMatch(line);
+  });
 });

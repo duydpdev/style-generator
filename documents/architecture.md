@@ -59,7 +59,7 @@ flowchart TD
 
 ```text
 src/
-├── core/                       # generate(), ThemeSchema, Options, defineTheme, type inference
+├── core/                       # generate(), ThemeSchema, options schema (internal, optionsSchema.ts), Options, defineTheme, type inference
 ├── features/
 │   ├── registry/               # builtInCategories, flattenByCategory, generateSourceInline
 │   ├── theme-css/              # :root / html[data-axis] / @theme inline, border-width, screens
@@ -148,7 +148,7 @@ export default styleGenNext({
 
 ### CLI
 
-`style-gen` (build riêng bằng `tsdown` → `dist/cli/index.mjs`): `init`, `generate [--watch]`, `schema`, `doctor`. Thứ tự resolve config: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định; `readConfigFile` trả kèm lỗi khi file config hỏng (`generate` cảnh báo rồi dùng mặc định, `doctor` báo lỗi). `generate` ghi CSS bằng `writeFileAtomic`; theme/option không hợp lệ hoặc lỗi ghi file đặt `process.exitCode = 1` (ở `--watch` chỉ log rồi tiếp tục theo dõi). `--version` đọc `package.json` qua `import.meta.url` (`src/cli/version.ts`), vì `__dirname` không tồn tại trong bundle ESM. `init` ghi theme, `theme.schema.json` cạnh theme, một script nhỏ (cờ `--plugin` đặt đường dẫn) gọi `generate()` và ghi đúng `output` của config — cùng file với `style-gen generate`, chạy thẳng bằng Node 24 — không còn là Tailwind plugin. `doctor` validate theme bằng `ThemeSchema`, chỉ kiểm tra script khi config có `plugin`, và in cảnh báo (không đổi exit code) khi key trùng utility của Tailwind (`src/cli/commands/utilityCollisions.ts`, danh sách được kiểm bằng compiler thật trong `src/__integration__/utility-collisions.test.ts`).
+`style-gen` (build riêng bằng `tsdown` → `dist/cli/index.mjs`): `init`, `generate [--watch]`, `schema`, `doctor`. Thứ tự resolve config: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định; `readConfigFile` validate file config bằng `StyleGenConfigSchema` (`src/cli/config.ts`; Shape và refinement dùng chung với `generate()` từ `src/core/optionsSchema.ts`), trả `issues` khi sai schema (không merge gì) và `error` khi file hỏng JSON (`generate` cảnh báo rồi dùng mặc định, `doctor` báo lỗi); issue của config làm `generate` và `doctor` dừng với mã 1. `generate` ghi CSS bằng `writeFileAtomic`; theme/option không hợp lệ hoặc lỗi ghi file đặt `process.exitCode = 1` (ở `--watch` chỉ log rồi tiếp tục theo dõi). `--version` đọc `package.json` qua `import.meta.url` (`src/cli/version.ts`), vì `__dirname` không tồn tại trong bundle ESM. `init` ghi theme, `theme.schema.json` cạnh theme, một script nhỏ (cờ `--plugin` đặt đường dẫn) gọi `generate()` và ghi đúng `output` của config — cùng file với `style-gen generate`, chạy thẳng bằng Node 24 — không còn là Tailwind plugin. `doctor` validate theme bằng `ThemeSchema`, chỉ kiểm tra script khi config có `plugin`, và in cảnh báo (không đổi exit code) khi key trùng utility của Tailwind (`src/cli/commands/utilityCollisions.ts`, danh sách được kiểm bằng compiler thật trong `src/__integration__/utility-collisions.test.ts`).
 
 ---
 

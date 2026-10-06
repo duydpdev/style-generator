@@ -34,7 +34,7 @@ export function DocsPage() {
     const raf = requestAnimationFrame(() => {
       const headings = root.querySelectorAll<HTMLHeadingElement>("h2");
       headings.forEach((h) => {
-        const text = (h.textContent ?? "").trim().toLowerCase();
+        const text = h.textContent.trim().toLowerCase();
         if (text !== "mục lục") return;
         const next = h.nextElementSibling;
         if (!next || (next.tagName !== "UL" && next.tagName !== "OL")) return;
@@ -42,7 +42,9 @@ export function DocsPage() {
         next.classList.add("md-toc");
       });
     });
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
   }, [slug]);
 
   if (!slug) {
@@ -174,7 +176,9 @@ export function DocsPage() {
             </a>
             <button
               type="button"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               style={{
                 background: "transparent",
                 border: 0,

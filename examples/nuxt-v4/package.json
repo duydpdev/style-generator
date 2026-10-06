@@ -21,7 +21,7 @@
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",
     "@tailwindcss/vite": "^4.2.0",
-    "nuxt": "^3.14.0",
+    "nuxt": "^3.21.10",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.9.0",
     "vue-tsc": "^2.1.0"

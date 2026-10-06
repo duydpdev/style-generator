@@ -13,7 +13,7 @@ interface Props {
  * @param root0.activeIndex
  * @param root0.onJump
  */
-export function SidebarToc({ chapters, activeIndex, onJump }: Props) {
+export function SidebarToc({ chapters, activeIndex, onJump }: Readonly<Props>) {
   return (
     <aside className="toc-aside">
       <div className="toc-sticky">

@@ -74,6 +74,30 @@ export default pluginTs.config(
     },
   },
 
+  // Node scripts (publish gates, smoke run, site example build): plain JS
+  // with Node globals. Type-aware rules are off because JSON.parse & co. are
+  // `any` in JS. `yarn typecheck:scripts` (tsconfig.scripts.json, checkJs)
+  // catches wrong API calls and JSDoc mismatches, but not `strict` (no null
+  // checks, implicit `any` allowed); the gate tests in src/__integration__
+  // cover their behaviour.
+  {
+    files: ["scripts/**/*.mjs", "site/scripts/**/*.mjs"],
+    extends: [pluginTs.configs.disableTypeChecked],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+
+  // Landing site components: typed like src/, without mandatory JSDoc.
+  {
+    files: ["site/src/**/*.{ts,tsx}"],
+    rules: Object.fromEntries(
+      Object.keys(pluginJsdoc.rules ?? {})
+        .filter((name) => name.startsWith("require-"))
+        .map((name) => [`jsdoc/${name}`, "off"]),
+    ),
+  },
+
   {
     ignores: [
       "node_modules/*",
@@ -83,9 +107,9 @@ export default pluginTs.config(
       "*.cjs",
       ".yarn/*",
       "coverage/*",
-      "**/scripts/*",
       "examples/**",
-      "site/**",
+      "site/dist/**",
+      "site/public/**",
     ],
   },
 );

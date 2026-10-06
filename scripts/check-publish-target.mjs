@@ -2,15 +2,15 @@
 /**
  * Guard against publishing to the wrong registry.
  *
- * Publish target = GitHub Packages (scoped @duydpdev). Dependency installs
+ * Publish target = GitHub Packages (scoped `@duydpdev`). Dependency installs
  * still resolve from npmjs.org via the global registry.
  *
  * Verifies:
  *   - package.json#publishConfig.registry === https://npm.pkg.github.com
  *   - package.json#publishConfig.access is "restricted" or "public"
  *   - .yarnrc.yml global npmRegistryServer === https://registry.npmjs.org (deps)
- *   - .yarnrc.yml scope @duydpdev npmRegistryServer === GitHub Packages
- *   - .yarnrc.yml scope @duydpdev npmPublishRegistry === GitHub Packages
+ *   - .yarnrc.yml scope `@duydpdev` npmRegistryServer === GitHub Packages
+ *   - .yarnrc.yml scope `@duydpdev` npmPublishRegistry === GitHub Packages
  *
  * Called by prepublish and by CI before `yarn npm publish`.
  * Exits 1 on any mismatch.

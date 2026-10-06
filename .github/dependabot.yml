@@ -19,3 +19,49 @@ updates:
       # ends with `]`, and `[ci]: bump …` fails the `[type] subject` header rule
       # that the PR title check and commitlint enforce.
       prefix: "[ci] "
+
+  - package-ecosystem: npm
+    directory: /
+    # Same flow as github-actions above: branch from main, land on develop
+    # first. Covers the root package and every workspace in the lockfile.
+    target-branch: main
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Examples and the site are not published; batch their bumps.
+      examples:
+        patterns:
+          - "next"
+          - "nuxt"
+          - "react"
+          - "react-dom"
+          - "react-router-dom"
+          - "vue"
+      dev-tooling:
+        dependency-type: development
+        exclude-patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "zod"
+    ignore:
+      # Majors that change a supported range are done by hand: the Tailwind
+      # and Zod lines (tailwind-floor leg) and the vite/typescript peers
+      # (peer matrix, CI-05). Minor and patch bumps still come through.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tailwindcss/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      # `[ci]` cuts no release. The root's runtime ranges are carets, so an
+      # in-range bump only moves yarn.lock, which is not published: consumers
+      # resolve their own versions. A bump that changes a published range
+      # (package.json `dependencies`/`peerDependencies`) must be retitled to
+      # `[fix]`/`[feat]` before merging so the new range is released.
+      prefix: "[ci] "

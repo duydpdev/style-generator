@@ -9,18 +9,18 @@ export interface DocEntry {
   badge?: string;
 }
 
-const raw = import.meta.glob(
+const raw = import.meta.glob<string>(
   ["../../../documents/*.md", "!../../../documents/README.md"],
   {
     query: "?raw",
     import: "default",
     eager: true,
   },
-) as Record<string, string>;
+);
 
 const META: Record<
   string,
-  { title: string; group: DocGroup; order: number; badge?: string }
+  { title: string; group: DocGroup; order: number; badge?: string } | undefined
 > = {
   architecture: { title: "Architecture", group: "Overview", order: 1 },
   guide: { title: "Guide", group: "Overview", order: 2 },
@@ -29,7 +29,7 @@ const META: Record<
 };
 
 function firstHeading(md: string): string | null {
-  const m = md.match(/^#\s+(.+)$/m);
+  const m = /^#[ \t]+([^ \t].*)$/m.exec(md);
   return m ? m[1].trim() : null;
 }
 
@@ -74,8 +74,9 @@ export interface DocGroupEntry {
 export function groupedDocs(): DocGroupEntry[] {
   const map = new Map<DocGroup, DocEntry[]>();
   for (const doc of docs) {
-    if (!map.has(doc.group)) map.set(doc.group, []);
-    map.get(doc.group)!.push(doc);
+    const list = map.get(doc.group);
+    if (list) list.push(doc);
+    else map.set(doc.group, [doc]);
   }
   return Array.from(map.entries()).map(([group, list]) => ({
     group,

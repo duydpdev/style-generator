@@ -36,6 +36,11 @@ if (!/^\d+$/.test(rawMax)) {
 }
 const maxGzip = Number(rawMax);
 
+/**
+ * The CSS files to measure: one file, or every `.css` file under a directory.
+ * @param {string} path - A `.css` file or a directory
+ * @returns {string[]} Absolute file paths, sorted by name within a directory
+ */
 function collectCss(path) {
   const abs = resolve(path);
   let stat;

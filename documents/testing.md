@@ -6,12 +6,13 @@ Tài liệu mô tả cách kiểm thử `@duydpdev/style-generator` 4.x. Code te
 
 Hệ thống kiểm tra hai lớp:
 
-1. **Local (pre-commit):** `Husky` + `lint-staged` chạy `eslint`, `prettier`, `tsc --noEmit` và `vitest run` trước khi commit. Husky được cài qua `postinstall` (Yarn Berry không chạy `prepare`).
+1. **Local (pre-commit):** `Husky` + `lint-staged` chạy trên snapshot đã stage của các file code được stage: `eslint --fix` → `prettier --write` → `tsc --noEmit` → `vitest related --run` (chỉ test import file được stage). Husky được cài qua `postinstall` (Yarn Berry không chạy `prepare`).
 2. **Remote (GitHub Actions, `.github/workflows/ci.yml`, PR vào `main`/`develop`):**
-   - job `check`: commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp `scripts/*.mjs` và `site/scripts/*.mjs` → `build:all` → build site (`yarn workspace site build`) → typecheck 3 example, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `yarn test` → `yarn test:types`;
+   - job `check`: audit dependency production (chặn high/critical) và audit toàn bộ (chỉ log) → commitlint → lint → `prettier:check` → `tsc` → kiểm cú pháp (`node --check`) và type (`yarn typecheck:scripts`) của `scripts/*.mjs` và `site/scripts/*.mjs` → `build:all` → build site (`yarn workspace site build`) → typecheck 3 example, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `check:smoke` → `yarn test` → `yarn test:types`;
    - job `e2e`: Playwright trên Chromium và WebKit (`build:all` → cài browser → `yarn test:e2e`);
    - job `tailwind-floor`: pin các package Tailwind về `~4.1.0` (chỉ trong checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`, để peer `tailwindcss >=4.1.0` thực sự được kiểm — lockfile đang giải ở bản 4.3.x nên nếu không có job này ngưỡng dưới không bao giờ được chạm tới.
-   - `e2e` và `tailwind-floor` chỉ chạy khi PR đổi file ngoài `documents/**` (job `changes`); PR chỉ đổi tài liệu bỏ qua cả hai.
+   - job `node-floor`: build và chạy `check:smoke` trên Node `20.19.0`, sàn của `engines.node` (các job khác chạy Node 22);
+   - `e2e`, `tailwind-floor` và `node-floor` chỉ chạy khi PR đổi file ngoài `documents/**` (job `changes`); PR chỉ đổi tài liệu bỏ qua cả ba.
 
 `check:publish-target` chạy trong `prepublish` và trong workflow publish (`deploy.yml`), xem [`deploy.md`](./deploy.md).
 
@@ -38,12 +39,14 @@ Test nằm cạnh code (`*.test.ts`). Nhóm chính:
 - `src/cli/*` — `init`, `generate`, `schema`, `doctor` (cảnh báo va chạm utility), `config`.
 - `src/shared/*` — `helpers` (kebab/camel), `resolveSafePath`, `writeFileAtomic`.
 
-Coverage dùng provider v8 và loại trừ `dist/` cùng file test; không có ngưỡng bắt buộc trong `vitest.config.ts`.
+Coverage dùng provider v8 với `include: ["src/**/*.ts"]`, nên file không có test nào import (vd `src/cli/index.ts`) vẫn hiện với 0 % thay vì bị bỏ qua. Loại trừ file test (`*.test.ts`, `*.test-d.ts`), `*.d.ts` và `src/__integration__/**`. Chưa có ngưỡng bắt buộc. Mốc đo ngày 2026-10-06: statements 91.35 %, branches 83.2 %, functions 92.48 %, lines 91.58 %; `src/cli/index.ts` 0 %.
+
+Bảng `text` gom theo thư mục (dòng `src/cli` rồi dòng `index.ts`), nên không `grep` theo đường dẫn file trên stdout; kiểm bằng `coverage/coverage-final.json`.
 
 ### 2. Type test (`*.test-d.ts`)
 
 ```bash
-yarn test:types      # vitest typecheck --run src/**/*.test-d.ts
+yarn test:types      # vitest run --typecheck.only (*.test-d.ts; `yarn test` không chạy chúng)
 ```
 
 Dùng `expectTypeOf` để khoá suy luận kiểu: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, chữ ký `createVariantMapper` (một `true` sót lại ở tham số thứ ba phải là lỗi TS), `resolveSpacing`/`ResponsiveValueStrict`, kiểu config mà `styleGenNext` trả về (object hay dạng hàm), và các subpath export (`src/exports/subpath-exports.test-d.ts`).
@@ -73,6 +76,7 @@ Các mối quan tâm được khoá ở đây:
 - Mẫu `THEME_JSON`/`THEME_CSS` trên landing site (`site-build-sample.test.ts`) là theme hợp lệ và là đoạn trích đúng thứ tự của `generate().css` thật.
 - Options không mặc định (`custom-options.test.ts`): `screens`/`breakpoints` tuỳ chỉnh, `spacing.properties`, `cssVarDriven`, `enableResponsive: false`, `spacing.enabled: false`.
 - Các script đo/kiểm ngân sách CSS (`measure-css-output`, `diff-class-families`, `check-css-budget`) có test riêng.
+- Đối chứng âm cho gate publish (`publish-gates.test.ts`): dựng một `dist/` giả trong thư mục tạm, chép script vào `<root>/scripts/` rồi khẳng định `check:externals`, `check:sizes`, `check:browser-safe` thoát mã 1 khi inline dependency, thiếu sourcemap, thiếu budget, vượt budget (kể cả qua chunk) hay kéo Zod/Node built-in vào subpath browser-safe.
 
 ### 4. E2E (Playwright, Chromium + WebKit)
 
@@ -94,13 +98,14 @@ Lý do chạy cả WebKit: ngữ nghĩa kế thừa của `@property` và cascad
 
 Chạy sau `yarn build:all`, cũng nằm trong `prepublish`:
 
-| Script                                                | Kiểm tra                                                                                                              |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `yarn check:externals`                                | `dist/` không inline bất kỳ dependency/peer nào                                                                       |
-| `yarn check:browser-safe`                             | `./tokens`, `./cva`, `./spacing`, `./types` không kéo Zod, Node built-in hay `@tailwindcss/*` (kể cả qua chunk chung) |
-| `yarn check:sizes`                                    | ngân sách gzip cho từng subpath trong `package.json#exports`, tính cả mọi chunk mà entry import (transitive)          |
-| `yarn check:publish-target`                           | publish đúng GitHub Packages                                                                                          |
-| `scripts/check-css-budget.mjs` (không có yarn script) | ngân sách gzip cho CSS đã biên dịch của một app tiêu dùng; script thuần Node, copy được sang repo khác                |
+| Script                                                | Kiểm tra                                                                                                                                                                                                    |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yarn check:externals`                                | không file nào trong `dist/` (entry, chunk chung, `dist/cli/index.mjs`) inline dependency/peer: đọc `sources` của mọi `dist/**/*.map` tìm `node_modules/<tên>/`; file JS thiếu sourcemap cũng làm gate fail |
+| `yarn check:browser-safe`                             | `./tokens`, `./cva`, `./spacing`, `./types` không kéo Zod, Node built-in hay `@tailwindcss/*` (kể cả qua chunk chung)                                                                                       |
+| `yarn check:sizes`                                    | ngân sách gzip cho từng subpath trong `package.json#exports`, tính cả mọi chunk mà entry import (transitive), và cho CLI `dist/cli/index.mjs` (`cli`)                                                       |
+| `yarn check:publish-target`                           | publish đúng GitHub Packages                                                                                                                                                                                |
+| `yarn check:smoke` (CI, không nằm trong `prepublish`) | `import` + `require` mọi subpath qua tên package và so khớp tên export; `generate()` ESM/CJS cho cùng CSS; chạy CLI (`--version`, `schema`, `generate`, `init`) và script TypeScript do `init` sinh ra      |
+| `scripts/check-css-budget.mjs` (không có yarn script) | ngân sách gzip cho CSS đã biên dịch của một app tiêu dùng; script thuần Node, copy được sang repo khác                                                                                                      |
 
 ---
 

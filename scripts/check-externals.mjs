@@ -6,27 +6,34 @@
  * If rollup ever inlines them, the bundle will leak duplicates of user-installed
  * packages — bad for tree-shaking, bad for peer-dep contracts.
  *
+ * Detection reads every `dist/**\/*.map` (library entries, shared chunks and
+ * the CLI bundle): an inlined module shows up in `sources` as
+ * `…/node_modules/<name>/…`. Every emitted `.js`/`.cjs`/`.mjs` must ship a
+ * map, otherwise the check could not see it.
+ *
  * Run: node scripts/check-externals.mjs
- * Exits 1 with details if any forbidden name appears in dist/index.{js,cjs}.
+ * Exits 1 with details on a missing artifact, a missing map or an inlined dep.
  */
-import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { resolve, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+const dist = resolve(root, "dist");
 
 const forbidden = [
   ...Object.keys(pkg.peerDependencies ?? {}),
   ...Object.keys(pkg.dependencies ?? {}),
 ];
 
-// `tailwindcss/package.json` is read at runtime by detectTailwindVersion —
-// that's an external require, not an inlined source. Match only inlined source
-// markers (string after `require(` / `from `) of the package itself, not
-// arbitrary substrings.
+const escape = (name) => name.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
+
+// Counts the external import sites per entry for the log: `require("name")`,
+// `require("name/…")`, `from "name"`, `from "name/…"`. Informational only;
+// inlining is detected from the sourcemaps below.
 const buildMatcher = (name) => {
-  const escaped = name.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
+  const escaped = escape(name);
   // require("name") | require("name/...") | from "name" | from "name/..."
   return new RegExp(
     `(require\\((['"\`])${escaped}(/[^'"\`]*)?\\2\\))|(from\\s+(['"\`])${escaped}(/[^'"\`]*)?\\5)`,
@@ -34,51 +41,71 @@ const buildMatcher = (name) => {
   );
 };
 
+// A sourcemap source path inside a forbidden package (any linker:
+// `node_modules/zod/…`, `.yarn/cache/zod-npm-….zip/node_modules/zod/…`).
+const inlinedSource = new RegExp(
+  `(?:^|/)node_modules/(${forbidden.map(escape).join("|")})/`,
+);
+
+const walk = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)],
+  );
+
 const entries = Object.keys(pkg.exports)
   .filter((key) => key !== "./package.json")
   .map((key) => (key === "." ? "index" : key.replace(/^\.\//, "")));
-const targets = entries.flatMap((e) => [
-  resolve(root, `dist/${e}.js`),
-  resolve(root, `dist/${e}.cjs`),
-]);
+const targets = [
+  ...entries.flatMap((e) => [
+    resolve(dist, `${e}.js`),
+    resolve(dist, `${e}.cjs`),
+  ]),
+  resolve(dist, "cli/index.mjs"),
+];
 
 let ok = true;
 for (const file of targets) {
   if (!existsSync(file)) {
-    console.error(`✗ Missing build artifact: ${file}`);
+    console.error(`✗ Missing build artifact: ${relative(root, file)}`);
     ok = false;
     continue;
   }
   const src = readFileSync(file, "utf8");
-  const externalRefs = new Map(); // name -> count of legitimate external refs
-
-  for (const name of forbidden) {
-    const re = buildMatcher(name);
-    const matches = src.match(re) ?? [];
-    if (matches.length > 0) {
-      externalRefs.set(name, matches.length);
-    }
-  }
+  const externalRefs = forbidden.flatMap((name) => {
+    const count = (src.match(buildMatcher(name)) ?? []).length;
+    return count > 0 ? [`${name}×${count}`] : [];
+  });
 
   console.log(
-    `✓ ${file} — external refs: ${
-      externalRefs.size === 0
-        ? "(none)"
-        : [...externalRefs].map(([n, c]) => `${n}×${c}`).join(", ")
+    `✓ ${relative(root, file)} — external refs: ${
+      externalRefs.length === 0 ? "(none)" : externalRefs.join(", ")
     }`,
   );
+}
 
-  // Inlined-source heuristic: scan for module-export patterns of forbidden pkgs.
-  // chokidar / @clack/prompts inlining would balloon the file dramatically —
-  // > 100 KB instantly. Use size guard + name leak check together.
-  const sizeKb = src.length / 1024;
-  if (sizeKb > 50) {
+const files = existsSync(dist) ? walk(dist) : [];
+for (const file of files.filter((f) => /\.[cm]?js$/.test(f))) {
+  if (!existsSync(`${file}.map`)) {
     console.error(
-      `✗ ${file} suspiciously large (${sizeKb.toFixed(1)} KB) — possible inlined dep`,
+      `✗ ${relative(root, file)} has no sourcemap — inlining cannot be checked`,
+    );
+    ok = false;
+  }
+}
+
+const maps = files.filter((f) => f.endsWith(".map"));
+for (const map of maps) {
+  const { sources = [] } = JSON.parse(readFileSync(map, "utf8"));
+  const inlined = sources.filter((s) => inlinedSource.test(s));
+  if (inlined.length > 0) {
+    console.error(
+      `✗ ${relative(root, map)} inlines forbidden module source:\n    ${inlined.join("\n    ")}`,
     );
     ok = false;
   }
 }
 
 if (!ok) process.exit(1);
-console.log("✓ check-externals passed");
+console.log(
+  `✓ check-externals passed (${maps.length} sourcemaps, no inlined ${forbidden.join(", ")})`,
+);

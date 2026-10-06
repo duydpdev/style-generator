@@ -24,7 +24,7 @@ function Preview({
   title,
   swatches,
   marker,
-}: PreviewProps) {
+}: Readonly<PreviewProps>) {
   return (
     <div className={`theme-preview ${variant}`}>
       <div className="tp-head">

@@ -122,7 +122,7 @@ describe("generateTypographyCss", () => {
           letterSpacing: "0",
         },
       }),
-    ).toThrowError(/Invalid typography utility name "@utility 2xl"/);
+    ).toThrow(/Invalid typography utility name "@utility 2xl"/);
   });
 
   it("throws a clear error for a typography key whose kebab-case form starts with a dash", () => {
@@ -135,7 +135,7 @@ describe("generateTypographyCss", () => {
           letterSpacing: "0",
         },
       }),
-    ).toThrowError(/Invalid typography utility name "@utility -lead"/);
+    ).toThrow(/Invalid typography utility name "@utility -lead"/);
   });
 
   it("omits letter-spacing when letterSpacing is absent (literal mode)", () => {

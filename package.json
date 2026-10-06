@@ -59,12 +59,13 @@
   ],
   "scripts": {
     "build": "tsc && vite build",
-    "build:cli": "tsdown src/cli/index.ts --format esm --out-dir dist/cli --banner.js '#!/usr/bin/env node'",
+    "build:cli": "tsdown",
     "build:all": "yarn build && yarn build:cli",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",
     "check:externals": "node scripts/check-externals.mjs",
     "check:publish-target": "node scripts/check-publish-target.mjs",
     "check:sizes": "node scripts/check-sizes.mjs",
+    "check:smoke": "node scripts/smoke-dist.mjs",
     "commitlint": "commitlint",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored",
     "lint-staged": "lint-staged",
@@ -80,11 +81,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:types": "vitest typecheck --run src/**/*.test-d.ts",
+    "test:types": "vitest run --typecheck.only",
     "test:e2e": "playwright test",
     "site:dev": "yarn workspace site dev",
     "site:build": "yarn build:all && yarn workspace site build",
-    "site:preview": "yarn workspace site preview"
+    "site:preview": "yarn workspace site preview",
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json"
   },
   "devDependencies": {
     "@commitlint/types": "^20.4.3",
@@ -95,7 +97,7 @@
     "@tailwindcss/node": "4.3.0",
     "@types/node": "^25.3.3",
     "@typescript-eslint/parser": "^8.56.1",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/coverage-v8": "^4.1.11",
     "class-variance-authority": "^0.7.0",
     "commitlint": "^20.4.3",
     "conventional-changelog-conventionalcommits": "^9.3.0",
@@ -117,9 +119,9 @@
     "tsdown": "^0.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.1",
+    "vite": "^7.3.5",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.11"
   },
   "peerDependencies": {
     "tailwindcss": ">=4.1.0",
@@ -153,6 +155,6 @@
     "minimatch": "^10.2.3",
     "tar": "^7.5.10",
     "@microsoft/api-extractor": "^7.58.7",
-    "vite": "^7.3.1"
+    "vite": "^7.3.5"
   }
 }

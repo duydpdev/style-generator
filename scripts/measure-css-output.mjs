@@ -7,12 +7,12 @@
  *   node scripts/measure-css-output.mjs <file|dir> [--classes-out <file>] [--json]
  *
  * Breakdown groups (heuristic, each top-level/layer-level rule lands in exactly one):
- *   font       @font-face
- *   preflight  @layer base, top-level html/body/* resets
- *   themeVars  @layer theme, rules declaring --sg-* / --color-* (:root, [data-*])
+ *   font       `@font-face`
+ *   preflight  `@layer base`, top-level html/body/* resets
+ *   themeVars  `@layer theme`, rules declaring --sg-* / --color-* (:root, [data-*])
  *   spacing    rules whose selector contains `.sp-` or that declare --tw-sp-* / --sp-* / --sg-sp-*
- *   utilities  remaining @layer utilities rules
- *   other      @property, @layer properties, anything unmatched
+ *   utilities  remaining `@layer utilities` rules
+ *   other      `@property`, `@layer properties`, anything unmatched
  * Group gzip sizes are measured per group, so they do not add up to the total gzip.
  */
 import { readFileSync, writeFileSync, statSync, readdirSync } from "node:fs";
@@ -32,6 +32,11 @@ if (!target) {
   process.exit(2);
 }
 
+/**
+ * The CSS files to measure.
+ * @param {string} path - A `.css` file, or a directory whose `*.css` files are read
+ * @returns {string[]} Absolute file paths, sorted by name for a directory
+ */
 function collectCssFiles(path) {
   const abs = resolve(path);
   if (statSync(abs).isDirectory()) {
@@ -43,51 +48,69 @@ function collectCssFiles(path) {
   return [abs];
 }
 
-/** Split CSS text into top-level blocks: { prelude, body, text } (body undefined for `@x ...;`). */
+/**
+ * Index just past the comment or quoted string that starts at `i`.
+ * @param {string} css - CSS text
+ * @param {number} i - Index of `/*` or of an opening quote
+ * @returns {number} Index of the first character after it
+ */
+function skipToken(css, i) {
+  if (css[i] === "/") {
+    const end = css.indexOf("*/", i + 2);
+    return end < 0 ? css.length : end + 2;
+  }
+  const quote = css[i];
+  let j = i + 1;
+  while (j < css.length && css[j] !== quote) j += css[j] === "\\" ? 2 : 1;
+  return j + 1;
+}
+
+/**
+ * Split CSS text into top-level blocks (`body` is undefined for `@x ...;`).
+ * @param {string} css - CSS text
+ * @returns {{ prelude: string, body: string | undefined, text: string }[]} Blocks in source order
+ */
 function splitBlocks(css) {
   const blocks = [];
   let i = 0;
   let start = 0;
   let depth = 0;
   let preludeEnd = -1;
-  while (i < css.length) {
-    const ch = css[i];
-    if (ch === "/" && css[i + 1] === "*") {
-      const end = css.indexOf("*/", i + 2);
-      const next = end < 0 ? css.length : end + 2;
-      // A comment between top-level blocks (e.g. the `/*! tailwindcss … */`
-      // banner) is not part of the next prelude: advance `start` past it.
-      if (depth === 0 && css.slice(start, i).trim() === "") start = next;
-      i = next;
-      continue;
-    }
-    if (ch === '"' || ch === "'") {
-      i++;
-      while (i < css.length && css[i] !== ch) i += css[i] === "\\" ? 2 : 1;
-      i++;
-      continue;
-    }
+  const push = (body, end) => {
+    const prelude = css.slice(start, body === undefined ? end : preludeEnd);
+    blocks.push({
+      prelude: prelude.trim(),
+      body,
+      text: css.slice(start, end + 1),
+    });
+    start = end + 1;
+  };
+  // `{` opens, `}` closes, top-level `;` ends a statement like `@import …;`.
+  const onStructural = (ch, at) => {
     if (ch === "{") {
-      if (depth === 0) preludeEnd = i;
+      if (depth === 0) preludeEnd = at;
       depth++;
     } else if (ch === "}") {
       depth--;
-      if (depth === 0) {
-        blocks.push({
-          prelude: css.slice(start, preludeEnd).trim(),
-          body: css.slice(preludeEnd + 1, i),
-          text: css.slice(start, i + 1),
-        });
-        start = i + 1;
-      }
+      if (depth === 0) push(css.slice(preludeEnd + 1, at), at);
     } else if (ch === ";" && depth === 0) {
-      blocks.push({
-        prelude: css.slice(start, i).trim(),
-        body: undefined,
-        text: css.slice(start, i + 1),
-      });
-      start = i + 1;
+      push(undefined, at);
     }
+  };
+  while (i < css.length) {
+    const ch = css[i];
+    const isComment = ch === "/" && css[i + 1] === "*";
+    if (isComment || ch === '"' || ch === "'") {
+      const next = skipToken(css, i);
+      // A comment between top-level blocks (e.g. the `/*! tailwindcss … */`
+      // banner) is not part of the next prelude: advance `start` past it.
+      if (isComment && depth === 0 && css.slice(start, i).trim() === "") {
+        start = next;
+      }
+      i = next;
+      continue;
+    }
+    onStructural(ch, i);
     i++;
   }
   const rest = css.slice(start);
@@ -99,6 +122,12 @@ function splitBlocks(css) {
 const SPACING_DECL = /--(?:tw-sp|sg-sp|sp)-/;
 const THEME_DECL = /--(?:sg|color)-/;
 
+/**
+ * Breakdown group of one rule.
+ * @param {{ prelude: string, body?: string | undefined }} block - Rule from `splitBlocks`
+ * @param {string | undefined} layer - Enclosing `@layer` name, if any
+ * @returns {"font" | "preflight" | "themeVars" | "spacing" | "utilities" | "other"} Group name
+ */
 function classifyRule(block, layer) {
   const { prelude, body = "" } = block;
   if (prelude.startsWith("@font-face")) return "font";
@@ -128,6 +157,11 @@ const groups = {
 };
 const selectors = [];
 
+/**
+ * Assign every rule in `css` to a group and record its selectors.
+ * @param {string} css - CSS text
+ * @param {string | undefined} layer - Enclosing `@layer` name, if any
+ */
 function walk(css, layer) {
   for (const block of splitBlocks(css)) {
     const layerMatch = /^@layer\s+([a-z-]+)$/.exec(block.prelude);
@@ -151,6 +185,10 @@ function walk(css, layer) {
   }
 }
 
+/**
+ * Record the selectors of every style rule in `css`, descending into at-rules.
+ * @param {string} css - CSS text
+ */
 function collectSelectors(css) {
   for (const block of splitBlocks(css)) {
     if (block.body === undefined) continue;

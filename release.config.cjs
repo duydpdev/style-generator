@@ -36,6 +36,27 @@ const parserOpts = {
   headerCorrespondence: ["type", "subject"],
 };
 
+const FIX_SECTION = "Bug Fixes";
+
+// A `[fix]` often tightens validation, so its body says what is now rejected
+// and how to migrate. Attach it to the entry as `details`, indented to stay
+// inside the Markdown list item (changelog-template.hbs).
+const finalizeContext = (context) => {
+  for (const group of context.commitGroups) {
+    if (group.title !== FIX_SECTION) continue;
+    group.commits = group.commits.map((commit) => {
+      const body = commit.body?.trim();
+      if (!body) return commit;
+      const details = body
+        .split("\n")
+        .map((line) => (line.trim() === "" ? "" : `  ${line}`))
+        .join("\n");
+      return { ...commit, details };
+    });
+  }
+  return context;
+};
+
 module.exports = {
   branches: ["main", { name: "develop", prerelease: "DEV" }],
   parserOpts,
@@ -71,12 +92,13 @@ module.exports = {
         parserOpts,
         writerOpts: {
           mainTemplate: template,
+          finalizeContext,
         },
         presetConfig: {
           types: [
             { type: "release", section: "Release" },
             { type: "feat", section: "Features" },
-            { type: "fix", section: "Bug Fixes" },
+            { type: "fix", section: FIX_SECTION },
             { type: "perf", section: "Performance Improvements" },
             { type: "refactor", section: "Refactor" },
             { type: "style", section: "Style" },

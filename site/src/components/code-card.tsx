@@ -17,7 +17,7 @@ interface Props {
  * @param root0.lang
  * @param root0.code
  */
-export function CodeCard({ filename, tag, lang, code }: Props) {
+export function CodeCard({ filename, tag, lang, code }: Readonly<Props>) {
   const html = useMemo(() => tokenize(code, lang), [code, lang]);
 
   return (

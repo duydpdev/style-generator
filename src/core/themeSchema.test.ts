@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { z } from "zod";
 
 import { ThemeSchema, formatZodError } from "./themeSchema";
 
@@ -430,4 +431,129 @@ describe("ThemeSchema — invalid themes", () => {
       expect(issue?.message).toMatch(/declaration order/);
     },
   );
+});
+
+describe("cross-category CSS variable collisions (X-01)", () => {
+  const pathsOf = (r: z.ZodSafeParseResult<unknown>) =>
+    r.success ? [] : r.error.issues.map((i) => i.path.join("."));
+
+  it.each([
+    [
+      {
+        colors: { shadowPrimary: "#ff0000" },
+        shadows: { primary: "0 1px 2px #000" },
+      },
+      "shadows.primary",
+      "colors.shadowPrimary",
+    ],
+    [
+      {
+        colors: { fontBrand: "#111" },
+        fontFamily: { brand: "Inter, sans-serif" },
+      },
+      "fontFamily.brand",
+      "colors.fontBrand",
+    ],
+    [
+      { colors: { radiusCard: "#222" }, borderRadius: { card: "8px" } },
+      "borderRadius.card",
+      "colors.radiusCard",
+    ],
+    [
+      { colors: { "backdrop-blur-sm": "#333" }, backDropBlurs: { sm: "4px" } },
+      "backDropBlurs.sm",
+      "colors.backdrop-blur-sm",
+    ],
+  ])("rejects %o at %s and names %s", (theme, path, otherPath) => {
+    const r = ThemeSchema.safeParse(theme);
+    expect(pathsOf(r)).toContain(path);
+    if (r.success) throw new Error("expected failure");
+    expect(formatZodError(r.error)).toContain(otherPath);
+  });
+
+  it("rejects a key whose variable falls in the reserved --sg-sp- spacing namespace", () => {
+    const r = ThemeSchema.safeParse({ colors: { spP: "#fff" } });
+    expect(r.success).toBe(false);
+    expect(pathsOf(r)).toContain("colors.spP");
+  });
+
+  it("accepts prefix-like keys that do not collide", () => {
+    for (const theme of [
+      { colors: { shadowPrimary: "#f00" } },
+      { colors: { sp: "#fff" } },
+      { colors: { fontBrand: "#111" }, fontFamily: { sans: "Inter" } },
+    ]) {
+      expect(ThemeSchema.safeParse(theme).success).toBe(true);
+    }
+  });
+});
+
+describe("bracket balance in values (X-02)", () => {
+  it.each([
+    "rgb(0 0 0",
+    "calc((1px + 2px)",
+    "rgb(0 0 0))",
+    "[x",
+    "a)b(",
+    "var(--a]",
+  ])("rejects %s at colors.primary", (value) => {
+    const r = ThemeSchema.safeParse({ colors: { primary: value } });
+    expect(r.success).toBe(false);
+    if (r.success) return;
+    expect(r.error.issues.map((i) => i.path.join("."))).toContain(
+      "colors.primary",
+    );
+    expect(formatZodError(r.error)).toMatch(/^colors\.primary → /m);
+  });
+
+  it("rejects it inside typography and shadows too", () => {
+    const shadows = ThemeSchema.safeParse({
+      colors: { a: "#fff" },
+      shadows: { sm: "0 1px 2px rgb(0 0 0" },
+    });
+    expect(shadows.error?.issues.map((i) => i.path.join("."))).toContain(
+      "shadows.sm",
+    );
+    const typography = ThemeSchema.safeParse({
+      colors: { a: "#fff" },
+      typography: {
+        body: {
+          fontSize: "calc(1rem",
+          lineHeight: "1.5",
+          fontWeight: 400,
+          letterSpacing: "0",
+        },
+      },
+    });
+    expect(typography.error?.issues.map((i) => i.path.join("."))).toContain(
+      "typography.body.fontSize",
+    );
+  });
+
+  it.each([
+    "rgb(0 0 0 / 50%)",
+    "calc(var(--a) * 2)",
+    "linear-gradient(to right, rgb(0 0 0), rgb(255 255 255))",
+    '"Plus Jakarta Sans", system-ui',
+    '"Brand (Display", serif',
+    "'a]b', serif",
+    "#3B82F6",
+  ])("accepts balanced value %s", (value) => {
+    expect(ThemeSchema.safeParse({ colors: { primary: value } }).success).toBe(
+      true,
+    );
+  });
+});
+
+describe("optional letterSpacing (X-12)", () => {
+  it("accepts a typography entry without letterSpacing", () => {
+    expect(
+      ThemeSchema.safeParse({
+        colors: { a: "#fff" },
+        typography: {
+          body: { fontSize: "16px", lineHeight: "1.5", fontWeight: 400 },
+        },
+      }).success,
+    ).toBe(true);
+  });
 });

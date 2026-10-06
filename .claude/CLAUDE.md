@@ -81,7 +81,7 @@ Source layout, public exports per subpath and CLI commands: `documents/architect
 
 - `colors` is the only **required** field in `ThemeConfig`; all others (`typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`) are optional.
 - Colors are a **flat camelCase** object. Nested color objects and `DEFAULT` key are unsupported.
-- Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`). Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` and a leading uppercase run (`CTA`, `ABtn`) are rejected in every token-name position**: the camelCased token would map to a class the registry never emits. `formatZodError` prints the hint on the path.
+- Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`). Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` and a leading uppercase run (`CTA`, `ABtn`) are rejected in every token-name position**: the camelCased token would map to a class the registry never emits. `formatZodError` prints the hint on the path. Two keys in different categories that produce the same `--<cssVarPrefix>-<kebab>` variable, or any key producing `--sg-sp-*`, are rejected.
 - `themeAxes: Record<axisName, Record<variantName, ThemeOverride>>` — independent axes (e.g. `theme.dark` and `palette.forest` at once), each activated via `html[data-<axis-kebab>="<variant-kebab>"]`. Selectors are pinned to `html` because a `$`-alias `var()` resolves where the custom property is declared (`:root`). Blocks emit after `:root` in declaration order, so for a token overridden by two axes the axis declared **last** wins.
 - An override key must already exist in the matching base category — override-only keys are rejected (they would produce no utility).
 - Axis and variant names must NOT be canonical integers (`/^(0|[1-9]\d*)$/`) — JS enumerates integer-like keys first, which would silently invert "last declared wins". `007`/`2xl` are fine.
@@ -90,7 +90,8 @@ Source layout, public exports per subpath and CLI commands: `documents/architect
 - A theme key whose class equals a Tailwind _static_ utility (`bg-none`, `border-2`, typography `text-sm`, …) is not rejected, but Tailwind picks the winner — rename it (`clear`, `flat`, `zero`). `style-gen doctor` warns on known collisions (`src/cli/commands/utilityCollisions.ts`).
 - `fontFamily` keys must not kebab-case to a font-_weight_ name (`thin` … `black`) — both share the `font-` prefix.
 - `borderWidth` replaces `border` (omitted → Tailwind's `border-0/1/2/4`); a key sharing a color's `border-*` class (`thinLine`/`thin-line`) is invalid.
-- `generate()` validates options: `breakpoints`/`screens`/`spacing.properties` keys use the key grammar. `extraSources`: non-empty, ≤512 chars, no `"'\;@<>`/line break.
+- `generate()` validates options with a strict schema (`src/core/optionsSchema.ts`, internal): unknown keys rejected (also in `spacing`/`typography`); flags are booleans; `screens` values are one px/rem/em length and the map merged with `defaultScreens` uses one unit; `breakpoints` must name a screen. `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/cli/config.ts`). `extraSources`: non-empty, ≤512 chars, no `"'\;@<>`/line break.
+- Values must balance `(`/`[`. `typography.*.letterSpacing` is optional. `formatZodError` is exported from `.`.
 
 ## Testing
 

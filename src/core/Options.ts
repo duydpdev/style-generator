@@ -31,6 +31,9 @@ export interface StyleGeneratorOptions {
   /**
    * Custom screens map to override defaults or add new ones.
    * Example: { md: "800px", "3xl": "1920px" }
+   * Each value must be one length in px, rem or em, and the map merged with
+   * the px `defaultScreens` must use a single unit (override every default
+   * screen to switch to rem).
    */
   screens?: Record<Breakpoint | string, string>;
 

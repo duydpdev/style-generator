@@ -137,4 +137,21 @@ describe("generateTypographyCss", () => {
       }),
     ).toThrowError(/Invalid typography utility name "@utility -lead"/);
   });
+
+  it("omits letter-spacing when letterSpacing is absent (literal mode)", () => {
+    const css = generateTypographyCss({
+      body: { fontSize: "16px", lineHeight: "1.5", fontWeight: 400 },
+    });
+    expect(css).not.toContain("letter-spacing");
+    expect(css).toContain("font-size");
+  });
+
+  it("omits the letter-spacing var and declaration when letterSpacing is absent (cssVarDriven)", () => {
+    const css = generateTypographyCss(
+      { body: { fontSize: "16px", lineHeight: "1.5", fontWeight: 400 } },
+      { typography: { cssVarDriven: true } },
+    );
+    expect(css).not.toContain("letter-spacing");
+    expect(css).toContain("font-size");
+  });
 });

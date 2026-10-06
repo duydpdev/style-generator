@@ -71,6 +71,7 @@ Các mối quan tâm được khoá ở đây:
 - `themeAxes` nhiều trục trên theme thật của `examples/nuxt-v4`.
 - Mọi `theme.json` trong `examples/`/`site/` đều qua `ThemeSchema` strict và các `theme.schema.json` đã commit khớp `z.toJSONSchema(ThemeSchema)`.
 - Mẫu `THEME_JSON`/`THEME_CSS` trên landing site (`site-build-sample.test.ts`) là theme hợp lệ và là đoạn trích đúng thứ tự của `generate().css` thật.
+- Options không mặc định (`custom-options.test.ts`): `screens`/`breakpoints` tuỳ chỉnh, `spacing.properties`, `cssVarDriven`, `enableResponsive: false`, `spacing.enabled: false`.
 - Các script đo/kiểm ngân sách CSS (`measure-css-output`, `diff-class-families`, `check-css-budget`) có test riêng.
 
 ### 4. E2E (Playwright, Chromium + WebKit)
@@ -84,6 +85,7 @@ yarn test:e2e
 Chỉ những hành vi phụ thuộc engine trình duyệt mới nằm ở đây (`e2e/`):
 
 - `spacing-inheritance.spec.ts` — `@property … inherits: false`: biến `--sg-sp-*` của phần tử cha không rò xuống phần tử con (quy tắc _cùng phần tử_).
+- `custom-breakpoint-spacing.spec.ts` — chuỗi fallback spacing ở breakpoint tuỳ chỉnh (md 800px, xl 1300px).
 - `multi-axis-precedence.spec.ts` — khi hai trục cùng override một token, trục khai báo sau thắng.
 
 Lý do chạy cả WebKit: ngữ nghĩa kế thừa của `@property` và cascade `var()` khác nhau giữa các engine.

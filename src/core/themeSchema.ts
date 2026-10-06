@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { builtInCategories } from "../features/registry/builtInCategories";
 import { UTILITY_NAME_RE, toCamelCase, toKebabCase } from "../shared/helpers";
 
 /**
@@ -61,23 +62,65 @@ const quotesBalanced = (v: string): boolean => {
   return doubleQuotes % 2 === 0 && singleQuotes % 2 === 0;
 };
 
+const BRACKET_OPENER: Readonly<Record<string, string>> = { ")": "(", "]": "[" };
+
+/**
+ * Find the first unbalanced `(`/`[` in a value, ignoring brackets inside a
+ * quoted string (`"Brand (Display", serif` is balanced). An unbalanced
+ * bracket otherwise reaches Tailwind as an unclosed block and fails far from
+ * the theme key (`Missing closing } at :root`). Unbalanced quotes are left to
+ * {@link quotesBalanced}.
+ * @param {string} v - Candidate token value
+ * @returns {string | undefined} The first problem found, or `undefined` when balanced
+ */
+const findUnbalancedBracket = (v: string): string | undefined => {
+  const stack: string[] = [];
+  let quote: string | undefined;
+  for (const ch of v) {
+    if (quote) {
+      if (ch === quote) quote = undefined;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === "(" || ch === "[") {
+      stack.push(ch);
+    } else if (
+      (ch === ")" || ch === "]") &&
+      stack.pop() !== BRACKET_OPENER[ch]
+    ) {
+      return `unexpected \`${ch}\` without a matching opener`;
+    }
+  }
+  const open = stack.at(-1);
+  return open === undefined ? undefined : `unclosed \`${open}\``;
+};
+
 /**
  * Token value grammar: rejects characters that could inject a new CSS rule,
  * an HTML tag, an at-rule, a comment, or a line break into `generate().css`
- * (`;`, `{`, `}`, `<`, `@`, `\`, `/ *`, `\n`, `\r`), and rejects unbalanced
- * quotes. Balanced quotes stay valid because `fontFamily` legitimately needs
- * them (e.g. `"Plus Jakarta Sans", system-ui`). A value of the form
- * `"$<TokenKey>"` (see {@link ALIAS_VALUE_RE}) is a valid `TokenValue` too —
- * it is resolved into `var(--<cssVarPrefix>-<key>)` by `flattenByCategory`
- * once `ThemeSchema`'s alias refinement below has proven the reference
- * exists and is acyclic.
+ * (`;`, `{`, `}`, `<`, `@`, `\`, `/ *`, `\n`, `\r`), rejects unbalanced
+ * quotes, and rejects unbalanced `(`/`[` outside quoted strings
+ * ({@link findUnbalancedBracket}). Balanced quotes stay valid because
+ * `fontFamily` legitimately needs them (e.g. `"Plus Jakarta Sans",
+ * system-ui`). A value of the form `"$<TokenKey>"` (see
+ * {@link ALIAS_VALUE_RE}) is a valid `TokenValue` too — it is resolved into
+ * `var(--<cssVarPrefix>-<key>)` by `flattenByCategory` once `ThemeSchema`'s
+ * alias refinement below has proven the reference exists and is acyclic.
  */
 export const TokenValue = z
   .string()
   .refine(
     (v) => !/[;{}<@\\\n\r]|\/\*/.test(v) && quotesBalanced(v),
     "Value must not contain `;`, `{`, `}`, `<`, `@`, `\\`, `/*`, or a line break, and quotes must be balanced",
-  );
+  )
+  .superRefine((v, ctx) => {
+    const problem = findUnbalancedBracket(v);
+    if (problem) {
+      ctx.addIssue({
+        code: "custom",
+        message: `Value has ${problem}: parentheses and brackets must be balanced`,
+      });
+    }
+  });
 
 /**
  * Alias sigil grammar: a `"$"` followed by exactly one valid {@link TokenKey}.
@@ -102,16 +145,17 @@ const TypographyValue = TokenValue.refine(
 );
 
 /**
- * A single typography variant. `fontFamily`/`fontStyle` are optional because
- * most variants inherit the base font stack and style; when present they
- * follow the same injection-safe `TypographyValue` grammar as every other
- * value.
+ * A single typography variant. `letterSpacing`, `fontFamily` and
+ * `fontStyle` are optional because most variants inherit the base tracking,
+ * font stack and style; an absent `letterSpacing` emits no declaration, so
+ * inherited tracking is not reset. When present they follow the same
+ * injection-safe `TypographyValue` grammar as every other value.
  */
 export const TypographyStyleSchema = z.strictObject({
   fontSize: TypographyValue,
   lineHeight: TypographyValue,
   fontWeight: z.number(),
-  letterSpacing: TypographyValue,
+  letterSpacing: TypographyValue.optional(),
   fontFamily: TypographyValue.optional(),
   fontStyle: TypographyValue.optional(),
 });
@@ -453,6 +497,77 @@ const validateBaseCategories = (
 };
 
 /**
+ * Variable-name prefixes no theme key may produce: the spacing utilities own
+ * `--sg-sp-<key>[-<bp>]` (see `generateSpacingCss.ts`), so a color such as
+ * `spP` (→ `--sg-sp-p`) would silently redefine a spacing variable.
+ */
+const RESERVED_CSS_VAR_PREFIXES = ["--sg-sp-"] as const;
+
+/** Where a `--sg-*` variable was first produced. */
+interface CssVarOwner {
+  category: string;
+  key: string;
+}
+
+/**
+ * Why `owner` may not produce `varName`, or `undefined` when it may.
+ * @param {string} varName - The `--<cssVarPrefix>-<kebab-key>` variable
+ * @param {CssVarOwner} owner - The category and key producing it
+ * @param {CssVarOwner | undefined} prev - The first owner of the same variable, if any
+ * @returns {string | undefined} The issue message, or `undefined`
+ */
+const cssVarCollisionMessage = (
+  varName: string,
+  owner: CssVarOwner,
+  prev: CssVarOwner | undefined,
+): string | undefined => {
+  if (RESERVED_CSS_VAR_PREFIXES.some((p) => varName.startsWith(p))) {
+    return `${owner.category}.${owner.key} produces ${varName}, which is reserved for the spacing utilities (--sg-sp-*); rename the key`;
+  }
+  if (prev && prev.category !== owner.category) {
+    return `${owner.category}.${owner.key} and ${prev.category}.${prev.key} both produce the CSS variable ${varName}; the later one silently overwrites the earlier — rename one of them`;
+  }
+  return undefined;
+};
+
+/**
+ * Reject two keys from different CSS-var categories that produce the same
+ * `--<cssVarPrefix>-<kebab-key>` variable (e.g. `colors.shadowPrimary` and
+ * `shadows.primary` both give `--sg-shadow-primary`; the later declaration
+ * silently overwrites the earlier one in `:root`), and any key whose
+ * variable falls in {@link RESERVED_CSS_VAR_PREFIXES}. Variable names come
+ * from `builtInCategories[].cssVarPrefix`, so a prefix rename flows in
+ * automatically. Same-category duplicates are left to
+ * {@link reportKebabCollisions}. Runs on the base theme only: every
+ * `themeAxes` override key must already exist in the base record
+ * ({@link validateThemeOverride}), so the base pass covers it.
+ * @param {z.RefinementCtx} ctx - Zod refinement context
+ * @param {ThemeCssVarSource} theme - Base theme (CSS-var categories only)
+ * @returns {void}
+ */
+const checkCssVarCollisions = (
+  ctx: z.RefinementCtx,
+  theme: ThemeCssVarSource,
+): void => {
+  const seen = new Map<string, CssVarOwner>();
+  for (const category of builtInCategories) {
+    const prefix = category.cssVarPrefix;
+    if (!prefix) continue;
+    for (const key of Object.keys(category.select?.(theme) ?? {})) {
+      const varName = `--${prefix}-${toKebabCase(key)}`;
+      const owner = { category: category.key, key };
+      const prev = seen.get(varName);
+      const message = cssVarCollisionMessage(varName, owner, prev);
+      if (message) {
+        ctx.addIssue({ code: "custom", path: [owner.category, key], message });
+      } else if (!prev) {
+        seen.set(varName, owner);
+      }
+    }
+  }
+};
+
+/**
  * Validate a single `themeAxes.<axis>.<variant>` override: kebab-key
  * uniqueness on its own records, that every override key already exists in
  * the matching base record (an override-only key never maps into
@@ -606,6 +721,7 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
   themeAxes: ThemeAxesSchema.optional(),
 }).superRefine((theme, ctx) => {
   validateBaseCategories(ctx, theme);
+  checkCssVarCollisions(ctx, theme);
   checkBorderWidthColorCollision(ctx, theme.colors, theme.borderWidth, []);
   checkFontFamilyWeightNames(ctx, theme.fontFamily, []);
 

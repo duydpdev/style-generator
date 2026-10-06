@@ -78,6 +78,10 @@ export function doctorCommand() {
     logger.log(`  Config  (${padStr(configFile.source ?? "")}) ❌ Ignored`);
     logger.log(`    ${configFile.error}`);
     hasErrors = true;
+  } else if (configFile.issues) {
+    logger.log(`  Config  (${padStr(configFile.source ?? "")}) ❌ Invalid`);
+    logger.log(configFile.issues);
+    hasErrors = true;
   } else if (configFile.source) {
     logger.log(`  Config  (${padStr(configFile.source)}) ✅ Found`);
   } else {

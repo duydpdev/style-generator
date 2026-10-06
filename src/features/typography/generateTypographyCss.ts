@@ -27,8 +27,10 @@ const assertValidUtilityName = (
 };
 
 /**
- * Style entries with a value. Optional fields (`fontFamily`, `fontStyle`)
- * may be present as explicit `undefined` in TS input, and Zod keeps them.
+ * Style entries with a value. Optional fields (`letterSpacing`,
+ * `fontFamily`, `fontStyle`) may be absent or present as explicit
+ * `undefined` in TS input (Zod keeps them); either way no declaration is
+ * emitted for them.
  * @param {TypographyConfig} styles - One typography variant
  * @returns {[string, string | number][]} Entries whose value is defined
  */

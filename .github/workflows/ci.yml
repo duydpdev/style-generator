@@ -81,6 +81,10 @@ jobs:
         # It is the only check that builds them; nothing deploys the site.
         run: yarn workspace site build
 
+      - name: Check doc links
+        # Relative links and #anchors in the markdown the site renders.
+        run: yarn workspace site check:links
+
       - name: Typecheck examples
         # The examples consume the built library through `link:../..`.
         run: yarn workspaces foreach -A --include '*-example' run typecheck
@@ -114,8 +118,9 @@ jobs:
         # tsconfig.dts-check.json; the examples set skipLibCheck.
         run: yarn typecheck:dist
 
-      - name: Test
-        run: yarn test
+      - name: Test (with coverage thresholds)
+        # vitest.config.ts coverage.thresholds fail the step if coverage drops.
+        run: yarn test:coverage
 
       - name: Type tests
         run: yarn test:types

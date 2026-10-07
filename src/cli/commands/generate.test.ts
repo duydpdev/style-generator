@@ -58,7 +58,7 @@ describe("generateCommand", () => {
     expect(fs.existsSync(outPath)).toBe(true);
 
     const content = fs.readFileSync(outPath, "utf8");
-    expect(content).toMatch(/--sg-primary/);
+    expect(content).toMatch(/--sg-color-primary/);
     expect(content).toMatch(/@utility h-1 \{/);
     expect(content).toMatch(/shadow-sm/);
   });
@@ -118,7 +118,7 @@ describe("generateCommand", () => {
     expect(path.dirname(String(from))).toBe(path.dirname(String(to)));
     expect(path.basename(String(from))).toMatch(/\.tmp$/);
     expect(fs.existsSync(String(from))).toBe(false);
-    expect(fs.readFileSync(outPath, "utf8")).toMatch(/--sg-primary/);
+    expect(fs.readFileSync(outPath, "utf8")).toMatch(/--sg-color-primary/);
   });
 
   it("removes the temp file and leaves no partial output when the rename fails", () => {

@@ -315,9 +315,7 @@ describe("integration: every color key the schema accepts maps to a class Tailwi
       colors: Object.fromEntries(accepted.map((key) => [key, "#123456"])),
     };
     const { css, tokens } = generate(theme);
-    const mapped = Object.values(
-      createVariantMapper("bg", tokens.Web.variantColor),
-    );
+    const mapped = Object.values(createVariantMapper("bg", tokens.Web.colors));
     const compiled = await compileFixtureCss(css, []);
     const selectors = new Set<string>();
     postcss.parse(compiled).walkRules((rule) => {
@@ -382,7 +380,7 @@ describe("integration: typed token arrays equal the keys expanded in @source inl
 
       const tokens = generate(theme as never, { spacing: { enabled: false } })
         .tokens.Web as unknown as Record<string, readonly string[]>;
-      const fromTokens = (tokens[descriptor.tokenName] ?? []).map(toKebabCase);
+      const fromTokens = (tokens[descriptor.key] ?? []).map(toKebabCase);
 
       expect(fromTokens).toEqual(
         sourceInlineKeys(theme, descriptor).filter(Boolean),

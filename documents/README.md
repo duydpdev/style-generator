@@ -23,6 +23,7 @@ Site render mọi file `documents/*.md` cấp cao nhất trừ file này (`site/
 
 | File                                                                                       | Nội dung                                                        |
 | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)                                     | Breaking changes 4.x → 5.0.0, recipe grep và diff CSS sinh ra   |
 | [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md)                                     | Breaking changes 3.x → 4.0.0 và runbook rollback                |
 | [`migration/4.0-to-4.1.md`](./migration/4.0-to-4.1.md)                                     | Validation siết chặt ở 4.1.0 (options, config, biến CSS, ngoặc) |
 | [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md)                   | Lịch sử subpath exports của 3.x                                 |

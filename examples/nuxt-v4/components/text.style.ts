@@ -5,7 +5,7 @@ import { DesignTokens } from "../theme/design-tokens";
 
 export const textStyle = cva("wrap-anywhere whitespace-pre-wrap", {
   variants: {
-    type: createVariantMapper("", DesignTokens.Web.variantText),
+    type: createVariantMapper("", DesignTokens.Web.typography),
     decoration: {
       underline: "underline",
       lineThrough: "line-through",
@@ -16,7 +16,7 @@ export const textStyle = cva("wrap-anywhere whitespace-pre-wrap", {
       left: "text-left",
       right: "text-right",
     },
-    color: createVariantMapper("text", DesignTokens.Web.variantColor),
+    color: createVariantMapper("text", DesignTokens.Web.colors),
   },
 });
 

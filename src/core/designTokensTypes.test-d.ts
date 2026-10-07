@@ -10,7 +10,7 @@ import type {
   BackdropBlurVariant,
   DesignTokenKeys,
 } from "./designTokensTypes";
-import type { InferColorKeys } from "./inference";
+import type { CategoryTokenKey } from "./inference";
 import type { ThemeConfig } from "./themeSchema";
 
 describe("DesignTokenKeys semantic aliases", () => {
@@ -34,9 +34,9 @@ describe("DesignTokenKeys semantic aliases", () => {
     fontFamily: { sans: string };
   }
 
-  it("ColorVariant<T> equals InferColorKeys<T>", () => {
+  it("ColorVariant<T> equals CategoryTokenKey<T, 'colors'>", () => {
     expectTypeOf<ColorVariant<SampleTheme>>().toEqualTypeOf<
-      InferColorKeys<SampleTheme>
+      CategoryTokenKey<SampleTheme, "colors">
     >();
   });
 

@@ -1,44 +1,33 @@
 import type { SpacingPropertyMap } from "../core/Options";
 
 /**
- * Default spacing properties → CSS property mapping.
+ * Default spacing properties → CSS properties each utility sets.
  * `generateSpacingCss` turns each entry into an `@utility sp-<key>` block
- * whose declarations read `var(--sg-sp-<key>)`.
+ * whose declarations read `var(--sg-sp-<key>)`. Passing
+ * `options.spacing.properties` REPLACES this map; spread it to extend.
  */
 export const DEFAULT_SPACING_PROPERTIES = {
-  p: { padding: "var(--sg-sp-p)" },
-  px: {
-    "padding-left": "var(--sg-sp-px)",
-    "padding-right": "var(--sg-sp-px)",
-  },
-  py: {
-    "padding-top": "var(--sg-sp-py)",
-    "padding-bottom": "var(--sg-sp-py)",
-  },
-  pt: { "padding-top": "var(--sg-sp-pt)" },
-  pb: { "padding-bottom": "var(--sg-sp-pb)" },
-  pl: { "padding-left": "var(--sg-sp-pl)" },
-  pr: { "padding-right": "var(--sg-sp-pr)" },
-  m: { margin: "var(--sg-sp-m)" },
-  mx: {
-    "margin-left": "var(--sg-sp-mx)",
-    "margin-right": "var(--sg-sp-mx)",
-  },
-  my: {
-    "margin-top": "var(--sg-sp-my)",
-    "margin-bottom": "var(--sg-sp-my)",
-  },
-  mt: { "margin-top": "var(--sg-sp-mt)" },
-  mb: { "margin-bottom": "var(--sg-sp-mb)" },
-  ml: { "margin-left": "var(--sg-sp-ml)" },
-  mr: { "margin-right": "var(--sg-sp-mr)" },
-  gap: { gap: "var(--sg-sp-gap)" },
-  "gap-x": { "column-gap": "var(--sg-sp-gap-x)" },
-  "gap-y": { "row-gap": "var(--sg-sp-gap-y)" },
-  top: { top: "var(--sg-sp-top)" },
-  right: { right: "var(--sg-sp-right)" },
-  bottom: { bottom: "var(--sg-sp-bottom)" },
-  left: { left: "var(--sg-sp-left)" },
+  p: ["padding"],
+  px: ["padding-left", "padding-right"],
+  py: ["padding-top", "padding-bottom"],
+  pt: ["padding-top"],
+  pb: ["padding-bottom"],
+  pl: ["padding-left"],
+  pr: ["padding-right"],
+  m: ["margin"],
+  mx: ["margin-left", "margin-right"],
+  my: ["margin-top", "margin-bottom"],
+  mt: ["margin-top"],
+  mb: ["margin-bottom"],
+  ml: ["margin-left"],
+  mr: ["margin-right"],
+  gap: ["gap"],
+  "gap-x": ["column-gap"],
+  "gap-y": ["row-gap"],
+  top: ["top"],
+  right: ["right"],
+  bottom: ["bottom"],
+  left: ["left"],
 } as const satisfies SpacingPropertyMap;
 
 /** Default border radius values, used when `theme.borderRadius` is omitted. */

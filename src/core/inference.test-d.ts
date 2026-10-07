@@ -5,7 +5,6 @@ import type { kebabParityCases } from "../__integration__/__fixtures__/kebabPari
 import type {
   CamelCase,
   KebabCase,
-  InferColorKeys,
   DesignTokensWeb,
   CategoryTokenKey,
   InferBorderWidthOptions,
@@ -90,13 +89,15 @@ describe("KebabCase", () => {
 
 // ---- Color key inference ----
 
-describe("InferColorKeys", () => {
+describe("CategoryTokenKey<T, 'colors'>", () => {
   it("infers simple flat color keys as-is", () => {
     interface T {
       colors: { primary: string; white: string };
       typography: Record<string, never>;
     }
-    expectTypeOf<InferColorKeys<T>>().toEqualTypeOf<"primary" | "white">();
+    expectTypeOf<CategoryTokenKey<T, "colors">>().toEqualTypeOf<
+      "primary" | "white"
+    >();
   });
 
   it("converts kebab-case keys to camelCase: sidebar-foreground → sidebarForeground", () => {
@@ -104,7 +105,7 @@ describe("InferColorKeys", () => {
       colors: { "sidebar-foreground": string; "primary-blue": string };
       typography: Record<string, never>;
     }
-    expectTypeOf<InferColorKeys<T>>().toEqualTypeOf<
+    expectTypeOf<CategoryTokenKey<T, "colors">>().toEqualTypeOf<
       "sidebarForeground" | "primaryBlue"
     >();
   });
@@ -114,11 +115,13 @@ describe("InferColorKeys", () => {
       colors: { "blue-500": string; "gray-100": string };
       typography: Record<string, never>;
     }
-    expectTypeOf<InferColorKeys<T>>().toEqualTypeOf<"blue500" | "gray100">();
+    expectTypeOf<CategoryTokenKey<T, "colors">>().toEqualTypeOf<
+      "blue500" | "gray100"
+    >();
   });
 
   it("does not return never when using base ThemeConfig annotation", () => {
-    expectTypeOf<InferColorKeys<ThemeConfig>>().not.toBeNever();
+    expectTypeOf<CategoryTokenKey<ThemeConfig, "colors">>().not.toBeNever();
   });
 });
 
@@ -153,40 +156,36 @@ describe("DesignTokensWeb", () => {
 
   type Web = DesignTokensWeb<MyTheme>;
 
-  it("variantColor: kebab keys become camelCase, numeric-suffix keys collapsed", () => {
-    expectTypeOf<Web["variantColor"]>().toEqualTypeOf<
+  it("colors: kebab keys become camelCase, numeric-suffix keys collapsed", () => {
+    expectTypeOf<Web["colors"]>().toEqualTypeOf<
       ("primary" | "sidebarForeground" | "blue500")[]
     >();
   });
 
-  it("variantText: typography keys become camelCase", () => {
-    expectTypeOf<Web["variantText"]>().toEqualTypeOf<("h1" | "bodyLg")[]>();
+  it("typography: typography keys become camelCase", () => {
+    expectTypeOf<Web["typography"]>().toEqualTypeOf<("h1" | "bodyLg")[]>();
   });
 
-  it("variantShadow: shadow keys as camelCase", () => {
-    expectTypeOf<Web["variantShadow"]>().toEqualTypeOf<("md" | "lg")[]>();
+  it("shadows: shadow keys as camelCase", () => {
+    expectTypeOf<Web["shadows"]>().toEqualTypeOf<("md" | "lg")[]>();
   });
 
-  it("roundedOption: supports digit-prefix values like 2xl and 4xl", () => {
-    expectTypeOf<Web["roundedOption"]>().toEqualTypeOf<
+  it("borderRadius: supports digit-prefix values like 2xl and 4xl", () => {
+    expectTypeOf<Web["borderRadius"]>().toEqualTypeOf<
       ("sm" | "2xl" | "4xl")[]
     >();
   });
 
-  it("borderWidthOption: inferred from theme borderWidth keys", () => {
-    expectTypeOf<Web["borderWidthOption"]>().toEqualTypeOf<
-      ("thin" | "thick")[]
-    >();
+  it("borderWidth: inferred from theme borderWidth keys", () => {
+    expectTypeOf<Web["borderWidth"]>().toEqualTypeOf<("thin" | "thick")[]>();
   });
 
-  it("variantFontFamily: inferred from theme fontFamily keys", () => {
-    expectTypeOf<Web["variantFontFamily"]>().toEqualTypeOf<"sans"[]>();
+  it("fontFamily: inferred from theme fontFamily keys", () => {
+    expectTypeOf<Web["fontFamily"]>().toEqualTypeOf<"sans"[]>();
   });
 
-  it("variantColor not never with base ThemeConfig", () => {
-    expectTypeOf<
-      DesignTokensWeb<ThemeConfig>["variantColor"]
-    >().not.toBeNever();
+  it("colors not never with base ThemeConfig", () => {
+    expectTypeOf<DesignTokensWeb<ThemeConfig>["colors"]>().not.toBeNever();
   });
 });
 

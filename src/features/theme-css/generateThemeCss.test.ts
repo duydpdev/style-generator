@@ -18,10 +18,10 @@ describe("generateThemeCss", () => {
       },
     };
     const css = generateThemeCss(config);
-    expect(css).toContain("--sg-primary: #007AFF;");
-    expect(css).toContain("--sg-secondary: #FF9500;");
-    expect(css).toContain("--color-primary: var(--sg-primary);");
-    expect(css).toContain("--color-secondary: var(--sg-secondary);");
+    expect(css).toContain("--sg-color-primary: #007AFF;");
+    expect(css).toContain("--sg-color-secondary: #FF9500;");
+    expect(css).toContain("--color-primary: var(--sg-color-primary);");
+    expect(css).toContain("--color-secondary: var(--sg-color-secondary);");
     expect(css).toContain("@theme inline");
   });
 
@@ -38,10 +38,10 @@ describe("generateThemeCss", () => {
       },
     };
     const css = generateThemeCss(config);
-    expect(css).toContain("--sg-sidebar-foreground: #fff;");
-    expect(css).toContain("--sg-primary-blue: #007;");
+    expect(css).toContain("--sg-color-sidebar-foreground: #fff;");
+    expect(css).toContain("--sg-color-primary-blue: #007;");
     expect(css).toContain(
-      "--color-sidebar-foreground: var(--sg-sidebar-foreground);",
+      "--color-sidebar-foreground: var(--sg-color-sidebar-foreground);",
     );
   });
 
@@ -66,7 +66,7 @@ describe("generateThemeCss", () => {
     };
     const css = generateThemeCss(config);
     expect(css).toContain('html[data-theme="dark"]');
-    expect(css).toContain("--sg-primary: #0A84FF;");
+    expect(css).toContain("--sg-color-primary: #0A84FF;");
   });
 
   it("resolves an alias declared inside a variant override to the target's --sg var, pinned to html", () => {
@@ -79,7 +79,7 @@ describe("generateThemeCss", () => {
     const css = generateThemeCss(config);
     const block = css.slice(css.indexOf('html[data-palette="rose"]'));
     expect(block).toMatch(
-      /^html\[data-palette="rose"\] \{\s*--sg-primary: var\(--sg-blue-500\);\s*\}/,
+      /^html\[data-palette="rose"\] \{\s*--sg-color-primary: var\(--sg-color-blue-500\);\s*\}/,
     );
   });
 
@@ -95,7 +95,7 @@ describe("generateThemeCss", () => {
       borderWidth: { hairline: "1px", card: "$hairline" },
     };
     const root = generateThemeCss(config).split(":root {")[1]?.split("}")[0];
-    expect(root).toContain("--sg-primary: var(--sg-brand);");
+    expect(root).toContain("--sg-color-primary: var(--sg-color-brand);");
     expect(root).toContain("--sg-shadow-card: var(--sg-shadow-soft);");
     expect(root).toContain(
       "--sg-backdrop-blur-panel: var(--sg-backdrop-blur-light);",
@@ -113,7 +113,7 @@ describe("generateThemeCss", () => {
       themeAxes: { highContrast: { onDark: { colors: { primary: "#000" } } } },
     });
     expect(css).toMatch(
-      /^html\[data-high-contrast="on-dark"\] \{\s*--sg-primary: #000;\s*\}/m,
+      /^html\[data-high-contrast="on-dark"\] \{\s*--sg-color-primary: #000;\s*\}/m,
     );
     expect(css).not.toMatch(/highContrast|onDark/);
   });
@@ -208,13 +208,46 @@ describe("generateThemeCss", () => {
       backDropBlurs: { sm: "4px" },
     };
     const themeBlock = generateThemeCss(config).split("@theme inline")[1];
-    expect(themeBlock).toContain("--color-primary: var(--sg-primary);");
+    expect(themeBlock).toContain("--color-primary: var(--sg-color-primary);");
     expect(themeBlock).toContain("--shadow-sm: var(--sg-shadow-sm);");
     expect(themeBlock).toContain("--radius-md: var(--sg-radius-md);");
     expect(themeBlock).toContain(
       "--backdrop-blur-sm: var(--sg-backdrop-blur-sm);",
     );
     expect(themeBlock).not.toMatch(/--color-(shadow|radius|backdrop-blur)-/);
+  });
+
+  it("maps borderWidth keys into Tailwind's --border-width-* namespace, last in @theme inline", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      borderRadius: { md: "8px" },
+      borderWidth: { thin: "1px", thick: "$thin" },
+    };
+    const themeBlock = generateThemeCss(config).split("@theme inline")[1] ?? "";
+    const lines = themeBlock
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("--"));
+
+    expect(lines.slice(-2)).toEqual([
+      "--border-width-thin: var(--sg-border-width-thin);",
+      "--border-width-thick: var(--sg-border-width-thick);",
+    ]);
+    expect(lines.indexOf("--radius-md: var(--sg-radius-md);")).toBeLessThan(
+      lines.indexOf("--border-width-thin: var(--sg-border-width-thin);"),
+    );
+  });
+
+  it("keeps a color named like another category's key in its own --sg-color- namespace", () => {
+    const config: ThemeConfig = {
+      colors: { shadowPrimary: "#ff0000", spP: "#00ff00" },
+      shadows: { primary: "0 1px 2px #000" },
+    };
+    const css = generateThemeCss(config);
+    expect(css).toContain("--sg-color-shadow-primary: #ff0000;");
+    expect(css).toContain("--sg-shadow-primary: 0 1px 2px #000;");
+    expect(css).toContain("--sg-color-sp-p: #00ff00;");
+    expect(css).not.toMatch(/--sg-sp-p\b/);
   });
 
   it("should return minimal output for empty config", () => {

@@ -25,7 +25,11 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // Re-measured 2026-10-06 (4.2.0: coverage option, resolveOptions, schema
 // split): index 10071, vite 10110, next 9997, cli 34703; tokens 1619 (the shared
 // internals live in the entry chunk, see `preserveEntrySignatures` in
-// vite.config.ts); cva, spacing and types are unchanged.
+// vite.config.ts); cva, spacing and types are unchanged. Re-measured
+// 2026-10-07 (5.0.0-DEV.1: borderWidth via `--border-width-*`, spacing arrays,
+// `Breakpoint` object, collision check removed, doctor scanner): index 9664,
+// tokens 1492, spacing 791, vite 9698, next 9586, cli 34188; cva and types
+// are unchanged. No budget raised.
 // Budgets = measured + ~10% headroom.
 const budgets = {
   index: 11_100,

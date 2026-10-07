@@ -4,13 +4,19 @@ import type {
   RegistryPrefix,
 } from "../features/registry/builtInCategories";
 
-export enum Breakpoint {
-  SM = "sm",
-  MD = "md",
-  LG = "lg",
-  XL = "xl",
-  XXL = "2xl",
-}
+/**
+ * Tailwind's default breakpoint keys. A const object (not an enum) so the
+ * runtime values and the string-literal type are one structural thing:
+ * `Breakpoint.MD` is `"md"`, and `const b: Breakpoint = "md"` compiles.
+ */
+export const Breakpoint = {
+  SM: "sm",
+  MD: "md",
+  LG: "lg",
+  XL: "xl",
+  XXL: "2xl",
+} as const;
+export type Breakpoint = (typeof Breakpoint)[keyof typeof Breakpoint];
 
 export const defaultScreens: Record<Breakpoint, string> = {
   [Breakpoint.SM]: "640px",
@@ -21,11 +27,10 @@ export const defaultScreens: Record<Breakpoint, string> = {
 };
 
 /**
- * Mapping of spacing property keys to their CSS property declarations.
- * Key: prop name (e.g. 'p', 'mx')
- * Value: Record of CSS property → var() reference
+ * Mapping of spacing property keys to the CSS properties each `sp-<key>`
+ * utility sets (e.g. `p: ["padding"]`, `mx: ["margin-left", "margin-right"]`).
  */
-export type SpacingPropertyMap = Record<string, Record<string, string>>;
+export type SpacingPropertyMap = Record<string, readonly string[]>;
 
 /**
  * How much of one token category's `@source inline` coverage to emit.
@@ -71,10 +76,11 @@ type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
 
 export interface StyleGeneratorOptions {
   /**
-   * Breakpoint keys to use for responsive class generation.
+   * Breakpoint keys to use for responsive class generation: a `Breakpoint`
+   * value (`"sm"` … `"2xl"`) or a custom key declared in `screens`.
    * @default ["md", "lg"]
    */
-  breakpoints?: (Breakpoint | string)[];
+  breakpoints?: (Breakpoint | (string & {}))[];
 
   /**
    * Custom screens map to override defaults or add new ones.
@@ -83,7 +89,7 @@ export interface StyleGeneratorOptions {
    * the px `defaultScreens` must use a single unit (override every default
    * screen to switch to rem).
    */
-  screens?: Record<Breakpoint | string, string>;
+  screens?: Record<string, string>;
 
   /**
    * Enable responsive class generation in spacing CSS rules.
@@ -116,7 +122,10 @@ export interface StyleGeneratorOptions {
   spacing?: {
     /** Disable spacing CSS rule generation entirely. Defaults to true. */
     enabled?: boolean;
-    /** Override or extend the default spacing property-to-CSS mapping. */
+    /**
+     * Spacing key → CSS properties, e.g. `{ p: ["padding"] }`. REPLACES the
+     * defaults: spread `DEFAULT_SPACING_PROPERTIES` to extend them.
+     */
     properties?: SpacingPropertyMap;
   };
 

@@ -162,6 +162,19 @@ describe("resolveConfig", () => {
     expect(config.typography).toEqual({ cssVarDriven: true });
   });
 
+  it("accepts the array form of spacing.properties from style-gen.config.json", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ spacing: { properties: { inset: ["top", "bottom"] } } }),
+    );
+
+    const config = resolveConfig({});
+
+    expect(config.spacing).toEqual({
+      properties: { inset: ["top", "bottom"] },
+    });
+  });
+
   it("CLI-flag-style extraSources/spacing/typography override file config", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),

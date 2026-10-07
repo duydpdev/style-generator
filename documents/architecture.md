@@ -62,7 +62,7 @@ src/
 ├── core/                       # generate(), ThemeSchema (+ tokenGrammar, aliasGraph, crossFieldChecks), options schema (internal, optionsSchema.ts), resolveOptions, Options, defineTheme, type inference
 ├── features/
 │   ├── registry/               # builtInCategories, flattenByCategory, generateSourceInline
-│   ├── theme-css/              # :root / html[data-axis] / @theme inline, border-width, screens
+│   ├── theme-css/              # :root / html[data-axis] / @theme inline (incl. --border-width-*), screens
 │   ├── typography/             # theme.typography → @utility
 │   ├── spacing/                # .sp-* utilities + resolveSpacing helpers
 │   ├── tokens/                 # createDesignTokens / buildDesignTokens
@@ -91,7 +91,7 @@ const { css, tokens, schema } = generate(theme, options);
 // schema → z.toJSONSchema(ThemeSchema)
 ```
 
-`generate()` luôn validate `theme` với `ThemeSchema` trước (kể cả khi caller đã gọi `defineTheme()`), rồi ghép các khối theo thứ tự: `@theme` breakpoints → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` → border-width `@utility` → typography `@utility` → spacing `@utility` → `@source inline`.
+`generate()` luôn validate `theme` với `ThemeSchema` trước (kể cả khi caller đã gọi `defineTheme()`), rồi ghép các khối theo thứ tự: `@theme` breakpoints → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` → typography `@utility` → spacing `@utility` → `@source inline`.
 
 ### `createDesignTokens`
 
@@ -99,11 +99,12 @@ Trả về object chứa các mảng key từ theme; dùng cho component logic, 
 
 ```typescript
 const { DesignTokens } = createDesignTokens(theme, options);
-// DesignTokens.Web.variantColor      → ["primary", "primaryHover", ...]
-// DesignTokens.Web.variantText       → ["text16Medium", ...]
-// DesignTokens.Web.variantFontFamily → ["sans", ...]
-// DesignTokens.Web.borderWidthOption → keys của borderWidth (mặc định 0, 1, 2, 4)
-// DesignTokens.Web.breakpoints       → mặc định ["md", "lg"]
+// Mỗi mảng mang tên field ThemeConfig tương ứng (từ 5.0):
+// DesignTokens.Web.colors        → ["primary", "primaryHover", ...]
+// DesignTokens.Web.typography    → ["text16Medium", ...]
+// DesignTokens.Web.fontFamily    → ["sans", ...]
+// DesignTokens.Web.borderWidth   → keys của borderWidth (mặc định 0, 1, 2, 4)
+// DesignTokens.Web.breakpoints   → mặc định ["md", "lg"]
 ```
 
 **Type inference:** generic `T extends ThemeConfig` kết hợp `KebabCase`, `CamelCase` để giữ literal type thay vì widen sang `string`.
@@ -150,6 +151,8 @@ export default styleGenNext({
 
 `style-gen` (build riêng bằng `tsdown` → `dist/cli/index.mjs`): `init`, `generate [--watch]`, `schema`, `doctor`. Thứ tự resolve config: flags → `style-gen.config.json` → `package.json["style-gen"]` → mặc định; `readConfigFile` validate file config bằng `StyleGenConfigSchema` (`src/cli/config.ts`; Shape và refinement dùng chung với `generate()` từ `src/core/optionsSchema.ts`), trả `issues` khi sai schema (không merge gì) và `error` khi file hỏng JSON (`generate` cảnh báo rồi dùng mặc định, `doctor` báo lỗi); issue của config làm `generate` và `doctor` dừng với mã 1. `generate` ghi CSS bằng `writeFileAtomic`; theme/option không hợp lệ hoặc lỗi ghi file đặt `process.exitCode = 1` (ở `--watch` chỉ log rồi tiếp tục theo dõi). `--version` đọc `package.json` qua `import.meta.url` (`src/cli/version.ts`), vì `__dirname` không tồn tại trong bundle ESM. `init` ghi theme, `theme.schema.json` cạnh theme, một script nhỏ (cờ `--plugin` đặt đường dẫn) gọi `generate()` và ghi đúng `output` của config — cùng file với `style-gen generate`, chạy thẳng bằng Node >= 22.18 — không còn là Tailwind plugin; `init` merge `theme`/`plugin`/`output` vào `style-gen.config.json` có sẵn, hoặc vào bản sao `package.json["style-gen"]` khi chưa có file đó (file mới sẽ được ưu tiên hơn section này), giữ các key khác và đọc config trước khi ghi gì; `theme.schema.json` có sẵn được coi là file đã tồn tại (hỏi trước khi ghi đè, non-interactive thoát mã 1). `schema` không có `--out` đọc config như `generate` (config sai schema → mã 1, không ghi gì) rồi ghi `theme.schema.json` vào thư mục của `theme` đã resolve (qua `normalizePath`). `doctor` validate theme bằng `ThemeSchema`, chỉ kiểm tra script khi config có `plugin`, và in cảnh báo (không đổi exit code) khi key trùng utility của Tailwind (`src/cli/commands/utilityCollisions.ts`, danh sách được kiểm bằng compiler thật trong `src/__integration__/utility-collisions.test.ts`).
 
+`doctor` ngoài kiểm tra cấu hình/theme còn quét các file nguồn (`.css/.scss/.ts/.tsx/.vue/.svelte/.astro/.html`, …) dưới thư mục hiện tại để cảnh báo `file:line` biến `--sg-<màu>` kiểu 4.x còn sót (`src/cli/commands/legacyColorVars.ts`): bỏ qua `node_modules`, `.git`, thư mục build (`dist`, `build`, `out`, `.next`, `.nuxt`, `.output`, …), file output của config và file > 1 MiB; không theo symlink; không đổi exit code.
+
 ---
 
 ## Registry & `@source inline`
@@ -162,7 +165,7 @@ export default styleGenNext({
 
 **Vì sao `@source inline` thay safelist:** Tailwind v4 không quét class được dựng lúc runtime. `generateSourceInline` phát một dòng `@source inline("…")` cho mỗi category (và mỗi state có sibling, ví dụ `hover:bg-primary-hover`), nên class luôn tồn tại dù source không tham chiếu chúng; class dựng runtime khai báo qua `options.extraSources`. Đánh đổi: mọi màu luôn có `bg-/text-/border-*`, CSS lớn hơn một chút — `options.coverage` thu hẹp dòng này theo category (`false`, `prefixes`, `keys: "aliased"`; xem README §8).
 
-**Alias `$key`:** `flattenByCategory` đổi `"$blue500"` thành `var(--sg-blue-500)` (theo `cssVarPrefix` của chính category). `ThemeSchema` đã chứng minh target tồn tại và đồ thị không có chu trình trước khi emit.
+**Alias `$key`:** `flattenByCategory` đổi `"$blue500"` thành `var(--sg-color-blue-500)` (theo `cssVarPrefix` của chính category). `ThemeSchema` đã chứng minh target tồn tại và đồ thị không có chu trình trước khi emit.
 
 **Vì sao cấm `_` trong key:** `toKebabCase` giữ nguyên `_` (`primary_active` → `bg-primary_active`) trong khi `createDesignTokens` camelCase bỏ `_` (`primaryActive`), nên `createVariantMapper` sẽ sinh `bg-primary-active` — một class không tồn tại. Schema từ chối `_` ở mọi vị trí tên token (color/typography/…, tên axis và variant); nới lỏng sau này không breaking, siết chặt sau này thì có. `formatZodError` mở lớp `invalid_key` của Zod nên CLI/plugin in thẳng gợi ý camelCase/kebab trên đúng path.
 
@@ -213,7 +216,7 @@ const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
 // style: { "--sg-sp-p": "1rem", "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" }
 ```
 
-Tắt bằng `options.spacing.enabled = false`; tuỳ chỉnh bằng `options.spacing.properties`. Chỉ breakpoint trong `options.breakpoints` (mặc định `["md","lg"]`) mới có chuỗi fallback.
+Tắt bằng `options.spacing.enabled = false`; tuỳ chỉnh bằng `options.spacing.properties` (key spacing → mảng thuộc tính CSS, ví dụ `{ inset: ["top", "bottom"] }`; giá trị luôn là `var(--sg-sp-<key>)`). Chỉ breakpoint trong `options.breakpoints` (mặc định `["md","lg"]`) mới có chuỗi fallback.
 
 ---
 
@@ -229,12 +232,12 @@ Tắt bằng `options.spacing.enabled = false`; tuỳ chỉnh bằng `options.sp
 | `resolveSpacing`, `resolveSpacingProps`                                                                                                                 | `.`, `./spacing`                            | Resolve spacing props → `{ className(s), style }`                                            |
 | `styleGenVite`                                                                                                                                          | `./vite`                                    | Vite plugin                                                                                  |
 | `styleGenNext`                                                                                                                                          | `./next`                                    | Next.js config wrapper                                                                       |
-| `Breakpoint`, `defaultScreens`                                                                                                                          | `.`, `./tokens`                             | Enum `SM \| MD \| LG \| XL \| XXL` và bề rộng mặc định                                       |
+| `Breakpoint`, `defaultScreens`                                                                                                                          | `.`, `./tokens`                             | Const `SM \| MD \| LG \| XL \| XXL` (+ kiểu cùng tên) và bề rộng mặc định                    |
 | `ColorVariant` … `RoundedVariant`                                                                                                                       | `./types` (và `.`)                          | Union key theo theme: color, text, shadow, backdrop blur, font family, border width, rounded |
 | `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `CoverageRule`, `CategoryKey`, `CategoryTokenKey`, `ResponsiveValueStrict` | `./types` (và `.`)                          | Kiểu công khai                                                                               |
 | `SpacingKey`, `DefaultBreakpointKeys`                                                                                                                   | `./spacing`                                 | Kiểu spacing                                                                                 |
 
-Danh sách đầy đủ nằm trong `src/index.ts` và `src/exports/*`; những gì bị xoá ở 4.0.0 nằm trong [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
+Danh sách đầy đủ nằm trong `src/index.ts` và `src/exports/*`; những gì bị xoá ở 4.0.0 nằm trong [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), ở 5.0.0 trong [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
 
 ---
 

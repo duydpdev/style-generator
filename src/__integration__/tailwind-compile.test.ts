@@ -51,22 +51,22 @@ describe("integration: Tailwind v4 compile pipeline", () => {
 
   it("emits :root with --sg-* intermediate vars", async () => {
     const root = declsOf(await buildCss(), ":root");
-    expect(root.get("--sg-primary")).toMatch(/^#3B82F6$/i);
-    expect(root.get("--sg-sidebar-foreground")).toMatch(/^#111827$/i);
+    expect(root.get("--sg-color-primary")).toMatch(/^#3B82F6$/i);
+    expect(root.get("--sg-color-sidebar-foreground")).toMatch(/^#111827$/i);
   });
 
   it("emits dark theme override block, pinned to html[data-theme]", async () => {
     const dark = declsOf(await buildCss(), 'html[data-theme="dark"]');
-    expect(dark.get("--sg-primary")).toMatch(/^#60A5FA$/i);
+    expect(dark.get("--sg-color-primary")).toMatch(/^#60A5FA$/i);
   });
 
   it("resolves utilities through @theme inline mapping to --sg-* vars", async () => {
     const css = await buildCss();
     expect(declsOf(css, ".bg-primary").get("background-color")).toBe(
-      "var(--sg-primary)",
+      "var(--sg-color-primary)",
     );
     expect(declsOf(css, ".text-sidebar-foreground").get("color")).toBe(
-      "var(--sg-sidebar-foreground)",
+      "var(--sg-color-sidebar-foreground)",
     );
   });
 
@@ -126,6 +126,8 @@ describe("integration: Tailwind v4 compile pipeline", () => {
       ".rounded-2xl",
       ".md\\:rounded-2xl",
       ".border-thin",
+      ".border-s-thin",
+      ".divide-x-thin",
       ".font-sans",
       ".sp-p",
       ".hover\\:bg-primary",
@@ -134,6 +136,38 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     for (const sel of selectors) {
       expect(compiled).toContain(sel);
     }
+  });
+
+  // Tripwire: `--border-width-*` is an undocumented Tailwind theme namespace
+  // (see `borderWidthCategory`). If a Tailwind release stops resolving
+  // border widths from it, this fails instead of the classes silently
+  // vanishing from consumers' CSS.
+  it("borderWidth keys resolve through Tailwind's --border-width-* namespace for border, logical-side and divide utilities", async () => {
+    const { css: themeCss } = generate(theme);
+    const compiled = await compileFixtureCss(themeCss, [
+      "border-thin",
+      "border-s-thin",
+      "divide-x-thin",
+    ]);
+
+    const border = declsOf(compiled, ".border-thin");
+    expect(border.get("border-width")).toBe("var(--sg-border-width-thin)");
+    // Tailwind's own rule shape: the style comes from its variable (see the
+    // "Border-width utilities" section of the 4.x → 5.0 migration guide).
+    expect(border.get("border-style")).toBe("var(--tw-border-style)");
+    expect(
+      declsOf(compiled, ".border-s-thin").get("border-inline-start-width"),
+    ).toBe("var(--sg-border-width-thin)");
+    const divide = new Map<string, string>();
+    postcss.parse(compiled).walkRules((rule) => {
+      if (!rule.selector.includes(".divide-x-thin")) return;
+      rule.walkDecls((decl) => {
+        divide.set(decl.prop, decl.value);
+      });
+    });
+    expect(divide.get("border-inline-start-width")).toMatch(
+      /^calc\(var\(--sg-border-width-thin\) \* /,
+    );
   });
 
   it("negative control: without @source inline, build([]) never emits classes", async () => {
@@ -162,7 +196,7 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     });
 
     expect(declsOf(compiled, ".bg-primary").get("background-color")).toBe(
-      "var(--sg-primary)",
+      "var(--sg-color-primary)",
     );
     expect(declsOf(compiled, ".underline").get("text-decoration-line")).toBe(
       "underline",

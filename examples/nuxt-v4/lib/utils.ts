@@ -10,10 +10,10 @@ import { DesignTokens } from "../theme/design-tokens";
 // prefix, so by default twMerge thinks they conflict and removes one.
 // Register the suffixes explicitly so twMerge knows which group each belongs to.
 const typographySuffixes = Object.values(
-  createVariantMapper("", DesignTokens.Web.variantText),
+  createVariantMapper("", DesignTokens.Web.typography),
 ).map((cls) => cls.replace(/^text-/, ""));
 
-const colorTokens = [...DesignTokens.Web.variantColor];
+const colorTokens = [...DesignTokens.Web.colors];
 
 const twMerge = extendTailwindMerge({
   extend: {

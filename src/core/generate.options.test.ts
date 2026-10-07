@@ -47,6 +47,15 @@ describe("generate() options validation (X-03)", () => {
     );
   });
 
+  it.each([
+    ["an empty list", { p: [] }],
+    ["the 4.x object form", { p: { padding: "var(--sg-sp-p)" } }],
+  ])("rejects spacing.properties.p as %s", (_label, properties) => {
+    expect(issuesOf({ spacing: { properties } }).map((i) => i.path)).toContain(
+      "spacing.properties.p",
+    );
+  });
+
   it.each(["banana", "80", "1px 2px", "calc(1px)", "10vw"])(
     "rejects screens.md = %s",
     (v) => {

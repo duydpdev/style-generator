@@ -49,10 +49,6 @@ export type KebabCase<S extends string> = S extends `${infer T}${infer U}`
     : Lowercase<S>
   : S;
 
-type KeysOf<T> = T extends object ? keyof T : never;
-
-type StringKeysOf<T> = Extract<KeysOf<T>, string>;
-
 // ---- Theme-based token keys ----
 
 /**
@@ -105,28 +101,6 @@ export type CategoryTokenKey<
   K extends CategoryKey,
 > = CamelCase<RawCategoryKey<TTheme, K>>;
 
-// Colors are flat keys only (e.g. "primary", "sidebar-foreground").
-export type InferColorKeys<TTheme extends ThemeConfig> = CategoryTokenKey<
-  TTheme,
-  "colors"
->;
-
-export type InferTypographyKeys<TTheme extends ThemeConfig> = StringKeysOf<
-  NonNullable<TTheme["typography"]>
->;
-
-export type InferShadowKeys<TTheme extends ThemeConfig> = StringKeysOf<
-  NonNullable<TTheme["shadows"]>
->;
-
-export type InferBackdropBlurKeys<TTheme extends ThemeConfig> = StringKeysOf<
-  NonNullable<TTheme["backDropBlurs"]>
->;
-
-export type InferFontFamilyKeys<TTheme extends ThemeConfig> = StringKeysOf<
-  NonNullable<TTheme["fontFamily"]>
->;
-
 // ---- Tokens từ defaults + theme ----
 
 export type InferBorderWidthOptions<TTheme extends ThemeConfig> =
@@ -142,14 +116,12 @@ export type InferSpacingKeys = SpacingKey;
 // ---- DesignTokens result types ----
 
 /**
- * One token-key array per built-in category, named by the descriptor's
- * `tokenName` (`variantColor`, `roundedOption`, …).
+ * One token-key array per built-in category, named by the category key
+ * (`colors`, `typography`, `borderRadius`, …) — the same names as the
+ * `ThemeConfig` fields.
  */
 type CategoryTokenArrays<TTheme extends ThemeConfig> = {
-  [C in BuiltInCategory as C["tokenName"]]: CategoryTokenKey<
-    TTheme,
-    C["key"]
-  >[];
+  [C in BuiltInCategory as C["key"]]: CategoryTokenKey<TTheme, C["key"]>[];
 };
 
 export interface DesignTokensWeb<

@@ -22,9 +22,9 @@ import { compileFixtureCss } from "../src/__integration__/compileFixtureCss";
  *
  * `--color-primary` (the `@theme inline` mapped var) is NOT asserted here:
  * Tailwind v4 inlines `@theme inline` values directly into each utility
- * declaration (`.bg-primary { background-color: var(--sg-primary); }`)
+ * declaration (`.bg-primary { background-color: var(--sg-color-primary); }`)
  * instead of emitting `--color-primary` as a real custom property, so it
- * never exists at runtime for `getComputedStyle` to read. `--sg-primary`
+ * never exists at runtime for `getComputedStyle` to read. `--sg-color-primary`
  * is the meaningful, actually-declared property.
  */
 test.describe("themeAxes precedence — two axes overriding the same token", () => {
@@ -57,7 +57,7 @@ test.describe("themeAxes precedence — two axes overriding the same token", () 
 
     return page.evaluate(() =>
       getComputedStyle(document.documentElement)
-        .getPropertyValue("--sg-primary")
+        .getPropertyValue("--sg-color-primary")
         .trim(),
     );
   };
@@ -110,7 +110,7 @@ test.describe("themeAxes precedence — hand-written compound override beats sin
     "palettes.css",
   );
 
-  test("dark×forest: --sg-primary matches the hand-written compound block (#7dba9e)", async ({
+  test("dark×forest: --sg-color-primary matches the hand-written compound block (#7dba9e)", async ({
     page,
   }) => {
     const theme = ThemeSchema.parse(
@@ -131,7 +131,7 @@ test.describe("themeAxes precedence — hand-written compound override beats sin
 
     const value = await page.evaluate(() =>
       getComputedStyle(document.documentElement)
-        .getPropertyValue("--sg-primary")
+        .getPropertyValue("--sg-color-primary")
         .trim(),
     );
 

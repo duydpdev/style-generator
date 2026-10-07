@@ -44,9 +44,9 @@ const formatCssBlock = (
 
 /**
  * Map intermediate `--sg-*` vars to Tailwind v4 `\@theme` namespace vars.
- * Each category is flattened from its OWN theme data: prefix-matching a
- * merged var map would misroute vars, because the colors prefix `--sg-` is
- * also a prefix of `--sg-shadow-*`, `--sg-radius-*` and `--sg-backdrop-blur-*`.
+ * Each category is flattened from its OWN theme data: every category owns a
+ * distinct `--sg-<category>-` prefix (`--sg-color-`, `--sg-shadow-`, …), so
+ * its vars are sliced by that prefix.
  * @param {ThemeConfig} config - Theme configuration (base theme only)
  * @returns {Record<string, string>} Tailwind v4 theme mapping
  */

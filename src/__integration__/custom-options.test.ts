@@ -64,9 +64,7 @@ describe("integration: non-default options through the real Tailwind engine (X-1
     const { root, tokens } = await compileRoot(
       {
         spacing: {
-          properties: {
-            inset: { top: "var(--sg-sp-inset)", bottom: "var(--sg-sp-inset)" },
-          },
+          properties: { inset: ["top", "bottom"] },
         },
       },
       ["sp-inset", "sp-p"],

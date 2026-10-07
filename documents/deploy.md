@@ -49,7 +49,7 @@ Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có t
 
 ### `ci.yml` — PR Check
 
-**Trigger:** Pull Request vào `main` hoặc `develop`
+**Trigger:** Pull Request vào `main`, `develop` hoặc nhánh tích hợp `release/**` (ví dụ `release/5.0` của chuyến 5.0: PR từ nhánh làm việc vào `release/5.0` và PR `release/5.0` → `develop` đều có CI). `release.yml` thì **không** chạy trên `release/**`: release chỉ phát hành từ `main`/`develop`.
 
 **Các job** (Node 22, trừ `node-floor`):
 
@@ -65,7 +65,7 @@ Browser Playwright **không** được cache, và đây là quyết định có 
 
 ### `pr-title.yml` — PR title lint
 
-**Trigger:** Pull Request vào `main` hoặc `develop`, `opened`, `edited`, `synchronize`, `reopened` (`edited` bắt cả lần chỉ sửa tiêu đề).
+**Trigger:** Pull Request vào `main`, `develop` hoặc `release/**`, `opened`, `edited`, `synchronize`, `reopened` (`edited` bắt cả lần chỉ sửa tiêu đề).
 
 Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR. Config này dùng lại `commitlint.config.ts` và chỉ tắt `defaultIgnores`, để tiêu đề `Revert "…"` (mặc định của GitHub khi revert PR) hay `Merge …` cũng fail. Range lint trong `ci.yml` vẫn dùng config chung vì ở đó có merge commit thật. Từ khi feature vào `develop` bằng merge commit, tiêu đề PR **không** còn quyết định release: dòng đầu của merge commit là `Merge pull request #N from …` (analyzer bỏ qua), tiêu đề PR chỉ nằm trong body. Check này giữ lại để tiêu đề PR dễ đọc và khớp với header của commit.
 

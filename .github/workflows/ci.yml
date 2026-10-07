@@ -2,7 +2,7 @@ name: CI Check
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, "release/**"]
 
 # Cancel any in-progress run for the same PR when new commits are pushed.
 concurrency:

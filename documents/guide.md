@@ -1,6 +1,6 @@
 # User Guide
 
-Hướng dẫn tích hợp `@duydpdev/style-generator` 4.0.0 vào dự án **Tailwind CSS v4**. Tra cứu đầy đủ (option, export, CLI) nằm ở [`README.md`](../README.md); đang nâng cấp từ 3.x thì đọc [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
+Hướng dẫn tích hợp `@duydpdev/style-generator` 5.0 vào dự án **Tailwind CSS v4**. Tra cứu đầy đủ (option, export, CLI) nằm ở [`README.md`](../README.md); đang nâng cấp từ 4.x thì đọc [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md), từ 3.x thì đọc [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
 
 ## Mục lục
 
@@ -81,16 +81,16 @@ Tạo `styles/theme.json` chứa toàn bộ design tokens. Chỉ `colors` là b�
 }
 ```
 
-| Field           | Sinh ra                                                            |
-| --------------- | ------------------------------------------------------------------ |
-| `colors`        | `bg-*`, `text-*`, `border-*` (bắt buộc)                            |
-| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)        |
-| `shadows`       | `shadow-*`                                                         |
-| `backDropBlurs` | `backdrop-blur-*`                                                  |
-| `borderRadius`  | `rounded-*` (+ biến thể `md:`/`lg:` theo breakpoint đang bật)      |
-| `fontFamily`    | `font-*` qua namespace `--font-*` của Tailwind                     |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l` (thay cho key `border` của bản 3.x) |
-| `themeAxes`     | override theo trục (xem [Multi-axis theming](#multi-axis-theming)) |
+| Field           | Sinh ra                                                                                                                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `colors`        | `bg-*`, `text-*`, `border-*` (bắt buộc)                                                                                            |
+| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)                                                                        |
+| `shadows`       | `shadow-*`                                                                                                                         |
+| `backDropBlurs` | `backdrop-blur-*`                                                                                                                  |
+| `borderRadius`  | `rounded-*` (+ biến thể `md:`/`lg:` theo breakpoint đang bật)                                                                      |
+| `fontFamily`    | `font-*` qua namespace `--font-*` của Tailwind                                                                                     |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` qua namespace `--border-width-*` của Tailwind (thay cho key `border` của bản 3.x) |
+| `themeAxes`     | override theo trục (xem [Multi-axis theming](#multi-axis-theming))                                                                 |
 
 ### Quy ước key
 
@@ -108,14 +108,15 @@ Key màu là **camelCase** (hoặc kebab-case); lib tự đổi sang kebab-case 
 - Giá trị không được chứa `;`, `{`, `}`, `<`, `@`, `\`, `/*` hay xuống dòng; dấu nháy phải cân, và ngoặc `(`/`[` ngoài chuỗi có nháy cũng phải cân (`rgb(0 0 0` bị từ chối tại path của nó).
 - Key typography phải kebab-case thành tên `@utility` hợp lệ (không bắt đầu bằng số hay dash): `heading1` → `.heading-1`.
 - Key `fontFamily` không được trùng tên độ đậm của Tailwind (`thin`, `light`, `normal`, `medium`, `bold`, `black`, …).
-- Hai key ở hai category khác nhau mà cho ra cùng một biến CSS bị từ chối (`colors.shadowPrimary` và `shadows.primary` đều thành `--sg-shadow-primary`; lỗi báo ở key khai báo sau và nêu tên cả hai). Namespace `--sg-sp-*` dành riêng cho spacing: key màu như `spP` (thành `--sg-sp-p`) bị từ chối.
+- Mỗi category sở hữu một namespace biến `--sg-<category>-` riêng (`--sg-color-*`, `--sg-shadow-*`, `--sg-sp-*`, …) nên key ở hai category khác nhau không bao giờ trùng biến (`colors.shadowPrimary` → `--sg-color-shadow-primary`, `shadows.primary` → `--sg-shadow-primary`).
+- Key `typography` không được kebab-case thành `sp-*` hoặc `font-*` (sẽ che utility spacing và font); `fontWeight` phải là số từ 1 đến 1000 (số thập phân hợp lệ cho variable font).
 - Key có chuỗi chữ hoa mở đầu từ hai ký tự trở lên (`CTA`, `ABtn`, `HTMLParser`) bị từ chối kèm gợi ý đổi tên (`cta`): class do typed token sinh ra (`c-ta`) khác class trong CSS (`cta`). Một chữ hoa đơn (`Blue`) hoặc chuỗi hoa ở giữa (`primaryCTA`) vẫn hợp lệ.
 - Key `borderWidth` không được kebab-case trùng một key `colors` (cả hai cùng sinh class `border-<key>`).
 - Bảng tóm tắt mọi quy tắc đặt tên, kèm ví dụ bị từ chối và hợp lệ: [Key rules trong README](../README.md#key-rules).
 
 ### Alias `$key`
 
-Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phát thành `var(--<cssVarPrefix>-<kebab-key>)`, nên không phải lặp mã hex. Prefix thuộc về category (`sg` cho `colors`, `sg-shadow` cho `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`), nên alias `"$base"` trong `shadows` thành `var(--sg-shadow-base)` chứ không phải `var(--sg-base)`:
+Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phát thành `var(--<cssVarPrefix>-<kebab-key>)`, nên không phải lặp mã hex. Prefix thuộc về category (`sg-color` cho `colors`, `sg-shadow` cho `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`), nên alias `"$base"` trong `shadows` thành `var(--sg-shadow-base)` chứ không phải `var(--sg-base)`:
 
 ```json
 {
@@ -197,7 +198,7 @@ Chạy được với webpack lẫn Turbopack, không import `next` nên không 
 yarn style-gen init                 # scaffold theme + theme.schema.json + script generate() + style-gen.config.json
 yarn style-gen generate             # ghi styles/theme.css
 yarn style-gen generate --watch     # sinh lại khi lưu
-yarn style-gen doctor               # kiểm tra cấu hình, schema và cảnh báo va chạm utility
+yarn style-gen doctor               # kiểm tra cấu hình, schema; cảnh báo va chạm utility và biến --sg-<màu> kiểu 4.x còn sót (quét file nguồn dưới thư mục hiện tại)
 ```
 
 Không chạy CLI qua `npx`: tên `style-gen` chưa có ai giữ trên npm public nên `npx` có thể tải nhầm package lạ. Dùng npm thì chạy `npm exec --no -- style-gen`.
@@ -262,7 +263,7 @@ generate(theme, {
 
 ### Class bị trùng utility có sẵn của Tailwind
 
-Key có class trùng utility của Tailwind (`none` trong `colors`/`shadows`/`borderRadius`, `borderWidth` toàn số, key typography thành `text-sm`, `h-1` (từ `h1`), `italic`…, màu `transparent`/`current`/`inherit`) không bị schema từ chối, nhưng rule nào thắng do Tailwind quyết định. Đặt tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các va chạm nó nhận ra được (chỉ là cảnh báo).
+Key có class trùng utility của Tailwind (`none` trong `colors`/`shadows`/`borderRadius`, key typography thành `text-sm`, `h-1` (từ `h1`), `italic`…, màu `transparent`/`current`/`inherit`) không bị schema từ chối, nhưng rule nào thắng do Tailwind quyết định. Đặt tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các va chạm nó nhận ra được (chỉ là cảnh báo). Riêng `borderWidth` toàn số (`2`) không phải va chạm mơ hồ: từ 5.0 giá trị theme thay thế `border-2`, `border-x-2`, `divide-x-2` có sẵn của Tailwind (Tailwind tra theme trước thang mặc định); `doctor` vẫn báo để bạn xác nhận đó là chủ ý.
 
 ---
 
@@ -322,7 +323,7 @@ Quy tắc cần nhớ:
 - **Key override phải có ở base** — key chỉ có ở override không tạo utility nên bị từ chối lúc parse.
 - **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay; bảng phạm vi ở `examples/nuxt-v4/README.md`.
 
-`--sg-*` là lớp biến trung gian để tránh vòng tham chiếu khi đổi theme. Trong code ứng dụng, ưu tiên class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`. Các biến lib phát ra (`--sg-<màu>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là output công khai của 4.x: alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; tên được giữ nguyên suốt 4.x. Bản 5.0 đổi tên biến màu thành `--sg-color-<key>` và sẽ ghi đó là breaking change.
+`--sg-*` là lớp biến trung gian để tránh vòng tham chiếu khi đổi theme. Trong code ứng dụng, ưu tiên class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`. Các biến lib phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là output công khai: alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; đổi tên là breaking change. Bản 5.0 đã đổi biến màu từ `--sg-<màu>` thành `--sg-color-<key>`; `style-gen doctor` cảnh báo `file:line` cho mọi `var(--sg-<colorKey>)` hoặc khai báo `--sg-<colorKey>:` còn sót (xem [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)).
 
 ---
 
@@ -391,7 +392,7 @@ const Box = ({
 - **Quy tắc cùng phần tử:** biến `--sg-sp-*` được đăng ký với `inherits: false`, nên class `sp-*` chỉ đọc biến khai báo trên chính phần tử đó; giá trị của phần tử cha không rò xuống con.
 - Prop hợp lệ là `SpacingKey`: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`. `resolveSpacing(prop, value, unit?)` xử lý một prop; `unit` mặc định `0.25` rem.
 - Chỉ breakpoint trong `options.breakpoints` (mặc định `["md", "lg"]`) mới có chuỗi fallback. Kiểu mặc định cũng chỉ nhận `md`/`lg` (`DefaultBreakpointKeys`); khi đặt `options.breakpoints` khác, truyền cùng các key đó làm tham số kiểu: `resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`.
-- Tắt bằng `spacing: { enabled: false }`; tuỳ chỉnh bằng `spacing: { properties: { … } }` (map prop → khai báo CSS).
+- Tắt bằng `spacing: { enabled: false }`; tuỳ chỉnh bằng `spacing: { properties: { inset: ["top", "bottom"] } }` (key spacing → danh sách thuộc tính CSS nó set; giá trị luôn là `var(--sg-sp-<key>)` nên không cần khai báo).
 - `generate()` kiểm tra mọi option bằng một schema strict và ném `ZodError` kèm path: key lạ bị từ chối (kể cả trong `spacing` và `typography`); `enableResponsive`, `spacing.enabled`, `typography.cssVarDriven` phải là boolean; phần tử `breakpoints`, key của `screens` và `spacing.properties` theo ngữ pháp key của theme (chữ, số, `-`); mỗi giá trị `screens` phải là một độ dài px/rem/em, và bản đồ sau khi gộp với `defaultScreens` (px) chỉ được dùng một đơn vị (lỗi báo ở `screens`); mỗi phần tử `breakpoints` phải là tên một screen trong `defaultScreens` hoặc `screens` (lỗi báo ở `breakpoints.<i>`); tên thuộc tính CSS trong `spacing.properties` phải viết thường (`padding`, `column-gap`, `--custom`).
 
 ---
@@ -413,10 +414,10 @@ const { DesignTokens } = createDesignTokens(theme, {
 // createVariantMapper luôn kebab-case cùng hàm với registry, nên mọi class trả ra đều tồn tại
 const button = cva("base-class", {
   variants: {
-    color: createVariantMapper("bg", DesignTokens.Web.variantColor),
+    color: createVariantMapper("bg", DesignTokens.Web.colors),
     // { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }
 
-    text: createVariantMapper("", DesignTokens.Web.variantText),
+    text: createVariantMapper("", DesignTokens.Web.typography),
     // { text16Medium: "text-16-medium", … }   ("" = class trần, dùng cho typography)
   },
 });
@@ -424,18 +425,20 @@ const button = cva("base-class", {
 
 **Tokens trong `DesignTokens.Web`:**
 
-| Token                 | Mô tả                                                                         |
-| --------------------- | ----------------------------------------------------------------------------- |
-| `variantColor`        | Tất cả key màu (flat, camelCase)                                              |
-| `variantText`         | Key của `typography`                                                          |
-| `variantShadow`       | Key của `shadows`                                                             |
-| `variantBackdropBlur` | Key của `backDropBlurs`                                                       |
-| `variantFontFamily`   | Key của `fontFamily`                                                          |
-| `borderWidthOption`   | Key của `borderWidth` (mặc định `0, 1, 2, 4` khi vắng hoặc `{}`)              |
-| `roundedOption`       | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES` khi vắng hoặc `{}`) |
-| `spacingProperties`   | Danh sách spacing props                                                       |
-| `breakpoints`         | Breakpoint đang dùng — mặc định `["md", "lg"]`                                |
-| `screens`             | Bản đồ breakpoint → độ rộng                                                   |
+| Token               | Mô tả                                                                         |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `colors`            | Tất cả key màu (flat, camelCase)                                              |
+| `typography`        | Key của `typography`                                                          |
+| `shadows`           | Key của `shadows`                                                             |
+| `backDropBlurs`     | Key của `backDropBlurs`                                                       |
+| `fontFamily`        | Key của `fontFamily`                                                          |
+| `borderWidth`       | Key của `borderWidth` (mặc định `0, 1, 2, 4` khi vắng hoặc `{}`)              |
+| `borderRadius`      | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES` khi vắng hoặc `{}`) |
+| `spacingProperties` | Danh sách spacing props                                                       |
+| `breakpoints`       | Breakpoint đang dùng — mặc định `["md", "lg"]`                                |
+| `screens`           | Bản đồ breakpoint → độ rộng                                                   |
+
+Tên mỗi mảng trùng với field `ThemeConfig` tương ứng (`DesignTokens.Web.colors` chứa key của `theme.colors`); `spacingProperties`, `breakpoints`, `screens` lấy từ options.
 
 ### Class trạng thái
 
@@ -456,7 +459,7 @@ const bg = createVariantMapper(
 // primaryHover: "bg-primary-hover", primaryActive: "bg-primary-active", danger: "bg-danger"
 ```
 
-Luôn truyền `COLOR_STATES` thay vì gõ tay `["hover", "active"]` — đó là danh sách mà các dòng `@source inline` cũng dùng. Truyền key camelCase như `DesignTokens.Web.variantColor` cung cấp (`primaryHover`, không phải `primary-hover`).
+Luôn truyền `COLOR_STATES` thay vì gõ tay `["hover", "active"]` — đó là danh sách mà các dòng `@source inline` cũng dùng. Truyền key camelCase như `DesignTokens.Web.colors` cung cấp (`primaryHover`, không phải `primary-hover`).
 
 ---
 
@@ -520,6 +523,7 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 
 ## Nâng cấp từ bản cũ
 
+- **4.x → 5.0.0** (breaking: `--sg-color-*`, `borderWidth` qua `@theme`, `spacing.properties` dạng mảng, key `DesignTokens.Web` đổi tên, typography chặt hơn): [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
 - **3.x → 4.0.0** (breaking: chỉ Tailwind v4, `generate()` thay plugin + safelist, schema strict, `themeAxes`, `borderWidth`, `--sg-sp-*`): [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), gồm bảng trước/sau và runbook rollback.
 - Đợt subpath exports của 3.x (lịch sử, còn yêu cầu về `moduleResolution`): [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md).
 - Key `themes` một trục đã đổi tên thành `themeAxes`; theme còn dùng tên cũ bị từ chối kèm thông báo hướng dẫn đổi tên (nguyên văn trong guide migration).

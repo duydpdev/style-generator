@@ -8,7 +8,8 @@
  * hard-coding per-category branches.
  *
  * Token data is read with `theme[descriptor.key]` (`key` is the
- * `ThemeConfig` field name), so a descriptor carries no accessor of its own.
+ * `ThemeConfig` field name), so a descriptor carries no accessor of its own;
+ * `DesignTokens.Web` names this category's typed token array by the same `key`.
  * @template K Literal union of valid category keys, kept for call-site type
  * narrowing (`builtInCategories` is `as const satisfies` this interface).
  */
@@ -16,19 +17,17 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   /** Stable identifier for the category (matches the `ThemeConfig` key). */
   key: K;
   /**
-   * Field name of this category's typed token array in
-   * `DesignTokens.Web` (e.g. `"variantColor"`).
-   */
-  tokenName: string;
-  /**
    * Name of this category's key-union alias in `DesignTokenKeys`
    * (e.g. `"colorKey"`).
    */
   tokenKeyName: string;
   /**
    * Bare intermediate CSS variable prefix (no leading/trailing dash), e.g.
-   * `"sg"` for colors or `"sg-shadow"` for shadows. Combined with a
-   * kebab-cased token key to produce `--<cssVarPrefix>-<key>`.
+   * `"sg-color"` for colors or `"sg-shadow"` for shadows. Combined with a
+   * kebab-cased token key to produce `--<cssVarPrefix>-<key>`. Every
+   * built-in prefix starts a distinct `--sg-<category>-` namespace (none is
+   * a prefix of another, nor of the spacing `--sg-sp-`), so two categories
+   * can never produce the same variable.
    * `undefined` when the category has no CSS variable representation.
    */
   cssVarPrefix?: string;
@@ -39,9 +38,9 @@ export interface TokenCategoryDescriptor<K extends string = string> {
    * `${themeNamespace}<key>: var(--<cssVarPrefix>-<key>)` inside
    * `@theme inline`, letting Tailwind auto-generate the matching
    * utilities. Omitted for categories the library emits its own
-   * `@utility` rules for (typography, border width — Tailwind v4 has no
-   * theme namespace for border width) or that have no CSS variable at
-   * all.
+   * `@utility` rules for (typography) or that have no CSS variable at all.
+   * `--border-width-` (border width) is an undocumented Tailwind
+   * namespace, pinned by the real-engine integration test.
    */
   themeNamespace?: string;
   /**

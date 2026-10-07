@@ -57,9 +57,9 @@ describe("integration: themeAxes — multiple simultaneous axes (ported nuxt-v4 
     const { css } = generate(theme);
     const compiled = await compileFixtureCss(css, []);
 
-    expect(compiled).toMatch(/--sg-primary:\s*#8FA6FF/i); // themeAxes.theme.dark
-    expect(compiled).toMatch(/--sg-primary:\s*#2f5f47/i); // themeAxes.palette.forest
-    expect(compiled).toMatch(/--sg-primary:\s*#b23a1b/i); // themeAxes.palette.sunset
-    expect(compiled).toMatch(/--sg-primary:\s*#0a0a0a/i); // themeAxes.palette.mono
+    expect(compiled).toMatch(/--sg-color-primary:\s*#8FA6FF/i); // themeAxes.theme.dark
+    expect(compiled).toMatch(/--sg-color-primary:\s*#2f5f47/i); // themeAxes.palette.forest
+    expect(compiled).toMatch(/--sg-color-primary:\s*#b23a1b/i); // themeAxes.palette.sunset
+    expect(compiled).toMatch(/--sg-color-primary:\s*#0a0a0a/i); // themeAxes.palette.mono
   });
 });

@@ -35,20 +35,20 @@ export const THEME_JSON = `{
 export const THEME_CSS = `${ELISION}
 
 :root {
-  --sg-primary: #2647D9;
-  --sg-background: #FAF7F2;
-  --sg-foreground: #0F1530;
+  --sg-color-primary: #2647D9;
+  --sg-color-background: #FAF7F2;
+  --sg-color-foreground: #0F1530;
 }
 
 html[data-theme="dark"] {
-  --sg-primary: #8FA6FF;
-  --sg-background: #0B0E1D;
+  --sg-color-primary: #8FA6FF;
+  --sg-color-background: #0B0E1D;
 }
 
 @theme inline {
-  --color-primary: var(--sg-primary);
-  --color-background: var(--sg-background);
-  --color-foreground: var(--sg-foreground);
+  --color-primary: var(--sg-color-primary);
+  --color-background: var(--sg-color-background);
+  --color-foreground: var(--sg-color-foreground);
 }
 
 @utility body {

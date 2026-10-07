@@ -157,7 +157,7 @@ describe("styleGenVite plugin", () => {
 
     const cssPath = join(tmp, "src/theme/theme.css");
     expect(existsSync(cssPath)).toBe(true);
-    expect(readFileSync(cssPath, "utf8")).toMatch(/--sg-primary/);
+    expect(readFileSync(cssPath, "utf8")).toMatch(/--sg-color-primary/);
     expect(readFileSync(cssPath, "utf8")).toMatch(/@utility body \{/);
     expect(logger.info).toHaveBeenCalledOnce();
   });

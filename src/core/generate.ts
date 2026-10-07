@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { generateSourceInline } from "../features/registry/generateSourceInline";
 import { generateSpacingCss } from "../features/spacing/generateSpacingCss";
-import { generateBorderWidthCss } from "../features/theme-css/generateBorderWidthCss";
 import { generateScreensCss } from "../features/theme-css/generateScreensCss";
 import { buildThemeCss } from "../features/theme-css/generateThemeCss";
 import { buildDesignTokens } from "../features/tokens/createDesignTokens";
@@ -57,7 +56,6 @@ export const generate = <TTheme extends ThemeConfig>(
   const css = [
     generateScreensCss(resolved),
     buildThemeCss(parsed),
-    generateBorderWidthCss(parsed),
     generateTypographyCss(parsed.typography, resolved),
     generateSpacingCss(resolved),
     generateSourceInline(parsed, resolved),

@@ -14,6 +14,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 // Keep in sync with the `import.meta.glob` patterns in `src/lib/docs-content.ts`.
 const DOC_FILES = [
   "README.md",
+  "documents/migration/4.x-to-5.0.md",
   "documents/migration/3.x-to-4.0.md",
   ...readdirSync(resolve(repoRoot, "documents"))
     .filter((name) => name.endsWith(".md") && name !== "README.md")

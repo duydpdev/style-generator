@@ -319,6 +319,63 @@ describe("doctorCommand", () => {
     });
   });
 
+  describe("legacy --sg-<color> variable warnings", () => {
+    const writeBase = (): void => {
+      writeProject(tmp, {
+        "style-gen.config.json": {
+          theme: "styles/theme.json",
+          plugin: "plugins/theme-plugin.ts",
+          output: "styles/theme.css",
+        },
+        "styles/theme.json": { colors: { primary: "#3B82F6" } },
+        "plugins/theme-plugin.ts": "// stub",
+      });
+    };
+
+    it("prints a file:line warning per leftover reference/declaration, skips the output file, exit code unchanged", () => {
+      writeBase();
+      writeProject(tmp, {
+        "src/a.css": [
+          ".a { color: var(--sg-primary); }",
+          "ok { color: var(--sg-color-primary); }",
+          'html[data-palette="x"] {',
+          "  --sg-primary: #111;",
+          "}",
+        ].join("\n"),
+        // The generated file legitimately mentions its own variables.
+        "styles/theme.css": ":root { --sg-primary: #000; }",
+      });
+
+      expect(() => {
+        doctorCommand();
+      }).not.toThrow();
+
+      const out = lines();
+      expect(out).toContain(
+        "Theme   ⚠️  src/a.css:1: --sg-primary was renamed to --sg-color-primary in 5.0",
+      );
+      expect(out).toContain(
+        "Theme   ⚠️  src/a.css:4: --sg-primary was renamed to --sg-color-primary in 5.0",
+      );
+      expect(out.match(/was renamed to/g)).toHaveLength(2);
+      expect(out).not.toContain("styles/theme.css:");
+      expect(exitSpy).not.toHaveBeenCalled();
+    });
+
+    it("stays silent for a migrated project", () => {
+      writeBase();
+      writeProject(tmp, {
+        "src/a.css": "html[data-x] { --sg-color-primary: #111; }",
+        "styles/theme.css": "x",
+      });
+
+      doctorCommand();
+
+      expect(lines()).not.toContain("was renamed to");
+      expect(exitSpy).not.toHaveBeenCalled();
+    });
+  });
+
   it.each([
     [{ breakpoints: "md" }, /breakpoints → /],
     [{ breakpoints: ["tablet"] }, /breakpoints\.0 → /],

@@ -4,12 +4,14 @@ TypeScript library + CLI that turns a theme JSON into a complete **design system
 
 Published on **GitHub Packages** as `@duydpdev/style-generator` (private — requires access, see Installation).
 
+> **Upgrading from 4.x?** 5.0.0 is a breaking release (color variables `--sg-<color>` → `--sg-color-<color>`, `@theme`-driven `borderWidth`, array-form `spacing.properties`, `DesignTokens.Web` keys renamed to the theme keys, stricter typography). Read [`documents/migration/4.x-to-5.0.md`](./documents/migration/4.x-to-5.0.md).
+>
 > **Upgrading from 3.x?** 4.0.0 is a breaking release (Tailwind v4 only, `generate()` instead of a plugin + safelist, strict theme schema, `themeAxes`). Read [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md).
 
 ## Features
 
 - 🎨 **Flat theme config** — every color in one camelCase namespace, validated by a strict Zod schema (unknown keys and unsafe values are errors).
-- 🔗 **Aliases** — `"primary": "$blue500"` emits `var(--sg-blue-500)`; no duplicated hex values.
+- 🔗 **Aliases** — `"primary": "$blue500"` emits `var(--sg-color-blue-500)`; no duplicated hex values.
 - 🌗 **Multi-axis theming** — `themeAxes` generates `html[data-theme="dark"]`, `html[data-palette="forest"]`, … that can be toggled independently.
 - ⚡ **One call, one file** — `generate(theme)` returns the CSS you `@import` next to `@import "tailwindcss"`; no `@plugin`, no safelist file.
 - 🚀 **CSS-variable spacing** — `.sp-*` utilities with `var()` fallback chains instead of thousands of safelisted classes.
@@ -217,6 +219,8 @@ yarn style-gen schema --out styles/theme.schema.json
 
 Check the setup: config file (a malformed `style-gen.config.json` or `package.json["style-gen"]` is an error — `generate` warns and uses the defaults — and so is a schema-invalid one: config keys and option values are validated with the same schema as `generate()`, so both commands give the same verdict, and `doctor` prints `Config (<file>) ❌ Invalid` followed by the issues), JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), the generator script when `plugin` is configured, and the output file. A `styleGenVite`/`styleGenNext` or CLI-only setup needs no `plugin` entry. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, or typography keys such as `textSm`, `h1` → `h-1`, `italic`).
 
+It also scans the source files under the current directory (`.css`, `.scss`, `.ts`, `.tsx`, `.vue`, `.svelte`, `.astro`, `.html`, …) and warns `file:line` about leftover pre-5.0 color variables; build folders, `node_modules`, the config `output` file and files over 1 MiB are skipped.
+
 ```bash
 yarn style-gen doctor
 ```
@@ -266,37 +270,37 @@ const { css } = generate({
 
 ### Key grammar
 
-Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Two keys in different categories that produce the same CSS variable (`colors.shadowPrimary` and `shadows.primary` both give `--sg-shadow-primary`) are rejected, and color keys may not produce a `--sg-sp-*` variable (that namespace is reserved for spacing, for example `spP`). Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, quotes must be balanced, and so must parentheses and brackets (`rgb(0 0 0` is rejected at its path).
+Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Each category owns a distinct `--sg-<category>-` variable namespace (`--sg-color-*`, `--sg-shadow-*`, `--sg-sp-*`, …), so keys in different categories never collide (`colors.shadowPrimary` → `--sg-color-shadow-primary`, `shadows.primary` → `--sg-shadow-primary`). A `typography` key may not kebab-case to `sp-*` or `font-*`, and `fontWeight` must be a number from 1 to 1000. Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, quotes must be balanced, and so must parentheses and brackets (`rgb(0 0 0` is rejected at its path).
 
 ### Key rules
 
 Everything the schema rejects about a name, in one place (every rule is reported as `path → message`):
 
-| Rule                                                                                                                                                                             | Applies to                                   | Rejected                                                            | Accepted                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------ |
-| Start with a letter or digit, then only letters, digits or `-`                                                                                                                   | every token, axis and variant name           | `-primary`, `my color`                                              | `primary`, `2xl`, `primary-active`   |
-| `_` is never allowed                                                                                                                                                             | every token, axis and variant name           | `primary_active`                                                    | `primaryActive`, `primary-active`    |
-| No leading run of two or more uppercase letters: the class the typed tokens produce (`cTA` → `c-ta`) would differ from the class the CSS emits (`cta`). A single capital is fine | every token, axis and variant name           | `CTA`, `ABtn`, `HTMLParser` (rename to `cta`, `abtn`, `htmlparser`) | `Blue`, `primaryCTA`, `primaryFG`    |
-| Keys of one record that kebab-case to the same name                                                                                                                              | each category and `typography`               | `blue500` + `blue-500`                                              | `blue500` + `blue600`                |
-| A `typography` key must kebab-case to a valid Tailwind `@utility` name: lowercase letter first, so no leading digit or dash                                                      | `typography`                                 | `2xl`, `12Mono`                                                     | `text2xl`, `heading1`                |
-| `fontFamily` keys may not kebab-case to a Tailwind font-weight name (`thin`, `extralight`, `light`, `normal`, `medium`, `semibold`, `bold`, `extrabold`, `black`)                | `fontFamily` (also in `themeAxes` overrides) | `bold`, `extrabold`                                                 | `sans`, `display`                    |
-| A `borderWidth` key may not kebab-case to a `colors` key (both emit `border-<key>`)                                                                                              | `borderWidth` vs `colors`, per scope         | `colors.thinLine` + `borderWidth.thin-line`                         | `colors.line` + `borderWidth.thin`   |
-| Two categories may not produce the same CSS variable, and `--sg-sp-*` is reserved for spacing                                                                                    | across categories                            | `colors.shadowPrimary` + `shadows.primary`, `colors.spP`            | `colors.primary` + `shadows.primary` |
-| Axis and variant names may not be canonical integers                                                                                                                             | `themeAxes`                                  | `100`, `2024`                                                       | `contrast100`, `007`                 |
+| Rule                                                                                                                                                                             | Applies to                                   | Rejected                                                            | Accepted                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------- |
+| Start with a letter or digit, then only letters, digits or `-`                                                                                                                   | every token, axis and variant name           | `-primary`, `my color`                                              | `primary`, `2xl`, `primary-active` |
+| `_` is never allowed                                                                                                                                                             | every token, axis and variant name           | `primary_active`                                                    | `primaryActive`, `primary-active`  |
+| No leading run of two or more uppercase letters: the class the typed tokens produce (`cTA` → `c-ta`) would differ from the class the CSS emits (`cta`). A single capital is fine | every token, axis and variant name           | `CTA`, `ABtn`, `HTMLParser` (rename to `cta`, `abtn`, `htmlparser`) | `Blue`, `primaryCTA`, `primaryFG`  |
+| Keys of one record that kebab-case to the same name                                                                                                                              | each category and `typography`               | `blue500` + `blue-500`                                              | `blue500` + `blue600`              |
+| A `typography` key must kebab-case to a valid Tailwind `@utility` name: lowercase letter first, so no leading digit or dash                                                      | `typography`                                 | `2xl`, `12Mono`                                                     | `text2xl`, `heading1`              |
+| `fontFamily` keys may not kebab-case to a Tailwind font-weight name (`thin`, `extralight`, `light`, `normal`, `medium`, `semibold`, `bold`, `extrabold`, `black`)                | `fontFamily` (also in `themeAxes` overrides) | `bold`, `extrabold`                                                 | `sans`, `display`                  |
+| A `borderWidth` key may not kebab-case to a `colors` key (both emit `border-<key>`)                                                                                              | `borderWidth` vs `colors`, per scope         | `colors.thinLine` + `borderWidth.thin-line`                         | `colors.line` + `borderWidth.thin` |
+| A `typography` key may not kebab-case to `sp-*` or `font-*` (it would shadow the spacing and font utilities)                                                                     | `typography`                                 | `spBody`, `sp-body`, `fontBold`                                     | `body`, `spacious`                 |
+| Axis and variant names may not be canonical integers                                                                                                                             | `themeAxes`                                  | `100`, `2024`                                                       | `contrast100`, `007`               |
 
 The CLI, `styleGenVite` and `styleGenNext` print the rename hint on the offending path (for example `colors.CTA → Key "CTA" yields class "cta" in the CSS but "c-ta" through the typed tokens; rename it to "cta" …`).
 
 ### Categories
 
-| Theme key       | Generates                                                                | Notes                                                                                                                                                                  |
-| --------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `colors`        | `bg-*`, `text-*`, `border-*` via `@theme inline` (`--color-*`)           | Required. Flat, camelCase.                                                                                                                                             |
-| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)              | Entry: `fontSize`, `lineHeight`, `fontWeight` (number), optional `letterSpacing`/`fontFamily`/`fontStyle`; an absent `letterSpacing` emits no declaration. No aliases. |
-| `shadows`       | `shadow-*`                                                               |                                                                                                                                                                        |
-| `backDropBlurs` | `backdrop-blur-*`                                                        |                                                                                                                                                                        |
-| `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)          | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                                                                |
-| `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                             | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                                                                      |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l` utilities backed by `--sg-border-width-*` | Falls back to Tailwind's own `0/1/2/4` scale when omitted or empty (`{}`). Replaces the 3.x `border` key.                                                              |
+| Theme key       | Generates                                                                                                                      | Notes                                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `colors`        | `bg-*`, `text-*`, `border-*` via `@theme inline` (`--color-*`)                                                                 | Required. Flat, camelCase.                                                                                                                                                     |
+| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)                                                                    | Entry: `fontSize`, `lineHeight`, `fontWeight` (number, 1–1000), optional `letterSpacing`/`fontFamily`/`fontStyle`; an absent `letterSpacing` emits no declaration. No aliases. |
+| `shadows`       | `shadow-*`                                                                                                                     |                                                                                                                                                                                |
+| `backDropBlurs` | `backdrop-blur-*`                                                                                                              |                                                                                                                                                                                |
+| `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)                                                                | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                                                                        |
+| `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                                                                                   | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                                                                              |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` via Tailwind's `--border-width-*` namespace (backed by `--sg-border-width-*`) | Falls back to Tailwind's own `0/1/2/4` scale when omitted or empty (`{}`). Replaces the 3.x `border` key.                                                                      |
 
 ### Colors — camelCase keys
 
@@ -313,7 +317,7 @@ Keys use **camelCase** (or kebab-case); the library converts them to kebab-case 
 
 ### Aliases (`$key`)
 
-A value `"$<key>"` refers to another key **in the same category** and is emitted as `var(--<cssVarPrefix>-<kebab-key>)`, where the prefix belongs to the category (`sg` for `colors`, `sg-shadow` for `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`), not always `--sg-<key>`:
+A value `"$<key>"` refers to another key **in the same category** and is emitted as `var(--<cssVarPrefix>-<kebab-key>)`, where the prefix belongs to the category (`sg-color` for `colors`, `sg-shadow` for `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`):
 
 ```json
 {
@@ -326,8 +330,8 @@ The target is the raw key (`$blue500`, not `$blue-500`), it must exist, and the 
 
 ```css
 :root {
-  --sg-blue-500: #3b82f6;
-  --sg-primary: var(--sg-blue-500);
+  --sg-color-blue-500: #3b82f6;
+  --sg-color-primary: var(--sg-color-blue-500);
   --sg-shadow-base: 0 1px 2px rgb(0 0 0 / 0.1);
   --sg-shadow-card: var(--sg-shadow-base);
 }
@@ -385,10 +389,10 @@ Declare flat sibling keys next to a color and the registry emits the state utili
 Generated selectors (after `:root`, in declaration order):
 
 ```css
-:root { --sg-primary: #3B82F6; … }
-html[data-theme="dark"] { --sg-primary: #60A5FA; … }
-html[data-palette="forest"] { --sg-primary: #16A34A; }
-html[data-palette="high-contrast"] { --sg-primary: #000000; }
+:root { --sg-color-primary: #3B82F6; … }
+html[data-theme="dark"] { --sg-color-primary: #60A5FA; … }
+html[data-palette="forest"] { --sg-color-primary: #16A34A; }
+html[data-palette="high-contrast"] { --sg-color-primary: #000000; }
 ```
 
 ```html
@@ -427,13 +431,13 @@ The old single-axis key was renamed; a theme still using it is rejected with a m
 
 /* With it: theme switching works */
 :root {
-  --sg-primary: #3b82f6;
+  --sg-color-primary: #3b82f6;
 }
 html[data-theme="dark"] {
-  --sg-primary: #60a5fa;
+  --sg-color-primary: #60a5fa;
 }
 @theme inline {
-  --color-primary: var(--sg-primary);
+  --color-primary: var(--sg-color-primary);
 }
 ```
 
@@ -449,11 +453,11 @@ Prefer standard Tailwind classes and the `--color-*` variables in application co
 }
 ```
 
-**Public contract.** The variables the generator emits (`--sg-<color>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, and the inline `--sg-sp-*` spacing variables) are part of the public output in 4.x: aliases resolve to them, and hand-written CSS may read or override them. Throughout 4.x they keep their names. The 5.0 major renames the color variables to `--sg-color-<key>` and will list that rename as a breaking change; existing `var(--sg-<color>)` references will need to be updated then.
+**Public contract.** The variables the generator emits (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, and the inline `--sg-sp-*` spacing variables) are part of the public output: aliases resolve to them, and hand-written CSS may read or override them. Renaming one is a breaking change — 5.0 renamed the color variables from `--sg-<color>` to `--sg-color-<key>`. `style-gen doctor` warns (`file:line`) about leftover `var(--sg-<colorKey>)` references or `--sg-<colorKey>:` declarations; see the [4.x → 5.0 guide](./documents/migration/4.x-to-5.0.md).
 
 ### Built-in utility name clashes
 
-A theme key whose class equals a Tailwind utility (`bg-none`, `shadow-none`, `rounded-none`, `border-2`, a typography key that becomes `text-sm`, `h-1` from `h1`, or `italic`, colors named `transparent`/`current`/`inherit`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the clashes it recognises.
+A theme key whose class equals a Tailwind utility (`bg-none`, `shadow-none`, `rounded-none`, a typography key that becomes `text-sm`, `h-1` from `h1`, or `italic`, colors named `transparent`/`current`/`inherit`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the clashes it recognises. A digit-only `borderWidth` key (`2`) is different: since 5.0 the theme value replaces Tailwind's built-in `border-2`, `border-x-2` and `divide-x-2` (Tailwind looks up the theme before its default scale); `doctor` still reports it so you confirm the override is intended.
 
 ---
 
@@ -567,7 +571,7 @@ Spacing utilities are generated once as `@utility sp-<key>` blocks; components o
 }
 ```
 
-Default keys: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left` (`SpacingKey`). Disable with `spacing: { enabled: false }`; customise with `spacing: { properties: { … } }`.
+Default keys: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left` (`SpacingKey`). Disable with `spacing: { enabled: false }`; customise with `spacing: { properties: { inset: ["top", "bottom"] } }` (a spacing key → the CSS properties it sets).
 
 ### Usage in components
 
@@ -631,18 +635,20 @@ const { DesignTokens } = createDesignTokens(theme, {
 
 **`DesignTokens.Web`:**
 
-| Token                 | Description                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------- |
-| `variantColor`        | All color keys (flat, camelCase)                                                      |
-| `variantText`         | Keys of `typography`                                                                  |
-| `variantShadow`       | Keys of `shadows`                                                                     |
-| `variantBackdropBlur` | Keys of `backDropBlurs`                                                               |
-| `variantFontFamily`   | Keys of `fontFamily`                                                                  |
-| `borderWidthOption`   | Keys of `borderWidth` (falls back to `0, 1, 2, 4` when omitted or empty)              |
-| `roundedOption`       | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES` when omitted or empty) |
-| `spacingProperties`   | List of spacing props                                                                 |
-| `breakpoints`         | Active breakpoints — defaults to `["md", "lg"]`                                       |
-| `screens`             | Breakpoint → width map                                                                |
+| Token               | Description                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| `colors`            | All color keys (flat, camelCase)                                                      |
+| `typography`        | Keys of `typography`                                                                  |
+| `shadows`           | Keys of `shadows`                                                                     |
+| `backDropBlurs`     | Keys of `backDropBlurs`                                                               |
+| `fontFamily`        | Keys of `fontFamily`                                                                  |
+| `borderWidth`       | Keys of `borderWidth` (falls back to `0, 1, 2, 4` when omitted or empty)              |
+| `borderRadius`      | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES` when omitted or empty) |
+| `spacingProperties` | List of spacing props                                                                 |
+| `breakpoints`       | Active breakpoints — defaults to `["md", "lg"]`                                       |
+| `screens`           | Breakpoint → width map                                                                |
+
+Each array is named after its `ThemeConfig` field (`DesignTokens.Web.colors` holds the keys of `theme.colors`); `spacingProperties`, `breakpoints` and `screens` come from the options.
 
 ### `createVariantMapper` for CVA
 
@@ -655,20 +661,17 @@ import {
   COLOR_STATES,
 } from "@duydpdev/style-generator/cva";
 
-const bg = createVariantMapper("bg", DesignTokens.Web.variantColor);
+const bg = createVariantMapper("bg", DesignTokens.Web.colors);
 // { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }
 
 const button = cva("rounded px-4 py-2", { variants: { color: bg } });
 button({ color: "primary" }); // → "rounded px-4 py-2 bg-primary"
 
 // prefix "" yields the bare kebab-case token (typography):
-createVariantMapper("", DesignTokens.Web.variantText); // { text12Mono: "text-12-mono", … }
+createVariantMapper("", DesignTokens.Web.typography); // { text12Mono: "text-12-mono", … }
 
 // several prefixes at once → nested map
-createVariantMapper(
-  ["border-x", "border-y"],
-  DesignTokens.Web.borderWidthOption,
-);
+createVariantMapper(["border-x", "border-y"], DesignTokens.Web.borderWidth);
 ```
 
 **State classes.** With sibling keys `primaryHover` / `primaryActive` in the theme, `{ states }` collapses them into one class string per base token:
@@ -733,7 +736,7 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 | `screens`                 | `Record<string, string>`                                | `defaultScreens`             | Custom screen widths (emitted as `@theme { --breakpoint-* }`).                                                                                                                             |
 | `enableResponsive`        | `boolean`                                               | `true`                       | Generate responsive spacing fallback chains.                                                                                                                                               |
 | `spacing.enabled`         | `boolean`                                               | `true`                       | Emit the `.sp-*` utilities.                                                                                                                                                                |
-| `spacing.properties`      | `SpacingPropertyMap`                                    | `DEFAULT_SPACING_PROPERTIES` | Override or extend the spacing prop → CSS declaration map.                                                                                                                                 |
+| `spacing.properties`      | `SpacingPropertyMap`                                    | `DEFAULT_SPACING_PROPERTIES` | Replace the spacing key → CSS properties map (`{ p: ["padding"] }`).                                                                                                                       |
 | `typography.cssVarDriven` | `boolean`                                               | `false`                      | Emit `--typography-<name>-<prop>` variables in `:root` and reference them from each typography utility, so a single token can be overridden in CSS.                                        |
 | `extraSources`            | `string[]`                                              | `[]`                         | Extra `@source inline("<entry>")` lines for classes built at runtime (brace expansion allowed). Entries: non-empty, ≤ 512 characters, none of `"` `'` `\` `;` `@` `<` `>` or a line break. |
 | `coverage`                | `Partial<Record<CategoryKey, boolean \| CoverageRule>>` | all categories fully covered | Trim a category's `@source inline` lines: `false`, `{ prefixes }`, `{ keys: "aliased" }`. See [`coverage`](#coverage-trim-the-source-inline-lines-per-category).                           |
@@ -781,9 +784,9 @@ generate(theme, {
 | `resolveSpacing`, `resolveSpacingProps`           | `.`, `./spacing`                              | Spacing props → `{ className(s), style }`.                                                                                                                                                                                            |
 | `styleGenVite`                                    | `./vite`                                      | Vite plugin writing `theme.css`.                                                                                                                                                                                                      |
 | `styleGenNext`                                    | `./next`                                      | Next.js config wrapper writing `theme.css`.                                                                                                                                                                                           |
-| `Breakpoint`, `defaultScreens`                    | `.`, `./tokens`                               | Breakpoint enum and default widths.                                                                                                                                                                                                   |
+| `Breakpoint`, `defaultScreens`                    | `.`, `./tokens`                               | `Breakpoint` const + type and default widths.                                                                                                                                                                                         |
 | `DEFAULT_ROUNDED_VALUES`, `DEFAULT_BORDER_VALUES` | `.`, `./tokens`                               | Fallback values for `borderRadius` / `borderWidth`.                                                                                                                                                                                   |
-| `DEFAULT_SPACING_PROPERTIES`                      | `.`, `./spacing`                              | Default spacing prop → CSS declaration map.                                                                                                                                                                                           |
+| `DEFAULT_SPACING_PROPERTIES`                      | `.`, `./spacing`                              | Default spacing key → CSS properties map.                                                                                                                                                                                             |
 | `roundedProperties`, `borderProperties`           | `.`, `./tokens`                               | Class-prefix lists of the `borderRadius` / `borderWidth` categories.                                                                                                                                                                  |
 | Types                                             | `./types` (most also `.`)                     | `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `CoverageRule`, `CategoryKey`, `CategoryTokenKey`, `ResponsiveValueStrict`, `SpacingKey` (`./spacing`), the `*Variant<T>` aliases, `DesignTokensResult`. |
 
@@ -814,6 +817,7 @@ yarn test:coverage # Coverage report
 
 ## 11. Migration
 
+- **4.x → 5.0.0** (breaking): [`documents/migration/4.x-to-5.0.md`](./documents/migration/4.x-to-5.0.md) — `--sg-color-*`, `borderWidth` via `@theme`, array-form `spacing.properties`, renamed `DesignTokens.Web` keys, typography bounds.
 - **3.x → 4.0.0** (breaking): [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md) — every removed API, the new theme fields, CLI changes and a rollback runbook.
 - **4.0 → 4.1** (stricter validation): [`documents/migration/4.0-to-4.1.md`](./documents/migration/4.0-to-4.1.md)
 - **Subpath exports (3.x)**: [`documents/migration/3.x-subpath-exports.md`](./documents/migration/3.x-subpath-exports.md) — historical; explains `moduleResolution` requirements.

@@ -7,7 +7,7 @@ import {
 import type { CategoryKey } from "../features/registry/builtInCategories";
 
 import { mergeScreens } from "./resolveTokenOptions";
-import { TOKEN_KEY_RE, TokenValue } from "./tokenGrammar";
+import { TOKEN_KEY_RE } from "./tokenGrammar";
 
 /**
  * Grammar for a single `extraSources` entry: non-empty, bounded length, and
@@ -143,7 +143,7 @@ export const StyleGeneratorOptionsShape = z.strictObject({
     .strictObject({
       enabled: z.boolean().optional(),
       properties: z
-        .record(OptionKey, z.record(CssPropertyName, TokenValue))
+        .record(OptionKey, z.array(CssPropertyName).min(1))
         .optional(),
     })
     .optional(),

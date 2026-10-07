@@ -38,7 +38,7 @@ const categoryTokenKeys = (
  * this with the options it resolved once; {@link createDesignTokens} wraps it
  * for callers holding raw options. Kept a literal, not a descriptor loop
  * (that would pull the descriptors into the `./tokens` budget): property
- * names are compiler-checked against each descriptor's `tokenName`
+ * names are compiler-checked against each descriptor's `key`
  * (`CategoryTokenArrays`), and `cva-roundtrip.test.ts` pins every array's
  * keys and defaults to the `@source inline` keys of its descriptor.
  * @param {ThemeConfig} config - Theme configuration
@@ -51,29 +51,30 @@ export const buildDesignTokens = <TTheme extends ThemeConfig>(
 ): DesignTokensResult<TTheme> => ({
   DesignTokens: {
     Web: {
-      variantText: categoryTokenKeys(config.typography) as CategoryTokenKey<
+      typography: categoryTokenKeys(config.typography) as CategoryTokenKey<
         TTheme,
         "typography"
       >[],
-      variantColor: categoryTokenKeys(config.colors) as CategoryTokenKey<
+      colors: categoryTokenKeys(config.colors) as CategoryTokenKey<
         TTheme,
         "colors"
       >[],
-      variantShadow: categoryTokenKeys(config.shadows) as CategoryTokenKey<
+      shadows: categoryTokenKeys(config.shadows) as CategoryTokenKey<
         TTheme,
         "shadows"
       >[],
-      variantBackdropBlur: categoryTokenKeys(
+      backDropBlurs: categoryTokenKeys(
         config.backDropBlurs,
       ) as CategoryTokenKey<TTheme, "backDropBlurs">[],
-      variantFontFamily: categoryTokenKeys(
-        config.fontFamily,
-      ) as CategoryTokenKey<TTheme, "fontFamily">[],
-      borderWidthOption: categoryTokenKeys(
+      fontFamily: categoryTokenKeys(config.fontFamily) as CategoryTokenKey<
+        TTheme,
+        "fontFamily"
+      >[],
+      borderWidth: categoryTokenKeys(
         config.borderWidth,
         categoryTokenMeta.borderWidth.defaultValues,
       ) as CategoryTokenKey<TTheme, "borderWidth">[],
-      roundedOption: categoryTokenKeys(
+      borderRadius: categoryTokenKeys(
         config.borderRadius,
         categoryTokenMeta.borderRadius.defaultValues,
       ) as CategoryTokenKey<TTheme, "borderRadius">[],

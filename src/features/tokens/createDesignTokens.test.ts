@@ -26,16 +26,16 @@ describe("createDesignTokens", () => {
     },
   };
 
-  it("should extract camelCase color keys into variantColor", () => {
+  it("should extract camelCase color keys into colors", () => {
     const result = createDesignTokens(mockTheme);
-    const colors = result.DesignTokens.Web.variantColor;
+    const colors = result.DesignTokens.Web.colors;
     expect(colors).toContain("primary");
     expect(colors).toContain("main");
     expect(colors).toContain("sidebarForeground");
     expect(colors).toContain("white");
   });
 
-  it("should convert kebab-case color keys to camelCase in variantColor", () => {
+  it("should convert kebab-case color keys to camelCase in colors", () => {
     const theme: ThemeConfig = {
       ...mockTheme,
       colors: {
@@ -44,19 +44,19 @@ describe("createDesignTokens", () => {
       },
     };
     const result = createDesignTokens(theme);
-    const colors = result.DesignTokens.Web.variantColor;
+    const colors = result.DesignTokens.Web.colors;
     expect(colors).toContain("primaryBlue");
     expect(colors).toContain("sidebarForeground");
   });
 
   it("should extract typography keys", () => {
     const result = createDesignTokens(mockTheme);
-    expect(result.DesignTokens.Web.variantText).toEqual(["h1"]);
+    expect(result.DesignTokens.Web.typography).toEqual(["h1"]);
   });
 
   it("should extract shadow keys", () => {
     const result = createDesignTokens(mockTheme);
-    expect(result.DesignTokens.Web.variantShadow).toEqual(["md"]);
+    expect(result.DesignTokens.Web.shadows).toEqual(["md"]);
   });
 
   it("should include screens and breakpoints", () => {
@@ -84,14 +84,9 @@ describe("createDesignTokens", () => {
       borderWidth: {},
       borderRadius: {},
     });
-    expect(empty.DesignTokens.Web.borderWidthOption).toEqual([
-      "0",
-      "1",
-      "2",
-      "4",
-    ]);
-    expect(empty.DesignTokens.Web.roundedOption).toEqual(
-      omitted.DesignTokens.Web.roundedOption,
+    expect(empty.DesignTokens.Web.borderWidth).toEqual(["0", "1", "2", "4"]);
+    expect(empty.DesignTokens.Web.borderRadius).toEqual(
+      omitted.DesignTokens.Web.borderRadius,
     );
   });
 });

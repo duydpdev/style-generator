@@ -5,6 +5,7 @@ import { ThemeSchema, formatZodError } from "../../core/themeSchema";
 import { readConfigFile, resolveConfig, normalizePath } from "../config";
 import { logger } from "../logger";
 
+import { findLegacyColorVarRefs } from "./legacyColorVars";
 import { findUtilityCollisions } from "./utilityCollisions";
 
 const padStr = (str: string) => {
@@ -21,9 +22,14 @@ const padStr = (str: string) => {
  * now as a proper error with the offending path named.
  * @param {string} cwd - Current working directory
  * @param {string} optionsTheme - Path to theme file
+ * @param {string} optionsOutput - Generated CSS path, excluded from the legacy-variable scan
  * @returns {boolean} True if there are errors, false otherwise
  */
-function checkTheme(cwd: string, optionsTheme: string): boolean {
+function checkTheme(
+  cwd: string,
+  optionsTheme: string,
+  optionsOutput: string,
+): boolean {
   let hasErrors = false;
   const themePath = path.resolve(cwd, normalizePath(optionsTheme));
 
@@ -41,9 +47,14 @@ function checkTheme(cwd: string, optionsTheme: string): boolean {
       logger.log(
         `  Theme   (${padStr(optionsTheme)}) ✅ Valid JSON, schema OK`,
       );
-      // Warnings only: a collision can be deliberate, and must not fail the
-      // exit code (hasErrors stays false).
-      for (const warning of findUtilityCollisions(result.data)) {
+      // Warnings only (utility collisions, pre-5.0 color variables): never
+      // change the exit code (hasErrors stays false).
+      for (const warning of [
+        ...findUtilityCollisions(result.data),
+        ...findLegacyColorVarRefs(cwd, result.data, {
+          output: normalizePath(optionsOutput),
+        }),
+      ]) {
         logger.log(`  Theme   ⚠️  ${warning}`);
       }
     } else {
@@ -91,7 +102,7 @@ export function doctorCommand() {
   }
 
   // 2. Check Theme
-  const themeErrors = checkTheme(cwd, options.theme);
+  const themeErrors = checkTheme(cwd, options.theme, options.output);
   if (themeErrors) hasErrors = true;
 
   // 3. Check the generator script, only when one is configured

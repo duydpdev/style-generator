@@ -41,20 +41,20 @@ describe("generate consumer shape", () => {
     expectTypeOf(result.css).toEqualTypeOf<string>();
   });
 
-  it("DesignTokens.Web.variantColor is literal camelCase union", () => {
-    expectTypeOf(result.tokens.Web.variantColor).toEqualTypeOf<
+  it("DesignTokens.Web.colors is literal camelCase union", () => {
+    expectTypeOf(result.tokens.Web.colors).toEqualTypeOf<
       ("primary" | "primaryForeground" | "sidebarForeground" | "blue500")[]
     >();
   });
 
-  it("DesignTokens.Web.variantText is typography keys", () => {
-    expectTypeOf(result.tokens.Web.variantText).toEqualTypeOf<
+  it("DesignTokens.Web.typography is typography keys", () => {
+    expectTypeOf(result.tokens.Web.typography).toEqualTypeOf<
       ("h1" | "bodyLg")[]
     >();
   });
 
-  it("DesignTokens.Web.roundedOption preserves digit-prefix tokens", () => {
-    expectTypeOf(result.tokens.Web.roundedOption).toEqualTypeOf<
+  it("DesignTokens.Web.borderRadius preserves digit-prefix tokens", () => {
+    expectTypeOf(result.tokens.Web.borderRadius).toEqualTypeOf<
       ("sm" | "2xl")[]
     >();
   });

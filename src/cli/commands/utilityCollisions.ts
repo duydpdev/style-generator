@@ -129,7 +129,8 @@ const NONE_COLLIDING_CATEGORIES = [
  * overrides (or is overridden by) the built-in class:
  * - `none` in colors/shadows/backDropBlurs/borderRadius (`bg-none`,
  *   `shadow-none`, `backdrop-blur-none`, `rounded-none`);
- * - digit-only `borderWidth` keys (`border-0`, `border-2`, ...);
+ * - digit-only `borderWidth` keys (`border-0`, `border-2`, ...): the theme value
+ *   replaces Tailwind's built-in width, so this is an override to confirm;
  * - `typography` keys kebab-casing to a Tailwind utility class: `text-xs`…
  *   `text-9xl`, text-align/wrap/overflow, a numeric functional utility
  *   (`h1` → `h-1`) or a static one (`italic`, `truncate`);
@@ -165,7 +166,7 @@ export const findUtilityCollisions = (theme: ThemeConfig): string[] => {
   for (const key of Object.keys(theme.borderWidth ?? {})) {
     if (/^\d+$/.test(key)) {
       warnings.push(
-        `borderWidth.${key} → digit-only key collides with Tailwind's "border-${key}" width utility`,
+        `borderWidth.${key} → digit-only key overrides Tailwind's built-in "border-${key}" width (also border-x/divide-x)`,
       );
     }
   }

@@ -9,15 +9,7 @@ export type {
   TypographyConfig,
 } from "../core/themeSchema";
 export type { CoverageRule, StyleGeneratorOptions } from "../core/Options";
-export type {
-  CategoryTokenKey,
-  InferColorKeys,
-  InferTypographyKeys,
-  InferShadowKeys,
-  InferBackdropBlurKeys,
-  InferFontFamilyKeys,
-  DesignTokensResult,
-} from "../core/inference";
+export type { CategoryTokenKey, DesignTokensResult } from "../core/inference";
 export type { CategoryKey } from "../features/registry/builtInCategories";
 export type {
   DesignTokenKeys,

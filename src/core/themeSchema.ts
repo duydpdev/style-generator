@@ -5,7 +5,6 @@ import { UTILITY_NAME_RE, toKebabCase } from "../shared/helpers";
 import { validateCategoryAliasGraph } from "./aliasGraph";
 import {
   checkBorderWidthColorCollision,
-  checkCssVarCollisions,
   checkFontFamilyWeightNames,
   reportKebabCollisions,
 } from "./crossFieldChecks";
@@ -21,11 +20,16 @@ import { TokenKey, TokenValue, TypographyValue } from "./tokenGrammar";
 export const TypographyStyleSchema = z.strictObject({
   fontSize: TypographyValue,
   lineHeight: TypographyValue,
-  fontWeight: z.number(),
+  // CSS Fonts 4: `font-weight` is a <number [1,1000]>; fractions are legal
+  // (variable fonts), so no `.int()`.
+  fontWeight: z.number().min(1).max(1000),
   letterSpacing: TypographyValue.optional(),
   fontFamily: TypographyValue.optional(),
   fontStyle: TypographyValue.optional(),
 });
+
+/** Utility families a typography `@utility` would shadow: `sp-*` and `font-*`. */
+const SHADOWED_UTILITY_FAMILIES = /^(sp|font)-/;
 
 /**
  * `theme.typography` keys become Tailwind v4 `@utility` names via
@@ -33,6 +37,8 @@ export const TypographyStyleSchema = z.strictObject({
  * form doesn't match `UTILITY_NAME_RE` (e.g. starts with a digit or a dash)
  * would otherwise only fail at CSS-generation time. Rejecting it here, at
  * parse time, surfaces a `ZodError` with the offending key in its `path`.
+ * Keys kebab-casing to `sp-*` or `font-*` are rejected too: they would
+ * shadow the generated spacing and font utilities.
  */
 const TypographyRecordSchema = z
   .record(TokenKey, TypographyStyleSchema)
@@ -52,6 +58,19 @@ const TypographyRecordSchema = z
       });
     }
     reportKebabCollisions(ctx, typography, []);
+    for (const key of Object.keys(typography)) {
+      const family = SHADOWED_UTILITY_FAMILIES.exec(toKebabCase(key))?.[1];
+      if (family === undefined) continue;
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message:
+          `Typography key "${key}" kebab-cases to "${toKebabCase(key)}", ` +
+          `which shadows the generated ${family}-* utilities ` +
+          `(${family === "sp" ? "spacing" : "font-family and font-weight"}) ` +
+          `— rename the key so it does not start with "${family}-".`,
+      });
+    }
   });
 
 /**
@@ -266,7 +285,6 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
   themeAxes: ThemeAxesSchema.optional(),
 }).superRefine((theme, ctx) => {
   validateBaseCategories(ctx, theme);
-  checkCssVarCollisions(ctx, theme);
   checkBorderWidthColorCollision(ctx, theme.colors, theme.borderWidth);
   checkFontFamilyWeightNames(ctx, theme.fontFamily);
 

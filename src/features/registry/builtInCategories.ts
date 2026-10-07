@@ -13,9 +13,8 @@ import { categoryTokenMeta } from "./categoryTokenMeta";
  */
 export const colorsCategory = {
   key: "colors",
-  tokenName: "variantColor",
   tokenKeyName: "colorKey",
-  cssVarPrefix: "sg",
+  cssVarPrefix: "sg-color",
   themeNamespace: "--color-",
   classPrefixes: ["bg", "text", "border"],
   /**
@@ -38,7 +37,6 @@ export const colorsCategory = {
  */
 export const typographyCategory = {
   key: "typography",
-  tokenName: "variantText",
   tokenKeyName: "textKey",
   classPrefixes: [""],
   bareClassName: true,
@@ -47,7 +45,6 @@ export const typographyCategory = {
 /** `shadows` — named `box-shadow` presets, feeds `shadow-*` utilities. */
 export const shadowsCategory = {
   key: "shadows",
-  tokenName: "variantShadow",
   tokenKeyName: "shadowKey",
   cssVarPrefix: "sg-shadow",
   themeNamespace: "--shadow-",
@@ -65,7 +62,6 @@ export const shadowsCategory = {
  */
 export const backDropBlursCategory = {
   key: "backDropBlurs",
-  tokenName: "variantBackdropBlur",
   tokenKeyName: "backdropBlurKey",
   cssVarPrefix: "sg-backdrop-blur",
   themeNamespace: "--backdrop-blur-",
@@ -79,7 +75,6 @@ export const backDropBlursCategory = {
  */
 export const borderRadiusCategory = {
   key: "borderRadius",
-  tokenName: "roundedOption",
   tokenKeyName: "roundedKey",
   ...categoryTokenMeta.borderRadius,
   cssVarPrefix: "sg-radius",
@@ -99,7 +94,6 @@ export const borderRadiusCategory = {
  */
 export const fontFamilyCategory = {
   key: "fontFamily",
-  tokenName: "variantFontFamily",
   tokenKeyName: "fontFamilyKey",
   cssVarPrefix: "sg-font",
   themeNamespace: "--font-",
@@ -109,22 +103,24 @@ export const fontFamilyCategory = {
 /**
  * `borderWidth` — named border widths (collapses the old `border`
  * category: a theme key of `border` must be renamed to `borderWidth`).
- * Unlike the other CSS-var categories, Tailwind v4 has no `@theme`
- * namespace for border width (`border-2`, `border-4`, … already resolve
- * against a fixed built-in scale) — so `themeNamespace` is omitted and
- * `generateBorderWidthCss.ts` emits an explicit `@utility
- * <classPrefix>-<key> { <longhand>: var(--sg-border-width-<key>); }` per
- * declared key, one block per side prefix (all 7 of `classPrefixes`).
+ * Maps into `--border-width-*`, the namespace Tailwind v4's `border-*`,
+ * `border-{x,y,t,r,b,l,s,e}-*` and `divide-{x,y}-*` utilities resolve
+ * border widths from, so `@theme inline` generates every side/logical
+ * class and no bespoke `@utility` is emitted. CAVEAT: `--border-width-*`
+ * is not a documented Tailwind theme namespace (tailwindcss.com lists no
+ * such variable; it works on 4.1–4.3). The real-engine assertion in
+ * `src/__integration__/tailwind-compile.test.ts` is the tripwire for a
+ * future Tailwind change.
  * When the theme omits `borderWidth` entirely (or declares it empty),
  * `generateSourceInline` and `createDesignTokens` fall back to
  * `defaultValues` (Tailwind's own built-in scale) instead.
  */
 export const borderWidthCategory = {
   key: "borderWidth",
-  tokenName: "borderWidthOption",
   tokenKeyName: "borderWidthKey",
   ...categoryTokenMeta.borderWidth,
   cssVarPrefix: "sg-border-width",
+  themeNamespace: "--border-width-",
   classPrefixes: BORDER_PREFIXES,
 } as const satisfies TokenCategoryDescriptor;
 

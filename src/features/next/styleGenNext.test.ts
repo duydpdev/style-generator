@@ -96,7 +96,7 @@ describe("styleGenNext", () => {
     expect(existsSync(cssPath)).toBe(true);
     const css = readFileSync(cssPath, "utf8");
     expect(css.length).toBeGreaterThan(0);
-    expect(css).toMatch(/--sg-/);
+    expect(css).toMatch(/--sg-color-/);
   });
 
   it("writes theme.css under a custom outDir", () => {

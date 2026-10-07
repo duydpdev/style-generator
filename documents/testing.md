@@ -32,12 +32,12 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # một fil
 
 Test nằm cạnh code (`*.test.ts`). Nhóm chính:
 
-- `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên số nguyên, key không round-trip, va chạm `borderWidth`/`colors`), `defineTheme`, kiểm tra option (`extraSources`, `screens`, `breakpoints`, `spacing.properties`), thử inject (cả `generateThemeCss`).
+- `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên số nguyên, key không round-trip, va chạm `borderWidth`/`colors`, `fontWeight` 1–1000, key typography đè `sp-*`/`font-*`), `defineTheme`, kiểm tra option (`extraSources`, `screens`, `breakpoints`, `spacing.properties` dạng mảng), thử inject (cả `generateThemeCss`).
 - `src/features/registry/*` — descriptor, `flattenByCategory`, `generateSourceInline` (kể cả state lines).
 - `src/features/{theme-css,typography,spacing}/*` — từng khối CSS được sinh.
 - `src/features/{tokens,cva}/*` — `createDesignTokens`, `createVariantMapper` (`{ states }`).
 - `src/features/{vite,next}/*` — plugin (emit-only, watcher, path guard).
-- `src/cli/*` — `init`, `generate`, `schema`, `doctor` (cảnh báo va chạm utility), `config`.
+- `src/cli/*` — `init`, `generate`, `schema`, `doctor` (cảnh báo va chạm utility; `legacyColorVars` quét biến `--sg-<màu>` kiểu 4.x trên thư mục tạm), `config`.
 - `src/shared/*` — `helpers` (kebab/camel), `resolveSafePath`, `writeFileAtomic`.
 
 Coverage dùng provider v8 với `include: ["src/**/*.ts"]`, nên file không có test nào import (vd `src/cli/index.ts`) vẫn hiện với 0 % thay vì bị bỏ qua. Loại trừ file test (`*.test.ts`, `*.test-d.ts`), `*.d.ts` và `src/__integration__/**`. Chưa có ngưỡng bắt buộc. Mốc đo ngày 2026-10-06: statements 91.35 %, branches 83.2 %, functions 92.48 %, lines 91.58 %; `src/cli/index.ts` 0 %.

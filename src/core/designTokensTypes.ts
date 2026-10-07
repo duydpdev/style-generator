@@ -1,30 +1,27 @@
-import type {
-  CamelCase,
-  InferColorKeys,
-  InferBorderWidthOptions,
-  InferRoundedOptions,
-} from "./inference";
+import type { BuiltInCategory } from "../features/registry/builtInCategories";
+
+import type { CategoryTokenKey } from "./inference";
 import type { ThemeConfig } from "./themeSchema";
 
+/** One key union per built-in category, named by the descriptor's `tokenKeyName`. */
+type CategoryTokenKeyMap<T extends ThemeConfig> = {
+  [C in BuiltInCategory as C["tokenKeyName"]]: CategoryTokenKey<T, C["key"]>;
+};
+
 /**
- * Mapped type exposing the derived design-token key unions for a theme.
+ * The derived design-token key unions for a theme, one per built-in category
+ * (`colorKey`, `textKey`, `roundedKey`, …).
  * Distinct from `DesignTokensWeb` in `./inference` which describes the runtime
  * token arrays returned by `createDesignTokens()`. Consumers can pluck individual
  * variant unions via the semantic aliases below instead of writing
  * `(typeof DesignTokens.Web.X)[number]` everywhere.
+ * Kept an interface (as in 4.1) so consumers can still augment it.
  * @template T - ThemeConfig type (typically `typeof themeJson`)
  */
-export interface DesignTokenKeys<T extends ThemeConfig> {
-  colorKey: InferColorKeys<T>;
-  textKey: CamelCase<Extract<keyof NonNullable<T["typography"]>, string>>;
-  shadowKey: CamelCase<Extract<keyof NonNullable<T["shadows"]>, string>>;
-  backdropBlurKey: CamelCase<
-    Extract<keyof NonNullable<T["backDropBlurs"]>, string>
-  >;
-  fontFamilyKey: CamelCase<Extract<keyof NonNullable<T["fontFamily"]>, string>>;
-  borderWidthKey: CamelCase<InferBorderWidthOptions<T>>;
-  roundedKey: CamelCase<InferRoundedOptions<T>>;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- an interface (not an alias) keeps 4.1 declaration merging
+export interface DesignTokenKeys<
+  T extends ThemeConfig,
+> extends CategoryTokenKeyMap<T> {}
 
 /** Color variant union derived from theme.colors keys (camelCased). */
 export type ColorVariant<T extends ThemeConfig> =

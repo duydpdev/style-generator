@@ -3,10 +3,15 @@ import postcss from "postcss";
 import { describe, it, expect } from "vitest";
 
 import { fixtureOptions } from "../../__integration__/__fixtures__/fixtureTheme";
+import type { StyleGeneratorOptions } from "../../core/Options";
+import { resolveOptions } from "../../core/resolveOptions";
 import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
 
-import { generateSpacingCss } from "./generateSpacingCss";
+import { generateSpacingCss as generateResolved } from "./generateSpacingCss";
 import { resolveSpacing } from "./spacingHelpers";
+
+const generateSpacingCss = (options: StyleGeneratorOptions = {}): string =>
+  generateResolved(resolveOptions(options));
 
 /**
  * Extract a flat `{ prop: value }` map from a rule/at-rule's direct

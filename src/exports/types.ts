@@ -8,8 +8,9 @@ export type {
   ThemeOverride,
   TypographyConfig,
 } from "../core/themeSchema";
-export type { StyleGeneratorOptions } from "../core/Options";
+export type { CoverageRule, StyleGeneratorOptions } from "../core/Options";
 export type {
+  CategoryTokenKey,
   InferColorKeys,
   InferTypographyKeys,
   InferShadowKeys,
@@ -17,6 +18,7 @@ export type {
   InferFontFamilyKeys,
   DesignTokensResult,
 } from "../core/inference";
+export type { CategoryKey } from "../features/registry/builtInCategories";
 export type {
   DesignTokenKeys,
   ColorVariant,

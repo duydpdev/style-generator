@@ -22,16 +22,20 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-10-06 (4.1.0: strict options/config schemas, cross-category
 // variable check): index 9288, vite 9309, next 9109; the other subpaths are
 // unchanged. Re-measured 2026-10-06 (CLI bundle via tsdown): cli 31750.
+// Re-measured 2026-10-06 (4.2.0: coverage option, resolveOptions, schema
+// split): index 10071, vite 10110, next 9997, cli 34703; tokens 1619 (the shared
+// internals live in the entry chunk, see `preserveEntrySignatures` in
+// vite.config.ts); cva, spacing and types are unchanged.
 // Budgets = measured + ~10% headroom.
 const budgets = {
-  index: 10_200,
+  index: 11_100,
   tokens: 1_700,
   cva: 800,
   spacing: 1_000,
   types: 100,
-  vite: 10_200,
-  next: 10_000,
-  cli: 35_000,
+  vite: 11_150,
+  next: 11_050,
+  cli: 38_000,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.

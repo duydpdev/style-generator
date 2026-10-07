@@ -7,6 +7,7 @@ import type {
   KebabCase,
   InferColorKeys,
   DesignTokensWeb,
+  CategoryTokenKey,
   InferBorderWidthOptions,
   InferRoundedOptions,
 } from "./inference";
@@ -207,5 +208,62 @@ describe("InferBorderWidthOptions / InferRoundedOptions defaults", () => {
       typography: Record<string, never>;
     }
     expectTypeOf<InferRoundedOptions<T>>().not.toBeNever();
+  });
+});
+
+describe("an empty category record counts as not declared (runtime parity)", () => {
+  it("`{}` resolves to the category defaults, like an omitted category", () => {
+    interface Omitted {
+      colors: Record<string, string>;
+    }
+    interface Empty {
+      colors: Record<string, string>;
+      borderWidth: Record<never, string>;
+      borderRadius: Record<never, string>;
+    }
+    expectTypeOf<InferBorderWidthOptions<Empty>>().toEqualTypeOf<
+      InferBorderWidthOptions<Omitted>
+    >();
+    expectTypeOf<InferRoundedOptions<Empty>>().toEqualTypeOf<
+      InferRoundedOptions<Omitted>
+    >();
+  });
+
+  it("declared keys win over the defaults (raw keys; CategoryTokenKey camelCases)", () => {
+    interface T {
+      colors: Record<string, string>;
+      borderRadius: { "pill-lg": string };
+    }
+    expectTypeOf<InferRoundedOptions<T>>().toEqualTypeOf<"pill-lg">();
+    expectTypeOf<
+      CategoryTokenKey<T, "borderRadius">
+    >().toEqualTypeOf<"pillLg">();
+  });
+
+  it("a union theme keeps the defaults of the members that omit the category", () => {
+    interface Omits {
+      colors: Record<string, string>;
+    }
+    interface Declares {
+      colors: Record<string, string>;
+      borderRadius: { pill: string };
+    }
+    expectTypeOf<InferRoundedOptions<Omits | Declares>>().toEqualTypeOf<
+      InferRoundedOptions<Omits> | "pill"
+    >();
+  });
+});
+
+describe("CategoryTokenKey", () => {
+  it("maps a declared category to its camelCased keys, other categories to defaults/never", () => {
+    interface T {
+      colors: { "primary-hover": string; blue500: string };
+      shadows: { soft: string };
+    }
+    expectTypeOf<CategoryTokenKey<T, "colors">>().toEqualTypeOf<
+      "primaryHover" | "blue500"
+    >();
+    expectTypeOf<CategoryTokenKey<T, "shadows">>().toEqualTypeOf<"soft">();
+    expectTypeOf<CategoryTokenKey<T, "backDropBlurs">>().toBeNever();
   });
 });

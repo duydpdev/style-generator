@@ -1,3 +1,33 @@
+# [4.2.0](https://github.com/duydpdev/style-generator/compare/v4.1.2...v4.2.0) (2026-10-07)
+
+### Features
+
+- descriptor as source of truth ([354749a](https://github.com/duydpdev/style-generator/commit/354749acf839120ce4779189b75bc299e7a2deb7))
+
+  The built-in category descriptor now drives the token types, the CSS
+  mapping and the typed-token arrays; options are resolved once
+  (resolveOptions/resolveTokenOptions); themeSchema is split into
+  tokenGrammar, aliasGraph and crossFieldChecks. Generated CSS is
+  unchanged for existing themes (except the breakpoint-sort fix below); no
+  public export is removed.
+
+  New: StyleGeneratorOptions.coverage trims the registry's @source inline
+  lines per category (false, prefixes, keys: "aliased"), plus the
+  CategoryKey, CategoryTokenKey and CoverageRule types.
+
+  Behaviour notes:
+  - borderWidth: {} / borderRadius: {} now count as omitted: tokens and
+    types list the default keys (was [] / never[]), matching @source inline.
+  - Breakpoints sort by real width (parseFloat): fractional screens such
+    as 48.5rem vs 48rem now order correctly; CSS can change for such input.
+  - An override-scoped collision is reported once, at the base path.
+  - coverage.keys "aliased" keeps the alias holders (keys whose value is
+    a $alias, base or any themeAxes override); their targets need no class.
+  - ./tokens is built with preserveEntrySignatures "allow-extension" and
+    minifyInternalExports: its runtime exports may list one-letter internal
+    aliases; dist/tokens.d.ts is the contract. Size budgets re-measured.
+  - Release notes now print [feat] commit bodies too (release.config.cjs).
+
 # [4.1.2](https://github.com/duydpdev/style-generator/compare/v4.1.1...v4.1.2) (2026-10-06)
 
 ### Bug Fixes

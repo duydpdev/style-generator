@@ -413,6 +413,55 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.error?.issues[0]?.message).toMatch(/kebab-case to/);
   });
 
+  describe("an override that repeats a base collision does not report it twice (F7)", () => {
+    const issuePaths = (theme: unknown): string[] => {
+      const result = ThemeSchema.safeParse(theme);
+      return result.success
+        ? []
+        : result.error.issues.map((i) => i.path.join("."));
+    };
+
+    it("borderWidth key vs colors key: one issue at the base key", () => {
+      expect(
+        issuePaths({
+          colors: { primary: "#fff" },
+          borderWidth: { primary: "1px" },
+          themeAxes: {
+            theme: {
+              dark: {
+                colors: { primary: "#000" },
+                borderWidth: { primary: "2px" },
+              },
+            },
+          },
+        }),
+      ).toEqual(["borderWidth.primary"]);
+    });
+
+    it("fontFamily key vs font-weight utility: one issue at the base key", () => {
+      expect(
+        issuePaths({
+          colors: { primary: "#fff" },
+          fontFamily: { bold: "Arial" },
+          themeAxes: { theme: { dark: { fontFamily: { bold: "Verdana" } } } },
+        }),
+      ).toEqual(["fontFamily.bold"]);
+    });
+
+    it("keys that kebab-case to the same value: one issue, none under themeAxes", () => {
+      const paths = issuePaths({
+        colors: { blue500: "#00f", "blue-500": "#00f" },
+        themeAxes: {
+          theme: {
+            dark: { colors: { blue500: "#000", "blue-500": "#111" } },
+          },
+        },
+      });
+      expect(paths).toHaveLength(1);
+      expect(paths[0]).toMatch(/^colors\./);
+    });
+  });
+
   it("rejects a theme still using the removed legacy axis-override key, naming the themeAxes rename", () => {
     // Built via a computed key (not a literal property name) so this
     // intentional rename-rejection input doesn't trip the repo-wide

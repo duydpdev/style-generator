@@ -1,8 +1,9 @@
 import type {
-  DefaultBorderValue,
-  DefaultRoundedValue,
-  SpacingKey,
-} from "../shared/defaultOption";
+  BuiltInCategory,
+  CategoryKey,
+} from "../features/registry/builtInCategories";
+import type { categoryTokenMeta } from "../features/registry/categoryTokenMeta";
+import type { SpacingKey } from "../shared/defaultOption";
 
 import type { ThemeConfig } from "./themeSchema";
 
@@ -54,10 +55,60 @@ type StringKeysOf<T> = Extract<KeysOf<T>, string>;
 
 // ---- Theme-based token keys ----
 
+/**
+ * Literal class-suffix keys a category falls back to when the theme omits
+ * it (or declares it as an empty record): the descriptor's `defaultValues`
+ * (`DefaultRoundedValue`, `DefaultBorderValue`), stringified. `never` for a
+ * category without defaults.
+ */
+type CategoryDefaultKey<K extends CategoryKey> =
+  K extends keyof typeof categoryTokenMeta
+    ? `${(typeof categoryTokenMeta)[K]["defaultValues"][number]}`
+    : never;
+
+/**
+ * The keys the theme declares for category `K`. A category with defaults
+ * only counts when the theme type declares it as a required property (an
+ * optional or missing one resolves to the defaults, as at runtime).
+ */
+type DeclaredCategoryKey<TTheme extends ThemeConfig, K extends CategoryKey> = [
+  CategoryDefaultKey<K>,
+] extends [never]
+  ? Extract<keyof NonNullable<TTheme[K]>, string>
+  : TTheme extends Record<K, infer R>
+    ? Extract<keyof NonNullable<R>, string>
+    : never;
+
+/**
+ * Un-cased token keys of category `K`: the declared keys, or the category's
+ * defaults when none are declared. `keyof {}` is `never`, so an empty record
+ * falls back to the defaults at the type level exactly like
+ * `createDesignTokens` does at runtime. Distributes over a union theme, so
+ * each member contributes its own declared keys or the defaults.
+ */
+type RawCategoryKey<
+  TTheme extends ThemeConfig,
+  K extends CategoryKey,
+> = TTheme extends unknown
+  ? [DeclaredCategoryKey<TTheme, K>] extends [never]
+    ? CategoryDefaultKey<K>
+    : DeclaredCategoryKey<TTheme, K>
+  : never;
+
+/**
+ * The camelCased token-key union of one built-in category — what the
+ * matching `DesignTokens.Web` array holds and the matching `DesignTokenKeys`
+ * alias exposes. Normalises kebab/snake keys → `"sidebarForeground"`.
+ */
+export type CategoryTokenKey<
+  TTheme extends ThemeConfig,
+  K extends CategoryKey,
+> = CamelCase<RawCategoryKey<TTheme, K>>;
+
 // Colors are flat keys only (e.g. "primary", "sidebar-foreground").
-// CamelCase normalises kebab/snake keys → "sidebarForeground".
-export type InferColorKeys<TTheme extends ThemeConfig> = CamelCase<
-  Extract<keyof TTheme["colors"], string>
+export type InferColorKeys<TTheme extends ThemeConfig> = CategoryTokenKey<
+  TTheme,
+  "colors"
 >;
 
 export type InferTypographyKeys<TTheme extends ThemeConfig> = StringKeysOf<
@@ -79,36 +130,31 @@ export type InferFontFamilyKeys<TTheme extends ThemeConfig> = StringKeysOf<
 // ---- Tokens từ defaults + theme ----
 
 export type InferBorderWidthOptions<TTheme extends ThemeConfig> =
-  TTheme extends { borderWidth: infer B }
-    ? Extract<keyof NonNullable<B>, string>
-    : `${DefaultBorderValue}`;
+  RawCategoryKey<TTheme, "borderWidth">;
 
-export type InferRoundedOptions<TTheme extends ThemeConfig> = TTheme extends {
-  borderRadius: infer R;
-}
-  ? Extract<keyof NonNullable<R>, string>
-  : DefaultRoundedValue;
+export type InferRoundedOptions<TTheme extends ThemeConfig> = RawCategoryKey<
+  TTheme,
+  "borderRadius"
+>;
 
 export type InferSpacingKeys = SpacingKey;
 
 // ---- DesignTokens result types ----
 
-export interface DesignTokensWeb<TTheme extends ThemeConfig> {
-  variantText: CamelCase<
-    Extract<keyof NonNullable<TTheme["typography"]>, string>
+/**
+ * One token-key array per built-in category, named by the descriptor's
+ * `tokenName` (`variantColor`, `roundedOption`, …).
+ */
+type CategoryTokenArrays<TTheme extends ThemeConfig> = {
+  [C in BuiltInCategory as C["tokenName"]]: CategoryTokenKey<
+    TTheme,
+    C["key"]
   >[];
-  variantColor: InferColorKeys<TTheme>[];
-  variantShadow: CamelCase<
-    Extract<keyof NonNullable<TTheme["shadows"]>, string>
-  >[];
-  variantBackdropBlur: CamelCase<
-    Extract<keyof NonNullable<TTheme["backDropBlurs"]>, string>
-  >[];
-  variantFontFamily: CamelCase<
-    Extract<keyof NonNullable<TTheme["fontFamily"]>, string>
-  >[];
-  borderWidthOption: CamelCase<InferBorderWidthOptions<TTheme>>[];
-  roundedOption: CamelCase<InferRoundedOptions<TTheme>>[];
+};
+
+export interface DesignTokensWeb<
+  TTheme extends ThemeConfig,
+> extends CategoryTokenArrays<TTheme> {
   spacingProperties: InferSpacingKeys[];
   breakpoints: string[];
   screens: Record<string, string>;

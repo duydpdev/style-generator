@@ -1,7 +1,12 @@
 import { describe, it, expectTypeOf } from "vitest";
 import type { z } from "zod";
 
-import type { StyleGeneratorOptions } from "./Options";
+import type {
+  CategoryKey,
+  RegistryPrefix,
+} from "../features/registry/builtInCategories";
+
+import type { CoverageRule, StyleGeneratorOptions } from "./Options";
 import type { StyleGeneratorOptionsSchema } from "./optionsSchema";
 
 type In = z.input<typeof StyleGeneratorOptionsSchema>;
@@ -15,5 +20,53 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
     expectTypeOf<
       keyof NonNullable<StyleGeneratorOptions["typography"]>
     >().toEqualTypeOf<keyof NonNullable<In["typography"]>>();
+  });
+
+  it("the coverage schema's category keys are exactly the registry's CategoryKey", () => {
+    expectTypeOf<
+      keyof NonNullable<In["coverage"]>
+    >().toEqualTypeOf<CategoryKey>();
+    expectTypeOf<
+      keyof NonNullable<StyleGeneratorOptions["coverage"]>
+    >().toEqualTypeOf<CategoryKey>();
+  });
+
+  it("a coverage entry is a boolean or a { prefixes, keys } rule", () => {
+    expectTypeOf<NonNullable<In["coverage"]>["colors"]>().toEqualTypeOf<
+      | boolean
+      | {
+          prefixes?: string[] | undefined;
+          keys?: "aliased" | "all" | undefined;
+        }
+      | undefined
+    >();
+    expectTypeOf<CoverageRule>().toEqualTypeOf<{
+      prefixes?: readonly RegistryPrefix[];
+      keys?: "aliased" | "all";
+    }>();
+  });
+
+  it("coverage prefixes are typed per category", () => {
+    type Coverage = NonNullable<StyleGeneratorOptions["coverage"]>;
+
+    expectTypeOf<{ colors: { prefixes: ["bg"] } }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { prefixes: readonly ["bg", "text"] };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{
+      borderRadius: { prefixes: ["rounded-t"] };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { prefixes: ["rounded"] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      shadows: { prefixes: ["bg"] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      typography: { prefixes: ["bg"] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      typography: { keys: "aliased" };
+    }>().toExtend<Coverage>();
   });
 });

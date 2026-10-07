@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 
-import { generateScreensCss } from "./generateScreensCss";
+import type { StyleGeneratorOptions } from "../../core/Options";
+import { resolveOptions } from "../../core/resolveOptions";
+
+import { generateScreensCss as generateResolved } from "./generateScreensCss";
+
+const generateScreensCss = (options: StyleGeneratorOptions = {}): string =>
+  generateResolved(resolveOptions(options));
 
 describe("generateScreensCss", () => {
   it("merges options.screens overrides/additions on top of the defaults", () => {

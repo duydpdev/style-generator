@@ -4,7 +4,7 @@ import {
   type ThemeOverride,
 } from "../../core/themeSchema";
 import { toKebabCase } from "../../shared/helpers";
-import { builtInCategories } from "../registry/builtInCategories";
+import { cssVarCategories } from "../registry/builtInCategories";
 import { flattenByCategory } from "../registry/flattenByCategory";
 
 /**
@@ -16,10 +16,10 @@ import { flattenByCategory } from "../registry/flattenByCategory";
 const buildIntermediateVars = (
   source: ThemeOverride,
 ): Record<string, string> => {
-  return builtInCategories.reduce<Record<string, string>>(
+  return cssVarCategories.reduce<Record<string, string>>(
     (acc, category) => ({
       ...acc,
-      ...flattenByCategory(category, category.select?.(source)),
+      ...flattenByCategory(category, source[category.key]),
     }),
     {},
   );
@@ -53,10 +53,10 @@ const formatCssBlock = (
 const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
   const mapping: Record<string, string> = {};
 
-  for (const category of builtInCategories) {
-    if (!category.cssVarPrefix || !category.themeNamespace) continue;
+  for (const category of cssVarCategories) {
+    if (!category.themeNamespace) continue;
     const varPrefix = `--${category.cssVarPrefix}-`;
-    const vars = flattenByCategory(category, category.select?.(config));
+    const vars = flattenByCategory(category, config[category.key]);
 
     for (const varName of Object.keys(vars)) {
       const key = varName.slice(varPrefix.length);

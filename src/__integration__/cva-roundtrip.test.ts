@@ -4,7 +4,10 @@ import postcss from "postcss";
 
 import { generate } from "../core/generate";
 import { ThemeSchema } from "../core/themeSchema";
-import { builtInCategories } from "../features/registry/builtInCategories";
+import {
+  builtInCategories,
+  type BuiltInCategory,
+} from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
 import { toCamelCase, toKebabCase, toPascalCase } from "../shared/helpers";
 
@@ -68,11 +71,20 @@ interface RoundTripCase {
 }
 
 /**
+ * The descriptor's `cssVarPrefix`, or `undefined` for a category with no
+ * CSS-variable representation.
+ * @param {BuiltInCategory} descriptor - Built-in category descriptor
+ * @returns {string | undefined} The prefix, when declared
+ */
+const cssVarPrefixOf = (descriptor: BuiltInCategory): string | undefined =>
+  "cssVarPrefix" in descriptor ? descriptor.cssVarPrefix : undefined;
+
+/**
  * Every built-in descriptor with a non-empty `classPrefixes`, crossed with
  * every fixture key of that category — mirrors how `generateSourceInline`
- * resolves per-category keys (`select`, or `theme.typography` directly for
- * the one descriptor with no `select`), except the raw (non-kebab) theme
- * key is kept since `createVariantMapper` does its own kebab-casing.
+ * resolves per-category keys (`theme[descriptor.key]`), except the raw
+ * (non-kebab) theme key is kept since `createVariantMapper` does its own
+ * kebab-casing.
  * @returns {RoundTripCase[]} Every (category, prefix, key) triple to check
  */
 const buildRoundTripCases = (): RoundTripCase[] => {
@@ -80,13 +92,9 @@ const buildRoundTripCases = (): RoundTripCase[] => {
 
   for (const descriptor of builtInCategories) {
     const prefixes = descriptor.classPrefixes;
-    if (!prefixes || prefixes.length === 0) continue;
 
-    const record =
-      descriptor.key === "typography"
-        ? fixtureTheme.typography
-        : descriptor.select?.(fixtureTheme);
-    const keys = record ? Object.keys(record) : [];
+    const record = fixtureTheme[descriptor.key];
+    const keys = Object.keys(record);
     if (keys.length === 0) continue;
 
     for (const prefix of prefixes) {
@@ -96,7 +104,7 @@ const buildRoundTripCases = (): RoundTripCase[] => {
           prefix,
           keys,
           key,
-          cssVarPrefix: descriptor.cssVarPrefix,
+          cssVarPrefix: cssVarPrefixOf(descriptor),
         });
       }
     }
@@ -131,16 +139,16 @@ const buildStateRoundTripCases = (): StateRoundTripCase[] => {
   const cases: StateRoundTripCase[] = [];
 
   for (const descriptor of builtInCategories) {
-    const prefixes = descriptor.classPrefixes;
-    const states = descriptor.states;
-    if (!prefixes || prefixes.length === 0 || !states || states.length === 0)
-      continue;
+    const prefixes: readonly string[] = descriptor.classPrefixes;
+    const states: readonly string[] =
+      "states" in descriptor ? descriptor.states : [];
+    if (states.length === 0) continue;
 
     // `createDesignTokens` camelCases every key before it reaches the mapper
     // (`accent-hover` -> `accentHover`); mirror that so kebab-keyed themes
     // are round-tripped the way real consumers see them.
-    const record = descriptor.select?.(fixtureTheme);
-    const keys = record ? Object.keys(record).map(toCamelCase) : [];
+    const record = fixtureTheme[descriptor.key];
+    const keys = Object.keys(record).map(toCamelCase);
     if (keys.length === 0) continue;
 
     for (const prefix of prefixes) {
@@ -151,7 +159,7 @@ const buildStateRoundTripCases = (): StateRoundTripCase[] => {
           key,
           keys,
           states,
-          cssVarPrefix: descriptor.cssVarPrefix,
+          cssVarPrefix: cssVarPrefixOf(descriptor),
         });
       }
     }
@@ -196,7 +204,7 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
 
   it("covers every built-in category with a class prefix", () => {
     const categoriesWithPrefixes = builtInCategories.filter(
-      (d) => d.classPrefixes && d.classPrefixes.length > 0,
+      (d) => d.classPrefixes.length > 0,
     );
     const coveredCategories = new Set(cases.map((c) => c.category));
 
@@ -321,4 +329,64 @@ describe("integration: every color key the schema accepts maps to a class Tailwi
       expect(selectors, cls).toContain(`.${escapeClassName(cls)}`);
     }
   });
+});
+
+describe("integration: typed token arrays equal the keys expanded in @source inline", () => {
+  type Shape = "present" | "absent" | "empty";
+  const shapes: Shape[] = ["present", "absent", "empty"];
+
+  /**
+   * The keys the category's main (non-state) `@source inline` line expands,
+   * isolated by switching every other category off through `coverage`.
+   * @param {Record<string, unknown>} theme - Theme to generate from
+   * @param {BuiltInCategory} descriptor - Category under test
+   * @returns {string[]} Kebab-cased keys of that line (empty when no line)
+   */
+  const sourceInlineKeys = (
+    theme: Record<string, unknown>,
+    descriptor: BuiltInCategory,
+  ): string[] => {
+    const off = Object.fromEntries(
+      builtInCategories
+        .filter((other) => other.key !== descriptor.key)
+        .map((other) => [other.key, false]),
+    );
+    const { css } = generate(theme as never, {
+      spacing: { enabled: false },
+      coverage: off,
+    });
+    // Every other category is off, so the category line is the first
+    // `@source inline` line (its state lines follow it).
+    const main = css
+      .split("\n")
+      .find((line) => line.startsWith("@source inline("));
+    if (!main) return [];
+    const groups = main.match(/\{([^{}]*)\}/g) ?? [];
+    const last = groups[groups.length - 1] ?? "";
+    return last.slice(1, -1).split(",");
+  };
+
+  const cases = builtInCategories.flatMap((descriptor) =>
+    shapes
+      .filter((shape) => descriptor.key !== "colors" || shape === "present")
+      .map((shape) => ({ descriptor, shape, key: descriptor.key })),
+  );
+
+  it.each(cases)(
+    "$key ($shape): token array == @source inline keys",
+    ({ descriptor, shape }) => {
+      const theme: Record<string, unknown> = { colors: fixtureTheme.colors };
+      if (shape === "present")
+        theme[descriptor.key] = fixtureTheme[descriptor.key];
+      if (shape === "empty") theme[descriptor.key] = {};
+
+      const tokens = generate(theme as never, { spacing: { enabled: false } })
+        .tokens.Web as unknown as Record<string, readonly string[]>;
+      const fromTokens = (tokens[descriptor.tokenName] ?? []).map(toKebabCase);
+
+      expect(fromTokens).toEqual(
+        sourceInlineKeys(theme, descriptor).filter(Boolean),
+      );
+    },
+  );
 });

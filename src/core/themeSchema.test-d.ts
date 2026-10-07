@@ -1,12 +1,27 @@
 import { describe, it, expectTypeOf } from "vitest";
 import type { z } from "zod";
 
+import type {
+  CategoryKey,
+  CssVarCategoryKey,
+} from "../features/registry/builtInCategories";
+
 import { defineTheme } from "./defineTheme";
-import type { ThemeSchema, ThemeConfig } from "./themeSchema";
+import type {
+  ThemeSchema,
+  ThemeConfig,
+  ThemeCssVarSource,
+} from "./themeSchema";
 
 describe("ThemeSchema type inference", () => {
   it("z.infer<typeof ThemeSchema> is exactly the exported ThemeConfig type", () => {
     expectTypeOf<z.infer<typeof ThemeSchema>>().toEqualTypeOf<ThemeConfig>();
+  });
+
+  it("ThemeConfig's category fields and the registry's CategoryKey agree", () => {
+    expectTypeOf<CategoryKey>().toExtend<keyof ThemeConfig>();
+    expectTypeOf<keyof ThemeCssVarSource>().toEqualTypeOf<CssVarCategoryKey>();
+    expectTypeOf<CssVarCategoryKey>().toExtend<CategoryKey>();
   });
 
   it("defineTheme() preserves the literal shape of its input for downstream inference", () => {

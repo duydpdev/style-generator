@@ -1,3 +1,9 @@
+import type {
+  BuiltInCategory,
+  CategoryKey,
+  RegistryPrefix,
+} from "../features/registry/builtInCategories";
+
 export enum Breakpoint {
   SM = "sm",
   MD = "md",
@@ -20,6 +26,48 @@ export const defaultScreens: Record<Breakpoint, string> = {
  * Value: Record of CSS property → var() reference
  */
 export type SpacingPropertyMap = Record<string, Record<string, string>>;
+
+/**
+ * How much of one token category's `@source inline` coverage to emit.
+ * `coverage` only trims the `@source inline(...)` safelist lines
+ * (class-name coverage for classes Tailwind cannot see in source files); it
+ * never changes the `@theme inline` mapping, the `@utility` blocks or the
+ * typed `DesignTokens`.
+ * @template P Class prefixes the category accepts
+ */
+export interface CoverageRule<P extends string = RegistryPrefix> {
+  /**
+   * Keep only these class prefixes of the category (e.g. `["bg"]` for
+   * `colors`, which feeds `bg`, `text` and `border`). Non-empty; each entry
+   * must be one of the category's own prefixes, and `typography` has none
+   * (its class is the bare key). Applies to the category's state lines too.
+   */
+  prefixes?: readonly P[];
+  /**
+   * `"all"` (default): every key of the category. `"aliased"`: only the
+   * alias holders — keys whose value is a `$<key>` alias, in the base record
+   * or in any `themeAxes` override of the same category (e.g. `primary:
+   * "$blue600"`). The primitives they point to are consumed through
+   * `var(--sg-*)` and need no class. Not accepted for `typography`.
+   */
+  keys?: "aliased" | "all";
+}
+
+/** The class prefixes of one built-in category (none for `typography`). */
+type CategoryPrefix<K extends CategoryKey> = Exclude<
+  Extract<BuiltInCategory, { key: K }>["classPrefixes"][number],
+  ""
+>;
+
+/**
+ * The `coverage` rule of category `K`: its own prefixes only, and none at
+ * all for a category without class prefixes (`typography`).
+ */
+type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
+  never,
+]
+  ? Omit<CoverageRule, "prefixes"> & { prefixes?: never }
+  : CoverageRule<CategoryPrefix<K>>;
 
 export interface StyleGeneratorOptions {
   /**
@@ -85,4 +133,18 @@ export interface StyleGeneratorOptions {
    * and inject an arbitrary at-rule.
    */
   extraSources?: string[];
+
+  /**
+   * Trim the `@source inline(...)` coverage per token category. Absent, or
+   * `true`, keeps today's output (one line per category covering every key
+   * and prefix, plus the colors state lines). `false` omits the category's
+   * lines (and its state lines); a {@link CoverageRule} keeps only the
+   * listed `prefixes` and/or the alias holders (`keys: "aliased"`). Typed
+   * tokens and the `@theme`/`@utility` CSS are unaffected.
+   *
+   * Validated by `generate()`: keys must be built-in category names, every
+   * `prefixes` entry a class prefix of that category, and `keys: "aliased"`
+   * is rejected for `typography` (it has no `$` aliases).
+   */
+  coverage?: { [K in CategoryKey]?: boolean | CategoryCoverageRule<K> };
 }

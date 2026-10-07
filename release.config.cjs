@@ -37,13 +37,17 @@ const parserOpts = {
 };
 
 const FIX_SECTION = "Bug Fixes";
+const FEAT_SECTION = "Features";
 
 // A `[fix]` often tightens validation, so its body says what is now rejected
-// and how to migrate. Attach it to the entry as `details`, indented to stay
-// inside the Markdown list item (changelog-template.hbs).
+// and how to migrate; a `[feat]` body lists behaviour notes (changed
+// defaults, new semantics). Attach it to the entry as `details`, indented to
+// stay inside the Markdown list item (changelog-template.hbs).
+const DETAIL_SECTIONS = new Set([FEAT_SECTION, FIX_SECTION]);
+
 const finalizeContext = (context) => {
   for (const group of context.commitGroups) {
-    if (group.title !== FIX_SECTION) continue;
+    if (!DETAIL_SECTIONS.has(group.title)) continue;
     group.commits = group.commits.map((commit) => {
       const body = commit.body?.trim();
       if (!body) return commit;

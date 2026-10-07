@@ -4,7 +4,12 @@ import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { normalizePath, readConfigFile, resolveConfig } from "./config";
+import {
+  normalizePath,
+  readConfigFile,
+  resolveConfig,
+  toGeneratorOptions,
+} from "./config";
 
 describe("normalizePath", () => {
   it("trims whitespace", () => {
@@ -166,6 +171,22 @@ describe("resolveConfig", () => {
     const config = resolveConfig({ extraSources: ["flag-wins"] });
     expect(config.extraSources).toEqual(["flag-wins"]);
   });
+
+  it("accepts `coverage` from style-gen.config.json and forwards it to generate() options", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({
+        coverage: { colors: false, borderRadius: { prefixes: ["rounded"] } },
+      }),
+    );
+
+    const file = readConfigFile(tmp);
+    expect(file.issues).toBeUndefined();
+    expect(toGeneratorOptions(resolveConfig({}, file)).coverage).toEqual({
+      colors: false,
+      borderRadius: { prefixes: ["rounded"] },
+    });
+  });
 });
 
 describe("readConfigFile schema validation (X-04)", () => {
@@ -192,6 +213,11 @@ describe("readConfigFile schema validation (X-04)", () => {
 
   it.each([
     [{ breakpoint: ["xl"], outptu: "x.css" }, /^breakpoint → /m],
+    [
+      { coverage: { colors: { prefixes: ["bgg"] } } },
+      /^coverage\.colors\.prefixes\.0 → /m,
+    ],
+    [{ coverage: { color: false } }, /^coverage\.color → Unrecognized key/m],
     [{ theme: 123 }, /^theme → /m],
     [{ breakpoints: "md" }, /^breakpoints → /m],
     [{ breakpoints: ["tablet"] }, /^breakpoints\.0 → /m],

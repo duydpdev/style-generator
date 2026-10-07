@@ -59,13 +59,13 @@ flowchart TD
 
 ```text
 src/
-├── core/                       # generate(), ThemeSchema, options schema (internal, optionsSchema.ts), Options, defineTheme, type inference
+├── core/                       # generate(), ThemeSchema (+ tokenGrammar, aliasGraph, crossFieldChecks), options schema (internal, optionsSchema.ts), resolveOptions, Options, defineTheme, type inference
 ├── features/
 │   ├── registry/               # builtInCategories, flattenByCategory, generateSourceInline
 │   ├── theme-css/              # :root / html[data-axis] / @theme inline, border-width, screens
 │   ├── typography/             # theme.typography → @utility
 │   ├── spacing/                # .sp-* utilities + resolveSpacing helpers
-│   ├── tokens/                 # createDesignTokens
+│   ├── tokens/                 # createDesignTokens / buildDesignTokens
 │   ├── cva/                    # createVariantMapper
 │   ├── vite/                   # styleGenVite
 │   └── next/                   # styleGenNext
@@ -154,9 +154,13 @@ export default styleGenNext({
 
 ## Registry & `@source inline`
 
-**Vì sao registry:** trước 4.0.0 mỗi category có danh sách key/prefix lặp ở plugin, safelist và tokens. Giờ một `TokenCategoryDescriptor` (`src/features/registry/builtInCategories.ts`) khai báo `cssVarPrefix`, `themeNamespace`, `classPrefixes`, `responsive`, `states`, giá trị mặc định; thêm một category = 1 dòng trong `ThemeSchema` + 1 descriptor + 1 test.
+**Vì sao registry:** trước 4.0.0 mỗi category có danh sách key/prefix lặp ở plugin, safelist và tokens. Giờ một `TokenCategoryDescriptor` (`src/features/registry/builtInCategories.ts`) khai báo `cssVarPrefix`, `themeNamespace`, `classPrefixes`, `responsive`, `states`, giá trị mặc định; thêm một category = 1 dòng trong `ThemeSchema` + 1 descriptor + 1 test. Dữ liệu category đọc bằng `theme[descriptor.key]`; các union `CategoryKey`/`CssVarCategoryKey`/`RegistryPrefix` và `CategoryTokenKey<T, K>` (kiểu key token) suy ra từ chính mảng `builtInCategories`. Giá trị mặc định (`defaultValues` của `borderRadius`/`borderWidth`) nằm ở `categoryTokenMeta.ts` — một file riêng, nhỏ, không kéo theo phần CSS của descriptor; descriptor spread nó vào, còn `createDesignTokens` chỉ import file này, nên entry `./tokens` (browser-safe, có ngân sách gzip) không phải ôm cả registry. Guard trong `builtInCategories.test.ts` giữ hai bên khớp.
 
-**Vì sao `@source inline` thay safelist:** Tailwind v4 không quét class được dựng lúc runtime. `generateSourceInline` phát một dòng `@source inline("…")` cho mỗi category (và mỗi state có sibling, ví dụ `hover:bg-primary-hover`), nên class luôn tồn tại dù source không tham chiếu chúng; class dựng runtime khai báo qua `options.extraSources`. Đánh đổi: mọi màu luôn có `bg-/text-/border-*`, CSS lớn hơn một chút.
+**Resolve option một lần:** `generate()` gọi `resolveOptions()` (`src/core/resolveOptions.ts`) ngay sau khi parse; `generateScreensCss`, `generateSpacingCss`, `generateSourceInline` và `buildDesignTokens` đọc `ResolvedOptions` (breakpoints, screens đã gộp với `defaultScreens`, breakpoints sắp theo độ rộng bằng `parseFloat`, spacing, `coverage`) thay vì mỗi nơi tự lặp `options.x ?? DEFAULT_X`. Phần mà token cần (`breakpoints`, `screens`, `spacing`) nằm ở `resolveTokenOptions()` (`src/core/resolveTokenOptions.ts`), `resolveOptions` spread nó; `createDesignTokens(theme, options)` = `buildDesignTokens(theme, resolveTokenOptions(options))`. Hai file này tách riêng vì Rollup gom module theo tập entry dùng chúng: gộp vào `resolveOptions` sẽ kéo cả `coverage` vào `./tokens`. Một category khai báo `{}` được coi như vắng ở cả `@source inline` lẫn `DesignTokens` (dùng key mặc định).
+
+**Entry `./tokens` và ngân sách gzip:** `vite.config.ts` đặt `preserveEntrySignatures: "allow-extension"`. Với mặc định `strict`, Rollup phải tách một facade chỉ chứa export công khai khi chunk của `./tokens` dùng chung code nội bộ (`buildDesignTokens`, `resolveTokenOptions`, `categoryTokenMeta`) với `generate`, và facade đó (~290 B gzip) làm `./tokens` vượt ngân sách. Hệ quả: `dist/tokens.js` và `dist/tokens.cjs` export thêm vài alias một chữ cái ở runtime (`minifyInternalExports: true` áp dụng cho cả CJS); `dist/tokens.d.ts` không đổi và là hợp đồng duy nhất, các alias này không phải API. Ngân sách `./tokens` chỉ được nâng khi bề mặt tokens tự lớn lên (ví dụ `aliasedColors` ở phase 09), không phải để nuốt coupling ngẫu nhiên.
+
+**Vì sao `@source inline` thay safelist:** Tailwind v4 không quét class được dựng lúc runtime. `generateSourceInline` phát một dòng `@source inline("…")` cho mỗi category (và mỗi state có sibling, ví dụ `hover:bg-primary-hover`), nên class luôn tồn tại dù source không tham chiếu chúng; class dựng runtime khai báo qua `options.extraSources`. Đánh đổi: mọi màu luôn có `bg-/text-/border-*`, CSS lớn hơn một chút — `options.coverage` thu hẹp dòng này theo category (`false`, `prefixes`, `keys: "aliased"`; xem README §8).
 
 **Alias `$key`:** `flattenByCategory` đổi `"$blue500"` thành `var(--sg-blue-500)` (theo `cssVarPrefix` của chính category). `ThemeSchema` đã chứng minh target tồn tại và đồ thị không có chu trình trước khi emit.
 
@@ -215,20 +219,20 @@ Tắt bằng `options.spacing.enabled = false`; tuỳ chỉnh bằng `options.sp
 
 ## Exports API
 
-| Export                                                                                               | Subpath                                     | Mô tả                                                                                        |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `generate`                                                                                           | `.`                                         | Entry chính → `{ css, tokens, schema }`                                                      |
-| `defineTheme`, `defineOptions`                                                                       | `.`                                         | Helper type-safe; `defineTheme` validate runtime (chỉ ở root)                                |
-| `generateThemeCss`                                                                                   | `.`                                         | Chỉ `:root` + axis + `@theme inline`                                                         |
-| `createDesignTokens`                                                                                 | `.`, `./tokens`                             | Sinh Design Tokens                                                                           |
-| `createVariantMapper`, `COLOR_STATES`                                                                | `.`, `./cva` (`COLOR_STATES` cả `./tokens`) | Map token → class (kebab), `{ states }` cho hover/active                                     |
-| `resolveSpacing`, `resolveSpacingProps`                                                              | `.`, `./spacing`                            | Resolve spacing props → `{ className(s), style }`                                            |
-| `styleGenVite`                                                                                       | `./vite`                                    | Vite plugin                                                                                  |
-| `styleGenNext`                                                                                       | `./next`                                    | Next.js config wrapper                                                                       |
-| `Breakpoint`, `defaultScreens`                                                                       | `.`, `./tokens`                             | Enum `SM \| MD \| LG \| XL \| XXL` và bề rộng mặc định                                       |
-| `ColorVariant` … `RoundedVariant`                                                                    | `./types` (và `.`)                          | Union key theo theme: color, text, shadow, backdrop blur, font family, border width, rounded |
-| `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `ResponsiveValueStrict` | `./types` (và `.`)                          | Kiểu công khai                                                                               |
-| `SpacingKey`, `DefaultBreakpointKeys`                                                                | `./spacing`                                 | Kiểu spacing                                                                                 |
+| Export                                                                                                                                                  | Subpath                                     | Mô tả                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `generate`                                                                                                                                              | `.`                                         | Entry chính → `{ css, tokens, schema }`                                                      |
+| `defineTheme`, `defineOptions`                                                                                                                          | `.`                                         | Helper type-safe; `defineTheme` validate runtime (chỉ ở root)                                |
+| `generateThemeCss`                                                                                                                                      | `.`                                         | Chỉ `:root` + axis + `@theme inline`                                                         |
+| `createDesignTokens`                                                                                                                                    | `.`, `./tokens`                             | Sinh Design Tokens                                                                           |
+| `createVariantMapper`, `COLOR_STATES`                                                                                                                   | `.`, `./cva` (`COLOR_STATES` cả `./tokens`) | Map token → class (kebab), `{ states }` cho hover/active                                     |
+| `resolveSpacing`, `resolveSpacingProps`                                                                                                                 | `.`, `./spacing`                            | Resolve spacing props → `{ className(s), style }`                                            |
+| `styleGenVite`                                                                                                                                          | `./vite`                                    | Vite plugin                                                                                  |
+| `styleGenNext`                                                                                                                                          | `./next`                                    | Next.js config wrapper                                                                       |
+| `Breakpoint`, `defaultScreens`                                                                                                                          | `.`, `./tokens`                             | Enum `SM \| MD \| LG \| XL \| XXL` và bề rộng mặc định                                       |
+| `ColorVariant` … `RoundedVariant`                                                                                                                       | `./types` (và `.`)                          | Union key theo theme: color, text, shadow, backdrop blur, font family, border width, rounded |
+| `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `CoverageRule`, `CategoryKey`, `CategoryTokenKey`, `ResponsiveValueStrict` | `./types` (và `.`)                          | Kiểu công khai                                                                               |
+| `SpacingKey`, `DefaultBreakpointKeys`                                                                                                                   | `./spacing`                                 | Kiểu spacing                                                                                 |
 
 Danh sách đầy đủ nằm trong `src/index.ts` và `src/exports/*`; những gì bị xoá ở 4.0.0 nằm trong [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
 

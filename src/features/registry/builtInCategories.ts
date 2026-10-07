@@ -1,22 +1,20 @@
 import { COLOR_STATES } from "../../shared/colorStates";
 import {
-  DEFAULT_BORDER_VALUES,
-  DEFAULT_ROUNDED_VALUES,
-} from "../../shared/defaultOption";
-import {
-  borderProperties,
-  roundedProperties,
+  BORDER_PREFIXES,
+  ROUNDED_PREFIXES,
 } from "../../shared/safelistProperties";
 
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
-import { defineCategory } from "./TokenCategoryDescriptor";
+import { categoryTokenMeta } from "./categoryTokenMeta";
 
 /**
  * `colors` — flat camelCase palette. Feeds `bg-*`/`text-*`/`border-*`
  * utilities through Tailwind v4's `--color-*` `@theme` namespace.
  */
-export const colorsCategory = defineCategory({
+export const colorsCategory = {
   key: "colors",
+  tokenName: "variantColor",
+  tokenKeyName: "colorKey",
   cssVarPrefix: "sg",
   themeNamespace: "--color-",
   classPrefixes: ["bg", "text", "border"],
@@ -25,33 +23,36 @@ export const colorsCategory = defineCategory({
    * `primary` + `primaryHover`/`primaryActive`) opts a token into the
    * `hover:`/`active:` variant classes `createVariantMapper(prefix,
    * tokens, { states })` generates and the `@source inline` state lines
-   * `generateSourceInline` emits for it. See `consumer-app/packages/
-   * theme/theme.json`'s flat-sibling convention this mirrors.
+   * `generateSourceInline` emits for it.
    */
   states: COLOR_STATES,
-  select: (source) => source.colors,
-});
+} as const satisfies TokenCategoryDescriptor;
 
 /**
  * `typography` — custom named text styles (e.g. `text12Mono` →
  * `.text-12-mono`). Has no Tailwind `@theme` namespace of its own — the
- * token key already carries the full class name, so `classPrefixes` is a
- * single empty-string entry and the CSS is emitted as `@utility <key> {…}`
- * by `generateTypographyCss` rather than through `flattenByCategory`.
+ * token key already carries the full class name, so `bareClassName` is set,
+ * `classPrefixes` is a single empty-string entry and the CSS is emitted as
+ * `@utility <key> {…}` by `generateTypographyCss` rather than through
+ * `flattenByCategory`.
  */
-export const typographyCategory = defineCategory({
+export const typographyCategory = {
   key: "typography",
+  tokenName: "variantText",
+  tokenKeyName: "textKey",
   classPrefixes: [""],
-});
+  bareClassName: true,
+} as const satisfies TokenCategoryDescriptor;
 
 /** `shadows` — named `box-shadow` presets, feeds `shadow-*` utilities. */
-export const shadowsCategory = defineCategory({
+export const shadowsCategory = {
   key: "shadows",
+  tokenName: "variantShadow",
+  tokenKeyName: "shadowKey",
   cssVarPrefix: "sg-shadow",
   themeNamespace: "--shadow-",
   classPrefixes: ["shadow"],
-  select: (source) => source.shadows,
-});
+} as const satisfies TokenCategoryDescriptor;
 
 /**
  * `backDropBlurs` — named blur presets.
@@ -62,28 +63,30 @@ export const shadowsCategory = defineCategory({
  * is deliberately NOT used: it would also redefine the `blur-*` filter
  * scale and override Tailwind's default `--blur-sm`/`md`/`lg` values.
  */
-export const backDropBlursCategory = defineCategory({
+export const backDropBlursCategory = {
   key: "backDropBlurs",
+  tokenName: "variantBackdropBlur",
+  tokenKeyName: "backdropBlurKey",
   cssVarPrefix: "sg-backdrop-blur",
   themeNamespace: "--backdrop-blur-",
   classPrefixes: ["backdrop-blur"],
-  select: (source) => source.backDropBlurs,
-});
+} as const satisfies TokenCategoryDescriptor;
 
 /**
  * `borderRadius` — named radius presets, responsive (`md:rounded-sm`, …)
  * so the `@source inline` lines cover the `md`/`lg` variants of every
  * rounded class prefix.
  */
-export const borderRadiusCategory = defineCategory({
+export const borderRadiusCategory = {
   key: "borderRadius",
+  tokenName: "roundedOption",
+  tokenKeyName: "roundedKey",
+  ...categoryTokenMeta.borderRadius,
   cssVarPrefix: "sg-radius",
   themeNamespace: "--radius-",
-  classPrefixes: roundedProperties,
+  classPrefixes: ROUNDED_PREFIXES,
   responsive: true,
-  defaultValues: DEFAULT_ROUNDED_VALUES,
-  select: (source) => source.borderRadius,
-});
+} as const satisfies TokenCategoryDescriptor;
 
 /**
  * `fontFamily` — named font stacks (e.g. `sans: '"Inter", sans-serif'`).
@@ -94,13 +97,14 @@ export const borderRadiusCategory = defineCategory({
  * font-*weight* utility name (`font-bold`, …) since both utilities share
  * the same `font-` class prefix.
  */
-export const fontFamilyCategory = defineCategory({
+export const fontFamilyCategory = {
   key: "fontFamily",
+  tokenName: "variantFontFamily",
+  tokenKeyName: "fontFamilyKey",
   cssVarPrefix: "sg-font",
   themeNamespace: "--font-",
   classPrefixes: ["font"],
-  select: (source) => source.fontFamily,
-});
+} as const satisfies TokenCategoryDescriptor;
 
 /**
  * `borderWidth` — named border widths (collapses the old `border`
@@ -111,19 +115,21 @@ export const fontFamilyCategory = defineCategory({
  * `generateBorderWidthCss.ts` emits an explicit `@utility
  * <classPrefix>-<key> { <longhand>: var(--sg-border-width-<key>); }` per
  * declared key, one block per side prefix (all 7 of `classPrefixes`).
- * When the theme omits `borderWidth` entirely, `generateSourceInline`
- * falls back to `defaultValues` (Tailwind's own built-in scale) instead.
+ * When the theme omits `borderWidth` entirely (or declares it empty),
+ * `generateSourceInline` and `createDesignTokens` fall back to
+ * `defaultValues` (Tailwind's own built-in scale) instead.
  */
-export const borderWidthCategory = defineCategory({
+export const borderWidthCategory = {
   key: "borderWidth",
+  tokenName: "borderWidthOption",
+  tokenKeyName: "borderWidthKey",
+  ...categoryTokenMeta.borderWidth,
   cssVarPrefix: "sg-border-width",
-  classPrefixes: borderProperties,
-  defaultValues: DEFAULT_BORDER_VALUES,
-  select: (source) => source.borderWidth,
-});
+  classPrefixes: BORDER_PREFIXES,
+} as const satisfies TokenCategoryDescriptor;
 
 /** All built-in token category descriptors, in theme-key declaration order. */
-export const builtInCategories: readonly TokenCategoryDescriptor[] = [
+export const builtInCategories = [
   colorsCategory,
   typographyCategory,
   shadowsCategory,
@@ -131,4 +137,53 @@ export const builtInCategories: readonly TokenCategoryDescriptor[] = [
   borderRadiusCategory,
   fontFamilyCategory,
   borderWidthCategory,
-];
+] as const satisfies readonly TokenCategoryDescriptor[];
+
+/** One built-in category descriptor (a union of the seven literal descriptors). */
+export type BuiltInCategory = (typeof builtInCategories)[number];
+
+/** Every built-in category key — the `ThemeConfig` field of each descriptor. */
+export type CategoryKey = BuiltInCategory["key"];
+
+/** Keys of the categories with a `--sg-*` CSS variable (`cssVarPrefix` set). */
+export type CssVarCategoryKey = Extract<
+  BuiltInCategory,
+  { cssVarPrefix: string }
+>["key"];
+
+/**
+ * Every non-empty utility class prefix a built-in category feeds. The bare
+ * empty prefix of `typography` (`bareClassName`) is not a prefix, so it is
+ * excluded.
+ */
+export type RegistryPrefix = Exclude<
+  BuiltInCategory["classPrefixes"][number],
+  ""
+>;
+
+/** A `TokenCategoryDescriptor` that maps into `--sg-*` variables. */
+export interface CssVarCategoryDescriptor extends TokenCategoryDescriptor<CssVarCategoryKey> {
+  cssVarPrefix: string;
+}
+
+/**
+ * Type guard: a descriptor with a `cssVarPrefix` is a CSS-var category, so
+ * its `key` is a field of `ThemeOverride`.
+ * @param {TokenCategoryDescriptor} descriptor - Any category descriptor
+ * @returns {boolean} `true` for a CSS-var category
+ */
+export const isCssVarCategory = (
+  descriptor: TokenCategoryDescriptor,
+): descriptor is CssVarCategoryDescriptor =>
+  descriptor.cssVarPrefix !== undefined;
+
+const allCategories: readonly TokenCategoryDescriptor[] = builtInCategories;
+
+/**
+ * The built-in categories that carry `--sg-*` CSS variable data (every
+ * category but `typography`), in declaration order. Their `key` is a field
+ * of `ThemeOverride`, so `source[descriptor.key]` is the typed flat token
+ * record.
+ */
+export const cssVarCategories: readonly CssVarCategoryDescriptor[] =
+  allCategories.filter(isCssVarCategory);

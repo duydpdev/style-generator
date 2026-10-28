@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { theme as baseTheme } from "design-system-example";
 
 import { Box } from "../components/Box";
 import { Button } from "../components/Button";
-import baseTheme from "../theme/theme.json";
 
 import { PALETTES, type PaletteId } from "./palettes";
 

@@ -78,6 +78,22 @@ describe("resolveSpacingProps", () => {
   });
 });
 
+describe("resolveSpacing prop parameter", () => {
+  it("accepts a custom spacing.properties key without a cast, keeping SpacingKey in the union", () => {
+    expectTypeOf(resolveSpacing("inset", 4)).toHaveProperty("className");
+    expectTypeOf<SpacingKey>().toExtend<Parameters<typeof resolveSpacing>[0]>();
+    expectTypeOf<string>().toExtend<Parameters<typeof resolveSpacing>[0]>();
+  });
+
+  it("still rejects a non-string prop and a bad value", () => {
+    expectTypeOf(resolveSpacing).parameter(0).not.toBeNumber();
+    // @ts-expect-error prop must be a string
+    resolveSpacing(4, 4);
+    // @ts-expect-error unknown breakpoint key stays an error for a custom prop
+    resolveSpacing("inset", { tablet: 4 });
+  });
+});
+
 describe("default breakpoint keys match the CSS (md/lg)", () => {
   it("accepts md/lg and rejects xl/sm by default", () => {
     expectTypeOf(

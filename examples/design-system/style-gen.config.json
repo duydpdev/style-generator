@@ -1,0 +1,5 @@
+{
+  "theme": "src/theme.json",
+  "output": "src/styles/theme.css",
+  "breakpoints": ["md", "lg"]
+}

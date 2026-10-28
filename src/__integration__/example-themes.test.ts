@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { describe, it, expect } from "vitest";
 
@@ -36,8 +36,18 @@ const themeFiles = [
   .filter((path, index, all) => all.indexOf(path) === index);
 
 describe("integration: workspace theme.json files parse via ThemeSchema", () => {
-  it("found at least the known example/site theme files", () => {
-    expect(themeFiles.length).toBeGreaterThanOrEqual(6);
+  it("found the known example/site theme files", () => {
+    const found = themeFiles.map((file) =>
+      relative(repoRoot, file).replaceAll("\\", "/"),
+    );
+    expect(found).toEqual(
+      expect.arrayContaining([
+        "examples/theme.json",
+        "examples/shadcn-theme.json",
+        "examples/design-system/src/theme.json",
+        "site/src/theme/theme.json",
+      ]),
+    );
   });
 
   it.each(themeFiles)("%s parses successfully", (file) => {

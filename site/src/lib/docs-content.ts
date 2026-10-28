@@ -17,6 +17,7 @@ const raw = import.meta.glob<string>(
     "../../../documents/*.md",
     "!../../../documents/README.md",
     "../../../README.md",
+    "../../../documents/migration/4.x-to-5.0.md",
     "../../../documents/migration/3.x-to-4.0.md",
   ],
   {
@@ -50,11 +51,17 @@ const META: Record<string, DocMeta | undefined> = {
     group: "Reference",
     order: 1,
   },
+  "documents/migration/4.x-to-5.0.md": {
+    slug: "migration-4x-to-5",
+    title: "Migration 4.x → 5.0",
+    group: "Reference",
+    order: 2,
+  },
   "documents/migration/3.x-to-4.0.md": {
     slug: "migration-3x-to-4",
     title: "Migration 3.x → 4.0",
     group: "Reference",
-    order: 2,
+    order: 3,
   },
 };
 

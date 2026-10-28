@@ -21,4 +21,13 @@ describe("styleGenNext resolved config type", () => {
       poweredByHeader: boolean;
     }>();
   });
+
+  it("accepts no options (config-file form) and keeps the config type", () => {
+    const config = { reactStrictMode: true };
+    expectTypeOf(
+      styleGenNext()(config)("phase-production-build"),
+    ).toEqualTypeOf<{
+      reactStrictMode: boolean;
+    }>();
+  });
 });

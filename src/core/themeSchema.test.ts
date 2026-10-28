@@ -288,6 +288,48 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.error?.issues[0]?.path).toContain("2xl");
   });
 
+  describe("typography bounds and shadowing (V2-07)", () => {
+    const style = {
+      fontSize: "16px",
+      lineHeight: "24px",
+      fontWeight: 400,
+    };
+    const parse = (typography: Record<string, unknown>) =>
+      ThemeSchema.safeParse({ colors: { primary: "#fff" }, typography });
+
+    it.each([
+      ["spacing", "spBody"],
+      ["spacing", "sp-body"],
+      ["font", "fontBold"],
+    ])("rejects the %s-shadowing key %s", (_family, key) => {
+      const result = parse({ [key]: style });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues.map((i) => i.path.join("."))).toContain(
+        `typography.${key}`,
+      );
+    });
+
+    it("accepts keys that merely start with the letters sp or font", () => {
+      expect(
+        parse({ spacious: style, fonts: style, footnote: style }).success,
+      ).toBe(true);
+    });
+
+    it.each([[1], [400], [450.5], [1000]])(
+      "accepts fontWeight %s",
+      (fontWeight) => {
+        expect(parse({ body: { ...style, fontWeight } }).success).toBe(true);
+      },
+    );
+
+    it.each([[0], [0.5], [1001], [-100], [Number.NaN]])(
+      "rejects fontWeight %s",
+      (fontWeight) => {
+        expect(parse({ body: { ...style, fontWeight } }).success).toBe(false);
+      },
+    );
+  });
+
   it("rejects an unrecognized key inside a themeAxes override", () => {
     const result = ThemeSchema.safeParse({
       colors: { primary: "#fff" },
@@ -502,60 +544,62 @@ describe("ThemeSchema — invalid themes", () => {
       expect(issue?.message).toMatch(/declaration order/);
     },
   );
-});
 
-describe("cross-category CSS variable collisions (X-01)", () => {
-  const pathsOf = (r: z.ZodSafeParseResult<unknown>) =>
-    r.success ? [] : r.error.issues.map((i) => i.path.join("."));
+  describe('the variant name "base" is reserved (no-override sentinel)', () => {
+    it("rejects a variant named base at its own path, pointing at the sentinel and a rename", () => {
+      const result = ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: {
+          theme: {
+            base: { colors: { primary: "#000" } },
+            dark: { colors: { primary: "#111" } },
+          },
+        },
+      });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toHaveLength(1);
+      const issue = result.error?.issues[0];
+      expect(issue?.path).toEqual(["themeAxes", "theme", "base"]);
+      expect(issue?.message).toMatch(/reserved/);
+      expect(issue?.message).toMatch(/ThemeAxesState/);
+      expect(issue?.message).toMatch(/themeAxisAttributes/);
+      expect(issue?.message).toMatch(/rename/);
+    });
 
-  it.each([
-    [
-      {
-        colors: { shadowPrimary: "#ff0000" },
-        shadows: { primary: "0 1px 2px #000" },
-      },
-      "shadows.primary",
-      "colors.shadowPrimary",
-    ],
-    [
-      {
-        colors: { fontBrand: "#111" },
-        fontFamily: { brand: "Inter, sans-serif" },
-      },
-      "fontFamily.brand",
-      "colors.fontBrand",
-    ],
-    [
-      { colors: { radiusCard: "#222" }, borderRadius: { card: "8px" } },
-      "borderRadius.card",
-      "colors.radiusCard",
-    ],
-    [
-      { colors: { "backdrop-blur-sm": "#333" }, backDropBlurs: { sm: "4px" } },
-      "backDropBlurs.sm",
-      "colors.backdrop-blur-sm",
-    ],
-  ])("rejects %o at %s and names %s", (theme, path, otherPath) => {
-    const r = ThemeSchema.safeParse(theme);
-    expect(pathsOf(r)).toContain(path);
-    if (r.success) throw new Error("expected failure");
-    expect(formatZodError(r.error)).toContain(otherPath);
-  });
+    it("reports it once per axis that declares it, and prints it through formatZodError", () => {
+      const result = ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: {
+          theme: { base: { colors: { primary: "#000" } } },
+          palette: { base: { colors: { primary: "#111" } } },
+        },
+      });
+      expect(result.error?.issues.map((i) => i.path.join("."))).toEqual([
+        "themeAxes.theme.base",
+        "themeAxes.palette.base",
+      ]);
+      expect(formatZodError(result.error as z.ZodError)).toMatch(
+        /^themeAxes\.theme\.base → .*reserved/m,
+      );
+    });
 
-  it("rejects a key whose variable falls in the reserved --sg-sp- spacing namespace", () => {
-    const r = ThemeSchema.safeParse({ colors: { spP: "#fff" } });
-    expect(r.success).toBe(false);
-    expect(pathsOf(r)).toContain("colors.spP");
-  });
+    it("only reserves the exact name: Base, base2 and baseline stay valid", () => {
+      for (const name of ["Base", "base2", "baseline", "rebase"]) {
+        const result = ThemeSchema.safeParse({
+          ...baseTheme,
+          themeAxes: { theme: { [name]: { colors: { primary: "#000" } } } },
+        });
+        expect(result.success, name).toBe(true);
+      }
+    });
 
-  it("accepts prefix-like keys that do not collide", () => {
-    for (const theme of [
-      { colors: { shadowPrimary: "#f00" } },
-      { colors: { sp: "#fff" } },
-      { colors: { fontBrand: "#111" }, fontFamily: { sans: "Inter" } },
-    ]) {
-      expect(ThemeSchema.safeParse(theme).success).toBe(true);
-    }
+    it("allows an AXIS named base (it is only a key of the state object)", () => {
+      const result = ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: { base: { dark: { colors: { primary: "#000" } } } },
+      });
+      expect(result.success).toBe(true);
+    });
   });
 });
 

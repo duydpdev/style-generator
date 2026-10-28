@@ -4,7 +4,8 @@ import path from "node:path";
 import { z } from "zod";
 
 import { ThemeSchema } from "../../core/themeSchema";
-import { normalizePath, readConfigFile, resolveConfig } from "../config";
+import { resolveProjectPath } from "../../node/resolveProjectPath";
+import { loadCliConfig } from "../loadCliConfig";
 import { logger } from "../logger";
 
 export interface SchemaArgs {
@@ -21,40 +22,44 @@ const SCHEMA_FILE_NAME = "theme.schema.json";
  * theme's `"$schema": "./theme.schema.json"` expects it; a config file is
  * then read like `generate` reads it (malformed → warn and use the
  * defaults, schema issues → exit code 1, nothing written).
+ *
+ * The target must stay inside the project root, so a theme outside it
+ * (a monorepo's shared theme) needs an explicit `--out`.
  * @param {SchemaArgs} args - Schema command arguments from the CLI
+ * @param {string} [cwd] - Project root; defaults to `process.cwd()`
+ * @returns {number} The process exit code
  */
-export function schemaCommand(args: SchemaArgs): void {
+export function schemaCommand(
+  args: SchemaArgs,
+  cwd: string = process.cwd(),
+): number {
   let outPath: string;
-  if (args.out) {
-    outPath = path.resolve(process.cwd(), args.out);
-  } else {
-    const configFile = readConfigFile(process.cwd());
-    if (configFile.error) {
-      logger.warn(`Ignoring ${configFile.error}; using defaults`);
-    }
-    if (configFile.issues) {
-      logger.error(
-        `Invalid config (${configFile.source ?? "style-gen.config.json"}):\n${configFile.issues}`,
+  try {
+    if (args.out) {
+      outPath = resolveProjectPath(cwd, args.out, "--out");
+    } else {
+      const loaded = loadCliConfig(cwd);
+      if (!loaded) return 1;
+      const themePath = resolveProjectPath(cwd, loaded.config.theme, "theme", {
+        allowOutsideRoot: true,
+      });
+      outPath = resolveProjectPath(
+        cwd,
+        path.join(path.dirname(themePath), SCHEMA_FILE_NAME),
+        "schema output",
       );
-      process.exitCode = 1;
-      return;
     }
-    const config = resolveConfig({}, configFile);
-    outPath = path.resolve(
-      process.cwd(),
-      path.dirname(normalizePath(config.theme)),
-      SCHEMA_FILE_NAME,
+  } catch (error) {
+    const hint = args.out ? "" : "\n💡 Pass --out to choose where to write it";
+    logger.error(
+      `${error instanceof Error ? error.message : String(error)}${hint}`,
     );
+    return 1;
   }
   const jsonSchema = z.toJSONSchema(ThemeSchema);
 
-  const outDir = path.dirname(outPath);
-  if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir, { recursive: true });
-  }
-
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(jsonSchema, null, 2) + "\n", "utf8");
-  logger.success(
-    `Theme JSON Schema written to ${path.relative(process.cwd(), outPath)}`,
-  );
+  logger.success(`Theme JSON Schema written to ${path.relative(cwd, outPath)}`);
+  return 0;
 }

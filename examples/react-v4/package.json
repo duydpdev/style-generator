@@ -7,15 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
-    "doctor": "node ../../dist/cli/index.mjs doctor"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
+    "design-system-example": "workspace:*",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.0.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",

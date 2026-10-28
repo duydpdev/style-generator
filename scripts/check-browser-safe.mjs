@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Verify the browser-safe subpaths (`./tokens`, `./cva`, `./spacing`,
- * `./types`) never transitively import Zod, a Node builtin, or
+ * `./recipes`, `./types`) never transitively import Zod, a Node builtin, or
  * `@tailwindcss/*` — even through a shared chunk (`helpers-*`,
  * `defaultOption-*`, `safelistProperties-*`, ...).
  *
@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-const BROWSER_SAFE_SUBPATHS = ["tokens", "cva", "spacing", "types"];
+const BROWSER_SAFE_SUBPATHS = ["tokens", "cva", "spacing", "recipes", "types"];
 
 const builtinNames = new Set(builtinModules);
 

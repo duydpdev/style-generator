@@ -7,7 +7,7 @@ import {
 import type { CategoryKey } from "../features/registry/builtInCategories";
 
 import { mergeScreens } from "./resolveTokenOptions";
-import { TOKEN_KEY_RE, TokenValue } from "./tokenGrammar";
+import { TOKEN_KEY_RE } from "./tokenGrammar";
 
 /**
  * Grammar for a single `extraSources` entry: non-empty, bounded length, and
@@ -126,11 +126,26 @@ const CoverageSchema = z
   });
 
 /**
+ * A DOM attribute name chosen by `axes.attribute`. It is interpolated into
+ * the emitted selector (`[<name>="<variant>"]`), so it follows the same
+ * injection-safe grammar as every other option that reaches `generate().css`:
+ * a lowercase letter first, then lowercase letters, digits and `-` only —
+ * lowercase like the `data-<axis-kebab>` default, so two axes can never
+ * differ only by case.
+ */
+const AttributeName = z
+  .string()
+  .regex(
+    /^[a-z][a-z0-9-]*$/,
+    "Attribute name must start with a lowercase letter and contain only lowercase letters, digits, `-`",
+  );
+
+/**
  * Strict shape of `StyleGeneratorOptions`, without the cross-field
  * refinement: unknown keys (also inside `spacing`/`typography`) are
  * rejected, behavioural flags must be booleans, and every option that
  * reaches `generate().css` follows the theme's injection-safe grammar.
- * `src/cli/config.ts` extends it for `style-gen.config.json`.
+ * `src/node/loadStyleGenConfig.ts` extends it for `style-gen.config.json`.
  */
 export const StyleGeneratorOptionsShape = z.strictObject({
   breakpoints: z.array(OptionKey).optional(),
@@ -143,12 +158,21 @@ export const StyleGeneratorOptionsShape = z.strictObject({
     .strictObject({
       enabled: z.boolean().optional(),
       properties: z
-        .record(OptionKey, z.record(CssPropertyName, TokenValue))
+        .record(OptionKey, z.array(CssPropertyName).min(1))
         .optional(),
     })
     .optional(),
   extraSources: z.array(ExtraSourceEntry).optional(),
   coverage: CoverageSchema.optional(),
+  axes: z
+    .strictObject({
+      attribute: z.record(OptionKey, AttributeName).optional(),
+      scope: z.enum(["root", "element"]).optional(),
+    })
+    .optional(),
+  resetTailwindDefaults: z
+    .array(z.enum(["colors", "radius", "shadow"]))
+    .optional(),
 });
 
 /**
@@ -208,7 +232,7 @@ export const refineStyleGeneratorOptions = (
 
 /**
  * Validates every `generate()` option. Internal: not exported from any
- * barrel; `src/cli/config.ts` reuses {@link StyleGeneratorOptionsShape} and
+ * barrel; `src/node/loadStyleGenConfig.ts` reuses {@link StyleGeneratorOptionsShape} and
  * {@link refineStyleGeneratorOptions} so `style-gen.config.json` gets the
  * same verdict.
  */

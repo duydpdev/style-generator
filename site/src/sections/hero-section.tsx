@@ -5,7 +5,7 @@ import { ArrowRight } from "../components/icon";
 const INSTALL_CMD = "yarn add @duydpdev/style-generator";
 
 const STATS = [
-  { k: "Subpaths", v: "7", m: "gzip-budgeted · tree-shakeable", accent: true },
+  { k: "Subpaths", v: "8", m: "gzip-budgeted · tree-shakeable", accent: true },
   { k: "Spacing utilities", v: "21", m: "from ~4 800 classes" },
   { k: "Tailwind", v: "v4", m: "the only target" },
   { k: "Runtime", v: "Build-time", m: "CSS generated before ship" },

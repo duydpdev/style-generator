@@ -76,13 +76,13 @@ describe("generate", () => {
 
   it("css contains the :root intermediate vars block", () => {
     const { css } = generate(theme);
-    expect(css).toMatch(/:root\s*\{[^}]*--sg-primary:\s*#3B82F6/);
+    expect(css).toMatch(/:root\s*\{[^}]*--sg-color-primary:\s*#3B82F6/);
   });
 
   it("css contains the @theme inline mapping block", () => {
     const { css } = generate(theme);
     expect(css).toMatch(
-      /@theme inline\s*\{[^}]*--color-primary:\s*var\(--sg-primary\)/,
+      /@theme inline\s*\{[^}]*--color-primary:\s*var\(--sg-color-primary\)/,
     );
   });
 
@@ -95,6 +95,15 @@ describe("generate", () => {
   it("css never contains a bare top-level .class{} rule", () => {
     const { css } = generate(theme);
     expect(css).not.toMatch(/^\.[A-Za-z]/m);
+  });
+
+  it("emits no @utility border-* block: borderWidth classes come from the @theme namespace", () => {
+    const { css } = generate({
+      colors: { primary: "#fff" },
+      borderWidth: { thin: "1px" },
+    });
+    expect(css).not.toMatch(/@utility border/);
+    expect(css).toContain("--border-width-thin: var(--sg-border-width-thin);");
   });
 
   it("rejects an alias cycle that only exists once an override is merged on the base", () => {
@@ -111,10 +120,10 @@ describe("generate", () => {
 
   it("tokens reflect the theme (typography/color/shadow/blur/rounded variants)", () => {
     const { tokens } = generate(theme);
-    expect(tokens.Web.variantText).toEqual(["text12Mono", "heading"]);
-    expect(tokens.Web.variantColor).toContain("primary");
-    expect(tokens.Web.variantShadow).toEqual(["sm"]);
-    expect(tokens.Web.variantBackdropBlur).toEqual(["sm"]);
+    expect(tokens.Web.typography).toEqual(["text12Mono", "heading"]);
+    expect(tokens.Web.colors).toContain("primary");
+    expect(tokens.Web.shadows).toEqual(["sm"]);
+    expect(tokens.Web.backDropBlurs).toEqual(["sm"]);
   });
 
   it("omits typography/spacing blocks when the theme has neither", () => {

@@ -4,13 +4,19 @@ import type {
   RegistryPrefix,
 } from "../features/registry/builtInCategories";
 
-export enum Breakpoint {
-  SM = "sm",
-  MD = "md",
-  LG = "lg",
-  XL = "xl",
-  XXL = "2xl",
-}
+/**
+ * Tailwind's default breakpoint keys. A const object (not an enum) so the
+ * runtime values and the string-literal type are one structural thing:
+ * `Breakpoint.MD` is `"md"`, and `const b: Breakpoint = "md"` compiles.
+ */
+export const Breakpoint = {
+  SM: "sm",
+  MD: "md",
+  LG: "lg",
+  XL: "xl",
+  XXL: "2xl",
+} as const;
+export type Breakpoint = (typeof Breakpoint)[keyof typeof Breakpoint];
 
 export const defaultScreens: Record<Breakpoint, string> = {
   [Breakpoint.SM]: "640px",
@@ -21,11 +27,10 @@ export const defaultScreens: Record<Breakpoint, string> = {
 };
 
 /**
- * Mapping of spacing property keys to their CSS property declarations.
- * Key: prop name (e.g. 'p', 'mx')
- * Value: Record of CSS property → var() reference
+ * Mapping of spacing property keys to the CSS properties each `sp-<key>`
+ * utility sets (e.g. `p: ["padding"]`, `mx: ["margin-left", "margin-right"]`).
  */
-export type SpacingPropertyMap = Record<string, Record<string, string>>;
+export type SpacingPropertyMap = Readonly<Record<string, readonly string[]>>;
 
 /**
  * How much of one token category's `@source inline` coverage to emit.
@@ -71,10 +76,11 @@ type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
 
 export interface StyleGeneratorOptions {
   /**
-   * Breakpoint keys to use for responsive class generation.
+   * Breakpoint keys to use for responsive class generation: a `Breakpoint`
+   * value (`"sm"` … `"2xl"`) or a custom key declared in `screens`.
    * @default ["md", "lg"]
    */
-  breakpoints?: (Breakpoint | string)[];
+  breakpoints?: readonly (Breakpoint | (string & {}))[];
 
   /**
    * Custom screens map to override defaults or add new ones.
@@ -83,7 +89,7 @@ export interface StyleGeneratorOptions {
    * the px `defaultScreens` must use a single unit (override every default
    * screen to switch to rem).
    */
-  screens?: Record<Breakpoint | string, string>;
+  screens?: Record<string, string>;
 
   /**
    * Enable responsive class generation in spacing CSS rules.
@@ -116,7 +122,10 @@ export interface StyleGeneratorOptions {
   spacing?: {
     /** Disable spacing CSS rule generation entirely. Defaults to true. */
     enabled?: boolean;
-    /** Override or extend the default spacing property-to-CSS mapping. */
+    /**
+     * Spacing key → CSS properties, e.g. `{ p: ["padding"] }`. REPLACES the
+     * defaults: spread `DEFAULT_SPACING_PROPERTIES` to extend them.
+     */
     properties?: SpacingPropertyMap;
   };
 
@@ -132,7 +141,7 @@ export interface StyleGeneratorOptions {
    * a line break — those characters could escape the `inline("…")` string
    * and inject an arbitrary at-rule.
    */
-  extraSources?: string[];
+  extraSources?: readonly string[];
 
   /**
    * Trim the `@source inline(...)` coverage per token category. Absent, or
@@ -147,4 +156,58 @@ export interface StyleGeneratorOptions {
    * is rejected for `typography` (it has no `$` aliases).
    */
   coverage?: { [K in CategoryKey]?: boolean | CategoryCoverageRule<K> };
+
+  /**
+   * How `themeAxes` variants are switched on in the DOM.
+   *
+   * Validated by `generate()`: every attribute name must match
+   * `[a-z][a-z0-9-]*` (it is interpolated into a CSS selector), every
+   * `attribute` key must name a `themeAxes` axis, and no two axes may
+   * resolve to the same attribute name — all for every `scope`. With
+   * `scope: "element"`, no variant may leave a `$`-alias holder stale (see
+   * `scope`).
+   */
+  axes?: {
+    /**
+     * Axis name → DOM attribute name, e.g. `{ theme: "data-mode" }` emits
+     * `html[data-mode="dark"]` instead of `html[data-theme="dark"]`. Axes
+     * that are not listed keep `data-<axis-kebab>`. `themeAxisAttributes()`
+     * from `./recipes` reads the same map, so both sides stay in step.
+     * @default {}
+     */
+    attribute?: Readonly<Record<string, string>>;
+    /**
+     * Where a variant block applies. `"root"` pins the selector to `html`
+     * (`html[data-theme="dark"]`): custom properties are declared on
+     * `:root`, so a `$`-alias `var()` is computed there and every override
+     * is seen by its aliases. `"element"` drops the `html` anchor
+     * (`[data-theme="dark"]`) so the attribute can sit on any element for a
+     * scoped theme; a `$`-alias holder is then still computed where it is
+     * declared, so `generate()` rejects a variant that overrides an alias
+     * target without re-declaring each holder of it (a holder written in
+     * the base theme or in any other variant of any axis).
+     * @default "root"
+     */
+    scope?: "root" | "element";
+  };
+
+  /**
+   * Tailwind default theme namespaces to clear before the theme's own values
+   * are mapped, as `--color-*: initial;` / `--radius-*: initial;` /
+   * `--shadow-*: initial;` lines at the top of `@theme inline`. After it,
+   * `bg-red-500`, `rounded-md` or `shadow-md` no longer compile unless the
+   * theme declares them.
+   *
+   * `"colors"` also removes `--color-white`/`--color-black`: declare them in
+   * `colors` if you use them. `rounded-full`, `rounded-none` and
+   * `shadow-none` are static utilities and stay. `inset-shadow-*`,
+   * `drop-shadow-*` and `text-shadow-*` are other namespaces and are not
+   * touched.
+   *
+   * Validated by `generate()`: `"radius"` needs a non-empty
+   * `theme.borderRadius` and `"shadow"` a non-empty `theme.shadows`, or the
+   * defaults would be wiped with nothing to replace them.
+   * @default []
+   */
+  resetTailwindDefaults?: readonly ("colors" | "radius" | "shadow")[];
 }

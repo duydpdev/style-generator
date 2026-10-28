@@ -2,8 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type Mock,
+  type MockInstance,
+} from "vitest";
 
+import type { WatchThemeOptions } from "../../node/watchThemeFile";
 import { logger } from "../logger";
 
 import { generateCommand, type GenerateWatchHandle } from "./generate";
@@ -23,423 +33,678 @@ const sampleTheme = {
 
 describe("generateCommand", () => {
   let tmp: string;
-  let origCwd: string;
   let watchHandle: GenerateWatchHandle | undefined;
+  let errorSpy: MockInstance<typeof logger.error>;
+  let successSpy: MockInstance<typeof logger.success>;
+  let warnSpy: MockInstance<typeof logger.warn>;
+
+  const file = (rel: string): string => path.join(tmp, rel);
+  const write = (rel: string, content: string | object): void => {
+    fs.mkdirSync(path.dirname(file(rel)), { recursive: true });
+    fs.writeFileSync(
+      file(rel),
+      typeof content === "string" ? content : JSON.stringify(content),
+    );
+  };
+  const read = (rel: string): string => fs.readFileSync(file(rel), "utf8");
+  const exists = (rel: string): boolean => fs.existsSync(file(rel));
 
   beforeEach(() => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-generate-"));
-    origCwd = process.cwd();
-    process.chdir(tmp);
+    errorSpy = vi.spyOn(logger, "error").mockImplementation(() => undefined);
+    successSpy = vi
+      .spyOn(logger, "success")
+      .mockImplementation(() => undefined);
+    vi.spyOn(logger, "info").mockImplementation(() => undefined);
+    warnSpy = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
   });
 
   afterEach(async () => {
     vi.useRealTimers();
     await watchHandle?.close();
     watchHandle = undefined;
-    process.chdir(origCwd);
     fs.rmSync(tmp, { recursive: true, force: true });
     vi.restoreAllMocks();
-    process.exitCode = undefined;
   });
 
-  it("writes theme.css with theme-derived CSS", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
+  describe("one-shot", () => {
+    it("writes theme.css with theme-derived CSS and returns 0", async () => {
+      write("styles/theme.json", sampleTheme);
 
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
+
+      expect(code).toBe(0);
+      const content = read("styles/theme.css");
+      expect(content).toMatch(/--sg-color-primary/);
+      expect(content).toMatch(/@utility h-1 \{/);
+      expect(content).toMatch(/shadow-sm/);
+      expect(successSpy).toHaveBeenCalledWith(
+        `CSS written to ${path.join("styles", "theme.css")}`,
+      );
     });
 
-    const outPath = path.join(tmp, "styles/theme.css");
-    expect(fs.existsSync(outPath)).toBe(true);
+    it("says the CSS is up to date, and leaves the file alone, on an identical second run", async () => {
+      write("styles/theme.json", sampleTheme);
+      const args = { theme: "styles/theme.json", out: "styles/theme.css" };
+      await generateCommand(args, tmp);
+      const before = fs.statSync(file("styles/theme.css")).mtimeMs;
+      successSpy.mockClear();
 
-    const content = fs.readFileSync(outPath, "utf8");
-    expect(content).toMatch(/--sg-primary/);
-    expect(content).toMatch(/@utility h-1 \{/);
-    expect(content).toMatch(/shadow-sm/);
-  });
+      expect(await generateCommand(args, tmp)).toBe(0);
 
-  it("warns about a malformed style-gen.config.json and still generates with defaults", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "{ not json");
-    const warnSpy = vi
-      .spyOn(logger, "warn")
-      .mockImplementation(() => undefined);
-
-    generateCommand({});
-
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Ignoring style-gen\.config\.json is not valid JSON .*; using defaults$/,
-      ),
-    );
-    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(true);
-    expect(process.exitCode).toBeUndefined();
-  });
-
-  it("writes atomically: the output path is only ever produced by renameSync from a sibling temp file", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    const outPath = path.join(tmp, "styles/theme.css");
-    // `process.chdir(tmp)` + macOS `/var` -> `/private/var` symlink means the
-    // command's resolved path may differ textually from `outPath`; compare
-    // by basename + dir realpath instead of raw string equality.
-    const isOutPath = (p: unknown): boolean =>
-      typeof p === "string" &&
-      path.basename(p) === "theme.css" &&
-      fs.realpathSync(path.dirname(p)) ===
-        fs.realpathSync(path.dirname(outPath));
-
-    const writeSpy = vi.spyOn(fs, "writeFileSync");
-    const renameSpy = vi.spyOn(fs, "renameSync");
-
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      expect(successSpy).toHaveBeenCalledWith(
+        `CSS is up to date: ${path.join("styles", "theme.css")}`,
+      );
+      expect(fs.statSync(file("styles/theme.css")).mtimeMs).toBe(before);
     });
 
-    expect(writeSpy.mock.calls.some(([target]) => isOutPath(target))).toBe(
-      false,
-    );
-    expect(renameSpy).toHaveBeenCalledTimes(1);
-    const [from, to] = renameSpy.mock.calls[0] ?? [];
-    expect(isOutPath(to)).toBe(true);
-    expect(path.dirname(String(from))).toBe(path.dirname(String(to)));
-    expect(path.basename(String(from))).toMatch(/\.tmp$/);
-    expect(fs.existsSync(String(from))).toBe(false);
-    expect(fs.readFileSync(outPath, "utf8")).toMatch(/--sg-primary/);
-  });
+    it("uses the config's theme and output when no flags are given", async () => {
+      write("src/t.json", sampleTheme);
+      write("style-gen.config.json", {
+        theme: "src/t.json",
+        output: "src/t.css",
+      });
 
-  it("removes the temp file and leaves no partial output when the rename fails", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    vi.spyOn(fs, "renameSync").mockImplementation(() => {
-      throw new Error("EXDEV: simulated rename failure");
-    });
-    vi.spyOn(logger, "error").mockImplementation(() => undefined);
+      expect(await generateCommand({}, tmp)).toBe(0);
 
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      expect(exists("src/t.css")).toBe(true);
     });
 
-    expect(fs.readdirSync(path.join(tmp, "styles"))).toEqual(["theme.json"]);
-    expect(process.exitCode).toBe(1);
-  });
+    it("warns about a malformed style-gen.config.json and still generates with defaults", async () => {
+      write("styles/theme.json", sampleTheme);
+      write("style-gen.config.json", "{ not json");
 
-  it("threads extraSources/spacing/typography from style-gen.config.json into generate()", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    fs.writeFileSync(
-      path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({
+      expect(await generateCommand({}, tmp)).toBe(0);
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^Ignoring style-gen\.config\.json is not valid JSON .*; using defaults$/,
+        ),
+      );
+      expect(exists("styles/theme.css")).toBe(true);
+    });
+
+    it("writes atomically: the output path is only ever produced by renameSync from a sibling temp file", async () => {
+      write("styles/theme.json", sampleTheme);
+      const outPath = file("styles/theme.css");
+      // macOS maps `/var` -> `/private/var`: compare by basename + dir
+      // realpath instead of raw string equality.
+      const isOutPath = (p: unknown): boolean =>
+        typeof p === "string" &&
+        path.basename(p) === "theme.css" &&
+        fs.realpathSync(path.dirname(p)) ===
+          fs.realpathSync(path.dirname(outPath));
+
+      const writeSpy = vi.spyOn(fs, "writeFileSync");
+      const renameSpy = vi.spyOn(fs, "renameSync");
+
+      await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
+
+      expect(writeSpy.mock.calls.some(([target]) => isOutPath(target))).toBe(
+        false,
+      );
+      expect(renameSpy).toHaveBeenCalledTimes(1);
+      const [from, to] = renameSpy.mock.calls[0] ?? [];
+      expect(isOutPath(to)).toBe(true);
+      expect(path.dirname(String(from))).toBe(path.dirname(String(to)));
+      expect(path.basename(String(from))).toMatch(/\.tmp$/);
+      expect(fs.existsSync(String(from))).toBe(false);
+      expect(read("styles/theme.css")).toMatch(/--sg-color-primary/);
+    });
+
+    it("removes the temp file, leaves no partial output and returns 1 when the rename fails", async () => {
+      write("styles/theme.json", sampleTheme);
+      vi.spyOn(fs, "renameSync").mockImplementation(() => {
+        throw new Error("EXDEV: simulated rename failure");
+      });
+
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
+
+      expect(code).toBe(1);
+      expect(fs.readdirSync(file("styles"))).toEqual(["theme.json"]);
+      expect(errorSpy.mock.calls[0]?.[0]).toMatch(/EXDEV/);
+    });
+
+    it("threads extraSources from style-gen.config.json into generate()", async () => {
+      write("styles/theme.json", sampleTheme);
+      write("style-gen.config.json", {
         theme: "styles/theme.json",
         output: "styles/theme.css",
         extraSources: ["hover:bg-{primary,background}"],
-      }),
-    );
+      });
 
-    generateCommand({});
+      expect(await generateCommand({}, tmp)).toBe(0);
 
-    const content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
-    expect(content).toContain(
-      '@source inline("hover:bg-{primary,background}");',
-    );
-  });
-
-  it("exits 1 when theme file missing", () => {
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
-      throw new Error("__exit__");
-    }) as never);
-
-    expect(() => {
-      generateCommand({ theme: "styles/missing.json", out: "out.css" });
-    }).toThrow("__exit__");
-    expect(exitSpy).toHaveBeenCalledWith(1);
-  });
-
-  it("exits 1 when theme path is a directory", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
-      throw new Error("__exit__");
-    }) as never);
-
-    expect(() => {
-      generateCommand({ theme: "styles", out: "out.css" });
-    }).toThrow("__exit__");
-    expect(exitSpy).toHaveBeenCalledWith(1);
-  });
-
-  it("creates output directory if missing", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "dist/nested/theme.css",
+      expect(read("styles/theme.css")).toContain(
+        '@source inline("hover:bg-{primary,background}");',
+      );
     });
 
-    expect(fs.existsSync(path.join(tmp, "dist/nested/theme.css"))).toBe(true);
-  });
+    it("returns 1 with an init hint when the theme file is missing", async () => {
+      const code = await generateCommand(
+        { theme: "styles/missing.json", out: "out.css" },
+        tmp,
+      );
 
-  it("threads breakpoints from style-gen.config.json into generate()", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    fs.writeFileSync(
-      path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({ breakpoints: ["sm", "xl"] }),
-    );
-
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      expect(code).toBe(1);
+      expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+        /Theme file not found.*\n💡 Run: yarn style-gen init$/s,
+      );
+      expect(exists("out.css")).toBe(false);
     });
 
-    // `@theme` always lists every screen, so only the breakpoint-driven
-    // output (spacing fallback chains) tells the configured list apart from
-    // the `["md", "lg"]` default.
-    const content = fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8");
-    expect(content).toContain("@media (width >= 640px)");
-    expect(content).toContain("--sg-sp-p-sm");
-    expect(content).toContain("--sg-sp-p-xl");
-    expect(content).not.toContain("--sg-sp-p-md");
-    expect(content).not.toContain("--sg-sp-p-lg");
-  });
+    it("returns 1 when the theme path is a directory", async () => {
+      fs.mkdirSync(file("styles"), { recursive: true });
 
-  it("exits 1 without writing output when the theme JSON is malformed", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(path.join(tmp, "styles/theme.json"), "not valid json{");
-    const errorSpy = vi
-      .spyOn(logger, "error")
-      .mockImplementation(() => undefined);
-
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      expect(
+        await generateCommand({ theme: "styles", out: "out.css" }, tmp),
+      ).toBe(1);
+      expect(exists("out.css")).toBe(false);
     });
 
-    expect(process.exitCode).toBe(1);
-    expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Failed to generate CSS:/);
-    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
-  });
+    it("creates the output directory when missing", async () => {
+      write("styles/theme.json", sampleTheme);
 
-  it("exits 1 without writing output when the theme fails validation", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify({ colors: { primary_x: "#fff" } }),
-    );
-    const errorSpy = vi
-      .spyOn(logger, "error")
-      .mockImplementation(() => undefined);
+      await generateCommand(
+        { theme: "styles/theme.json", out: "dist/nested/theme.css" },
+        tmp,
+      );
 
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      expect(exists("dist/nested/theme.css")).toBe(true);
     });
 
-    expect(process.exitCode).toBe(1);
-    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-      /^Invalid theme \(styles\/theme\.json\):\ncolors\.primary_x → /,
-    );
-    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
-  });
+    it("threads breakpoints from style-gen.config.json into generate()", async () => {
+      write("styles/theme.json", sampleTheme);
+      write("style-gen.config.json", { breakpoints: ["sm", "xl"] });
 
-  it("reports an invalid extraSources entry in style-gen.config.json as a config error with its path", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    fs.writeFileSync(
-      path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({ extraSources: ["bg-primary", "bad;entry"] }),
-    );
-    const errorSpy = vi
-      .spyOn(logger, "error")
-      .mockImplementation(() => undefined);
+      await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
 
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      // `@theme` always lists every screen, so only the breakpoint-driven
+      // output (spacing fallback chains) tells the configured list apart from
+      // the `["md", "lg"]` default.
+      const content = read("styles/theme.css");
+      expect(content).toContain("@media (width >= 640px)");
+      expect(content).toContain("--sg-sp-p-sm");
+      expect(content).toContain("--sg-sp-p-xl");
+      expect(content).not.toContain("--sg-sp-p-md");
+      expect(content).not.toContain("--sg-sp-p-lg");
     });
 
-    expect(process.exitCode).toBe(1);
-    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-      /^Invalid config \(style-gen\.config\.json\):\nextraSources\.1 → /,
-    );
-    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
-  });
+    it("returns 1 without writing output when the theme JSON is malformed", async () => {
+      write("styles/theme.json", "not valid json{");
 
-  it("exits 1 on a misspelled config key (breakpoint) without writing output", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    fs.writeFileSync(
-      path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({ breakpoint: ["xl"] }),
-    );
-    const errorSpy = vi
-      .spyOn(logger, "error")
-      .mockImplementation(() => undefined);
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
 
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      expect(code).toBe(1);
+      expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid JSON in /);
+      expect(exists("styles/theme.css")).toBe(false);
     });
 
-    expect(process.exitCode).toBe(1);
-    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-      /^Invalid config \(style-gen\.config\.json\):\nbreakpoint → /,
-    );
-    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
-  });
+    it("returns 1 without writing output when the theme fails validation", async () => {
+      write("styles/theme.json", { colors: { primary_x: "#fff" } });
 
-  it("exits 1 when config breakpoints is not an array", () => {
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-    fs.writeFileSync(
-      path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({ breakpoints: "md" }),
-    );
-    const errorSpy = vi
-      .spyOn(logger, "error")
-      .mockImplementation(() => undefined);
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
 
-    generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
+      expect(code).toBe(1);
+      expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+        /^Invalid theme \(.*styles\/theme\.json\):\ncolors\.primary_x → /s,
+      );
+      expect(exists("styles/theme.css")).toBe(false);
     });
 
-    expect(process.exitCode).toBe(1);
-    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-      /^Invalid config \(style-gen\.config\.json\):\nbreakpoints → /,
+    it("reports an invalid extraSources entry in style-gen.config.json as a config error with its path", async () => {
+      write("styles/theme.json", sampleTheme);
+      write("style-gen.config.json", {
+        extraSources: ["bg-primary", "bad;entry"],
+      });
+
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
+
+      expect(code).toBe(1);
+      expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+        /^Invalid config \(style-gen\.config\.json\):\nextraSources\.1 → /,
+      );
+      expect(exists("styles/theme.css")).toBe(false);
+    });
+
+    it('labels a theme × options conflict (axes.scope "element" with a stale alias) "Invalid theme/options"', async () => {
+      write("styles/theme.json", {
+        colors: { brand: "#00f", primary: "$brand" },
+        themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
+      });
+      write("style-gen.config.json", { axes: { scope: "element" } });
+
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
+
+      expect(code).toBe(1);
+      expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+        /^Invalid theme\/options:\nthemeAxes\.theme\.dark\.colors\.brand → /,
+      );
+      expect(exists("styles/theme.css")).toBe(false);
+    });
+
+    it.each([
+      ["a misspelled key", { breakpoint: ["xl"] }, /\nbreakpoint → /],
+      ["a non-array breakpoints", { breakpoints: "md" }, /\nbreakpoints → /],
+    ])(
+      "returns 1 without writing output on %s in the config",
+      async (_label, config, issue) => {
+        write("styles/theme.json", sampleTheme);
+        write("style-gen.config.json", config);
+
+        const code = await generateCommand(
+          { theme: "styles/theme.json", out: "styles/theme.css" },
+          tmp,
+        );
+
+        expect(code).toBe(1);
+        expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+          /^Invalid config \(style-gen\.config\.json\):/,
+        );
+        expect(errorSpy.mock.calls[0]?.[0]).toMatch(issue);
+        expect(exists("styles/theme.css")).toBe(false);
+      },
     );
-    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
   });
 
-  it(
-    "watch mode: regenerates theme.css when theme.json changes",
-    {
-      // Four sequential waits of up to 2000ms each: keep the test timeout
-      // above their sum so a miss reports the assertion, not a timeout.
-      timeout: 10_000,
-    },
-    async () => {
-      // A genuine chokidar watcher reacting to real fs events: `ready` says
-      // when it is attached, and `vi.waitFor` polls for each debounced write.
-      const themePath = path.join(tmp, "styles/theme.json");
-      const cssPath = path.join(tmp, "styles/theme.css");
-      const readCss = (): string => fs.readFileSync(cssPath, "utf8");
-      // Each wait stays well below the 10s test timeout so a miss reports the assertion.
-      const waitOptions = { timeout: 2000, interval: 25 };
+  describe("project root", () => {
+    it("accepts a theme outside the project root", async () => {
+      const shared = fs.mkdtempSync(
+        path.join(os.tmpdir(), "style-gen-generate-shared-"),
+      );
+      try {
+        fs.writeFileSync(
+          path.join(shared, "theme.json"),
+          JSON.stringify(sampleTheme),
+        );
 
-      fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-      fs.writeFileSync(themePath, JSON.stringify(sampleTheme));
+        const code = await generateCommand(
+          { theme: path.join(shared, "theme.json"), out: "styles/theme.css" },
+          tmp,
+        );
 
-      watchHandle = generateCommand({
+        expect(code).toBe(0);
+        expect(exists("styles/theme.css")).toBe(true);
+      } finally {
+        fs.rmSync(shared, { recursive: true, force: true });
+      }
+    });
+
+    it("refuses an output outside the project root and writes nothing", async () => {
+      write("styles/theme.json", sampleTheme);
+
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "../escaped.css" },
+        tmp,
+      );
+
+      expect(code).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        "output escapes project root: ../escaped.css",
+      );
+      expect(fs.existsSync(path.join(tmp, "..", "escaped.css"))).toBe(false);
+    });
+
+    it("treats a leading-slash path as absolute, not project-relative", async () => {
+      write("styles/theme.json", sampleTheme);
+
+      const code = await generateCommand(
+        { theme: "/styles/theme.json", out: "styles/theme.css" },
+        tmp,
+      );
+
+      expect(code).toBe(1);
+      expect(exists("styles/theme.css")).toBe(false);
+    });
+  });
+
+  describe("--watch", () => {
+    // chokidar can miss a write made right after `ready`, so an edit is
+    // repeated (same content: harmless, the emit is write-if-changed) until
+    // its effect shows up instead of sleeping a guessed time.
+    const until = (edit: () => void, assertion: () => void): Promise<void> =>
+      vi.waitFor(
+        () => {
+          edit();
+          assertion();
+        },
+        { timeout: 4000, interval: 150 },
+      );
+    const start = async (
+      args: Parameters<typeof generateCommand>[0],
+      hooks: Parameters<typeof generateCommand>[2] = {},
+    ): Promise<number> =>
+      generateCommand({ ...args, watch: true }, tmp, {
+        debounceMs: 50,
+        onHandle: (handle) => {
+          watchHandle = handle;
+        },
+        ...hooks,
+      });
+
+    it(
+      "regenerates theme.css when theme.json changes, survives an invalid edit and recovers",
+      { timeout: 10_000 },
+      async () => {
+        write("styles/theme.json", sampleTheme);
+
+        // A genuine chokidar watcher reacting to real fs events.
+        const code = await start({
+          theme: "styles/theme.json",
+          out: "styles/theme.css",
+        });
+        expect(code).toBe(0);
+        expect(read("styles/theme.css")).toMatch(/#3B82F6/);
+
+        await until(
+          () => {
+            write("styles/theme.json", {
+              ...sampleTheme,
+              colors: { ...sampleTheme.colors, primary: "#FF0000" },
+            });
+          },
+          () => {
+            expect(read("styles/theme.css")).toMatch(/#FF0000/);
+          },
+        );
+
+        // An invalid edit is logged, keeps the last good output, and
+        // watching continues.
+        errorSpy.mockClear();
+        await until(
+          () => {
+            write("styles/theme.json", { colors: { primary_x: "#00FF00" } });
+          },
+          () => {
+            expect(errorSpy.mock.calls.map((c) => c[0])).toContainEqual(
+              expect.stringMatching(/^Invalid theme /),
+            );
+          },
+        );
+        expect(read("styles/theme.css")).toMatch(/#FF0000/);
+
+        await until(
+          () => {
+            write("styles/theme.json", {
+              ...sampleTheme,
+              colors: { ...sampleTheme.colors, primary: "#0000FF" },
+            });
+          },
+          () => {
+            expect(read("styles/theme.css")).toMatch(/#0000FF/);
+          },
+        );
+      },
+    );
+
+    it(
+      "reloads style-gen.config.json: a config edit re-emits with the new options",
+      { timeout: 10_000 },
+      async () => {
+        write("styles/theme.json", sampleTheme);
+        write("style-gen.config.json", {
+          theme: "styles/theme.json",
+          output: "styles/theme.css",
+        });
+
+        await start({});
+        expect(read("styles/theme.css")).not.toContain("hover:bg-primary");
+
+        await until(
+          () => {
+            write("style-gen.config.json", {
+              theme: "styles/theme.json",
+              output: "styles/theme.css",
+              extraSources: ["hover:bg-primary"],
+            });
+          },
+          () => {
+            expect(read("styles/theme.css")).toContain(
+              '@source inline("hover:bg-primary");',
+            );
+          },
+        );
+      },
+    );
+
+    it(
+      "watch mode keeps running and keeps the last valid config when the config file becomes invalid (V5-06)",
+      { timeout: 15_000 },
+      async () => {
+        write("styles/theme.json", sampleTheme);
+        const validConfig = {
+          theme: "styles/theme.json",
+          output: "styles/theme.css",
+          extraSources: ["hover:bg-primary"],
+        };
+        write("style-gen.config.json", validConfig);
+
+        expect(await start({})).toBe(0);
+        expect(read("styles/theme.css")).toContain(
+          '@source inline("hover:bg-primary");',
+        );
+
+        // Malformed JSON, then a schema violation: both are reported with
+        // their source and neither touches the output.
+        errorSpy.mockClear();
+        await until(
+          () => {
+            write("style-gen.config.json", "{ not json");
+          },
+          () => {
+            expect(errorSpy.mock.calls.map((c) => c[0])).toContainEqual(
+              expect.stringMatching(
+                /^Invalid config \(style-gen\.config\.json\):\nstyle-gen\.config\.json is not valid JSON/,
+              ),
+            );
+          },
+        );
+
+        errorSpy.mockClear();
+        await until(
+          () => {
+            write("style-gen.config.json", {
+              ...validConfig,
+              extraSources: ["bad;entry"],
+            });
+          },
+          () => {
+            expect(errorSpy.mock.calls.map((c) => c[0])).toContainEqual(
+              expect.stringMatching(
+                /^Invalid config \(style-gen\.config\.json\):\nextraSources\.0 → /,
+              ),
+            );
+          },
+        );
+        expect(read("styles/theme.css")).toContain(
+          '@source inline("hover:bg-primary");',
+        );
+
+        // The process is still watching: a theme edit regenerates with the
+        // LAST VALID config (still carrying extraSources), not the defaults.
+        await until(
+          () => {
+            write("styles/theme.json", {
+              ...sampleTheme,
+              colors: { ...sampleTheme.colors, primary: "#FF0000" },
+            });
+          },
+          () => {
+            expect(read("styles/theme.css")).toMatch(/#FF0000/);
+          },
+        );
+        expect(read("styles/theme.css")).toContain(
+          '@source inline("hover:bg-primary");',
+        );
+
+        // Fixing the config applies it.
+        await until(
+          () => {
+            write("style-gen.config.json", {
+              ...validConfig,
+              extraSources: ["hover:bg-background"],
+            });
+          },
+          () => {
+            expect(read("styles/theme.css")).toContain(
+              '@source inline("hover:bg-background");',
+            );
+          },
+        );
+        expect(read("styles/theme.css")).not.toContain("hover:bg-primary");
+      },
+    );
+
+    it("returns 1 and starts no watcher when the theme cannot be read", async () => {
+      const watch = vi.fn();
+
+      const code = await start(
+        { theme: "styles/missing.json", out: "out.css" },
+        { watch: watch as unknown as WatchThemeOptions["watch"] },
+      );
+
+      expect(code).toBe(1);
+      expect(watch).not.toHaveBeenCalled();
+      expect(watchHandle).toBeUndefined();
+    });
+
+    it("returns 1 and starts no watcher when the config is invalid at startup", async () => {
+      write("styles/theme.json", sampleTheme);
+      write("style-gen.config.json", { breakpoint: ["xl"] });
+      const watch = vi.fn();
+
+      const code = await start(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        { watch: watch as unknown as WatchThemeOptions["watch"] },
+      );
+
+      expect(code).toBe(1);
+      expect(watch).not.toHaveBeenCalled();
+    });
+
+    it("still starts watching when the first emit fails validation, so the fix is picked up", async () => {
+      write("styles/theme.json", { colors: { primary_x: "#fff" } });
+
+      const code = await start({
         theme: "styles/theme.json",
         out: "styles/theme.css",
-        watch: true,
       });
-      expect(watchHandle).toBeDefined();
-      await watchHandle?.ready;
 
-      // Initial (debounced) generation.
-      await vi.waitFor(() => {
-        expect(readCss()).toMatch(/#3B82F6/);
-      }, waitOptions);
+      expect(code).toBe(0);
+      expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid theme /);
+      expect(exists("styles/theme.css")).toBe(false);
 
-      fs.writeFileSync(
-        themePath,
-        JSON.stringify({
-          ...sampleTheme,
-          colors: { ...sampleTheme.colors, primary: "#FF0000" },
-        }),
+      await until(
+        () => {
+          write("styles/theme.json", sampleTheme);
+        },
+        () => {
+          expect(read("styles/theme.css")).toMatch(/#3B82F6/);
+        },
       );
-      await vi.waitFor(() => {
-        expect(readCss()).toMatch(/#FF0000/);
-      }, waitOptions);
-
-      // An invalid edit is logged, keeps the last good output, does not mark
-      // the process failed, and watching continues.
-      const errorSpy = vi
-        .spyOn(logger, "error")
-        .mockImplementation(() => undefined);
-      fs.writeFileSync(
-        themePath,
-        JSON.stringify({ colors: { primary_x: "#00FF00" } }),
-      );
-      await vi.waitFor(() => {
-        expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid theme /);
-      }, waitOptions);
-      expect(process.exitCode).toBeUndefined();
-      expect(readCss()).toMatch(/#FF0000/);
-
-      fs.writeFileSync(
-        themePath,
-        JSON.stringify({
-          ...sampleTheme,
-          colors: { ...sampleTheme.colors, primary: "#0000FF" },
-        }),
-      );
-      await vi.waitFor(() => {
-        expect(readCss()).toMatch(/#0000FF/);
-      }, waitOptions);
-    },
-  );
-
-  it("watch mode: close() cancels the pending debounced generation", async () => {
-    const cssPath = path.join(tmp, "styles/theme.css");
-    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "styles/theme.json"),
-      JSON.stringify(sampleTheme),
-    );
-
-    // Fake only the command's debounce timer; restore before awaiting
-    // chokidar's own async close.
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    const handle = generateCommand({
-      theme: "styles/theme.json",
-      out: "styles/theme.css",
-      watch: true,
     });
-    watchHandle = handle;
-    const closing = handle?.close();
-    vi.advanceTimersByTime(200);
-    vi.useRealTimers();
-    await closing;
 
-    expect(fs.existsSync(cssPath)).toBe(false);
+    it("watches the config file even when none exists yet, and applies it once created", async () => {
+      write("styles/theme.json", sampleTheme);
+      let watched: unknown;
+      const fakeWatch = ((paths: unknown) => {
+        watched = paths;
+        return fakeWatcher().watcher;
+      }) as unknown as WatchThemeOptions["watch"];
+
+      await start(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        { watch: fakeWatch },
+      );
+
+      expect(watched).toEqual([
+        path.join(tmp, "styles/theme.json"),
+        path.join(tmp, "style-gen.config.json"),
+      ]);
+    });
+
+    it("close() cancels the pending debounced generation", async () => {
+      write("styles/theme.json", sampleTheme);
+      const { watcher, emit } = fakeWatcher();
+      const fakeWatch = (() =>
+        watcher) as unknown as WatchThemeOptions["watch"];
+
+      await start(
+        { theme: "styles/theme.json", out: "styles/theme.css" },
+        { watch: fakeWatch, debounceMs: 200 },
+      );
+      fs.rmSync(file("styles/theme.css"));
+
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      emit("change", path.join(tmp, "styles/theme.json"));
+      const closing = watchHandle?.close();
+      vi.advanceTimersByTime(1000);
+      vi.useRealTimers();
+      await closing;
+
+      expect(exists("styles/theme.css")).toBe(false);
+      expect(watcher.close).toHaveBeenCalledTimes(1);
+    });
   });
 });
+
+/**
+ * A stand-in for a chokidar watcher: records listeners, reports `ready` on the
+ * next tick and lets a test fire events by hand.
+ * @returns {{ watcher: object; emit: (event: string, file: string) => void }} The fake and its trigger
+ */
+function fakeWatcher(): {
+  watcher: {
+    on: (event: string, cb: (file: string) => void) => unknown;
+    once: (event: string, cb: () => void) => unknown;
+    add: Mock;
+    unwatch: Mock;
+    close: Mock;
+  };
+  emit: (event: string, file: string) => void;
+} {
+  const listeners = new Map<string, ((file: string) => void)[]>();
+  const watcher = {
+    on: (event: string, cb: (file: string) => void) => {
+      listeners.set(event, [...(listeners.get(event) ?? []), cb]);
+      return watcher;
+    },
+    once: (event: string, cb: () => void) => {
+      if (event === "ready") queueMicrotask(cb);
+      return watcher;
+    },
+    add: vi.fn(),
+    unwatch: vi.fn(),
+    close: vi.fn(() => Promise.resolve()),
+  };
+  return {
+    watcher,
+    emit: (event, file) => {
+      for (const cb of listeners.get(event) ?? []) cb(file);
+    },
+  };
+}

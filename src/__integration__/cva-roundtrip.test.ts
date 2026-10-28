@@ -7,6 +7,7 @@ import { ThemeSchema } from "../core/themeSchema";
 import {
   builtInCategories,
   type BuiltInCategory,
+  type RegistryPrefix,
 } from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
 import { toCamelCase, toKebabCase, toPascalCase } from "../shared/helpers";
@@ -58,7 +59,7 @@ const escapeClassName = (cls: string): string => {
  */
 interface RoundTripCase {
   category: string;
-  prefix: string;
+  prefix: RegistryPrefix | "";
   keys: readonly string[];
   key: string;
   /**
@@ -123,7 +124,7 @@ const buildRoundTripCases = (): RoundTripCase[] => {
  */
 interface StateRoundTripCase {
   category: string;
-  prefix: string;
+  prefix: RegistryPrefix | "";
   key: string;
   keys: readonly string[];
   states: readonly string[];
@@ -139,7 +140,7 @@ const buildStateRoundTripCases = (): StateRoundTripCase[] => {
   const cases: StateRoundTripCase[] = [];
 
   for (const descriptor of builtInCategories) {
-    const prefixes: readonly string[] = descriptor.classPrefixes;
+    const prefixes: readonly (RegistryPrefix | "")[] = descriptor.classPrefixes;
     const states: readonly string[] =
       "states" in descriptor ? descriptor.states : [];
     if (states.length === 0) continue;
@@ -315,9 +316,7 @@ describe("integration: every color key the schema accepts maps to a class Tailwi
       colors: Object.fromEntries(accepted.map((key) => [key, "#123456"])),
     };
     const { css, tokens } = generate(theme);
-    const mapped = Object.values(
-      createVariantMapper("bg", tokens.Web.variantColor),
-    );
+    const mapped = Object.values(createVariantMapper("bg", tokens.Web.colors));
     const compiled = await compileFixtureCss(css, []);
     const selectors = new Set<string>();
     postcss.parse(compiled).walkRules((rule) => {
@@ -382,7 +381,7 @@ describe("integration: typed token arrays equal the keys expanded in @source inl
 
       const tokens = generate(theme as never, { spacing: { enabled: false } })
         .tokens.Web as unknown as Record<string, readonly string[]>;
-      const fromTokens = (tokens[descriptor.tokenName] ?? []).map(toKebabCase);
+      const fromTokens = (tokens[descriptor.key] ?? []).map(toKebabCase);
 
       expect(fromTokens).toEqual(
         sourceInlineKeys(theme, descriptor).filter(Boolean),

@@ -4,7 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    exclude: [...configDefaults.exclude, "e2e/**"],
+    // examples/** are separate workspaces with their own vitest config
+    // (`yarn workspace design-system-example test`, CI: after `build:all`).
+    exclude: [...configDefaults.exclude, "e2e/**", "examples/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -30,6 +32,7 @@ export default defineConfig({
     typecheck: {
       checker: "tsc",
       include: ["**/*.test-d.ts"],
+      exclude: [...configDefaults.exclude, "examples/**"],
     },
   },
 });

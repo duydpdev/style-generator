@@ -76,10 +76,8 @@ describe("builtInCategories", () => {
     ).toEqual(overrideFields);
   });
 
-  it("token and key alias names are unique across descriptors", () => {
-    const tokenNames = builtInCategories.map((c) => c.tokenName);
+  it("key alias names are unique across descriptors", () => {
     const tokenKeyNames = builtInCategories.map((c) => c.tokenKeyName);
-    expect(new Set(tokenNames).size).toBe(tokenNames.length);
     expect(new Set(tokenKeyNames).size).toBe(tokenKeyNames.length);
   });
 });

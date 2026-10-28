@@ -19,6 +19,13 @@ import {
   toKebabCase,
 } from "@duydpdev/style-generator/cva";
 import {
+  createTailwindMergeExtension,
+  splitSpacingProps,
+  themeAxisAttributes,
+  type SpacingProps,
+  type TailwindMergeExtension,
+} from "@duydpdev/style-generator/recipes";
+import {
   createDesignTokens,
   type Breakpoint,
 } from "@duydpdev/style-generator/tokens";
@@ -64,6 +71,13 @@ const aliased = createDesignTokens({
   colors: { blue500: "#00f", primary: "$blue500", accent: "#f00" },
   themeAxes: { theme: { dark: { colors: { accent: "$blue500" } } } },
 }).DesignTokens.Web;
+
+const mergeExtension = createTailwindMergeExtension(web);
+const split = splitSpacingProps(
+  {} as SpacingProps<"md" | "xl", "inset"> & { id: string },
+  web.spacingProperties,
+);
+const axisAttributes = themeAxisAttributes<typeof theme>({ theme: "dark" });
 
 const states = createVariantMapper(
   "bg",
@@ -115,4 +129,10 @@ export type DistTypeChecks = [
   >,
   Assert<Eq<typeof states.primaryHover, "bg-primary-hover">>,
   Assert<Eq<typeof toKebabCase, (str: string) => string>>,
+  // Recipes: the tokens feed the tailwind-merge extension, whose type names no
+  // `tailwind-merge` import; spacing props split into `rest`.
+  Assert<Eq<typeof mergeExtension, TailwindMergeExtension>>,
+  Assert<Eq<typeof split.rest, { id: string }>>,
+  Assert<Eq<typeof split.spacing.className, string>>,
+  Assert<Eq<typeof axisAttributes, Readonly<Record<string, string>>>>,
 ];

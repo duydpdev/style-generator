@@ -7,6 +7,7 @@ import { buildThemeCss } from "../features/theme-css/generateThemeCss";
 import { buildDesignTokens } from "../features/tokens/createDesignTokens";
 import { generateTypographyCss } from "../features/typography/generateTypographyCss";
 
+import { assertAxesOptions } from "./crossFieldChecks";
 import type { DesignTokensResult } from "./inference";
 import type { StyleGeneratorOptions } from "./Options";
 import { StyleGeneratorOptionsSchema } from "./optionsSchema";
@@ -36,9 +37,11 @@ export interface GenerateResult<
  * static CSS string meant to be written to a file and `@import`ed alongside
  * `@import "tailwindcss"` (Tailwind v4 only).
  *
- * Always validates `theme` against `ThemeSchema` first — independent of
- * whether the caller already went through `defineTheme()` — so CLI/Vite/Next
- * callers that hand it raw `JSON.parse()` output get the same guarantees.
+ * Validates `options` first, then `theme` against `ThemeSchema` — independent
+ * of whether the caller already went through `defineTheme()` — so CLI/Vite/
+ * Next callers that hand it raw `JSON.parse()` output get the same
+ * guarantees. Both failures are a `ZodError`; with `axes.scope: "element"`
+ * a variant that would leave a `$`-alias holder stale is rejected too.
  *
  * With `options`, their literal `breakpoints`, `screens` and
  * `spacing.properties` keys type `tokens`; options typed as
@@ -62,14 +65,17 @@ export function generate(
   theme: ThemeConfig,
   options?: StyleGeneratorOptions,
 ): GenerateResult<ThemeConfig, StyleGeneratorOptions> {
-  // Throws a `ZodError` (unknown keys, injection-unsafe values, ...) before
-  // any CSS is generated; `parseTheme` hands the theme back typed as
-  // `ThemeConfig` so downstream inference keeps the literal keys.
-  const parsed = parseTheme(theme);
-
+  // Options first (a bad option fails before the theme is even looked at),
+  // then the theme: each throws a `ZodError` (unknown keys,
+  // injection-unsafe values, ...) before any CSS is generated.
+  // `parseTheme` hands the theme back typed as `ThemeConfig` so downstream
+  // inference keeps the literal keys.
   const styleOptions: StyleGeneratorOptions = options ?? {};
   StyleGeneratorOptionsSchema.parse(styleOptions);
   const resolved = resolveOptions(styleOptions);
+  const parsed = parseTheme(theme);
+  // The only checks that need both the theme and the options.
+  assertAxesOptions(parsed, resolved.axes);
 
   const { DesignTokens } = buildDesignTokens<
     ThemeConfig,
@@ -78,7 +84,7 @@ export function generate(
 
   const css = [
     generateScreensCss(resolved),
-    buildThemeCss(parsed),
+    buildThemeCss(parsed, resolved),
     generateTypographyCss(parsed.typography, resolved),
     generateSpacingCss(resolved),
     generateSourceInline(parsed, resolved),

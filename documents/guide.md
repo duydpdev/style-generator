@@ -316,7 +316,7 @@ Kích hoạt trên phần tử `<html>`:
 
 Quy tắc cần nhớ:
 
-- **Selector ghim vào `html`.** Attribute đặt trên phần tử bọc khác không có tác dụng: alias `var()` được tính tại phần tử _khai báo_ biến (`:root`), nên override ở phần tử con không bao giờ tới được giá trị alias.
+- **Selector ghim vào `html`** (mặc định, `axes.scope: "root"`). Attribute đặt trên phần tử bọc khác không có tác dụng: alias `var()` được tính tại phần tử _khai báo_ biến (`:root`), nên override ở phần tử con không bao giờ tới được giá trị alias. Muốn theme cục bộ thì đặt `axes.scope: "element"` (xem [Đổi attribute và scope](#đổi-attribute-và-scope-axes)).
 - **Giá trị attribute là dạng kebab của key**: variant `highContrast` → `data-palette="high-contrast"`; trục `colorScheme` → `data-color-scheme`.
 - **Precedence = thứ tự khai báo**: hai trục cùng override một token có specificity ngang nhau, trục khai báo **sau** thắng.
 - **Tên trục/variant không được là số nguyên** (`100`, `2024`): JS liệt kê key kiểu số lên đầu và phá thứ tự. Dùng `contrast100`.
@@ -324,6 +324,31 @@ Quy tắc cần nhớ:
 - **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay; bảng phạm vi ở `examples/nuxt-v4/README.md`.
 
 `--sg-*` là lớp biến trung gian để tránh vòng tham chiếu khi đổi theme. Trong code ứng dụng, ưu tiên class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`. Các biến lib phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là output công khai: alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; đổi tên là breaking change. Bản 5.0 đã đổi biến màu từ `--sg-<màu>` thành `--sg-color-<key>`; `style-gen doctor` cảnh báo `file:line` cho mọi `var(--sg-<colorKey>)` hoặc khai báo `--sg-<colorKey>:` còn sót (xem [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)).
+
+### Đổi attribute và scope (`axes`)
+
+Mặc định selector là `html[data-<trục-kebab>="<variant-kebab>"]`. `options.axes` đổi tên attribute theo từng trục và cho phép bỏ ghim `html`:
+
+```typescript
+generate(theme, {
+  axes: {
+    attribute: { theme: "data-mode" }, // trục → tên attribute; trục không liệt kê giữ data-<trục-kebab>
+    scope: "element", // "root" (mặc định) | "element"
+  },
+});
+```
+
+```css
+[data-mode="dark"] { … }            /* scope: "element" — không có html */
+html[data-palette="forest"] { … }   /* scope: "root" — mặc định */
+```
+
+- **`attribute` là bản đồ**, không phải hàm: `style-gen.config.json` ghi được. Tên phải khớp `[a-z][a-z0-9-]*` (chữ thường như mặc định `data-<trục-kebab>`; nó được nhúng vào selector). `themeAxisAttributes(state, { attribute })` của `./recipes` đọc đúng bản đồ này để DOM và CSS không lệch nhau.
+- **`scope: "root"`** giữ selector ghim vào `html` như quy tắc ở trên. **`scope: "element"`** bỏ `html`, nên attribute đặt được trên phần tử bất kỳ (theme cục bộ cho một vùng).
+- **Quy tắc alias khi `scope: "element"`.** Alias `"$<key>"` vẫn được tính tại phần tử _khai báo_ nó (`:root`), nên giữ giá trị gốc bên trong phần tử có attribute. `generate()` vì vậy ném `ZodError` khi một variant override một key `T` mà một entry `H` khác đang alias tới (trực tiếp hoặc qua chuỗi alias, ở mọi category), trừ khi variant đó khai báo lại chính `H` (bằng giá trị literal hoặc `"$<key>"`). Alias của `H` được tìm ở theme gốc **và** ở mọi variant khác của mọi trục (ví dụ `dark` viết `primary: "$brand"` còn `light` override `brand` mà không khai báo lại `primary`). Lỗi nằm tại key bị override (`themeAxes.<trục>.<variant>.<category>.<key>`); với chuỗi alias, mỗi mắt xích cũ được báo thành một lỗi riêng cùng path. Sửa bằng cách khai báo lại entry giữ alias trong variant, hoặc dùng `scope: "root"`.
+- **Kiểm tra attribute chạy ở mọi `scope`:** key trong `attribute` phải là tên một trục của `themeAxes` (lỗi tại `axes.attribute.<trục>`), và hai trục không được cùng ra một tên attribute (ví dụ `attribute: { theme: "data-palette" }` khi có trục `palette`; lỗi tại `axes.attribute.<trục>`).
+- **Variant tên `base` không bật được bằng `themeAxisAttributes`:** `"base"` nghĩa là "không override" nên không phát attribute. Đặt tên khác (`default`, `standard`) cho variant cần bật.
+- `generateThemeCss(theme, options)` nhận cùng `options` ở tham số thứ hai.
 
 ---
 

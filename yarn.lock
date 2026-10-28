@@ -872,6 +872,7 @@ __metadata:
     postcss: "npm:^8.5.28"
     prettier: "npm:^3.8.1"
     semantic-release: "npm:^25.0.3"
+    tailwind-merge: "npm:^3.0.0"
     tailwindcss: "npm:4.3.0"
     tsdown: "npm:^0.21.0"
     typescript: "npm:^5.9.3"

@@ -32,7 +32,7 @@ const cliKeys = {
 /**
  * Resolved CLI configuration: the CLI-only keys plus every `generate()`
  * option (`breakpoints`, `screens`, `enableResponsive`, `spacing`,
- * `typography`, `extraSources`, `coverage`), forwarded through
+ * `typography`, `extraSources`, `coverage`, `axes`), forwarded through
  * {@link toGeneratorOptions}.
  */
 export const StyleGenConfigSchema = StyleGeneratorOptionsShape.extend(

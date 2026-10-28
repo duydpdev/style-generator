@@ -35,16 +35,35 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // override, and the unused `axisOverrides` field was dropped), cva 729,
 // spacing 791, types 55, vite 9916, next 9803, cli 34991. Budget raised:
 // tokens 1700 -> 1850 (measured 1688 + ~10%; `aliasedColors` is intrinsic).
-// Budgets = measured + ~10% headroom.
+// Re-measured 2026-10-28 (5.0.0-DEV.N, phase 10): recipes 2076 (new
+// `./recipes` subpath: its entry plus the `helpers`, `spacing`,
+// `defaultOption` and `axisAttributeName` chunks it shares), budget 2284 =
+// measured + ~10%. index 10954, vite 10967 and next 10854 grew by ~1.05 kB
+// (vs phase 09; cli 34991 -> 37694 = +2.7 kB because the tsdown bundle is
+// unminified and keeps every JSDoc block) from the `axes` option (options schema, resolve,
+// `assertAxesOptions`/`checkElementScopeAliases`, `generateThemeCss`
+// signature), NOT from `./recipes`: index measured 10504 without it, before
+// the last axes checks landed. tokens 1686, cva 727, spacing 788 and types
+// 55 are back at their phase-09 values. With the default chunking
+// `./recipes` splits `helpers`/`colorStates` and `spacingHelpers` off their
+// entry chunks and pushed tokens to 1861, cva to 902 and spacing to 919; the
+// `manualChunks` rule in vite.config.ts pins those modules to stable chunks,
+// and `axisAttributeName` lives in its own module so `./tokens`/`./cva` do
+// not carry it. Budgets raised for the measured intrinsic `axes` growth
+// (measured + ~10%): index 11100 -> 12050, vite 11150 -> 12050, next 11050 ->
+// 11950, cli 38000 -> 41450; plus the new `recipes` entry.
+// Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
+// unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
-  index: 11_100,
+  index: 12_050,
   tokens: 1_850,
   cva: 800,
   spacing: 1_000,
+  recipes: 2_284,
   types: 100,
-  vite: 11_150,
-  next: 11_050,
-  cli: 38_000,
+  vite: 12_050,
+  next: 11_950,
+  cli: 41_450,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.

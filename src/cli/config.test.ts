@@ -200,6 +200,22 @@ describe("resolveConfig", () => {
       borderRadius: { prefixes: ["rounded"] },
     });
   });
+
+  it("accepts `axes` from style-gen.config.json and forwards it to generate() options", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({
+        axes: { attribute: { theme: "data-mode" }, scope: "element" },
+      }),
+    );
+
+    const file = readConfigFile(tmp);
+    expect(file.issues).toBeUndefined();
+    expect(toGeneratorOptions(resolveConfig({}, file)).axes).toEqual({
+      attribute: { theme: "data-mode" },
+      scope: "element",
+    });
+  });
 });
 
 describe("readConfigFile schema validation (X-04)", () => {

@@ -126,6 +126,21 @@ const CoverageSchema = z
   });
 
 /**
+ * A DOM attribute name chosen by `axes.attribute`. It is interpolated into
+ * the emitted selector (`[<name>="<variant>"]`), so it follows the same
+ * injection-safe grammar as every other option that reaches `generate().css`:
+ * a lowercase letter first, then lowercase letters, digits and `-` only —
+ * lowercase like the `data-<axis-kebab>` default, so two axes can never
+ * differ only by case.
+ */
+const AttributeName = z
+  .string()
+  .regex(
+    /^[a-z][a-z0-9-]*$/,
+    "Attribute name must start with a lowercase letter and contain only lowercase letters, digits, `-`",
+  );
+
+/**
  * Strict shape of `StyleGeneratorOptions`, without the cross-field
  * refinement: unknown keys (also inside `spacing`/`typography`) are
  * rejected, behavioural flags must be booleans, and every option that
@@ -149,6 +164,12 @@ export const StyleGeneratorOptionsShape = z.strictObject({
     .optional(),
   extraSources: z.array(ExtraSourceEntry).optional(),
   coverage: CoverageSchema.optional(),
+  axes: z
+    .strictObject({
+      attribute: z.record(OptionKey, AttributeName).optional(),
+      scope: z.enum(["root", "element"]).optional(),
+    })
+    .optional(),
 });
 
 /**

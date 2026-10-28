@@ -205,7 +205,9 @@ const integerLikeNameMessage = (kind: "axis" | "variant", name: string) =>
  * selector/attribute-value character. Multiple axes can be declared and
  * toggled independently (`html[data-theme]` + `html[data-palette]`, ...);
  * `generateThemeCss.ts` emits one `html[data-<axis-kebab>="<variant-kebab>"]`
- * block per variant, in declaration order, after `:root`.
+ * block per variant, in declaration order, after `:root` — with the default
+ * `axes.scope: "root"` and no `axes.attribute` rename (`options.axes` changes
+ * the attribute name and, for `"element"`, drops the `html` anchor).
  *
  * Axis and variant names that are canonical integers (`/^(0|[1-9]\d*)$/`)
  * are rejected: `JSON.parse`/object enumeration hoists them ahead of all

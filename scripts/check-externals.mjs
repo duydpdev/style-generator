@@ -22,9 +22,13 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const dist = resolve(root, "dist");
 
+// `tailwind-merge` is the app's own dependency (only a devDependency here,
+// so Rollup does not externalise it): a stray runtime import in the
+// `./recipes` sources would be inlined silently, and this is the tripwire.
 const forbidden = [
   ...Object.keys(pkg.peerDependencies ?? {}),
   ...Object.keys(pkg.dependencies ?? {}),
+  "tailwind-merge",
 ];
 
 const escape = (name) => name.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");

@@ -41,6 +41,11 @@
       "import": "./dist/types.js",
       "require": "./dist/types.cjs"
     },
+    "./recipes": {
+      "types": "./dist/recipes.d.ts",
+      "import": "./dist/recipes.js",
+      "require": "./dist/recipes.cjs"
+    },
     "./vite": {
       "types": "./dist/vite.d.ts",
       "import": "./dist/vite.js",
@@ -116,6 +121,7 @@
     "postcss": "^8.5.28",
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.3",
+    "tailwind-merge": "^3.0.0",
     "tailwindcss": "4.3.0",
     "tsdown": "^0.21.0",
     "typescript": "^5.9.3",

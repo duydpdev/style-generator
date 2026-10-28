@@ -49,3 +49,32 @@ export type BorderWidthVariant<T extends ThemeConfig> =
 /** Rounded variant union derived from theme.borderRadius keys (falls back to defaults). */
 export type RoundedVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["roundedKey"];
+
+/**
+ * Axis names of `theme.themeAxes` (`"theme"`, `"palette"`, …); `never`
+ * without it. Distributes over a union of themes.
+ */
+export type ThemeAxisName<T extends ThemeConfig> = T extends unknown
+  ? Extract<keyof NonNullable<T["themeAxes"]>, string>
+  : never;
+
+/**
+ * Variant names of one `themeAxes` axis (`"dark"`, `"forest"`, …).
+ * Distributes over a union of themes.
+ */
+export type ThemeAxisVariant<
+  T extends ThemeConfig,
+  A extends ThemeAxisName<T>,
+> = T extends unknown
+  ? A extends keyof NonNullable<T["themeAxes"]>
+    ? Extract<keyof NonNullable<T["themeAxes"]>[A], string>
+    : never
+  : never;
+
+/**
+ * The active variant per axis — every axis optional, each `"base"` (no
+ * `html[data-<axis>]` override) or one of its declared variants.
+ */
+export type ThemeAxesState<T extends ThemeConfig> = {
+  readonly [A in ThemeAxisName<T>]?: ThemeAxisVariant<T, A> | "base";
+};

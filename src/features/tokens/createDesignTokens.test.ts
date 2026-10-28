@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 
+import { resolveOptions } from "../../core/resolveOptions";
 import type { ThemeConfig } from "../../core/themeSchema";
+import { toKebabCase } from "../../shared/helpers";
 import { generateSourceInline } from "../registry/generateSourceInline";
 
 import { createDesignTokens } from "./createDesignTokens";
@@ -88,5 +90,105 @@ describe("createDesignTokens", () => {
     expect(empty.DesignTokens.Web.borderRadius).toEqual(
       omitted.DesignTokens.Web.borderRadius,
     );
+  });
+
+  it("aliasedColors lists the camelCased colors whose value is a $alias, in declaration order", () => {
+    const { aliasedColors } = createDesignTokens({
+      colors: {
+        blue500: "#3B82F6",
+        primary: "$blue500",
+        "sidebar-accent": "$primary",
+        plain: "#fff",
+      },
+    }).DesignTokens.Web;
+    expect(aliasedColors).toEqual(["primary", "sidebarAccent"]);
+  });
+
+  it("aliasedColors is empty when no color is an alias", () => {
+    expect(
+      createDesignTokens({ colors: { primary: "#fff" } }).DesignTokens.Web
+        .aliasedColors,
+    ).toEqual([]);
+  });
+
+  it("aliasedColors includes holders that exist only in a themeAxes override, once, camelCased", () => {
+    const { aliasedColors } = createDesignTokens({
+      colors: {
+        blue500: "#3B82F6",
+        primary: "$blue500",
+        accent: "#f00",
+        "sidebar-ring": "#111",
+        plain: "#fff",
+      },
+      themeAxes: {
+        theme: {
+          dark: { colors: { accent: "$blue500", primary: "$blue500" } },
+          dim: { colors: { accent: "$primary" } },
+        },
+        palette: { sand: { colors: { "sidebar-ring": "$blue500" } } },
+      },
+    }).DesignTokens.Web;
+    expect(aliasedColors).toEqual(["primary", "accent", "sidebarRing"]);
+  });
+
+  it('aliasedColors matches the holders coverage.keys "aliased" keeps', () => {
+    const theme: ThemeConfig = {
+      colors: { blue500: "#00f", primary: "$blue500", "sidebar-ring": "#111" },
+      themeAxes: {
+        theme: { dark: { colors: { "sidebar-ring": "$blue500" } } },
+      },
+    };
+    const { aliasedColors } = createDesignTokens(theme).DesignTokens.Web;
+    const line = generateSourceInline(
+      theme,
+      resolveOptions({ coverage: { colors: { keys: "aliased" } } }),
+    )
+      .split("\n")
+      .find((l) => l.includes("{bg,"));
+    expect(line).toBeDefined();
+    for (const key of aliasedColors) {
+      expect(line).toContain(toKebabCase(key));
+    }
+    expect(line).not.toContain("blue-500");
+  });
+
+  it("tolerates an unvalidated theme without colors or with non-string values", () => {
+    const bad = {
+      colors: { primary: 1, ok: "$x" },
+    } as unknown as ThemeConfig;
+    expect(createDesignTokens(bad).DesignTokens.Web.aliasedColors).toEqual([
+      "ok",
+    ]);
+    const noColors = {} as unknown as ThemeConfig;
+    const web = createDesignTokens(noColors).DesignTokens.Web;
+    expect(web.aliasedColors).toEqual([]);
+    expect(web.colors).toEqual([]);
+  });
+
+  it("spacingProperties are the custom spacing.properties keys, else the defaults", () => {
+    const theme = { colors: { primary: "#fff" } };
+    expect(
+      createDesignTokens(theme, {
+        spacing: { properties: { inset: ["inset"] } },
+      }).DesignTokens.Web.spacingProperties,
+    ).toEqual(["inset"]);
+    expect(
+      createDesignTokens(theme).DesignTokens.Web.spacingProperties,
+    ).toContain("px");
+  });
+
+  it("screens merge the default screens with options.screens", () => {
+    const { screens } = createDesignTokens(
+      { colors: { primary: "#fff" } },
+      { screens: { md: "800px", "3xl": "1920px" } },
+    ).DesignTokens.Web;
+    expect(screens).toEqual({
+      sm: "640px",
+      md: "800px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+      "3xl": "1920px",
+    });
   });
 });

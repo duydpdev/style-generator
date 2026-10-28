@@ -110,6 +110,9 @@ export default pluginTs.config(
       "examples/**",
       "site/dist/**",
       "site/public/**",
+      // Compiled by `yarn typecheck:dist` (tsconfig.dts-check.json) against
+      // the built package, so the project service cannot map it.
+      "scripts/dist-types.assert.ts",
     ],
   },
 );

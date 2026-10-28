@@ -5,5 +5,5 @@
  * small surface for class-variance-authority users.
  */
 export { createVariantMapper } from "../features/cva/createVariantMapper";
-export type { VariantMapperStatesOptions } from "../features/cva/createVariantMapper";
 export { COLOR_STATES } from "../shared/colorStates";
+export { toKebabCase } from "../shared/helpers";

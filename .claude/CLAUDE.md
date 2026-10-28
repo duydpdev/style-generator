@@ -76,7 +76,7 @@ Pipelines, all driven by the category registry:
 
 Build outputs: `dist/{index,tokens,cva,spacing,types,vite,next}.{js,cjs,d.ts}` (7 subpaths, Vite lib multi-entry) + `dist/cli/index.mjs` (tsdown). Shared hashed chunks are internal. Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/check-sizes.mjs`.
 
-Source layout, public exports per subpath and CLI commands: `documents/architecture.md`. Internal helpers (`toCamelCase`, `toPascalCase`, `toKebabCase`) are not exported from any barrel. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`.
+Source layout, public exports per subpath and CLI commands: `documents/architecture.md`. Internal helpers (`toCamelCase`, `toPascalCase`) are not exported from any barrel; `toKebabCase` is public (from `.` and `./cva`) because it is the function the registry and `createVariantMapper` share. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`; from 4.x: `documents/migration/4.x-to-5.0.md`.
 
 ## Theme / Color Rules (current v4 API)
 

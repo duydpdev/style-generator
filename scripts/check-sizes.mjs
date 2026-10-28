@@ -29,11 +29,16 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-10-07 (5.0.0-DEV.1: borderWidth via `--border-width-*`, spacing arrays,
 // `Breakpoint` object, collision check removed, doctor scanner): index 9664,
 // tokens 1492, spacing 791, vite 9698, next 9586, cli 34188; cva and types
-// are unchanged. No budget raised.
+// are unchanged. No budget raised. Re-measured 2026-10-28 (5.0.0-DEV.N,
+// phase 09: inferred token types, `aliasedColors`): index 9907, tokens 1688
+// (1591 without `aliasedColors`; it walks the base and every `themeAxes`
+// override, and the unused `axisOverrides` field was dropped), cva 729,
+// spacing 791, types 55, vite 9916, next 9803, cli 34991. Budget raised:
+// tokens 1700 -> 1850 (measured 1688 + ~10%; `aliasedColors` is intrinsic).
 // Budgets = measured + ~10% headroom.
 const budgets = {
   index: 11_100,
-  tokens: 1_700,
+  tokens: 1_850,
   cva: 800,
   spacing: 1_000,
   types: 100,

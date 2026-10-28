@@ -30,7 +30,7 @@ export const defaultScreens: Record<Breakpoint, string> = {
  * Mapping of spacing property keys to the CSS properties each `sp-<key>`
  * utility sets (e.g. `p: ["padding"]`, `mx: ["margin-left", "margin-right"]`).
  */
-export type SpacingPropertyMap = Record<string, readonly string[]>;
+export type SpacingPropertyMap = Readonly<Record<string, readonly string[]>>;
 
 /**
  * How much of one token category's `@source inline` coverage to emit.
@@ -80,7 +80,7 @@ export interface StyleGeneratorOptions {
    * value (`"sm"` … `"2xl"`) or a custom key declared in `screens`.
    * @default ["md", "lg"]
    */
-  breakpoints?: (Breakpoint | (string & {}))[];
+  breakpoints?: readonly (Breakpoint | (string & {}))[];
 
   /**
    * Custom screens map to override defaults or add new ones.
@@ -141,7 +141,7 @@ export interface StyleGeneratorOptions {
    * a line break — those characters could escape the `inline("…")` string
    * and inject an arbitrary at-rule.
    */
-  extraSources?: string[];
+  extraSources?: readonly string[];
 
   /**
    * Trim the `@source inline(...)` coverage per token category. Absent, or

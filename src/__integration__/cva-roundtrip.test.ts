@@ -7,6 +7,7 @@ import { ThemeSchema } from "../core/themeSchema";
 import {
   builtInCategories,
   type BuiltInCategory,
+  type RegistryPrefix,
 } from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
 import { toCamelCase, toKebabCase, toPascalCase } from "../shared/helpers";
@@ -58,7 +59,7 @@ const escapeClassName = (cls: string): string => {
  */
 interface RoundTripCase {
   category: string;
-  prefix: string;
+  prefix: RegistryPrefix | "";
   keys: readonly string[];
   key: string;
   /**
@@ -123,7 +124,7 @@ const buildRoundTripCases = (): RoundTripCase[] => {
  */
 interface StateRoundTripCase {
   category: string;
-  prefix: string;
+  prefix: RegistryPrefix | "";
   key: string;
   keys: readonly string[];
   states: readonly string[];
@@ -139,7 +140,7 @@ const buildStateRoundTripCases = (): StateRoundTripCase[] => {
   const cases: StateRoundTripCase[] = [];
 
   for (const descriptor of builtInCategories) {
-    const prefixes: readonly string[] = descriptor.classPrefixes;
+    const prefixes: readonly (RegistryPrefix | "")[] = descriptor.classPrefixes;
     const states: readonly string[] =
       "states" in descriptor ? descriptor.states : [];
     if (states.length === 0) continue;

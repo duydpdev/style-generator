@@ -425,20 +425,21 @@ const button = cva("base-class", {
 
 **Tokens trong `DesignTokens.Web`:**
 
-| Token               | Mô tả                                                                         |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `colors`            | Tất cả key màu (flat, camelCase)                                              |
-| `typography`        | Key của `typography`                                                          |
-| `shadows`           | Key của `shadows`                                                             |
-| `backDropBlurs`     | Key của `backDropBlurs`                                                       |
-| `fontFamily`        | Key của `fontFamily`                                                          |
-| `borderWidth`       | Key của `borderWidth` (mặc định `0, 1, 2, 4` khi vắng hoặc `{}`)              |
-| `borderRadius`      | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES` khi vắng hoặc `{}`) |
-| `spacingProperties` | Danh sách spacing props                                                       |
-| `breakpoints`       | Breakpoint đang dùng — mặc định `["md", "lg"]`                                |
-| `screens`           | Bản đồ breakpoint → độ rộng                                                   |
+| Token               | Mô tả                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `colors`            | Tất cả key màu (flat, camelCase)                                                   |
+| `typography`        | Key của `typography`                                                               |
+| `shadows`           | Key của `shadows`                                                                  |
+| `backDropBlurs`     | Key của `backDropBlurs`                                                            |
+| `fontFamily`        | Key của `fontFamily`                                                               |
+| `borderWidth`       | Key của `borderWidth` (mặc định `0, 1, 2, 4` khi vắng hoặc `{}`)                   |
+| `borderRadius`      | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES` khi vắng hoặc `{}`)      |
+| `spacingProperties` | Danh sách spacing props — key của `options.spacing.properties` hoặc mặc định       |
+| `breakpoints`       | Breakpoint đang dùng — mặc định `["md", "lg"]`                                     |
+| `screens`           | Bản đồ breakpoint → độ rộng: screens mặc định cộng key của `options.screens`       |
+| `aliasedColors`     | Key `colors` có giá trị là alias `"$<key>"` ở record gốc hoặc override `themeAxes` |
 
-Tên mỗi mảng trùng với field `ThemeConfig` tương ứng (`DesignTokens.Web.colors` chứa key của `theme.colors`); `spacingProperties`, `breakpoints`, `screens` lấy từ options.
+Tên mỗi mảng trùng với field `ThemeConfig` tương ứng (`DesignTokens.Web.colors` chứa key của `theme.colors`); `spacingProperties`, `breakpoints`, `screens` lấy từ options. Mọi mảng đều `readonly`, và options được suy ra dạng literal (`generate`, `createDesignTokens`, `defineOptions` nhận `const O`): `breakpoints: ["md", "xl"]` cho `DesignTokens.Web.breakpoints` kiểu `readonly ("md" | "xl")[]`. Options khai báo kiểu `StyleGeneratorOptions`, hoặc type argument tường minh chỉ cho theme (`createDesignTokens<typeof theme>(theme, { breakpoints: ["xl"] })`), thì hai trường này widen thành `readonly string[]`; bỏ type argument để giữ literal. Không truyền `options` thì dùng mặc định (`readonly ("md" | "lg")[]`). `aliasedColors` tính lúc chạy từ record gốc và mọi override; kiểu của nó giữ mỗi key có giá trị là literal `$…` hoặc `string`. Kiểu tương ứng: `DesignTokensWeb<TTheme, O>`, `DesignTokensResult<TTheme, O>`; `ThemeAxisName`, `ThemeAxisVariant`, `ThemeAxesState` gõ kiểu cho các thuộc tính `data-<axis>` (key và giá trị là key gốc trong theme, còn thuộc tính/selector được sinh ra là kebab-case: `colorMode` + `high-contrast` → `html[data-color-mode="high-contrast"]`).
 
 ### Class trạng thái
 
@@ -460,6 +461,8 @@ const bg = createVariantMapper(
 ```
 
 Luôn truyền `COLOR_STATES` thay vì gõ tay `["hover", "active"]` — đó là danh sách mà các dòng `@source inline` cũng dùng. Truyền key camelCase như `DesignTokens.Web.colors` cung cấp (`primaryHover`, không phải `primary-hover`).
+
+`prefix` có kiểu `RegistryPrefix | ""` (các prefix mà registry phát `@source inline`; `""` dành cho typography), nên `createVariantMapper("ring", …)` hoặc prefix nằm trong biến kiểu `string` đều là lỗi kiểu: chúng ánh xạ ra class mà không dòng `@source inline` nào giữ lại. Để bỏ qua kiểm tra cho một prefix đơn lẻ, truyền `{ allowUnregisteredPrefix: true }` làm tham số thứ ba và khai báo class trong `extraSources`. Cách này không dùng cùng `{ states }` hay mảng prefix.
 
 ---
 

@@ -105,9 +105,10 @@ const { DesignTokens } = createDesignTokens(theme, options);
 // DesignTokens.Web.fontFamily    → ["sans", ...]
 // DesignTokens.Web.borderWidth   → keys của borderWidth (mặc định 0, 1, 2, 4)
 // DesignTokens.Web.breakpoints   → mặc định ["md", "lg"]
+// DesignTokens.Web.aliasedColors → key màu có giá trị "$alias" (record gốc hoặc override themeAxes)
 ```
 
-**Type inference:** generic `T extends ThemeConfig` kết hợp `KebabCase`, `CamelCase` để giữ literal type thay vì widen sang `string`.
+**Type inference:** generic `const T extends ThemeConfig` và `const O extends StyleGeneratorOptions` kết hợp `KebabCase`, `CamelCase` để giữ literal type thay vì widen sang `string`. Mọi mảng là `readonly`; `breakpoints`, `spacingProperties`, `screens` lấy literal từ `options` (`BreakpointKeys<O>`, `SpacingKeys<O>`, `ScreenKeys<O>`). Một category tùy chọn mà kiểu theme khai báo là optional (theme gõ `ThemeConfig`) cho `string`, vì runtime có thể là key khai báo hoặc mặc định. `ThemeSchema.parse(theme) as T` chỉ nằm ở `src/core/parseTheme.ts`, dùng chung cho `defineTheme` và `generate`.
 
 ### Vite Plugin (emit-only)
 
@@ -228,7 +229,7 @@ Tắt bằng `options.spacing.enabled = false`; tuỳ chỉnh bằng `options.sp
 | `defineTheme`, `defineOptions`                                                                                                                          | `.`                                         | Helper type-safe; `defineTheme` validate runtime (chỉ ở root)                                |
 | `generateThemeCss`                                                                                                                                      | `.`                                         | Chỉ `:root` + axis + `@theme inline`                                                         |
 | `createDesignTokens`                                                                                                                                    | `.`, `./tokens`                             | Sinh Design Tokens                                                                           |
-| `createVariantMapper`, `COLOR_STATES`                                                                                                                   | `.`, `./cva` (`COLOR_STATES` cả `./tokens`) | Map token → class (kebab), `{ states }` cho hover/active                                     |
+| `createVariantMapper`, `COLOR_STATES`, `toKebabCase`                                                                                                    | `.`, `./cva` (`COLOR_STATES` cả `./tokens`) | Map token → class (kebab), `{ states }` cho hover/active; `toKebabCase` là hàm registry dùng |
 | `resolveSpacing`, `resolveSpacingProps`                                                                                                                 | `.`, `./spacing`                            | Resolve spacing props → `{ className(s), style }`                                            |
 | `styleGenVite`                                                                                                                                          | `./vite`                                    | Vite plugin                                                                                  |
 | `styleGenNext`                                                                                                                                          | `./next`                                    | Next.js config wrapper                                                                       |

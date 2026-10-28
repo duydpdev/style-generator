@@ -5,7 +5,9 @@
  *
  * 1. every file named in `package.json#exports` and `bin` exists;
  * 2. every subpath loads through the package name with both `import` and
- *    `require` and exposes the same export names;
+ *    `require`, exposes the same export names, and those names match the
+ *    value exports its `.d.ts` declares (`./tokens` may add one-letter
+ *    internal aliases);
  * 3. `generate()` from the ESM and CJS builds returns identical CSS;
  * 4. the CLI bundle runs: `--version`, `schema`, `generate` (same CSS as the
  *    library) and `init` in an empty project, whose scaffolded TypeScript
@@ -35,6 +37,10 @@ const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const cli = join(root, pkg.bin["style-gen"]);
 const exampleTheme = join(root, "examples/theme.json");
 const require = createRequire(import.meta.url);
+// `typescript` is CommonJS without a default export; `require` keeps the
+// namespace intact (named ESM imports of it are not statically analysable).
+/** @type {typeof import("typescript")} */
+const ts = require("typescript");
 
 /**
  * Stop the smoke run with a message.
@@ -84,6 +90,53 @@ console.log(`✓ ${subpaths.length} export targets and the bin exist`);
 
 /* ---------- 2. Every subpath loads in both formats ---------- */
 
+/**
+ * The value (runtime) export names a built `.d.ts` declares, read with the
+ * TypeScript checker so `export declare const`, `export { a as b }` and
+ * re-exports all count; type-only exports do not.
+ * @param {string} dtsFile - Absolute path of a built declaration file
+ * @returns {string[]} Sorted value export names
+ */
+const dtsValueExports = (dtsFile) => {
+  const program = ts.createProgram([dtsFile], {
+    module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    skipLibCheck: true,
+    noEmit: true,
+    types: [],
+  });
+  const checker = program.getTypeChecker();
+  const source = program.getSourceFile(dtsFile);
+  const moduleSymbol = source && checker.getSymbolAtLocation(source);
+  if (!moduleSymbol) return [];
+  return checker
+    .getExportsOfModule(moduleSymbol)
+    .filter((symbol) => {
+      // `export type { X }` re-exports a name that is also a value elsewhere
+      // (e.g. `Breakpoint`) but ships no runtime export.
+      const typeOnly = symbol.declarations?.every(
+        (declaration) =>
+          ts.isExportSpecifier(declaration) &&
+          (declaration.isTypeOnly || declaration.parent.parent.isTypeOnly),
+      );
+      if (typeOnly) return false;
+      const target =
+        symbol.flags & ts.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(symbol)
+          : symbol;
+      return (target.flags & ts.SymbolFlags.Value) !== 0;
+    })
+    .map((symbol) => symbol.name)
+    .sort();
+};
+
+// `./tokens` is built with `preserveEntrySignatures: "allow-extension"` (see
+// vite.config.ts), so its runtime keys are a superset of its declared ones:
+// the extras are minified internal chunk exports, always one letter. Every
+// other entry keeps strict equality, which is what makes that global
+// setting safe.
+const MINIFIED_EXTRAS_ALLOWED = new Set(["./tokens"]);
+
 for (const key of subpaths) {
   const specifier = key === "." ? pkg.name : `${pkg.name}/${key.slice(2)}`;
   const esmKeys = Object.keys(await import(specifier)).sort();
@@ -97,7 +150,22 @@ for (const key of subpaths) {
   if (key !== "./types" && esmKeys.length === 0) {
     fail(`${specifier}: no runtime exports`);
   }
-  console.log(`✓ ${specifier} — import + require (${esmKeys.length} exports)`);
+
+  const dtsKeys = dtsValueExports(join(root, pkg.exports[key].types));
+  const missing = dtsKeys.filter((name) => !esmKeys.includes(name));
+  if (missing.length > 0) {
+    fail(`${specifier}: declared but not exported at runtime: [${missing}]`);
+  }
+  const extras = esmKeys.filter((name) => !dtsKeys.includes(name));
+  const illegal = MINIFIED_EXTRAS_ALLOWED.has(key)
+    ? extras.filter((name) => name.length !== 1)
+    : extras;
+  if (illegal.length > 0) {
+    fail(`${specifier}: exported at runtime but not declared: [${illegal}]`);
+  }
+  console.log(
+    `✓ ${specifier} — import + require (${esmKeys.length} exports, ${dtsKeys.length} declared)`,
+  );
 }
 
 /* ---------- 3. ESM and CJS builds agree ---------- */

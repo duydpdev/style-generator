@@ -8,5 +8,5 @@
     "noEmit": true,
     "skipLibCheck": false
   },
-  "include": ["dist/*.d.ts"]
+  "include": ["dist/*.d.ts", "scripts/dist-types.assert.ts"]
 }

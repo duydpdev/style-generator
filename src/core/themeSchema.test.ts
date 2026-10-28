@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { z } from "zod";
 
 import { ThemeSchema, formatZodError } from "./themeSchema";
 
@@ -543,6 +544,63 @@ describe("ThemeSchema — invalid themes", () => {
       expect(issue?.message).toMatch(/declaration order/);
     },
   );
+
+  describe('the variant name "base" is reserved (no-override sentinel)', () => {
+    it("rejects a variant named base at its own path, pointing at the sentinel and a rename", () => {
+      const result = ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: {
+          theme: {
+            base: { colors: { primary: "#000" } },
+            dark: { colors: { primary: "#111" } },
+          },
+        },
+      });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toHaveLength(1);
+      const issue = result.error?.issues[0];
+      expect(issue?.path).toEqual(["themeAxes", "theme", "base"]);
+      expect(issue?.message).toMatch(/reserved/);
+      expect(issue?.message).toMatch(/ThemeAxesState/);
+      expect(issue?.message).toMatch(/themeAxisAttributes/);
+      expect(issue?.message).toMatch(/rename/);
+    });
+
+    it("reports it once per axis that declares it, and prints it through formatZodError", () => {
+      const result = ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: {
+          theme: { base: { colors: { primary: "#000" } } },
+          palette: { base: { colors: { primary: "#111" } } },
+        },
+      });
+      expect(result.error?.issues.map((i) => i.path.join("."))).toEqual([
+        "themeAxes.theme.base",
+        "themeAxes.palette.base",
+      ]);
+      expect(formatZodError(result.error as z.ZodError)).toMatch(
+        /^themeAxes\.theme\.base → .*reserved/m,
+      );
+    });
+
+    it("only reserves the exact name: Base, base2 and baseline stay valid", () => {
+      for (const name of ["Base", "base2", "baseline", "rebase"]) {
+        const result = ThemeSchema.safeParse({
+          ...baseTheme,
+          themeAxes: { theme: { [name]: { colors: { primary: "#000" } } } },
+        });
+        expect(result.success, name).toBe(true);
+      }
+    });
+
+    it("allows an AXIS named base (it is only a key of the state object)", () => {
+      const result = ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: { base: { dark: { colors: { primary: "#000" } } } },
+      });
+      expect(result.success).toBe(true);
+    });
+  });
 });
 
 describe("bracket balance in values (X-02)", () => {

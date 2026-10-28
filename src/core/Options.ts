@@ -190,4 +190,24 @@ export interface StyleGeneratorOptions {
      */
     scope?: "root" | "element";
   };
+
+  /**
+   * Tailwind default theme namespaces to clear before the theme's own values
+   * are mapped, as `--color-*: initial;` / `--radius-*: initial;` /
+   * `--shadow-*: initial;` lines at the top of `@theme inline`. After it,
+   * `bg-red-500`, `rounded-md` or `shadow-md` no longer compile unless the
+   * theme declares them.
+   *
+   * `"colors"` also removes `--color-white`/`--color-black`: declare them in
+   * `colors` if you use them. `rounded-full`, `rounded-none` and
+   * `shadow-none` are static utilities and stay. `inset-shadow-*`,
+   * `drop-shadow-*` and `text-shadow-*` are other namespaces and are not
+   * touched.
+   *
+   * Validated by `generate()`: `"radius"` needs a non-empty
+   * `theme.borderRadius` and `"shadow"` a non-empty `theme.shadows`, or the
+   * defaults would be wiped with nothing to replace them.
+   * @default []
+   */
+  resetTailwindDefaults?: readonly ("colors" | "radius" | "shadow")[];
 }

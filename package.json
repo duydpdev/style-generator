@@ -17,44 +17,84 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./tokens": {
-      "types": "./dist/tokens.d.ts",
-      "import": "./dist/tokens.js",
-      "require": "./dist/tokens.cjs"
+      "import": {
+        "types": "./dist/tokens.d.ts",
+        "default": "./dist/tokens.js"
+      },
+      "require": {
+        "types": "./dist/tokens.d.cts",
+        "default": "./dist/tokens.cjs"
+      }
     },
     "./cva": {
-      "types": "./dist/cva.d.ts",
-      "import": "./dist/cva.js",
-      "require": "./dist/cva.cjs"
+      "import": {
+        "types": "./dist/cva.d.ts",
+        "default": "./dist/cva.js"
+      },
+      "require": {
+        "types": "./dist/cva.d.cts",
+        "default": "./dist/cva.cjs"
+      }
     },
     "./spacing": {
-      "types": "./dist/spacing.d.ts",
-      "import": "./dist/spacing.js",
-      "require": "./dist/spacing.cjs"
+      "import": {
+        "types": "./dist/spacing.d.ts",
+        "default": "./dist/spacing.js"
+      },
+      "require": {
+        "types": "./dist/spacing.d.cts",
+        "default": "./dist/spacing.cjs"
+      }
     },
     "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js",
-      "require": "./dist/types.cjs"
+      "import": {
+        "types": "./dist/types.d.ts",
+        "default": "./dist/types.js"
+      },
+      "require": {
+        "types": "./dist/types.d.cts",
+        "default": "./dist/types.cjs"
+      }
     },
     "./recipes": {
-      "types": "./dist/recipes.d.ts",
-      "import": "./dist/recipes.js",
-      "require": "./dist/recipes.cjs"
+      "import": {
+        "types": "./dist/recipes.d.ts",
+        "default": "./dist/recipes.js"
+      },
+      "require": {
+        "types": "./dist/recipes.d.cts",
+        "default": "./dist/recipes.cjs"
+      }
     },
     "./vite": {
-      "types": "./dist/vite.d.ts",
-      "import": "./dist/vite.js",
-      "require": "./dist/vite.cjs"
+      "import": {
+        "types": "./dist/vite.d.ts",
+        "default": "./dist/vite.js"
+      },
+      "require": {
+        "types": "./dist/vite.d.cts",
+        "default": "./dist/vite.cjs"
+      }
     },
     "./next": {
-      "types": "./dist/next.d.ts",
-      "import": "./dist/next.js",
-      "require": "./dist/next.cjs"
+      "import": {
+        "types": "./dist/next.d.ts",
+        "default": "./dist/next.js"
+      },
+      "require": {
+        "types": "./dist/next.d.cts",
+        "default": "./dist/next.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -63,7 +103,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/emit-cts-types.mjs",
     "build:cli": "tsdown",
     "build:all": "yarn build && yarn build:cli",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",
@@ -71,6 +111,7 @@
     "check:publish-target": "node scripts/check-publish-target.mjs",
     "check:sizes": "node scripts/check-sizes.mjs",
     "check:smoke": "node scripts/smoke-dist.mjs",
+    "check:types-pack": "node scripts/check-types-pack.mjs",
     "commitlint": "commitlint",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored",
     "lint-staged": "lint-staged",
@@ -91,10 +132,11 @@
     "site:dev": "yarn workspace site dev",
     "site:build": "yarn build:all && yarn workspace site build",
     "site:preview": "yarn workspace site preview",
-    "typecheck:dist": "tsc -p tsconfig.dts-check.json",
+    "typecheck:dist": "tsc -p tsconfig.dts-check.json && tsc -p tsconfig.dts-check.cjs.json",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@commitlint/types": "^20.4.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",

@@ -105,4 +105,71 @@ describe("integration: non-default options through the real Tailwind engine (X-1
     ]);
     expect(ruleFor(root, ".sp-p")).toBeUndefined();
   });
+
+  describe("resetTailwindDefaults (V5-08)", () => {
+    const resetTheme = defineTheme({
+      colors: { primary: "#3B82F6" },
+      borderRadius: { card: "8px" },
+      shadows: { soft: "0 1px 2px rgb(0 0 0 / 0.1)" },
+    });
+    const candidates = [
+      "bg-red-500",
+      "bg-primary",
+      "rounded-md",
+      "rounded-card",
+      "rounded-full",
+      "shadow-md",
+      "shadow-soft",
+    ];
+
+    const compiledClasses = async (
+      options: StyleGeneratorOptions,
+    ): Promise<string[]> => {
+      const { css } = generate(resetTheme, options);
+      const root = postcss.parse(await compileFixtureCss(css, candidates));
+      const classes: string[] = [];
+      root.walkRules((r) => {
+        // `.rounded-md` / `.bg-red-500`: the candidate rules only.
+        const match = /^\.([a-z0-9-]+)$/.exec(r.selector);
+        if (match?.[1] && candidates.includes(match[1])) classes.push(match[1]);
+      });
+      return classes.sort((a, b) => a.localeCompare(b));
+    };
+
+    it("keeps Tailwind's defaults when the option is absent", async () => {
+      expect(await compiledClasses({})).toEqual(
+        [...candidates].sort((a, b) => a.localeCompare(b)),
+      );
+    });
+
+    it('"colors" removes bg-red-500 only; the theme color still compiles', async () => {
+      const classes = await compiledClasses({
+        resetTailwindDefaults: ["colors"],
+      });
+      expect(classes).not.toContain("bg-red-500");
+      expect(classes).toContain("bg-primary");
+      expect(classes).toContain("rounded-md");
+      expect(classes).toContain("shadow-md");
+    });
+
+    it('"radius" and "shadow" remove rounded-md/shadow-md; theme values and static utilities stay', async () => {
+      const classes = await compiledClasses({
+        resetTailwindDefaults: ["radius", "shadow"],
+      });
+      expect(classes).not.toContain("rounded-md");
+      expect(classes).not.toContain("shadow-md");
+      expect(classes).toContain("rounded-card");
+      expect(classes).toContain("rounded-full");
+      expect(classes).toContain("shadow-soft");
+      expect(classes).toContain("bg-red-500");
+    });
+
+    it("all three together leave only the theme's own values and static utilities", async () => {
+      expect(
+        await compiledClasses({
+          resetTailwindDefaults: ["colors", "radius", "shadow"],
+        }),
+      ).toEqual(["bg-primary", "rounded-card", "rounded-full", "shadow-soft"]);
+    });
+  });
 });

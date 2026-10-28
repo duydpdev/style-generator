@@ -67,6 +67,21 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
     }>().not.toExtend<NonNullable<StyleGeneratorOptions["axes"]>>();
   });
 
+  it("resetTailwindDefaults is a list of the literal namespaces on both sides", () => {
+    expectTypeOf<
+      NonNullable<StyleGeneratorOptions["resetTailwindDefaults"]>[number]
+    >().toEqualTypeOf<"colors" | "radius" | "shadow">();
+    expectTypeOf<
+      NonNullable<In["resetTailwindDefaults"]>[number]
+    >().toEqualTypeOf<"colors" | "radius" | "shadow">();
+    expectTypeOf<{
+      resetTailwindDefaults: ["colors", "radius"];
+    }>().toExtend<StyleGeneratorOptions>();
+    expectTypeOf<{
+      resetTailwindDefaults: ["fonts"];
+    }>().not.toExtend<StyleGeneratorOptions>();
+  });
+
   it("coverage prefixes are typed per category", () => {
     type Coverage = NonNullable<StyleGeneratorOptions["coverage"]>;
 

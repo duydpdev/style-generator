@@ -515,3 +515,81 @@ describe("generate() axes option", () => {
     });
   });
 });
+
+describe("generate() resetTailwindDefaults option", () => {
+  const full: ThemeConfig = {
+    colors: { primary: "#fff" },
+    borderRadius: { md: "6px" },
+    shadows: { soft: "0 1px 2px #0003" },
+  };
+
+  const issuesFor = (t: ThemeConfig, options: unknown) => {
+    try {
+      generate(t, options as never);
+      return [];
+    } catch (e) {
+      if (!(e instanceof z.ZodError)) throw e;
+      return e.issues.map((i) => ({
+        path: i.path.join("."),
+        message: i.message,
+      }));
+    }
+  };
+
+  it.each([
+    [{ resetTailwindDefaults: "colors" }, "resetTailwindDefaults"],
+    [{ resetTailwindDefaults: ["fonts"] }, "resetTailwindDefaults.0"],
+    [{ resetTailwindDefaults: ["colors", 1] }, "resetTailwindDefaults.1"],
+    [{ resetTailwindDefaults: [["colors"]] }, "resetTailwindDefaults.0"],
+  ])("rejects %o at %s", (options, path) => {
+    expect(issuesOf(options).map((i) => i.path)).toContain(path);
+  });
+
+  it("accepts every namespace on a theme that replaces them", () => {
+    expect(
+      issuesFor(full, {
+        resetTailwindDefaults: ["colors", "radius", "shadow"],
+      }),
+    ).toEqual([]);
+    expect(issuesFor(full, { resetTailwindDefaults: [] })).toEqual([]);
+  });
+
+  it("rejects radius without borderRadius and shadow without shadows, naming the category", () => {
+    const issues = issuesFor(
+      { colors: { primary: "#fff" } },
+      { resetTailwindDefaults: ["radius", "shadow"] },
+    );
+    expect(issues.map((i) => i.path)).toEqual([
+      "resetTailwindDefaults.0",
+      "resetTailwindDefaults.1",
+    ]);
+    expect(issues[0]?.message).toContain('"borderRadius"');
+    expect(issues[1]?.message).toContain('"shadows"');
+  });
+
+  it("needs only the matching category: radius is fine without shadows", () => {
+    expect(
+      issuesFor(
+        { colors: { primary: "#fff" }, borderRadius: { md: "6px" } },
+        { resetTailwindDefaults: ["radius"] },
+      ),
+    ).toEqual([]);
+  });
+
+  it("validates the options before the theme", () => {
+    expect(
+      issuesFor(
+        { colors: { primary: "{" } },
+        {
+          resetTailwindDefaults: ["fonts"],
+        },
+      ).map((i) => i.path),
+    ).toEqual(["resetTailwindDefaults.0"]);
+  });
+
+  it("does not change the typed tokens", () => {
+    expect(
+      generate(full, { resetTailwindDefaults: ["colors"] }).tokens,
+    ).toEqual(generate(full).tokens);
+  });
+});

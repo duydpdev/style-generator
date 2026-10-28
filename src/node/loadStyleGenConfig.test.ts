@@ -5,25 +5,105 @@ import os from "node:os";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import {
-  normalizePath,
+  loadStyleGenConfig,
   readConfigFile,
   resolveConfig,
   toGeneratorOptions,
-} from "./config";
+} from "./loadStyleGenConfig";
 
-describe("normalizePath", () => {
-  it("trims whitespace", () => {
-    expect(normalizePath("  styles/theme.json  ")).toBe("styles/theme.json");
+describe("loadStyleGenConfig", () => {
+  let tmp: string;
+
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-load-"));
   });
 
-  it("strips leading slash for relative-looking paths", () => {
-    const result = normalizePath("/styles/theme.json");
-    expect(result).not.toMatch(/^\/styles/);
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  it("preserves path that starts with cwd", () => {
-    const abs = path.join(process.cwd(), "styles/theme.json");
-    expect(normalizePath(abs)).toBe(path.normalize(abs));
+  it("reads the given root, not process.cwd(), and merges over the defaults", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ output: "out/x.css", breakpoints: ["sm"] }),
+    );
+
+    const loaded = loadStyleGenConfig(tmp);
+
+    expect(loaded.config).toEqual({
+      theme: "styles/theme.json",
+      output: "out/x.css",
+      breakpoints: ["sm"],
+    });
+    expect(loaded.source).toBe("style-gen.config.json");
+    expect(loaded.error).toBeUndefined();
+    expect(loaded.issues).toBeUndefined();
+  });
+
+  it("returns the defaults and no source when there is no config", () => {
+    const loaded = loadStyleGenConfig(tmp);
+    expect(loaded.config).toEqual({
+      theme: "styles/theme.json",
+      output: "styles/theme.css",
+    });
+    expect(loaded.source).toBeUndefined();
+  });
+
+  it("passes schema issues through and merges nothing from the bad file", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ theme: "mine.json", breakpoint: ["xl"] }),
+    );
+
+    const loaded = loadStyleGenConfig(tmp);
+
+    expect(loaded.issues).toMatch(/^breakpoint → /m);
+    expect(loaded.source).toBe("style-gen.config.json");
+    expect(loaded.config.theme).toBe("styles/theme.json");
+  });
+
+  it("passes a malformed file's error through", () => {
+    fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "{nope");
+    const loaded = loadStyleGenConfig(tmp);
+    expect(loaded.error).toMatch(/is not valid JSON/);
+    expect(loaded.config.output).toBe("styles/theme.css");
+  });
+
+  it("reads package.json#style-gen when there is no config file", () => {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ name: "x", "style-gen": { theme: "pkg/t.json" } }),
+    );
+    const loaded = loadStyleGenConfig(tmp);
+    expect(loaded.config.theme).toBe("pkg/t.json");
+    expect(loaded.source).toBe("package.json");
+  });
+
+  it("forwards `axes` and `resetTailwindDefaults` to the generate() options", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({
+        axes: { attribute: { theme: "data-mode" } },
+        resetTailwindDefaults: ["colors"],
+      }),
+    );
+
+    const options = toGeneratorOptions(loadStyleGenConfig(tmp).config);
+
+    expect(options).toEqual({
+      axes: { attribute: { theme: "data-mode" } },
+      resetTailwindDefaults: ["colors"],
+    });
+  });
+
+  it("rejects an unknown resetTailwindDefaults entry", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ resetTailwindDefaults: ["fonts"] }),
+    );
+    expect(loadStyleGenConfig(tmp).issues).toMatch(
+      /^resetTailwindDefaults\.0 → /m,
+    );
   });
 });
 
@@ -283,6 +363,7 @@ describe("readConfigFile schema validation (X-04)", () => {
       spacing: { enabled: true },
       typography: { cssVarDriven: true },
       extraSources: ["bg-x"],
+      resetTailwindDefaults: ["colors"],
     };
     writeConfig(cfg);
     const file = readConfigFile(tmp);

@@ -52,6 +52,21 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // not carry it. Budgets raised for the measured intrinsic `axes` growth
 // (measured + ~10%): index 11100 -> 12050, vite 11150 -> 12050, next 11050 ->
 // 11950, cli 38000 -> 41450; plus the new `recipes` entry.
+// 2026-10-28 (phase 11, node runner): `vite` and `next` now carry the
+// shared emitter (config loader, `prepareGenerate`, atomic write, watcher
+// glue) and import the `tokens` chunk (the `./tokens` internals are pinned to
+// it in `vite.config.ts`, which keeps `./tokens` at one entry + two shared
+// chunks). Measured vite 12742 B, next 13163 B (+~10%): vite 12050 -> 14050,
+// next 11950 -> 14450. `cli` fell 37694 -> 22496 B after tsdown stopped
+// emitting JSDoc (`comments.jsdoc: false`); budget = measured + ~10%:
+// 41450 -> 24750.
+// tokens 1688, cva 724 and spacing 790 measured in phase 11 are +2/-3/+2 B
+// against the phase-10 values (1686/727/788). Their runtime sources are
+// unchanged since phase 10 (the only edit under their import closure is a
+// type-only addition to `core/Options.ts`), so the delta is chunk-hash import
+// specifiers (`./helpers-<hash>.js`, gzip-sensitive) and the `tokens` chunk
+// layout, not code; inferred from the unchanged sources, not byte-compared
+// with a phase-10 build.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -61,9 +76,9 @@ const budgets = {
   spacing: 1_000,
   recipes: 2_284,
   types: 100,
-  vite: 12_050,
-  next: 11_950,
-  cli: 41_450,
+  vite: 14_050,
+  next: 14_450,
+  cli: 24_750,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.

@@ -1,18 +1,11 @@
 import { z } from "zod";
 
-import { generateSourceInline } from "../features/registry/generateSourceInline";
-import { generateSpacingCss } from "../features/spacing/generateSpacingCss";
-import { generateScreensCss } from "../features/theme-css/generateScreensCss";
-import { buildThemeCss } from "../features/theme-css/generateThemeCss";
 import { buildDesignTokens } from "../features/tokens/createDesignTokens";
-import { generateTypographyCss } from "../features/typography/generateTypographyCss";
 
-import { assertAxesOptions } from "./crossFieldChecks";
+import { generateFromParsed } from "./generateFromParsed";
 import type { DesignTokensResult } from "./inference";
 import type { StyleGeneratorOptions } from "./Options";
-import { StyleGeneratorOptionsSchema } from "./optionsSchema";
-import { parseTheme } from "./parseTheme";
-import { resolveOptions } from "./resolveOptions";
+import { prepareGenerate } from "./prepareGenerate";
 import { ThemeSchema, type ThemeConfig } from "./themeSchema";
 
 // Computed once at module scope — `z.toJSONSchema` walks the whole schema
@@ -65,32 +58,17 @@ export function generate(
   theme: ThemeConfig,
   options?: StyleGeneratorOptions,
 ): GenerateResult<ThemeConfig, StyleGeneratorOptions> {
-  // Options first (a bad option fails before the theme is even looked at),
-  // then the theme: each throws a `ZodError` (unknown keys,
-  // injection-unsafe values, ...) before any CSS is generated.
-  // `parseTheme` hands the theme back typed as `ThemeConfig` so downstream
-  // inference keeps the literal keys.
-  const styleOptions: StyleGeneratorOptions = options ?? {};
-  StyleGeneratorOptionsSchema.parse(styleOptions);
-  const resolved = resolveOptions(styleOptions);
-  const parsed = parseTheme(theme);
-  // The only checks that need both the theme and the options.
-  assertAxesOptions(parsed, resolved.axes);
+  // One shared prologue (options → resolve → theme → theme × options), each
+  // step throwing a `ZodError` before any CSS is generated. `parsed` is
+  // typed as `ThemeConfig` so downstream inference keeps the literal keys.
+  const { parsed, resolved } = prepareGenerate(theme, options);
 
   const { DesignTokens } = buildDesignTokens<
     ThemeConfig,
     StyleGeneratorOptions
   >(parsed, resolved);
 
-  const css = [
-    generateScreensCss(resolved),
-    buildThemeCss(parsed, resolved),
-    generateTypographyCss(parsed.typography, resolved),
-    generateSpacingCss(resolved),
-    generateSourceInline(parsed, resolved),
-  ]
-    .filter((block) => block.length > 0)
-    .join("\n");
+  const css = generateFromParsed(parsed, resolved);
 
   return { css, tokens: DesignTokens, schema: themeJsonSchema };
 }

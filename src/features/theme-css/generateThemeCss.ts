@@ -1,13 +1,7 @@
-import { assertAxesOptions } from "../../core/crossFieldChecks";
 import type { StyleGeneratorOptions } from "../../core/Options";
-import { StyleGeneratorOptionsSchema } from "../../core/optionsSchema";
-import { resolveOptions } from "../../core/resolveOptions";
+import { prepareGenerate } from "../../core/prepareGenerate";
 import type { ResolvedOptions } from "../../core/resolveOptions";
-import {
-  ThemeSchema,
-  type ThemeConfig,
-  type ThemeOverride,
-} from "../../core/themeSchema";
+import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
 import { axisAttributeName } from "../../shared/axisAttributeName";
 import { toKebabCase } from "../../shared/helpers";
 import { cssVarCategories } from "../registry/builtInCategories";
@@ -74,6 +68,17 @@ const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
 };
 
 /**
+ * `resetTailwindDefaults` name → its `@theme inline` line, in the fixed
+ * order they are emitted (so duplicates and the written order do not change
+ * the CSS).
+ */
+const RESET_LINES = [
+  ["colors", "  --color-*: initial;"],
+  ["radius", "  --radius-*: initial;"],
+  ["shadow", "  --shadow-*: initial;"],
+] as const;
+
+/**
  * Generate a complete CSS string for Tailwind v4 `\@theme` integration.
  *
  * Output includes:
@@ -86,24 +91,21 @@ const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
  *    an alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules).
  *    `options.axes` renames the attribute per axis and, with
  *    `scope: "element"`, drops the `html` anchor (guarded by an alias check)
- * 3. `\@theme inline` block mapping `--sg-*` → Tailwind v4 namespaces
+ * 3. `\@theme inline` block: the `resetTailwindDefaults` lines
+ *    (`--color-*: initial;`, …) first, then the mapping of `--sg-*` → Tailwind v4 namespaces
  *
  * Parses `options` and `config` like `generate()` — options first — so an
  * invalid or injection-unsafe option or theme throws a `ZodError` instead of
  * reaching the CSS.
  * @param {ThemeConfig} config - Theme configuration
- * @param {StyleGeneratorOptions} [options] - Generator options; only `axes` affects this output
+ * @param {StyleGeneratorOptions} [options] - Generator options; only `axes` and `resetTailwindDefaults` affect this output
  * @returns {string} CSS string
  */
 export const generateThemeCss = (
   config: ThemeConfig,
   options?: StyleGeneratorOptions,
 ): string => {
-  const styleOptions: StyleGeneratorOptions = options ?? {};
-  StyleGeneratorOptionsSchema.parse(styleOptions);
-  const resolved = resolveOptions(styleOptions);
-  const parsed = ThemeSchema.parse(config);
-  assertAxesOptions(parsed, resolved.axes);
+  const { parsed, resolved } = prepareGenerate(config, options);
   return buildThemeCss(parsed, resolved);
 };
 
@@ -112,12 +114,12 @@ export const generateThemeCss = (
  * already parsed the theme and the options. Not exported from any public
  * barrel.
  * @param {ThemeConfig} config - Theme already parsed by `ThemeSchema`
- * @param {Pick<ResolvedOptions, "axes">} options - Resolved options (`axes`: attribute map and scope)
+ * @param {Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">} options - Resolved options (`axes`: attribute map and scope; `resetTailwindDefaults`: namespaces to clear)
  * @returns {string} CSS string
  */
 export const buildThemeCss = (
   config: ThemeConfig,
-  options: Pick<ResolvedOptions, "axes">,
+  options: Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">,
 ): string => {
   const blocks: string[] = [];
 
@@ -142,13 +144,19 @@ export const buildThemeCss = (
     }
   }
 
-  // 3. @theme inline mapping (only base theme vars, not overrides)
-  const themeMapping = buildThemeMapping(config);
-  if (Object.keys(themeMapping).length > 0) {
-    const lines = Object.entries(themeMapping)
-      .map(([k, v]) => `  ${k}: ${v};`)
-      .join("\n");
-    blocks.push(`@theme inline {\n${lines}\n}`);
+  // 3. @theme inline: the Tailwind default resets first (they wipe the
+  // namespace, so anything declared after them survives), then the mapping
+  // (only base theme vars, not overrides)
+  const lines = [
+    ...RESET_LINES.filter(([name]) =>
+      options.resetTailwindDefaults.includes(name),
+    ).map(([, line]) => line),
+    ...Object.entries(buildThemeMapping(config)).map(
+      ([k, v]) => `  ${k}: ${v};`,
+    ),
+  ];
+  if (lines.length > 0) {
+    blocks.push(`@theme inline {\n${lines.join("\n")}\n}`);
   }
 
   return blocks.join("\n\n") + "\n";

@@ -50,6 +50,11 @@ export interface ResolvedOptions extends ResolvedTokenOptions {
     readonly attribute: Readonly<Record<string, string>>;
     readonly scope: "root" | "element";
   };
+  /**
+   * The Tailwind default namespaces to clear (`[]`: none). Order and
+   * duplicates are kept as written; the CSS generator emits each name once.
+   */
+  resetTailwindDefaults: readonly ("colors" | "radius" | "shadow")[];
 }
 
 const sortBreakpoints = (
@@ -104,5 +109,6 @@ export const resolveOptions = (
       attribute: options.axes?.attribute ?? {},
       scope: options.axes?.scope ?? "root",
     },
+    resetTailwindDefaults: options.resetTailwindDefaults ?? [],
   };
 };

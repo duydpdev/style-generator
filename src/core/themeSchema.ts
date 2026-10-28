@@ -198,6 +198,18 @@ const integerLikeNameMessage = (kind: "axis" | "variant", name: string) =>
   `themeAxes ${kind} name "${name}" is a canonical integer; JS object key order puts integer-like keys first (ascending) regardless of declaration order, which would silently break the "last declared wins" precedence — rename it (e.g. "contrast${name}" or "c${name}")`;
 
 /**
+ * `"base"` is the "no override" sentinel of `ThemeAxesState` and
+ * `themeAxisAttributes()`: a variant of that name could never be switched on
+ * (it would emit no `data-<axis>` attribute), so it is rejected rather than
+ * left as a block nothing can activate. An AXIS named `base` is fine: it is
+ * only a key of the state object, and its own variants are not affected.
+ */
+const RESERVED_VARIANT_NAME = "base";
+
+const reservedVariantMessage = () =>
+  `themeAxes variant name "${RESERVED_VARIANT_NAME}" is reserved: ThemeAxesState and themeAxisAttributes() read "${RESERVED_VARIANT_NAME}" as "no override" on the axis, so this variant could never be switched on — rename it (e.g. "default" or "standard"). The base theme already is what an axis shows without an override.`;
+
+/**
  * `themeAxes` — replaces the single-axis `themes` field. Outer key is the
  * axis name (e.g. `"theme"`, `"palette"`), inner key is the variant name
  * within that axis (e.g. `"dark"`, `"forest"`) — both use the
@@ -213,6 +225,8 @@ const integerLikeNameMessage = (kind: "axis" | "variant", name: string) =>
  * are rejected: `JSON.parse`/object enumeration hoists them ahead of all
  * other keys, so declaration order — and with it the emit-order precedence
  * contract — would be lost before this library ever sees the object.
+ *
+ * A variant named `base` is rejected too (see {@link RESERVED_VARIANT_NAME}).
  */
 const ThemeAxesSchema = z
   .record(TokenKey, z.record(TokenKey, ThemeOverrideSchema))
@@ -226,6 +240,13 @@ const ThemeAxesSchema = z
         });
       }
       for (const variantName of Object.keys(variants)) {
+        if (variantName === RESERVED_VARIANT_NAME) {
+          ctx.addIssue({
+            code: "custom",
+            path: [axisName, variantName],
+            message: reservedVariantMessage(),
+          });
+        }
         if (INTEGER_LIKE_NAME_RE.test(variantName)) {
           ctx.addIssue({
             code: "custom",

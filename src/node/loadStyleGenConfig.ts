@@ -11,7 +11,7 @@ import {
 import { formatZodError } from "../core/themeSchema";
 
 /**
- * CLI-only config keys, layered on the strict `generate()` options shape so
+ * Config-only keys, layered on the strict `generate()` options shape so
  * `style-gen.config.json` gets the same unknown-key, flag and screen checks
  * as `generate()` itself.
  */
@@ -30,10 +30,10 @@ const cliKeys = {
 };
 
 /**
- * Resolved CLI configuration: the CLI-only keys plus every `generate()`
+ * Resolved configuration: the config-only keys plus every `generate()`
  * option (`breakpoints`, `screens`, `enableResponsive`, `spacing`,
- * `typography`, `extraSources`, `coverage`, `axes`), forwarded through
- * {@link toGeneratorOptions}.
+ * `typography`, `extraSources`, `coverage`, `axes`, `resetTailwindDefaults`),
+ * forwarded through {@link toGeneratorOptions}.
  */
 export const StyleGenConfigSchema = StyleGeneratorOptionsShape.extend(
   cliKeys,
@@ -65,23 +65,6 @@ export const defaultConfig: StyleGenConfig = {
   theme: "styles/theme.json",
   output: "styles/theme.css",
 };
-
-/**
- * Normalizes a path input from the user.
- * Strips leading '/' to prevent path.resolve from treating it as an absolute path from filesystem root.
- * @param {string} p - The path to normalize
- * @returns {string} The normalized path
- */
-export function normalizePath(p: string): string {
-  let normalized = p.trim();
-
-  // Strip leading slash if it's not meant to be an absolute path from the system root
-  if (normalized.startsWith("/") && !normalized.startsWith(process.cwd())) {
-    normalized = normalized.substring(1);
-  }
-
-  return path.normalize(normalized);
-}
 
 const CONFIG_KEYS = StyleGenConfigSchema.keyof().options;
 
@@ -140,8 +123,8 @@ const validateFileConfig = (
 /**
  * Reads `style-gen.config.json`, else `package.json#style-gen`, from `cwd`.
  * A malformed file is ignored (defaults apply) and reported through `error`
- * so callers can warn (`generate`) or fail (`doctor`).
- * @param {string} cwd - The current working directory
+ * so callers can warn (`generate`) or fail (`doctor`, the bundler plugins).
+ * @param {string} cwd - The project root
  * @returns {ConfigFile} The file config, its source and any error
  */
 export function readConfigFile(cwd: string): ConfigFile {
@@ -199,10 +182,11 @@ const GENERATOR_OPTION_KEYS = StyleGeneratorOptionsShape.keyof().options;
 
 /**
  * Pick the `generate()` options out of a resolved config, dropping the
- * CLI-only keys (`theme`, `output`, `plugin`, `$schema`) that the strict
+ * config-only keys (`theme`, `output`, `plugin`, `$schema`) that the strict
  * options schema would reject. The key list comes from
  * `StyleGeneratorOptionsShape`, so a new option is forwarded automatically.
- * @param {StyleGenConfig} config - Resolved CLI configuration
+ * The only way config options reach `generate()` and the runner.
+ * @param {StyleGenConfig} config - Resolved configuration
  * @returns {StyleGeneratorOptions} The options to pass to `generate()`
  */
 export function toGeneratorOptions(
@@ -216,7 +200,7 @@ export function toGeneratorOptions(
 }
 
 /**
- * Resolves CLI configuration: flags over file config over defaults.
+ * Resolves configuration: flags over file config over defaults.
  * @param {StyleGenConfigFlags} flags - The command line flags
  * @param {ConfigFile} [file] - File config; read from `process.cwd()` when omitted
  * @returns {StyleGenConfig} The resolved StyleGen configuration
@@ -230,4 +214,23 @@ export function resolveConfig(
     ...sanitizeFlags(file.config),
     ...sanitizeFlags(flags),
   };
+}
+
+/** {@link ConfigFile} with the merged, defaulted config. */
+export type LoadedStyleGenConfig = Omit<ConfigFile, "config"> & {
+  config: StyleGenConfig;
+};
+
+/**
+ * Load the config the way the Vite plugin, the Next.js integration and the
+ * CLI do when they are given no options: `style-gen.config.json`, else
+ * `package.json#style-gen`, read from `root`, merged over the defaults.
+ * `source`, `error` and `issues` are passed through so the caller can refuse
+ * an invalid config (`issues`, `error`) instead of silently using defaults.
+ * @param {string} root - The project root
+ * @returns {LoadedStyleGenConfig} The resolved config and where it came from
+ */
+export function loadStyleGenConfig(root: string): LoadedStyleGenConfig {
+  const file = readConfigFile(root);
+  return { ...file, config: resolveConfig({}, file) };
 }

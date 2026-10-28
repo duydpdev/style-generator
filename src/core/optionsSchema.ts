@@ -145,7 +145,7 @@ const AttributeName = z
  * refinement: unknown keys (also inside `spacing`/`typography`) are
  * rejected, behavioural flags must be booleans, and every option that
  * reaches `generate().css` follows the theme's injection-safe grammar.
- * `src/cli/config.ts` extends it for `style-gen.config.json`.
+ * `src/node/loadStyleGenConfig.ts` extends it for `style-gen.config.json`.
  */
 export const StyleGeneratorOptionsShape = z.strictObject({
   breakpoints: z.array(OptionKey).optional(),
@@ -169,6 +169,9 @@ export const StyleGeneratorOptionsShape = z.strictObject({
       attribute: z.record(OptionKey, AttributeName).optional(),
       scope: z.enum(["root", "element"]).optional(),
     })
+    .optional(),
+  resetTailwindDefaults: z
+    .array(z.enum(["colors", "radius", "shadow"]))
     .optional(),
 });
 
@@ -229,7 +232,7 @@ export const refineStyleGeneratorOptions = (
 
 /**
  * Validates every `generate()` option. Internal: not exported from any
- * barrel; `src/cli/config.ts` reuses {@link StyleGeneratorOptionsShape} and
+ * barrel; `src/node/loadStyleGenConfig.ts` reuses {@link StyleGeneratorOptionsShape} and
  * {@link refineStyleGeneratorOptions} so `style-gen.config.json` gets the
  * same verdict.
  */

@@ -86,6 +86,13 @@ export default defineConfig({
           if (/[/\\]src[/\\]shared[/\\]defaultOption\.ts$/.test(id)) {
             return "defaultOption";
           }
+          if (
+            /[/\\]src[/\\](exports[/\\]tokens|core[/\\](Options|resolveTokenOptions)|features[/\\]registry[/\\]categoryTokenMeta|shared[/\\]safelistProperties)\.ts$/.test(
+              id,
+            )
+          ) {
+            return "tokens";
+          }
           return undefined;
         },
       },

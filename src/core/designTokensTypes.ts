@@ -73,7 +73,9 @@ export type ThemeAxisVariant<
 
 /**
  * The active variant per axis — every axis optional, each `"base"` (no
- * `html[data-<axis>]` override) or one of its declared variants.
+ * `html[data-<axis>]` override) or one of its declared variants. `"base"` is
+ * a sentinel that `ThemeSchema` reserves: no axis may declare a variant of
+ * that name, so the union never merges a real variant with it.
  */
 export type ThemeAxesState<T extends ThemeConfig> = {
   readonly [A in ThemeAxisName<T>]?: ThemeAxisVariant<T, A> | "base";

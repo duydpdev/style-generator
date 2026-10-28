@@ -3,15 +3,18 @@
  * Smoke-run the built package the way consumers load it (CI-04). Run after
  * `yarn build:all`:
  *
- * 1. every file named in `package.json#exports` and `bin` exists;
+ * 1. every file named in `package.json#exports` and `bin` exists (nested
+ *    `import`/`require` → `types`/`default` conditions included), and each
+ *    `.d.cts` is its `.d.ts` rewritten by `scripts/cjs-declaration.mjs`;
  * 2. every subpath loads through the package name with both `import` and
  *    `require`, exposes the same export names, and those names match the
  *    value exports its `.d.ts` declares (`./tokens` may add one-letter
  *    internal aliases);
  * 3. `generate()` from the ESM and CJS builds returns identical CSS;
  * 4. the CLI bundle runs: `--version`, `schema`, `generate` (same CSS as the
- *    library) and `init` in an empty project, whose scaffolded TypeScript
- *    generator script then runs under Node's type stripping.
+ *    library), `tokens`, `budget` (each also with `--help`) and `init` in an
+ *    empty project, whose scaffolded TypeScript generator script then runs
+ *    under Node's type stripping.
  *
  * Run: node scripts/smoke-dist.mjs
  * Exits 1 on the first failed step.
@@ -31,6 +34,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { toCjsDeclaration } from "./cjs-declaration.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -78,11 +83,32 @@ const runNode = (label, argv, cwd) => {
 const subpaths = Object.keys(pkg.exports).filter(
   (key) => key !== "./package.json",
 );
+/**
+ * Every file path an `exports` target names, however deeply the conditions
+ * (`import`/`require` → `types`/`default`) nest.
+ * @param {string | Record<string, unknown>} target - An `exports` value
+ * @returns {string[]} File paths
+ */
+const targetFiles = (target) =>
+  typeof target === "string"
+    ? [target]
+    : Object.values(target).flatMap((value) =>
+        targetFiles(/** @type {string | Record<string, unknown>} */ (value)),
+      );
+
 for (const key of subpaths) {
-  for (const target of Object.values(pkg.exports[key])) {
+  for (const target of targetFiles(pkg.exports[key])) {
     if (!existsSync(join(root, target))) {
       fail(`exports["${key}"] points at missing ${target}`);
     }
+  }
+  // The `.d.cts` is its `.d.ts` rewritten by scripts/cjs-declaration.mjs.
+  const { import: esm, require: cjs } = pkg.exports[key];
+  if (
+    readFileSync(join(root, cjs.types), "utf8") !==
+    toCjsDeclaration(readFileSync(join(root, esm.types), "utf8"), esm.types)
+  ) {
+    fail(`exports["${key}"]: ${cjs.types} differs from ${esm.types}`);
   }
 }
 if (!existsSync(cli)) fail(`bin points at missing ${pkg.bin["style-gen"]}`);
@@ -151,7 +177,7 @@ for (const key of subpaths) {
     fail(`${specifier}: no runtime exports`);
   }
 
-  const dtsKeys = dtsValueExports(join(root, pkg.exports[key].types));
+  const dtsKeys = dtsValueExports(join(root, pkg.exports[key].import.types));
   const missing = dtsKeys.filter((name) => !esmKeys.includes(name));
   if (missing.length > 0) {
     fail(`${specifier}: declared but not exported at runtime: [${missing}]`);
@@ -203,6 +229,33 @@ runNode(
 if (readFileSync(join(work, "theme.css"), "utf8") !== esmCss) {
   fail("style-gen generate CSS differs from generate().css");
 }
+
+for (const command of ["tokens", "budget"]) {
+  const help = runNode(
+    `style-gen ${command} --help`,
+    [cli, command, "--help"],
+    work,
+  );
+  if (!help.includes(`Usage: style-gen ${command}`)) {
+    fail(`${command} --help printed no "Usage: style-gen ${command}" line`);
+  }
+}
+
+runNode(
+  "style-gen tokens",
+  [cli, "tokens", "--theme", "theme.json", "--out", "theme.tokens.ts"],
+  work,
+);
+if (!readFileSync(join(work, "theme.tokens.ts"), "utf8").includes("tokens")) {
+  fail("style-gen tokens wrote no tokens export");
+}
+
+// A generous budget: the smoke checks the command runs and exits 0, not the size.
+runNode(
+  "style-gen budget",
+  [cli, "budget", "theme.css", "--max-gzip", "100000"],
+  work,
+);
 
 // `init` in an empty ESM project that resolves the package by name.
 const project = join(work, "project");

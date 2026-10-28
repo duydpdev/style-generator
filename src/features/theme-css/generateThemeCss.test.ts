@@ -323,4 +323,124 @@ describe("generateThemeCss", () => {
       ).not.toThrow();
     });
   });
+
+  describe("options.resetTailwindDefaults", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      borderRadius: { md: "6px" },
+      shadows: { soft: "0 1px 2px #0003" },
+    };
+
+    const themeBlock = (css: string): string =>
+      /@theme inline \{\n([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+
+    it("is byte-identical to no option when absent, empty or []", () => {
+      const css = generateThemeCss(config);
+      expect(generateThemeCss(config, {})).toBe(css);
+      expect(generateThemeCss(config, { resetTailwindDefaults: [] })).toBe(css);
+      expect(css).not.toContain("initial");
+    });
+
+    it.each([
+      ["colors", "--color-*: initial;"],
+      ["radius", "--radius-*: initial;"],
+      ["shadow", "--shadow-*: initial;"],
+    ] as const)(
+      "%s emits %s as the first line of @theme inline, before the mapping",
+      (name, line) => {
+        const lines = themeBlock(
+          generateThemeCss(config, { resetTailwindDefaults: [name] }),
+        ).split("\n");
+        expect(lines[0]).toBe(`  ${line}`);
+        expect(lines.filter((l) => l.includes("initial"))).toHaveLength(1);
+        expect(lines).toContain("  --color-primary: var(--sg-color-primary);");
+      },
+    );
+
+    it("emits several namespaces in a fixed order, each once, whatever the written order", () => {
+      const expected = themeBlock(
+        generateThemeCss(config, {
+          resetTailwindDefaults: ["colors", "radius", "shadow"],
+        }),
+      );
+      expect(expected.split("\n").slice(0, 3)).toEqual([
+        "  --color-*: initial;",
+        "  --radius-*: initial;",
+        "  --shadow-*: initial;",
+      ]);
+      expect(
+        themeBlock(
+          generateThemeCss(config, {
+            resetTailwindDefaults: ["shadow", "colors", "radius", "colors"],
+          }),
+        ),
+      ).toBe(expected);
+    });
+
+    it("only adds the reset lines: the rest of the CSS is unchanged", () => {
+      const plain = generateThemeCss(config);
+      const reset = generateThemeCss(config, {
+        resetTailwindDefaults: ["colors"],
+      });
+      expect(reset.replace("  --color-*: initial;\n", "")).toBe(plain);
+    });
+
+    it("rejects radius without theme.borderRadius and shadow without theme.shadows, at the option's path", () => {
+      const colorsOnly: ThemeConfig = { colors: { primary: "#007AFF" } };
+      const issuePaths = (
+        options: Parameters<typeof generateThemeCss>[1],
+      ): (string | number)[][] => {
+        try {
+          generateThemeCss(colorsOnly, options);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            return error.issues.map((i) => i.path as (string | number)[]);
+          }
+          throw error;
+        }
+        return [];
+      };
+
+      expect(
+        issuePaths({ resetTailwindDefaults: ["colors", "radius"] }),
+      ).toEqual([["resetTailwindDefaults", 1]]);
+      expect(issuePaths({ resetTailwindDefaults: ["shadow"] })).toEqual([
+        ["resetTailwindDefaults", 0],
+      ]);
+      expect(issuePaths({ resetTailwindDefaults: ["colors"] })).toEqual([]);
+    });
+
+    it("treats an empty borderRadius/shadows record as no replacement", () => {
+      expect(() =>
+        generateThemeCss(
+          { colors: { primary: "#007AFF" }, borderRadius: {} },
+          { resetTailwindDefaults: ["radius"] },
+        ),
+      ).toThrow(z.ZodError);
+    });
+
+    it('treats an empty colors record as no replacement for "colors", at the option\'s path', () => {
+      let error: unknown;
+      try {
+        generateThemeCss(
+          { colors: {}, borderRadius: { md: "6px" } },
+          { resetTailwindDefaults: ["radius", "colors"] },
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeInstanceOf(z.ZodError);
+      const issues = (error as z.ZodError).issues;
+      expect(issues.map((i) => i.path)).toEqual([["resetTailwindDefaults", 1]]);
+      expect(issues[0]?.message).toContain('"colors"');
+      // Without the option an empty colors record stays valid.
+      expect(() => generateThemeCss({ colors: {} })).not.toThrow();
+    });
+
+    it("rejects an unknown namespace in the options parse", () => {
+      expect(() =>
+        generateThemeCss(config, { resetTailwindDefaults: ["fonts" as never] }),
+      ).toThrow(z.ZodError);
+    });
+  });
 });

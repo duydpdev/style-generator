@@ -109,13 +109,19 @@ jobs:
         # TypeScript generator script that `style-gen init` scaffolds.
         run: yarn check:smoke
 
+      - name: Check types resolve for ESM and CJS (attw, node16 profile)
+        # Packs the package and runs @arethetypeswrong/cli on the tarball;
+        # needs dist/*.d.cts from `yarn build:all`.
+        run: yarn check:types-pack
+
       - name: Vite dev-server smoke (styleGenVite configureServer)
         # `vite build` never runs configureServer; this edits the example
         # theme under a real dev server and expects a re-emit + full-reload.
         run: node scripts/vite-dev-smoke.mjs
 
-      - name: Type-check dist/*.d.ts with library checking on
-        # tsconfig.dts-check.json; the examples set skipLibCheck.
+      - name: Type-check dist/*.d.ts (ESM, Bundler) and dist/*.d.cts (CJS, node16) with library checking on
+        # tsconfig.dts-check.json and tsconfig.dts-check.cjs.json; attw
+        # (above) never resolves peer types. The examples set skipLibCheck.
         run: yarn typecheck:dist
 
       - name: Test (with coverage thresholds)
@@ -343,7 +349,7 @@ jobs:
       - name: Type-check the react-v4 example against dist
         run: yarn workspace react-v4-example typecheck
 
-      - name: Type-check dist/*.d.ts with library checking on
+      - name: Type-check dist/*.d.ts (ESM, Bundler) and dist/*.d.cts (CJS, node16) with library checking on
         # The example sets skipLibCheck, so it never checks the package's own
         # declarations (or the vite/zod types they reference).
         run: yarn typecheck:dist

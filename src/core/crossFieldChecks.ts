@@ -129,8 +129,8 @@ interface AxesIssue {
 }
 
 /**
- * Where the `axes` checks report to: a `z.RefinementCtx` satisfies it, and so
- * does the plain collector {@link assertAxesOptions} uses.
+ * Where the `axes` and reset checks report to: a `z.RefinementCtx` satisfies
+ * it, and so does the plain collector {@link assertThemeOptions} uses.
  */
 interface AxesIssueCtx {
   addIssue: (issue: AxesIssue) => void;
@@ -322,23 +322,57 @@ export const checkAxesAttribute = (
 };
 
 /**
- * Run the `axes` checks against the theme and throw every issue as one
- * `ZodError`, like the other `generate()` option and theme failures:
- * {@link checkAxesAttribute} always, {@link checkElementScopeAliases} only
- * for `scope: "element"` (with `"root"` the `html` anchor keeps every alias
- * in step).
+ * Check `resetTailwindDefaults` against the theme: clearing Tailwind's
+ * `--color-*`, `--radius-*` or `--shadow-*` defaults while the theme declares
+ * no replacement would leave `bg-red-500`/`rounded-md`/`shadow-md` compiling
+ * to nothing with no theme value to take over. `ThemeSchema` accepts
+ * `colors: {}`, so `"colors"` needs a non-empty record like the others.
+ * @param {AxesIssueCtx} ctx - Issue collector
  * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
- * @param {ResolvedOptions["axes"]} axes - Resolved `axes` option
+ * @param {ResolvedOptions["resetTailwindDefaults"]} reset - Resolved `resetTailwindDefaults`
  * @returns {void}
- * @throws {z.ZodError} on an unknown or clashing attribute, or a stale alias holder
  */
-export const assertAxesOptions = (
+export const checkResetTailwindDefaults = (
+  ctx: AxesIssueCtx,
   theme: ThemeConfig,
-  axes: ResolvedOptions["axes"],
+  reset: ResolvedOptions["resetTailwindDefaults"],
+): void => {
+  const needs = [
+    ["colors", "colors"],
+    ["radius", "borderRadius"],
+    ["shadow", "shadows"],
+  ] as const;
+  for (const [name, category] of needs) {
+    const index = reset.indexOf(name);
+    if (index === -1) continue;
+    if (Object.keys(theme[category] ?? {}).length > 0) continue;
+    ctx.addIssue({
+      code: "custom",
+      path: ["resetTailwindDefaults", index],
+      message: `resetTailwindDefaults "${name}" clears Tailwind's default ${name} values but the theme declares no "${category}" to replace them — add "${category}" or drop "${name}".`,
+    });
+  }
+};
+
+/**
+ * Run every check that needs both the theme and the options and throw every
+ * issue as one `ZodError`, like the other `generate()` option and theme
+ * failures: {@link checkAxesAttribute} always, {@link checkElementScopeAliases}
+ * only for `scope: "element"` (with `"root"` the `html` anchor keeps every
+ * alias in step), and {@link checkResetTailwindDefaults}.
+ * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
+ * @param {Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">} resolved - Resolved options
+ * @returns {void}
+ * @throws {z.ZodError} on an unknown or clashing attribute, a stale alias holder, or a reset with no theme replacement
+ */
+export const assertThemeOptions = (
+  theme: ThemeConfig,
+  resolved: Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">,
 ): void => {
   const issues: z.core.$ZodIssue[] = [];
   const ctx: AxesIssueCtx = { addIssue: (issue) => issues.push(issue) };
-  checkAxesAttribute(ctx, theme, axes.attribute);
-  if (axes.scope === "element") checkElementScopeAliases(ctx, theme);
+  checkAxesAttribute(ctx, theme, resolved.axes.attribute);
+  if (resolved.axes.scope === "element") checkElementScopeAliases(ctx, theme);
+  checkResetTailwindDefaults(ctx, theme, resolved.resetTailwindDefaults);
   if (issues.length > 0) throw new z.ZodError(issues);
 };

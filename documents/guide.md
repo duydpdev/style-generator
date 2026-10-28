@@ -173,7 +173,9 @@ export default defineConfig({
 });
 ```
 
-Plugin ghi `theme.css` (nguyên tử) khi khởi động dev, khi build và mỗi lần lưu theme JSON. Thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật. Nuxt chạy trên Vite nên đăng ký cùng plugin trong `nuxt.config.ts → vite.plugins` (xem `examples/nuxt-v4`); ví dụ Vite + React ở `examples/react-v4`.
+Plugin ghi `theme.css` (nguyên tử, chỉ khi nội dung đổi) ở hook `buildStart`, tức khi dev server khởi động và khi bắt đầu build; theme được đăng ký với Rollup (`this.addWatchFile`) nên `vite build --watch` cũng build lại khi theme đổi. Trong dev, mỗi lần lưu theme JSON plugin ghi lại (debounce) và chỉ full-reload trình duyệt khi CSS thật sự đổi. Lỗi ở `buildStart` làm hỏng build với thông báo theo từng bước (`Invalid JSON in …`, `Invalid options:`, `Invalid theme (<path>):`, `Invalid theme/options:`, `Cannot write …`). `themePath` có thể là đường dẫn tuyệt đối hoặc nằm ngoài root (theme dùng chung trong monorepo); `outDir` phải nằm trong root. Thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật. Nuxt chạy trên Vite nên đăng ký cùng plugin trong `nuxt.config.ts → vite.plugins` (xem `examples/nuxt-v4`); ví dụ Vite + React ở `examples/react-v4`.
+
+**Không truyền tham số:** `styleGenVite()` đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở root của Vite — `theme`, `output` (file CSS cần ghi) và mọi option của `generate()` — nên CLI và bundler dùng chung một nguồn cấu hình. Config hỏng hoặc sai schema ném `[style-gen-vite] Invalid config (<file>):` kèm từng dòng lỗi, không bao giờ im lặng rơi về mặc định. Khi có tham số thì file config không được đọc.
 
 ### Cách 2: Next.js
 
@@ -190,22 +192,33 @@ export default styleGenNext({
 })(nextConfig);
 ```
 
-Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả config mà không đọc theme. `nextConfig` có thể là object hoặc dạng hàm `(phase, { defaultConfig }) => config` (được gọi với đúng tham số của Next). Giới hạn: guard đường dẫn không `realpath` symlink. Xem `examples/next-v4`.
+Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả config mà không đọc theme. `nextConfig` có thể là object hoặc dạng hàm `(phase, { defaultConfig }) => config` (được gọi với đúng tham số của Next). `styleGenNext()` không tham số đọc `style-gen.config.json` ở `process.cwd()` như Vite. Watcher của `next dev` không chết khi theme tạm thời sai (lỗi được log, `theme.css` cũ giữ nguyên) và được thay khi config nạp lại với theme/output khác. `themePath` có thể tuyệt đối hoặc ngoài project, `outDir` phải ở trong project; dấu `/` đầu không còn bị đổi thành đường dẫn tương đối. Giới hạn: guard đường dẫn không `realpath` symlink. Xem `examples/next-v4`.
 
 ### Cách 3: CLI
 
 ```bash
 yarn style-gen init                 # scaffold theme + theme.schema.json + script generate() + style-gen.config.json
 yarn style-gen generate             # ghi styles/theme.css
-yarn style-gen generate --watch     # sinh lại khi lưu
-yarn style-gen doctor               # kiểm tra cấu hình, schema; cảnh báo va chạm utility và biến --sg-<màu> kiểu 4.x còn sót (quét file nguồn dưới thư mục hiện tại)
+yarn style-gen generate --watch     # sinh lại khi lưu theme hoặc style-gen.config.json
+yarn style-gen doctor               # kiểm tra cấu hình, schema, theme × options; cảnh báo va chạm utility, gợi ý $alias và biến --sg-<màu> kiểu 4.x còn sót (quét file nguồn dưới thư mục hiện tại)
+yarn style-gen schema               # ghi theme.schema.json cạnh theme
+yarn style-gen tokens               # ghi theme.tokens.ts: chỉ các key của DesignTokens.Web, cho bundle client
+yarn style-gen budget .next/static/css --max-gzip 14925   # CI: fail khi CSS build vượt ngân sách gzip
 ```
 
 Không chạy CLI qua `npx`: tên `style-gen` chưa có ai giữ trên npm public nên `npx` có thể tải nhầm package lạ. Dùng npm thì chạy `npm exec --no -- style-gen`.
 
-Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình, theo từng key: flags → file config → mặc định (`styles/theme.json` → `styles/theme.css`). File config là một trong hai nguồn, chọn theo kiểu _hoặc_: `style-gen.config.json` nếu nó tồn tại, nếu không thì `package.json["style-gen"]`; hai nguồn không bao giờ được merge (`style-gen.config.json` hỏng thì bị báo lỗi chứ không rơi sang `package.json`). File config được validate bằng cùng schema với option của `generate()`: gõ sai key (`breakpoint` thay vì `breakpoints`) hay giá trị không hợp lệ thì `generate` in `Invalid config (<file>):` kèm từng dòng `path → message`, không ghi file và thoát với mã 1; `doctor` báo `Config (<file>) ❌ Invalid` và cũng thoát với mã 1. File config không parse được JSON (hỏng) thì `generate` cảnh báo rồi dùng mặc định.
+`style-gen --help` liệt kê lệnh, `style-gen <lệnh> --help` in flag của riêng lệnh đó. Flag được parse **chặt**: flag lạ (`--them`) là lỗi chứ không còn bị bỏ qua. Mã thoát: `0` thành công / `--help` / `--version` / huỷ prompt, `1` lỗi (`budget` dùng `2` cho lỗi cú pháp, xem dưới).
 
-Script do `init` sinh và `style-gen generate` ghi cùng một file (`output` trong config); chạy một trong hai (`node plugins/theme-plugin.ts` cần Node >= 22.18). `doctor` chỉ kiểm tra script khi config có `plugin` — setup `styleGenVite`/`styleGenNext` hay chỉ dùng CLI không cần.
+Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình, theo từng key: flags → file config → mặc định (`styles/theme.json` → `styles/theme.css`). File config là một trong hai nguồn, chọn theo kiểu _hoặc_: `style-gen.config.json` nếu nó tồn tại, nếu không thì `package.json["style-gen"]`; hai nguồn không bao giờ được merge (`style-gen.config.json` hỏng thì bị báo lỗi chứ không rơi sang `package.json`). File config được validate bằng cùng schema với option của `generate()`: gõ sai key (`breakpoint` thay vì `breakpoints`) hay giá trị không hợp lệ thì `generate` in `Invalid config (<file>):` kèm từng dòng `path → message`, không ghi file và thoát với mã 1; `doctor` báo `Config (<file>) ❌ Invalid`, dừng ở đó (các bước sau sẽ chạy trên mặc định sai) và thoát với mã 1. File config không parse được JSON (hỏng) thì `generate` cảnh báo rồi dùng mặc định. `--theme` được phép trỏ ra ngoài project; `--out` và `output` phải nằm trong project.
+
+`--watch` theo dõi cả theme **lẫn file config** và đọc lại config mỗi lần đổi, nên `output`, `breakpoints`, `resetTailwindDefaults`… đổi có hiệu lực không cần khởi động lại. Sửa config thành sai chỉ bị báo lỗi và **config hợp lệ gần nhất vẫn được giữ** cho tới khi bạn sửa xong. Theme không đọc được lúc khởi động (thiếu file, là thư mục) hoặc config sai lúc khởi động thoát mã 1 trước khi tạo watcher; sau khi đã watch, lỗi theme/ghi file chỉ được log.
+
+`tokens` ghi `theme.tokens.ts` (`export const tokens = {…} as const`) chỉ chứa **key** của `DesignTokens.Web` (mỗi category một mảng key camelCase, cộng `breakpoints`, `screens`, `spacingProperties`), để bundle client không phải kèm runtime `./tokens` và theme JSON (khoảng 2,4 kB gzip so với khoảng 0,6 kB). Mặc định ghi cạnh theme và phải nằm trong project (theme ngoài project cần `--out`); chạy lại khi key của theme đổi.
+
+`budget <file.css|dir> --max-gzip <bytes>` cộng gzip của mọi file `.css` (đệ quy nếu là thư mục) và in `OK: …` hoặc `OVER BUDGET: …`. Mã thoát `0` trong ngân sách, `1` vượt, `2` sai cú pháp / không đọc được / không có CSS. Lệnh này thay cho script `check-css-budget.mjs` mà consumer từng phải chép.
+
+Script do `init` sinh và `style-gen generate` ghi cùng một file (`output` trong config); chạy một trong hai (`node plugins/theme-plugin.ts` cần Node >= 22.18). `doctor` chỉ kiểm tra script khi config có `plugin` — setup `styleGenVite`/`styleGenNext` hay chỉ dùng CLI không cần. `doctor` còn kiểm tra cặp theme × options (`❌ Invalid theme/options`), coi `output`/`plugin` thoát khỏi root là lỗi, và in gợi ý `$alias` khi một override trong `themeAxes` lặp lại giá trị literal của một key khác ở base.
 
 ### Cách 4: Script tự viết
 
@@ -260,6 +273,16 @@ generate(theme, {
   },
 });
 ```
+
+### Xoá namespace mặc định của Tailwind (`resetTailwindDefaults`)
+
+Mặc định Tailwind vẫn giữ thang màu, `rounded-*` và `shadow-*` của nó bên cạnh token của bạn. `resetTailwindDefaults` xoá từng namespace để chỉ còn token của theme:
+
+```typescript
+generate(theme, { resetTailwindDefaults: ["colors", "radius", "shadow"] });
+```
+
+Mỗi tên thêm một dòng `--color-*: initial;`, `--radius-*: initial;` hoặc `--shadow-*: initial;` ở **đầu** khối `@theme inline`. `"colors"` cũng xoá `--color-white`/`--color-black` (tự khai báo trong `colors` nếu còn dùng). Utility tĩnh như `rounded-full`, `rounded-none`, `shadow-none` và các họ `inset-`/`drop-`/`text-shadow` không bị đụng tới. Mỗi tên đòi một thay thế không rỗng trong theme: `"colors"` đòi `colors` (không rỗng; schema vẫn nhận `colors: {}`), `"radius"` đòi `borderRadius`, `"shadow"` đòi `shadows` (ngược lại `generate()` ném lỗi tại `resetTailwindDefaults.<i>`, vì xoá mặc định mà không có thay thế làm `bg-red-500`/`rounded-md`/`shadow-md` biên dịch ra rỗng); `doctor` cũng báo lỗi này. Trùng tên hay đổi thứ tự không đổi output. Cũng dùng được trong `style-gen.config.json`.
 
 ### Class bị trùng utility có sẵn của Tailwind
 
@@ -347,7 +370,7 @@ html[data-palette="forest"] { … }   /* scope: "root" — mặc định */
 - **`scope: "root"`** giữ selector ghim vào `html` như quy tắc ở trên. **`scope: "element"`** bỏ `html`, nên attribute đặt được trên phần tử bất kỳ (theme cục bộ cho một vùng).
 - **Quy tắc alias khi `scope: "element"`.** Alias `"$<key>"` vẫn được tính tại phần tử _khai báo_ nó (`:root`), nên giữ giá trị gốc bên trong phần tử có attribute. `generate()` vì vậy ném `ZodError` khi một variant override một key `T` mà một entry `H` khác đang alias tới (trực tiếp hoặc qua chuỗi alias, ở mọi category), trừ khi variant đó khai báo lại chính `H` (bằng giá trị literal hoặc `"$<key>"`). Alias của `H` được tìm ở theme gốc **và** ở mọi variant khác của mọi trục (ví dụ `dark` viết `primary: "$brand"` còn `light` override `brand` mà không khai báo lại `primary`). Lỗi nằm tại key bị override (`themeAxes.<trục>.<variant>.<category>.<key>`); với chuỗi alias, mỗi mắt xích cũ được báo thành một lỗi riêng cùng path. Sửa bằng cách khai báo lại entry giữ alias trong variant, hoặc dùng `scope: "root"`.
 - **Kiểm tra attribute chạy ở mọi `scope`:** key trong `attribute` phải là tên một trục của `themeAxes` (lỗi tại `axes.attribute.<trục>`), và hai trục không được cùng ra một tên attribute (ví dụ `attribute: { theme: "data-palette" }` khi có trục `palette`; lỗi tại `axes.attribute.<trục>`).
-- **Variant tên `base` không bật được bằng `themeAxisAttributes`:** `"base"` nghĩa là "không override" nên không phát attribute. Đặt tên khác (`default`, `standard`) cho variant cần bật.
+- **Variant tên `base` bị dành riêng:** `"base"` nghĩa là "không override" (`ThemeAxesState`, `themeAxisAttributes`), nên `ThemeSchema` từ chối `themeAxes.<trục>.base`. Đặt tên khác (`default`, `standard`). Trục tên `base` vẫn hợp lệ.
 - `generateThemeCss(theme, options)` nhận cùng `options` ở tham số thứ hai.
 
 ---
@@ -551,7 +574,7 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 
 ## Nâng cấp từ bản cũ
 
-- **4.x → 5.0.0** (breaking: `--sg-color-*`, `borderWidth` qua `@theme`, `spacing.properties` dạng mảng, key `DesignTokens.Web` đổi tên, typography chặt hơn): [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
+- **4.x → 5.0.0** (breaking: `--sg-color-*`, `borderWidth` qua `@theme`, `spacing.properties` dạng mảng, key `DesignTokens.Web` đổi tên, typography chặt hơn, Node runner: emit ở `buildStart`, plugin không tham số, `resolveProjectPath`, mã thoát + flag chặt của CLI, lệnh `tokens`/`budget`, `resetTailwindDefaults`, variant `base` dành riêng, khai báo `.d.cts`): [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
 - **3.x → 4.0.0** (breaking: chỉ Tailwind v4, `generate()` thay plugin + safelist, schema strict, `themeAxes`, `borderWidth`, `--sg-sp-*`): [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), gồm bảng trước/sau và runbook rollback.
 - Đợt subpath exports của 3.x (lịch sử, còn yêu cầu về `moduleResolution`): [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md).
 - Key `themes` một trục đã đổi tên thành `themeAxes`; theme còn dùng tên cũ bị từ chối kèm thông báo hướng dẫn đổi tên (nguyên văn trong guide migration).

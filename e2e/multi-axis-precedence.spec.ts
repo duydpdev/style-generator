@@ -87,7 +87,7 @@ test.describe("themeAxes precedence — two axes overriding the same token", () 
 
 /**
  * Cross-axis compound overrides (`[data-theme="dark"][data-palette="…"]`
- * in `examples/nuxt-v4/theme/palettes.css`) stay hand-written CSS —
+ * in `examples/design-system/src/styles/palettes.css`) stay hand-written CSS —
  * outside the `themeAxes` scope (see the README's scope table) — but
  * their (0,2,0) specificity must still beat either single-axis
  * `html[data-...]` rule the library emits (0,1,1) when both attributes
@@ -98,15 +98,16 @@ test.describe("themeAxes precedence — hand-written compound override beats sin
   const themePath = join(
     repoRoot,
     "examples",
-    "nuxt-v4",
-    "theme",
+    "design-system",
+    "src",
     "theme.json",
   );
   const palettesCssPath = join(
     repoRoot,
     "examples",
-    "nuxt-v4",
-    "theme",
+    "design-system",
+    "src",
+    "styles",
     "palettes.css",
   );
 

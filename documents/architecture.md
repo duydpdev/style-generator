@@ -204,7 +204,7 @@ Các quyết định thiết kế:
 - **Selector ghim vào `html`:** alias `var()` được tính tại phần tử _khai báo_ custom property (`:root`), nên override trên phần tử con không bao giờ tới được giá trị của alias.
 - **Precedence = thứ tự khai báo:** hai trục cùng override một token có specificity ngang nhau; trục khai báo sau thắng. Vì vậy tên trục/variant là số nguyên chuẩn bị từ chối (JS liệt kê key kiểu số lên đầu, phá thứ tự).
 - **Override phải có key ở base:** key chỉ có ở override không map vào `@theme inline`/`@utility` nên không tạo utility; bị từ chối lúc parse.
-- **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay (xem bảng trong `examples/nuxt-v4/README.md`).
+- **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay (xem bảng trong [`examples/design-system/README.md`](../examples/design-system/README.md)).
 
 ---
 
@@ -281,15 +281,16 @@ Top-level `site/` là landing page riêng (React + Vite + Tailwind v4) dogfood t
 
 ### Examples catalog (`examples/*`)
 
-3 consumer app (link lib qua `link:../..`, cùng `theme.json` + palettes + cva configs + demo section):
+4 workspace trong `examples/*` (link lib qua `link:../..`; `design-system-example` được ba app tham chiếu qua `workspace:*`). **`examples/design-system`** giữ mọi thứ dùng chung — `theme.json` (+ schema), `style-gen.options.ts`, `tokens`, `cn`, 8 recipe headless (`button`, `input`, `card`, `badge`, `stack`, `dialog`, `text`, `box`), CSS dùng chung (`palettes.css`, `style-guide.css`) và test DX — nên mỗi app chỉ còn phần wiring cộng một component đặc thù framework. `style-gen.options.ts` là `as const satisfies StyleGeneratorOptions` (import kiểu từ `./types`, không dùng `defineOptions` vì nó chỉ có ở `.` và kéo Zod vào bundle trình duyệt); cả ba app import `options` từ `design-system-example/style-gen.options`.
 
-| Example    | Stack                           | Theme wiring                                                                                                                                       |
-| ---------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `react-v4` | Vite + React + Tailwind v4      | `styleGenVite` → `@import "./theme/theme.css"`                                                                                                     |
-| `next-v4`  | Next.js 15 (App Router) + TW v4 | `styleGenNext` trong `next.config.ts` (webpack và Turbopack)                                                                                       |
-| `nuxt-v4`  | Nuxt 3 (Vue 3) + TW v4          | Nuxt chạy trên Vite → tái dùng `styleGenVite` trong `nuxt.config.ts → vite.plugins`; component là Vue SFC, SSR-safe `<html data-*>` bằng `useHead` |
+| Example         | Stack                           | Vai trò / theme wiring                                                                                                                                                                |
+| --------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `design-system` | TypeScript thuần (không có app) | Theme, options, tokens, `cn`, recipe headless, CSS dùng chung, test DX (`yarn workspace design-system-example test`); luồng CLI-only (`style-gen.config.json` → `style-gen generate`) |
+| `react-v4`      | Vite + React + Tailwind v4      | `styleGenVite({ themePath, outDir, options })` → `@import "./theme/theme.css"`; `Box`/`Button`/`Text` bọc recipe                                                                      |
+| `next-v4`       | Next.js 16 (App Router) + TW v4 | `styleGenNext({ themePath, outDir, options })` trong `next.config.ts` (webpack và Turbopack), `transpilePackages: ["design-system-example"]`                                          |
+| `nuxt-v4`       | Nuxt 4 (Vue 3) + TW v4          | Nuxt chạy trên Vite → `styleGenVite` trong `nuxt.config.ts → vite.plugins` với `themePath`/`outDir` tuyệt đối (Vite `root` là `app/`); SSR-safe `<html data-*>` bằng `useHead`        |
 
-Chỉ `react-v4` được nhúng vào landing site; `next-v4`/`nuxt-v4` là standalone. Xem [`examples/README.md`](../examples/README.md).
+Mỗi app emit `theme.css` vào file gitignored của riêng nó và `@import` CSS dùng chung qua `design-system-example/styles/*`; `@source` trỏ về `design-system/src` (tương đối theo file CSS). Chạy các example cần Node >= 22.18 (config bundler import module `.ts` qua type stripping của Node). Chỉ `react-v4` được nhúng vào landing site; `next-v4`/`nuxt-v4` là standalone. Xem [`examples/README.md`](../examples/README.md).
 
 ### Deploy pipelines
 

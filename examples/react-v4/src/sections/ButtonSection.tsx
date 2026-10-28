@@ -24,9 +24,9 @@ export const ButtonSection = () => {
         title="cva × compoundVariants."
         desc={
           <>
-            Sixteen permutations from a single <code>style.ts</code>. Each cell
-            here is the rendered class chain — final classes are merged through{" "}
-            <code>cn(clsx, twMerge)</code>.
+            Sixteen permutations from a single <code>buttonRecipe</code>. Each
+            cell here is the rendered class chain — final classes are merged
+            through <code>cn(clsx, twMerge)</code>.
           </>
         }
       />

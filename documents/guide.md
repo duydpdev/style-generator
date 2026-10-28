@@ -9,7 +9,7 @@ Hướng dẫn tích hợp `@duydpdev/style-generator` 5.0 vào dự án **Tailw
 3. [Sinh CSS và import vào Tailwind](#sinh-css-và-import-vào-tailwind)
 4. [Multi-axis theming](#multi-axis-theming)
 5. [Spacing Helpers](#spacing-helpers)
-6. [Design Tokens cho Component](#design-tokens-cho-component)
+6. [Build components](#build-components)
 7. [TypeScript Tips](#typescript-tips)
 8. [Nâng cấp từ bản cũ](#nâng-cấp-từ-bản-cũ)
 
@@ -129,7 +129,7 @@ Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phá
 
 ### Trạng thái hover/active
 
-Khai báo key anh em cạnh màu gốc: `primary`, `primaryHover`, `primaryActive`. Registry tự sinh `hover:bg-primary-hover`, `active:bg-primary-active` (và dạng `text-`/`border-`), còn `createVariantMapper(..., { states: COLOR_STATES })` gộp chúng thành một chuỗi class (xem [Design Tokens](#design-tokens-cho-component)). Tên state được kebab-case (`focusVisible` → `focus-visible:`).
+Khai báo key anh em cạnh màu gốc: `primary`, `primaryHover`, `primaryActive`. Registry tự sinh `hover:bg-primary-hover`, `active:bg-primary-active` (và dạng `text-`/`border-`), còn `createVariantMapper(..., { states: COLOR_STATES })` gộp chúng thành một chuỗi class (xem [Build components](#build-components)). Tên state được kebab-case (`focusVisible` → `focus-visible:`).
 
 ### Autocomplete trong editor
 
@@ -160,6 +160,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
+import { options } from "./style-gen.options"; // một nguồn options dùng chung, xem "Build components"
 
 export default defineConfig({
   plugins: [
@@ -167,15 +168,48 @@ export default defineConfig({
     styleGenVite({
       themePath: "src/theme/theme.json",
       outDir: "src/theme", // phải khớp đường dẫn @import trong CSS
+      options,
     }),
     tailwindcss(),
   ],
 });
 ```
 
-Plugin ghi `theme.css` (nguyên tử, chỉ khi nội dung đổi) ở hook `buildStart`, tức khi dev server khởi động và khi bắt đầu build; theme được đăng ký với Rollup (`this.addWatchFile`) nên `vite build --watch` cũng build lại khi theme đổi. Trong dev, mỗi lần lưu theme JSON plugin ghi lại (debounce) và chỉ full-reload trình duyệt khi CSS thật sự đổi. Lỗi ở `buildStart` làm hỏng build với thông báo theo từng bước (`Invalid JSON in …`, `Invalid options:`, `Invalid theme (<path>):`, `Invalid theme/options:`, `Cannot write …`). `themePath` có thể là đường dẫn tuyệt đối hoặc nằm ngoài root (theme dùng chung trong monorepo); `outDir` phải nằm trong root. Thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật. Nuxt chạy trên Vite nên đăng ký cùng plugin trong `nuxt.config.ts → vite.plugins` (xem `examples/nuxt-v4`); ví dụ Vite + React ở `examples/react-v4`.
+Plugin ghi `theme.css` (nguyên tử, chỉ khi nội dung đổi) ở hook `buildStart`, tức khi dev server khởi động và khi bắt đầu build; theme được đăng ký với Rollup (`this.addWatchFile`) nên `vite build --watch` cũng build lại khi theme đổi. Trong dev, mỗi lần lưu theme JSON plugin ghi lại (debounce) và chỉ full-reload trình duyệt khi CSS thật sự đổi. Lỗi ở `buildStart` làm hỏng build với thông báo theo từng bước (`Invalid JSON in …`, `Invalid options:`, `Invalid theme (<path>):`, `Invalid theme/options:`, `Cannot write …`). `themePath` có thể là đường dẫn tuyệt đối hoặc nằm ngoài root (theme dùng chung trong monorepo); `outDir` phải nằm trong root. Thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật.
 
-**Không truyền tham số:** `styleGenVite()` đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở root của Vite — `theme`, `output` (file CSS cần ghi) và mọi option của `generate()` — nên CLI và bundler dùng chung một nguồn cấu hình. Config hỏng hoặc sai schema ném `[style-gen-vite] Invalid config (<file>):` kèm từng dòng lỗi, không bao giờ im lặng rơi về mặc định. Khi có tham số thì file config không được đọc.
+Hai lưu ý về dev server:
+
+- **Vite 5 cần `listen()`.** `buildStart` của dev server chỉ chạy khi `server.listen()` (hoặc `middlewareMode`) được gọi; `createServer()` rồi `ssrLoadModule` mà không `listen()` thì trên Vite 5 `theme.css` chưa được ghi. Plugin đặt `perEnvironmentStartEndDuringDev`, nên từ Vite 6 trở lên `buildStart` cũng chạy trong trường hợp đó.
+- **Plugin chỉ đọc config một lần**, lúc Vite nạp config. Sửa `style-gen.config.json` (dạng không tham số) khi dev server đang chạy thì chưa có hiệu lực: khởi động lại dev server. Chỉ file theme JSON được theo dõi.
+
+Nuxt chạy trên Vite nên đăng ký cùng plugin trong `nuxt.config.ts → vite.plugins`. Nuxt 4 đặt `root` của Vite là `app/` (`srcDir`), nên đường dẫn tương đối sẽ được tính từ `app/`; dùng đường dẫn tuyệt đối:
+
+```typescript
+// nuxt.config.ts
+import { fileURLToPath } from "node:url";
+import { defineNuxtConfig } from "nuxt/config";
+import tailwindcss from "@tailwindcss/vite";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+import { options } from "./style-gen.options";
+
+export default defineNuxtConfig({
+  css: ["~/assets/css/globals.css"],
+  vite: {
+    plugins: [
+      styleGenVite({
+        themePath: fileURLToPath(new URL("./theme.json", import.meta.url)),
+        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
+        options,
+      }),
+      tailwindcss(),
+    ],
+  },
+});
+```
+
+Ví dụ hoàn chỉnh: `examples/react-v4` (Vite + React), `examples/nuxt-v4` (Nuxt 4) và `examples/next-v4` (Next 16) dùng chung theme và options từ `examples/design-system`; xem [`examples/design-system/README.md`](../examples/design-system/README.md).
+
+**Không truyền tham số:** `styleGenVite()` đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở root của Vite — `theme`, `output` (file CSS cần ghi) và mọi option của `generate()` — nên CLI và bundler dùng chung một nguồn cấu hình. Config hỏng hoặc sai schema ném `[style-gen-vite] Invalid config (<file>):` kèm từng dòng lỗi, không bao giờ im lặng rơi về mặc định. Khi có tham số thì file config không được đọc. File config được đọc **một lần** khi nạp config của bundler (xem ở trên).
 
 ### Cách 2: Next.js
 
@@ -183,16 +217,18 @@ Plugin ghi `theme.css` (nguyên tử, chỉ khi nội dung đổi) ở hook `bui
 // next.config.ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
+import { options } from "./style-gen.options";
 
 const nextConfig: NextConfig = {};
 
 export default styleGenNext({
   themePath: "app/theme/theme.json",
   outDir: "app/theme",
+  options,
 })(nextConfig);
 ```
 
-Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả config mà không đọc theme. `nextConfig` có thể là object hoặc dạng hàm `(phase, { defaultConfig }) => config` (được gọi với đúng tham số của Next). `styleGenNext()` không tham số đọc `style-gen.config.json` ở `process.cwd()` như Vite. Watcher của `next dev` không chết khi theme tạm thời sai (lỗi được log, `theme.css` cũ giữ nguyên) và được thay khi config nạp lại với theme/output khác. `themePath` có thể tuyệt đối hoặc ngoài project, `outDir` phải ở trong project; dấu `/` đầu không còn bị đổi thành đường dẫn tương đối. Giới hạn: guard đường dẫn không `realpath` symlink. Xem `examples/next-v4`.
+Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả config mà không đọc theme. `nextConfig` có thể là object hoặc dạng hàm `(phase, { defaultConfig }) => config` (được gọi với đúng tham số của Next). `styleGenNext()` không tham số đọc `style-gen.config.json` ở `process.cwd()` như Vite, và cũng chỉ **một lần** khi Next nạp config (sửa file config thì khởi động lại `next dev`). Watcher của `next dev` không chết khi theme tạm thời sai (lỗi được log, `theme.css` cũ giữ nguyên) và được thay khi config nạp lại với theme/output khác. `themePath` có thể tuyệt đối hoặc ngoài project, `outDir` phải ở trong project; dấu `/` đầu không còn bị đổi thành đường dẫn tương đối. Giới hạn: guard đường dẫn không `realpath` symlink. Khi theme và options nằm trong một package workspace (như `examples/design-system`), thêm package đó vào `transpilePackages` của Next. Xem `examples/next-v4`.
 
 ### Cách 3: CLI
 
@@ -344,7 +380,7 @@ Quy tắc cần nhớ:
 - **Precedence = thứ tự khai báo**: hai trục cùng override một token có specificity ngang nhau, trục khai báo **sau** thắng.
 - **Tên trục/variant không được là số nguyên** (`100`, `2024`): JS liệt kê key kiểu số lên đầu và phá thứ tự. Dùng `contrast100`.
 - **Key override phải có ở base** — key chỉ có ở override không tạo utility nên bị từ chối lúc parse.
-- **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay; bảng phạm vi ở `examples/nuxt-v4/README.md`.
+- **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay; bảng phạm vi ở [`examples/design-system/README.md`](../examples/design-system/README.md).
 
 `--sg-*` là lớp biến trung gian để tránh vòng tham chiếu khi đổi theme. Trong code ứng dụng, ưu tiên class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`. Các biến lib phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là output công khai: alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; đổi tên là breaking change. Bản 5.0 đã đổi biến màu từ `--sg-<màu>` thành `--sg-color-<key>`; `style-gen doctor` cảnh báo `file:line` cho mọi `var(--sg-<colorKey>)` hoặc khai báo `--sg-<colorKey>:` còn sót (xem [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)).
 
@@ -445,30 +481,57 @@ const Box = ({
 
 ---
 
-## Design Tokens cho Component
+## Build components
 
-`generate()` trả `tokens`; cũng có thể dựng riêng, an toàn cho browser, bằng `createDesignTokens` từ `./tokens`:
+Mục này đi từ theme tới component, theo đúng thứ tự các file trong `examples/design-system` (package workspace dùng chung cho ba app mẫu `react-v4`, `next-v4`, `nuxt-v4`; chi tiết ở [`examples/design-system/README.md`](../examples/design-system/README.md)). Mỗi bước chỉ import từ subpath an toàn cho browser (`./tokens`, `./cva`, `./recipes`, `./types`), không kéo Zod hay Node vào bundle client.
+
+```text
+src/theme.json         → theme (nguồn sự thật)
+src/style-gen.options.ts → options dùng chung (bundler, tokens, recipe)
+src/tokens.ts          → createDesignTokens(theme, options)
+src/recipes/*.ts       → recipe headless (cva + createVariantMapper)
+src/cn.ts              → clsx + tailwind-merge biết token của theme
+src/axes.ts            → themeAxisAttributes<Theme>
+```
+
+### 1. Theme
+
+Một file JSON như ở [Tạo Theme Config](#tạo-theme-config). Import nó như module (`resolveJsonModule`) để giữ kiểu literal của từng key:
 
 ```typescript
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
-import { createVariantMapper } from "@duydpdev/style-generator/cva";
-import { cva } from "class-variance-authority";
-import theme from "./styles/theme.json";
+import themeJson from "./theme.json";
 
-const { DesignTokens } = createDesignTokens(theme, {
+export type Theme = typeof themeJson; // đầu vào của ColorVariant<Theme>, ThemeAxesState<Theme>, …
+export const theme = themeJson;
+```
+
+### 2. Options dùng chung: `style-gen.options.ts`
+
+Mọi nơi gọi `generate()` (Vite plugin, Next plugin, `createDesignTokens`, kiểu của recipe) phải thấy **cùng một** options, nếu không `@source inline` và token sẽ lệch nhau. Đặt chúng trong một module không phụ thuộc gì:
+
+```typescript
+// src/style-gen.options.ts
+import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
+
+export const options = {
   breakpoints: ["md", "lg"],
-});
+} as const satisfies StyleGeneratorOptions;
+```
 
-// createVariantMapper luôn kebab-case cùng hàm với registry, nên mọi class trả ra đều tồn tại
-const button = cva("base-class", {
-  variants: {
-    color: createVariantMapper("bg", DesignTokens.Web.colors),
-    // { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }
+Dùng `as const satisfies` với `import type`, không dùng `defineOptions()`: `defineOptions` chỉ có ở root `.` (kéo Zod vào bundle browser), còn file này vừa được cấu hình bundler nạp bằng Node (type stripping) vừa chạy ở browser. Tuple `breakpoints` literal là thứ thu hẹp `BreakpointKeys<typeof options>` thành `"md" | "lg"`. Nếu dự án cũng dùng CLI (`style-gen generate`), `style-gen.config.json` phải lặp lại các giá trị này; ví dụ có một test để hai bản không lệch nhau.
 
-    text: createVariantMapper("", DesignTokens.Web.typography),
-    // { text16Medium: "text-16-medium", … }   ("" = class trần, dùng cho typography)
-  },
-});
+### 3. Tokens
+
+`generate()` trả `tokens`; để dùng ở client, dựng riêng, an toàn cho browser, bằng `createDesignTokens` từ `./tokens`:
+
+```typescript
+// src/tokens.ts
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+
+import { options } from "./style-gen.options";
+import themeJson from "./theme.json";
+
+export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 ```
 
 **Tokens trong `DesignTokens.Web`:**
@@ -489,7 +552,7 @@ const button = cva("base-class", {
 
 Tên mỗi mảng trùng với field `ThemeConfig` tương ứng (`DesignTokens.Web.colors` chứa key của `theme.colors`); `spacingProperties`, `breakpoints`, `screens` lấy từ options. Mọi mảng đều `readonly`, và options được suy ra dạng literal (`generate`, `createDesignTokens`, `defineOptions` nhận `const O`): `breakpoints: ["md", "xl"]` cho `DesignTokens.Web.breakpoints` kiểu `readonly ("md" | "xl")[]`. Options khai báo kiểu `StyleGeneratorOptions`, hoặc type argument tường minh chỉ cho theme (`createDesignTokens<typeof theme>(theme, { breakpoints: ["xl"] })`), thì hai trường này widen thành `readonly string[]`; bỏ type argument để giữ literal. Không truyền `options` thì dùng mặc định (`readonly ("md" | "lg")[]`). `aliasedColors` tính lúc chạy từ record gốc và mọi override; kiểu của nó giữ mỗi key có giá trị là literal `$…` hoặc `string`. Kiểu tương ứng: `DesignTokensWeb<TTheme, O>`, `DesignTokensResult<TTheme, O>`; `ThemeAxisName`, `ThemeAxisVariant`, `ThemeAxesState` gõ kiểu cho các thuộc tính `data-<axis>` (key và giá trị là key gốc trong theme, còn thuộc tính/selector được sinh ra là kebab-case: `colorMode` + `high-contrast` → `html[data-color-mode="high-contrast"]`).
 
-### Class trạng thái
+### 4. Recipe: `createVariantMapper` + `COLOR_STATES`
 
 Với các key anh em `primaryHover`/`primaryActive` trong theme, `{ states }` gộp chúng vào class của key gốc:
 
@@ -511,6 +574,88 @@ const bg = createVariantMapper(
 Luôn truyền `COLOR_STATES` thay vì gõ tay `["hover", "active"]` — đó là danh sách mà các dòng `@source inline` cũng dùng. Truyền key camelCase như `DesignTokens.Web.colors` cung cấp (`primaryHover`, không phải `primary-hover`).
 
 `prefix` có kiểu `RegistryPrefix | ""` (các prefix mà registry phát `@source inline`; `""` dành cho typography), nên `createVariantMapper("ring", …)` hoặc prefix nằm trong biến kiểu `string` đều là lỗi kiểu: chúng ánh xạ ra class mà không dòng `@source inline` nào giữ lại. Để bỏ qua kiểm tra cho một prefix đơn lẻ, truyền `{ allowUnregisteredPrefix: true }` làm tham số thứ ba và khai báo class trong `extraSources`. Cách này không dùng cùng `{ states }` hay mảng prefix.
+
+Một recipe headless ghép các mapper bằng `cva`; component của framework (React, Vue) chỉ bọc nó. Mỏ neo DX là `satisfies` trên danh sách intent: đổi tên hoặc xoá một màu trong `theme.json` thì compiler báo lỗi đúng dòng đó, thay vì phát ra class không còn tồn tại.
+
+```typescript
+// src/recipes/button.ts (rút gọn)
+import { cva } from "class-variance-authority";
+import {
+  COLOR_STATES,
+  createVariantMapper,
+} from "@duydpdev/style-generator/cva";
+import type { ColorVariant } from "@duydpdev/style-generator/types";
+
+import { tokens, type Theme } from "../tokens";
+
+export const intents = [
+  "primary",
+  "secondary",
+  "success",
+  "danger",
+] as const satisfies readonly ColorVariant<Theme>[];
+
+const bg = createVariantMapper("bg", tokens.colors, { states: COLOR_STATES });
+
+export const buttonRecipe = cva("inline-flex items-center", {
+  variants: { color: bg },
+});
+```
+
+Tám recipe của ví dụ (`button`, `input`, `card`, `badge`, `stack`, `dialog`, `text`, `box`) đều theo mẫu này. Class có độ mờ (`bg-primary/10`) không thuộc phạm vi `@source inline` của registry, nên viết nguyên văn trong file nguồn để scanner của Tailwind tìm thấy.
+
+### 5. `cn`: gộp class biết token của theme
+
+`tailwind-merge` mặc định không biết `text-16-medium`, `shadow-md` hay `rounded-pill` của theme bạn nên có thể giữ nhầm class. `createTailwindMergeExtension` (từ `./recipes`) đăng ký chúng vào đúng nhóm class; `tailwind-merge` vẫn là dependency của ứng dụng:
+
+```typescript
+// src/cn.ts
+import { clsx, type ClassValue } from "clsx";
+import { extendTailwindMerge } from "tailwind-merge";
+import { createTailwindMergeExtension } from "@duydpdev/style-generator/recipes";
+
+import { tokens } from "./tokens";
+
+const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
+
+export const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs));
+```
+
+`cn("text-16-medium", "text-32-bold")` giữ lại class sau, và `cn("rounded-md", "rounded-pill")` cũng vậy. Component gọi `cn(buttonRecipe({ … }), className)`.
+
+### 6. Bật trục theme trên DOM: `themeAxisAttributes`
+
+`themeAxisAttributes<Theme>(state, attributes?)` trả các attribute `data-*` của các trục đang bật, có kiểu theo `theme.json`; `"base"` hoặc trục bị bỏ qua không phát gì. Mặc định attribute là `data-<trục>`; khi `options.axes.attribute` đổi tên attribute, truyền cùng bản đồ đó làm đối số thứ hai để DOM và selector CSS không lệch nhau:
+
+```typescript
+// src/axes.ts
+import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
+import type { ThemeAxesState } from "@duydpdev/style-generator/types";
+
+import type { Theme } from "./tokens";
+
+export const axisAttributes = (state: ThemeAxesState<Theme>) =>
+  themeAxisAttributes<Theme>(state);
+
+axisAttributes({ theme: "highContrast", palette: "forest" });
+// { "data-theme": "high-contrast", "data-palette": "forest" }
+```
+
+Rải kết quả lên `<html>` (React: `<html {...axisAttributes(state)}>`; Nuxt: `useHead({ htmlAttrs: axisAttributes(state) })`). Nếu `options.axes.attribute` đổi tên attribute, truyền cùng bản đồ đó vào tham số thứ hai (`{ attribute }`).
+
+### 7. Spacing prop: `splitSpacingProps`
+
+Component nhận spacing prop (`p`, `px`, `gap`, …, số hoặc `{ base, md, lg }`) tách chúng khỏi phần còn lại bằng `splitSpacingProps` từ `./recipes`; kiểu `SpacingProps<BreakpointKeys<typeof options>>` lấy key breakpoint từ options, nên `{ xl: 4 }` là lỗi kiểu khi `xl` không nằm trong `breakpoints`:
+
+```typescript
+import { splitSpacingProps } from "@duydpdev/style-generator/recipes";
+
+const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
+// với props = { p: 4, mx: { base: 2, md: 4 }, id: "x" }:
+// spacing.className → "sp-p sp-mx"
+// spacing.style     → { "--sg-sp-p": "1rem", "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" }
+// rest → các prop còn lại (className, children, …)
+```
 
 ---
 

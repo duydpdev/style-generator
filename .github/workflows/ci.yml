@@ -55,7 +55,12 @@ jobs:
           echo "Linting commits $BASE_SHA..$HEAD_SHA"
           yarn commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
 
+      - name: Build
+        run: yarn build:all
+
       - name: Lint
+        # Type-aware ESLint also covers examples/**, which import the built
+        # library through `link:../..`; without dist/ their types are unresolved.
         run: yarn lint
 
       - name: Prettier check
@@ -72,9 +77,6 @@ jobs:
           done
           yarn typecheck:scripts
 
-      - name: Build
-        run: yarn build:all
-
       - name: Build site
         # site/ and examples/react-v4 dogfood the library through `link:` deps,
         # and the site renders documents/*.md, so this runs for docs-only PRs too.
@@ -88,6 +90,11 @@ jobs:
       - name: Typecheck examples
         # The examples consume the built library through `link:../..`.
         run: yarn workspaces foreach -A --include '*-example' run typecheck
+
+      - name: Test examples (design-system DX)
+        # Compiles the recipes against a mutated theme.json and expects the
+        # error in src/recipes/button.ts; needs dist/*.d.ts from the build.
+        run: yarn workspace design-system-example test
 
       - name: Build examples
         # react-v4 is already built by the site build above.

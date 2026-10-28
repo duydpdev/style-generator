@@ -72,6 +72,10 @@ jobs:
       - name: Verify externals (dist must not inline peer/dep packages)
         run: yarn check:externals
 
+      - name: Verify package types (attw on the packed tarball)
+        # Needs dist/*.d.cts from `yarn build:all`.
+        run: yarn check:types-pack
+
       # The tag's build must run: every subpath loads in ESM and CJS, and
       # `style-gen --version` prints the version set from the tag above.
       - name: Smoke-test the built package

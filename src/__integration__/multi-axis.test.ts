@@ -11,18 +11,18 @@ import { compileFixtureCss } from "./compileFixtureCss";
 const repoRoot = join(__dirname, "..", "..");
 
 /**
- * `examples/nuxt-v4/theme/theme.json` declares two `themeAxes` — `theme`
+ * `examples/design-system/src/theme.json` declares two `themeAxes` — `theme`
  * (before `palette` in the file) — each with one or more variants. This
  * asserts the ported real-world theme, not a synthetic fixture, so a
  * regression in axis/variant declaration-order handling shows up against
  * the actual example consumers ship.
  */
-describe("integration: themeAxes — multiple simultaneous axes (ported nuxt-v4 theme)", () => {
+describe("integration: themeAxes — multiple simultaneous axes (ported design-system theme)", () => {
   const themePath = join(
     repoRoot,
     "examples",
-    "nuxt-v4",
-    "theme",
+    "design-system",
+    "src",
     "theme.json",
   );
   const theme = ThemeSchema.parse(JSON.parse(readFileSync(themePath, "utf8")));

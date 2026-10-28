@@ -88,14 +88,23 @@ export default pluginTs.config(
     },
   },
 
-  // Landing site components: typed like src/, without mandatory JSDoc.
+  // Landing site components and the example apps: typed like src/, without
+  // mandatory JSDoc.
   {
-    files: ["site/src/**/*.{ts,tsx}"],
+    files: ["site/src/**/*.{ts,tsx}", "examples/**/*.{ts,tsx}"],
     rules: Object.fromEntries(
       Object.keys(pluginJsdoc.rules ?? {})
         .filter((name) => name.startsWith("require-"))
         .map((name) => [`jsdoc/${name}`, "off"]),
     ),
+  },
+
+  // The design-system DX tests run in Node (TypeScript Compiler API, fs).
+  {
+    files: ["examples/design-system/tests/**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
   },
 
   {
@@ -107,7 +116,13 @@ export default pluginTs.config(
       "*.cjs",
       ".yarn/*",
       "coverage/*",
-      "examples/**",
+      // nuxt-v4 references ./.nuxt/tsconfig.*.json, which only exist after
+      // `nuxt prepare` (no postinstall hook in the examples); generated output.
+      "examples/nuxt-v4/**",
+      "examples/**/.next/**",
+      "examples/**/.nuxt/**",
+      "examples/**/.output/**",
+      "**/next-env.d.ts",
       "site/dist/**",
       "site/public/**",
       // Compiled by `yarn typecheck:dist` (tsconfig.dts-check*.json) against

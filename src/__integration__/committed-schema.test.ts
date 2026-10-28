@@ -12,9 +12,7 @@ const repoRoot = join(__dirname, "..", "..");
 // files. Deep-equal (not byte) comparison: lint-staged prettier reformats them.
 const committedSchemas = [
   "examples/theme.schema.json",
-  "examples/react-v4/src/theme/theme.schema.json",
-  "examples/next-v4/app/theme/theme.schema.json",
-  "examples/nuxt-v4/theme/theme.schema.json",
+  "examples/design-system/src/theme.schema.json",
   "site/src/theme/theme.schema.json",
 ];
 

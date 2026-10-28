@@ -89,3 +89,8 @@ Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không
 
 - **Mistake:** Phase 11 shipped `dist/*.d.cts` as byte copies of the `.d.ts`, reproduced `TS1479` for `vite.d.cts` under `module: node16`, and recorded it as a "known limitation" instead of making the repo gate model that consumer. The ESM-only gate (`typecheck:dist`, Bundler) passed locally on Vite 7; the peer-matrix Vite 5/6 legs failed with `TS2305` on PR #133, and `attw` was green throughout because it never resolves peer imports.
 - **New Rule:** When a consumer-mode check fails on our own output, fix the output and add that mode to the repo gate (here `tsconfig.dts-check.cjs.json`, `node16`, `skipLibCheck: false`), then verify with a negative control (the plain copy must fail). Do not document it away. Check which TypeScript versions can parse new syntax in published declarations: `with { … }` import attributes are a parse error on TS < 5.3 even under `skipLibCheck`, `assert { … }` parses on every 5.x/6.x.
+
+### [2026-10-29] - ESLint on `examples/**` needs the built library
+
+- **Mistake:** Enabled type-aware ESLint on `examples/**` (CI-06) and verified it locally, where `dist/` existed. In a clean worktree (and in CI, where Lint ran before Build) every import of the `link:../..` library resolved to an error type and `no-unsafe-*` reported hundreds of findings.
+- **New Rule:** Run `yarn build:all` before `yarn lint` (CI, `validation.md` gate, `gate.sh`). Prove lint changes that touch type resolution in a clean worktree before pushing; the local tree's `dist/` hides the failure. `lint-staged` runs `eslint --fix` on staged example files, so it also needs a local `dist/`.

@@ -53,7 +53,7 @@ Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có t
 
 **Các job** (Node 22, trừ `node-floor`):
 
-- `check`: `yarn install --immutable` → `yarn npm audit --recursive --severity high --environment production` (chặn khi dependency production có lỗ hổng high/critical) → `yarn npm audit --all --recursive || true` (chỉ in log, tooling dev/example/site không được ship) → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` + `yarn typecheck:scripts` → `yarn build:all` → `yarn workspace site build` → `yarn workspace site check:links` → typecheck 3 example (`yarn workspaces foreach -A --include '*-example' run typecheck`) → build `next-v4-example` và `nuxt-v4-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn check:smoke` → `yarn check:types-pack` (tarball + `@arethetypeswrong/cli`, profile node16) → `node scripts/vite-dev-smoke.mjs` → `yarn typecheck:dist` → `yarn test:coverage` (ngưỡng `coverage.thresholds`) → `yarn test:types`.
+- `check`: `yarn install --immutable` → `yarn npm audit --recursive --severity high --environment production` (chặn khi dependency production có lỗ hổng high/critical) → `yarn npm audit --all --recursive || true` (chỉ in log, tooling dev/example/site không được ship) → commitlint các commit của PR → `yarn build:all` (đứng trước lint: ESLint có kiểu cũng quét `examples/**`, vốn import thư viện đã build) → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` + `yarn typecheck:scripts` → `yarn workspace site build` → `yarn workspace site check:links` → typecheck 4 example (`yarn workspaces foreach -A --include '*-example' run typecheck`: `design-system`, `react-v4`, `next-v4`, `nuxt-v4`) → `yarn workspace design-system-example test` (test DX, cần `dist/` của `build:all`) → build `next-v4-example` và `nuxt-v4-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn check:smoke` → `yarn check:types-pack` (tarball + `@arethetypeswrong/cli`, profile node16) → `node scripts/vite-dev-smoke.mjs` → `yarn typecheck:dist` → `yarn test:coverage` (ngưỡng `coverage.thresholds`) → `yarn test:types`. Các example chạy build bundler cần Node >= 22.18 (config import module `.ts` qua type stripping); Node 22 của CI là 22.23.4.
   - Commitlint range: `base..head` cho cả PR vào `develop` lẫn `main`. Feature được cắt từ `main` và vào hai nhánh bằng cùng các commit (merge commit, không squash), nên range này đúng bằng các commit của feature. Header của chúng quyết định loại release, nên commit nào cũng bị lint.
 - `changes`: `git diff --name-only base...head`; `code=false` khi PR chỉ đổi `documents/**`.
 - `e2e`: chỉ chạy khi `changes.code == 'true'`. `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
@@ -129,11 +129,12 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 4. `npm pkg set version=<tag bỏ v>` rồi assert khớp tag (fail nếu tag rỗng). Bắt buộc cho DEV, vì `package.json` tại tag DEV vẫn là version stable gần nhất; trên `main` là no-op. Không commit.
 5. `yarn build:all`
 6. `yarn check:externals`
-7. `yarn check:smoke` (build của tag chạy được: mọi subpath load ở ESM/CJS, `style-gen --version` in đúng version vừa set ở bước 4)
-8. `yarn check:browser-safe`
-9. `yarn check:publish-target`
-10. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
-11. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
+7. `yarn check:types-pack` (tarball đóng gói + `@arethetypeswrong/cli`, profile node16; cần `dist/*.d.cts` từ `build:all`)
+8. `yarn check:smoke` (build của tag chạy được: mọi subpath load ở ESM/CJS, `style-gen --version` in đúng version vừa set ở bước 4)
+9. `yarn check:browser-safe`
+10. `yarn check:publish-target`
+11. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
+12. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
 
 Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package. `check:smoke` thì khác: nó kiểm build mang version của tag, là thứ duy nhất được publish.
 
@@ -240,13 +241,13 @@ Xem: [`commitlint.config.ts`](../commitlint.config.ts) và [`release.config.cjs`
 
 ## Site (landing + examples)
 
-Landing site (`site/`) và `examples/react-v4` dùng thư viện qua dependency `link:`. Site **không được deploy**: repo private trên GitHub Free không có GitHub Pages (Pages cho repo private cần Pro/Team/Enterprise: https://docs.github.com/pages/quickstart). `deploy-site.yml` và `site:deploy:manual` đã bị xoá (2026-09-30). Muốn bật lại cần nâng gói hoặc host ở nơi khác, qua một plan riêng.
+Landing site (`site/`) và các example (`examples/design-system`, `react-v4`, `next-v4`, `nuxt-v4`) dùng thư viện qua dependency `link:`. Site **không được deploy**: repo private trên GitHub Free không có GitHub Pages (Pages cho repo private cần Pro/Team/Enterprise: https://docs.github.com/pages/quickstart). `deploy-site.yml` và `site:deploy:manual` đã bị xoá (2026-09-30). Muốn bật lại cần nâng gói hoặc host ở nơi khác, qua một plan riêng.
 
-Site vẫn được build trên mọi PR: job `check` của `ci.yml` chạy `yarn workspace site build` ngay sau `yarn build:all`, kể cả với PR chỉ đổi `documents/**`, vì site render `documents/*.md`. `yarn workspace site build` chạy `build:examples` (build `examples/react-v4` với base `./`, copy `examples/react-v4/dist` vào `site/public/examples/v4`), rồi Vite build site.
+Site vẫn được build trên mọi PR: job `check` của `ci.yml` chạy `yarn workspace site build` ngay sau `yarn build:all`, kể cả với PR chỉ đổi `documents/**`, vì site render `documents/*.md`. `yarn workspace site build` chạy `build:examples` (build `examples/react-v4` với base `./`, copy `examples/react-v4/dist` vào `site/public/examples/v4`), rồi Vite build site. `react-v4` import theme, options và recipe từ workspace `design-system-example` (`workspace:*`, symlink thật), nên build site không cần bước nào thêm; explorer mã nguồn của site cũng đọc `examples/design-system`.
 
 ### Vì sao `link:` thay vì `workspace:*`
 
-Gói root chính là thư viện `@duydpdev/style-generator`. Với `nodeLinker: node-modules`, Yarn hoist một dependency `workspace:*` trỏ về root lên `node_modules` của root, coi đó là self-reference và bỏ đi. Kết quả là sau một lần `yarn install` sạch, không có `node_modules/@duydpdev/style-generator` ở đâu cả (`nmSelfReferences` không áp dụng cho trường hợp này). `link:..` (site) và `link:../..` (examples) tạo symlink trong `node_modules` của từng workspace. Không alias gói trong Vite: example phải đi qua `exports` thật của package.
+Gói root chính là thư viện `@duydpdev/style-generator`. Với `nodeLinker: node-modules`, Yarn hoist một dependency `workspace:*` trỏ về root lên `node_modules` của root, coi đó là self-reference và bỏ đi. Kết quả là sau một lần `yarn install` sạch, không có `node_modules/@duydpdev/style-generator` ở đâu cả (`nmSelfReferences` không áp dụng cho trường hợp này). `link:..` (site) và `link:../..` (examples) tạo symlink trong `node_modules` của từng workspace. Không alias gói trong Vite: example phải đi qua `exports` thật của package. Quy tắc này chỉ áp dụng cho thư viện gốc: `design-system-example` là một workspace riêng nên ba app tham chiếu nó bằng `workspace:*`.
 
 ### Script aliases (root)
 

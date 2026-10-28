@@ -1,4 +1,8 @@
+/* Next.js entry: Tailwind v4, the generated theme, then the shared design-system styles. */
 @import "tailwindcss";
 @import "./theme/theme.css";
-@import "./theme/palettes.css";
-@import "./theme/style-guide.css";
+@import "design-system-example/styles/palettes.css";
+@import "design-system-example/styles/style-guide.css";
+
+/* Tailwind only scans this app by default; the recipes live in the design system. */
+@source "../../design-system/src";

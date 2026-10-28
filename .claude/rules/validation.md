@@ -2,10 +2,10 @@
 
 ## Gate before reporting done
 
-A task is done only when this chain exits 0 at the repo root:
+A task is done only when this chain exits 0 at the repo root (`yarn build:all` comes first because type-aware ESLint also covers `examples/**`, which import the built library through `link:../..`):
 
 ```bash
-yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types
+yarn build:all && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types
 ```
 
 Add the rows that match the change:

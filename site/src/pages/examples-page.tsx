@@ -130,6 +130,10 @@ export function ExamplesPage() {
               <span>examples/react-{v}</span>
             </div>
             <div className="row">
+              <span>SHARED</span>
+              <span>examples/design-system</span>
+            </div>
+            <div className="row">
               <span>BUNDLE</span>
               <span>{meta.bundler}</span>
             </div>

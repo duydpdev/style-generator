@@ -20,7 +20,9 @@ import { createServer, version } from "vite";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const exampleDir = join(root, "examples/react-v4");
-const themeJson = join(exampleDir, "src/theme/theme.json");
+// The theme lives in the shared design-system package; the app's plugin reads
+// it through `themePath` and emits `theme.css` into the react-v4 example.
+const themeJson = join(root, "examples/design-system/src/theme.json");
 const themeCss = join(exampleDir, "src/theme/theme.css");
 const MARKER = "#0a1b2c";
 const TIMEOUT_MS = 15_000;
@@ -144,7 +146,8 @@ while (
 
 const theme = JSON.parse(originalJson);
 const [firstColor] = Object.keys(theme.colors);
-if (firstColor === undefined) fail("examples/react-v4 theme has no colors");
+if (firstColor === undefined)
+  fail("examples/design-system theme has no colors");
 theme.colors[firstColor] = MARKER;
 writeFileSync(themeJson, `${JSON.stringify(theme, null, 2)}\n`);
 

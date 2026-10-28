@@ -50,7 +50,7 @@ Bảng `text` gom theo thư mục (dòng `src/cli` rồi dòng `index.ts`), nên
 yarn test:types      # vitest run --typecheck.only (*.test-d.ts; `yarn test` không chạy chúng)
 ```
 
-Dùng `expectTypeOf` để khoá suy luận kiểu: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, chữ ký `createVariantMapper` (một `true` sót lại ở tham số thứ ba phải là lỗi TS), `resolveSpacing`/`ResponsiveValueStrict`, kiểu config mà `styleGenNext` trả về (object hay dạng hàm), và các subpath export (`src/exports/subpath-exports.test-d.ts`).
+Dùng `expectTypeOf` để khoá suy luận kiểu: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, chữ ký `createVariantMapper` (một `true` sót lại ở tham số thứ ba phải là lỗi TS), `resolveSpacing`/`ResponsiveValueStrict`, `SpacingProps`/`splitSpacingProps`/`themeAxisAttributes` (`src/features/recipes/*.test-d.ts`), kiểu config mà `styleGenNext` trả về (object hay dạng hàm), và các subpath export (`src/exports/subpath-exports.test-d.ts`).
 
 ```typescript
 import { describe, it, expectTypeOf } from "vitest";
@@ -99,14 +99,14 @@ Lý do chạy cả WebKit: ngữ nghĩa kế thừa của `@property` và cascad
 
 Chạy sau `yarn build:all`, cũng nằm trong `prepublish`:
 
-| Script                                                | Kiểm tra                                                                                                                                                                                                    |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yarn check:externals`                                | không file nào trong `dist/` (entry, chunk chung, `dist/cli/index.mjs`) inline dependency/peer: đọc `sources` của mọi `dist/**/*.map` tìm `node_modules/<tên>/`; file JS thiếu sourcemap cũng làm gate fail |
-| `yarn check:browser-safe`                             | `./tokens`, `./cva`, `./spacing`, `./types` không kéo Zod, Node built-in hay `@tailwindcss/*` (kể cả qua chunk chung)                                                                                       |
-| `yarn check:sizes`                                    | ngân sách gzip cho từng subpath trong `package.json#exports`, tính cả mọi chunk mà entry import (transitive), và cho CLI `dist/cli/index.mjs` (`cli`)                                                       |
-| `yarn check:publish-target`                           | publish đúng GitHub Packages                                                                                                                                                                                |
-| `yarn check:smoke` (CI, không nằm trong `prepublish`) | `import` + `require` mọi subpath qua tên package và so khớp tên export; `generate()` ESM/CJS cho cùng CSS; chạy CLI (`--version`, `schema`, `generate`, `init`) và script TypeScript do `init` sinh ra      |
-| `scripts/check-css-budget.mjs` (không có yarn script) | ngân sách gzip cho CSS đã biên dịch của một app tiêu dùng; script thuần Node, copy được sang repo khác                                                                                                      |
+| Script                                                | Kiểm tra                                                                                                                                                                                                                                                                                                 |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yarn check:externals`                                | không file nào trong `dist/` (entry, chunk chung, `dist/cli/index.mjs`) inline dependency/peer: đọc `sources` của mọi `dist/**/*.map` tìm `node_modules/<tên>/`; file JS thiếu sourcemap cũng làm gate fail. `tailwind-merge` (chỉ là devDependency, dùng trong test của `./recipes`) cũng bị cấm inline |
+| `yarn check:browser-safe`                             | `./tokens`, `./cva`, `./spacing`, `./recipes`, `./types` không kéo Zod, Node built-in hay `@tailwindcss/*` (kể cả qua chunk chung)                                                                                                                                                                       |
+| `yarn check:sizes`                                    | ngân sách gzip cho từng subpath trong `package.json#exports`, tính cả mọi chunk mà entry import (transitive), và cho CLI `dist/cli/index.mjs` (`cli`)                                                                                                                                                    |
+| `yarn check:publish-target`                           | publish đúng GitHub Packages                                                                                                                                                                                                                                                                             |
+| `yarn check:smoke` (CI, không nằm trong `prepublish`) | `import` + `require` mọi subpath qua tên package và so khớp tên export; `generate()` ESM/CJS cho cùng CSS; chạy CLI (`--version`, `schema`, `generate`, `init`) và script TypeScript do `init` sinh ra                                                                                                   |
+| `scripts/check-css-budget.mjs` (không có yarn script) | ngân sách gzip cho CSS đã biên dịch của một app tiêu dùng; script thuần Node, copy được sang repo khác                                                                                                                                                                                                   |
 
 ---
 

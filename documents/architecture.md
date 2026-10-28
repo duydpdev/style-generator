@@ -67,6 +67,7 @@ src/
 │   ├── spacing/                # .sp-* utilities + resolveSpacing helpers
 │   ├── tokens/                 # createDesignTokens / buildDesignTokens
 │   ├── cva/                    # createVariantMapper
+│   ├── recipes/                # ./recipes: createTailwindMergeExtension, splitSpacingProps, themeAxisAttributes
 │   ├── vite/                   # styleGenVite
 │   └── next/                   # styleGenNext
 ├── shared/                     # helpers (kebab/camel), defaults, COLOR_STATES, resolveSafePath, writeFileAtomic
@@ -76,7 +77,7 @@ src/
 └── index.ts                    # root barrel
 ```
 
-`src/exports/*` xác định subpath nào an toàn cho browser (không kéo Zod / Node built-in): `./tokens`, `./cva`, `./spacing`, `./types`. Ràng buộc này được kiểm bằng `scripts/check-browser-safe.mjs`.
+`src/exports/*` xác định subpath nào an toàn cho browser (không kéo Zod / Node built-in): `./tokens`, `./cva`, `./spacing`, `./recipes`, `./types`. Ràng buộc này được kiểm bằng `scripts/check-browser-safe.mjs`. `./recipes` chỉ nằm ở subpath (không re-export từ `.`), giống `./vite`/`./next`, để ngân sách `index` không gánh helper phía component.
 
 ---
 
@@ -91,7 +92,7 @@ const { css, tokens, schema } = generate(theme, options);
 // schema → z.toJSONSchema(ThemeSchema)
 ```
 
-`generate()` luôn validate `theme` với `ThemeSchema` trước (kể cả khi caller đã gọi `defineTheme()`), rồi ghép các khối theo thứ tự: `@theme` breakpoints → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` → typography `@utility` → spacing `@utility` → `@source inline`.
+`generate()` validate `options` trước (`StyleGeneratorOptionsSchema.parse` → `resolveOptions`), rồi luôn validate lại `theme` với `ThemeSchema` (kể cả khi caller đã gọi `defineTheme()`); với mọi `axes.scope`, `assertAxesOptions` từ chối `axes.attribute` trỏ tới axis không tồn tại hoặc hai axis trùng tên attribute, và với `axes.scope: "element"` thêm `checkElementScopeAliases` (theme × options). Sau đó ghép các khối theo thứ tự: `@theme` breakpoints → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` → typography `@utility` → spacing `@utility` → `@source inline`.
 
 ### `createDesignTokens`
 
@@ -154,6 +155,14 @@ export default styleGenNext({
 
 `doctor` ngoài kiểm tra cấu hình/theme còn quét các file nguồn (`.css/.scss/.ts/.tsx/.vue/.svelte/.astro/.html`, …) dưới thư mục hiện tại để cảnh báo `file:line` biến `--sg-<màu>` kiểu 4.x còn sót (`src/cli/commands/legacyColorVars.ts`): bỏ qua `node_modules`, `.git`, thư mục build (`dist`, `build`, `out`, `.next`, `.nuxt`, `.output`, …), file output của config và file > 1 MiB; không theo symlink; không đổi exit code.
 
+### Recipes (`./recipes`)
+
+Ba helper phía component, browser-safe, không import `tailwind-merge` (dist `.d.ts` không nhắc tới nó; app tự khai báo `tailwind-merge` 3.x — extension dùng id group v3 và theme key `radius`):
+
+- `createTailwindMergeExtension(tokens)` → `{ extend: { classGroups, conflictingClassGroups, theme } }` cho `extendTailwindMerge`. Token là key camelCase nên được `toKebabCase` trước khi thành class. `borderRadius` đi vào `theme.radius` (thang mà mọi group `rounded-*` của tailwind-merge đều đọc, nên cả `rounded-tl-pill`, `rounded-s-pill` cũng gộp đúng); `shadows`, `backDropBlurs`, `borderWidth` là class group. Bảng prefix của `border`/`divide-*` (→ id `border-w*`), `shadow`, `backdrop-blur` nằm cục bộ trong module để không kéo registry vào chunk của `./tokens`; `extendTailwindMerge.test.ts` ghim bảng này với `classPrefixes` của registry. `colors` và `fontFamily` không được liệt kê vì group mặc định của tailwind-merge đã nhận mọi giá trị.
+- `splitSpacingProps(props, keys, unit)` + `SpacingProps<BKeys, K>` → `{ spacing: { className, style }, rest }`; gọi `resolveSpacing` một lần cho mỗi key (nên import `./spacing` qua chunk dùng chung), bỏ mọi key spacing khỏi `rest` kể cả khi giá trị `undefined`.
+- `themeAxisAttributes(state, { attribute })` → attribute DOM của các trục đang bật, cùng công thức `axisAttributeName` với selector mà `generate()` phát ra; trục `"base"`/`undefined` không phát attribute.
+
 ---
 
 ## Registry & `@source inline`
@@ -163,6 +172,8 @@ export default styleGenNext({
 **Resolve option một lần:** `generate()` gọi `resolveOptions()` (`src/core/resolveOptions.ts`) ngay sau khi parse; `generateScreensCss`, `generateSpacingCss`, `generateSourceInline` và `buildDesignTokens` đọc `ResolvedOptions` (breakpoints, screens đã gộp với `defaultScreens`, breakpoints sắp theo độ rộng bằng `parseFloat`, spacing, `coverage`) thay vì mỗi nơi tự lặp `options.x ?? DEFAULT_X`. Phần mà token cần (`breakpoints`, `screens`, `spacing`) nằm ở `resolveTokenOptions()` (`src/core/resolveTokenOptions.ts`), `resolveOptions` spread nó; `createDesignTokens(theme, options)` = `buildDesignTokens(theme, resolveTokenOptions(options))`. Hai file này tách riêng vì Rollup gom module theo tập entry dùng chúng: gộp vào `resolveOptions` sẽ kéo cả `coverage` vào `./tokens`. Một category khai báo `{}` được coi như vắng ở cả `@source inline` lẫn `DesignTokens` (dùng key mặc định).
 
 **Entry `./tokens` và ngân sách gzip:** `vite.config.ts` đặt `preserveEntrySignatures: "allow-extension"`. Với mặc định `strict`, Rollup phải tách một facade chỉ chứa export công khai khi chunk của `./tokens` dùng chung code nội bộ (`buildDesignTokens`, `resolveTokenOptions`, `categoryTokenMeta`) với `generate`, và facade đó (~290 B gzip) làm `./tokens` vượt ngân sách. Hệ quả: `dist/tokens.js` và `dist/tokens.cjs` export thêm vài alias một chữ cái ở runtime (`minifyInternalExports: true` áp dụng cho cả CJS); `dist/tokens.d.ts` không đổi và là hợp đồng duy nhất, các alias này không phải API. Ngân sách `./tokens` chỉ được nâng khi bề mặt tokens tự lớn lên (ví dụ `aliasedColors` ở phase 09), không phải để nuốt coupling ngẫu nhiên.
+
+**Chunk chung và `manualChunks`:** thêm một entry (như `./recipes`, dùng `helpers` + `spacingHelpers` nhưng không dùng `colorStates`) làm đổi tập entry phụ thuộc vào từng module, nên Rollup tách `helpers`/`colorStates` và tách `spacingHelpers` khỏi entry `spacing`, dồn chi phí import chunk lên `./tokens`, `./cva`, `./spacing`. `vite.config.ts` ghim các module đó vào chunk ổn định bằng `manualChunks`: `helpers` + `colorStates` → `helpers`, `exports/spacing` + `spacingHelpers` → `spacing` (tên chunk `spacing` PHẢI trùng tên entry, nếu không không gộp được), `defaultOption` → `defaultOption`. Khi thêm module dùng chung hoặc entry mới, chạy lại `yarn build:all && yarn check:sizes`; `tokens`/`cva`/`spacing`/`index` không được nhích lên — ghim module hoặc cấu trúc lại import, không nâng ngân sách. Vite 8 / Rolldown đánh dấu `manualChunks` là deprecated, thay bằng `advancedChunks`: xem lại khi nâng cấp.
 
 **Vì sao `@source inline` thay safelist:** Tailwind v4 không quét class được dựng lúc runtime. `generateSourceInline` phát một dòng `@source inline("…")` cho mỗi category (và mỗi state có sibling, ví dụ `hover:bg-primary-hover`), nên class luôn tồn tại dù source không tham chiếu chúng; class dựng runtime khai báo qua `options.extraSources`. Đánh đổi: mọi màu luôn có `bg-/text-/border-*`, CSS lớn hơn một chút — `options.coverage` thu hẹp dòng này theo category (`false`, `prefixes`, `keys: "aliased"`; xem README §8).
 
@@ -223,20 +234,21 @@ Tắt bằng `options.spacing.enabled = false`; tuỳ chỉnh bằng `options.sp
 
 ## Exports API
 
-| Export                                                                                                                                                  | Subpath                                     | Mô tả                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `generate`                                                                                                                                              | `.`                                         | Entry chính → `{ css, tokens, schema }`                                                      |
-| `defineTheme`, `defineOptions`                                                                                                                          | `.`                                         | Helper type-safe; `defineTheme` validate runtime (chỉ ở root)                                |
-| `generateThemeCss`                                                                                                                                      | `.`                                         | Chỉ `:root` + axis + `@theme inline`                                                         |
-| `createDesignTokens`                                                                                                                                    | `.`, `./tokens`                             | Sinh Design Tokens                                                                           |
-| `createVariantMapper`, `COLOR_STATES`, `toKebabCase`                                                                                                    | `.`, `./cva` (`COLOR_STATES` cả `./tokens`) | Map token → class (kebab), `{ states }` cho hover/active; `toKebabCase` là hàm registry dùng |
-| `resolveSpacing`, `resolveSpacingProps`                                                                                                                 | `.`, `./spacing`                            | Resolve spacing props → `{ className(s), style }`                                            |
-| `styleGenVite`                                                                                                                                          | `./vite`                                    | Vite plugin                                                                                  |
-| `styleGenNext`                                                                                                                                          | `./next`                                    | Next.js config wrapper                                                                       |
-| `Breakpoint`, `defaultScreens`                                                                                                                          | `.`, `./tokens`                             | Const `SM \| MD \| LG \| XL \| XXL` (+ kiểu cùng tên) và bề rộng mặc định                    |
-| `ColorVariant` … `RoundedVariant`                                                                                                                       | `./types` (và `.`)                          | Union key theo theme: color, text, shadow, backdrop blur, font family, border width, rounded |
-| `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `CoverageRule`, `CategoryKey`, `CategoryTokenKey`, `ResponsiveValueStrict` | `./types` (và `.`)                          | Kiểu công khai                                                                               |
-| `SpacingKey`, `DefaultBreakpointKeys`                                                                                                                   | `./spacing`                                 | Kiểu spacing                                                                                 |
+| Export                                                                                                                                                  | Subpath                                     | Mô tả                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `generate`                                                                                                                                              | `.`                                         | Entry chính → `{ css, tokens, schema }`                                                              |
+| `defineTheme`, `defineOptions`                                                                                                                          | `.`                                         | Helper type-safe; `defineTheme` validate runtime (chỉ ở root)                                        |
+| `generateThemeCss`                                                                                                                                      | `.`                                         | Chỉ `:root` + axis + `@theme inline`                                                                 |
+| `createDesignTokens`                                                                                                                                    | `.`, `./tokens`                             | Sinh Design Tokens                                                                                   |
+| `createVariantMapper`, `COLOR_STATES`, `toKebabCase`                                                                                                    | `.`, `./cva` (`COLOR_STATES` cả `./tokens`) | Map token → class (kebab), `{ states }` cho hover/active; `toKebabCase` là hàm registry dùng         |
+| `resolveSpacing`, `resolveSpacingProps`                                                                                                                 | `.`, `./spacing`                            | Resolve spacing props → `{ className(s), style }`                                                    |
+| `createTailwindMergeExtension`, `splitSpacingProps`, `themeAxisAttributes` (+ kiểu `SpacingProps`, `TailwindMergeExtension`, `TailwindMergeTokens`)     | `./recipes` (không có ở `.`)                | Recipe phía component: extension cho tailwind-merge, spacing props có kiểu, attribute của theme axes |
+| `styleGenVite`                                                                                                                                          | `./vite`                                    | Vite plugin                                                                                          |
+| `styleGenNext`                                                                                                                                          | `./next`                                    | Next.js config wrapper                                                                               |
+| `Breakpoint`, `defaultScreens`                                                                                                                          | `.`, `./tokens`                             | Const `SM \| MD \| LG \| XL \| XXL` (+ kiểu cùng tên) và bề rộng mặc định                            |
+| `ColorVariant` … `RoundedVariant`                                                                                                                       | `./types` (và `.`)                          | Union key theo theme: color, text, shadow, backdrop blur, font family, border width, rounded         |
+| `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `CoverageRule`, `CategoryKey`, `CategoryTokenKey`, `ResponsiveValueStrict` | `./types` (và `.`)                          | Kiểu công khai                                                                                       |
+| `SpacingKey`, `DefaultBreakpointKeys`                                                                                                                   | `./spacing`                                 | Kiểu spacing                                                                                         |
 
 Danh sách đầy đủ nằm trong `src/index.ts` và `src/exports/*`; những gì bị xoá ở 4.0.0 nằm trong [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), ở 5.0.0 trong [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
 

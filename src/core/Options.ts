@@ -156,4 +156,38 @@ export interface StyleGeneratorOptions {
    * is rejected for `typography` (it has no `$` aliases).
    */
   coverage?: { [K in CategoryKey]?: boolean | CategoryCoverageRule<K> };
+
+  /**
+   * How `themeAxes` variants are switched on in the DOM.
+   *
+   * Validated by `generate()`: every attribute name must match
+   * `[a-z][a-z0-9-]*` (it is interpolated into a CSS selector), every
+   * `attribute` key must name a `themeAxes` axis, and no two axes may
+   * resolve to the same attribute name — all for every `scope`. With
+   * `scope: "element"`, no variant may leave a `$`-alias holder stale (see
+   * `scope`).
+   */
+  axes?: {
+    /**
+     * Axis name → DOM attribute name, e.g. `{ theme: "data-mode" }` emits
+     * `html[data-mode="dark"]` instead of `html[data-theme="dark"]`. Axes
+     * that are not listed keep `data-<axis-kebab>`. `themeAxisAttributes()`
+     * from `./recipes` reads the same map, so both sides stay in step.
+     * @default {}
+     */
+    attribute?: Readonly<Record<string, string>>;
+    /**
+     * Where a variant block applies. `"root"` pins the selector to `html`
+     * (`html[data-theme="dark"]`): custom properties are declared on
+     * `:root`, so a `$`-alias `var()` is computed there and every override
+     * is seen by its aliases. `"element"` drops the `html` anchor
+     * (`[data-theme="dark"]`) so the attribute can sit on any element for a
+     * scoped theme; a `$`-alias holder is then still computed where it is
+     * declared, so `generate()` rejects a variant that overrides an alias
+     * target without re-declaring each holder of it (a holder written in
+     * the base theme or in any other variant of any axis).
+     * @default "root"
+     */
+    scope?: "root" | "element";
+  };
 }

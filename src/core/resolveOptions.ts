@@ -41,6 +41,15 @@ export interface ResolvedOptions extends ResolvedTokenOptions {
    * category that is absent here uses the default (everything).
    */
   coverage: Readonly<Record<string, ResolvedCoverageRule>>;
+  /**
+   * How `themeAxes` variants are switched on: the axis → attribute-name map
+   * (`{}`: every axis uses `data-<axis-kebab>`) and where the selector
+   * applies.
+   */
+  axes: {
+    readonly attribute: Readonly<Record<string, string>>;
+    readonly scope: "root" | "element";
+  };
 }
 
 const sortBreakpoints = (
@@ -91,5 +100,9 @@ export const resolveOptions = (
     typographyCssVarDriven: options.typography?.cssVarDriven === true,
     extraSources: options.extraSources ?? [],
     coverage: resolveCoverage(options.coverage),
+    axes: {
+      attribute: options.axes?.attribute ?? {},
+      scope: options.axes?.scope ?? "root",
+    },
   };
 };

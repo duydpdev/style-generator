@@ -295,6 +295,35 @@ describe("generateCommand", () => {
     expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
   });
 
+  it('labels a theme × options conflict (axes.scope "element" with a stale alias) "Invalid theme/options", not "Invalid options"', () => {
+    fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "styles/theme.json"),
+      JSON.stringify({
+        colors: { brand: "#00f", primary: "$brand" },
+        themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
+      }),
+    );
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ axes: { scope: "element" } }),
+    );
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
+
+    generateCommand({
+      theme: "styles/theme.json",
+      out: "styles/theme.css",
+    });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+      /^Invalid theme\/options:\nthemeAxes\.theme\.dark\.colors\.brand → /,
+    );
+    expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(false);
+  });
+
   it("exits 1 on a misspelled config key (breakpoint) without writing output", () => {
     fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
     fs.writeFileSync(

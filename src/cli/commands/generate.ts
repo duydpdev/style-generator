@@ -109,11 +109,16 @@ export function generateCommand(
         return true;
       } catch (error) {
         if (error instanceof z.ZodError) {
-          logger.error(
-            stage === "theme"
-              ? `Invalid theme (${options.theme}):\n${formatZodError(error)}`
-              : `Invalid options:\n${formatZodError(error)}`,
-          );
+          // `generate()` also reports theme × options conflicts (a stale
+          // alias under `axes.scope: "element"`) at a `themeAxes` path:
+          // neither the theme nor the options alone are at fault.
+          let header = "Invalid options";
+          if (stage === "theme") {
+            header = `Invalid theme (${options.theme})`;
+          } else if (error.issues.some((i) => i.path[0] === "themeAxes")) {
+            header = "Invalid theme/options";
+          }
+          logger.error(`${header}:\n${formatZodError(error)}`);
         } else if (error instanceof Error) {
           logger.error(`Failed to generate CSS: ${error.message}`);
         } else {

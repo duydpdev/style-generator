@@ -5,10 +5,17 @@ import type * as root from "../index";
 // Import via subpath barrels (v4 new paths — resolved via `src/exports/*`
 // which is how consumers will see them after exports map resolves).
 import type { ThemeConfig } from "../core/themeSchema";
+import type { createTailwindMergeExtension } from "../features/recipes/extendTailwindMerge";
+import type {
+  SpacingProps,
+  splitSpacingProps,
+} from "../features/recipes/spacingProps";
+import type { themeAxisAttributes } from "../features/recipes/themeAxisAttributes";
 
 import * as tokens from "./tokens";
 import * as cva from "./cva";
 import * as spacing from "./spacing";
+import * as recipes from "./recipes";
 import type * as types from "./types";
 
 interface AxesTheme extends ThemeConfig {
@@ -93,6 +100,35 @@ describe("subpath exports — symbols match root barrel", () => {
     expectTypeOf<keyof typeof cva>().toEqualTypeOf<
       "COLOR_STATES" | "createVariantMapper" | "toKebabCase"
     >();
+  });
+
+  it("recipes subpath runtime exports are exactly the documented list", () => {
+    expectTypeOf<keyof typeof recipes>().toEqualTypeOf<
+      | "createTailwindMergeExtension"
+      | "splitSpacingProps"
+      | "themeAxisAttributes"
+    >();
+  });
+
+  it("recipes subpath re-exports the feature modules unchanged and is not part of the root", () => {
+    expectTypeOf(recipes.createTailwindMergeExtension).toEqualTypeOf<
+      typeof createTailwindMergeExtension
+    >();
+    expectTypeOf(recipes.splitSpacingProps).toEqualTypeOf<
+      typeof splitSpacingProps
+    >();
+    expectTypeOf(recipes.themeAxisAttributes).toEqualTypeOf<
+      typeof themeAxisAttributes
+    >();
+    expectTypeOf<recipes.SpacingProps>().toEqualTypeOf<SpacingProps>();
+    expectTypeOf<
+      Extract<
+        keyof typeof root,
+        | "createTailwindMergeExtension"
+        | "splitSpacingProps"
+        | "themeAxisAttributes"
+      >
+    >().toBeNever();
   });
 
   it("removed 4.x helper VariantMapperStatesOptions is gone from every subpath", () => {

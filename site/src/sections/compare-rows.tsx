@@ -114,7 +114,7 @@ export const COMPARE_ROWS: CompareRow[] = [
   {
     label: "Bundle impact",
     tw: <>Glue code for each feature lives in your app.</>,
-    us: <>7 subpath imports · gzip-budgeted · side-effect free.</>,
+    us: <>8 subpath imports · gzip-budgeted · side-effect free.</>,
   },
   {
     label: "Scaffolding",

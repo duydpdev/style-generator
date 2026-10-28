@@ -54,7 +54,40 @@ export default defineConfig({
       output: {
         preserveModules: false,
         minifyInternalExports: true,
-        manualChunks: undefined,
+        // Pin the modules several entries share to stable chunks. Without it
+        // `./recipes` (which uses helpers + spacingHelpers but not
+        // colorStates) changes the set of entries depending on each module,
+        // so Rollup splits `helpers`/`colorStates` apart and `spacingHelpers`
+        // off the `spacing` entry, adding chunk overhead to `./tokens`,
+        // `./cva` and `./spacing` (see the 2026-10-28 note in
+        // scripts/check-sizes.mjs). `spacing` merges the entry module with
+        // `spacingHelpers` so `./recipes` imports `spacing.js` instead of
+        // duplicating it.
+        //
+        // Rules: the chunk name "spacing" MUST equal the entry name (a
+        // differently named chunk would not merge with the entry and would
+        // split it again). `tokens`, `cva`, `spacing` and `index` must not
+        // drift when a new shared module or entry appears: re-run
+        // `yarn build:all && yarn check:sizes` and pin the module here (or
+        // restructure the import) instead of raising their budgets.
+        // Vite 8 / Rolldown deprecates `manualChunks` in favour of
+        // `advancedChunks`: revisit this rule when upgrading.
+        manualChunks: (id) => {
+          if (/[/\\]src[/\\]shared[/\\](helpers|colorStates)\.ts$/.test(id)) {
+            return "helpers";
+          }
+          if (
+            /[/\\]src[/\\](exports[/\\]spacing|features[/\\]spacing[/\\]spacingHelpers)\.ts$/.test(
+              id,
+            )
+          ) {
+            return "spacing";
+          }
+          if (/[/\\]src[/\\]shared[/\\]defaultOption\.ts$/.test(id)) {
+            return "defaultOption";
+          }
+          return undefined;
+        },
       },
     },
   },

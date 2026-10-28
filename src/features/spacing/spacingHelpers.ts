@@ -42,7 +42,7 @@ type NoInferBKeys<T> = [T][T extends unknown ? 0 : never];
  * `BKeys` when `options.breakpoints` adds others. `BKeys` is never inferred
  * from the value ({@link NoInferBKeys}), so a typo such as `{ tablet: 4 }` stays an error.
  * @template BKeys - Breakpoint keys accepted in `value` (default `md | lg`)
- * @param {SpacingKey} prop - Spacing property name (e.g. 'p', 'mx', 'gap')
+ * @param {string} prop - Spacing property name (`SpacingKey` autocompletes: 'p', 'mx', 'gap'); any string is accepted so a custom `spacing.properties` key works without a cast
  * @param {ResponsiveValueStrict<number, BKeys>} value - Simple number or responsive object
  * @param {number} unit - Rem multiplier (default: 0.25, matching Tailwind's spacing scale)
  * @returns {{ className: string; style: Record<string, string> }} Resolved class name and CSS variable style map
@@ -57,7 +57,7 @@ type NoInferBKeys<T> = [T][T extends unknown ? 0 : never];
  * resolveSpacing<"md" | "lg" | "xl">('p', { base: 4, xl: 16 })
  */
 export const resolveSpacing = <BKeys extends string = DefaultBreakpointKeys>(
-  prop: SpacingKey,
+  prop: SpacingKey | (string & {}),
   value: ResponsiveValueStrict<number, NoInferBKeys<BKeys>>,
   unit = 0.25,
 ): { className: string; style: Record<string, string> } => {

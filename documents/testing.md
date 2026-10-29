@@ -17,6 +17,8 @@ The checks have two layers:
 
 `check:publish-target` runs in `prepublish` and in the publish workflow (`deploy.yml`); `deploy.yml` additionally runs `check:types-pack` right after `build:all`, see [`deploy.md`](./deploy.md).
 
+Two separate workflows screenshot the built site: `.github/workflows/visual.yml` (job `Site visual regression (chromium)`) only compares against the committed Linux baselines and runs for non-draft PRs that change `site/**`, `packages/**`, `examples/**`, `e2e-site/**` or `playwright.site.config.ts`; `.github/workflows/visual-update.yml` (job `Site visual baselines (chromium)`) runs only when the `visual-update` label is added and rewrites the baselines. See [layer 7](#7-site-visual-regression-playwright-chromium).
+
 ---
 
 ## Test layers
@@ -122,6 +124,22 @@ This gate sits outside the root `yarn test` (`vitest.config.ts` excludes `exampl
 
 - `tests/dx.test.ts` uses the TypeScript Compiler API: it compiles `src/recipes/button.ts` against the real `theme.json` (no diagnostics), then against a `theme.json` in which `danger` was renamed to `dangerX` (intercepting `host.getSourceFile` to swap the JSON content), and asserts that a TS error lands exactly in `src/recipes/button.ts` — that is, renaming a token in the theme breaks the recipe at the place that uses it, not at runtime. The same file asserts that `style-gen.config.json` (the mirror for the CLI-only flow) matches `options` in `src/style-gen.options.ts`.
 - `tests/dx.test-d.ts` (`expectTypeOf`): the `Intent` union (the `intents` tuple, constrained by `satisfies` against the theme), `BreakpointKeys<typeof options>` is `"md" | "lg"`, `Box` with `{ xl: 4 }` does not compile, the type of `axisAttributes`.
+
+### 7. Site visual regression (Playwright, Chromium)
+
+```bash
+yarn site:build              # the suite screenshots the BUILT site (vite preview, port 4173)
+yarn test:visual             # compare against the committed baselines
+yarn test:visual:update      # rewrite changed/missing baselines (--update-snapshots=changed)
+```
+
+`playwright.site.config.ts` (separate from `playwright.config.ts` so that `yarn test:e2e` needs no server) runs `e2e-site/site.spec.ts`: 3 routes (`/`, `/docs/architecture`, `/examples` → `/examples/v4` with the `react-v4` iframe) × 3 viewports (375×812, 768×1024, 1280×800) × the `light`/`dark` theme (set through `localStorage["sg-site-theme"]` with `addInitScript`). Full-page images are cut into 8000 px slices (`-p0`, `-p1`, …). Threshold `maxDiffPixelRatio: 0.001`, `animations: "disabled"`, `reducedMotion: "reduce"` (the `prefers-reduced-motion` block in `site/src/styles/base.css` turns off smooth scroll and the looping animations).
+
+Before capturing, the spec scrolls the whole page so every IntersectionObserver has fired, then checks readiness through fixed test hooks, never through classes: at least one `[data-reveal-state]` element and none with `data-reveal-state="pending"` (`site/src/lib/use-reveal.ts`); the `data-testid="terminal-cursor"` cursor (`site/src/sections/start-section.tsx`) is already inside `data-testid="terminal-body"` (`site/src/components/terminal-typewriter.tsx`); the `data-testid="example-preview"` iframe (`site/src/components/preview-frame.tsx`) has rendered `#root`. No CSS reads these hooks; keep them when you change the site markup.
+
+Fonts: the spec blocks every request to `fonts.googleapis.com`/`fonts.gstatic.com` and answers with the pinned copies in `e2e-site/fixtures/fonts/` (`site.css`, `react-v4.css` and the `.woff2` files); each test asserts that no font request reached the network. When you change the Google Fonts link in `site/index.html` or `examples/react-v4/index.html`, refresh the fixtures and update `FONT_CSS` in the spec. To refresh: download each stylesheet URL listed in `FONT_CSS` with a current Chrome `User-Agent` (so Google returns `woff2` `@font-face` rules) into `e2e-site/fixtures/fonts/<css file>`, keeping the `url(https://fonts.gstatic.com/…)` references unchanged; then download every referenced `https://fonts.gstatic.com/<path>` into the same directory as `<path>` with each `/` replaced by `_` (for example `s/geist/v5/x.woff2` → `s_geist_v5_x.woff2`), which is the name the spec looks up, and delete fixture files that are no longer referenced.
+
+Baselines exist only for Linux (`*-chromium-linux.png`; `.gitignore` excludes the `-darwin`/`-win32` ones) because font rendering differs between macOS and Linux. Running locally on macOS is only for debugging (create temporary darwin baselines with `yarn test:visual:update`). To update the baselines after an intentional UI change: run the compare first (a non-draft PR), download the `site-visual-report` artifact to get the exact list of changed images, get that list approved, and only then add the `visual-update` label (`gh pr edit <N> --add-label visual-update`). Download the `site-visual-baselines` artifact of the `Site visual update` run into a temporary directory, check the run's `headSha` against `HEAD`, copy the files into `e2e-site/__screenshots__/`, commit them and remove the label.
 
 ---
 

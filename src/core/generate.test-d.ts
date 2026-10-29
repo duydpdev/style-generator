@@ -1,13 +1,18 @@
 import { describe, it, expectTypeOf } from "vitest";
 
 import type { SpacingKey } from "../shared/defaultOption";
+import { createDesignTokens } from "../features/tokens/createDesignTokens";
 
 import { defineOptions, defineTheme } from "./defineTheme";
 import type { ThemeAxesState } from "./designTokensTypes";
 import { generate } from "./generate";
 import type { GenerateResult } from "./generate";
 import type { DesignTokensWeb } from "./inference";
-import type { Breakpoint, StyleGeneratorOptions } from "./Options";
+import type {
+  Breakpoint,
+  ExactOptions,
+  StyleGeneratorOptions,
+} from "./Options";
 import type { ThemeConfig } from "./themeSchema";
 
 describe("generate consumer shape", () => {
@@ -237,6 +242,81 @@ describe("aliasedColors", () => {
     const wide: ThemeConfig = { colors: { primary: "#fff" } };
     expectTypeOf(generate(wide).tokens.Web.aliasedColors).toEqualTypeOf<
       readonly string[]
+    >();
+  });
+});
+
+describe("a top-level option typo is a type error", () => {
+  const theme = defineTheme({ colors: { primary: "#3B82F6" } });
+
+  it("generate, createDesignTokens and defineOptions reject an unknown key", () => {
+    // @ts-expect-error `screnes` is not an option
+    generate(theme, { screnes: { "3xl": "1920px" } });
+    // @ts-expect-error `screnes` is not an option
+    createDesignTokens(theme, { screnes: { "3xl": "1920px" } });
+    // @ts-expect-error `screnes` is not an option
+    defineOptions({ breakpoints: ["md"], screnes: {} });
+    expectTypeOf<ExactOptions<{ screnes: object }>["screnes"]>().toBeNever();
+  });
+
+  it("every legitimate shape still compiles and keeps its literals", () => {
+    generate(theme);
+    generate(theme, undefined);
+    createDesignTokens(theme, undefined);
+    generate(theme, {});
+
+    const annotated: StyleGeneratorOptions = { breakpoints: ["md"] };
+    generate(theme, annotated);
+    createDesignTokens(theme, annotated);
+
+    const satisfied = {
+      breakpoints: ["md", "xl"],
+      screens: { "3xl": "1920px" },
+    } as const satisfies StyleGeneratorOptions;
+    expectTypeOf(
+      generate(theme, satisfied).tokens.Web.breakpoints,
+    ).toEqualTypeOf<readonly ("md" | "xl")[]>();
+    expectTypeOf(
+      createDesignTokens(theme, satisfied).DesignTokens.Web.breakpoints,
+    ).toEqualTypeOf<readonly ("md" | "xl")[]>();
+
+    const literal = defineOptions({ breakpoints: ["md"] } as const);
+    expectTypeOf(literal.breakpoints).toEqualTypeOf<readonly ["md"]>();
+    expectTypeOf(generate(theme, literal).tokens.Web.breakpoints).toEqualTypeOf<
+      readonly "md"[]
+    >();
+  });
+});
+
+describe("numeric theme keys type like the runtime's stringified keys", () => {
+  it("a numeric borderWidth key is a declared key, not the default fallback", () => {
+    const theme = defineTheme({
+      colors: { primary: "#000" },
+      borderWidth: { 2: "2px" },
+    });
+    expectTypeOf(generate(theme).tokens.Web.borderWidth).toEqualTypeOf<
+      readonly "2"[]
+    >();
+  });
+
+  it("a numeric color key that holds an alias is an aliasedColors entry", () => {
+    const theme = defineTheme({
+      colors: { 500: "$primary", primary: "#000" },
+    });
+    const { colors, aliasedColors } = generate(theme).tokens.Web;
+    expectTypeOf(colors).toEqualTypeOf<readonly ("500" | "primary")[]>();
+    expectTypeOf(aliasedColors).toEqualTypeOf<readonly "500"[]>();
+  });
+
+  it("numeric spacing.properties and screens keys stay in the token types", () => {
+    const theme = defineTheme({ colors: { primary: "#000" } });
+    const { tokens } = generate(theme, {
+      spacing: { properties: { 2: ["padding"] } },
+      screens: { 3: "1920px" },
+    });
+    expectTypeOf(tokens.Web.spacingProperties).toEqualTypeOf<readonly "2"[]>();
+    expectTypeOf<keyof typeof tokens.Web.screens>().toEqualTypeOf<
+      Breakpoint | "3"
     >();
   });
 });

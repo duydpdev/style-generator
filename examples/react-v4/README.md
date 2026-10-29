@@ -36,7 +36,7 @@ yarn dev          # Vite dev server on http://localhost:5173
 
 1. **Wrapping headless recipes in React**: `Box`, `Button` and `Text` in `src/components/` are thin wrappers over `boxRecipe`, `buttonRecipe` and `textRecipe`. Each component is a single file: it maps props to recipe variants and merges classes with the shared `cn()`.
 2. **Spacing helpers**: `Box` calls `splitSpacingProps(props, tokens.spacingProperties)`, which returns the `.sp-*` class names and the inline `--sg-sp-*` variables, so `<Box p={4} mx={{ base: 2, md: 4 }}>` works.
-3. **Multi-axis theming**: `App.tsx` toggles `data-theme` / `data-palette` on `<html>` (plus the chrome-only `voice`, `geometry`, `surface`). The `dark × palette` compound overrides are hand-written CSS in the design system's `palettes.css`.
+3. **Multi-axis theming**: `App.tsx` applies `axisAttributes({ theme, palette })` to `<html>` (the state types derive from the theme's axes; the topbar button cycles light, dark and high contrast) plus the chrome-only `voice`, `geometry`, `surface`. The `dark × palette` compound overrides are hand-written CSS in the design system's `palettes.css`.
 4. **Live demo sections**: `src/sections/` is the style-guide UI. The `site` build renders it as the live demo, so it stays in this app.
 
 ## Layout

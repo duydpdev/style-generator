@@ -1,6 +1,11 @@
+import { theme as baseTheme } from "design-system-example";
+
+import type { PaletteId, ThemeName } from "./types";
+
+/** `base` is the palette `theme.json` declares at the top level (no attribute on `<html>`). */
 export const PALETTE_LIST = [
   {
-    id: "cobalt",
+    id: "base",
     label: "Cobalt",
     dots: ["#2647D9", "#6E5BFF", "#FAF7F2"],
   },
@@ -19,9 +24,11 @@ export const PALETTE_LIST = [
     label: "Mono",
     dots: ["#0A0A0A", "#525252", "#FAFAFA"],
   },
-] as const;
-
-export type PaletteId = (typeof PALETTE_LIST)[number]["id"];
+] as const satisfies readonly {
+  id: PaletteId;
+  label: string;
+  dots: readonly string[];
+}[];
 
 interface ColorTokens {
   primary: string;
@@ -40,7 +47,7 @@ interface PaletteSet {
 }
 
 export const PALETTES: Record<PaletteId, PaletteSet> = {
-  cobalt: {
+  base: {
     light: {
       primary: "#2647D9",
       secondary: "#6E5BFF",
@@ -128,6 +135,34 @@ export const PALETTES: Record<PaletteId, PaletteSet> = {
       muted: "#A3A3A3",
     },
   },
+};
+
+/** The high-contrast surfaces `palettes.css` forces on every non-base palette. */
+const HIGH_CONTRAST_SURFACES = {
+  background: "#000000",
+  surface: "#000000",
+  foreground: "#ffffff",
+  muted: "#d0d0d0",
+};
+
+/**
+ * The swatch colors the page resolves to for an axes state: `theme.json`'s
+ * `highContrast` override on the base palette, the palette's dark brand colors
+ * on black/white surfaces (the compound rules in `palettes.css`) otherwise.
+ * @param palette - active `palette` axis variant
+ * @param theme - active `theme` axis variant
+ * @returns the eight role colors
+ */
+export const colorsFor = (
+  palette: PaletteId,
+  theme: ThemeName,
+): ColorTokens => {
+  const set = PALETTES[palette];
+  if (theme === "base") return set.light;
+  if (theme === "dark") return set.dark;
+  return palette === "base"
+    ? baseTheme.themeAxes.theme.highContrast.colors
+    : { ...set.dark, ...HIGH_CONTRAST_SURFACES };
 };
 
 export const COLOR_ROWS = [

@@ -79,6 +79,31 @@ describe("resolvePluginTarget", () => {
         "[my-plugin] outDir (defaults to dirname(themePath); set outDir inside the project root) escapes project root: ../shared",
       );
     });
+
+    it("rejects an unknown key (a typo is not silently ignored) with a labelled message", () => {
+      expect(() =>
+        resolvePluginTarget(
+          root,
+          { themePath: "theme.json", outdir: "gen" } as never,
+          "my-plugin",
+        ),
+      ).toThrow(/^\[my-plugin\] Invalid options:\n.*outdir/);
+    });
+
+    it("rejects a missing themePath with a labelled message instead of Node's path TypeError", () => {
+      expect(() =>
+        resolvePluginTarget(root, { themepath: "theme.json" } as never, "x"),
+      ).toThrow(/^\[x\] Invalid options:\n[^]*themePath/);
+    });
+
+    it("rejects an empty themePath and an empty outDir", () => {
+      expect(() => resolvePluginTarget(root, { themePath: "" }, "x")).toThrow(
+        /Invalid options:\n.*themePath/,
+      );
+      expect(() =>
+        resolvePluginTarget(root, { themePath: "t.json", outDir: "" }, "x"),
+      ).toThrow(/Invalid options:\n.*outDir/);
+    });
   });
 
   describe("without options", () => {

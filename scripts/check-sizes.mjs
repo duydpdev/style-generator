@@ -67,16 +67,24 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // specifiers (`./helpers-<hash>.js`, gzip-sensitive) and the `tokens` chunk
 // layout, not code; inferred from the unchanged sources, not byte-compared
 // with a phase-10 build.
+// 2026-10-29 (review fixes): the cross-axis alias-cycle pass
+// (`validateCrossAxisAliasCycles`), the typography/font-family class
+// collision checks and the strict plugin-options schema are intrinsic schema
+// code shared by `index`, `vite`, `next` and `cli`. Measured index 12326, vite
+// 14022, next 14177, cli 23685 (vs 12742/13163/22496 for vite/next/cli in
+// phase 11). Budgets raised to measured + ~10%: index 12050 -> 13560, vite
+// 14050 -> 15430; next (98%) and cli (96%) keep theirs. tokens 1686, recipes
+// 2076 are unchanged.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
-  index: 12_050,
+  index: 13_560,
   tokens: 1_850,
   cva: 800,
   spacing: 1_000,
   recipes: 2_284,
   types: 100,
-  vite: 14_050,
+  vite: 15_430,
   next: 14_450,
   cli: 24_750,
 };

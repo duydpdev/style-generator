@@ -1,6 +1,10 @@
 import { describe, it, expectTypeOf } from "vitest";
 
 import { COLOR_STATES } from "../../shared/colorStates";
+import {
+  borderProperties,
+  roundedProperties,
+} from "../../shared/safelistProperties";
 import type { RegistryPrefix } from "../registry/builtInCategories";
 
 import { createVariantMapper } from "./createVariantMapper";
@@ -50,6 +54,15 @@ describe("createVariantMapper return type", () => {
 
     expectTypeOf(map.bg.primary).toEqualTypeOf<"bg-primary">();
     expectTypeOf(map.text.primary).toEqualTypeOf<"text-primary">();
+  });
+
+  it("accepts the exported roundedProperties/borderProperties lists (documented 5.0 call)", () => {
+    const border = createVariantMapper(borderProperties, ["thin"] as const);
+    const rounded = createVariantMapper(roundedProperties, ["lg"] as const);
+
+    expectTypeOf(border["border-x"].thin).toEqualTypeOf<"border-x-thin">();
+    expectTypeOf(border["divide-y"].thin).toEqualTypeOf<"divide-y-thin">();
+    expectTypeOf(rounded["rounded-t"].lg).toEqualTypeOf<"rounded-t-lg">();
   });
 
   it("kebab-cases digit-boundary typography tokens with the empty prefix", () => {

@@ -17,6 +17,11 @@ export interface TokensArgs {
 /** File the keys land in when `--out` is not given: next to the theme. */
 const TOKENS_FILE_NAME = "theme.tokens.ts";
 
+/** The module is TypeScript (`as const`, `export type`), so only a TS file name fits. */
+const TS_FILE = /\.[mc]?ts$/;
+/** Declaration files cannot hold a runtime `export const`. */
+const DECLARATION_FILE = /\.d\.[mc]?ts$/;
+
 /**
  * Executes the `tokens` CLI command: writes the theme's design-token keys
  * (`DesignTokens.Web`: one array of camelCased keys per category, plus the
@@ -29,7 +34,9 @@ const TOKENS_FILE_NAME = "theme.tokens.ts";
  * The theme and options go through the same validation (and the same error
  * labels) as `generate`. The default `--out` is `theme.tokens.ts` next to the
  * theme and must stay inside the project root, so a theme outside it needs an
- * explicit `--out`.
+ * explicit `--out`. `--out` must name a `.ts`, `.mts` or `.cts` file (not a
+ * declaration file): the module is TypeScript. A file whose content is
+ * already current is not rewritten, so file watchers stay quiet.
  * @param {TokensArgs} args - `--theme` and `--out`
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
  * @returns {number} The process exit code
@@ -62,6 +69,12 @@ export function tokensCommand(
     );
     return 1;
   }
+  if (!TS_FILE.test(outFile) || DECLARATION_FILE.test(outFile)) {
+    logger.error(
+      `--out must be a .ts, .mts or .cts file (not a .d.ts declaration): the output is TypeScript, got ${path.relative(cwd, outFile)}`,
+    );
+    return 1;
+  }
 
   const prepared = readAndPrepareTheme(themeFile, toGeneratorOptions(config));
   if (!prepared.ok) {
@@ -78,6 +91,20 @@ export function tokensCommand(
     "export type Tokens = typeof tokens;\n";
 
   try {
+    let existing: string | undefined;
+    try {
+      existing = fs.readFileSync(outFile, "utf8");
+    } catch {
+      // Missing (or unreadable): treat as changed; a real problem surfaces
+      // from the write below.
+      existing = undefined;
+    }
+    if (existing === source) {
+      logger.success(
+        `Tokens up to date: ${path.relative(cwd, outFile)} (unchanged)`,
+      );
+      return 0;
+    }
     fs.mkdirSync(path.dirname(outFile), { recursive: true });
     writeFileAtomic(outFile, source);
   } catch (error) {

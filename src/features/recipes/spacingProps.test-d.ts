@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 
+import type { StyleGeneratorOptions } from "../../core/Options";
 import { createDesignTokens } from "../tokens/createDesignTokens";
 import type { BreakpointKeys } from "../../core/inference";
 import type { ResponsiveValueStrict } from "../spacing/spacingHelpers";
@@ -121,5 +122,29 @@ describe("splitSpacingProps", () => {
     type Props = SpacingProps<"md" | "xl", "p"> & { id: string };
     const { rest } = splitSpacingProps({} as Props, ["p"] as const);
     expectTypeOf(rest).toEqualTypeOf<{ id: string }>();
+  });
+
+  it("options annotated StyleGeneratorOptions: widened keys fall back to the built-in props, other props stay typed", () => {
+    const wide: StyleGeneratorOptions = { breakpoints: ["md"] };
+    const { spacingProperties: wideKeys } = createDesignTokens(
+      { colors: { a: "#000" } },
+      wide,
+    ).DesignTokens.Web;
+    expectTypeOf(wideKeys).toEqualTypeOf<readonly string[]>();
+
+    type WideProps = SpacingProps<
+      BreakpointKeys<typeof wide>,
+      (typeof wideKeys)[number]
+    > & { id: string; children?: unknown };
+    expectTypeOf<WideProps>().toHaveProperty("p");
+    expectTypeOf<WideProps>().toHaveProperty("gapX");
+    expectTypeOf<WideProps["id"]>().toEqualTypeOf<string>();
+    expectTypeOf<WideProps["children"]>().toEqualTypeOf<unknown>();
+
+    const { rest } = splitSpacingProps({} as WideProps, wideKeys);
+    expectTypeOf(rest).not.toHaveProperty("p");
+    expectTypeOf(rest).not.toHaveProperty("gapX");
+    expectTypeOf(rest).toHaveProperty("id").toEqualTypeOf<string>();
+    expectTypeOf(rest).toHaveProperty("children");
   });
 });

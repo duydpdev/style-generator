@@ -22,8 +22,14 @@ export interface StyleGenViteOptions {
 
 const PLUGIN_NAME = "style-gen-vite";
 
-/** Module-scoped registry: detects monorepo configs writing to the same file. */
-const activeOutFiles = new Set<string>();
+/**
+ * Module-scoped registry: detects configs writing to the same file. `owner` is
+ * the config file (else the root) that created the entry, `instance` the
+ * plugin that holds it, so a dev-server restart (new instance registered
+ * BEFORE the old server closes) and per-environment builder instances of ONE
+ * config are not mistaken for duplicates.
+ */
+const activeOutFiles = new Map<string, { owner: string; instance: object }>();
 
 const debounce = <Args extends unknown[]>(
   fn: (...args: Args) => void,
@@ -58,7 +64,11 @@ const debounce = <Args extends unknown[]>(
  * Path rules (`resolveProjectPath`): `themePath` may be anywhere (absolute, or
  * `..` out of the root); `outDir` must stay inside the project root.
  *
- * Monorepo: warns once if two plugin instances target the same `theme.css`.
+ * Monorepo: warns once if a plugin instance from a DIFFERENT Vite config (or
+ * root, when there is no config file) targets the same `theme.css`. Two
+ * `styleGenVite()` calls inside ONE config file are not warned about: that
+ * is indistinguishable from the per-environment instances Vite creates in
+ * builder mode and from a dev-server restart.
  *
  * `theme.css` is written atomically (`writeFileAtomic`: sibling temp file +
  * `renameSync`), so `@tailwindcss/vite` never reads a half-written file.
@@ -77,10 +87,16 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
   let logger: Pick<Logger, "info"> | undefined;
   let target: EmitTarget | null = null;
   let registeredOutFile: string | null = null;
+  const self = {};
 
   /** Free this instance's slot in `activeOutFiles` (dev-server shutdown). */
   const release = (): void => {
-    if (registeredOutFile !== null) activeOutFiles.delete(registeredOutFile);
+    if (
+      registeredOutFile !== null &&
+      activeOutFiles.get(registeredOutFile)?.instance === self
+    ) {
+      activeOutFiles.delete(registeredOutFile);
+    }
     registeredOutFile = null;
   };
 
@@ -112,19 +128,17 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
 
       // A plugin instance runs `configResolved` again per environment; it
       // must not collide with itself.
-      if (registeredOutFile !== target.outFile) {
-        if (registeredOutFile !== null) {
-          activeOutFiles.delete(registeredOutFile);
-        }
-        if (activeOutFiles.has(target.outFile)) {
-          config.logger.warn(
-            `[${PLUGIN_NAME}] Multiple plugin instances target ${target.outFile}. Last write wins.`,
-          );
-        } else {
-          activeOutFiles.add(target.outFile);
-        }
-        registeredOutFile = target.outFile;
+      if (registeredOutFile === target.outFile) return;
+      if (registeredOutFile !== null) release();
+      const owner = config.configFile ?? config.root;
+      const existing = activeOutFiles.get(target.outFile);
+      if (existing && existing.owner !== owner) {
+        config.logger.warn(
+          `[${PLUGIN_NAME}] Multiple plugin instances target ${target.outFile}. Last write wins.`,
+        );
       }
+      activeOutFiles.set(target.outFile, { owner, instance: self });
+      registeredOutFile = target.outFile;
     },
 
     buildStart() {
@@ -162,9 +176,11 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
       server.watcher.on("change", (path) => {
         if (path === emitTarget.themeFile) reemit();
       });
-      // Free the `activeOutFiles` slot when the dev server closes, so a
-      // restart (config change) does not warn about itself. `closeBundle` /
-      // `buildEnd` are no use: they also run after every rebuild of a
+      // Free this instance's `activeOutFiles` slot when the dev server
+      // closes. Vite's `restartServer` resolves the NEW config (new
+      // instance) before closing the old server, so `release()` deletes the
+      // slot only if this instance still owns it. `closeBundle` / `buildEnd`
+      // are no use: they also run after every rebuild of a
       // `vite build --watch`, and the registration must outlive those.
       // `httpServer` is null in middleware mode, so wrap `close()` instead.
       const close = server.close.bind(server);

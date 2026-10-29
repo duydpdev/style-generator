@@ -32,6 +32,14 @@ export const BORDER_PREFIXES = [
   "divide-y",
 ] as const;
 
-export const roundedProperties: string[] = [...ROUNDED_PREFIXES];
+/**
+ * Mutable copies of the prefix lists, typed with the literal unions so they
+ * pass `createVariantMapper(borderProperties, keys)` as they are.
+ */
+export const roundedProperties: (typeof ROUNDED_PREFIXES)[number][] = [
+  ...ROUNDED_PREFIXES,
+];
 
-export const borderProperties: string[] = [...BORDER_PREFIXES];
+export const borderProperties: (typeof BORDER_PREFIXES)[number][] = [
+  ...BORDER_PREFIXES,
+];

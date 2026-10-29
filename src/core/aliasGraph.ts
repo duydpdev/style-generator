@@ -128,3 +128,110 @@ export const validateCategoryAliasGraph = (
     message: `Alias cycle detected: ${cycle.join(" → ")}`,
   });
 };
+
+/** One `themeAxes.<axis>.<variant>` override of a single category. */
+interface AxisVariantRecords {
+  axis: string;
+  variants: readonly (readonly [
+    variant: string,
+    record: Record<string, string>,
+  ])[];
+}
+
+/**
+ * Every axis's `html[data-<axis>]` block applies to the same element at
+ * once, so a `$`-alias in one axis and another in a second axis can chain
+ * into a cycle that no single `base ⊕ variant` pass sees (`x.one: a→$b`
+ * with `y.two: b→$a` makes both custom properties invalid). Walk every
+ * combination of at most one variant per axis (an axis may also be off),
+ * merge them over `base` in axis declaration order (the last declaring axis
+ * wins a key, exactly like the emitted CSS) and report the first cycle whose
+ * edges come from at least two different axes — a cycle drawn from base +
+ * one axis is already reported by {@link validateCategoryAliasGraph}.
+ *
+ * Axes whose variants hold no `$` value are skipped, and nothing runs unless
+ * two axes carry aliases in this category.
+ * @param {z.RefinementCtx} ctx - Zod refinement context
+ * @param {Record<string, string> | undefined} base - Base record of the category
+ * @param {Record<string, Record<string, Record<string, string> | undefined>>} axes - `themeAxes` projected on this category (`axis → variant → record`)
+ * @param {string} category - Category key, used in the issue path
+ * @returns {void}
+ */
+export const validateCrossAxisAliasCycles = (
+  ctx: z.RefinementCtx,
+  base: Record<string, string> | undefined,
+  axes: Record<string, Record<string, Record<string, string> | undefined>>,
+  category: string,
+): void => {
+  const aliasAxes: AxisVariantRecords[] = [];
+  for (const [axis, variants] of Object.entries(axes)) {
+    const withRecords = Object.entries(variants).flatMap(([variant, record]) =>
+      record && Object.values(record).some((value) => value.startsWith("$"))
+        ? [[variant, record] as const]
+        : [],
+    );
+    if (withRecords.length > 0) aliasAxes.push({ axis, variants: withRecords });
+  }
+  if (aliasAxes.length < 2) return;
+
+  const keys = new Set(Object.keys(base ?? {}));
+  const chosen: { axisIndex: number; axis: string; variant: string }[] = [];
+
+  const check = (): boolean => {
+    if (chosen.length < 2) return false;
+
+    const merged: Record<string, string> = { ...base };
+    const sourceAxis = new Map<string, number>();
+    for (const { axisIndex, axis, variant } of chosen) {
+      const record = axes[axis]?.[variant] ?? {};
+      for (const [key, value] of Object.entries(record)) {
+        merged[key] = value;
+        sourceAxis.set(key, axisIndex);
+      }
+    }
+
+    const cycle = findAliasCycle(merged, keys);
+    if (!cycle) return false;
+
+    const cycleAxes = new Set<number>();
+    for (const key of cycle) {
+      const source = sourceAxis.get(key);
+      if (source !== undefined) cycleAxes.add(source);
+    }
+    if (cycleAxes.size < 2) return false;
+
+    const involved = chosen.filter(({ axisIndex }) => cycleAxes.has(axisIndex));
+    const latest = involved[involved.length - 1];
+    const anchorKey = cycle.find(
+      (key) => sourceAxis.get(key) === latest?.axisIndex,
+    );
+    if (!latest || anchorKey === undefined) return false;
+
+    const coActive = involved
+      .map(({ axis, variant }) => `themeAxes.${axis}.${variant}`)
+      .join(" and ");
+    ctx.addIssue({
+      code: "custom",
+      path: ["themeAxes", latest.axis, latest.variant, category, anchorKey],
+      message:
+        `Alias cycle detected when ${coActive} are active together: ` +
+        `${cycle.join(" → ")} — axes apply to the same element, so these ` +
+        "aliases chain across axes; point one of them at a literal value.",
+    });
+    return true;
+  };
+
+  const walk = (axisIndex: number): boolean => {
+    const current = aliasAxes[axisIndex];
+    if (!current) return check();
+    if (walk(axisIndex + 1)) return true;
+    for (const [variant] of current.variants) {
+      chosen.push({ axisIndex, axis: current.axis, variant });
+      const found = walk(axisIndex + 1);
+      chosen.pop();
+      if (found) return true;
+    }
+    return false;
+  };
+  walk(0);
+};

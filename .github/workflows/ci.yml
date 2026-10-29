@@ -201,7 +201,7 @@ jobs:
       - name: Run e2e tests
         run: yarn test:e2e
 
-  # The published peer range is `tailwindcss >=4.1.0`, but the lockfile pins
+  # The published peer range is `tailwindcss ^4.1.0`, but the lockfile pins
   # 4.3.0, so the floor is otherwise never exercised. This leg re-resolves the
   # Tailwind packages to the latest 4.1.x via `resolutions` (edited in this
   # runner's checkout only — the committed package.json/yarn.lock are not

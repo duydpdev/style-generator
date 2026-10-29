@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { axisAttributes } from "design-system-example";
 
 import { Box } from "./components/Box";
 import { ButtonSection } from "./sections/ButtonSection";
@@ -11,11 +12,13 @@ import { Topbar } from "./sections/Topbar";
 import { TweaksPanel } from "./sections/TweaksPanel";
 import { TypographySection } from "./sections/TypographySection";
 import { UtilitiesSection } from "./sections/UtilitiesSection";
-import type { StyleGuideState, TweakSetter } from "./sections/types";
+import type { StyleGuideState, ThemeName, TweakSetter } from "./sections/types";
+
+const THEME_CYCLE: readonly ThemeName[] = ["base", "dark", "highContrast"];
 
 const INITIAL: StyleGuideState = {
-  palette: "cobalt",
-  theme: "light",
+  palette: "base",
+  theme: "base",
   voice: "editorial",
   geometry: "soft",
   surface: "lifted",
@@ -25,11 +28,21 @@ export const App = () => {
   const [state, setState] = useState<StyleGuideState>(INITIAL);
   const [jsonOpen, setJsonOpen] = useState(false);
   const [tweaksOpen, setTweaksOpen] = useState(false);
+  const appliedAxes = useRef<string[]>([]);
 
   useEffect(() => {
-    const r = document.documentElement.dataset;
-    r.palette = state.palette;
-    r.theme = state.theme;
+    const root = document.documentElement;
+    const axes = axisAttributes({ theme: state.theme, palette: state.palette });
+    // A `"base"` axis emits no attribute, so the previous one must go.
+    for (const name of appliedAxes.current) {
+      if (!(name in axes)) root.removeAttribute(name);
+    }
+    for (const [name, value] of Object.entries(axes)) {
+      root.setAttribute(name, value);
+    }
+    appliedAxes.current = Object.keys(axes);
+
+    const r = root.dataset;
     r.voice = state.voice;
     r.geometry = state.geometry;
     r.surface = state.surface;
@@ -43,8 +56,9 @@ export const App = () => {
     <>
       <Topbar
         theme={state.theme}
-        onToggleTheme={() => {
-          setTweak("theme", state.theme === "dark" ? "light" : "dark");
+        onCycleTheme={() => {
+          const next = THEME_CYCLE.indexOf(state.theme) + 1;
+          setTweak("theme", THEME_CYCLE[next % THEME_CYCLE.length]);
         }}
         onOpenJson={() => {
           setJsonOpen(true);

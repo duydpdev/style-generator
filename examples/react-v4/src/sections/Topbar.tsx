@@ -4,16 +4,22 @@ import { Text } from "../components/Text";
 
 import type { ThemeName } from "./types";
 
+const THEME_LABEL: Record<ThemeName, string> = {
+  base: "Light",
+  dark: "Dark",
+  highContrast: "High contrast",
+};
+
 interface TopbarProps {
   theme: ThemeName;
-  onToggleTheme: () => void;
+  onCycleTheme: () => void;
   onOpenJson: () => void;
   onToggleTweaks: () => void;
 }
 
 export const Topbar = ({
   theme,
-  onToggleTheme,
+  onCycleTheme,
   onOpenJson,
   onToggleTweaks,
 }: TopbarProps) => {
@@ -38,8 +44,8 @@ export const Topbar = ({
           <Button variant="ghost" size="sm" onClick={onToggleTweaks}>
             Tweaks
           </Button>
-          <Button variant="ghost" size="sm" onClick={onToggleTheme}>
-            {theme === "dark" ? "Dark" : "Light"}
+          <Button variant="ghost" size="sm" onClick={onCycleTheme}>
+            {THEME_LABEL[theme]}
           </Button>
           <Button variant="outline" size="sm" onClick={onOpenJson}>
             theme.json

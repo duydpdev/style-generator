@@ -429,6 +429,28 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.error?.issues[0]?.message).toMatch(/font-weight utility/);
   });
 
+  it.each(["weightBold", "weight", "sizeLg", "size-xl"])(
+    "rejects fontFamily key %s: --font-<key> is Tailwind's weight/size scale namespace",
+    (key) => {
+      const result = ThemeSchema.safeParse({
+        colors: { primary: "#fff" },
+        fontFamily: { [key]: "Arial" },
+      });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.path).toEqual(["fontFamily", key]);
+      expect(result.error?.issues[0]?.message).toMatch(/weight\/font-size/);
+    },
+  );
+
+  it("accepts fontFamily keys that only start with the letters weight/size", () => {
+    expect(
+      ThemeSchema.safeParse({
+        colors: { primary: "#fff" },
+        fontFamily: { weighty: "Arial", sizeable: "Arial", sans: "Arial" },
+      }).success,
+    ).toBe(true);
+  });
+
   it("rejects a $-prefixed value in typography (aliases are not supported there)", () => {
     const result = ThemeSchema.safeParse({
       colors: { primary: "#fff" },
@@ -600,6 +622,201 @@ describe("ThemeSchema — invalid themes", () => {
       });
       expect(result.success).toBe(true);
     });
+  });
+});
+
+describe("cross-axis alias cycles (axes apply to one element at once)", () => {
+  const cyclePaths = (theme: unknown): string[] => {
+    const result = ThemeSchema.safeParse(theme);
+    return result.success
+      ? []
+      : result.error.issues.map((issue) => issue.path.join("."));
+  };
+
+  it("rejects a cycle that only exists when two axes are active together, anchored at the later axis", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { a: "#fff", b: "#000" },
+      themeAxes: {
+        x: { one: { colors: { a: "$b" } } },
+        y: { two: { colors: { b: "$a" } } },
+      },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toHaveLength(1);
+    expect(result.error?.issues[0]?.path).toEqual([
+      "themeAxes",
+      "y",
+      "two",
+      "colors",
+      "b",
+    ]);
+    expect(result.error?.issues[0]?.message).toMatch(
+      /themeAxes\.x\.one and themeAxes\.y\.two.*a → b → a|themeAxes\.x\.one and themeAxes\.y\.two.*b → a → b/,
+    );
+  });
+
+  it("accepts the same edges when a later axis shadows one with a literal", () => {
+    expect(
+      ThemeSchema.safeParse({
+        colors: { a: "#111111", b: "#222222" },
+        themeAxes: {
+          x: { one: { colors: { a: "$b" } } },
+          y: { two: { colors: { b: "$a", a: "#ff0000" } } },
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("accepts alias edges of two variants of the same axis (never co-active)", () => {
+    expect(
+      ThemeSchema.safeParse({
+        colors: { a: "#fff", b: "#000" },
+        themeAxes: {
+          x: {
+            one: { colors: { a: "$b" } },
+            two: { colors: { b: "$a" } },
+          },
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a three-axis cycle and names the latest axis", () => {
+    expect(
+      cyclePaths({
+        colors: { a: "#111", b: "#222", c: "#333" },
+        themeAxes: {
+          x: { one: { colors: { a: "$b" } } },
+          y: { two: { colors: { b: "$c" } } },
+          z: { three: { colors: { c: "$a" } } },
+        },
+      }),
+    ).toEqual(["themeAxes.z.three.colors.c"]);
+  });
+
+  it("checks every category on its own (shadows)", () => {
+    expect(
+      cyclePaths({
+        colors: { primary: "#fff" },
+        shadows: { a: "0 0 1px #000", b: "0 0 2px #000" },
+        themeAxes: {
+          x: { one: { shadows: { a: "$b" } } },
+          y: { two: { shadows: { b: "$a" } } },
+        },
+      }),
+    ).toEqual(["themeAxes.y.two.shadows.b"]);
+  });
+
+  it("does not repeat a cycle the single-variant pass already reports", () => {
+    expect(
+      cyclePaths({
+        colors: { a: "#fff", b: "#000", c: "#123" },
+        themeAxes: {
+          x: { one: { colors: { a: "$b", b: "$a" } } },
+          y: { two: { colors: { c: "$a" } } },
+        },
+      }),
+    ).toEqual(["themeAxes.x.one.colors.a"]);
+  });
+});
+
+describe("variant names within one axis (F10)", () => {
+  it("rejects two variants that kebab-case to the same attribute value", () => {
+    const result = ThemeSchema.safeParse({
+      ...baseTheme,
+      themeAxes: {
+        theme: {
+          "dark-mode": { colors: { primary: "#000" } },
+          darkMode: { colors: { primary: "#111" } },
+        },
+      },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual([
+      "themeAxes",
+      "theme",
+      "darkMode",
+    ]);
+    expect(result.error?.issues[0]?.message).toMatch(/both kebab-case/);
+  });
+
+  it("accepts the same variant name in two different axes", () => {
+    expect(
+      ThemeSchema.safeParse({
+        ...baseTheme,
+        themeAxes: {
+          theme: { dark: { colors: { primary: "#000" } } },
+          palette: { dark: { colors: { primary: "#111" } } },
+        },
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("typography keys vs other categories' classes (F9)", () => {
+  const style = {
+    fontSize: "16px",
+    lineHeight: "24px",
+    fontWeight: 400,
+  };
+
+  it.each([
+    ["colors", { colors: { primary: "#fff" } }, "textPrimary"],
+    ["colors (bg-)", { colors: { primary: "#fff" } }, "bgPrimary"],
+    [
+      "borderWidth",
+      { colors: { primary: "#fff" }, borderWidth: { thin: "1px" } },
+      "borderThin",
+    ],
+    [
+      "shadows",
+      { colors: { primary: "#fff" }, shadows: { base: "0 0 1px #000" } },
+      "shadowBase",
+    ],
+    [
+      "borderRadius",
+      { colors: { primary: "#fff" }, borderRadius: { lg: "8px" } },
+      "roundedLg",
+    ],
+    [
+      "backDropBlurs",
+      { colors: { primary: "#fff" }, backDropBlurs: { md: "12px" } },
+      "backdropBlurMd",
+    ],
+  ])("rejects a typography key equal to a %s class", (_label, theme, key) => {
+    const result = ThemeSchema.safeParse({
+      ...theme,
+      typography: { [key]: style },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues).toHaveLength(1);
+    expect(result.error?.issues[0]?.path).toEqual(["typography", key]);
+  });
+
+  it("compares kebab forms: textPrimary collides with colors.primary in kebab-keyed form too", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { "primary-dark": "#fff" },
+      typography: { textPrimaryDark: style },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual([
+      "typography",
+      "textPrimaryDark",
+    ]);
+  });
+
+  it("does not flag typography keys that merely resemble a prefix", () => {
+    expect(
+      ThemeSchema.safeParse({
+        colors: { primary: "#fff" },
+        typography: {
+          text12Mono: style,
+          heading: style,
+          textHeading: style,
+          textSecondary: style,
+        },
+      }).success,
+    ).toBe(true);
   });
 });
 

@@ -130,11 +130,12 @@ Dự án sử dụng **Husky** và **lint-staged** để chặn các commit khô
 5. `yarn build:all`
 6. `yarn check:externals`
 7. `yarn check:types-pack` (tarball đóng gói + `@arethetypeswrong/cli`, profile node16; cần `dist/*.d.cts` từ `build:all`)
-8. `yarn check:smoke` (build của tag chạy được: mọi subpath load ở ESM/CJS, `style-gen --version` in đúng version vừa set ở bước 4)
-9. `yarn check:browser-safe`
-10. `yarn check:publish-target`
-11. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
-12. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
+8. `yarn typecheck:dist` (kiểm `dist/*.d.ts` và `dist/*.d.cts` với `skipLibCheck: false`; attw không resolve peer type nên không thay được bước này)
+9. `yarn check:smoke` (build của tag chạy được: mọi subpath load ở ESM/CJS, `style-gen --version` in đúng version vừa set ở bước 4)
+10. `yarn check:browser-safe`
+11. `yarn check:publish-target`
+12. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
+13. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
 
 Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package. `check:smoke` thì khác: nó kiểm build mang version của tag, là thứ duy nhất được publish.
 

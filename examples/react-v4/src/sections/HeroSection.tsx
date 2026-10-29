@@ -1,7 +1,8 @@
 import { Box } from "../components/Box";
 import { Text } from "../components/Text";
 
-import { PALETTE_LIST, type PaletteId } from "./palettes";
+import { PALETTE_LIST } from "./palettes";
+import type { PaletteId } from "./types";
 
 interface HeroSectionProps {
   palette: PaletteId;

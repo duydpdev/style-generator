@@ -4,7 +4,8 @@ import { theme as baseTheme } from "design-system-example";
 import { Box } from "../components/Box";
 import { Button } from "../components/Button";
 
-import { PALETTES, type PaletteId } from "./palettes";
+import { PALETTES } from "./palettes";
+import type { PaletteId } from "./types";
 
 interface JsonDrawerProps {
   open: boolean;

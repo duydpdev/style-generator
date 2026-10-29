@@ -4,7 +4,7 @@ import { buildDesignTokens } from "../features/tokens/createDesignTokens";
 
 import { generateFromParsed } from "./generateFromParsed";
 import type { DesignTokensResult } from "./inference";
-import type { StyleGeneratorOptions } from "./Options";
+import type { ExactOptions, StyleGeneratorOptions } from "./Options";
 import { prepareGenerate } from "./prepareGenerate";
 import { ThemeSchema, type ThemeConfig } from "./themeSchema";
 
@@ -53,7 +53,10 @@ export function generate<const TTheme extends ThemeConfig>(
 export function generate<
   const TTheme extends ThemeConfig,
   const O extends StyleGeneratorOptions = StyleGeneratorOptions,
->(theme: TTheme, options: O | undefined): GenerateResult<TTheme, O>;
+>(
+  theme: TTheme,
+  options: ExactOptions<O> | undefined,
+): GenerateResult<TTheme, O>;
 export function generate(
   theme: ThemeConfig,
   options?: StyleGeneratorOptions,

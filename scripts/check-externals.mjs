@@ -1,18 +1,21 @@
 #!/usr/bin/env node
 /**
- * Verify dist bundles do NOT inline forbidden modules.
+ * Verify dist bundles do NOT inline any third-party module.
  *
- * Forbidden = peerDependencies + dependencies declared in package.json.
- * If rollup ever inlines them, the bundle will leak duplicates of user-installed
- * packages — bad for tree-shaking, bad for peer-dep contracts.
+ * Peers and dependencies are externalised by the bundler, so the only thing
+ * that can end up inlined is a devDependency (e.g. `tailwind-merge`,
+ * `class-variance-authority`) imported by mistake from a shipped source. A
+ * duplicate of a user-installed package is bad for tree-shaking and for the
+ * peer-dep contracts.
  *
  * Detection reads every `dist/**\/*.map` (library entries, shared chunks and
  * the CLI bundle): an inlined module shows up in `sources` as
- * `…/node_modules/<name>/…`. Every emitted `.js`/`.cjs`/`.mjs` must ship a
+ * `…/node_modules/<name>/…`. ANY such source fails. Every emitted
+ * `.js`/`.cjs`/`.mjs` must ship a
  * map, otherwise the check could not see it.
  *
  * Run: node scripts/check-externals.mjs
- * Exits 1 with details on a missing artifact, a missing map or an inlined dep.
+ * Exits 1 with details on a missing artifact, a missing map or an inlined module.
  */
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join, relative } from "node:path";
@@ -22,13 +25,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const dist = resolve(root, "dist");
 
-// `tailwind-merge` is the app's own dependency (only a devDependency here,
-// so Rollup does not externalise it): a stray runtime import in the
-// `./recipes` sources would be inlined silently, and this is the tripwire.
-const forbidden = [
+// Used only for the informational external-ref log below.
+const externalNames = [
   ...Object.keys(pkg.peerDependencies ?? {}),
   ...Object.keys(pkg.dependencies ?? {}),
-  "tailwind-merge",
 ];
 
 const escape = (name) => name.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
@@ -45,11 +45,15 @@ const buildMatcher = (name) => {
   );
 };
 
-// A sourcemap source path inside a forbidden package (any linker:
+// A `node_modules/<package>/` segment in a sourcemap source path (any linker:
 // `node_modules/zod/…`, `.yarn/cache/zod-npm-….zip/node_modules/zod/…`).
-const inlinedSource = new RegExp(
-  `(?:^|/)node_modules/(${forbidden.map(escape).join("|")})/`,
-);
+const nodeModulesSegment = /(?:^|\/)node_modules\/[^/]+\//;
+
+/**
+ * @param {string} source - Sourcemap `sources` entry
+ * @returns {boolean} `true` when it lies inside a `node_modules/` package
+ */
+const isInlinedSource = (source) => nodeModulesSegment.test(source);
 
 const walk = (dir) =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
@@ -75,7 +79,7 @@ for (const file of targets) {
     continue;
   }
   const src = readFileSync(file, "utf8");
-  const externalRefs = forbidden.flatMap((name) => {
+  const externalRefs = externalNames.flatMap((name) => {
     const count = (src.match(buildMatcher(name)) ?? []).length;
     return count > 0 ? [`${name}×${count}`] : [];
   });
@@ -100,10 +104,10 @@ for (const file of files.filter((f) => /\.[cm]?js$/.test(f))) {
 const maps = files.filter((f) => f.endsWith(".map"));
 for (const map of maps) {
   const { sources = [] } = JSON.parse(readFileSync(map, "utf8"));
-  const inlined = sources.filter((s) => inlinedSource.test(s));
+  const inlined = sources.filter(isInlinedSource);
   if (inlined.length > 0) {
     console.error(
-      `✗ ${relative(root, map)} inlines forbidden module source:\n    ${inlined.join("\n    ")}`,
+      `✗ ${relative(root, map)} inlines third-party module source:\n    ${inlined.join("\n    ")}`,
     );
     ok = false;
   }
@@ -111,5 +115,5 @@ for (const map of maps) {
 
 if (!ok) process.exit(1);
 console.log(
-  `✓ check-externals passed (${maps.length} sourcemaps, no inlined ${forbidden.join(", ")})`,
+  `✓ check-externals passed (${maps.length} sourcemaps, no inlined node_modules source)`,
 );

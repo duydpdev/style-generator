@@ -29,6 +29,7 @@ interface StubConfig {
   root: string;
   command: "serve" | "build";
   logger: StubLogger;
+  configFile?: string;
 }
 
 interface StubServer {
@@ -151,9 +152,13 @@ describe("styleGenVite plugin", () => {
     return abs;
   };
 
-  const serveConfig = (logger = makeLogger()): StubConfig => ({
+  const serveConfig = (
+    logger = makeLogger(),
+    configFile: string | null = join(tmp, "vite.config.ts"),
+  ): StubConfig => ({
     root: tmp,
     command: "serve",
+    ...(configFile !== null && { configFile }),
     logger,
   });
 
@@ -247,7 +252,25 @@ describe("styleGenVite plugin", () => {
     }).toThrow(/outDir escapes project root/);
   });
 
-  it("warns when two plugin instances target the same theme.css", () => {
+  it("rejects an unknown option key and a missing themePath with a labelled message", () => {
+    expect(() => {
+      callConfigResolved(
+        styleGenVite({
+          themePath: "src/theme/theme.json",
+          outdir: "x",
+        } as never),
+        serveConfig(),
+      );
+    }).toThrow(/^\[style-gen-vite\] Invalid options:\n.*outdir/);
+    expect(() => {
+      callConfigResolved(
+        styleGenVite({ themepath: "src/theme/theme.json" } as never),
+        serveConfig(),
+      );
+    }).toThrow(/^\[style-gen-vite\] Invalid options:\n[^]*themePath/);
+  });
+
+  it("warns when two plugin instances from different configs target the same theme.css", () => {
     writeTheme();
     const opts: StyleGenViteOptions = { themePath: "src/theme/theme.json" };
     const p1 = styleGenVite(opts);
@@ -256,8 +279,8 @@ describe("styleGenVite plugin", () => {
     const log1 = makeLogger();
     const log2 = makeLogger();
 
-    callConfigResolved(p1, serveConfig(log1));
-    callConfigResolved(p2, serveConfig(log2));
+    callConfigResolved(p1, serveConfig(log1, join(tmp, "a.vite.config.ts")));
+    callConfigResolved(p2, serveConfig(log2, join(tmp, "b.vite.config.ts")));
 
     expect(log1.warn).not.toHaveBeenCalled();
     expect(log2.warn).toHaveBeenCalledWith(
@@ -276,7 +299,55 @@ describe("styleGenVite plugin", () => {
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
-  it("frees the output file when the dev server closes, so a restart does not warn", async () => {
+  it("builder mode: one instance per environment of the same config does not warn; another config does", () => {
+    writeTheme();
+    const opts: StyleGenViteOptions = { themePath: "src/theme/theme.json" };
+    const logger = makeLogger();
+    callConfigResolved(styleGenVite(opts), serveConfig(logger));
+    callConfigResolved(styleGenVite(opts), serveConfig(logger));
+    expect(logger.warn).not.toHaveBeenCalled();
+
+    callConfigResolved(
+      styleGenVite(opts),
+      serveConfig(logger, join(tmp, "other.vite.config.ts")),
+    );
+    expect(logger.warn).toHaveBeenCalledOnce();
+  });
+
+  it("falls back to the root as owner when there is no config file", () => {
+    writeTheme();
+    const opts: StyleGenViteOptions = { themePath: "src/theme/theme.json" };
+    const logger = makeLogger();
+    callConfigResolved(styleGenVite(opts), serveConfig(logger, null));
+    callConfigResolved(styleGenVite(opts), serveConfig(logger, null));
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("a restart (new instance resolved BEFORE the old server closes) does not warn, and the old close does not free the new slot", async () => {
+    writeTheme();
+    const opts: StyleGenViteOptions = { themePath: "src/theme/theme.json" };
+    const first = styleGenVite(opts);
+    const oldServer = makeServer(makeLogger());
+    callConfigResolved(first, serveConfig());
+    callConfigureServer(first, oldServer);
+
+    // Vite's restartServer: the new server's plugins resolve first.
+    const restarted = styleGenVite(opts);
+    const restartLogger = makeLogger();
+    callConfigResolved(restarted, serveConfig(restartLogger));
+    expect(restartLogger.warn).not.toHaveBeenCalled();
+
+    await oldServer.close();
+
+    const stranger = makeLogger();
+    callConfigResolved(
+      styleGenVite(opts),
+      serveConfig(stranger, join(tmp, "other.vite.config.ts")),
+    );
+    expect(stranger.warn).toHaveBeenCalledOnce();
+  });
+
+  it("frees the output file when its own server closes", async () => {
     writeTheme();
     const opts: StyleGenViteOptions = { themePath: "src/theme/theme.json" };
     const first = styleGenVite(opts);
@@ -286,13 +357,15 @@ describe("styleGenVite plugin", () => {
 
     await server.close();
 
-    const restarted = styleGenVite(opts);
     const logger = makeLogger();
-    callConfigResolved(restarted, serveConfig(logger));
+    callConfigResolved(
+      styleGenVite(opts),
+      serveConfig(logger, join(tmp, "other.vite.config.ts")),
+    );
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
-  it("still warns for a second live instance when the first server has not closed", () => {
+  it("still warns for a second live instance from another config when the first server has not closed", () => {
     writeTheme();
     const opts: StyleGenViteOptions = { themePath: "src/theme/theme.json" };
     const first = styleGenVite(opts);
@@ -300,7 +373,10 @@ describe("styleGenVite plugin", () => {
     callConfigureServer(first, makeServer(makeLogger()));
 
     const logger = makeLogger();
-    callConfigResolved(styleGenVite(opts), serveConfig(logger));
+    callConfigResolved(
+      styleGenVite(opts),
+      serveConfig(logger, join(tmp, "other.vite.config.ts")),
+    );
 
     expect(logger.warn).toHaveBeenCalledOnce();
   });

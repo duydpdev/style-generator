@@ -2,10 +2,14 @@ import { z } from "zod";
 
 import { UTILITY_NAME_RE, toKebabCase } from "../shared/helpers";
 
-import { validateCategoryAliasGraph } from "./aliasGraph";
+import {
+  validateCategoryAliasGraph,
+  validateCrossAxisAliasCycles,
+} from "./aliasGraph";
 import {
   checkBorderWidthColorCollision,
   checkFontFamilyWeightNames,
+  checkTypographyClassCollisions,
   reportKebabCollisions,
 } from "./crossFieldChecks";
 import { TokenKey, TokenValue, TypographyValue } from "./tokenGrammar";
@@ -255,6 +259,7 @@ const ThemeAxesSchema = z
           });
         }
       }
+      reportKebabCollisions(ctx, variants, [axisName]);
     }
   });
 
@@ -310,6 +315,7 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
   validateBaseCategories(ctx, theme);
   checkBorderWidthColorCollision(ctx, theme.colors, theme.borderWidth);
   checkFontFamilyWeightNames(ctx, theme.fontFamily);
+  checkTypographyClassCollisions(ctx, theme);
 
   if (!theme.themeAxes) return;
   for (const [axisName, variants] of Object.entries(theme.themeAxes)) {
@@ -321,6 +327,25 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
         override,
       );
     }
+  }
+
+  for (const category of ALIAS_CATEGORIES) {
+    validateCrossAxisAliasCycles(
+      ctx,
+      theme[category],
+      Object.fromEntries(
+        Object.entries(theme.themeAxes).map(([axisName, variants]) => [
+          axisName,
+          Object.fromEntries(
+            Object.entries(variants).map(([variantName, override]) => [
+              variantName,
+              override[category],
+            ]),
+          ),
+        ]),
+      ),
+      category,
+    );
   }
 });
 

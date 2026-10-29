@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   axisAttributes,
   buttonRecipe,
@@ -16,13 +16,12 @@ type PaletteName = NonNullable<AxesState["palette"]>;
 const THEMES: readonly ThemeName[] = ["base", "dark", "highContrast"];
 const PALETTES: readonly PaletteName[] = ["base", "forest", "sunset", "mono"];
 
-const AXIS_ATTRIBUTES = ["data-theme", "data-palette"] as const;
-
 /**
  * Next-specific piece: a client component, because the axis attributes live on
  * `<html>`, which a server component cannot reach after hydration. The
  * attribute map comes from the design system's `axisAttributes`; a variant that
- * is `"base"` produces no attribute, so stale ones are removed first.
+ * is `"base"` produces no attribute, so the keys the previous map had and the
+ * next one lacks are removed.
  * @returns The two axis pickers.
  */
 export function ThemeSwitch() {
@@ -31,12 +30,18 @@ export function ThemeSwitch() {
     palette: "base",
   });
 
+  const applied = useRef<readonly string[]>([]);
+
   useEffect(() => {
     const root = document.documentElement;
-    for (const name of AXIS_ATTRIBUTES) root.removeAttribute(name);
-    for (const [name, value] of Object.entries(axisAttributes(state))) {
+    const attributes = axisAttributes(state);
+    for (const name of applied.current) {
+      if (!(name in attributes)) root.removeAttribute(name);
+    }
+    for (const [name, value] of Object.entries(attributes)) {
       root.setAttribute(name, value);
     }
+    applied.current = Object.keys(attributes);
   }, [state]);
 
   return (

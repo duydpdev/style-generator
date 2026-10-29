@@ -12,6 +12,7 @@ import {
   generate,
   defineOptions,
   defineTheme,
+  borderProperties,
 } from "@duydpdev/style-generator";
 import {
   COLOR_STATES,
@@ -71,6 +72,14 @@ const aliased = createDesignTokens({
   colors: { blue500: "#00f", primary: "$blue500", accent: "#f00" },
   themeAxes: { theme: { dark: { colors: { accent: "$blue500" } } } },
 }).DesignTokens.Web;
+
+const borderMap = createVariantMapper(borderProperties, ["thin"] as const);
+const numeric = createDesignTokens({
+  colors: { 500: "$primary", primary: "#000" },
+  borderWidth: { 2: "2px" },
+}).DesignTokens.Web;
+// @ts-expect-error `screnes` is not an option: a typo must not compile
+generate(theme, { screnes: {} });
 
 const mergeExtension = createTailwindMergeExtension(web);
 const split = splitSpacingProps(
@@ -135,4 +144,9 @@ export type DistTypeChecks = [
   Assert<Eq<typeof split.rest, { id: string }>>,
   Assert<Eq<typeof split.spacing.className, string>>,
   Assert<Eq<typeof axisAttributes, Readonly<Record<string, string>>>>,
+  // Documented 5.0 call: the exported prefix lists feed the mapper as they are.
+  Assert<Eq<(typeof borderMap)["border-x"]["thin"], "border-x-thin">>,
+  // Numeric theme keys are the stringified keys the runtime sees.
+  Assert<Eq<typeof numeric.borderWidth, readonly "2"[]>>,
+  Assert<Eq<typeof numeric.aliasedColors, readonly "500"[]>>,
 ];

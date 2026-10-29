@@ -75,9 +75,9 @@ type CategoryDefaultKey<K extends CategoryKey> =
 type DeclaredCategoryKey<TTheme extends ThemeConfig, K extends CategoryKey> = [
   CategoryDefaultKey<K>,
 ] extends [never]
-  ? Extract<keyof NonNullable<TTheme[K]>, string>
+  ? `${Extract<keyof NonNullable<TTheme[K]>, string | number>}`
   : TTheme extends Record<K, infer R>
-    ? Extract<keyof NonNullable<R>, string>
+    ? `${Extract<keyof NonNullable<R>, string | number>}`
     : K extends keyof TTheme
       ? string
       : never;
@@ -151,7 +151,7 @@ export type BreakpointKeys<O> = O extends {
 export type SpacingKeys<O> = O extends {
   readonly spacing: { readonly properties: infer P };
 }
-  ? Extract<keyof P, string>
+  ? `${Extract<keyof P, string | number>}`
   : O extends { readonly spacing?: infer S }
     ? "properties" extends keyof NonNullable<S>
       ? string
@@ -160,7 +160,7 @@ export type SpacingKeys<O> = O extends {
 
 /** The custom screen keys `options.screens` adds to the default screens. */
 export type ScreenKeys<O> = O extends { readonly screens: infer S }
-  ? Extract<keyof S, string>
+  ? `${Extract<keyof S, string | number>}`
   : "screens" extends keyof O
     ? string
     : never;
@@ -184,9 +184,9 @@ type CategoryTokenArrays<TTheme extends ThemeConfig> = {
 /** Keys of record `R` whose value may be a `$alias` (a plain `string` value may). */
 type AliasHolderKeys<R> = {
   [K in keyof R]: string extends R[K]
-    ? K
+    ? `${Extract<K, string | number>}`
     : R[K] extends `$${string}`
-      ? K
+      ? `${Extract<K, string | number>}`
       : never;
 }[keyof R];
 

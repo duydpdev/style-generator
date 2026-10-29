@@ -13,6 +13,7 @@ export type {
 } from "../core/themeSchema";
 export type {
   CoverageRule,
+  ExactOptions,
   SpacingPropertyMap,
   StyleGeneratorOptions,
 } from "../core/Options";

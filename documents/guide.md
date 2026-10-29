@@ -42,7 +42,7 @@ Rồi cài:
 yarn add @duydpdev/style-generator
 ```
 
-**Peer dependencies:** `tailwindcss >=4.1.0` (Tailwind v3 không còn được hỗ trợ); `typescript ^5 || ^6` (tuỳ chọn, để type-check theo `.d.ts` của package) và `vite ^5 || ^6 || ^7 || ^8` (tuỳ chọn, chỉ khi dùng `styleGenVite`). Bản đã được CI kiểm: bảng peer trong [`README.md`](../README.md). `zod` là dependency thường của package — không cần cài riêng.
+**Peer dependencies:** `tailwindcss ^4.1.0` (Tailwind v3 không còn được hỗ trợ); `typescript ^5 || ^6` (tuỳ chọn, để type-check theo `.d.ts` của package) và `vite ^5 || ^6 || ^7 || ^8` (tuỳ chọn, chỉ khi dùng `styleGenVite`). Bản đã được CI kiểm: bảng peer trong [`README.md`](../README.md). `zod` là dependency thường của package — không cần cài riêng.
 
 ```bash
 yarn add tailwindcss typescript

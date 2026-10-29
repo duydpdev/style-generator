@@ -43,11 +43,12 @@ export type SpacingPropertyMap = Readonly<Record<string, readonly string[]>>;
 export interface CoverageRule<P extends string = RegistryPrefix> {
   /**
    * Keep only these class prefixes of the category (e.g. `["bg"]` for
-   * `colors`, which feeds `bg`, `text` and `border`). Non-empty; each entry
-   * must be one of the category's own prefixes, and `typography` has none
-   * (its class is the bare key). Applies to the category's state lines too.
+   * `colors`, which feeds `bg`, `text` and `border`). Non-empty (the type
+   * is a non-empty tuple); each entry must be one of the category's own
+   * prefixes, and `typography` has none (its class is the bare key).
+   * Applies to the category's state lines too.
    */
-  prefixes?: readonly P[];
+  prefixes?: readonly [P, ...P[]];
   /**
    * `"all"` (default): every key of the category. `"aliased"`: only the
    * alias holders — keys whose value is a `$<key>` alias, in the base record
@@ -65,13 +66,14 @@ type CategoryPrefix<K extends CategoryKey> = Exclude<
 >;
 
 /**
- * The `coverage` rule of category `K`: its own prefixes only, and none at
- * all for a category without class prefixes (`typography`).
+ * The `coverage` rule of category `K`: its own prefixes only. A category
+ * without class prefixes or `$` aliases (`typography`) takes neither
+ * `prefixes` nor `keys: "aliased"` — `generate()` rejects both.
  */
 type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
   never,
 ]
-  ? Omit<CoverageRule, "prefixes"> & { prefixes?: never }
+  ? { prefixes?: never; keys?: "all" }
   : CoverageRule<CategoryPrefix<K>>;
 
 export interface StyleGeneratorOptions {
@@ -211,3 +213,12 @@ export interface StyleGeneratorOptions {
    */
   resetTailwindDefaults?: readonly ("colors" | "radius" | "shadow")[];
 }
+
+/**
+ * `O` plus a `never` slot for every top-level key `StyleGeneratorOptions`
+ * does not declare. A `const O extends StyleGeneratorOptions` type parameter
+ * skips the excess-property check, so `generate(theme, { screnes })` would
+ * compile; this restores it without losing `const` inference.
+ */
+export type ExactOptions<O> = O &
+  Readonly<Record<Exclude<keyof O, keyof StyleGeneratorOptions>, never>>;

@@ -78,7 +78,8 @@ export const buttonRecipe = cva(
   [
     "inline-flex shrink-0 items-center justify-center gap-1.5",
     "rounded-md border",
-    "cursor-pointer text-16-medium whitespace-nowrap outline-none select-none",
+    "cursor-pointer text-16-medium whitespace-nowrap outline-hidden select-none",
+    "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2",
     "transition-[background-color,color,opacity] duration-150",
     "disabled:cursor-not-allowed disabled:opacity-50",
   ],
@@ -91,11 +92,13 @@ export const buttonRecipe = cva(
         ghost: "border-transparent active:scale-[0.98]",
         link: "border-transparent underline-offset-4 hover:underline",
       },
+      // No `outline-*` coverage is registry-emitted for colors (bg/text/border
+      // only): the per-intent focus ring stays literal for the scanner.
       color: {
-        primary: "",
-        secondary: "",
-        success: "",
-        danger: "",
+        primary: "focus-visible:outline-primary",
+        secondary: "focus-visible:outline-secondary",
+        success: "focus-visible:outline-success",
+        danger: "focus-visible:outline-danger",
       },
       size: {
         sm: "h-7 px-2.5",

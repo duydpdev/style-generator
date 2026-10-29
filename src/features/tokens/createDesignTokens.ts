@@ -4,7 +4,7 @@ import type {
   DesignTokensResult,
   SpacingKeys,
 } from "../../core/inference";
-import type { StyleGeneratorOptions } from "../../core/Options";
+import type { ExactOptions, StyleGeneratorOptions } from "../../core/Options";
 import { resolveTokenOptions } from "../../core/resolveTokenOptions";
 import type { ResolvedTokenOptions } from "../../core/resolveTokenOptions";
 import type { ThemeConfig } from "../../core/themeSchema";
@@ -156,7 +156,10 @@ export function createDesignTokens<const TTheme extends ThemeConfig>(
 export function createDesignTokens<
   const TTheme extends ThemeConfig,
   const O extends StyleGeneratorOptions = StyleGeneratorOptions,
->(config: TTheme, options: O | undefined): DesignTokensResult<TTheme, O>;
+>(
+  config: TTheme,
+  options: ExactOptions<O> | undefined,
+): DesignTokensResult<TTheme, O>;
 export function createDesignTokens(
   config: ThemeConfig,
   options?: StyleGeneratorOptions,

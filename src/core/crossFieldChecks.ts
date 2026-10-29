@@ -93,9 +93,20 @@ export const checkBorderWidthColorCollision = (
 };
 
 /**
+ * `--font-weight-*` and `--font-size-*` live in the `--font-` theme
+ * namespace Tailwind reads for font families, but it ignores them as
+ * families and instead reads them as the weight/size scale — a
+ * `fontFamily` key `weightBold` would overwrite `--font-weight-bold`
+ * (`font-bold`) and `sizeLg` the `font-size-lg` variable.
+ */
+const FONT_SCALE_NAMESPACE_RE = /^(weight|size)(-|$)/;
+
+/**
  * Reject a `fontFamily` key whose kebab-case form matches one of
  * Tailwind's built-in font-weight utility suffixes (see
- * {@link TAILWIND_FONT_WEIGHT_UTILITY_NAMES}).
+ * {@link TAILWIND_FONT_WEIGHT_UTILITY_NAMES}), or that starts with the
+ * `weight`/`size` segment of Tailwind's `--font-weight-*`/`--font-size-*`
+ * theme variables.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} fontFamily - Base `fontFamily` record
  * @returns {void}
@@ -109,11 +120,69 @@ export const checkFontFamilyWeightNames = (
   const weightNames: readonly string[] = TAILWIND_FONT_WEIGHT_UTILITY_NAMES;
   for (const key of Object.keys(fontFamily)) {
     const kebab = toKebabCase(key);
-    if (!weightNames.includes(kebab)) continue;
+    if (weightNames.includes(kebab)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fontFamily", key],
+        message: `fontFamily key "${key}" collides with Tailwind's built-in font-weight utility "font-${kebab}" — rename it.`,
+      });
+    } else if (FONT_SCALE_NAMESPACE_RE.test(kebab)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fontFamily", key],
+        message: `fontFamily key "${key}" emits "--font-${kebab}", which is Tailwind's font-weight/font-size theme namespace (--font-weight-*, --font-size-*): it is not a font family and would overwrite that scale — rename it so it does not start with "weight" or "size".`,
+      });
+    }
+  }
+};
+
+/**
+ * Map every class a CSS-var category emits (`<prefix>-<kebab key>`) to the
+ * `category.key` that owns it.
+ * @param {ThemeConfig} theme - Base theme
+ * @returns {Map<string, string>} Class name → first owning `category.key`
+ */
+const classOwners = (theme: ThemeConfig): Map<string, string> => {
+  const owner = new Map<string, string>();
+  for (const descriptor of cssVarCategories) {
+    for (const key of Object.keys(theme[descriptor.key] ?? {})) {
+      for (const prefix of descriptor.classPrefixes ?? []) {
+        const className = `${prefix}-${toKebabCase(key)}`;
+        if (!owner.has(className)) {
+          owner.set(className, `${descriptor.key}.${key}`);
+        }
+      }
+    }
+  }
+  return owner;
+};
+
+/**
+ * Reject a `typography` key whose kebab-case form equals the class another
+ * category emits (`<prefix>-<kebab key>`, e.g. `colors.primary` →
+ * `text-primary`, so `typography.textPrimary` → `@utility text-primary`
+ * would collide). Typography emits the bare `@utility <kebab-key>`, so its
+ * class set is just its keys; state classes are not considered.
+ * @param {z.RefinementCtx} ctx - Zod refinement context
+ * @param {ThemeConfig} theme - Base theme
+ * @returns {void}
+ */
+export const checkTypographyClassCollisions = (
+  ctx: z.RefinementCtx,
+  theme: ThemeConfig,
+): void => {
+  if (!theme.typography) return;
+
+  const owner = classOwners(theme);
+
+  for (const key of Object.keys(theme.typography)) {
+    const className = toKebabCase(key);
+    const other = owner.get(className);
+    if (other === undefined) continue;
     ctx.addIssue({
       code: "custom",
-      path: ["fontFamily", key],
-      message: `fontFamily key "${key}" collides with Tailwind's built-in font-weight utility "font-${kebab}" — rename it.`,
+      path: ["typography", key],
+      message: `typography key "${key}" emits "@utility ${className}", the same class theme.${other} emits — rename one.`,
     });
   }
 };

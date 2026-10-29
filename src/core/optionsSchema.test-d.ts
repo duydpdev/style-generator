@@ -41,7 +41,7 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
       | undefined
     >();
     expectTypeOf<CoverageRule>().toEqualTypeOf<{
-      prefixes?: readonly RegistryPrefix[];
+      prefixes?: readonly [RegistryPrefix, ...RegistryPrefix[]];
       keys?: "aliased" | "all";
     }>();
   });
@@ -101,8 +101,30 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
     expectTypeOf<{
       typography: { prefixes: ["bg"] };
     }>().not.toExtend<Coverage>();
+    // `typography` has no `$` aliases: `keys: "aliased"` is rejected at runtime.
     expectTypeOf<{
       typography: { keys: "aliased" };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      typography: { keys: "all" };
     }>().toExtend<Coverage>();
+    expectTypeOf<{ typography: false }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { keys: "aliased"; prefixes: ["bg"] };
+      shadows: { keys: "aliased" };
+    }>().toExtend<Coverage>();
+  });
+
+  it("coverage prefixes are a non-empty list, like the schema's min(1)", () => {
+    type Coverage = NonNullable<StyleGeneratorOptions["coverage"]>;
+
+    expectTypeOf<{ colors: { prefixes: [] } }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { prefixes: readonly [] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { prefixes: ["bg", "text"] };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{ colors: { keys: "aliased" } }>().toExtend<Coverage>();
   });
 });

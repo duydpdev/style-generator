@@ -1,9 +1,9 @@
 import { Box } from "../components/Box";
 import { Text } from "../components/Text";
 
-import { COLOR_ROWS, PALETTES, type PaletteId } from "./palettes";
+import { COLOR_ROWS, colorsFor } from "./palettes";
 import { SectionHead } from "./SectionHead";
-import type { ThemeName } from "./types";
+import type { PaletteId, ThemeName } from "./types";
 
 interface ColorSectionProps {
   palette: PaletteId;
@@ -11,7 +11,7 @@ interface ColorSectionProps {
 }
 
 export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
-  const set = PALETTES[palette][theme];
+  const set = colorsFor(palette, theme);
 
   return (
     <section

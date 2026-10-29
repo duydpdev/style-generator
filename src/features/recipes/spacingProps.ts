@@ -8,12 +8,21 @@ import type {
 } from "../spacing/spacingHelpers";
 
 /**
+ * A widened `K` (`string`, e.g. from options annotated
+ * `StyleGeneratorOptions`) names no particular keys: fall back to the
+ * built-in `SpacingKey` union instead of an index signature, which would
+ * make every other prop of the component (`id`, `children`) a spacing prop.
+ */
+type SpacingPropKeys<K extends string> = string extends K ? SpacingKey : K;
+
+/**
  * Component props for the spacing utilities: every key of `K` camelCased
  * (`gap-x` → `gapX`), each optional and responsive. `K` defaults to the
  * built-in properties; pass `tokens.spacingProperties` elements when
  * `options.spacing.properties` adds or removes some, and `BKeys` (e.g.
  * `BreakpointKeys<typeof options>`) when `options.breakpoints` adds
- * breakpoints.
+ * breakpoints. A widened `K` (`string`) means the built-in properties;
+ * explicit literal keys give the narrowest result.
  * @template BKeys - Breakpoint keys accepted in object values (default `md | lg`)
  * @template K - Spacing property names (kebab-case, as in `tokens.spacingProperties`)
  * @example
@@ -24,7 +33,7 @@ export type SpacingProps<
   BKeys extends string = DefaultBreakpointKeys,
   K extends string = SpacingKey,
 > = {
-  readonly [P in K as CamelCase<P>]?:
+  readonly [P in SpacingPropKeys<K> as CamelCase<P>]?:
     | ResponsiveValueStrict<number, BKeys>
     | undefined;
 };
@@ -65,7 +74,7 @@ export const splitSpacingProps = <
   unit = 0.25,
 ): {
   spacing: { className: string; style: Record<string, string> };
-  rest: Omit<P, CamelCase<K>>;
+  rest: Omit<P, CamelCase<SpacingPropKeys<K>>>;
 } => {
   const propNames = new Map(keys.map((key) => [toCamelCase(key), key]));
   const classNames: string[] = [];
@@ -91,6 +100,6 @@ export const splitSpacingProps = <
 
   return {
     spacing: { className: classNames.join(" "), style },
-    rest: rest as Omit<P, CamelCase<K>>,
+    rest: rest as Omit<P, CamelCase<SpacingPropKeys<K>>>,
   };
 };

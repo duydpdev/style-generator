@@ -16,7 +16,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createServer, version } from "vite";
+import { createLogger, createServer, version } from "vite";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const exampleDir = join(root, "examples/react-v4");
@@ -85,11 +85,22 @@ if (Number(version.split(".")[0]) >= 6) {
   );
 }
 
-// Scenario 2: the regular dev server (below).
+// Scenario 2: the regular dev server (below). A custom logger records every
+// warning so the restart scenario can assert the duplicate-instance warning
+// does not fire (Vite builds the new server, and resolves its plugins, before
+// it closes the old one).
+/** @type {string[]} */
+const warnings = [];
+const customLogger = createLogger("warn");
+const loggerWarn = customLogger.warn;
+customLogger.warn = (msg, options) => {
+  warnings.push(msg);
+  loggerWarn(msg, options);
+};
 const server = await createServer({
   root: exampleDir,
   configFile: join(exampleDir, "vite.config.ts"),
-  logLevel: "warn",
+  customLogger,
   server: { hmr: false },
   optimizeDeps: { noDiscovery: true, include: [] },
 });
@@ -169,7 +180,16 @@ while (
   await new Promise((r) => setTimeout(r, 100));
 }
 
+await server.restart();
+const duplicate = warnings.find((w) => w.includes("Multiple plugin instances"));
+if (duplicate !== undefined) {
+  await server.close();
+  fail(
+    `server.restart() logged a false duplicate-instance warning: ${duplicate}`,
+  );
+}
+
 await server.close();
 console.log(
-  `✓ vite ${version} dev server: theme.json edit re-emitted theme.css and sent full-reload`,
+  `✓ vite ${version} dev server: theme.json edit re-emitted theme.css and sent full-reload; server.restart() raised no duplicate-instance warning`,
 );

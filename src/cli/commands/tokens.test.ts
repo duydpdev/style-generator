@@ -123,6 +123,50 @@ describe("tokensCommand", () => {
     expect(fs.existsSync(file("styles/theme.tokens.ts"))).toBe(false);
   });
 
+  it.each([
+    "keys.js",
+    "keys.mjs",
+    "keys.d.ts",
+    "keys.d.mts",
+    "keys.d.cts",
+    "keys",
+  ])(
+    "rejects --out %s with exit 1 and writes nothing (the output is TypeScript)",
+    (out) => {
+      write("styles/theme.json", theme);
+
+      expect(tokensCommand({ theme: "styles/theme.json", out }, tmp)).toBe(1);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("--out must be a .ts, .mts or .cts file"),
+      );
+      expect(fs.existsSync(file(out))).toBe(false);
+    },
+  );
+
+  it.each(["keys.ts", "keys.mts", "keys.cts"])("accepts --out %s", (out) => {
+    write("styles/theme.json", theme);
+
+    expect(tokensCommand({ theme: "styles/theme.json", out }, tmp)).toBe(0);
+
+    expect(fs.existsSync(file(out))).toBe(true);
+  });
+
+  it("does not rewrite the file when its content is already current", () => {
+    write("styles/theme.json", theme);
+    expect(tokensCommand({ theme: "styles/theme.json" }, tmp)).toBe(0);
+    const out = file("styles/theme.tokens.ts");
+    const first = fs.statSync(out).ino;
+
+    expect(tokensCommand({ theme: "styles/theme.json" }, tmp)).toBe(0);
+    // writeFileAtomic renames a fresh file into place: an unchanged run keeps the inode.
+    expect(fs.statSync(out).ino).toBe(first);
+
+    write("styles/theme.json", { ...theme, shadows: { md: "0 2px 4px #000" } });
+    expect(tokensCommand({ theme: "styles/theme.json" }, tmp)).toBe(0);
+    expect(fs.readFileSync(out, "utf8")).toContain('"md"');
+  });
+
   it("returns 1 with a config error and writes nothing for an invalid config", () => {
     write("styles/theme.json", theme);
     write("style-gen.config.json", { breakpoint: ["xl"] });

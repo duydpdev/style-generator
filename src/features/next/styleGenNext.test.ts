@@ -106,6 +106,19 @@ describe("styleGenNext", () => {
     }).toThrow(/outDir escapes project root/);
   });
 
+  it("rejects an unknown option key and a missing themePath with a labelled message", () => {
+    expect(() => {
+      styleGenNext({ themePath: "theme.json", outdir: "gen" } as never)({})(
+        "phase-production-build",
+      );
+    }).toThrow(/^\[style-gen-next\] Invalid options:\n.*outdir/);
+    expect(() => {
+      styleGenNext({ themepath: "theme.json" } as never)({})(
+        "phase-production-build",
+      );
+    }).toThrow(/^\[style-gen-next\] Invalid options:\n[^]*themePath/);
+  });
+
   it("writes theme.css and passes the Next config through unchanged", () => {
     writeTheme();
     const nextConfig = { reactStrictMode: true };

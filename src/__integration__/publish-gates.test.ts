@@ -152,13 +152,19 @@ describe("integration: publish gates reject bad builds", () => {
       expect(output).toContain("node_modules/@clack/prompts/dist/index.mjs");
     });
 
-    it("does not treat a package whose name only starts with a dependency's name as inlined", () => {
-      bundle(dir, "dist/index.js", "export const index = 1;\n", [
-        "../src/index.ts",
-        "../node_modules/zodiac/index.js",
+    it("fails when a sourcemap lists a devDependency's source (any node_modules path, not only dependencies)", () => {
+      bundle(dir, "dist/recipes.js", "export const recipes = 1;\n", [
+        "../src/exports/recipes.ts",
+        "../node_modules/class-variance-authority/dist/index.mjs",
       ]);
 
-      expect(runGate(dir, "check-externals").status).toBe(0);
+      const { status, output } = runGate(dir, "check-externals");
+
+      expect(status).toBe(1);
+      expect(output).toContain("dist/recipes.js.map");
+      expect(output).toContain(
+        "node_modules/class-variance-authority/dist/index.mjs",
+      );
     });
 
     it("fails when a bundle ships without a sourcemap", () => {
@@ -258,6 +264,32 @@ describe("integration: publish gates reject bad builds", () => {
 
       expect(status).toBe(1);
       expect(output).toContain("dist/spacing.js -> @tailwindcss/node");
+    });
+
+    it.each([
+      ["chokidar", 'import { watch } from "chokidar";\n'],
+      ["chokidar/handler.js", 'import "chokidar/handler.js";\n'],
+      ["@clack/prompts", 'import * as p from "@clack/prompts";\n'],
+    ])("fails when a shared chunk reaches %s", (specifier, chunk) => {
+      put(dir, "dist/tokens.js", 'import { h } from "./helpers-q.js";\n');
+      put(dir, "dist/helpers-q.js", chunk);
+
+      const { status, output } = runGate(dir, "check-browser-safe");
+
+      expect(status).toBe(1);
+      expect(output).toContain(
+        `forbidden import chain: dist/tokens.js -> dist/helpers-q.js -> ${specifier}`,
+      );
+    });
+
+    it("does not forbid a bare import whose name merely starts with a dependency's name", () => {
+      put(
+        dir,
+        "dist/cva.js",
+        'import "chokidar-fake";\nimport "@clack/other";\n',
+      );
+
+      expect(runGate(dir, "check-browser-safe").status).toBe(0);
     });
   });
 });

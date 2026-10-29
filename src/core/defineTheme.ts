@@ -1,4 +1,4 @@
-import type { StyleGeneratorOptions } from "./Options";
+import type { ExactOptions, StyleGeneratorOptions } from "./Options";
 import { parseTheme } from "./parseTheme";
 import type { ThemeConfig } from "./themeSchema";
 
@@ -36,7 +36,7 @@ export function defineTheme<const T extends ThemeConfig>(config: T): T {
  * @returns {O} The same options object (type-preserving)
  */
 export function defineOptions<const O extends StyleGeneratorOptions>(
-  options: O,
+  options: ExactOptions<O>,
 ): O {
   return options;
 }

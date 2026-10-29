@@ -192,7 +192,7 @@ so a client bundle can import them without the ./tokens runtime and the theme JS
 
 Options:
   --theme <path>    Theme JSON (default: from style-gen.config.json, else styles/theme.json)
-  --out <path>      File to write (default: theme.tokens.ts next to the theme); must stay inside the project`,
+  --out <path>      File to write: .ts, .mts or .cts, not a .d.ts (default: theme.tokens.ts next to the theme); must stay inside the project`,
   options: { theme: { type: "string" }, out: { type: "string" } },
   allowPositionals: false,
   run: (values, _positionals, ctx) => {

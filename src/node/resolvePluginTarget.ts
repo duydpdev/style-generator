@@ -1,6 +1,9 @@
 import { dirname, resolve } from "node:path";
 
+import { z } from "zod";
+
 import type { StyleGeneratorOptions } from "../core/Options";
+import { formatZodError } from "../core/themeSchema";
 
 import { loadStyleGenConfig, toGeneratorOptions } from "./loadStyleGenConfig";
 import { resolveProjectPath } from "./resolveProjectPath";
@@ -16,6 +19,13 @@ export interface PluginTargetOptions {
   options?: StyleGeneratorOptions;
 }
 
+// `options` is validated by `prepareGenerate` when the theme is emitted.
+const PluginTargetOptionsSchema = z.strictObject({
+  themePath: z.string().min(1),
+  outDir: z.string().min(1).optional(),
+  options: z.unknown().optional(),
+});
+
 /**
  * Resolve where a bundler integration reads the theme from and writes the CSS
  * to. With `opts` the paths come from it (`theme.css` inside `outDir`); with
@@ -30,7 +40,7 @@ export interface PluginTargetOptions {
  * @param {PluginTargetOptions | undefined} opts - Integration options, if any
  * @param {string} label - Integration name for messages (`"style-gen-vite"`)
  * @returns {EmitTarget} Absolute theme and output files plus the options
- * @throws {Error} For an invalid config file or an output path that escapes `root`
+ * @throws {Error} For unknown or mistyped keys in `opts`, an invalid config file or an output path that escapes `root`
  */
 export function resolvePluginTarget(
   root: string,
@@ -38,6 +48,12 @@ export function resolvePluginTarget(
   label: string,
 ): EmitTarget {
   if (opts) {
+    const parsed = PluginTargetOptionsSchema.safeParse(opts);
+    if (!parsed.success) {
+      throw new Error(
+        `[${label}] Invalid options:\n${formatZodError(parsed.error)}`,
+      );
+    }
     // Say where an inherited outDir came from: with a theme outside the root
     // `dirname(themePath)` is outside it too, and the error must not read as
     // if the caller had passed that outDir.

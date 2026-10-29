@@ -10,6 +10,9 @@ updates:
     target-branch: main
     schedule:
       interval: monthly
+    # No automatic rebase: every rebase re-runs the whole CI on the PR.
+    # Comment `@dependabot rebase` on the PR to update it before landing.
+    rebase-strategy: disabled
     groups:
       github-actions:
         patterns:
@@ -26,24 +29,20 @@ updates:
     # first. Covers the root package and every workspace in the lockfile.
     target-branch: main
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    # Same as github-actions above.
+    rebase-strategy: disabled
+    open-pull-requests-limit: 2
     groups:
-      # Examples and the site are not published; batch their bumps.
-      examples:
+      # Report §3.6 item 4: every minor/patch bump in ONE PR. Majors are not
+      # grouped, so each gets its own PR (the ignore list below still drops
+      # the hand-managed majors).
+      npm-minor-patch:
         patterns:
-          - "next"
-          - "nuxt"
-          - "react"
-          - "react-dom"
-          - "react-router-dom"
-          - "vue"
-      dev-tooling:
-        dependency-type: development
-        exclude-patterns:
-          - "tailwindcss"
-          - "@tailwindcss/*"
-          - "zod"
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       # Majors that change a supported range are done by hand: the Tailwind
       # and Zod lines (tailwind-floor leg) and the vite/typescript peers

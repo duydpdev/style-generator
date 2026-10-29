@@ -28,6 +28,7 @@ export function PreviewFrame({ src, pathLabel, meta, title }: Readonly<Props>) {
         <iframe
           key={src}
           className="preview-iframe"
+          data-testid="example-preview"
           src={src}
           title={title}
           sandbox="allow-scripts allow-same-origin allow-forms"

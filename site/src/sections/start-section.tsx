@@ -42,7 +42,7 @@ const TERM_LINES: TermLine[] = [
     delay: 350,
   },
   {
-    html: '<span class="prompt">$</span> <span class="cursor"></span>',
+    html: '<span class="prompt">$</span> <span class="cursor" data-testid="terminal-cursor"></span>',
     delay: 0,
   },
 ];

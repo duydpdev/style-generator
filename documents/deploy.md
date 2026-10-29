@@ -9,6 +9,7 @@ Quy trình deploy thư viện `@duydpdev/style-generator`.
   - [CI/CD Overview](#cicd-overview)
   - [GitHub Actions Workflows](#github-actions-workflows)
     - [`ci.yml` — PR Check](#ciyml--pr-check)
+    - [`ci-matrix.yml` — PR Matrix](#ci-matrixyml--pr-matrix)
     - [`pr-title.yml` — PR title lint](#pr-titleyml--pr-title-lint)
     - [Pull Request \& merge convention](#pull-request--merge-convention)
     - [Local (Pre-commit) — Husky](#local-pre-commit--husky)
@@ -41,7 +42,7 @@ flowchart LR
     M2 -.->|back-merge sau mọi push vào main| D
 ```
 
-Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có tag mới thì `deploy.yml` publish lên GitHub Packages. Mọi push vào `main` (có hoặc không có release) kết thúc bằng `back-merge.yml`, merge `main` về `develop`. `drift.yml` chạy mỗi giờ, cảnh báo khi `develop` vẫn thiếu commit của `main`.
+Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có tag mới thì `deploy.yml` publish lên GitHub Packages. Mọi push vào `main` (có hoặc không có release) kết thúc bằng `back-merge.yml`, merge `main` về `develop`. `drift.yml` chạy mỗi ngày (06:17 UTC), cảnh báo khi `develop` vẫn thiếu commit của `main`.
 
 ---
 
@@ -51,21 +52,29 @@ Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có t
 
 **Trigger:** Pull Request vào `main`, `develop` hoặc nhánh tích hợp `release/**` (ví dụ `release/5.0` của chuyến 5.0: PR từ nhánh làm việc vào `release/5.0` và PR `release/5.0` → `develop` đều có CI). `release.yml` thì **không** chạy trên `release/**`: release chỉ phát hành từ `main`/`develop`.
 
-**Các job** (Node 22, trừ `node-floor`):
+**Draft:** job `check` có `if: github.event.pull_request.draft == false` và `on.pull_request.types` có thêm `ready_for_review`: PR draft không chạy CI, CI chạy khi PR được đánh dấu ready. Mở PR ở draft cho đến khi gate local xanh. `ci.yml` không có bộ lọc path: PR chỉ đổi `documents/**` vẫn chạy `check`, vì site render `documents/*.md` và `check:links` kiểm link của chúng.
+
+**Job** (Node 22):
 
 - `check`: `yarn install --immutable` → `yarn npm audit --recursive --severity high --environment production` (chặn khi dependency production có lỗ hổng high/critical) → `yarn npm audit --all --recursive || true` (chỉ in log, tooling dev/example/site không được ship) → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` + `yarn typecheck:scripts` → `yarn build:all` → `yarn workspace site build` → `yarn workspace site check:links` → typecheck 3 example (`yarn workspaces foreach -A --include '*-example' run typecheck`) → build `next-v4-example` và `nuxt-v4-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn check:smoke` → `node scripts/vite-dev-smoke.mjs` → `yarn typecheck:dist` → `yarn test:coverage` (ngưỡng `coverage.thresholds`) → `yarn test:types`.
   - Commitlint range: `base..head` cho cả PR vào `develop` lẫn `main`. Feature được cắt từ `main` và vào hai nhánh bằng cùng các commit (merge commit, không squash), nên range này đúng bằng các commit của feature. Header của chúng quyết định loại release, nên commit nào cũng bị lint.
-- `changes`: `git diff --name-only base...head`; `code=false` khi PR chỉ đổi `documents/**`.
-- `e2e`: chỉ chạy khi `changes.code == 'true'`. `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
-- `tailwind-floor`: chỉ chạy khi `changes.code == 'true'`. Ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
-- `node-floor`: chỉ chạy khi `changes.code == 'true'`. Node `20.19.0` (sàn của `engines.node`) → `yarn install --immutable` → `yarn build:all` → `yarn check:smoke`; bước chạy script TypeScript do `init` sinh ra bị bỏ qua vì Node 20 không strip được type (script đó cần Node >= 22.18).
-- `peer-matrix`: chỉ chạy khi `changes.code == 'true'`; 5 leg (`vite` 5/6/8, `typescript` 6/7). `yarn install --immutable` → `yarn build:all` → ghi `resolutions[<peer>] = ^<major>.0.0` (không commit) → `yarn install --no-immutable` → assert bản resolve ở root và `examples/react-v4` là `<major>.x` → build `examples/react-v4` → (leg `vite`) `node scripts/vite-dev-smoke.mjs` → typecheck example → `yarn typecheck:dist` → (leg `typescript`) `yarn test:types`. Leg của major đã công bố phải xanh; chỉ leg `experimental: true` (TypeScript 7) có `continue-on-error`. Leg xanh/đỏ quyết định range `peerDependencies` (sửa tay).
 
-Browser Playwright **không** được cache, và đây là quyết định có đo đạc (PR #73). Khi hit, bước install mất 42 s; không có cache là 49–52 s; khi miss là 56–75 s, cộng 5–8 s để lưu cache, và mỗi ref PR tốn 383 MB. Cache không bỏ được bước `install-deps` (apt), vốn chiếm phần lớn thời gian. `ci.yml` chỉ chạy trên `pull_request`, nên không có cache của nhánh base để PR mới dùng lại. Kết quả là mọi PR mới đều chậm hơn. Dùng container `mcr.microsoft.com/playwright` chỉ đáng xem lại khi e2e trở thành nút cổ chai.
+### `ci-matrix.yml` — PR Matrix
+
+**Trigger:** Pull Request vào `main`, `develop` hoặc `release/**` (`types: [opened, synchronize, reopened, ready_for_review]`), trừ PR chỉ đổi `documents/**`: `paths-ignore: ["documents/**"]` ở mức workflow khiến GitHub không tạo run, nên không tốn phút. Bộ lọc này thay cho job `changes` cũ của `ci.yml`, vốn tốn tối thiểu 1 phút runner ở mọi PR chỉ để quyết định có chạy bốn job dưới đây hay không. `concurrency: ci-matrix-<ref>` riêng, `cancel-in-progress: true`. Mọi job có `if: github.event.pull_request.draft == false` như `check`.
+
+**Các job** (Node 22, trừ `node-floor`); mỗi job tự `yarn install` và `yarn build:all`:
+
+- `e2e`: `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
+- `tailwind-floor`: Ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
+- `node-floor`: Node `20.19.0` (sàn của `engines.node`) → `yarn install --immutable` → `yarn build:all` → `yarn check:smoke`; bước chạy script TypeScript do `init` sinh ra bị bỏ qua vì Node 20 không strip được type (script đó cần Node >= 22.18).
+- `peer-matrix`: 4 leg (`vite` 5/6/8, `typescript` 6). `yarn install --immutable` → `yarn build:all` → ghi `resolutions[<peer>] = ^<major>.0.0` (không commit) → `yarn install --no-immutable` → assert bản resolve ở root và `examples/react-v4` là `<major>.x` → build `examples/react-v4` → (leg `vite`) `node scripts/vite-dev-smoke.mjs` → typecheck example → `yarn typecheck:dist` → (leg `typescript`) `yarn test:types`. Mọi leg phải xanh (không leg nào có `continue-on-error`); leg TypeScript 7 đã bỏ vì Yarn 4.10 không cài được TypeScript 7 native, nên leg đó không bao giờ xanh và tốn khoảng 45 phút mỗi tháng. Leg xanh/đỏ quyết định range `peerDependencies` (sửa tay).
+
+Browser Playwright **không** được cache, và đây là quyết định có đo đạc (PR #73). Khi hit, bước install mất 42 s; không có cache là 49–52 s; khi miss là 56–75 s, cộng 5–8 s để lưu cache, và mỗi ref PR tốn 383 MB. Cache không bỏ được bước `install-deps` (apt), vốn chiếm phần lớn thời gian. `ci-matrix.yml` chỉ chạy trên `pull_request`, nên không có cache của nhánh base để PR mới dùng lại. Kết quả là mọi PR mới đều chậm hơn. Dùng container `mcr.microsoft.com/playwright` chỉ đáng xem lại khi e2e trở thành nút cổ chai.
 
 ### `pr-title.yml` — PR title lint
 
-**Trigger:** Pull Request vào `main`, `develop` hoặc `release/**`, `opened`, `edited`, `synchronize`, `reopened` (`edited` bắt cả lần chỉ sửa tiêu đề).
+**Trigger:** Pull Request vào `main`, `develop` hoặc `release/**`, `opened`, `edited`, `reopened` (`edited` bắt cả lần chỉ sửa tiêu đề). Không chạy ở `synchronize`: push commit mới không đổi tiêu đề, nên check chỉ gắn vào head lúc PR được mở/sửa/mở lại.
 
 Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR. Config này dùng lại `commitlint.config.ts` và chỉ tắt `defaultIgnores`, để tiêu đề `Revert "…"` (mặc định của GitHub khi revert PR) hay `Merge …` cũng fail. Range lint trong `ci.yml` vẫn dùng config chung vì ở đó có merge commit thật. Từ khi feature vào `develop` bằng merge commit, tiêu đề PR **không** còn quyết định release: dòng đầu của merge commit là `Merge pull request #N from …` (analyzer bỏ qua), tiêu đề PR chỉ nằm trong body. Check này giữ lại để tiêu đề PR dễ đọc và khớp với header của commit.
 
@@ -160,7 +169,7 @@ Merge thường, **không** `-X theirs` (option đó chọn phía `main` cho m�
 
 ### `drift.yml` — Drift check
 
-**Trigger:** mỗi giờ (`schedule`) và `workflow_dispatch`.
+**Trigger:** mỗi ngày lúc 06:17 UTC (`schedule`, `cron: "17 6 * * *"`) và `workflow_dispatch`. Lịch mỗi giờ tốn khoảng 675 phút runner mỗi tháng (mỗi lần chạy ~6 giây bị tính tròn 1 phút); back-merge hỏng giờ được báo muộn nhất một ngày.
 
 Fail khi `git rev-list --count origin/develop..origin/main` > 0 và đỉnh `main` đã cũ hơn 60 phút (bỏ qua lúc một run release/back-merge đang chạy), in ra các commit bị thiếu. Giới hạn: số đếm không bắt được "revert trap" (xem [Gỡ feature bị reject](#gỡ-feature-bị-reject)).
 

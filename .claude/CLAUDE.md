@@ -97,7 +97,7 @@ Source layout, public exports per subpath and CLI commands: `documents/architect
 
 ## Testing
 
-Vitest (Node env) with colocated `*.test.ts`; type tests in `*.test-d.ts` via `yarn test:types` (`expectTypeOf`); integration tests in `src/__integration__/` compile through the real Tailwind engine; Playwright e2e via `yarn test:e2e`; `yarn typecheck:dist` checks the built `dist/*.d.ts` with `skipLibCheck: false`; `node scripts/vite-dev-smoke.mjs` runs `styleGenVite` under a real Vite dev server. Layers and CI legs (including `tailwind-floor`, `node-floor` and `peer-matrix`, which decides the `vite`/`typescript` peer ranges; only its `experimental` legs may fail): `documents/testing.md`.
+Vitest (Node env) with colocated `*.test.ts`; type tests in `*.test-d.ts` via `yarn test:types` (`expectTypeOf`); integration tests in `src/__integration__/` compile through the real Tailwind engine; Playwright e2e via `yarn test:e2e`; `yarn typecheck:dist` checks the built `dist/*.d.ts` with `skipLibCheck: false`; `node scripts/vite-dev-smoke.mjs` runs `styleGenVite` under a real Vite dev server. Layers and CI legs (including `tailwind-floor`, `node-floor` and `peer-matrix`, which decides the `vite`/`typescript` peer ranges; every leg must pass; these jobs live in `.github/workflows/ci-matrix.yml`, which skips `documents/**`-only PRs, and every CI job skips draft PRs): `documents/testing.md`.
 
 ## Publishing guards
 

@@ -6,13 +6,16 @@
 # Header của các commit trong nhánh mới quyết định release (lint trong ci.yml).
 # Check này giữ tiêu đề PR dễ đọc và khớp với header đó.
 # `edited` bắt được cả khi chỉ sửa tiêu đề (ci.yml không chạy lại khi đó).
+# Không chạy ở `synchronize`: push commit mới không đổi tiêu đề. Hệ quả: check
+# chỉ gắn vào head lúc chạy; commit push sau đó không có check này (không có
+# branch protection nên không chặn merge).
 # ─────────────────────────────────────────────────────
 name: PR Title
 
 on:
   pull_request:
     branches: [main, develop, "release/**"]
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, edited, reopened]
 
 concurrency:
   group: pr-title-${{ github.event.pull_request.number }}

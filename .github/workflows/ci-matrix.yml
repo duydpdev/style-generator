@@ -1,0 +1,216 @@
+# ─────────────────────────────────────────────────────
+# CI Matrix — e2e, Tailwind floor, Node floor, peer matrix
+#
+# Split from ci.yml so a workflow-level `paths-ignore` skips the whole run
+# when a PR only changes documents/** (it replaced the old `changes` job,
+# which cost a billed runner minute on every PR just to decide). ci.yml's
+# `check` job still runs on docs-only PRs: the site renders documents/*.md.
+# Every job skips draft PRs; `ready_for_review` runs them when the PR leaves
+# draft.
+# ─────────────────────────────────────────────────────
+name: CI Matrix
+
+on:
+  pull_request:
+    branches: [main, develop, "release/**"]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - "documents/**"
+
+# Own group: cancelling a stale matrix run never cancels ci.yml's `check`.
+concurrency:
+  group: ci-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps chromium webkit
+
+      - name: Run e2e tests
+        run: yarn test:e2e
+
+  # The published peer range is `tailwindcss >=4.1.0`, but the lockfile pins
+  # 4.3.0, so the floor is otherwise never exercised. This leg re-resolves the
+  # Tailwind packages to the latest 4.1.x via `resolutions` (edited in this
+  # runner's checkout only — the committed package.json/yarn.lock are not
+  # changed) and runs the unit + e2e suites against it.
+  tailwind-floor:
+    name: Tailwind peer floor (4.1.x)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Pin Tailwind packages to the 4.1.x floor
+        run: |
+          jq '.resolutions += {
+            "tailwindcss": "~4.1.0",
+            "@tailwindcss/node": "~4.1.0",
+            "@tailwindcss/vite": "~4.1.0",
+            "@tailwindcss/postcss": "~4.1.0"
+          }' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          yarn install --no-immutable
+          yarn why tailwindcss
+          yarn why @tailwindcss/node
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps chromium webkit
+
+      - name: Unit tests
+        run: yarn test
+
+      - name: E2E tests
+        run: yarn test:e2e
+
+  # `engines.node` is `^20.19.0 || >=22.12.0`, while every other job runs
+  # Node 22. This leg loads the built package on the floor release: every
+  # subpath via import + require (the CJS entries `require` ESM-only
+  # chokidar 5, unflagged only from 20.19) and the CLI. The init-scaffolded
+  # TypeScript script is skipped here; it needs Node >= 22.18.
+  node-floor:
+    name: Node engines floor (20.19.0)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20.19.0"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Smoke-run built artifacts
+        run: yarn check:smoke
+
+  # The `vite` and `typescript` peer ranges (CI-05). Each leg re-resolves ONE
+  # peer to the latest release of one major via `resolutions` (this runner's
+  # checkout only), after the library is built with the committed toolchain,
+  # so a red leg names exactly one major. The leg then runs what a consumer on
+  # that major runs: the react-v4 example built through `styleGenVite`, a dev
+  # server re-emitting on a theme edit, the example and `dist/*.d.ts`
+  # type-checked and, for TypeScript, the type tests. Every leg is a
+  # published major and must pass (TypeScript 7 has no leg: Yarn 4.10's
+  # compat patch cannot install it). ci.yml's `check` job covers the
+  # lockfile's Vite 7/TS 5.
+  peer-matrix:
+    name: Peer matrix (${{ matrix.peer }} ${{ matrix.major }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { peer: vite, major: 5 }
+          - { peer: vite, major: 6 }
+          - { peer: vite, major: 8 }
+          - { peer: typescript, major: 6 }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Re-resolve ${{ matrix.peer }} to the latest ${{ matrix.major }}.x
+        env:
+          PEER: ${{ matrix.peer }}
+          MAJOR: ${{ matrix.major }}
+        run: |
+          jq --arg peer "$PEER" --arg range "^$MAJOR.0.0" \
+            '.resolutions[$peer] = $range' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          yarn install --no-immutable
+          yarn why "$PEER"
+          # A red leg must mean "this major fails", never "the old copy ran":
+          # the version seen from the root and from the example must be N.x.
+          for ws in . examples/react-v4; do
+            got=$(cd "$ws" && node -p "require('$PEER/package.json').version")
+            echo "$ws: $PEER $got"
+            case "$got" in "$MAJOR".*) ;; *) echo "::error::$ws resolved $PEER $got, expected $MAJOR.x"; exit 1 ;; esac
+          done
+
+      - name: Build the react-v4 example (styleGenVite)
+        run: yarn workspace react-v4-example build
+
+      - name: Vite dev-server smoke (styleGenVite configureServer)
+        if: matrix.peer == 'vite'
+        run: node scripts/vite-dev-smoke.mjs
+
+      - name: Type-check the react-v4 example against dist
+        run: yarn workspace react-v4-example typecheck
+
+      - name: Type-check dist/*.d.ts with library checking on
+        # The example sets skipLibCheck, so it never checks the package's own
+        # declarations (or the vite/zod types they reference).
+        run: yarn typecheck:dist
+
+      - name: Type tests
+        if: matrix.peer == 'typescript'
+        run: yarn test:types

@@ -44,6 +44,15 @@ const UI_APP_FILES = [
   "site/src/components/key-point.tsx",
   "site/src/components/terminal-typewriter.tsx",
   "site/src/components/theme-preview.tsx",
+  "site/src/pages/docs-page.tsx",
+  "site/src/components/docs-sidebar.tsx",
+  "site/src/components/docs-nav-list.tsx",
+  "site/src/components/docs-mobile-nav.tsx",
+  "site/src/components/docs-mobile-onpage.tsx",
+  "site/src/components/docs-onpage.tsx",
+  "site/src/components/docs-header.tsx",
+  "site/src/components/docs-footer.tsx",
+  "site/src/components/doc-markdown.tsx",
 ];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;

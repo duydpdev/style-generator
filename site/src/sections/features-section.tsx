@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
 import { ChapterHead } from "../components/chapter-head";
-import { Box } from "../ui";
+import { Box, Grid, Stack, Text } from "../ui";
 
 interface Feat {
-  cls: string;
+  part: string;
   tag: string;
   title: string;
   body: ReactNode;
@@ -12,7 +12,7 @@ interface Feat {
 
 const FEATS: Feat[] = [
   {
-    cls: "feat-1",
+    part: "feat-wide",
     tag: "root",
     title: "generate()",
     body: (
@@ -24,7 +24,7 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    cls: "feat-2",
+    part: "feat-wide",
     tag: "root",
     title: "defineTheme()",
     body: (
@@ -35,7 +35,7 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    cls: "feat-3",
+    part: "feat-narrow",
     tag: "/spacing",
     title: "resolveSpacingProps()",
     body: (
@@ -45,19 +45,19 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    cls: "feat-4",
+    part: "feat-narrow",
     tag: "/cva",
     title: "createVariantMapper()",
     body: <>Token → class lookup for CVA. Kebab auto.</>,
   },
   {
-    cls: "feat-5",
+    part: "feat-narrow",
     tag: "/vite",
     title: "styleGenVite()",
     body: <>Watches theme.json. HMR-friendly.</>,
   },
   {
-    cls: "feat-6",
+    part: "feat-wide",
     tag: "/types",
     title: "Semantic type aliases",
     body: (
@@ -68,7 +68,7 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    cls: "feat-7",
+    part: "feat-wide",
     tag: "CLI",
     title: "style-gen — init · generate · doctor",
     body: (
@@ -107,15 +107,36 @@ export function FeaturesSection() {
         }
       />
 
-      <div className="bento" data-reveal="stagger">
+      <Grid data-part="bento" data-reveal="stagger" gap={3.5}>
         {FEATS.map((f) => (
-          <article key={f.tag + f.title} className={`feat ${f.cls}`}>
-            <span className="feat-tag">{f.tag}</span>
-            <h4>{f.title}</h4>
-            <p>{f.body}</p>
-          </article>
+          <Stack
+            as="article"
+            key={f.tag + f.title}
+            data-part={`feat ${f.part}`}
+            gap={2}
+            p={4.5}
+            rounded="lg"
+            position="relative"
+          >
+            <Box
+              as="span"
+              data-part="feat-tag"
+              px={2}
+              py={0.5}
+              rounded="pill"
+              backgroundColor="primarySoft"
+            >
+              {f.tag}
+            </Box>
+            <Box as="h4" mt={1} position="relative">
+              {f.title}
+            </Box>
+            <Text as="p" color="muted">
+              {f.body}
+            </Text>
+          </Stack>
         ))}
-      </div>
+      </Grid>
     </Box>
   );
 }

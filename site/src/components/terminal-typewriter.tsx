@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { Box, Flex, Stack, Text } from "../ui";
+
 export interface TermLine {
   html: string;
   delay: number;
@@ -69,22 +71,31 @@ export function TerminalTypewriter({
   }, [shown]);
 
   return (
-    <div className="terminal">
-      <div className="code-head">
-        <span className="dots">
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="filename">{filename}</span>
-      </div>
-      <div ref={bodyRef} className="terminal-body" data-testid="terminal-body">
+    <Stack data-part="terminal" minHeight={320} rounded="lg">
+      <Flex data-part="code-head" align="center" gap={2} px={4} py={3}>
+        <Flex as="span" gap={1.25}>
+          <Box as="span" data-part="dot" width={10} height={10} />
+          <Box as="span" data-part="dot" width={10} height={10} />
+          <Box as="span" data-part="dot" width={10} height={10} />
+        </Flex>
+        <Text as="span" data-part="filename" ml={1.5}>
+          {filename}
+        </Text>
+      </Flex>
+      <Box
+        ref={bodyRef}
+        data-part="terminal-body"
+        data-testid="terminal-body"
+        px={4.5}
+        py={4}
+      >
         {lines.map((l, i) => {
           const revealed = i < shown;
           return (
-            <div
+            <Text
+              as="div"
               key={i}
-              className="line"
+              data-part="line"
               data-line-state={revealed ? "shown" : "pending"}
               aria-hidden={!revealed}
               style={{ visibility: revealed ? "visible" : "hidden" }}
@@ -92,7 +103,7 @@ export function TerminalTypewriter({
             />
           );
         })}
-      </div>
-    </div>
+      </Box>
+    </Stack>
   );
 }

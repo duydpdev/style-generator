@@ -1,38 +1,33 @@
-.terminal {
+[data-part~="terminal"] {
   background: #0b0e1d;
   color: #e6e2d7;
-  border-radius: var(--r-lg);
   overflow: hidden;
   border: 1px solid #1b1f36;
   box-shadow: 0 24px 50px -24px rgba(15, 21, 48, 0.4);
-  display: flex;
-  flex-direction: column;
-  min-height: 320px;
 }
-.terminal-body {
-  padding: 16px 18px;
+[data-part~="terminal-body"] {
   font-family: var(--f-mono);
   font-size: 12px;
   line-height: 1.75;
   flex: 1;
   overflow: auto;
 }
-.terminal-body .line {
+[data-part~="terminal-body"] [data-part~="line"] {
   white-space: pre-wrap;
 }
-.terminal-body .prompt {
+[data-part~="terminal-body"] .prompt {
   color: #6bbf93;
 }
-.terminal-body .dim {
+[data-part~="terminal-body"] .dim {
   color: #777c95;
 }
-.terminal-body .acc {
+[data-part~="terminal-body"] .acc {
   color: #8fa6ff;
 }
-.terminal-body .good {
+[data-part~="terminal-body"] .good {
   color: #6bbf93;
 }
-.terminal-body .cursor {
+[data-part~="terminal-body"] .cursor {
   display: inline-block;
   width: 7px;
   height: 13px;
@@ -44,13 +39,6 @@
   50% {
     opacity: 0;
   }
-}
-
-.start-cta {
-  display: flex;
-  gap: 12px;
-  margin-top: 28px;
-  flex-wrap: wrap;
 }
 
 [data-part~="cta-card"] {

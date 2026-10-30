@@ -1,5 +1,5 @@
 import { ChapterHead } from "../components/chapter-head";
-import { Box } from "../ui";
+import { Box, Grid, Stack } from "../ui";
 import { CodeCard } from "../components/code-card";
 import { KeyPoint } from "../components/key-point";
 
@@ -53,8 +53,8 @@ export function TypesSection() {
         }
       />
 
-      <div className="split-grid" data-reveal="up">
-        <div className="kp-list">
+      <Grid data-part="split-grid" data-reveal="up" gap={6}>
+        <Stack gap={3}>
           <KeyPoint
             badge="T1"
             title={<code>ColorVariant&lt;Theme&gt;</code>}
@@ -84,9 +84,9 @@ export function TypesSection() {
             title={<code>createDesignTokens()</code>}
             body={<>Typed token arrays for CVA, runtime-checked.</>}
           />
-        </div>
+        </Stack>
         <CodeCard filename="Box.tsx" tag="typed" lang="ts" code={TS_CODE} />
-      </div>
+      </Grid>
     </Box>
   );
 }

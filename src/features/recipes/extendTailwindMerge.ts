@@ -62,7 +62,7 @@ const BORDER_WIDTH_PREFIXES = [
  * ```ts
  * import { extendTailwindMerge } from "tailwind-merge";
  * import { createTailwindMergeExtension } from "@duydpdev/style-generator/recipes";
- * import { tokens } from "./tokens";
+ * declare const tokens: Parameters<typeof createTailwindMergeExtension>[0];
  *
  * const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
  * ```

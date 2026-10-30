@@ -911,6 +911,12 @@ __metadata:
   languageName: node
   linkType: soft
 
+"@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-vue%40workspace%3Apackages%2Fui-vue":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-vue%40workspace%3Apackages%2Fui-vue"
+  languageName: node
+  linkType: soft
+
 "@duydpdev/style-generator@link:../..::locator=design-system-example%40workspace%3Aexamples%2Fdesign-system":
   version: 0.0.0-use.local
   resolution: "@duydpdev/style-generator@link:../..::locator=design-system-example%40workspace%3Aexamples%2Fdesign-system"
@@ -968,6 +974,7 @@ __metadata:
     eslint-plugin-jsdoc: "npm:^62.7.1"
     eslint-plugin-prettier: "npm:^5.5.5"
     eslint-plugin-sonarjs: "npm:^4.0.0"
+    eslint-plugin-vue: "npm:^10.12.0"
     globals: "npm:^17.4.0"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^16.3.2"
@@ -983,6 +990,7 @@ __metadata:
     vite: "npm:^7.3.5"
     vite-plugin-dts: "npm:^4.5.4"
     vitest: "npm:^4.1.11"
+    vue-eslint-parser: "npm:^10.4.1"
     zod: "npm:^4"
   peerDependencies:
     tailwindcss: ^4.1.0
@@ -1014,6 +1022,21 @@ __metadata:
     vitest: "npm:^4.1.11"
   peerDependencies:
     react: ^19.0.0
+  languageName: unknown
+  linkType: soft
+
+"@duydpdev/ui-vue@workspace:*, @duydpdev/ui-vue@workspace:packages/ui-vue":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/ui-vue@workspace:packages/ui-vue"
+  dependencies:
+    "@duydpdev/style-generator": "link:../.."
+    "@types/node": "npm:^25.3.3"
+    design-system-example: "workspace:*"
+    typescript: "npm:^5.9.0"
+    vitest: "npm:^4.1.11"
+    vue: "npm:^3.5.44"
+  peerDependencies:
+    vue: ^3.5.0
   languageName: unknown
   linkType: soft
 
@@ -7772,6 +7795,42 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eslint-plugin-vue@npm:^10.12.0":
+  version: 10.12.0
+  resolution: "eslint-plugin-vue@npm:10.12.0"
+  dependencies:
+    "@eslint-community/eslint-utils": "npm:^4.9.1"
+    natural-compare: "npm:^1.4.0"
+    nth-check: "npm:^2.1.1"
+    postcss-selector-parser: "npm:^7.1.4"
+    semver: "npm:^7.8.5"
+    xml-name-validator: "npm:^5.0.0"
+  peerDependencies:
+    "@stylistic/eslint-plugin": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
+    "@typescript-eslint/parser": ^7.0.0 || ^8.0.0
+    eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
+    vue-eslint-parser: ^10.3.0
+  peerDependenciesMeta:
+    "@stylistic/eslint-plugin":
+      optional: true
+    "@typescript-eslint/parser":
+      optional: true
+  checksum: 10c0/9886f2a038ccb0fad411188df64bd5b5fd86eb1aeea12ecf5819846592fc511d9d8718e1573eab42b2d9b211468a23941f176281f821fb8337bc6993a57d24fe
+  languageName: node
+  linkType: hard
+
+"eslint-scope@npm:^8.2.0 || ^9.0.0":
+  version: 9.1.2
+  resolution: "eslint-scope@npm:9.1.2"
+  dependencies:
+    "@types/esrecurse": "npm:^4.3.1"
+    "@types/estree": "npm:^1.0.8"
+    esrecurse: "npm:^4.3.0"
+    estraverse: "npm:^5.2.0"
+  checksum: 10c0/9fb8bca5a73e5741efb6cec84467027b6cb6f4203ff9b43a938e272c5cd30800bde46a5c20dfd1609f840225f0b62b7673be391b20acadf8658ca9fa4729b3dd
+  languageName: node
+  linkType: hard
+
 "eslint-scope@npm:^9.1.1":
   version: 9.1.1
   resolution: "eslint-scope@npm:9.1.1"
@@ -7791,7 +7850,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-visitor-keys@npm:^5.0.0, eslint-visitor-keys@npm:^5.0.1":
+"eslint-visitor-keys@npm:^4.2.0 || ^5.0.0, eslint-visitor-keys@npm:^5.0.0, eslint-visitor-keys@npm:^5.0.1":
   version: 5.0.1
   resolution: "eslint-visitor-keys@npm:5.0.1"
   checksum: 10c0/16190bdf2cbae40a1109384c94450c526a79b0b9c3cb21e544256ed85ac48a4b84db66b74a6561d20fe6ab77447f150d711c2ad5ad74df4fcc133736bce99678
@@ -7843,6 +7902,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"espree@npm:^10.3.0 || ^11.0.0":
+  version: 11.2.0
+  resolution: "espree@npm:11.2.0"
+  dependencies:
+    acorn: "npm:^8.16.0"
+    acorn-jsx: "npm:^5.3.2"
+    eslint-visitor-keys: "npm:^5.0.1"
+  checksum: 10c0/cf87e18ffd9dc113eb8d16588e7757701bc10c9934a71cce8b89c2611d51672681a918307bd6b19ac3ccd0e7ba1cbccc2f815b36b52fa7e73097b251014c3d81
+  languageName: node
+  linkType: hard
+
 "espree@npm:^11.1.0, espree@npm:^11.1.1":
   version: 11.1.1
   resolution: "espree@npm:11.1.1"
@@ -7854,7 +7924,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esquery@npm:^1.7.0":
+"esquery@npm:^1.6.0, esquery@npm:^1.7.0":
   version: 1.7.0
   resolution: "esquery@npm:1.7.0"
   dependencies:
@@ -11851,6 +11921,7 @@ __metadata:
   resolution: "nuxt-v4-example@workspace:examples/nuxt-v4"
   dependencies:
     "@duydpdev/style-generator": "link:../.."
+    "@duydpdev/ui-vue": "workspace:*"
     "@tailwindcss/vite": "npm:^4.2.0"
     design-system-example: "workspace:*"
     nuxt: "npm:~4.4.8"
@@ -13078,7 +13149,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-selector-parser@npm:^7.1.5":
+"postcss-selector-parser@npm:^7.1.4, postcss-selector-parser@npm:^7.1.5":
   version: 7.1.7
   resolution: "postcss-selector-parser@npm:7.1.7"
   dependencies:
@@ -14254,7 +14325,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.5.4, semver@npm:^7.8.1, semver@npm:^7.8.5":
+"semver@npm:^7.5.4, semver@npm:^7.6.3, semver@npm:^7.8.1, semver@npm:^7.8.5":
   version: 7.8.5
   resolution: "semver@npm:7.8.5"
   bin:
@@ -16700,6 +16771,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"vue-eslint-parser@npm:^10.4.1":
+  version: 10.4.1
+  resolution: "vue-eslint-parser@npm:10.4.1"
+  dependencies:
+    debug: "npm:^4.4.0"
+    eslint-scope: "npm:^8.2.0 || ^9.0.0"
+    eslint-visitor-keys: "npm:^4.2.0 || ^5.0.0"
+    espree: "npm:^10.3.0 || ^11.0.0"
+    esquery: "npm:^1.6.0"
+    semver: "npm:^7.6.3"
+  peerDependencies:
+    eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
+  checksum: 10c0/f6181b4d4ac17a5c06484aed40022997f65622a037ccc21797c88e55ab93f4ad21c95c93c466777f7a139ffb8bf750c889ef48e1ea16882e6617f6405c1d2013
+  languageName: node
+  linkType: hard
+
 "vue-router@npm:^5.1.0":
   version: 5.4.0
   resolution: "vue-router@npm:5.4.0"
@@ -16921,6 +17008,13 @@ __metadata:
     is-wsl: "npm:^3.1.0"
     powershell-utils: "npm:^0.1.0"
   checksum: 10c0/b3ba99cc6b71f66457eef598d529beeb8cb57a72646877fe25993894b808c60b82f6d47df5463f0b6e54632272f62f5eaea105c12784fd09b06f500f3f53aa2e
+  languageName: node
+  linkType: hard
+
+"xml-name-validator@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "xml-name-validator@npm:5.0.0"
+  checksum: 10c0/3fcf44e7b73fb18be917fdd4ccffff3639373c7cb83f8fc35df6001fecba7942f1dbead29d91ebb8315e2f2ff786b508f0c9dc0215b6353f9983c6b7d62cb1f5
   languageName: node
   linkType: hard
 

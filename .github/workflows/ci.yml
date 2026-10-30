@@ -64,6 +64,12 @@ jobs:
       - name: Build
         run: yarn build:all
 
+      - name: Prepare nuxt-v4 types
+        # ESLint lints examples/nuxt-v4/app/**, whose tsconfig references
+        # .nuxt/tsconfig.*.json. `nuxt prepare` writes them and needs dist/
+        # (nuxt.config.ts imports the built library), so it runs after Build.
+        run: yarn workspace nuxt-v4-example prepare:nuxt
+
       - name: Lint
         # Type-aware ESLint also covers examples/**, which import the built
         # library through `link:../..`; without dist/ their types are unresolved.
@@ -94,8 +100,8 @@ jobs:
         run: yarn workspace site check:links
 
       - name: Typecheck examples
-        # The examples and packages/ui-react consume the built library through `link:../..`.
-        run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' run typecheck
+        # The examples, packages/ui-react and packages/ui-vue consume the built library through `link:../..`.
+        run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' --include '@duydpdev/ui-vue' run typecheck
 
       - name: Test examples (design-system DX)
         # Compiles the recipes against a mutated theme.json and expects the
@@ -105,6 +111,10 @@ jobs:
       - name: Test ui-react (unit, types, recipe names, Tailwind coverage)
         # Own vitest runner (its tsconfig has jsx); needs dist/ from the build above.
         run: yarn workspace @duydpdev/ui-react test
+
+      - name: Test ui-vue (SSR render, types, names)
+        # Own vitest runner (root vitest excludes packages/**); needs dist/.
+        run: yarn workspace @duydpdev/ui-vue test
 
       - name: Build examples
         # react-v4 is already built by the site build above.

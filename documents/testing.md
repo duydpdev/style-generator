@@ -157,6 +157,8 @@ Like layer 6, this runner is outside the root `yarn test` (`packages/**` is excl
 - `tests/recipe-names.test.ts`: recipes and components compared by name (allow-lists `PART_RECIPES`/`SHARED_RECIPE`); the registry matches `createUi`.
 - `tests/tailwind-classes.test.ts`: `compileScannedCss` (Tailwind's own `Scanner` over the `@source` paths) asserts that every class the recipe tables can emit is in the CSS, for the design-system theme and for the site theme, plus a negative control.
 
+`packages/ui-vue` has its own runner too: `yarn workspace @duydpdev/ui-vue test` (SSR render with `vue/server-renderer`, `*.test-d.ts` type tests, names compared with `UI_COMPONENT_NAMES`).
+
 ---
 
 ## Writing new tests

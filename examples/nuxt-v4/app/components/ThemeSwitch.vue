@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import {
-  axisAttributes,
-  buttonRecipe,
-  cn,
-  stackRecipe,
-  textRecipe,
-} from "design-system-example";
+import { axisAttributes } from "design-system-example";
+
+import { Button, Flex, Select, Stack, Text } from "~/ui";
 
 type AxesState = Parameters<typeof axisAttributes>[0];
 type ThemeName = NonNullable<AxesState["theme"]>;
@@ -20,11 +16,12 @@ const state = useThemeAxes();
 // `"base"` axis; `useHead` applies the map to <html> and drops stale keys.
 useHead(() => ({ htmlAttrs: axisAttributes(state.value) }));
 
-const row = cn(stackRecipe({ direction: "row", wrap: true }), "gap-4");
-const field = cn(stackRecipe({ align: "start" }), "gap-1");
-const label = textRecipe({ type: "text12Mono", color: "muted" });
-const select = "rounded-md border border-current/20 bg-surface px-2 py-1";
-const resetClass = buttonRecipe({ variant: "ghost", size: "sm" });
+const setTheme = (value: string) => {
+  state.value = { ...state.value, theme: value as ThemeName };
+};
+const setPalette = (value: string) => {
+  state.value = { ...state.value, palette: value as PaletteName };
+};
 
 const reset = () => {
   state.value = { theme: "base", palette: "base" };
@@ -32,23 +29,27 @@ const reset = () => {
 </script>
 
 <template>
-  <div :class="row">
-    <label :class="field">
-      <span :class="label">theme</span>
-      <select v-model="state.theme" :class="select">
+  <Flex wrap :gap="4">
+    <Stack as="label" align="start" :gap="1">
+      <Text as="span" type="text12Mono" color="muted">theme</Text>
+      <Select size="sm" :modelValue="state.theme" @update:modelValue="setTheme">
         <option v-for="name in THEMES" :key="name" :value="name">
           {{ name }}
         </option>
-      </select>
-    </label>
-    <label :class="field">
-      <span :class="label">palette</span>
-      <select v-model="state.palette" :class="select">
+      </Select>
+    </Stack>
+    <Stack as="label" align="start" :gap="1">
+      <Text as="span" type="text12Mono" color="muted">palette</Text>
+      <Select
+        size="sm"
+        :modelValue="state.palette"
+        @update:modelValue="setPalette"
+      >
         <option v-for="name in PALETTES" :key="name" :value="name">
           {{ name }}
         </option>
-      </select>
-    </label>
-    <button type="button" :class="resetClass" @click="reset">Reset</button>
-  </div>
+      </Select>
+    </Stack>
+    <Button variant="ghost" size="sm" @click="reset">Reset</Button>
+  </Flex>
 </template>

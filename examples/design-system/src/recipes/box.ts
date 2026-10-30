@@ -1,5 +1,4 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { createVariantMapper } from "@duydpdev/style-generator/cva";
+import type { VariantProps } from "class-variance-authority";
 import type { SpacingProps } from "@duydpdev/style-generator/recipes";
 import type {
   BackdropBlurVariant,
@@ -13,40 +12,32 @@ import type {
 import type { options } from "../style-gen.options";
 import { tokens, type Theme } from "../tokens";
 
+import {
+  createBoxRecipe,
+  type BoxPreset,
+  type BoxVariantKey,
+} from "./factories/box";
+
+/** Every design-system Box is `relative` (the inner-border overlay is positioned against it). */
+export const boxPreset = { base: "relative" } as const satisfies BoxPreset;
+
+/** Props of the bound box recipe: the token-typed box variants. */
+export type BoxRecipeProps = Readonly<
+  { [K in BoxVariantKey]?: BoxStyleProps[K] | null | undefined } & {
+    innerBorder?: boolean | null | undefined;
+    overlay?: boolean | null | undefined;
+  }
+>;
+
 /**
  * Headless box recipe: `boxRecipe({ backgroundColor, borderColor, border*,
  * rounded*, shadow, backdropBlur, position, innerBorder })`. Spacing is not a
  * variant: split it off with `splitSpacingProps(props, tokens.spacingProperties)`.
  */
-export const boxRecipe = cva("relative", {
-  variants: {
-    backgroundColor: createVariantMapper("bg", tokens.colors),
-    borderColor: createVariantMapper("border", tokens.colors),
-    border: createVariantMapper("border", tokens.borderWidth),
-    borderX: createVariantMapper("border-x", tokens.borderWidth),
-    borderY: createVariantMapper("border-y", tokens.borderWidth),
-    borderT: createVariantMapper("border-t", tokens.borderWidth),
-    borderB: createVariantMapper("border-b", tokens.borderWidth),
-    borderL: createVariantMapper("border-l", tokens.borderWidth),
-    borderR: createVariantMapper("border-r", tokens.borderWidth),
-    rounded: createVariantMapper("rounded", tokens.borderRadius),
-    roundedT: createVariantMapper("rounded-t", tokens.borderRadius),
-    roundedB: createVariantMapper("rounded-b", tokens.borderRadius),
-    roundedL: createVariantMapper("rounded-l", tokens.borderRadius),
-    roundedR: createVariantMapper("rounded-r", tokens.borderRadius),
-    shadow: createVariantMapper("shadow", tokens.shadows),
-    backdropBlur: createVariantMapper("backdrop-blur", tokens.backDropBlurs),
-    position: {
-      absolute: "absolute",
-      relative: "relative",
-      fixed: "fixed",
-      sticky: "sticky",
-    },
-    innerBorder: {
-      true: "!border-none",
-    },
-  },
-});
+export const boxRecipe: (props?: BoxRecipeProps) => string = createBoxRecipe(
+  tokens,
+  boxPreset,
+);
 
 export type BoxVariants = VariantProps<typeof boxRecipe>;
 

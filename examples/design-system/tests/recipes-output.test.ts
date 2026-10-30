@@ -5,14 +5,18 @@ import {
   boxRecipe,
   buttonRecipe,
   cardRecipe,
+  containerRecipe,
   dialogOverlayRecipe,
   dialogRecipe,
+  gridRecipe,
   inputRecipe,
   intents,
+  selectRecipe,
   stackRecipe,
   textRecipe,
   tokens,
 } from "../src";
+import { gridColumns } from "../src/recipes/factories/grid";
 
 type Recipe = (props?: Record<string, unknown>) => string;
 type Axes = Readonly<Record<string, readonly unknown[]>>;
@@ -144,5 +148,30 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
         }),
       ),
     ).toMatchSnapshot();
+  });
+
+  it("containerRecipe and gridRecipe (new, exact)", () => {
+    expect(containerRecipe()).toBe("mx-auto w-full");
+    expect(gridRecipe()).toBe("grid");
+    expect(gridRecipe({ align: "center", flow: "dense" })).toBe(
+      "grid items-center grid-flow-dense",
+    );
+    expect(gridColumns({ base: 1, md: 3 })).toEqual({
+      className: "grid-cols-(--ui-grid-cols) md:grid-cols-(--ui-grid-cols-md)",
+      style: {
+        "--ui-grid-cols": "repeat(1, minmax(0, 1fr))",
+        "--ui-grid-cols-md": "repeat(3, minmax(0, 1fr))",
+      },
+    });
+    expect(() => gridColumns(0)).toThrow(RangeError);
+    expect(() => gridColumns({ tablet: 2 })).toThrow(
+      'unknown breakpoint "tablet"',
+    );
+  });
+
+  it("selectRecipe() equals nuxt-v4 ThemeSwitch.vue's hand-written select string", () => {
+    expect(selectRecipe()).toBe(
+      "rounded-md border border-current/20 bg-surface px-2 py-1",
+    );
   });
 });

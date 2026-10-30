@@ -90,9 +90,9 @@ body::after {
   html {
     scroll-behavior: auto;
   }
-  .marquee-track,
+  [data-part~="marquee-track"],
   .terminal-body .cursor,
-  .arrow-anim {
+  [data-part~="arrow-anim"] {
     animation: none !important;
   }
 }

@@ -1,100 +1,62 @@
 /* Pros / Cons two-column */
-.judgement-grid {
-  display: grid;
+[data-part~="judgement-grid"] {
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
 }
 @media (max-width: 720px) {
-  .judgement-grid {
+  [data-part~="judgement-grid"] {
     grid-template-columns: 1fr;
   }
 }
-.judgement {
+[data-part~="judgement"] {
   border: 1px solid var(--c-line);
-  border-radius: var(--r-lg);
-  padding: 24px;
   background: color-mix(in srgb, var(--c-paper) 70%, transparent);
 }
-.judgement.pro {
+[data-part~="judgement"][data-part~="pro"] {
   border-color: color-mix(in srgb, var(--c-success) 30%, var(--c-line));
 }
-.judgement.con {
+[data-part~="judgement"][data-part~="con"] {
   border-color: color-mix(in srgb, var(--c-danger) 30%, var(--c-line));
 }
-.judgement-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
+[data-part~="judgement-head"] {
   border-bottom: 1px dashed var(--c-line);
 }
-.j-tag {
+[data-part~="j-tag"] {
   font-family: var(--f-mono);
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 3px 9px;
-  border-radius: var(--r-pill);
 }
-.pro .j-tag {
-  background: var(--c-success-soft);
+[data-part~="pro"] [data-part~="j-tag"],
+[data-part~="pro"] [data-part~="mark"] {
   color: var(--c-success);
 }
-.con .j-tag {
-  background: var(--c-danger-soft);
+[data-part~="con"] [data-part~="j-tag"],
+[data-part~="con"] [data-part~="mark"] {
   color: var(--c-danger);
 }
-.j-head-title {
+[data-part~="j-head-title"] {
   font-family: var(--f-display);
   font-style: italic;
   font-weight: 400;
   font-size: 22px;
   letter-spacing: -0.015em;
-  margin: 0;
 }
 
-.j-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.j-list li {
-  display: grid;
+[data-part~="j-item"] {
   grid-template-columns: 22px 1fr;
-  gap: 10px;
   line-height: 1.45;
   font-size: 14px;
 }
-.j-list b {
+[data-part~="j-item"] b {
   font-weight: 600;
   letter-spacing: -0.005em;
   display: block;
 }
-.j-list .meta {
+[data-part~="j-item"] [data-part~="meta"] {
   display: block;
   font-size: 13px;
-  color: var(--c-muted);
-  margin-top: 2px;
 }
-.j-list .mark {
-  width: 22px;
-  height: 22px;
+[data-part~="mark"] {
   border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  margin-top: 1px;
-}
-.pro .mark {
-  background: var(--c-success-soft);
-  color: var(--c-success);
-}
-.con .mark {
-  background: var(--c-danger-soft);
-  color: var(--c-danger);
 }

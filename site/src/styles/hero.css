@@ -1,135 +1,82 @@
-[data-part~="hero"] {
-  padding: 72px 0 32px;
-  position: relative;
-  scroll-margin-top: 80px;
-}
-.hero-eyebrow {
+[data-part~="hero-eyebrow"] {
   display: inline-flex;
-  align-items: center;
-  gap: 10px;
   font-family: var(--f-mono);
   font-size: 11px;
   color: var(--c-muted);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding: 6px 12px;
-  border-radius: var(--r-pill);
-  background: var(--c-paper);
   border: 1px solid var(--c-line);
-  margin-bottom: 28px;
 }
-.hero-eyebrow .dot {
-  width: 6px;
-  height: 6px;
+[data-part~="hero-eyebrow"] [data-part~="dot"] {
   border-radius: 50%;
-  background: var(--c-success);
   box-shadow: 0 0 0 4px var(--c-success-soft);
 }
-.hero-title {
+[data-part~="hero-title"] {
   font-family: var(--f-display);
   font-weight: 400;
   font-size: clamp(56px, 8.4vw, 116px);
   line-height: 0.92;
   letter-spacing: -0.025em;
-  margin: 0 0 28px;
-  color: var(--c-fg);
   max-width: 14ch;
   text-wrap: balance;
 }
-.hero-title em {
+[data-part~="hero-title"] em {
   font-style: italic;
   color: var(--c-primary);
 }
-.hero-lede {
+[data-part~="hero-lede"] {
   font-size: 19px;
-  color: var(--c-muted);
   max-width: 56ch;
-  margin: 0 0 40px;
   line-height: 1.55;
 }
-.hero-lede b {
+[data-part~="hero-lede"] b {
   color: var(--c-fg);
   font-weight: 500;
 }
-.hero-cta {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
 
-.install {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--c-paper);
+[data-part~="install"] {
   border: 1px solid var(--c-line-strong);
-  border-radius: var(--r-md);
-  padding: 7px 7px 7px 14px;
   font-family: var(--f-mono);
   font-size: 13px;
   color: inherit;
   text-decoration: none;
   box-shadow: 0 4px 12px -4px rgba(15, 21, 48, 0.08);
 }
-.install:hover {
+[data-part~="install"]:hover {
   border-color: var(--c-primary);
 }
-.install .prompt {
-  color: var(--c-muted);
-}
-.install .install-go {
+[data-part~="install"] [data-part~="install-go"] {
   font-family: var(--f-sans);
   font-size: 11.5px;
   font-weight: 500;
-  padding: 6px 10px;
   border-radius: 5px;
   border: 1px solid var(--c-line);
   background: var(--c-bg);
-  color: var(--c-fg);
 }
 
-.hero-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-  margin-top: 56px;
-  padding: 24px 0;
+[data-part~="hero-stats"] {
   border-top: 1px solid var(--c-line);
   border-bottom: 1px solid var(--c-line);
 }
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.stat .k {
+[data-part~="hero-stats"] [data-part~="k"] {
   font-family: var(--f-mono);
   font-size: 10px;
-  color: var(--c-muted);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.stat .v {
+[data-part~="hero-stats"] [data-part~="v"] {
   font-family: var(--f-display);
   font-style: italic;
   font-size: 32px;
   line-height: 1;
   letter-spacing: -0.02em;
 }
-.stat .v.accent {
-  color: var(--c-primary);
-}
-.stat .m {
+[data-part~="hero-stats"] [data-part~="m"] {
   font-family: var(--f-mono);
   font-size: 11px;
-  color: var(--c-muted);
 }
 
-.marquee {
-  display: flex;
-  gap: 36px;
-  margin-top: 48px;
+[data-part~="marquee"] {
   font-family: var(--f-mono);
   font-size: 11px;
   color: var(--c-muted);
@@ -151,19 +98,14 @@
     transparent
   );
 }
-.marquee-track {
-  display: flex;
-  gap: 36px;
+[data-part~="marquee-track"] {
   animation: marquee 36s linear infinite;
   flex-shrink: 0;
 }
-.marquee-track > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+[data-part~="marquee-item"] {
   white-space: nowrap;
 }
-.marquee-track > span::before {
+[data-part~="marquee-item"]::before {
   content: "";
   width: 4px;
   height: 4px;
@@ -177,16 +119,16 @@
 }
 
 @media (max-width: 480px) {
-  .hero-stats {
+  [data-part~="hero-stats"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .install {
-    display: flex;
+  [data-part~="install"] {
     width: 100%;
     box-sizing: border-box;
   }
-  .install .install-go {
+  [data-part~="install"] [data-part~="install-go"] {
     flex: none;
+    /* spacing-exception: E4 */
     margin-left: auto;
     white-space: nowrap;
   }

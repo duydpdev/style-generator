@@ -1,29 +1,9 @@
 import { Link } from "react-router-dom";
 
 import { ChapterMarker } from "../components/chapter-head";
-import { Box } from "../ui";
+import { Box, Flex, Grid, Stack, Text } from "../ui";
 import { ArrowRight } from "../components/icon";
-
-const INSTALL_CMD = "yarn add @duydpdev/style-generator";
-
-const STATS = [
-  { k: "Subpaths", v: "8", m: "gzip-budgeted · tree-shakeable", accent: true },
-  { k: "Spacing utilities", v: "21", m: "from ~4 800 classes" },
-  { k: "Tailwind", v: "v4", m: "the only target" },
-  { k: "Runtime", v: "Build-time", m: "CSS generated before ship" },
-] as const;
-
-const MARQUEE_TOKENS = [
-  "generate",
-  "defineTheme",
-  "resolveSpacingProps",
-  "createVariantMapper",
-  "styleGenVite",
-  "generateThemeCss",
-  "ColorVariant<Theme>",
-  "style-gen init",
-  "style-gen doctor",
-];
+import { INSTALL_CMD, MARQUEE_TOKENS, STATS } from "../data/hero";
 
 /**
  *
@@ -33,55 +13,125 @@ export function HeroSection() {
     <Box
       as="section"
       id="hero"
-      data-part="hero"
       data-ch="00"
       data-ch-label="Cover"
+      pt={18}
+      pb={8}
     >
       <ChapterMarker num="00" />
-      <div data-reveal="stagger">
-        <div className="hero-eyebrow">
-          <span className="dot" />
+      <Box data-reveal="stagger">
+        <Flex
+          data-part="hero-eyebrow"
+          align="center"
+          gap={2.5}
+          px={3}
+          py={1.5}
+          mb={7}
+          rounded="pill"
+          backgroundColor="paper"
+        >
+          <Box
+            as="span"
+            data-part="dot"
+            backgroundColor="success"
+            width={6}
+            height={6}
+          />
           Typed · Tailwind v4 · MIT
-        </div>
-        <h1 className="hero-title">
+        </Flex>
+        <Text as="h1" data-part="hero-title" color="foreground" mb={7}>
           A design system from <em>one</em> JSON.
-        </h1>
-        <p className="hero-lede">
+        </Text>
+        <Text as="p" data-part="hero-lede" color="muted" mb={10}>
           <b>@duydpdev/style-generator</b> compiles a flat{" "}
           <code>theme.json</code> into complete Tailwind v4 CSS — variables,
           dark mode overrides, registry-generated <code>@source inline</code>{" "}
           utility coverage, runtime spacing utilities, typed design tokens. One
           source of truth. No safelist file to maintain.
-        </p>
-        <div className="hero-cta">
-          <Link className="install" to="/docs/reference#1-installation">
-            <span className="prompt">$</span>
-            <span>{INSTALL_CMD}</span>
-            <span className="install-go">Install guide →</span>
-          </Link>
-          <a className="btn btn-primary btn-lg" href="#start">
+        </Text>
+        <Flex wrap align="center" gap={3}>
+          <Flex
+            as={Link}
+            to="/docs/reference#1-installation"
+            data-part="install"
+            align="center"
+            gap={2.5}
+            py={1.75}
+            pr={1.75}
+            pl={3.5}
+            rounded="md"
+            backgroundColor="paper"
+          >
+            <Text as="span" color="muted">
+              $
+            </Text>
+            <Text as="span">{INSTALL_CMD}</Text>
+            <Text
+              as="span"
+              data-part="install-go"
+              color="foreground"
+              px={2.5}
+              py={1.5}
+            >
+              Install guide →
+            </Text>
+          </Flex>
+          <Flex
+            as="a"
+            data-part="btn btn-primary btn-lg"
+            align="center"
+            gap={1.5}
+            px={5}
+            py={3}
+            href="#start"
+          >
             Get started <ArrowRight />
-          </a>
-        </div>
-      </div>
+          </Flex>
+        </Flex>
+      </Box>
 
-      <div className="hero-stats" data-reveal="stagger">
+      <Grid
+        data-part="hero-stats"
+        data-reveal="stagger"
+        columns={4}
+        gap={6}
+        mt={14}
+        py={6}
+      >
         {STATS.map((s) => (
-          <div key={s.k} className="stat">
-            <span className="k">{s.k}</span>
-            <span className={`v${"accent" in s ? " accent" : ""}`}>{s.v}</span>
-            <span className="m">{s.m}</span>
-          </div>
+          <Stack key={s.k} gap={1}>
+            <Text as="span" data-part="k" color="muted">
+              {s.k}
+            </Text>
+            <Text
+              as="span"
+              data-part="v"
+              color={"accent" in s ? "primary" : undefined}
+            >
+              {s.v}
+            </Text>
+            <Text as="span" data-part="m" color="muted">
+              {s.m}
+            </Text>
+          </Stack>
         ))}
-      </div>
+      </Grid>
 
-      <div className="marquee" aria-hidden="true">
-        <div className="marquee-track">
+      <Flex data-part="marquee" aria-hidden="true" gap={9} mt={12}>
+        <Flex data-part="marquee-track" gap={9}>
           {[...MARQUEE_TOKENS, ...MARQUEE_TOKENS].map((t, i) => (
-            <span key={`${t}-${String(i)}`}>{t}</span>
+            <Flex
+              as="span"
+              key={`${t}-${String(i)}`}
+              data-part="marquee-item"
+              align="center"
+              gap={1.5}
+            >
+              {t}
+            </Flex>
           ))}
-        </div>
-      </div>
+        </Flex>
+      </Flex>
     </Box>
   );
 }

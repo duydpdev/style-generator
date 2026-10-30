@@ -1,13 +1,10 @@
 import { ChapterHead } from "../components/chapter-head";
-import { Box } from "../ui";
+import { Box, Grid } from "../ui";
 import { Check, Cross } from "../components/icon";
 
-interface Item {
-  title: string;
-  meta: string;
-}
+import { JudgementPanel, type JudgementItem } from "./judgement-panel";
 
-const PROS: Item[] = [
+const PROS: JudgementItem[] = [
   {
     title: "Velocity from day one",
     meta: "Utility-first means no naming, no context-switching. Bottomless palette of primitives.",
@@ -26,7 +23,7 @@ const PROS: Item[] = [
   },
 ];
 
-const CONS: Item[] = [
+const CONS: JudgementItem[] = [
   {
     title: "Dynamic classes are a minefield",
     meta: "JIT can't see bg-${x}. Hand-rolled safelists or duplicated markup.",
@@ -44,6 +41,25 @@ const CONS: Item[] = [
     meta: "Config can't be re-used as component prop types. Drift on you.",
   },
 ];
+
+const PANELS = [
+  {
+    part: "pro",
+    tint: "successSoft",
+    tag: "Strengths",
+    heading: "What it nails.",
+    items: PROS,
+    icon: <Check />,
+  },
+  {
+    part: "con",
+    tint: "dangerSoft",
+    tag: "Friction",
+    heading: "Where it hurts.",
+    items: CONS,
+    icon: <Cross />,
+  },
+] as const;
 
 /**
  *
@@ -76,46 +92,11 @@ export function WhySection() {
         }
       />
 
-      <div className="judgement-grid" data-reveal="stagger">
-        <div className="judgement pro">
-          <div className="judgement-head">
-            <span className="j-tag">Strengths</span>
-            <h3 className="j-head-title">What it nails.</h3>
-          </div>
-          <ul className="j-list">
-            {PROS.map((it) => (
-              <li key={it.title}>
-                <span className="mark">
-                  <Check />
-                </span>
-                <div>
-                  <b>{it.title}</b>
-                  <span className="meta">{it.meta}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="judgement con">
-          <div className="judgement-head">
-            <span className="j-tag">Friction</span>
-            <h3 className="j-head-title">Where it hurts.</h3>
-          </div>
-          <ul className="j-list">
-            {CONS.map((it) => (
-              <li key={it.title}>
-                <span className="mark">
-                  <Cross />
-                </span>
-                <div>
-                  <b>{it.title}</b>
-                  <span className="meta">{it.meta}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <Grid data-part="judgement-grid" data-reveal="stagger" gap={6}>
+        {PANELS.map((p) => (
+          <JudgementPanel key={p.part} {...p} />
+        ))}
+      </Grid>
     </Box>
   );
 }

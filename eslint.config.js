@@ -14,58 +14,12 @@ import {
 } from "./packages/ui-react/registry.mjs";
 
 // App code that renders only ui-react components. A tree joins this list
-// when it is migrated (phase 06: react-v4, next-v4, the site CTA footer;
-// phase 08 adds the rest of site/src).
+// when it is migrated (phase 06: react-v4, next-v4; phase 08: every site TSX
+// file).
 const UI_APP_FILES = [
   "examples/react-v4/src/**/*.{ts,tsx}",
   "examples/next-v4/app/**/*.{ts,tsx}",
-  "site/src/sections/cta-footer.tsx",
-  "site/src/app.tsx",
-  "site/src/components/topbar*.tsx",
-  "site/src/components/scroll-progress.tsx",
-  "site/src/components/icon.tsx",
-  "site/src/components/sidebar-toc.tsx",
-  "site/src/components/chapter-head.tsx",
-  "site/src/pages/landing-page.tsx",
-  "site/src/sections/hero-section.tsx",
-  "site/src/sections/why-section.tsx",
-  "site/src/sections/judgement-panel.tsx",
-  "site/src/sections/compare-section.tsx",
-  "site/src/sections/compare-rows.tsx",
-  "site/src/sections/build-section.tsx",
-  "site/src/components/code-card.tsx",
-  "site/src/components/pill.tsx",
-  "site/src/sections/features-section.tsx",
-  "site/src/sections/spacing-section.tsx",
-  "site/src/sections/theming-section.tsx",
-  "site/src/sections/types-section.tsx",
-  "site/src/sections/tooling-section.tsx",
-  "site/src/sections/start-section.tsx",
-  "site/src/components/key-point.tsx",
-  "site/src/components/terminal-typewriter.tsx",
-  "site/src/components/theme-preview.tsx",
-  "site/src/pages/docs-page.tsx",
-  "site/src/components/docs-sidebar.tsx",
-  "site/src/components/docs-nav-list.tsx",
-  "site/src/components/docs-mobile-nav.tsx",
-  "site/src/components/docs-mobile-onpage.tsx",
-  "site/src/components/docs-onpage.tsx",
-  "site/src/components/docs-header.tsx",
-  "site/src/components/docs-footer.tsx",
-  "site/src/components/doc-markdown.tsx",
-  "site/src/pages/examples-page.tsx",
-  "site/src/components/examples-sidebar.tsx",
-  "site/src/components/examples-toolbar.tsx",
-  "site/src/components/examples-view-tabs.tsx",
-  "site/src/components/examples-workspace.tsx",
-  "site/src/components/file-tree.tsx",
-  "site/src/components/tree-folder.tsx",
-  "site/src/components/code-editor.tsx",
-  "site/src/components/code-tabs.tsx",
-  "site/src/components/code-statusbar.tsx",
-  "site/src/components/preview-frame.tsx",
-  "site/src/components/frame-titlebar.tsx",
-  "site/src/pages/not-found.tsx",
+  "site/src/**/*.tsx",
 ];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;

@@ -21,7 +21,7 @@ export function TerminalTypewriter({
   filename = "~/my-app · zsh",
 }: Readonly<Props>) {
   const bodyRef = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState<TermLine[]>([]);
+  const [shown, setShown] = useState(0);
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function TerminalTypewriter({
     const tick = () => {
       if (cancel || idx >= lines.length) return;
       const line = lines[idx];
-      setShown((s) => [...s, line]);
+      setShown(idx + 1);
       idx++;
       window.setTimeout(tick, line.delay);
     };
@@ -61,6 +61,8 @@ export function TerminalTypewriter({
     };
   }, [started, lines]);
 
+  // Every line is rendered from the first paint (hidden until revealed), so
+  // the box never grows; this only matters when the body itself overflows.
   useEffect(() => {
     const el = bodyRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -77,13 +79,19 @@ export function TerminalTypewriter({
         <span className="filename">{filename}</span>
       </div>
       <div ref={bodyRef} className="terminal-body" data-testid="terminal-body">
-        {shown.map((l, i) => (
-          <div
-            key={i}
-            className="line"
-            dangerouslySetInnerHTML={{ __html: l.html }}
-          />
-        ))}
+        {lines.map((l, i) => {
+          const revealed = i < shown;
+          return (
+            <div
+              key={i}
+              className="line"
+              data-line-state={revealed ? "shown" : "pending"}
+              aria-hidden={!revealed}
+              style={{ visibility: revealed ? "visible" : "hidden" }}
+              dangerouslySetInnerHTML={{ __html: l.html }}
+            />
+          );
+        })}
       </div>
     </div>
   );

@@ -4,5 +4,6 @@
 @import "design-system-example/styles/palettes.css";
 @import "design-system-example/styles/style-guide.css";
 
-/* Tailwind only scans this app by default; the recipes live in the design system. */
-@source "../../../design-system/src";
+/* Tailwind only scans this app by default; recipes live in the design system, components in packages/ui-vue. */
+@source "../../../../design-system/src";
+@source "../../../../../packages/ui-vue/src";

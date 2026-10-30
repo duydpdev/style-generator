@@ -12,6 +12,7 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@duydpdev/ui-vue": "workspace:*",
     "design-system-example": "workspace:*",
     "vue": "^3.5.44"
   },

@@ -1,3 +1,5 @@
+import { Box } from "../ui";
+
 interface Props {
   progress: number;
 }
@@ -9,8 +11,10 @@ interface Props {
  */
 export function ScrollProgress({ progress }: Readonly<Props>) {
   return (
-    <div
-      className="scroll-progress"
+    <Box
+      data-part="scroll-progress"
+      position="fixed"
+      height={2}
       style={{ transform: `scaleX(${String(progress)})` }}
     />
   );

@@ -20,6 +20,12 @@ const UI_APP_FILES = [
   "examples/react-v4/src/**/*.{ts,tsx}",
   "examples/next-v4/app/**/*.{ts,tsx}",
   "site/src/sections/cta-footer.tsx",
+  "site/src/app.tsx",
+  "site/src/components/topbar*.tsx",
+  "site/src/components/scroll-progress.tsx",
+  "site/src/components/icon.tsx",
+  "site/src/components/sidebar-toc.tsx",
+  "site/src/pages/landing-page.tsx",
 ];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;

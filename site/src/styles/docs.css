@@ -1024,10 +1024,7 @@
   }
 }
 
-.route-fallback {
-  padding: 80px 32px;
-  text-align: center;
-  color: var(--c-muted);
+[data-part~="route-fallback"] {
   font-family: var(--f-mono);
   font-size: 13px;
 }

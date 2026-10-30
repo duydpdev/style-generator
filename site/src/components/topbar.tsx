@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
-import { VERSION } from "../data/version";
+import { Box, Container, Flex, Text } from "../ui";
 
-import { Menu, Moon, Sun } from "./icon";
-
-export type ActiveRoute = "landing" | "docs" | "examples";
+import { TopbarActions } from "./topbar-actions";
+import { type ActiveRoute, TopbarNav } from "./topbar-nav";
 
 interface Props {
   activeChapter: { num: string; label: string } | null;
@@ -13,7 +12,8 @@ interface Props {
   activeRoute?: ActiveRoute;
 }
 
-const NAV_ID = "topbar-nav";
+const PAGE_MAX_WIDTH =
+  "calc(var(--content-w) + var(--sidebar-w) + var(--gutter) * 2)";
 
 /**
  * Subscribes to the `data-theme` attribute of <html>, which every page's
@@ -77,97 +77,55 @@ export function Topbar({
   };
 
   return (
-    <header className="topbar" ref={headerRef}>
-      <div className="topbar-inner">
-        <div className="topbar-left">
-          <Link to="/" className="brand">
-            <div className="brand-mark" />
-            <div className="brand-meta">
-              <b>@duydpdev/style-generator</b>
-              <span>v{VERSION} · tailwind v4</span>
-            </div>
-          </Link>
-          <nav
-            id={NAV_ID}
-            className={`topbar-nav${menuOpen ? " open" : ""}`}
-            aria-label="Pages"
-          >
-            <NavLink
-              to="/"
-              end
-              className={activeRoute === "landing" ? "active" : ""}
-              onClick={closeMenu}
-            >
-              Landing
-            </NavLink>
-            <NavLink
-              to="/docs"
-              className={activeRoute === "docs" ? "active" : ""}
-              onClick={closeMenu}
-            >
-              Docs
-            </NavLink>
-            <NavLink
-              to="/examples/v4"
-              className={activeRoute === "examples" ? "active" : ""}
-              onClick={closeMenu}
-            >
-              Examples
-            </NavLink>
-          </nav>
-        </div>
+    <Box as="header" data-part="topbar" position="sticky" ref={headerRef}>
+      <Container maxWidth={PAGE_MAX_WIDTH}>
+        <Flex
+          data-part="topbar-inner"
+          align="center"
+          justify="between"
+          height={60}
+          gap={6}
+          px={8}
+        >
+          <TopbarNav
+            activeRoute={activeRoute}
+            menuOpen={menuOpen}
+            closeMenu={closeMenu}
+          />
 
-        <div className={`now-reading${showReading ? " visible" : ""}`}>
-          <span className="pulse" />
-          Reading{" "}
-          <span className="now-ch">
-            {activeChapter
-              ? `Ch. ${activeChapter.num} — ${activeChapter.label}`
-              : "— Cover"}
-          </span>
-        </div>
+          <Flex
+            data-part={`now-reading${showReading ? " visible" : ""}`}
+            align="center"
+            gap={2.5}
+            py={1.25}
+            px={3}
+            rounded="pill"
+          >
+            <Box
+              as="span"
+              data-part="pulse"
+              width={6}
+              height={6}
+              backgroundColor="success"
+            />
+            Reading{" "}
+            <Text as="span" data-part="now-ch" color="foreground">
+              {activeChapter
+                ? `Ch. ${activeChapter.num} — ${activeChapter.label}`
+                : "— Cover"}
+            </Text>
+          </Flex>
 
-        <div className="topbar-actions">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={onToggleTheme}
-            aria-label="Toggle theme"
-            aria-pressed={dark}
-            title={dark ? "Switch to light theme" : "Switch to dark theme"}
-          >
-            {dark ? <Moon /> : <Sun />}
-          </button>
-          <a
-            className="btn btn-outline"
-            href="https://github.com/duydpdev/style-generator"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub ↗
-          </a>
-          <a
-            className="btn btn-primary"
-            href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            package ↗
-          </a>
-          <button
-            type="button"
-            className="btn btn-ghost topbar-menu"
-            aria-label="Menu"
-            aria-expanded={menuOpen}
-            aria-controls={NAV_ID}
-            onClick={() => {
+          <TopbarActions
+            dark={dark}
+            menuOpen={menuOpen}
+            onToggleTheme={onToggleTheme}
+            onToggleMenu={() => {
               setOpenAt(menuOpen ? null : pathname);
             }}
-          >
-            <Menu />
-          </button>
-        </div>
-      </div>
-    </header>
+          />
+        </Flex>
+      </Container>
+    </Box>
   );
 }

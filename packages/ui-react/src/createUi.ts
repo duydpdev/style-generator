@@ -3,6 +3,7 @@ import type {
   BoxPreset,
   ButtonPreset as ButtonRole,
   CardPreset as CardRole,
+  CodePreset as CodeRole,
   DialogPreset as DialogRole,
   InputPreset as InputRole,
   SelectPreset as SelectRole,
@@ -13,11 +14,15 @@ import { createBadge, createBadgeStyles } from "./Badge";
 import { createBox, createBoxStyles } from "./Box";
 import { createButton, createButtonStyles } from "./Button";
 import { createCard, createCardStyles } from "./Card";
+import { createCode, createCodeStyles } from "./Code";
 import { createContainer, createContainerStyles } from "./Container";
 import { createDialog, createDialogStyles } from "./Dialog";
 import { createFlex, createFlexStyles } from "./Flex";
 import { createGrid, createGridStyles } from "./Grid";
 import { createInput, createInputStyles } from "./Input";
+import { createLink, createLinkStyles } from "./Link";
+import { createList, createListStyles } from "./List";
+import { createListItem } from "./ListItem";
 import { createSelect, createSelectStyles } from "./Select";
 import { createUiCn } from "./shared/cn";
 import type { ColorKey, Ui, UiPresets, UiTokens } from "./shared/types";
@@ -28,6 +33,7 @@ import { createText, createTextStyles } from "./Text";
 interface Roles {
   readonly box?: BoxPreset | undefined;
   readonly text?: TextRole | undefined;
+  readonly code?: CodeRole | undefined;
   readonly button?: ButtonRole | undefined;
   readonly badge?: BadgeRole | undefined;
   readonly card?: CardRole | undefined;
@@ -38,8 +44,9 @@ interface Roles {
 
 /**
  * Bind every component to one app's tokens (`createDesignTokens(theme, options).DesignTokens.Web`)
- * and role presets. Box/Flex/Stack/Grid/Container/Text are always returned; Button, Badge,
- * Card, Input, Select and Dialog only when `presets` declares their role. Call once per app.
+ * and role presets. Box/Flex/Stack/Grid/Container/Text/Link/List/ListItem/Code are always
+ * returned; Button, Badge, Card, Input, Select and Dialog only when `presets` declares their
+ * role. Call once per app.
  */
 export function createUi<
   W extends UiTokens,
@@ -67,6 +74,14 @@ export function createUi<
       cn,
       spacing,
       ...createTextStyles(tokens, roles.text),
+    }),
+    Link: createLink({ cn, spacing, ...createLinkStyles(tokens) }),
+    List: createList({ cn, spacing, layout, ...createListStyles() }),
+    ListItem: createListItem({ cn, spacing, layout }),
+    Code: createCode({
+      cn,
+      spacing,
+      ...createCodeStyles(tokens, roles.code),
     }),
   };
   if (roles.button)

@@ -6,11 +6,15 @@ import type {
   BoxOwnProps,
   ButtonOwnProps,
   CardOwnProps,
+  CodeOwnProps,
   ContainerOwnProps,
   DialogProps,
   FlexOwnProps,
   GridOwnProps,
   InputProps,
+  LayoutProps,
+  LinkOwnProps,
+  ListOwnProps,
   SelectProps,
   TextOwnProps,
 } from "./props";
@@ -24,6 +28,10 @@ export interface LayoutUi<W extends UiTokens> {
   readonly Grid: PolymorphicComponent<"div", GridOwnProps<W>>;
   readonly Container: PolymorphicComponent<"div", ContainerOwnProps<W>>;
   readonly Text: PolymorphicComponent<"p", TextOwnProps<W>>;
+  readonly Link: PolymorphicComponent<"a", LinkOwnProps<W>>;
+  readonly List: PolymorphicComponent<"ul", ListOwnProps<W>>;
+  readonly ListItem: PolymorphicComponent<"li", LayoutProps<W>>;
+  readonly Code: PolymorphicComponent<"code", CodeOwnProps<W>>;
 }
 
 /** Returned per declared preset role. */

@@ -102,6 +102,10 @@ jobs:
         # error in src/recipes/button.ts; needs dist/*.d.ts from the build.
         run: yarn workspace design-system-example test
 
+      - name: Test ui-react (unit, types, recipe names, Tailwind coverage)
+        # Own vitest runner (its tsconfig has jsx); needs dist/ from the build above.
+        run: yarn workspace @duydpdev/ui-react test
+
       - name: Build examples
         # react-v4 is already built by the site build above.
         run: |

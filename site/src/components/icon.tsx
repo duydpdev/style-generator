@@ -2,18 +2,16 @@ import type { ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
-  className?: string;
 }
 
 /**
  *
  * @param root0
  * @param root0.children
- * @param root0.className
  */
-export function Icon({ children, className = "ic" }: Readonly<Props>) {
+export function Icon({ children }: Readonly<Props>) {
   return (
-    <svg className={className} viewBox="0 0 16 16" aria-hidden="true">
+    <svg data-part="ic" viewBox="0 0 16 16" aria-hidden="true">
       {children}
     </svg>
   );

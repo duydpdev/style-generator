@@ -1,5 +1,5 @@
 import { VERSION } from "../data/version";
-import { Box, Flex, Grid, Stack } from "../ui";
+import { Box, Flex, Grid, Stack, Text } from "../ui";
 
 /**
  *
@@ -66,10 +66,17 @@ export function CtaFooter() {
       >
         <Box>
           <Flex data-part="brand" align="center" gap={3}>
-            <Box data-part="brand-mark" />
+            <Box
+              data-part="brand-mark"
+              position="relative"
+              width={26}
+              height={26}
+            />
             <Stack data-part="brand-meta">
               <b>@duydpdev/style-generator</b>
-              <Box as="span">v{VERSION} · MIT · 2026</Box>
+              <Text as="span" color="muted">
+                v{VERSION} · MIT · 2026
+              </Text>
             </Stack>
           </Flex>
           <Box as="p" mt={3}>

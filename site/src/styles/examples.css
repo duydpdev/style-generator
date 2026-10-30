@@ -10,7 +10,7 @@ body.examples-mode #root {
   flex-direction: column;
   height: 100%;
 }
-body.examples-mode .topbar {
+body.examples-mode [data-part~="topbar"] {
   flex: none;
 }
 

@@ -82,6 +82,22 @@ export type TextOwnProps<W extends UiTokens> = UiSpacingProps<W> & {
   readonly align?: "left" | "center" | "right" | undefined;
   readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
 };
+export type LinkOwnProps<W extends UiTokens> = UiSpacingProps<W> & {
+  readonly color?: ColorKey<W> | undefined;
+  readonly underline?: "always" | "hover" | "none" | undefined;
+};
+/** `position` is the list-style position here, so the Box's CSS `position` prop is left out. */
+export type ListOwnProps<W extends UiTokens> = Omit<
+  LayoutProps<W>,
+  "position"
+> & {
+  readonly marker?: "none" | "disc" | "decimal" | undefined;
+  readonly position?: "inside" | "outside" | undefined;
+};
+export type CodeOwnProps<W extends UiTokens> = UiSpacingProps<W> & {
+  readonly type?: TypographyKey<W> | undefined;
+  readonly color?: ColorKey<W> | undefined;
+};
 export type ButtonOwnProps<
   W extends UiTokens,
   B extends string,

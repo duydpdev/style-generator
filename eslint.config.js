@@ -109,6 +109,16 @@ export default pluginTs.config(
     },
   },
 
+  // Compile-time type tests: the assertion is the compiler (`@ts-expect-error` must be consumed,
+  // positive lines must compile), and JSX is evaluated only for its type, hence `void (<X />)`.
+  {
+    files: ["packages/**/*.test-d.tsx"],
+    rules: {
+      "sonarjs/void-use": "off",
+      "sonarjs/assertions-in-tests": "off",
+    },
+  },
+
   // Landing site components, the example apps and the workspace packages: typed like src/, without
   // mandatory JSDoc.
   {

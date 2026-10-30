@@ -41,6 +41,9 @@ export {
 } from "./recipes/stack";
 export { gridRecipe, type GridRecipeProps } from "./recipes/grid";
 export { containerRecipe } from "./recipes/container";
+export { linkRecipe, type LinkRecipeProps } from "./recipes/link";
+export { listRecipe, type ListRecipeProps } from "./recipes/list";
+export { codeRecipe, type CodeRecipeProps } from "./recipes/code";
 export {
   dialogOverlayRecipe,
   dialogPreset,

@@ -17,6 +17,11 @@ export interface TextPreset<W extends UiTokens> {
   readonly defaultType?: TypographyKey<W> | undefined;
   readonly defaultColor?: ColorKey<W> | undefined;
 }
+/** Non-gating like `text`: `Code` is always returned, the preset only sets its defaults. */
+export interface CodePreset<W extends UiTokens> {
+  readonly base?: string | undefined;
+  readonly defaultType?: TypographyKey<W> | undefined;
+}
 export interface ButtonPreset<W extends UiTokens, B extends ColorKey<W>> {
   readonly intents: readonly B[];
   readonly background: ColorKey<W>;
@@ -79,6 +84,7 @@ export interface UiPresets<
 > {
   readonly box?: BoxPreset | undefined;
   readonly text?: TextPreset<W> | undefined;
+  readonly code?: CodePreset<W> | undefined;
   readonly button?: ButtonPreset<W, B> | undefined;
   readonly badge?: BadgePreset<W, G> | undefined;
   readonly card?: CardPreset<W> | undefined;

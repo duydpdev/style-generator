@@ -11,3 +11,6 @@ export * from "./card";
 export * from "./input";
 export * from "./dialog";
 export * from "./select";
+export * from "./link";
+export * from "./list";
+export * from "./code";

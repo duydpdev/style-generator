@@ -20,7 +20,7 @@
   z-index: 30;
   background: color-mix(in srgb, var(--c-bg) 80%, transparent);
   backdrop-filter: saturate(160%) blur(14px);
-  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  /* No -webkit- twin: the build keeps only the prefixed rule, which Chromium ignores. */
   border-bottom: 1px solid var(--c-line);
 }
 .topbar-inner {
@@ -103,12 +103,6 @@
   background: var(--c-primary);
   margin-right: 7px;
   vertical-align: 1px;
-}
-
-@media (max-width: 860px) {
-  .topbar-nav {
-    display: none;
-  }
 }
 
 .now-reading {
@@ -197,6 +191,92 @@
   font-size: 13.5px;
 }
 
+/* Topbar: never wrap or overflow; drop the least important items first. */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.brand {
+  min-width: 0;
+  white-space: nowrap;
+}
+.brand-mark {
+  flex-shrink: 0;
+}
+.brand-meta {
+  min-width: 0;
+}
+.brand-meta b,
+.brand-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-nav a,
+.now-reading,
+.btn {
+  white-space: nowrap;
+}
+.topbar-menu {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .now-reading {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .topbar-menu {
+    display: inline-flex;
+  }
+  .topbar-actions .btn {
+    min-height: 40px;
+    justify-content: center;
+  }
+  /* The nav becomes a dropdown under the sticky bar, opened by .topbar-menu. */
+  .topbar-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    margin: 0;
+    padding: 8px 16px 12px;
+    background: var(--c-bg);
+    border-bottom: 1px solid var(--c-line);
+    box-shadow: 0 18px 30px -20px rgba(15, 21, 48, 0.25);
+  }
+  .topbar-nav.open {
+    display: flex;
+  }
+  .topbar-nav a {
+    font-size: 14px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar-inner {
+    padding: 0 16px;
+    gap: 8px;
+  }
+  .topbar-actions .btn-outline {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-actions .btn-primary {
+    display: none;
+  }
+}
+
 /* Shell */
 .shell {
   max-width: calc(var(--content-w) + var(--sidebar-w) + var(--gutter) * 2);
@@ -207,6 +287,7 @@
   padding: 0 32px;
   position: relative;
   z-index: 1;
+  overflow-x: clip;
 }
 
 /* Sidebar TOC */

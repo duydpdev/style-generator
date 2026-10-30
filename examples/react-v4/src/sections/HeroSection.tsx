@@ -50,7 +50,11 @@ export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
                   <span
                     key={c}
                     className="sg-palette-dot"
-                    style={{ background: c }}
+                    style={{
+                      background: c,
+                      boxShadow:
+                        "0 0 0 1px color-mix(in srgb, var(--color-foreground) 35%, transparent)",
+                    }}
                   />
                 ))}
               </span>

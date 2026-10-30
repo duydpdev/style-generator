@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { CodeEditor } from "../components/code-editor";
@@ -34,6 +34,8 @@ export function ExamplesPage() {
   const [view, setView] = useState<View>("preview");
   const [openTabs, setOpenTabs] = useState<ExampleFile[]>([]);
   const [activePath, setActivePath] = useState<string | null>(null);
+  const [filesOpen, setFilesOpen] = useState(false);
+  const filesToggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     document.body.classList.add("examples-mode");
@@ -51,6 +53,20 @@ export function ExamplesPage() {
     setView("preview");
   }, [variant]);
 
+  // The file tree is an overlay on tablet/mobile: Escape closes it.
+  useEffect(() => {
+    if (!filesOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setFilesOpen(false);
+      filesToggleRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [filesOpen]);
+
   if (variant !== "v4") return <Navigate to="/examples/v4" replace />;
 
   const v = variant;
@@ -65,6 +81,7 @@ export function ExamplesPage() {
     );
     setActivePath(path);
     setView("code");
+    setFilesOpen(false);
   };
 
   const closeTab = (path: string) => {
@@ -88,7 +105,19 @@ export function ExamplesPage() {
       />
 
       <div className="ex-shell">
-        <aside className="ex-sidebar">
+        <button
+          type="button"
+          className={`ex-backdrop${filesOpen ? " open" : ""}`}
+          aria-label="Close file tree"
+          tabIndex={-1}
+          onClick={() => {
+            setFilesOpen(false);
+          }}
+        />
+        <aside
+          id="ex-sidebar"
+          className={`ex-sidebar${filesOpen ? " open" : ""}`}
+        >
           <div className="version-switch">
             <div className="version-switch-label">Tailwind version</div>
             <div className="version-pills" role="tablist">
@@ -152,6 +181,22 @@ export function ExamplesPage() {
 
         <main className="ex-main">
           <div className="ex-toolbar">
+            <button
+              ref={filesToggleRef}
+              type="button"
+              className="icon-btn files-toggle"
+              aria-label="Files"
+              title="Files"
+              aria-expanded={filesOpen}
+              aria-controls="ex-sidebar"
+              onClick={() => {
+                setFilesOpen((open) => !open);
+              }}
+            >
+              <svg className="ic" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M1.5 4a1 1 0 011-1h3l1.2 1.5h6.8a1 1 0 011 1V12a1 1 0 01-1 1h-11a1 1 0 01-1-1V4z" />
+              </svg>
+            </button>
             <div className="crumbs">
               <span className="pulse" />
               <span>examples</span>
@@ -200,7 +245,7 @@ export function ExamplesPage() {
             <div className="toolbar-actions">
               <a
                 className="icon-btn"
-                href={iframeSrc}
+                href={`${iframeSrc}?theme=${theme}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Open in new tab"
@@ -220,7 +265,8 @@ export function ExamplesPage() {
               <PreviewFrame
                 src={iframeSrc}
                 pathLabel={`/examples/${v}`}
-                meta={`TW ${v} · ${theme}`}
+                metaPrefix={`TW ${v}`}
+                siteTheme={theme}
                 title={`${meta.label} demo`}
               />
             </div>

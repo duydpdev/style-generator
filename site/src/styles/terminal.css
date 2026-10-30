@@ -135,3 +135,14 @@
     padding: 32px 24px;
   }
 }
+
+/* The glow is decorative: keep the text above it. */
+.cta-card > * {
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 900px) {
+  .cta-card {
+    grid-template-columns: 1fr;
+  }
+}

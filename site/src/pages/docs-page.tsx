@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 
 import { DocMarkdown } from "../components/doc-markdown";
-import { DocsOnPage } from "../components/docs-onpage";
-import { DocsSidebar } from "../components/docs-sidebar";
+import { DocsMobileOnPage, DocsOnPage } from "../components/docs-onpage";
+import { DocsMobileNav, DocsSidebar } from "../components/docs-sidebar";
 import { Topbar } from "../components/topbar";
 import { adjacentDocs, docs, getDoc, REPO_BLOB_URL } from "../lib/docs-content";
 import { useTheme } from "../lib/use-theme";
@@ -13,6 +13,39 @@ import { NotFound } from "./not-found";
 function approxReadMinutes(source: string): number {
   const words = source.trim().split(/\s+/).length;
   return Math.max(1, Math.round(words / 220));
+}
+
+const TOC_HEADING = /^##\s+table of contents\s*$/i;
+const TOC_SELF_LINK = "(#table-of-contents)";
+const LIST_ITEM = /^[-*+] /;
+
+/**
+ * Cleans a hand-written "Table of contents" list: drops the wrapper entry that
+ * points at the page title (its heading is not rendered, so the link is dead
+ * and it only adds a nesting level) and the entry that points at the TOC itself.
+ */
+function tidyToc(markdown: string): string {
+  const lines = markdown.split("\n");
+  const heading = lines.findIndex((l) => TOC_HEADING.test(l.trim()));
+  if (heading < 0) return markdown;
+  const first = lines.findIndex((l, i) => i > heading && l.trim() !== "");
+  if (first < 0 || !/^\s*([-*+]|\d+\.) /.test(lines[first])) return markdown;
+
+  let end = first;
+  while (end < lines.length && lines[end].trim() !== "") end += 1;
+
+  let list = lines.slice(first, end);
+  const [root, ...children] = list;
+  if (
+    LIST_ITEM.test(root) &&
+    children.length > 0 &&
+    children.every((l) => l.startsWith(" "))
+  ) {
+    list = children.map((l) => l.replace(/^ {1,2}/, ""));
+  }
+  list = list.filter((l) => !l.includes(TOC_SELF_LINK));
+
+  return [...lines.slice(0, first), ...list, ...lines.slice(end)].join("\n");
 }
 
 export function DocsPage() {
@@ -68,10 +101,11 @@ export function DocsPage() {
   // The page header already renders the title as an <h1>; drop the file's own.
   const lines = doc.source.split("\n");
   const titleAt = lines.findIndex((l) => l.trim() !== "");
-  const body =
+  const body = tidyToc(
     titleAt >= 0 && lines[titleAt].startsWith("# ")
       ? lines.slice(titleAt + 1).join("\n")
-      : doc.source;
+      : doc.source,
+  );
   const readMin = approxReadMinutes(body);
   const ghUrl = `${REPO_BLOB_URL}${doc.repoPath}`;
 
@@ -82,6 +116,10 @@ export function DocsPage() {
         <DocsSidebar activeSlug={doc.slug} />
 
         <main className="docs-content" ref={contentRef}>
+          <DocsMobileNav activeSlug={doc.slug}>
+            <DocsMobileOnPage contentRef={contentRef} rawMarkdown={body} />
+          </DocsMobileNav>
+
           <div className="doc-breadcrumb">
             <Link to="/docs">Docs</Link>
             <span className="sep">/</span>
@@ -93,8 +131,7 @@ export function DocsPage() {
           <header className="doc-head reveal is-in">
             <div>
               <h1>
-                {doc.title}
-                <em> at a glance.</em>
+                {doc.title} <em>at a glance.</em>
               </h1>
               <p className="lede">
                 <b>{doc.title}</b> — synced from <code>{doc.repoPath}</code>.

@@ -13,33 +13,53 @@ interface Props {
   quicklinks?: { label: string; href: string; arr?: string }[];
 }
 
-export function DocsOnPage({
-  contentRef,
-  rawMarkdown,
-  quicklinks = [],
-}: Readonly<Props>) {
+/** The in-content TOC heading is not worth a navigation entry. */
+const TOC_TITLE = "table of contents";
+
+function useHeadings(
+  contentRef: RefObject<HTMLElement | null>,
+  rawMarkdown: string,
+): Heading[] {
   const [headings, setHeadings] = useState<Heading[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
 
   // Re-scan headings whenever the markdown changes
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
     const raf = requestAnimationFrame(() => {
-      const list: Heading[] = Array.from(
-        el.querySelectorAll("h2[id], h3[id]"),
-      ).map((h) => ({
-        id: h.id,
-        text: h.textContent.replace(/`/g, ""),
-        level: h.tagName === "H3" ? 3 : 2,
-      }));
+      const found = Array.from(el.querySelectorAll("h2[id], h3[id]"));
+      const list: Heading[] = found
+        .filter((h) => h.textContent.trim().toLowerCase() !== TOC_TITLE)
+        .map((h) => ({
+          id: h.id,
+          text: h.textContent.replace(/`/g, ""),
+          level: h.tagName === "H3" ? 3 : 2,
+        }));
       setHeadings(list);
     });
     return () => {
       cancelAnimationFrame(raf);
     };
   }, [contentRef, rawMarkdown]);
+
+  return headings;
+}
+
+function jump(id: string) {
+  const node = document.getElementById(id);
+  if (!node) return;
+  const top = node.getBoundingClientRect().top + window.scrollY - 80;
+  window.scrollTo({ top, behavior: "smooth" });
+}
+
+export function DocsOnPage({
+  contentRef,
+  rawMarkdown,
+  quicklinks = [],
+}: Readonly<Props>) {
+  const headings = useHeadings(contentRef, rawMarkdown);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   // Scroll spy + progress fill
   useEffect(() => {
@@ -72,13 +92,6 @@ export function DocsOnPage({
       cancelAnimationFrame(raf);
     };
   }, [contentRef, headings]);
-
-  const jump = (id: string) => {
-    const node = document.getElementById(id);
-    if (!node) return;
-    const top = node.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top, behavior: "smooth" });
-  };
 
   return (
     <aside className="toc-rail">
@@ -133,5 +146,41 @@ export function DocsOnPage({
         ) : null}
       </div>
     </aside>
+  );
+}
+
+type MobileProps = Pick<Props, "contentRef" | "rawMarkdown">;
+
+/** "On this page" list for <=860px, where the right rail is hidden. */
+export function DocsMobileOnPage({
+  contentRef,
+  rawMarkdown,
+}: Readonly<MobileProps>) {
+  const headings = useHeadings(contentRef, rawMarkdown);
+  if (headings.length === 0) return null;
+
+  return (
+    <details className="docs-mobile-details">
+      <summary>
+        <span className="lbl">On this page</span>
+        <span className="cur">{headings.length} sections</span>
+      </summary>
+      <ol className="docs-mobile-onpage">
+        {headings.map((h) => (
+          <li key={h.id} className={`h${String(h.level)}`}>
+            <button
+              type="button"
+              onClick={(e) => {
+                // Close first: the list sits above the content and shifts it.
+                e.currentTarget.closest("details")?.removeAttribute("open");
+                jump(h.id);
+              }}
+            >
+              {h.text}
+            </button>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }

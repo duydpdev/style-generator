@@ -17,7 +17,7 @@ How to integrate `@duydpdev/style-generator` 5.0 into a **Tailwind CSS v4** proj
 
 ## Installation
 
-The package is published to GitHub Packages. Configure the `@duydpdev` scope in the file your package manager reads (Yarn Berry reads `.yarnrc.yml` and ignores `.npmrc`); how to create a `read:packages` PAT is covered in the Installation section of [`README.md`](../README.md#1-installation).
+The package is published to GitHub Packages. Configure the `@duydpdev` scope in the file your package manager reads (Yarn Berry reads `.yarnrc.yml` and ignores `.npmrc`); how to create a `read:packages` PAT is covered in the Install section of [`README.md`](../README.md#install).
 
 Yarn Berry — `.yarnrc.yml`:
 
@@ -112,7 +112,7 @@ Color keys are **camelCase** (or kebab-case); the library converts them to kebab
 - A `typography` key must not kebab-case to `sp-*` or `font-*` (it would shadow the spacing and font utilities); `fontWeight` must be a number from 1 to 1000 (decimals are valid for variable fonts).
 - A key that starts with a run of two or more capital letters (`CTA`, `ABtn`, `HTMLParser`) is rejected with a rename hint (`cta`): the class produced by the typed token (`c-ta`) differs from the class in the CSS (`cta`). A single capital (`Blue`) or an inner capital run (`primaryCTA`) is still valid.
 - A `borderWidth` key must not kebab-case to the same name as a `colors` key (both would generate the class `border-<key>`).
-- A summary of all naming rules, with rejected and valid examples: [Key rules in the README](../README.md#key-rules).
+- A summary of all naming rules, with rejected and valid examples: [Key rules](./reference/theme.md#key-rules).
 
 ### `$key` aliases
 
@@ -266,7 +266,7 @@ import {
   defineOptions,
   Breakpoint,
 } from "@duydpdev/style-generator";
-import themeJson from "../styles/theme.json";
+import themeJson from "./theme.json";
 
 const theme = defineTheme(themeJson); // type-checked AND validated at runtime
 const options = defineOptions({
@@ -284,6 +284,9 @@ export { tokens };
 Every color always gets `bg-*`/`text-*`/`border-*` thanks to the `@source inline` lines the registry generates. Classes you assemble with template literals cannot be scanned by Tailwind — declare them with `extraSources`:
 
 ```typescript
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+
 generate(theme, { extraSources: ["hover:bg-{primary,secondary}"] });
 ```
 
@@ -302,6 +305,9 @@ By default each category has one `@source inline` line covering every key (color
 `prefixes` and `keys` can be combined; the `prefixes` list must be non-empty. With `keys: "aliased"`, if the category has no alias-holding key (or declares no keys), nothing is emitted: the default value is not an alias. `coverage` only trims `@source inline`: `@theme inline`, `@utility` and the typed `DesignTokens` stay unchanged, so a class that is still used but no longer covered must appear literally in the source or be declared through `extraSources`.
 
 ```typescript
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+
 generate(theme, {
   coverage: {
     colors: { prefixes: ["bg", "text"], keys: "aliased" },
@@ -315,6 +321,9 @@ generate(theme, {
 By default Tailwind keeps its own color scale, `rounded-*` and `shadow-*` next to your tokens. `resetTailwindDefaults` clears each namespace so only the theme's tokens remain:
 
 ```typescript
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+
 generate(theme, { resetTailwindDefaults: ["colors", "radius", "shadow"] });
 ```
 
@@ -389,6 +398,9 @@ Rules to remember:
 By default the selector is `html[data-<axis-kebab>="<variant-kebab>"]`. `options.axes` renames the attribute per axis and lets you unpin `html`:
 
 ```typescript
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+
 generate(theme, {
   axes: {
     attribute: { theme: "data-mode" }, // axis → attribute name; axes not listed keep data-<axis-kebab>
@@ -457,6 +469,8 @@ const Box = ({
   );
 };
 ```
+
+<!-- snippet: no-check shows rendered output, not code -->
 
 ```tsx
 <Box p={4} />
@@ -577,6 +591,8 @@ Always pass `COLOR_STATES` instead of typing `["hover", "active"]` by hand — i
 
 A headless recipe composes the mappers with `cva`; framework components (React, Vue) just wrap it. The DX anchor is `satisfies` on the intent list: rename or delete a color in `theme.json` and the compiler flags exactly that line, instead of emitting a class that no longer exists.
 
+<!-- snippet: no-check imports ../tokens from src/recipes/button.ts, type-checked by the design-system example -->
+
 ```typescript
 // src/recipes/button.ts (abridged)
 import { cva } from "class-variance-authority";
@@ -649,6 +665,13 @@ A component that accepts spacing props (`p`, `px`, `gap`, …, a number or `{ ba
 
 ```typescript
 import { splitSpacingProps } from "@duydpdev/style-generator/recipes";
+import { tokens } from "./tokens";
+
+declare const props: {
+  p: number;
+  mx: { base: number; md: number };
+  id: string;
+};
 
 const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
 // with props = { p: 4, mx: { base: 2, md: 4 }, id: "x" }:

@@ -905,6 +905,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-react%40workspace%3Apackages%2Fui-react":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-react%40workspace%3Apackages%2Fui-react"
+  languageName: node
+  linkType: soft
+
 "@duydpdev/style-generator@link:../..::locator=design-system-example%40workspace%3Aexamples%2Fdesign-system":
   version: 0.0.0-use.local
   resolution: "@duydpdev/style-generator@link:../..::locator=design-system-example%40workspace%3Aexamples%2Fdesign-system"
@@ -988,6 +994,19 @@ __metadata:
       optional: true
   bin:
     style-gen: dist/cli/index.mjs
+  languageName: unknown
+  linkType: soft
+
+"@duydpdev/ui-react@workspace:*, @duydpdev/ui-react@workspace:packages/ui-react":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/ui-react@workspace:packages/ui-react"
+  dependencies:
+    "@duydpdev/style-generator": "link:../.."
+    "@types/react": "npm:^19.0.0"
+    react: "npm:^19.0.0"
+    typescript: "npm:^5.9.0"
+  peerDependencies:
+    react: ^19.0.0
   languageName: unknown
   linkType: soft
 
@@ -11277,6 +11296,7 @@ __metadata:
   resolution: "next-v4-example@workspace:examples/next-v4"
   dependencies:
     "@duydpdev/style-generator": "link:../.."
+    "@duydpdev/ui-react": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.2.0"
     "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^19.0.0"
@@ -13438,6 +13458,7 @@ __metadata:
   resolution: "react-v4-example@workspace:examples/react-v4"
   dependencies:
     "@duydpdev/style-generator": "link:../.."
+    "@duydpdev/ui-react": "workspace:*"
     "@tailwindcss/vite": "npm:^4.2.0"
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"
@@ -14485,6 +14506,7 @@ __metadata:
   resolution: "site@workspace:site"
   dependencies:
     "@duydpdev/style-generator": "link:.."
+    "@duydpdev/ui-react": "workspace:*"
     "@tailwindcss/vite": "npm:^4.2.0"
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"

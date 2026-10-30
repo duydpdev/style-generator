@@ -1,11 +1,13 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import {
-  COLOR_STATES,
-  createVariantMapper,
-} from "@duydpdev/style-generator/cva";
+import type { VariantProps } from "class-variance-authority";
 import type { ColorVariant } from "@duydpdev/style-generator/types";
 
 import { tokens, type Theme } from "../tokens";
+
+import {
+  createButtonRecipe,
+  type ButtonPreset,
+  type ButtonTint,
+} from "./factories/button";
 
 /**
  * The semantic intents the components expose. `satisfies` is the DX anchor:
@@ -22,104 +24,59 @@ export const intents = [
 
 export type Intent = (typeof intents)[number];
 
-// `bg-primary hover:bg-primary-hover active:bg-primary-active`: the state
-// siblings (`primaryHover`, `primaryActive`) declared in theme.json collapse
-// into one chained class per color.
-const bg = createVariantMapper("bg", tokens.colors, { states: COLOR_STATES });
-const text = createVariantMapper("text", tokens.colors);
+/** Design-system button roles. */
+export const buttonPreset = {
+  intents,
+  background: "background",
+  radius: "md",
+  type: "text16Medium",
+  typeLg: "text32Bold",
+  focusRing: {
+    primary: "focus-visible:outline-primary",
+    secondary: "focus-visible:outline-secondary",
+    success: "focus-visible:outline-success",
+    danger: "focus-visible:outline-danger",
+  },
+  tint: {
+    primary: {
+      outline: "border-primary text-primary hover:bg-primary/10",
+      soft: "bg-primary/10 text-primary hover:bg-primary/15",
+      ghost: "text-primary hover:bg-primary/10",
+      link: "text-primary",
+    },
+    secondary: {
+      outline: "border-secondary text-secondary hover:bg-secondary/10",
+      soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
+      ghost: "text-secondary hover:bg-secondary/10",
+      link: "text-secondary",
+    },
+    success: {
+      outline: "border-success text-success hover:bg-success/10",
+      soft: "bg-success/10 text-success hover:bg-success/15",
+      ghost: "text-success hover:bg-success/10",
+      link: "text-success",
+    },
+    danger: {
+      outline: "border-danger text-danger hover:bg-danger/10",
+      soft: "bg-danger/10 text-danger hover:bg-danger/15",
+      ghost: "text-danger hover:bg-danger/10",
+      link: "text-danger",
+    },
+  },
+} as const satisfies ButtonPreset;
 
-const fill = {
-  primary: [bg.primary, text.onPrimary],
-  secondary: [bg.secondary, "text-background hover:opacity-90"],
-  success: [bg.success, "text-background hover:opacity-90"],
-  danger: [bg.danger, "text-background hover:opacity-90"],
-} satisfies Record<Intent, string[]>;
-
-// Opacity-modified classes are not part of the registry's `@source inline`
-// coverage; they stay literal so Tailwind's scanner finds them in this file.
-const tint = {
-  primary: {
-    outline: "border-primary text-primary hover:bg-primary/10",
-    soft: "bg-primary/10 text-primary hover:bg-primary/15",
-    ghost: "text-primary hover:bg-primary/10",
-    link: "text-primary",
-  },
-  secondary: {
-    outline: "border-secondary text-secondary hover:bg-secondary/10",
-    soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
-    ghost: "text-secondary hover:bg-secondary/10",
-    link: "text-secondary",
-  },
-  success: {
-    outline: "border-success text-success hover:bg-success/10",
-    soft: "bg-success/10 text-success hover:bg-success/15",
-    ghost: "text-success hover:bg-success/10",
-    link: "text-success",
-  },
-  danger: {
-    outline: "border-danger text-danger hover:bg-danger/10",
-    soft: "bg-danger/10 text-danger hover:bg-danger/15",
-    ghost: "text-danger hover:bg-danger/10",
-    link: "text-danger",
-  },
-} as const satisfies Record<
-  Intent,
-  Record<"outline" | "soft" | "ghost" | "link", string>
->;
-
-const tintedVariants = ["outline", "soft", "ghost", "link"] as const;
+/** Props of the bound button recipe. */
+export type ButtonRecipeProps = Readonly<{
+  variant?: "fill" | ButtonTint | null | undefined;
+  color?: Intent | null | undefined;
+  size?: "sm" | "md" | "lg" | null | undefined;
+}>;
 
 /**
  * Headless button recipe: `buttonRecipe({ variant, color, size })` → class
- * string. The framework components (`Button.tsx`, `Button.vue`) wrap it with
- * their own markup and `cn(buttonRecipe(…), className)`.
+ * string. Framework components wrap it with their own markup.
  */
-export const buttonRecipe = cva(
-  [
-    "inline-flex shrink-0 items-center justify-center gap-1.5",
-    "rounded-md border",
-    "cursor-pointer text-16-medium whitespace-nowrap outline-hidden select-none",
-    "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2",
-    "transition-[background-color,color,opacity] duration-150",
-    "disabled:cursor-not-allowed disabled:opacity-50",
-  ],
-  {
-    variants: {
-      variant: {
-        fill: "border-transparent active:scale-[0.98]",
-        outline: "bg-background active:scale-[0.98]",
-        soft: "border-transparent active:scale-[0.98]",
-        ghost: "border-transparent active:scale-[0.98]",
-        link: "border-transparent underline-offset-4 hover:underline",
-      },
-      // No `outline-*` coverage is registry-emitted for colors (bg/text/border
-      // only): the per-intent focus ring stays literal for the scanner.
-      color: {
-        primary: "focus-visible:outline-primary",
-        secondary: "focus-visible:outline-secondary",
-        success: "focus-visible:outline-success",
-        danger: "focus-visible:outline-danger",
-      },
-      size: {
-        sm: "h-7 px-2.5",
-        md: "h-9 px-3.5",
-        lg: "h-11 px-5 text-32-bold",
-      },
-    },
-    compoundVariants: intents.flatMap((color) => [
-      { color, variant: "fill" as const, class: fill[color] },
-      ...tintedVariants.map((variant) => ({
-        color,
-        variant,
-        class: tint[color][variant],
-      })),
-    ]),
-    defaultVariants: {
-      variant: "fill",
-      color: "primary",
-      size: "md",
-    },
-  },
-);
+export const buttonRecipe: (props?: ButtonRecipeProps) => string =
+  createButtonRecipe(tokens, buttonPreset);
 
 export type ButtonVariants = VariantProps<typeof buttonRecipe>;

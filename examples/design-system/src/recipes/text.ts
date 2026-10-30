@@ -1,5 +1,4 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { createVariantMapper } from "@duydpdev/style-generator/cva";
+import type { VariantProps } from "class-variance-authority";
 import type {
   ColorVariant,
   TextVariant,
@@ -7,29 +6,37 @@ import type {
 
 import { tokens, type Theme } from "../tokens";
 
+import { createTextRecipe, type TextPreset } from "./factories/text";
+
 export const textAlign = ["left", "center", "right"] as const;
 export const textDecoration = ["underline", "lineThrough", "none"] as const;
+
+/** Design-system text defaults; `<Text>` applies them when `type`/`color` are omitted. */
+export const textPreset = {
+  base: "wrap-anywhere whitespace-pre-wrap",
+  defaultType: "text16Medium",
+  defaultColor: "foreground",
+} as const satisfies TextPreset & {
+  readonly defaultType: TextVariant<Theme>;
+  readonly defaultColor: ColorVariant<Theme>;
+};
+
+/** Props of the bound text recipe. */
+export type TextRecipeProps = Readonly<{
+  type?: TextVariant<Theme> | null | undefined;
+  color?: ColorVariant<Theme> | null | undefined;
+  decoration?: (typeof textDecoration)[number] | null | undefined;
+  align?: (typeof textAlign)[number] | null | undefined;
+}>;
 
 /**
  * Headless text recipe: `textRecipe({ type, color, decoration, align })`.
  * `type` is a typography utility (`text-16-medium`), `color` a `text-*` color.
  */
-export const textRecipe = cva("wrap-anywhere whitespace-pre-wrap", {
-  variants: {
-    type: createVariantMapper("", tokens.typography),
-    decoration: {
-      underline: "underline",
-      lineThrough: "line-through",
-      none: "no-underline",
-    },
-    align: {
-      center: "text-center",
-      left: "text-left",
-      right: "text-right",
-    },
-    color: createVariantMapper("text", tokens.colors),
-  },
-});
+export const textRecipe: (props?: TextRecipeProps) => string = createTextRecipe(
+  tokens,
+  textPreset,
+);
 
 export type TextVariants = VariantProps<typeof textRecipe>;
 

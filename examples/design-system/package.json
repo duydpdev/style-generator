@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./recipes": "./src/recipes/factories/index.ts",
     "./style-gen.options": "./src/style-gen.options.ts",
     "./theme.json": "./src/theme.json",
     "./styles/*": "./src/styles/*",

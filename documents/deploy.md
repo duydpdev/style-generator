@@ -36,7 +36,7 @@ Deployment process for the `@duydpdev/style-generator` library.
 
 ```mermaid
 flowchart LR
-    M[main] -->|branch off| F["feature/x"]
+    M[main] -->|branch off| F["feat/x"]
     F -->|PR, merge commit| D["develop → vX.Y.Z-DEV.N"]
     F -->|PR, merge commit, after approval| M2["main → vX.Y.Z"]
     M2 -.->|back-merge after every push to main| D
@@ -50,7 +50,7 @@ Every merge into `main`/`develop` runs `release.yml` (semantic-release). When th
 
 ### `ci.yml` — PR Check
 
-**Trigger:** Pull Request into `main`, `develop` or an integration branch `release/**` (for example `release/5.0` for the 5.0 cycle: a PR from a working branch into `release/5.0` and the `release/5.0` → `develop` PR both get CI). `release.yml` does **not** run on `release/**`: releases are only published from `main`/`develop`.
+**Trigger:** Pull Request into `main`, `develop` or an integration branch `release/**` (for example `release/5.0` for the 5.0 cycle: a PR from a working branch into `release/5.0` and the `promote/<x>` → `develop` PR (created at the exact SHA of `release/5.0`, see [Pull Request & merge convention](#pull-request--merge-convention)) both get CI). `release.yml` does **not** run on `release/**`: releases are only published from `main`/`develop`.
 
 **Draft:** the `check` job has `if: github.event.pull_request.draft == false` and `on.pull_request.types` additionally includes `ready_for_review`: a draft PR does not run CI, and CI runs once the PR is marked ready. Open the PR as a draft until the local gate is green. `ci.yml` has no path filter: a PR that only changes `documents/**` still runs `check`, because the site renders `documents/*.md` and `check:links` checks their links.
 
@@ -76,7 +76,7 @@ Playwright browsers are **not** cached, and this is a measured decision (PR #73)
 
 **Trigger:** Pull Request into `main`, `develop` or `release/**`, `opened`, `edited`, `reopened` (`edited` also catches a title-only edit). It does not run on `synchronize`: pushing a new commit does not change the title, so the check is only attached to the head at the time the PR is opened/edited/reopened.
 
-Runs `commitlint --config commitlint.pr-title.config.ts` on the PR title. This config reuses `commitlint.config.ts` and only turns off `defaultIgnores`, so a `Revert "…"` title (GitHub's default when reverting a PR) or `Merge …` also fails. The lint range in `ci.yml` still uses the shared config because real merge commits appear there. Since features enter `develop` through merge commits, the PR title no longer decides the release: the first line of a merge commit is `Merge pull request #N from …` (ignored by the analyzer), and the PR title only appears in the body. This check is kept so PR titles stay readable and match the commit header.
+Runs `commitlint --config commitlint.pr-title.config.ts` on the PR title. This config reuses `commitlint.config.ts` and only turns off `defaultIgnores`, so a `Revert "…"` title (GitHub's default when reverting a PR) or `Merge …` also fails. The lint range in `ci.yml` still uses the shared config because real merge commits appear there. Since features enter `develop` through merge commits, the PR title no longer decides the release: the first line of a merge commit is `Merge pull request #N from …` (ignored by the analyzer), and the PR title only appears in the body. This check is kept so PR titles stay readable and match the commit header. The `Check branch name` step (it runs before the dependencies are installed) checks `github.head_ref` with `scripts/check-branch-name.sh`, the same rule as the `pre-push` hook (see [Branching Strategy](#branching-strategy)).
 
 ### Pull Request & merge convention
 
@@ -91,9 +91,11 @@ Rulesets protect `main`/`develop` (a PR is required, merge commits only, the `Bu
 
 **Load-bearing setting:** `merge_commit_title = MERGE_MESSAGE` (first line `Merge pull request #N …`) and `merge_commit_message = PR_TITLE`. If the first line becomes the PR title, the merge commit carries a `[type]` header, and every merge commit that exists only on `develop` is counted again after each back-merge. Do not change it.
 
-`delete_branch_on_merge` stays `false`: the feature branch is still needed for the second PR into `main`.
+`delete_branch_on_merge=true`: GitHub deletes the head branch when a PR is merged. The feature branch is still needed for the second PR into `main`. If the PR into `develop` came straight from `feat/x`, GitHub has already deleted `feat/x`: recreate it on GitHub at the exact merged SHA, never push it from a local clone: `SHA=$(gh pr view <PR into develop> --json headRefOid --jq .headRefOid)`, then `gh api -X POST repos/duydpdev/style-generator/git/refs -f ref=refs/heads/feat/x -f sha=$SHA`. Before merging the PR into `main`, `gh pr view <PR into main> --json headRefOid --jq .headRefOid` must print exactly `$SHA`. If the PR into `develop` went through `integrate/x`, `feat/x` is not deleted. The commits of a deleted branch stay in the PR (`refs/pull/<N>/head`), so deleting the branch loses no history.
 
-Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) updates GitHub Actions monthly as **one** grouped PR (`groups`) targeting `main` (`target-branch`), with the prefix `"[ci] "` (trailing space so GitHub does not insert `:` after `]`). Dependabot branches off the target branch, so targeting `main` makes its branch a clean feature branch. Land it on `develop` first with a second PR from the same branch (`gh pr create --base develop --head <dependabot branch>`), then merge the Dependabot PR into `main`. Dependabot only reads this file on the default branch `main`.
+`release/*` is never the head of a merged PR: merging a `release/5.0` → `develop` PR would delete `release/5.0`, and GitHub retargets every open PR whose base is `release/5.0`. To bring `release/*` into `develop` or `main`, create a `promote/<x>` branch at its exact SHA (`gh api -X POST repos/duydpdev/style-generator/git/refs -f ref=refs/heads/promote/<x> -f sha=$(gh api repos/duydpdev/style-generator/git/ref/heads/release/5.0 --jq .object.sha)`) and open the PR from `promote/<x>`; on merge, GitHub only deletes `promote/<x>`.
+
+Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) updates GitHub Actions monthly as **one** grouped PR (`groups`) targeting `main` (`target-branch`), with the prefix `"[ci] "` (trailing space so GitHub does not insert `:` after `]`). Dependabot branches off the target branch, so targeting `main` makes its branch a clean feature branch. Land it on `develop` first with a second PR from the same branch (`gh pr create --base develop --head <dependabot branch>`), then merge the Dependabot PR into `main`. If GitHub deleted the Dependabot branch when the PR into `develop` was merged (the Dependabot PR into `main` is then closed), recreate the branch at the `headRefOid` of the PR into `develop` (`gh api -X POST repos/duydpdev/style-generator/git/refs -f ref=refs/heads/<branch> -f sha=<SHA>`) and run `gh pr reopen <N>`. Dependabot only reads this file on the default branch `main`.
 
 The `npm` entry in the same file runs monthly with the same flow (targets `main`, prefix `"[ci] "`, at most 2 open PRs). All minor/patch bumps are grouped into **one** PR (group `npm-minor-patch`); each major bump is its own PR. It never proposes a major for `tailwindcss`, `@tailwindcss/*`, `zod`, `vite` and `typescript`: these lines (and the peer ranges) are tracked by hand, and the `tailwind-floor` and `peer-matrix` jobs check them. A bump that changes a published range (`dependencies`/`peerDependencies`) must change its header to `[fix]`/`[feat]` before merging.
 
@@ -108,6 +110,7 @@ The project uses **Husky** and **lint-staged** to block commits that do not meet
 - `.husky/pre-commit` only calls `yarn lint-staged` (the single configuration: `lint-staged.config.js`). lint-staged first stashes unstaged changes, so every step only sees the staged snapshot.
 - For staged code files: `eslint --fix` → `prettier --write` on those files → `tsc --noEmit` for the whole project → `vitest related --run` (only tests that import the staged files). `json`/`md`/`yml`/`css` files only go through `prettier --write`.
 - The full `yarn test`, `yarn test:types` and the `check:*` gates run in CI, not in the hook.
+- `.husky/pre-push` runs `scripts/check-branch-name.sh` for every pushed branch (it skips `main`, `develop`, tags and branch deletions). Skip once with `HUSKY=0 git push …`.
 - The hook is installed via `postinstall: husky` (Yarn Berry does not run `prepare`); `pinst` disables `postinstall` in the published tarball; release CI sets `HUSKY=0`.
 
 ---
@@ -181,22 +184,25 @@ Fails when `git rev-list --count origin/develop..origin/main` > 0 and the tip of
 
 ## Branching Strategy
 
-| Branch        | Purpose                                                                                 |
-| ------------- | --------------------------------------------------------------------------------------- |
-| `main`        | Stable releases. Every push → release flow + back-merge                                 |
-| `develop`     | Integration and testing. Pre-release versions (DEV suffix, dist-tag `DEV`)              |
-| `feature/*`   | Branched from `main`. PR into `develop`, then a separate PR into `main` after approval  |
-| `hotfix/*`    | Like a feature: branched from `main`, enters `develop` first and then `main`            |
-| `integrate/*` | Temporary branch to resolve a feature's conflicts with `develop`; only enters `develop` |
+| Branch                       | Purpose                                                                                                                                                                             |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`                       | Stable releases. Every push → release flow + back-merge                                                                                                                             |
+| `develop`                    | Integration and testing. Pre-release versions (DEV suffix, dist-tag `DEV`)                                                                                                          |
+| `<type>/<slug>`              | Branched from `main`. PR into `develop`, then a separate PR into `main` after approval. An urgent fix works the same way (`fix/<slug>`)                                             |
+| `integrate/<slug>`           | Temporary branch to resolve a feature's conflicts with `develop`; only enters `develop`                                                                                             |
+| `release/*`                  | Integration branch of a major cycle (for example `release/5.0`): PRs from working branches go here. Never the head of a merged PR; it enters `develop`/`main` through `promote/<x>` |
+| `promote/*`, `dependabot/**` | `promote/<x>`: created at the exact SHA of a `release/*` to open the PR into `develop`/`main` (earlier example: `promote/4.0.0`); `dependabot/**`: branches created by Dependabot   |
+
+**Branch name rule** (`scripts/check-branch-name.sh`): `^(feat|fix|docs|chore|ci|build|refactor|test|perf|revert)/[a-z0-9]+(-[a-z0-9]+){0,5}$`, i.e. `<type>/<slug>`: `type` is a commit type except `style`, `release`, `temp`, `conf`, `wip`; `slug` is 1–6 words of lowercase letters or digits joined by `-` (for example `feat/theme-axes`, `ci/branch-hygiene`). Exceptions: `release/<x>`, `promote/<x>`, `dependabot/**`, `integrate/<slug>`. The rule is checked in two places: the `.husky/pre-push` hook on the local machine and the `Check branch name` step of `pr-title.yml` on the PR's head branch. The required checks of the rulesets only list `Build & Lint Check`, so a red `PR Title` check does not block the merge by itself: the merger must stop on it.
 
 ### Feature flow
 
-1. `git fetch origin && git switch -c feature/x origin/main`. Never branch from `develop`.
+1. `git fetch origin && git switch -c feat/x origin/main`. Never branch from `develop`.
 2. **One commit, correct header.** The release type is decided by the headers of the commits in the branch (merge commits are ignored by the analyzer). Before the first PR, squash the branch into one `[type] subject` commit and use exactly that header as the title of both PRs. A leftover `[feat] wip` commit becomes a minor even if the PR is named `[fix] …`. Major: `[release] …`.
-3. PR `feature/x` → `develop`, **Create a merge commit**. The result is `vX.Y.Z-DEV.N` on the `DEV` dist-tag. Consumers test with the exact version (`@duydpdev/style-generator@4.1.0-DEV.3`), not a range: `^4.1.0-DEV.3` resolves up to stable `4.1.0`, which may lack another feature that is on `develop`.
-4. After approval: PR `feature/x` → `main`, **Create a merge commit**. Stable release, publishes `latest`, back-merge.
+3. PR `feat/x` → `develop`, **Create a merge commit**. The result is `vX.Y.Z-DEV.N` on the `DEV` dist-tag. Consumers test with the exact version (`@duydpdev/style-generator@4.1.0-DEV.3`), not a range: `^4.1.0-DEV.3` resolves up to stable `4.1.0`, which may lack another feature that is on `develop`.
+4. After approval: if `feat/x` was deleted when the PR into `develop` merged (`delete_branch_on_merge=true`), recreate it on GitHub at the exact merged SHA (see [Pull Request & merge convention](#pull-request--merge-convention)), never push it from a local clone. Then PR `feat/x` → `main`, **Create a merge commit**; before merging, the PR's `headRefOid` must equal that SHA. Stable release, publishes `latest`, back-merge.
 5. **Depends on another feature:** branch from that other feature's branch, say so in the PR, and that other feature must enter `main` first.
-6. **Conflict when entering `develop`:** do **not** use GitHub's "Resolve conflicts" or "Update branch" button: both merge `develop` into `feature/x`, and the later PR into `main` would then carry the unapproved feature along. Instead: `git switch -c integrate/x origin/develop && git merge feature/x`, resolve, open a PR `integrate/x` → `develop` (merge commit), then delete the branch. `feature/x` stays clean for `main`. Update `feature/x` only with `git merge origin/main`.
+6. **Conflict when entering `develop`:** do **not** use GitHub's "Resolve conflicts" or "Update branch" button: both merge `develop` into `feat/x`, and the later PR into `main` would then carry the unapproved feature along. Instead: `git switch -c integrate/x origin/develop && git merge feat/x`, resolve, open a PR `integrate/x` → `develop` (merge commit); GitHub deletes the branch on merge (`delete_branch_on_merge=true`). `feat/x` stays clean for `main`. Update `feat/x` only with `git merge origin/main`.
 
 ### Removing a rejected feature
 
@@ -214,7 +220,7 @@ Fails when `git rev-list --count origin/develop..origin/main` > 0 and the tip of
 
 ### Correct process
 
-1. Branch `feature/x` from `main` (see [Feature flow](#feature-flow))
+1. Branch `feat/x` from `main` (see [Feature flow](#feature-flow))
 2. One commit in the format `[type] subject` (see below)
 3. PR into `develop`, CI passes → **Create a merge commit** → `release.yml` cuts `vX.Y.Z-DEV.N` (tag only, no commit) and publishes the dist-tag `DEV`
 4. After approval → PR from the same branch into `main`, CI passes → **Create a merge commit** → `release.yml`:

@@ -44,7 +44,7 @@ yarn site:build     # lib build + landing site (renders documents/*.md)
 
 The gate a task must pass before it is reported done lives in `.claude/rules/validation.md`.
 
-Pre-commit (Husky): `.husky/pre-commit` runs only `yarn lint-staged`, which works on the staged snapshot: eslint --fix → prettier → `tsc --noEmit` → `vitest related --run` (`lint-staged.config.js`). Yarn Berry never runs `prepare`, so Husky is installed via `postinstall: husky` (verify with `git config core.hooksPath` → `.husky/_`). `pinst` (`prepack: pinst --disable`, `postpack: pinst --enable`) renames `postinstall` to `_postinstall` inside the published tarball so consumers never run Husky. Release CI sets `HUSKY=0`.
+Pre-commit (Husky): `.husky/pre-commit` runs only `yarn lint-staged`, which works on the staged snapshot: eslint --fix → prettier → `tsc --noEmit` → `vitest related --run` (`lint-staged.config.js`). Yarn Berry never runs `prepare`, so Husky is installed via `postinstall: husky` (verify with `git config core.hooksPath` → `.husky/_`). `pinst` (`prepack: pinst --disable`, `postpack: pinst --enable`) renames `postinstall` to `_postinstall` inside the published tarball so consumers never run Husky. Release CI sets `HUSKY=0`. `.husky/pre-push` runs `scripts/check-branch-name.sh`, also a step of `pr-title.yml`: branch names are `<type>/<slug>` (`feat|fix|docs|chore|ci|build|refactor|test|perf|revert`, slug 1–6 lowercase words joined by `-`), plus `release/*`, `promote/*`, `dependabot/**` and `integrate/<slug>` (`documents/deploy.md` → Branching Strategy).
 
 ## Commit Convention
 
@@ -57,7 +57,7 @@ Custom format `[type] subject`, lowercase type (NOT conventional-commits `type:`
 | `[fix]` `[perf]` `[revert]` `[style]` `[refactor]` | patch   |
 | `[chore]` `[docs]` `[test]` `[build]` `[ci]`       | none    |
 
-`[conf]` `[temp]` `[wip]` are valid, no release. Features are cut from `main` and land twice, both as merge commits (never squash): a PR into `develop` (pre-release `DEV` dist-tag), then, once approved, a PR from the same branch into `main` (stable). Each merge triggers Semantic Release → tag → publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`); the release type comes from the feature's commit headers. Every push to `main` back-merges to `develop`. Details: `documents/deploy.md`.
+`[conf]` `[temp]` `[wip]` are valid, no release. Features are cut from `main` and land twice, both as merge commits (never squash): a PR into `develop` (pre-release `DEV` dist-tag), then, once approved, a PR from the same branch into `main` (stable). With `delete_branch_on_merge=true` GitHub deletes the branch when the `develop` PR merges: recreate it on GitHub at that PR's `headRefOid` (`gh api -X POST …/git/refs`, never a local push) and check that the `main` PR's `headRefOid` equals it before merging. `release/*` is never the head of a merged PR: promote it through a `promote/<x>` branch at the same SHA. Each merge triggers Semantic Release → tag → publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`); the release type comes from the feature's commit headers. Every push to `main` back-merges to `develop`. Details: `documents/deploy.md`.
 
 ## Architecture
 

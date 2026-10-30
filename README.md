@@ -2,7 +2,7 @@
 
 TypeScript library + CLI that turns a theme JSON into a complete **design system for Tailwind CSS v4**: one generated CSS file (theme variables, dark-mode/palette overrides, typography and spacing utilities, `@source inline` class coverage), typed design tokens, and a JSON Schema for editor autocomplete.
 
-Published on **GitHub Packages** as `@duydpdev/style-generator` (private — requires access, see Installation).
+Published on **GitHub Packages** as `@duydpdev/style-generator` (installing needs a token, see Installation).
 
 > **Upgrading from 3.x?** 4.0.0 is a breaking release (Tailwind v4 only, `generate()` instead of a plugin + safelist, strict theme schema, `themeAxes`). Read [`documents/migration/3.x-to-4.0.md`](./documents/migration/3.x-to-4.0.md).
 
@@ -20,9 +20,8 @@ Published on **GitHub Packages** as `@duydpdev/style-generator` (private — req
 
 ## 1. Installation
 
-This package is published to **GitHub Packages** under a **private** repository.
-To install you must be a repository collaborator and authenticate with a GitHub
-Personal Access Token (classic) that has the `read:packages` scope.
+This package is published to **GitHub Packages**. To install, authenticate with a
+GitHub Personal Access Token (classic) that has the `read:packages` scope.
 
 **1. Configure the `@duydpdev` scope** — use the file your package manager reads. Yarn Berry (v2 and later) reads `.yarnrc.yml` and ignores `.npmrc`.
 

@@ -56,7 +56,7 @@ Custom format `[type] subject`, lowercase type (NOT conventional-commits `type:`
 | `[fix]` `[perf]` `[revert]` `[style]` `[refactor]` | patch   |
 | `[chore]` `[docs]` `[test]` `[build]` `[ci]`       | none    |
 
-`[conf]` `[temp]` `[wip]` are valid, no release. Features are cut from `main` and land twice, both as merge commits (never squash): a PR into `develop` (pre-release `DEV` dist-tag), then, once approved, a PR from the same branch into `main` (stable). Each merge triggers Semantic Release → tag → publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`, private); the release type comes from the feature's commit headers. Every push to `main` back-merges to `develop`. Details: `documents/deploy.md`.
+`[conf]` `[temp]` `[wip]` are valid, no release. Features are cut from `main` and land twice, both as merge commits (never squash): a PR into `develop` (pre-release `DEV` dist-tag), then, once approved, a PR from the same branch into `main` (stable). Each merge triggers Semantic Release → tag → publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`); the release type comes from the feature's commit headers. Every push to `main` back-merges to `develop`. Details: `documents/deploy.md`.
 
 ## Architecture
 
@@ -72,7 +72,7 @@ Pipelines, all driven by the category registry:
 2. **theme-css** (`src/features/theme-css/`) — `:root` `--sg-*` vars, `html[data-<axis>="<variant>"]` overrides, `@theme inline` mapping; `generateBorderWidthCss.ts` (explicit `@utility border-*-<key>`), `generateScreensCss.ts` (custom breakpoints).
 3. **tokens**, **typography** (`@utility <kebab-key>`), **spacing** (`.sp-*` utilities over `var(--sg-sp-*)`), **cva**, **vite**, **next** under `src/features/`.
 
-`DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants, spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only: the pre-v4 baseline (`documents/migration/v4-baseline-classes.txt`) emitted only `md:`/`lg:` and the consumer passes `[Breakpoint.MD, Breakpoint.LG]`; defaulting to every `screens` key advertised breakpoints no `@source inline` line covered. `src/shared/safelistProperties.ts` holds the `roundedProperties`/`borderProperties` class-prefix lists (legacy filename).
+`DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants, spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only: the pre-v4 baseline emitted only `md:`/`lg:` and the consumer passes `[Breakpoint.MD, Breakpoint.LG]`; defaulting to every `screens` key advertised breakpoints no `@source inline` line covered. `src/shared/safelistProperties.ts` holds the `roundedProperties`/`borderProperties` class-prefix lists (legacy filename).
 
 Build outputs: `dist/{index,tokens,cva,spacing,types,vite,next}.{js,cjs,d.ts}` (7 subpaths, Vite lib multi-entry) + `dist/cli/index.mjs` (tsdown). Shared hashed chunks are internal. Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/check-sizes.mjs`.
 
@@ -86,7 +86,7 @@ Source layout, public exports per subpath and CLI commands: `documents/architect
 - `themeAxes: Record<axisName, Record<variantName, ThemeOverride>>` — independent axes (e.g. `theme.dark` and `palette.forest` at once), each activated via `html[data-<axis-kebab>="<variant-kebab>"]`. Selectors are pinned to `html` because a `$`-alias `var()` resolves where the custom property is declared (`:root`). Blocks emit after `:root` in declaration order, so for a token overridden by two axes the axis declared **last** wins.
 - An override key must already exist in the matching base category — override-only keys are rejected (they would produce no utility).
 - Axis and variant names must NOT be canonical integers (`/^(0|[1-9]\d*)$/`) — JS enumerates integer-like keys first, which would silently invert "last declared wins". `007`/`2xl` are fine.
-- Alias `"$<key>"` resolves within the SAME category to `var(--<cssVarPrefix>-<kebab-key>)` using that category's `cssVarPrefix` (`src/features/registry/builtInCategories.ts`): `$blue500` in `colors` → `var(--sg-blue-500)`, `$base` in `shadows` → `var(--sg-shadow-base)`. Existence and acyclicity are validated at parse time. Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`. The emitted `--sg-<color>` variables are a public contract in 4.x (consumers read them); 5.0 renames them to `--sg-color-*` (decision Q6 in `documents/brainstorm/2026-10-06/advise-issue-register.md`).
+- Alias `"$<key>"` resolves within the SAME category to `var(--<cssVarPrefix>-<kebab-key>)` using that category's `cssVarPrefix` (`src/features/registry/builtInCategories.ts`): `$blue500` in `colors` → `var(--sg-blue-500)`, `$base` in `shadows` → `var(--sg-shadow-base)`. Existence and acyclicity are validated at parse time. Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`. The emitted `--sg-<color>` variables are a public contract in 4.x (consumers read them); 5.0 renames them to `--sg-color-*` (decision Q6 of the 5.0 issue register).
 - `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`) is the single state list for the registry's `@source inline` state lines and `createVariantMapper(prefix, tokens, { states: COLOR_STATES })`. Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`); states emit kebab-cased (`focusVisible` → `focus-visible:`).
 - A theme key whose class equals a Tailwind _static_ utility (`bg-none`, `border-2`, typography `text-sm`, …) is not rejected, but Tailwind picks the winner — rename it (`clear`, `flat`, `zero`). `style-gen doctor` warns on known collisions (`src/cli/commands/utilityCollisions.ts`).
 - `fontFamily` keys must not kebab-case to a font-_weight_ name (`thin` … `black`) — both share the `font-` prefix.
@@ -103,7 +103,7 @@ Vitest (Node env) with colocated `*.test.ts`; type tests in `*.test-d.ts` via `y
 
 - `yarn check:publish-target` (`prepublish` + CI) locks the registry to `npm.pkg.github.com`; CI also runs `yarn npm publish --dry-run` and asserts that host. Yarn Berry runs `prepublish`, not `prepublishOnly`, on `yarn npm publish`.
 - `yarn check:externals` fails if any `dist/**/*.map` lists a peer/dependency under `node_modules/` (or a JS file ships without a map); `yarn check:sizes` enforces gzip budgets incl. the `cli` bundle (`scripts/check-sizes.mjs`); `yarn check:browser-safe` keeps browser subpaths free of Node/Zod. Negative controls: `src/__integration__/publish-gates.test.ts`.
-- Only `@duydpdev` resolves to GitHub Packages; consumers need a PAT with `read:packages` + repo access.
+- Only `@duydpdev` resolves to GitHub Packages; consumers need a PAT with `read:packages`.
 
 ## Project-Specific Workflow Rules
 
@@ -134,6 +134,7 @@ documents/
 - Plans: one directory per plan under the creation date; `plan.md` holds the phase table and status; no per-day `task.md`. On completion flip `[ ]` → `[x]` in the phase file and update the phase row in `plan.md` immediately. Materialize the plan directory even when the user supplies the plan inline.
 - Brainstorm: `documents/brainstorm/YYYY-MM-DD/<topic>.md` (an advise `-state.md` file sits next to its report); no per-day `session.md`.
 - Journals and standalone reports are written by AgentKit into `documents/plans/journals/` and `documents/plans/reports/`.
+- `documents/plans/` and `documents/brainstorm/` are git-ignored local working directories: they are never committed or published, so plan bookkeeping (checkbox flips, phase tables) is local and needs no commit.
 - **Relative paths only** — no absolute paths in docs.
 
 ### ESM gotcha

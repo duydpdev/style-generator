@@ -47,6 +47,7 @@ documents/plans/YYYY-MM-DD/<plan-slug>/
 - Relative links only; never absolute paths.
 - Reports that belong to no plan go to `documents/plans/reports/`; journals go to `documents/plans/journals/YYYY-MM-DD-<slug>.md` (where `ak journal create` writes them).
 - Brainstorm/advise output: `documents/brainstorm/YYYY-MM-DD/<topic>.md`; no per-day `session.md`.
+- `documents/plans/` and `documents/brainstorm/` are git-ignored local directories (not published). Keep the plan layout, but never `git add` them.
 
 `plan.md` template:
 

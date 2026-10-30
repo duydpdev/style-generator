@@ -80,7 +80,7 @@ Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR.
 
 ### Pull Request & merge convention
 
-GitHub Free + repo private: không có branch protection, mọi check chỉ là cảnh báo. Người merge phải tự dừng khi check đỏ; lưới cuối là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag.
+Rulesets bảo vệ `main`/`develop` (cần PR, chỉ merge commit, check `Build & Lint Check` bắt buộc); admin được bypass vì `release.yml`/`back-merge.yml` push bằng PAT. Người merge vẫn phải dừng khi check đỏ ngoài danh sách bắt buộc; lưới cuối là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag.
 
 | PR                  | Merge method                                                 | Ghi chú                                                                                                                                                  |
 | ------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -251,7 +251,7 @@ Xem: [`commitlint.config.ts`](../commitlint.config.ts) và [`release.config.cjs`
 
 ## Site (landing + examples)
 
-Landing site (`site/`) và `examples/react-v4` dùng thư viện qua dependency `link:`. Site **không được deploy**: repo private trên GitHub Free không có GitHub Pages (Pages cho repo private cần Pro/Team/Enterprise: https://docs.github.com/pages/quickstart). `deploy-site.yml` và `site:deploy:manual` đã bị xoá (2026-09-30). Muốn bật lại cần nâng gói hoặc host ở nơi khác, qua một plan riêng.
+Landing site (`site/`) và `examples/react-v4` dùng thư viện qua dependency `link:`. Site **không được deploy** (chưa có kế hoạch host). `deploy-site.yml` và `site:deploy:manual` đã bị xoá (2026-09-30). Muốn bật lại cần một plan riêng.
 
 Site vẫn được build trên mọi PR: job `check` của `ci.yml` chạy `yarn workspace site build` ngay sau `yarn build:all`, kể cả với PR chỉ đổi `documents/**`, vì site render `documents/*.md`. `yarn workspace site build` chạy `build:examples` (build `examples/react-v4` với base `./`, copy `examples/react-v4/dist` vào `site/public/examples/v4`), rồi Vite build site.
 

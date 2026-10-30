@@ -62,7 +62,7 @@ export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
  * default shared by the `@source inline` responsive variants, the spacing
  * `@media` chains, and `DesignTokens.Web.breakpoints`. `md`/`lg` match the
  * only responsive variants the pre-v4 baseline emitted
- * (`documents/migration/v4-baseline-classes.txt`: 89 `md:` + 89 `lg:`
+ * (89 `md:` + 89 `lg:`
  * classes, no `sm:`/`xl:`/`2xl:`).
  */
 export const DEFAULT_BREAKPOINTS = ["md", "lg"] as const;

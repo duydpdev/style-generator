@@ -2,7 +2,7 @@
 
 ### Features
 
-- descriptor as source of truth ([354749a](https://github.com/duydpdev/style-generator/commit/354749acf839120ce4779189b75bc299e7a2deb7))
+- descriptor as source of truth ([9bfbaa4](https://github.com/duydpdev/style-generator/commit/9bfbaa49787fb2d59ecc71ed02980957a7a51a96))
 
   The built-in category descriptor now drives the token types, the CSS
   mapping and the typed-token arrays; options are resolved once
@@ -32,7 +32,7 @@
 
 ### Bug Fixes
 
-- config: update peer matrix to reflect tested support ([20b1b79](https://github.com/duydpdev/style-generator/commit/20b1b791c454016a11b06ddb31256476e27b20c1))
+- config: update peer matrix to reflect tested support ([aa54000](https://github.com/duydpdev/style-generator/commit/aa54000fd72e4a925013ad2eaf2117722aa89c89))
 
   Peer ranges now follow the CI peer-matrix job (latest release of each
   major: example build, Vite dev server, example and dist .d.ts typecheck).
@@ -45,71 +45,71 @@
 
 ### Bug Fixes
 
-- CLI scaffolding guards, Vite/Next integration phases and Node engines ([4426496](https://github.com/duydpdev/style-generator/commit/4426496566c47f32a2f28f9fba5dd8fbff7f5d1e))
+- CLI scaffolding guards, Vite/Next integration phases and Node engines ([7178721](https://github.com/duydpdev/style-generator/commit/71787213cabe3333bf3c9cee97775235d6782180))
 
 # [4.1.0](https://github.com/duydpdev/style-generator/compare/v4.0.3...v4.1.0) (2026-10-06)
 
 ### Features
 
-- validate options, config and cross-category theme variables ([2e30cb1](https://github.com/duydpdev/style-generator/commit/2e30cb1ee3630cba1645b9d2d61a3bb6d78c2113))
+- validate options, config and cross-category theme variables ([afd2d30](https://github.com/duydpdev/style-generator/commit/afd2d3023407de07ac5a58fd527c78d88e6a15be))
 
 # [4.0.3](https://github.com/duydpdev/style-generator/compare/v4.0.2...v4.0.3) (2026-10-05)
 
 ### Bug Fixes
 
-- make init scaffold one working setup and doctor check only what it uses ([eaa7cef](https://github.com/duydpdev/style-generator/commit/eaa7cef9d8f873a04fbebc336e2965b7033539ed))
+- make init scaffold one working setup and doctor check only what it uses ([f0a2d96](https://github.com/duydpdev/style-generator/commit/f0a2d964f4182df2fb3ca26b560c2a5ca76166cd))
 
 # [4.0.2](https://github.com/duydpdev/style-generator/compare/v4.0.1...v4.0.2) (2026-10-05)
 
 ### Bug Fixes
 
-- keep schema, options and typed helpers consistent with the emitted CSS ([35c2d5f](https://github.com/duydpdev/style-generator/commit/35c2d5f74005fba1dd475d264277f4f9e20f6625)) (see [4.0.2 — stricter validation](./documents/migration/3.x-to-4.0.md#402--stricter-validation))
+- keep schema, options and typed helpers consistent with the emitted CSS ([364615a](https://github.com/duydpdev/style-generator/commit/364615afb5e319aad6d6f9e814aebd8b8eb957fd)) (see [4.0.2 — stricter validation](./documents/migration/3.x-to-4.0.md#402--stricter-validation))
 
 # [4.0.1](https://github.com/duydpdev/style-generator/compare/v4.0.0...v4.0.1) (2026-10-05)
 
 ### Bug Fixes
 
-- exit non-zero on failed generate, fix --version and release tag detection ([5469736](https://github.com/duydpdev/style-generator/commit/5469736fb048bb57742eca987aa84ef43e21f3a6))
+- exit non-zero on failed generate, fix --version and release tag detection ([0f3936c](https://github.com/duydpdev/style-generator/commit/0f3936c3a901e15efa14f32eca9364a8824639ea))
 
 # [4.0.0](https://github.com/duydpdev/style-generator/compare/v3.0.0...v4.0.0) (2026-09-30)
 
 ### Bug Fixes
 
-- align default breakpoints and kebab types, warn on Tailwind utility collisions ([59b2221](https://github.com/duydpdev/style-generator/commit/59b2221d5f3f6487382027a98d671e312a1cceda))
-- correct --sg-sp-* custom-property inheritance in spacing utilities ([0e82feb](https://github.com/duydpdev/style-generator/commit/0e82feb3b4e12a915d48246d00c0e2cbe03b3c7c))
-- print key-grammar hint for invalid record keys ([18debfc](https://github.com/duydpdev/style-generator/commit/18debfc029d019a8e9e50050d8319de2ac951863))
-- reject underscores in token keys, kebab state prefixes, atomic writes ([082379c](https://github.com/duydpdev/style-generator/commit/082379c7908d6f324ccfbceb04cb9dc45945ec9f))
-- skip comments in CSS block extractor and regenerate baseline class list ([4910a8c](https://github.com/duydpdev/style-generator/commit/4910a8c58c97eaf5bdf02fa58a724976dd59c2c9))
-- skip undefined optional typography fields in generated CSS ([4e49bf8](https://github.com/duydpdev/style-generator/commit/4e49bf87212e779e4744703013db5ea97a7468d0))
-- tighten alias/override validation and make cva round-trip probative ([bf9090a](https://github.com/duydpdev/style-generator/commit/bf9090a86db2e4f905b42cdb418989d70102571a))
-- unify tailwind engine, align state source lines with tokens, guard axis key order ([8024ecd](https://github.com/duydpdev/style-generator/commit/8024ecd0d4398c5ee156813b60a04c6246d4dbdd))
+- align default breakpoints and kebab types, warn on Tailwind utility collisions ([aed6bad](https://github.com/duydpdev/style-generator/commit/aed6badb57d5c8cf3250ee2ea960b7198c2c3631))
+- correct --sg-sp-* custom-property inheritance in spacing utilities ([6a96706](https://github.com/duydpdev/style-generator/commit/6a9670678157fd95e62a7390ffed58aaf7bfed90))
+- print key-grammar hint for invalid record keys ([67515d1](https://github.com/duydpdev/style-generator/commit/67515d1df7665dbff12a989ca0c4a9f84baf0c3a))
+- reject underscores in token keys, kebab state prefixes, atomic writes ([8a635ec](https://github.com/duydpdev/style-generator/commit/8a635ec09e045f5d47a16c48293605b8129e4670))
+- skip comments in CSS block extractor and regenerate baseline class list ([317b1a5](https://github.com/duydpdev/style-generator/commit/317b1a59136e8a50e2ffb426d45f6d6a7b6036d0))
+- skip undefined optional typography fields in generated CSS ([0528bc6](https://github.com/duydpdev/style-generator/commit/0528bc6802d0315db6f893a16cd9abc1e69a5cd9))
+- tighten alias/override validation and make cva round-trip probative ([17ea1ab](https://github.com/duydpdev/style-generator/commit/17ea1ab4cc965ff360418054a5ac6f553f37c5a5))
+- unify tailwind engine, align state source lines with tokens, guard axis key order ([76a6b30](https://github.com/duydpdev/style-generator/commit/76a6b301c8ffcd77871085a59cc0b2bf2fff8025))
 
 ### Code Refactoring
 
-- enable strict TypeScript flags repo-wide, remove unsafe casts ([8f8a84c](https://github.com/duydpdev/style-generator/commit/8f8a84c7fa4ffa7f35f21f69604a9ff466abd143))
+- enable strict TypeScript flags repo-wide, remove unsafe casts ([dcda75b](https://github.com/duydpdev/style-generator/commit/dcda75bc9a6885b0259191db87b24782a5c61cf3))
 
 ### Features
 
-- add $schema to example themes + committed theme.schema.json + AC6 proof ([cf892e8](https://github.com/duydpdev/style-generator/commit/cf892e89d07cc59f3cae3bdf65874b64ec7102de))
-- add next-v4 and nuxt-v4 examples ([#68](https://github.com/duydpdev/style-generator-private/issues/68)) ([c69de63](https://github.com/duydpdev/style-generator/commit/c69de63fc0e85dedc066a90558b472f27ac10432))
-- add strict Zod 4 theme schema as single source of truth ([52ba9c1](https://github.com/duydpdev/style-generator/commit/52ba9c1abb557773f22820f46927305d3aee8042))
-- add strict Zod theme schema ([3f5cbc2](https://github.com/duydpdev/style-generator/commit/3f5cbc2398debba152440ba8ab1888f6973619fb))
-- add style-gen generate command ([29cd84f](https://github.com/duydpdev/style-generator/commit/29cd84f41c8ab7acf6e3e663002c0dbcf77e33e8))
-- add token aliases, fontFamily/borderWidth, registry `@source` inline, styleGenNext and flat variant mapper ([97a9952](https://github.com/duydpdev/style-generator/commit/97a995249114e8f02b8ab05100117b02c3fdced0))
-- add token category registry and generate() core ([9def0f2](https://github.com/duydpdev/style-generator/commit/9def0f239f3e9f74960abe3e6e9e8fca157e3309))
-- alias tokens, fontFamily/borderWidth categories, `@source` inline ([503ddb8](https://github.com/duydpdev/style-generator/commit/503ddb8de134dbfeed183f577175b1a17d8eeee6))
-- multi-axis themeAxes and registry-driven state palette classes ([4c8b70d](https://github.com/duydpdev/style-generator/commit/4c8b70d82cbf0b4670454b7953e053a8804edd05))
-- update lib v4 ([#66](https://github.com/duydpdev/style-generator-private/issues/66)) ([8e25647](https://github.com/duydpdev/style-generator/commit/8e25647a605a8b350052185d86417081c5b1659e))
-- validate always via ThemeSchema in generate/CLI/Vite + schema command ([0954929](https://github.com/duydpdev/style-generator/commit/0954929cb58cacc793fa0b2a2632e7cad7a9b03d))
+- add $schema to example themes + committed theme.schema.json + AC6 proof ([3b4e3b0](https://github.com/duydpdev/style-generator/commit/3b4e3b06f00d65aad1797d47a8c8485f0248d777))
+- add next-v4 and nuxt-v4 examples ([#68](https://github.com/duydpdev/style-generator-private/issues/68)) ([60976d7](https://github.com/duydpdev/style-generator/commit/60976d760b58f50f5fb4de8b5333876c5eb1b4a4))
+- add strict Zod 4 theme schema as single source of truth ([01db4ed](https://github.com/duydpdev/style-generator/commit/01db4ed0de5f9d9223b03274efe7113b755403c5))
+- add strict Zod theme schema ([3105af0](https://github.com/duydpdev/style-generator/commit/3105af03e7a7b657d838982829284c350595245d))
+- add style-gen generate command ([adf9b79](https://github.com/duydpdev/style-generator/commit/adf9b79897721355c448e7c0ae4156fded6fdfa0))
+- add token aliases, fontFamily/borderWidth, registry `@source` inline, styleGenNext and flat variant mapper ([898831e](https://github.com/duydpdev/style-generator/commit/898831ec49d33282c1e7d91ea56d186158943d7d))
+- add token category registry and generate() core ([440a958](https://github.com/duydpdev/style-generator/commit/440a958643fa1ddd846e1b359e051e91221bafe5))
+- alias tokens, fontFamily/borderWidth categories, `@source` inline ([cc68e52](https://github.com/duydpdev/style-generator/commit/cc68e527cd1379a5152abbb611181f990addf82e))
+- multi-axis themeAxes and registry-driven state palette classes ([89d49f2](https://github.com/duydpdev/style-generator/commit/89d49f2cb05ebd612a64a0cc176eb7f1917dd0cf))
+- update lib v4 ([#66](https://github.com/duydpdev/style-generator-private/issues/66)) ([9e78d18](https://github.com/duydpdev/style-generator/commit/9e78d185c702a12a7b5f9b67416da05e871a07cd))
+- validate always via ThemeSchema in generate/CLI/Vite + schema command ([a2971a0](https://github.com/duydpdev/style-generator/commit/a2971a0b2b452b2060591188de27ec5fd1b41ec6))
 
 ### Performance Improvements
 
-- lock CSS output size budget and class-family coverage checks ([ff73c3f](https://github.com/duydpdev/style-generator/commit/ff73c3f59875e2f8a8b637b2e5aefbc7643df83a))
+- lock CSS output size budget and class-family coverage checks ([fd1bc08](https://github.com/duydpdev/style-generator/commit/fd1bc08d3f923402bbcd12c63cccd1f2112060d7))
 
 ### release
 
-- introduce token category registry and generate() core ([cd664dd](https://github.com/duydpdev/style-generator/commit/cd664dd9c85f6cc7d57744e82adf16c99dc44871))
-- promote 4.0.0 to main ([2377c27](https://github.com/duydpdev/style-generator/commit/2377c27af8c0c608023b16466ad16565cd933dd4))
+- introduce token category registry and generate() core ([acb90af](https://github.com/duydpdev/style-generator/commit/acb90afd38c94684c5b78da11041b287d02ff95e))
+- promote 4.0.0 to main ([41a5343](https://github.com/duydpdev/style-generator/commit/41a53437f3856ccd5897b465a98a8db3a5e7933f))
 
 ### BREAKING CHANGES
 

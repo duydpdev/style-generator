@@ -1,6 +1,6 @@
 # AC4 sample PR — `letterSpacing` category (3-file proof)
 
-Success Criteria 3 of `documents/plans/2026-09-28/v4-major-rewrite/phase-07-v4-aliases-categories.md` (as
+Success Criteria 3 of phase 07 of the v4 major-rewrite plan (not published) (as
 amended by "Quyết định user 2026-09-29") requires proving that adding a new
 CSS-var category touches **exactly 3 files**: one line in `themeSchema.ts`
 (the `ThemeCssVarShape` record), one descriptor in `builtInCategories.ts`,

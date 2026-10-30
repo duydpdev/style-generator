@@ -17,7 +17,7 @@ Hướng dẫn tích hợp `@duydpdev/style-generator` 5.0 vào dự án **Tailw
 
 ## Cài đặt
 
-Package được publish lên GitHub Packages (private). Cấu hình scope `@duydpdev` trong file mà package manager của bạn đọc (Yarn Berry đọc `.yarnrc.yml` và bỏ qua `.npmrc`); cách tạo PAT `read:packages` nằm ở mục Installation của [`README.md`](../README.md#1-installation).
+Package được publish lên GitHub Packages. Cấu hình scope `@duydpdev` trong file mà package manager của bạn đọc (Yarn Berry đọc `.yarnrc.yml` và bỏ qua `.npmrc`); cách tạo PAT `read:packages` nằm ở mục Installation của [`README.md`](../README.md#1-installation).
 
 Yarn Berry — `.yarnrc.yml`:
 

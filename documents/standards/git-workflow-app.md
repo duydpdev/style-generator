@@ -4,7 +4,7 @@ Chuẩn này dành cho app deploy qua 4 nhánh môi trường: `develop` → `st
 
 Thư viện `@duydpdev/style-generator` không dùng chuẩn này. Nó chỉ có 2 nhánh `develop` và `main` và áp cùng nguyên tắc; xem [`../deploy.md`](../deploy.md).
 
-Nguồn gốc: [`../brainstorm/2026-09-30/advise-git-branch-workflow.md`](../brainstorm/2026-09-30/advise-git-branch-workflow.md). Các hành vi git được viện dẫn (squash tạo SHA mới, revert trap, back-merge) đã đo trong [`../plans/2026-09-30/feature-from-main-flow/reports/phase-01-dry-run.md`](../plans/2026-09-30/feature-from-main-flow/reports/phase-01-dry-run.md).
+Các hành vi git được viện dẫn (squash tạo SHA mới, revert trap, back-merge) đã được đo bằng dry run nội bộ, không công bố.
 
 ## Sơ đồ
 

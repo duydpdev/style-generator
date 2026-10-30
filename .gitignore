@@ -100,3 +100,7 @@ site/public/examples/
 
 # MCP local config (contains API keys)
 .mcp.json
+
+# Local working notes (never published): plans, brainstorm, reports, journals
+documents/plans/
+documents/brainstorm/

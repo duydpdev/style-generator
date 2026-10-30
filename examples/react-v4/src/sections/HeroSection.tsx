@@ -1,5 +1,4 @@
-import { Box } from "../components/Box";
-import { Text } from "../components/Text";
+import { Box, Flex, Text } from "../ui";
 
 import { PALETTE_LIST } from "./palettes";
 import type { PaletteId } from "./types";
@@ -11,20 +10,19 @@ interface HeroSectionProps {
 
 export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
   return (
-    <section className="pt-22 pb-14">
-      <span className="sg-eyebrow mb-7 block">
+    <Box as="section" pt={22} pb={14}>
+      <Box as="span" mb={7} data-part="sg-eyebrow">
         A token-driven design system
-      </span>
-      <h1
-        className="sg-font-display sg-hero-title m-0 mb-7 max-w-[14ch] tracking-[-0.025em] text-[clamp(56px,8vw,104px)] leading-[0.94]"
+      </Box>
+      <Box
+        as="h1"
+        mb={7}
+        data-part="sg-font-display sg-hero-title hero-title"
         style={{ color: "var(--color-foreground)" }}
       >
         Tokens, <em>composed</em> with intention.
-      </h1>
-      <Text
-        className="mb-10 max-w-[56ch] text-[18px] leading-[1.55]"
-        color="muted"
-      >
+      </Box>
+      <Text color="muted" mb={10} data-part="hero-lede">
         A small, opinionated set of design primitives —{" "}
         <b style={{ color: "var(--color-foreground)", fontWeight: 500 }}>
           colors, type, spacing, radii, shadows
@@ -32,24 +30,26 @@ export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
         — that compile down to Tailwind utilities and inline CSS variables. Pick
         a palette below to remix every component on this page in real time.
       </Text>
-      <Box gap={2} className="flex flex-wrap">
+      <Flex wrap gap={2}>
         {PALETTE_LIST.map((p) => {
           const active = palette === p.id;
           return (
-            <button
+            <Box
+              as="button"
               key={p.id}
               type="button"
-              className="sg-palette-pick"
+              data-part="sg-palette-pick"
               aria-pressed={active}
               onClick={() => {
                 onPickPalette(p.id);
               }}
             >
-              <span className="flex">
+              <Flex as="span">
                 {p.dots.map((c) => (
-                  <span
+                  <Box
+                    as="span"
                     key={c}
-                    className="sg-palette-dot"
+                    data-part="sg-palette-dot"
                     style={{
                       background: c,
                       boxShadow:
@@ -57,12 +57,12 @@ export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
                     }}
                   />
                 ))}
-              </span>
+              </Flex>
               {p.label}
-            </button>
+            </Box>
           );
         })}
-      </Box>
-    </section>
+      </Flex>
+    </Box>
   );
 };

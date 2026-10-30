@@ -1,0 +1,108 @@
+/*
+ * Bespoke styles of the demo sections, keyed by data-part (app code has
+ * no className). Each rule holds only classes no component prop covers;
+ * spacing is always a prop. `@layer utilities` keeps the old cascade: the
+ * unlayered style-guide.css still wins, and these rules come after the
+ * component utilities.
+ */
+@layer utilities {
+  [data-part~="caps"] {
+    @apply uppercase;
+  }
+  [data-part~="caps-wide"] {
+    @apply uppercase tracking-wider;
+  }
+  [data-part~="caps-widest"] {
+    @apply uppercase tracking-widest;
+  }
+  [data-part~="text-medium"] {
+    @apply font-medium;
+  }
+  [data-part~="text-semibold"] {
+    @apply font-semibold;
+  }
+  [data-part~="display-contents"] {
+    @apply contents;
+  }
+  [data-part~="dashed"] {
+    @apply border-dashed;
+  }
+  [data-part~="grow-1"] {
+    @apply flex-1;
+  }
+  [data-part~="tint-primary"] {
+    @apply bg-primary/10;
+  }
+  [data-part~="tint-secondary"] {
+    @apply bg-secondary/15;
+  }
+  [data-part~="tint-success"] {
+    @apply bg-success/15;
+  }
+  [data-part~="topbar-brand-text"] {
+    @apply leading-tight;
+  }
+  [data-part~="hero-title"] {
+    @apply max-w-[14ch] tracking-[-0.025em] text-[clamp(56px,8vw,104px)] leading-[0.94];
+  }
+  [data-part~="hero-lede"] {
+    @apply max-w-[56ch] text-[18px] leading-[1.55];
+  }
+  [data-part~="section-head"] {
+    @apply items-baseline;
+  }
+  [data-part~="section-title"] {
+    @apply tracking-[-0.02em] text-[40px] leading-tight;
+  }
+  [data-part~="section-desc"] {
+    @apply max-w-[44ch] text-[14px];
+  }
+  [data-part~="color-card"] {
+    @apply overflow-hidden;
+  }
+  [data-part~="typo-grid"] {
+    @apply items-baseline md:grid-cols-[220px_1fr];
+  }
+  [data-part~="typo-display"] {
+    @apply text-[clamp(40px,6vw,80px)] tracking-[-0.025em] leading-none;
+  }
+  [data-part~="typo-heading"] {
+    @apply text-[32px] font-bold tracking-[-0.02em] leading-tight;
+  }
+  [data-part~="typo-body"] {
+    @apply text-[16px] font-medium leading-relaxed;
+  }
+  [data-part~="typo-mono"] {
+    @apply text-[13px];
+  }
+  [data-part~="padding-row"] {
+    @apply grid-cols-[80px_1fr_80px];
+  }
+  [data-part~="button-matrix"] {
+    @apply min-w-[520px] grid-cols-[72px_repeat(4,minmax(0,1fr))] md:min-w-0 md:grid-cols-[120px_repeat(4,minmax(0,1fr))];
+  }
+  [data-part~="footer-quote"] {
+    @apply max-w-[38ch] text-[28px] leading-tight;
+  }
+  [data-part~="drawer-title"] {
+    @apply text-[22px];
+  }
+  [data-part~="tweak-opt-name"] {
+    @apply text-[12px] font-medium;
+  }
+  [data-part~="tweak-opt-meta"] {
+    @apply text-[9.5px];
+  }
+  [data-part~="no-shrink"] {
+    @apply shrink-0;
+  }
+  [data-part~="truncate"] {
+    @apply truncate;
+  }
+  [data-part~="md-only"] {
+    @apply hidden md:block;
+  }
+  [data-part~="scroll-x"] {
+    @apply overflow-x-auto;
+  }
+}

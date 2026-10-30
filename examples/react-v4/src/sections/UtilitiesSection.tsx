@@ -1,5 +1,4 @@
-import { Box } from "../components/Box";
-import { Text } from "../components/Text";
+import { Box, Flex, Grid, Text } from "../ui";
 
 import { SectionHead } from "./SectionHead";
 
@@ -25,19 +24,17 @@ const RADII: { key: "sm" | "md" | "lg" | "pill"; width: number }[] = [
 ];
 
 const UtilTitle = ({ children }: { children: string }) => (
-  <Text
-    type="text12Mono"
-    color="muted"
-    className="mb-5 block uppercase tracking-wider"
-  >
+  <Text type="text12Mono" color="muted" mb={5} data-part="caps-wide">
     {children}
   </Text>
 );
 
 export const UtilitiesSection = () => {
   return (
-    <section
-      className="border-t py-14"
+    <Box
+      as="section"
+      borderT="thin"
+      py={14}
       style={{ borderColor: "var(--c-line)" }}
     >
       <SectionHead
@@ -52,38 +49,44 @@ export const UtilitiesSection = () => {
         }
       />
 
-      <Box className="mb-12">
+      <Box mb={12}>
         <UtilTitle>Padding scale</UtilTitle>
         {SPACING.map(({ name, px }) => (
-          <Box
+          <Grid
             key={name}
-            className="grid grid-cols-[80px_1fr_80px] items-center gap-4 border-t border-dashed py-3 first:border-t-0"
+            align="center"
+            gap={4}
+            borderT="thin"
+            py={3}
+            data-part="dashed padding-row"
             style={{ borderColor: "var(--c-line)" }}
           >
             <Text type="text12Mono" color="muted">
               {name}
             </Text>
-            <div>
-              <div
-                className="sg-spacing-bar"
+            <Box>
+              <Box
+                data-part="sg-spacing-bar"
                 style={{ width: `${String((px / 48) * 100)}%` }}
               />
-            </div>
-            <Text type="text12Mono" className="text-right">
+            </Box>
+            <Text type="text12Mono" align="right">
               {px}px
             </Text>
-          </Box>
+          </Grid>
         ))}
       </Box>
 
-      <Box className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
+      <Grid columns={{ base: 1, md: 2 }} gap={{ base: 8, md: 12 }}>
         <Box>
           <UtilTitle>Radius</UtilTitle>
-          <Box gap={4} className="flex flex-wrap items-end">
+          <Flex wrap align="end" gap={4}>
             {RADII.map(({ key, width }) => (
-              <Box
+              <Flex
                 key={key}
-                className="flex items-end justify-center pb-2"
+                align="end"
+                justify="center"
+                pb={2}
                 style={{
                   width,
                   height: 80,
@@ -98,30 +101,35 @@ export const UtilitiesSection = () => {
                 >
                   {key}
                 </Text>
-              </Box>
+              </Flex>
             ))}
-          </Box>
+          </Flex>
         </Box>
         <Box>
           <UtilTitle>Shadow</UtilTitle>
-          <Box gap={4} className="flex">
+          <Flex gap={4}>
             {SHADOWS.map(({ key }) => (
-              <Box
+              <Flex
                 key={key}
                 backgroundColor="surface"
                 rounded="md"
                 shadow={key}
-                className="sg-glass-target flex h-[100px] flex-1 items-end justify-center border pb-3"
+                border="thin"
+                height={100}
+                align="end"
+                justify="center"
+                pb={3}
+                data-part="sg-glass-target grow-1"
                 style={{ borderColor: "var(--c-line)" }}
               >
                 <Text type="text12Mono" color="muted">
                   {key}
                 </Text>
-              </Box>
+              </Flex>
             ))}
-          </Box>
+          </Flex>
         </Box>
-      </Box>
-    </section>
+      </Grid>
+    </Box>
   );
 };

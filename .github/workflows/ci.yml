@@ -99,6 +99,23 @@ jobs:
         # Relative links and #anchors in the markdown the site renders.
         run: yarn workspace site check:links
 
+      - name: Check embedded doc code
+        # Tutorial blocks with an `<!-- embed: path#region -->` marker must
+        # equal that region of the real example file (yarn docs:embed).
+        run: yarn check:docs-embed
+
+      - name: Type-check doc snippets
+        # Every ts/tsx block in README.md and documents/ (not plans,
+        # brainstorm, migration) against dist/*.d.ts; opt-outs need a reason
+        # and stay at or below 10% of all blocks.
+        run: yarn check:doc-snippets
+
+      - name: Check reference coverage of exports
+        # Every export of every package.json#exports subpath needs a heading
+        # in documents/reference/<subpath>.md with a signature block that
+        # matches dist/*.d.ts and a non-empty TSDoc (yarn docs:signatures).
+        run: yarn check:doc-exports
+
       - name: Typecheck examples
         # The examples, packages/ui-react and packages/ui-vue consume the built library through `link:../..`.
         run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' --include '@duydpdev/ui-vue' run typecheck

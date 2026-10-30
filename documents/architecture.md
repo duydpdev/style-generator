@@ -89,6 +89,10 @@ src/
 ### `generate`
 
 ```typescript
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+import { options } from "./style-gen.options";
+
 const { css, tokens, schema } = generate(theme, options);
 // css    → written to a file, @import next to tailwindcss
 // tokens → DesignTokens (same result as createDesignTokens)
@@ -102,6 +106,10 @@ const { css, tokens, schema } = generate(theme, options);
 Returns an object holding arrays of keys from the theme; used for component logic, CVA variants and prop types.
 
 ```typescript
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import theme from "./theme.json";
+import { options } from "./style-gen.options";
+
 const { DesignTokens } = createDesignTokens(theme, options);
 // Each array is named after the matching ThemeConfig field (since 5.0):
 // DesignTokens.Web.colors        → ["primary", "primaryHover", ...]
@@ -120,6 +128,8 @@ const { DesignTokens } = createDesignTokens(theme, options);
 
 ```typescript
 // vite.config.ts
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
 
 export default defineConfig({
@@ -144,6 +154,10 @@ export default defineConfig({
 `styleGenNext` is a wrapper for `next.config.*`, aimed at Next without Vite. It does not import `next`, so it behaves identically under webpack and Turbopack and adds no peer dependency.
 
 ```typescript
+import { styleGenNext } from "@duydpdev/style-generator/next";
+
+declare const nextConfig: object;
+
 export default styleGenNext({
   themePath: "app/theme/theme.json",
   outDir: "app/theme",
@@ -227,6 +241,8 @@ Spacing does **not** use a per-value safelist. `generateSpacingCss` emits each `
 **Why `inherits: false`:** variables do not inherit, so an `sp-*` class only reads variables declared on the **same element**; otherwise a parent's responsive value leaks down to a child that has not set the variable itself (a bug in 3.x). The `--sg-sp-*` namespace also avoids occupying Tailwind's internal `--tw-*` namespace. The regression is tested on Chromium and WebKit (`e2e/spacing-inheritance.spec.ts`).
 
 ```tsx
+import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
+
 const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
 // classNames: "sp-p sp-mx"                       (a string, not an array)
 // style: { "--sg-sp-p": "1rem", "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" }
@@ -238,28 +254,7 @@ Turn it off with `options.spacing.enabled = false`; customize it with `options.s
 
 ## Exports API
 
-| Export                                                                                                                                               | Subpath                                       | Description                                                                                                |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `generate`                                                                                                                                           | `.`                                           | Main entry → `{ css, tokens, schema }`                                                                     |
-| `defineTheme`, `defineOptions`                                                                                                                       | `.`                                           | Type-safe helpers; `defineTheme` validates at runtime (root only)                                          |
-| `generateThemeCss`                                                                                                                                   | `.`                                           | Only `:root` + axes + `@theme inline`                                                                      |
-| `createDesignTokens`                                                                                                                                 | `.`, `./tokens`                               | Generates Design Tokens                                                                                    |
-| `createVariantMapper`, `COLOR_STATES`, `toKebabCase`                                                                                                 | `.`, `./cva` (`COLOR_STATES` also `./tokens`) | Maps token → class (kebab), `{ states }` for hover/active; `toKebabCase` is the function the registry uses |
-| `resolveSpacing`, `resolveSpacingProps`                                                                                                              | `.`, `./spacing`                              | Resolves spacing props → `{ className(s), style }`                                                         |
-| `createTailwindMergeExtension`, `splitSpacingProps`, `themeAxisAttributes` (+ types `SpacingProps`, `TailwindMergeExtension`, `TailwindMergeTokens`) | `./recipes` (not available from `.`)          | Component-side recipes: tailwind-merge extension, typed spacing props, theme axis attributes               |
-| `styleGenVite`                                                                                                                                       | `./vite`                                      | Vite plugin                                                                                                |
-| `styleGenNext`                                                                                                                                       | `./next`                                      | Next.js config wrapper                                                                                     |
-| `Breakpoint`, `defaultScreens`                                                                                                                       | `.`, `./tokens`                               | Const `SM \| MD \| LG \| XL \| XXL` (+ type of the same name) and default widths                           |
-| `DesignTokenKeys`, `ColorVariant` … `RoundedVariant`                                                                                                 | `./types` (and `.`)                           | Per-theme key unions: color, text, shadow, backdrop blur, font family, border width, rounded               |
-| `ThemeAxisName`, `ThemeAxisVariant`, `ThemeAxesState`                                                                                                | `./types` (and `.`)                           | Axis name, axis variant and the state `{ axis: variant \| "base" }`                                        |
-| `ThemeConfig`, `ThemeOverride`, `TypographyConfig`, `StyleGeneratorOptions`, `ExactOptions`, `CoverageRule`, `SpacingPropertyMap`, `CategoryKey`     | `./types` (and `.`)                           | Theme and options types                                                                                    |
-| `DesignTokensResult`, `DesignTokensWeb`, `CategoryTokenKey`, `InferBorderWidthOptions`, `InferRoundedOptions`, `InferSpacingKeys`                    | `./types` (and `.`)                           | Inferred token types                                                                                       |
-| `BreakpointKeys`, `SpacingKeys`, `ScreenKeys`, `CamelCase`, `KebabCase`                                                                              | `./types` (and `.`)                           | Keys inferred from options; key string type conversions                                                    |
-| `ResponsiveValueStrict`, `DefaultBreakpointKeys`                                                                                                     | `./types`, `./spacing` (and `.`)              | Responsive spacing types                                                                                   |
-| `SpacingKey`, `DefaultBorderValue`, `DefaultRoundedValue`                                                                                            | `./types` (`SpacingKey` also `./spacing`)     | Default keys/values                                                                                        |
-| `GenerateResult`                                                                                                                                     | `.` (not available from `./types`)            | Return type of `generate()`                                                                                |
-
-The full list is in `src/index.ts` and `src/exports/*`; what was removed in 4.0.0 is in [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), and in 5.0.0 in [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
+The export list per subpath, with signatures and examples, lives in [`reference/`](./reference/core.md#all-exports-by-subpath); `yarn check:doc-exports` guarantees that every export has a heading there. What was removed in 4.0.0 is in [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), and in 5.0.0 in [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
 
 ---
 
@@ -272,12 +267,16 @@ The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) th
 - **Theme:** Cobalt palette (`site/src/theme/theme.json`) — `site/src/theme/theme.css` is generated by `styleGenVite`; `site/src/theme/theme.schema.json` is a committed copy of the schema
 - **Scripts:** `yarn workspace site {dev,build,typecheck,lint}`; the dev port defaults to 5174 to avoid conflicting with the examples
 - **Workspace setup:** the root `package.json` declares `workspaces: ["site", "examples/*", "packages/*"]` + `resolutions.vite` so there is only one Vite instance
+- **UI:** every `site/src/**/*.tsx` file renders through the components of `site/src/ui.ts`, which calls `createUi(tokens, presets)` of `@duydpdev/ui-react` once (every role in `presets` is optional). ESLint rejects the tags in `BANNED_TAGS` (`packages/ui-react/registry.mjs`) and `className`; only `NavLink` and `ReactMarkdown` keep `className`. The same rules cover the other consuming apps through `UI_APP_FILES` in `eslint.config.js` (`site/src/**/*.tsx`, `examples/react-v4/src/**`, `examples/next-v4/app/**`); `examples/nuxt-v4` is linted with the `vue/no-restricted-*` rules against `@duydpdev/ui-vue`. Files in `UI_APP_FILES` stay under the `max-lines` limit (150 lines): split a longer component.
+- **CSS hooks:** `data-part="<token>"` for pseudo-elements, keyframes, markdown/highlight (`[data-part~="doc-body"]`) and bespoke chrome that has no prop; `data-reveal="up|stagger"` + `data-reveal-state="pending|done"` (set by `site/src/lib/use-reveal.ts`) for the reveal effect; `data-ch` on each chapter. Spacing (`margin*`, `padding*`, `gap`) is always a component prop and never sits in a `[data-part~=…]` rule.
+- **Spacing exceptions:** the only spacing declarations allowed under a `[data-part~=…]` rule are inside an `@media (max-width: …)` block whose width no responsive prop can express (the props switch only at `md` and `lg`), each marked `/* spacing-exception: <Id> */` in the CSS: E1 (`terminal.css`, `cta-card` padding at 720px), E2/E3 (`layout.css`, `topbar-inner` padding and gap at 640px), E4 (`hero.css`, `install-go` `margin-left: auto` at 480px), E5/E6 (`examples.css`, `url-pill` margin and `view-tab` padding at 640px).
+- **Component packages and tests:** `packages/ui-react` (React) and `packages/ui-vue` (Vue 3) expose the same `createUi(tokens, presets)` contract and component names; each package has its own vitest runner (`yarn workspace @duydpdev/ui-react test`, `yarn workspace @duydpdev/ui-vue test`, see [`testing.md`](./testing.md)); the site is covered by `yarn workspace site check:links` and the visual and layout specs (`yarn test:visual`).
 
 ### Routes
 
 - `/` — landing (editorial scroll).
-- `/docs` — automatically redirects to the first doc.
-- `/docs/:slug` — renders the `documents/*.md` files (top level only, except `documents/README.md`, excluding `documents/migration/`) via `react-markdown`.
+- `/docs` — redirects to `/docs/introduction` (the repo `README.md`).
+- `/docs/:slug` — renders the files listed in `site/src/lib/docs-meta.json` (the repo `README.md`, `documents/*.md`, `documents/getting-started/*.md`, `documents/reference/*.md` and the two migration guides; each entry has a unique slug, group and order) via `react-markdown`. HTML comments used by the docs scripts (`<!-- embed: … -->`, `<!-- signature: … -->`, `<!-- snippet: … -->`) are stripped before rendering (`site/src/lib/strip-html-comments.ts`).
 - `/examples/v4` — an iframe embedding `examples/react-v4/dist`.
 
 ### Examples integration
@@ -301,7 +300,7 @@ Each app emits `theme.css` into its own gitignored file and `@import`s the share
 
 `packages/*` holds **private, never-published** workspace packages, always named under the `@duydpdev/` scope (an unscoped name such as `ui-react` is already taken on npmjs). Apps consume their TypeScript source directly (`exports: { ".": "./src/index.ts" }`, no build step) through a `"<name>": "workspace:*"` dependency; the library is still linked through `link:../..`, like the examples.
 
-- **`packages/ui-react`** (`@duydpdev/ui-react`): `createUi(tokens, presets)` takes the app's own `DesignTokens.Web` (`createDesignTokens(theme, options).DesignTokens.Web`) and the app's per-role preset map, and returns React components whose props are typed by that theme. Every role in `presets` is optional; an omitted role means that component is not returned. Layout components such as `Box` need tokens only, so an app with no preset-driven component passes `{}`. Each app calls `createUi` exactly once, in its own `ui.ts` (`site/src/ui.ts`, `examples/react-v4/src/ui.ts`, `examples/next-v4/app/ui.ts`). The package depends on no theme; `react` is a peer dependency, so the whole workspace resolves a single React (`yarn why react`).
+- **`packages/ui-react`** (`@duydpdev/ui-react`): `createUi(tokens, presets)` takes the app's own `DesignTokens.Web` (`createDesignTokens(theme, options).DesignTokens.Web`) and the app's per-role preset map, and returns React components whose props are typed by that theme. Every role in `presets` is optional; an omitted role means that component is not returned. Layout components such as `Box` need tokens only, so an app with no preset-driven component passes `{}`. Each app calls `createUi` exactly once, in its own `ui.ts` (`site/src/ui.ts`, `examples/react-v4/src/ui.ts`, `examples/next-v4/app/ui.ts`). The package depends on no theme; `react` is a peer dependency, so the whole workspace resolves a single React (`yarn why react`). Every role in `presets` is optional: when a role (`button`, `badge`, `card`, `input`, `select`, `dialog`) is missing, `createUi` does not return that component; `Box`/`Flex`/`Stack`/`Grid`/`Container`/`Text` are always returned. Recipes are theme-free factories in `design-system-example/recipes` (`create<Name>Recipe`, `<name>Tables`, `createCn`).
 - **What an app needs to consume a source package:** its CSS entry declares `@source` to `packages/ui-react/src` (Tailwind scans only the app's own directory by default); Next lists `"@duydpdev/ui-react"` in `transpilePackages`; Vite (`site`, `react-v4`) compiles workspace source directly.
 - **Checks:** `yarn workspace @duydpdev/ui-react typecheck` (CI: the "Typecheck examples" step); type-aware ESLint covers `packages/**` through `packages/ui-react/tsconfig.json`.
 

@@ -31,32 +31,34 @@ export const ButtonSection = () => {
         }
       />
 
-      <Box className="grid grid-cols-[120px_repeat(4,1fr)] items-center gap-x-4 gap-y-4">
-        <div />
-        {COLORS.map((c) => (
-          <Text key={c} type="text12Mono" color="muted">
-            {c}
-          </Text>
-        ))}
-        {VARIANTS.map((v) => (
-          <Box key={v.id} className="contents">
-            <Text
-              type="text12Mono"
-              color="muted"
-              className="uppercase tracking-wider"
-            >
-              {v.label}
+      <div className="-mx-8 overflow-x-auto px-8 py-2">
+        <Box className="grid min-w-[520px] grid-cols-[72px_repeat(4,minmax(0,1fr))] items-center gap-x-4 gap-y-4 md:min-w-0 md:grid-cols-[120px_repeat(4,minmax(0,1fr))]">
+          <div />
+          {COLORS.map((c) => (
+            <Text key={c} type="text12Mono" color="muted">
+              {c}
             </Text>
-            {COLORS.map((c) => (
-              <Box key={`${v.id}-${c}`}>
-                <Button variant={v.id} color={c}>
-                  {v.label.toLowerCase()}
-                </Button>
-              </Box>
-            ))}
-          </Box>
-        ))}
-      </Box>
+          ))}
+          {VARIANTS.map((v) => (
+            <Box key={v.id} className="contents">
+              <Text
+                type="text12Mono"
+                color="muted"
+                className="uppercase tracking-wider"
+              >
+                {v.label}
+              </Text>
+              {COLORS.map((c) => (
+                <Box key={`${v.id}-${c}`}>
+                  <Button variant={v.id} color={c}>
+                    {v.label.toLowerCase()}
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          ))}
+        </Box>
+      </div>
 
       <Box
         mt={10}

@@ -23,7 +23,10 @@ const Caption = ({ children }: { children: string }) => (
 
 export const ResponsiveSpacingSection = () => {
   return (
-    <section className="border-t py-14">
+    <section
+      className="border-t py-14"
+      style={{ borderColor: "var(--c-line)" }}
+    >
       <SectionHead
         num="05 — Responsive"
         title="Spacing reacts to breakpoints."
@@ -33,7 +36,11 @@ export const ResponsiveSpacingSection = () => {
       <div className="grid gap-8">
         <div>
           <ResponsiveTitle>{`p={{ base: 4, md: 8, lg: 12 }}`}</ResponsiveTitle>
-          <Box className={ROW_CLASS} p={{ base: 4, md: 8, lg: 12 }}>
+          <Box
+            className={ROW_CLASS}
+            p={{ base: 4, md: 8, lg: 12 }}
+            style={{ borderColor: "var(--c-line)" }}
+          >
             <Box className="rounded-sm bg-primary/10 px-3 py-2">
               <Text type="text14Regular" color="primary">
                 Padding scales with viewport
@@ -50,6 +57,7 @@ export const ResponsiveSpacingSection = () => {
           <Box
             className="flex flex-wrap border rounded-md bg-surface p-4"
             gap={{ base: 2, md: 6 }}
+            style={{ borderColor: "var(--c-line)" }}
           >
             {[1, 2, 3, 4].map((i) => (
               <Box key={i} className="rounded-sm bg-secondary/15 px-3 py-2">
@@ -68,6 +76,7 @@ export const ResponsiveSpacingSection = () => {
             className="grid grid-cols-3 border rounded-md bg-surface p-4"
             gapX={{ base: 2, md: 6 }}
             gapY={2}
+            style={{ borderColor: "var(--c-line)" }}
           >
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Box key={i} className="rounded-sm bg-success/15 px-3 py-2">

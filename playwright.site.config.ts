@@ -3,7 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 // Screenshot regression of the BUILT landing site: run `yarn site:build`
 // first. Kept apart from playwright.config.ts (engine e2e, Chromium +
 // WebKit, no server) so `yarn test:e2e` never starts a server.
-const PORT = 4173;
+// SITE_PORT lets a second preview run next to another checkout's server.
+const PORT = Number(process.env.SITE_PORT ?? 4173);
 
 export default defineConfig({
   testDir: "e2e-site",

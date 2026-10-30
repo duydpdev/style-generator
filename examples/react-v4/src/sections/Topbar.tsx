@@ -26,21 +26,25 @@ export const Topbar = ({
   return (
     <header className="sg-topbar">
       <Box
-        px={8}
-        className="mx-auto flex h-16 max-w-[1240px] items-center justify-between gap-6"
+        px={{ base: 4, md: 8 }}
+        className="mx-auto flex min-h-16 max-w-[1240px] flex-wrap items-center justify-between gap-x-6 gap-y-2 py-2"
       >
-        <Box gap={3} className="flex items-center">
-          <span className="sg-brand-mark" aria-hidden />
-          <Box className="flex flex-col leading-tight">
-            <Text type="text14Regular" className="font-medium">
+        <Box gap={3} className="flex min-w-0 items-center">
+          <span className="sg-brand-mark shrink-0" aria-hidden />
+          <Box className="flex min-w-0 flex-col leading-tight">
+            <Text type="text14Regular" className="truncate font-medium">
               @duydpdev/style-generator
             </Text>
-            <Text type="text12Mono" color="muted">
+            <Text
+              type="text12Mono"
+              color="muted"
+              className="hidden truncate md:block"
+            >
               tokens → tailwind v4
             </Text>
           </Box>
         </Box>
-        <Box gap={2} className="flex items-center">
+        <Box gap={2} className="flex flex-wrap items-center">
           <Button variant="ghost" size="sm" onClick={onToggleTweaks}>
             Tweaks
           </Button>

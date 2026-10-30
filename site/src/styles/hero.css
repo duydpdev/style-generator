@@ -175,3 +175,19 @@
     transform: translateX(-50%);
   }
 }
+
+@media (max-width: 480px) {
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .install {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .install .install-go {
+    flex: none;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+}

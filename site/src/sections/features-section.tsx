@@ -10,7 +10,7 @@ interface Feat {
 const FEATS: Feat[] = [
   {
     cls: "feat-1",
-    tag: ".",
+    tag: "root",
     title: "generate()",
     body: (
       <>
@@ -22,7 +22,7 @@ const FEATS: Feat[] = [
   },
   {
     cls: "feat-2",
-    tag: ".",
+    tag: "root",
     title: "defineTheme()",
     body: (
       <>

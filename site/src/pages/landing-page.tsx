@@ -16,6 +16,7 @@ import { ThemingSection } from "../sections/theming-section";
 import { ToolingSection } from "../sections/tooling-section";
 import { TypesSection } from "../sections/types-section";
 import { WhySection } from "../sections/why-section";
+import { Box } from "../ui";
 
 export function LandingPage() {
   const { toggle } = useTheme();
@@ -28,7 +29,7 @@ export function LandingPage() {
     <>
       <ScrollProgress progress={progress} />
       <Topbar activeChapter={activeChapter} onToggleTheme={toggle} />
-      <div className="shell">
+      <Box className="shell">
         <SidebarToc
           chapters={chapters}
           activeIndex={activeIndex}
@@ -47,7 +48,7 @@ export function LandingPage() {
           <StartSection />
           <CtaFooter />
         </main>
-      </div>
+      </Box>
     </>
   );
 }

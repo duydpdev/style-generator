@@ -3,8 +3,8 @@ import { styleGenNext } from "@duydpdev/style-generator/next";
 import { options } from "design-system-example/style-gen.options";
 
 const nextConfig: NextConfig = {
-  // The design system ships TypeScript source (no build step): let Next compile it.
-  transpilePackages: ["design-system-example"],
+  // The design system and @duydpdev/ui-react ship TypeScript source (no build step): let Next compile them.
+  transpilePackages: ["design-system-example", "@duydpdev/ui-react"],
 };
 
 // Next.js runs on Turbopack/webpack (no Vite), so the Vite-only `styleGenVite`

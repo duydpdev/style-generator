@@ -94,8 +94,8 @@ jobs:
         run: yarn workspace site check:links
 
       - name: Typecheck examples
-        # The examples consume the built library through `link:../..`.
-        run: yarn workspaces foreach -A --include '*-example' run typecheck
+        # The examples and packages/ui-react consume the built library through `link:../..`.
+        run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' run typecheck
 
       - name: Test examples (design-system DX)
         # Compiles the recipes against a mutated theme.json and expects the

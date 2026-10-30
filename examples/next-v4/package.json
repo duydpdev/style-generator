@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@duydpdev/ui-react": "workspace:*",
     "design-system-example": "workspace:*",
     "next": "^16.4.3",
     "react": "^19.0.0",

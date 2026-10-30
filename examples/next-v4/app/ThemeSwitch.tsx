@@ -9,6 +9,8 @@ import {
   textRecipe,
 } from "design-system-example";
 
+import { Box } from "./ui";
+
 type AxesState = Parameters<typeof axisAttributes>[0];
 type ThemeName = NonNullable<AxesState["theme"]>;
 type PaletteName = NonNullable<AxesState["palette"]>;
@@ -45,7 +47,7 @@ export function ThemeSwitch() {
   }, [state]);
 
   return (
-    <div className={cn(stackRecipe({ direction: "row", wrap: true }), "gap-4")}>
+    <Box className={cn(stackRecipe({ direction: "row", wrap: true }), "gap-4")}>
       <label className={cn(stackRecipe({ align: "start" }), "gap-1")}>
         <span className={textRecipe({ type: "text12Mono", color: "muted" })}>
           theme
@@ -97,6 +99,6 @@ export function ThemeSwitch() {
       >
         Reset
       </button>
-    </div>
+    </Box>
   );
 }

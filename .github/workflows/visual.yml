@@ -1,0 +1,68 @@
+name: Site visual
+
+# Compare-only screenshot regression of the built landing site
+# (playwright.site.config.ts, e2e-site/). Baselines are Linux-only and are
+# rewritten by visual-update.yml (PR label `visual-update`), never here.
+# No label trigger type: a label event must never cancel a compare run.
+on:
+  pull_request:
+    branches: [main, develop, "release/**"]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "site/**"
+      - "packages/**"
+      - "examples/**"
+      - "e2e-site/**"
+      - "playwright.site.config.ts"
+      - ".github/workflows/visual.yml"
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  visual:
+    name: Site visual regression (chromium)
+    # Draft PRs skip the compare (CI minutes); `ready_for_review` runs it.
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build library and site
+        # site:build = build:all + site build, which also builds the
+        # react-v4 example embedded at /examples/v4.
+        run: yarn site:build
+
+      # No browser cache on purpose (documents/deploy.md, PR #73).
+      - name: Install Playwright Chromium
+        run: yarn playwright install --with-deps chromium
+
+      - name: Compare with the committed baselines
+        run: yarn test:visual
+
+      - name: Upload diff report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-visual-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -76,7 +76,7 @@ export function TerminalTypewriter({
         </span>
         <span className="filename">{filename}</span>
       </div>
-      <div ref={bodyRef} className="terminal-body">
+      <div ref={bodyRef} className="terminal-body" data-testid="terminal-body">
         {shown.map((l, i) => (
           <div
             key={i}

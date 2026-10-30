@@ -25,3 +25,6 @@ next-env.d.ts
 .next
 .nuxt
 .output
+
+# Google Fonts responses pinned verbatim for the site screenshots (e2e-site/site.spec.ts)
+e2e-site/fixtures/

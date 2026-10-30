@@ -4,9 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    // examples/** are separate workspaces with their own vitest config
+    // e2e/** and e2e-site/** are Playwright specs; examples/** are separate workspaces with their own vitest config
     // (`yarn workspace design-system-example test`, CI: after `build:all`).
-    exclude: [...configDefaults.exclude, "e2e/**", "examples/**"],
+    exclude: [...configDefaults.exclude, "e2e/**", "e2e-site/**", "examples/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

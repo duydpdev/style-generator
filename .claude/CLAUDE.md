@@ -29,6 +29,7 @@ yarn test:watch     # Watch mode
 yarn test:coverage  # v8 coverage; excludes test files and dist/
 yarn test:types     # vitest run --typecheck.only — *.test-d.ts (expectTypeOf); `yarn test` does not run them
 yarn test:e2e       # Playwright (Chromium + WebKit) — spacing inheritance, compiled CSS
+yarn test:visual    # after yarn site:build: Playwright screenshots of the built site (Chromium); Linux baselines, compared in visual.yml, rewritten only via the visual-update label (visual-update.yml)
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single file
 
 # Quality

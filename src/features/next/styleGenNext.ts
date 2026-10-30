@@ -6,6 +6,7 @@ import {
   type ThemeWatchHandle,
 } from "../../node/watchThemeFile";
 
+/** Options of `styleGenNext()`, which wraps a Next.js config and emits `theme.css` for `next dev` and `next build`. */
 export interface StyleGenNextOptions {
   /**
    * Path to theme JSON, resolved relative to `process.cwd()`. An absolute

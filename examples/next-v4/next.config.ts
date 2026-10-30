@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 import { options } from "design-system-example/style-gen.options";
 
+// #region docs:next-config
 const nextConfig: NextConfig = {
   // The design system and @duydpdev/ui-react ship TypeScript source (no build step): let Next compile them.
   transpilePackages: ["design-system-example", "@duydpdev/ui-react"],
@@ -19,3 +20,4 @@ export default styleGenNext({
   outDir: "app/theme",
   options,
 })(nextConfig);
+// #endregion docs:next-config

@@ -21,6 +21,7 @@ const BUTTON_VARIANTS = ["fill", "outline", "soft", "ghost", "link"] as const;
 const dialogOpen = ref(false);
 </script>
 
+<!-- #region docs:usage -->
 <template>
   <Container as="main" :maxWidth="960" :py="{ base: 6, md: 10 }" :px="4">
     <Stack as="header" justify="between" wrap>
@@ -70,3 +71,4 @@ const dialogOpen = ref(false);
     </Box>
   </Container>
 </template>
+<!-- #endregion docs:usage -->

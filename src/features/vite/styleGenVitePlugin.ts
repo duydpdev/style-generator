@@ -4,6 +4,7 @@ import type { StyleGeneratorOptions } from "../../core/Options";
 import { resolvePluginTarget } from "../../node/resolvePluginTarget";
 import { emitThemeCss, type EmitTarget } from "../../node/themeEmitter";
 
+/** Options of the `styleGenVite()` Vite plugin. */
 export interface StyleGenViteOptions {
   /**
    * Path to theme JSON, resolved relative to Vite project root. An absolute

@@ -58,7 +58,7 @@ export function DocsPage() {
   }, [slug]);
 
   if (!slug) {
-    return <Navigate to={`/docs/${docs[0]?.slug ?? "guide"}`} replace />;
+    return <Navigate to={`/docs/${docs[0]?.slug ?? "introduction"}`} replace />;
   }
 
   const doc = getDoc(slug);

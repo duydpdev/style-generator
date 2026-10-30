@@ -11,6 +11,7 @@ import type { ThemeConfig } from "./themeSchema";
 
 // ---- Basic utilities ----
 
+/** Type-level camelCase of a kebab- or snake-case string: `"blue-500"` → `"blue500"`, `"text_sm"` → `"textSm"`. */
 export type CamelCase<S extends string> = S extends `${infer P1}-${infer P2}`
   ? `${Uncapitalize<P1>}${Capitalize<CamelCase<P2>>}`
   : S extends `${infer P1}_${infer P2}`
@@ -43,8 +44,7 @@ type KebabBoundary<T extends string, N extends string> = N extends Digit
         : ""
     : "";
 
-// Type-level twin of the runtime `toKebabCase`: "blue500" → "blue-500",
-// "2xl" → "2xl", "text12Mono" → "text-12-mono", "primaryFG" → "primary-fg".
+/** Type-level twin of the runtime `toKebabCase`: `"blue500"` → `"blue-500"`, `"2xl"` → `"2xl"`, `"text12Mono"` → `"text-12-mono"`, `"primaryFG"` → `"primary-fg"`. */
 export type KebabCase<S extends string> = S extends `${infer T}${infer U}`
   ? U extends `${infer N}${string}`
     ? `${Lowercase<T>}${KebabBoundary<T, N>}${KebabCase<U>}`
@@ -117,14 +117,17 @@ export type CategoryTokenKey<
 
 // ---- Tokens from defaults + theme ----
 
+/** The `borderWidth` keys of `TTheme` as written in the theme, or the default border widths when the theme omits the category. */
 export type InferBorderWidthOptions<TTheme extends ThemeConfig> =
   RawCategoryKey<TTheme, "borderWidth">;
 
+/** The `borderRadius` keys of `TTheme` as written in the theme, or the default radius keys when the theme omits the category. */
 export type InferRoundedOptions<TTheme extends ThemeConfig> = RawCategoryKey<
   TTheme,
   "borderRadius"
 >;
 
+/** Alias of `SpacingKey`: every default spacing property key (`"p"`, `"px"`, …). */
 export type InferSpacingKeys = SpacingKey;
 
 // ---- Options-derived key types ----
@@ -241,6 +244,7 @@ export interface DesignTokensWeb<
   readonly aliasedColors: readonly AliasedColorKey<TTheme>[];
 }
 
+/** Return type of `createDesignTokens(theme, options)`: the typed token arrays under `DesignTokens.Web`. `generate()` returns the same `DesignTokens` object as `tokens`. */
 export interface DesignTokensResult<
   TTheme extends ThemeConfig,
   O = Record<never, never>,

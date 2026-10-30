@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Link check for the markdown files the landing site renders (the globs in
- * `src/lib/docs-content.ts`): every relative link must point at an existing
+ * `src/lib/docs-content.ts`, including `documents/getting-started` and
+ * `documents/reference`): every relative link must point at an existing
  * file, and a `#anchor` into a markdown file must match one of its headings
  * (GitHub slug rules). Absolute URLs are not fetched. Exits 1 on any miss.
  */
@@ -12,14 +13,60 @@ import { fileURLToPath } from "node:url";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 // Keep in sync with the `import.meta.glob` patterns in `src/lib/docs-content.ts`.
+const markdownIn = (dir) =>
+  readdirSync(resolve(repoRoot, dir))
+    .filter((name) => name.endsWith(".md") && name !== "README.md")
+    .map((name) => `${dir}/${name}`);
+
 const DOC_FILES = [
   "README.md",
   "documents/migration/4.x-to-5.0.md",
   "documents/migration/3.x-to-4.0.md",
-  ...readdirSync(resolve(repoRoot, "documents"))
-    .filter((name) => name.endsWith(".md") && name !== "README.md")
-    .map((name) => `documents/${name}`),
+  ...markdownIn("documents"),
+  ...markdownIn("documents/getting-started"),
+  ...markdownIn("documents/reference"),
 ];
+
+// `src/lib/docs-meta.json` must describe exactly the rendered files, with unique slugs and orders.
+const META_GROUPS = [
+  "Start",
+  "Guides",
+  "Reference",
+  "Overview",
+  "Operations",
+  "Migration",
+];
+const meta = JSON.parse(
+  readFileSync(resolve(repoRoot, "site/src/lib/docs-meta.json"), "utf8"),
+);
+/** @type {string[]} */
+const metaErrors = [];
+for (const file of DOC_FILES) {
+  if (!(file in meta)) metaErrors.push(`docs-meta.json: no entry for ${file}`);
+}
+const seenSlugs = new Set();
+const seenOrders = new Set();
+for (const [key, entry] of Object.entries(meta)) {
+  if (!DOC_FILES.includes(key)) {
+    metaErrors.push(`docs-meta.json: ${key} is not a rendered doc`);
+  }
+  if (seenSlugs.has(entry.slug)) {
+    metaErrors.push(`docs-meta.json: duplicate slug ${entry.slug}`);
+  }
+  seenSlugs.add(entry.slug);
+  const order = `${entry.group}/${String(entry.order)}`;
+  if (seenOrders.has(order)) {
+    metaErrors.push(`docs-meta.json: duplicate order ${order}`);
+  }
+  seenOrders.add(order);
+  if (!META_GROUPS.includes(entry.group)) {
+    metaErrors.push(`docs-meta.json: unknown group ${entry.group} in ${key}`);
+  }
+}
+if (metaErrors.length > 0) {
+  for (const line of metaErrors) console.error(line);
+  process.exit(1);
+}
 
 /**
  * Blank out fenced blocks (and, with `inline`, inline code spans) with

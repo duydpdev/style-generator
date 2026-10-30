@@ -29,7 +29,7 @@ export function NotFound({ missingDoc }: Readonly<Props>) {
       </Text>
       <Text as="p">
         <Link to="/">Landing page</Link> ·{" "}
-        <Link to={`/docs/${docs[0]?.slug ?? "guide"}`}>Docs</Link> ·{" "}
+        <Link to={`/docs/${docs[0]?.slug ?? "introduction"}`}>Docs</Link> ·{" "}
         <Link to="/examples/v4">Examples</Link>
       </Text>
     </>

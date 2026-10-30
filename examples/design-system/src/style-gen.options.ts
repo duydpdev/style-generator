@@ -11,6 +11,8 @@ import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
  * tuple is what narrows `BreakpointKeys<typeof options>` to `"md" | "lg"`.
  * `style-gen.config.json` mirrors it for the CLI-only flow; a test pins the two.
  */
+// #region docs:options
 export const options = {
   breakpoints: ["md", "lg"],
 } as const satisfies StyleGeneratorOptions;
+// #endregion docs:options

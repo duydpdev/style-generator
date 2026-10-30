@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
 import { options } from "design-system-example/style-gen.options";
 
+// #region docs:vite-config
 export default defineConfig({
   base: process.env.EXAMPLE_BASE ?? "/",
   plugins: [
@@ -16,3 +17,4 @@ export default defineConfig({
     tailwindcss(),
   ],
 });
+// #endregion docs:vite-config

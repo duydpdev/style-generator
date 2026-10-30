@@ -19,6 +19,7 @@ export const ButtonSection = () => {
       py={14}
       style={{ borderColor: "var(--c-line)" }}
     >
+      {/* #region docs:usage */}
       <SectionHead
         num="04 — Button"
         title="cva × compoundVariants."
@@ -74,6 +75,7 @@ export const ButtonSection = () => {
           ))}
         </Flex>
       </Box>
+      {/* #endregion docs:usage */}
     </Box>
   );
 };

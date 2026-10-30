@@ -1,3 +1,4 @@
+/* #region docs:css-entry */
 @import "tailwindcss";
 @import "./theme/theme.css";
 @import "design-system-example/styles/palettes.css";
@@ -5,3 +6,4 @@
 @import "./parts.css";
 @source "../../design-system/src";
 @source "../../../packages/ui-react/src";
+/* #endregion docs:css-entry */

@@ -28,7 +28,14 @@ const DOC_FILES = [
 ];
 
 // `src/lib/docs-meta.json` must describe exactly the rendered files, with unique slugs and orders.
-const META_GROUPS = ["Start", "Guides", "Reference", "Overview", "Operations"];
+const META_GROUPS = [
+  "Start",
+  "Guides",
+  "Reference",
+  "Overview",
+  "Operations",
+  "Migration",
+];
 const meta = JSON.parse(
   readFileSync(resolve(repoRoot, "site/src/lib/docs-meta.json"), "utf8"),
 );

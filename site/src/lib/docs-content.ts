@@ -6,7 +6,8 @@ export type DocGroup =
   | "Guides"
   | "Reference"
   | "Overview"
-  | "Operations";
+  | "Operations"
+  | "Migration";
 
 export interface DocEntry {
   slug: string;
@@ -53,6 +54,7 @@ const GROUP_ORDER: Record<DocGroup, number> = {
   Reference: 2,
   Overview: 3,
   Operations: 4,
+  Migration: 5,
 };
 
 export const docs: DocEntry[] = Object.entries(raw)

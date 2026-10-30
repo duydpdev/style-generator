@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 
 import { VERSION } from "../data/version";
 import { docs } from "../lib/docs-content";
+import { useScrollActiveIntoView } from "../lib/use-scroll-active";
 import { Box, Flex, Stack } from "../ui";
 
 import { DocsNavGroups } from "./docs-nav-list";
@@ -23,22 +24,25 @@ function FootRow({
 }
 
 export function DocsSidebar({ activeSlug }: Readonly<Props>) {
+  const navRef = useRef<HTMLDivElement>(null);
+  useScrollActiveIntoView(navRef, activeSlug);
+
   return (
     <Box as="aside" data-part="docs-rail" position="relative" pt={9}>
       <Stack
         data-part="docs-rail-sticky"
-        gap={5.5}
+        gap={0}
         pr={1.5}
         maxHeight="calc(100vh - 100px)"
       >
-        <Box>
-          <Flex data-part="rail-label" align="center" gap={2.5} mb={1}>
-            Documentation
-          </Flex>
+        <Flex data-part="rail-label" align="center" gap={2.5} mb={1}>
+          Documentation
+        </Flex>
+        <Box data-part="docs-rail-nav" ref={navRef}>
           <DocsNavGroups activeSlug={activeSlug} />
         </Box>
 
-        <Stack data-part="rail-foot" mt={2} pt={3.5} gap={2}>
+        <Stack data-part="rail-foot" mt={7.5} pt={3.5} gap={2}>
           <FootRow label="VERSION">
             <Box as="span">v{VERSION}</Box>
           </FootRow>

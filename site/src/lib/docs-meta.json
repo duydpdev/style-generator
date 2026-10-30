@@ -110,14 +110,14 @@
   "documents/migration/4.x-to-5.0.md": {
     "slug": "migration-4x-to-5",
     "title": "Migration 4.x → 5.0",
-    "group": "Reference",
-    "order": 12
+    "group": "Migration",
+    "order": 1
   },
   "documents/migration/3.x-to-4.0.md": {
     "slug": "migration-3x-to-4",
     "title": "Migration 3.x → 4.0",
-    "group": "Reference",
-    "order": 13
+    "group": "Migration",
+    "order": 2
   },
   "documents/architecture.md": {
     "slug": "architecture",

@@ -5,6 +5,7 @@ import { styleGenVite } from "@duydpdev/style-generator/vite";
 import { options } from "design-system-example/style-gen.options";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
+// #region docs:nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-01-01",
   devtools: { enabled: false },
@@ -47,3 +48,4 @@ export default defineNuxtConfig({
     },
   },
 });
+// #endregion docs:nuxt-config

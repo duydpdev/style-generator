@@ -42,6 +42,7 @@ interface Roles {
   readonly dialog?: DialogRole | undefined;
 }
 
+// #region docs:create-ui
 /**
  * Bind every component to one app's tokens (`createDesignTokens(theme, options).DesignTokens.Web`)
  * and role presets. Box/Flex/Stack/Grid/Container/Text/Link/List/ListItem/Code are always
@@ -120,3 +121,4 @@ export function createUi<
   // Bodies are untyped (LooseProps); the typed surface is restored once, here.
   return ui as unknown as Ui<W, B, G, P>;
 }
+// #endregion docs:create-ui

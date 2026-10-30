@@ -19,6 +19,7 @@ const BUTTON_VARIANTS = ["fill", "outline", "soft", "ghost", "link"] as const;
 export default function Page() {
   return (
     <Container as="main" maxWidth={960} py={{ base: 6, md: 10 }} px={4}>
+      {/* #region docs:usage */}
       <Stack as="header" justify="between" wrap>
         <Box>
           <Text type="text12Mono" color="muted">
@@ -68,6 +69,7 @@ export default function Page() {
       >
         <DialogDemo />
       </Box>
+      {/* #endregion docs:usage */}
     </Container>
   );
 }

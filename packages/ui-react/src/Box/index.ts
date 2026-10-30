@@ -1,3 +1,3 @@
 export { createBox } from "./Box";
-export { createBoxStyles, type BoxStyles } from "./Box.styles";
-export type { BoxProps } from "./Box.types";
+export { createBoxStyles } from "./Box.styles";
+export type { BoxDeps } from "./Box.types";

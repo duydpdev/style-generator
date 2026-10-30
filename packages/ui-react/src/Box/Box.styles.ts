@@ -1,16 +1,15 @@
-import { createVariantMapper } from "@duydpdev/style-generator/cva";
+import {
+  createBoxRecipe,
+  type BoxPreset,
+  type RecipeTokens,
+} from "design-system-example/recipes";
 
-/** Maps a color key to its `bg-*` class; `undefined` → no class. */
-export type BoxStyles = (
-  backgroundColor: string | undefined,
-) => string | undefined;
+import type { BodyRecipe } from "../shared/splitStyleProps";
 
-/**
- * Builds the `Box` class lookup from the app's color tokens.
- * @param colors - `tokens.colors` of the app
- * @returns The lookup `createBox` binds
- */
-export function createBoxStyles(colors: readonly string[]): BoxStyles {
-  const backgroundColor = createVariantMapper("bg", colors);
-  return (key) => (key === undefined ? undefined : backgroundColor[key]);
-}
+export const createBoxStyles = (
+  tokens: RecipeTokens,
+  preset: BoxPreset | undefined,
+): { readonly box: BodyRecipe; readonly layout: BodyRecipe } => ({
+  box: createBoxRecipe(tokens, preset),
+  layout: createBoxRecipe(tokens),
+});

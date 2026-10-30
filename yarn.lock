@@ -1003,6 +1003,8 @@ __metadata:
   dependencies:
     "@duydpdev/style-generator": "link:../.."
     "@types/react": "npm:^19.0.0"
+    clsx: "npm:^2.1.1"
+    design-system-example: "workspace:*"
     react: "npm:^19.0.0"
     typescript: "npm:^5.9.0"
   peerDependencies:

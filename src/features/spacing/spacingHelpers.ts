@@ -12,13 +12,13 @@ export type DefaultBreakpointKeys = (typeof DEFAULT_BREAKPOINTS)[number];
 
 /**
  * Responsive value type: simple value or per-breakpoint object.
- * Generic `BKeys` cho phép dự án tuỳ biến breakpoint khi bọc type.
- * `base` mặc định luôn có sẵn độc lập. Typo trong breakpoint key là type
- * error — không có fallback `(string & {})`.
+ * The generic `BKeys` lets a project customize the breakpoints when wrapping the type.
+ * `base` is always available by default, independent of `BKeys`. A typo in a
+ * breakpoint key is a type error — there is no `(string & {})` fallback.
  * @example
  * // Simple: p={4}
  * // Responsive: p={{ base: 4, md: 8, lg: 12 }}
- * // Custom breakpoint (ở project React):
+ * // Custom breakpoint (in a React project):
  * // type ResponsiveOptions<T> = ResponsiveValueStrict<T, 'tablet' | 'desktop'>;
  * @example
  * type P = ResponsiveValueStrict<number, "base" | "md">;

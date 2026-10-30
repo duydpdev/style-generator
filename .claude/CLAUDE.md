@@ -111,7 +111,7 @@ Read before any code/design work:
 
 - `.claude/rules/agent-protocol.md` — request classification (plan required for complex code/design) and session start (read `lessons.md`, load the runtime skill for the task). The repo does not vendor agents, commands or skills.
 - `.claude/rules/coding-standards.md` — TIER 0/1 rules; Socratic gate before complex changes.
-- `.claude/rules/validation.md` — yarn gate before reporting done; **4-Phase plan protocol**; plan and phase templates. **NEVER write code before the user approves the plan.** Wait for explicit "ok"/"proceed"/"duyệt".
+- `.claude/rules/validation.md` — yarn gate before reporting done; **4-Phase plan protocol**; plan and phase templates. **NEVER write code before the user approves the plan.** Wait for explicit "ok"/"proceed"/"approved".
 - `.claude/rules/lessons.md` — past mistakes; review at session start; append an entry on every user correction.
 
 ### Documentation layout

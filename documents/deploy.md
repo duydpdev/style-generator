@@ -1,11 +1,11 @@
 # Deployment & CI/CD
 
-Quy trình deploy thư viện `@duydpdev/style-generator`.
+Deployment process for the `@duydpdev/style-generator` library.
 
-## Mục lục
+## Table of contents
 
 - [Deployment \& CI/CD](#deployment--cicd)
-  - [Mục lục](#mục-lục)
+  - [Table of contents](#table-of-contents)
   - [CI/CD Overview](#cicd-overview)
   - [GitHub Actions Workflows](#github-actions-workflows)
     - [`ci.yml` — PR Check](#ciyml--pr-check)
@@ -15,19 +15,19 @@ Quy trình deploy thư viện `@duydpdev/style-generator`.
     - [Local (Pre-commit) — Husky](#local-pre-commit--husky)
     - [`release.yml` — Semantic Release Orchestrator](#releaseyml--semantic-release-orchestrator)
     - [`deploy.yml` — Build \& Publish](#deployyml--build--publish)
-      - [Publish lại một tag đã push nhưng chưa publish](#publish-lại-một-tag-đã-push-nhưng-chưa-publish)
+      - [Re-publishing a tag that was pushed but not published](#re-publishing-a-tag-that-was-pushed-but-not-published)
     - [`back-merge.yml` — Back-merge](#back-mergeyml--back-merge)
     - [`drift.yml` — Drift check](#driftyml--drift-check)
   - [Branching Strategy](#branching-strategy)
-    - [Luồng một feature](#luồng-một-feature)
-    - [Gỡ feature bị reject](#gỡ-feature-bị-reject)
+    - [Feature flow](#feature-flow)
+    - [Removing a rejected feature](#removing-a-rejected-feature)
   - [Release Process](#release-process)
-    - [Quy trình đúng](#quy-trình-đúng)
+    - [Correct process](#correct-process)
     - [Required Secrets](#required-secrets)
   - [Commit Format](#commit-format)
     - [Config](#config)
   - [Site (landing + examples)](#site-landing--examples)
-    - [Vì sao `link:` thay vì `workspace:*`](#vì-sao-link-thay-vì-workspace)
+    - [Why `link:` instead of `workspace:*`](#why-link-instead-of-workspace)
     - [Script aliases (root)](#script-aliases-root)
 
 ---
@@ -36,13 +36,13 @@ Quy trình deploy thư viện `@duydpdev/style-generator`.
 
 ```mermaid
 flowchart LR
-    M[main] -->|cắt| F["feature/x"]
+    M[main] -->|branch off| F["feature/x"]
     F -->|PR, merge commit| D["develop → vX.Y.Z-DEV.N"]
-    F -->|PR, merge commit, sau khi duyệt| M2["main → vX.Y.Z"]
-    M2 -.->|back-merge sau mọi push vào main| D
+    F -->|PR, merge commit, after approval| M2["main → vX.Y.Z"]
+    M2 -.->|back-merge after every push to main| D
 ```
 
-Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có tag mới thì `deploy.yml` publish lên GitHub Packages. Mọi push vào `main` (có hoặc không có release) kết thúc bằng `back-merge.yml`, merge `main` về `develop`. `drift.yml` chạy mỗi ngày (06:17 UTC), cảnh báo khi `develop` vẫn thiếu commit của `main`.
+Every merge into `main`/`develop` runs `release.yml` (semantic-release). When there is a new tag, `deploy.yml` publishes to GitHub Packages. Every push to `main` (with or without a release) ends with `back-merge.yml`, which merges `main` back into `develop`. `drift.yml` runs daily (06:17 UTC) and warns when `develop` still lacks commits from `main`.
 
 ---
 
@@ -50,219 +50,219 @@ Mỗi merge vào `main`/`develop` chạy `release.yml` (semantic-release). Có t
 
 ### `ci.yml` — PR Check
 
-**Trigger:** Pull Request vào `main`, `develop` hoặc nhánh tích hợp `release/**` (ví dụ `release/5.0` của chuyến 5.0: PR từ nhánh làm việc vào `release/5.0` và PR `release/5.0` → `develop` đều có CI). `release.yml` thì **không** chạy trên `release/**`: release chỉ phát hành từ `main`/`develop`.
+**Trigger:** Pull Request into `main`, `develop` or an integration branch `release/**` (for example `release/5.0` for the 5.0 cycle: a PR from a working branch into `release/5.0` and the `release/5.0` → `develop` PR both get CI). `release.yml` does **not** run on `release/**`: releases are only published from `main`/`develop`.
 
-**Draft:** job `check` có `if: github.event.pull_request.draft == false` và `on.pull_request.types` có thêm `ready_for_review`: PR draft không chạy CI, CI chạy khi PR được đánh dấu ready. Mở PR ở draft cho đến khi gate local xanh. `ci.yml` không có bộ lọc path: PR chỉ đổi `documents/**` vẫn chạy `check`, vì site render `documents/*.md` và `check:links` kiểm link của chúng.
+**Draft:** the `check` job has `if: github.event.pull_request.draft == false` and `on.pull_request.types` additionally includes `ready_for_review`: a draft PR does not run CI, and CI runs once the PR is marked ready. Open the PR as a draft until the local gate is green. `ci.yml` has no path filter: a PR that only changes `documents/**` still runs `check`, because the site renders `documents/*.md` and `check:links` checks their links.
 
 **Job** (Node 22):
 
-- `check`: `yarn install --immutable` → `yarn npm audit --recursive --severity high --environment production` (chặn khi dependency production có lỗ hổng high/critical) → `yarn npm audit --all --recursive || true` (chỉ in log, tooling dev/example/site không được ship) → commitlint các commit của PR → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` + `yarn typecheck:scripts` → `yarn build:all` → `yarn workspace site build` → `yarn workspace site check:links` → typecheck 3 example (`yarn workspaces foreach -A --include '*-example' run typecheck`) → build `next-v4-example` và `nuxt-v4-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn check:smoke` → `node scripts/vite-dev-smoke.mjs` → `yarn typecheck:dist` → `yarn test:coverage` (ngưỡng `coverage.thresholds`) → `yarn test:types`.
-  - Commitlint range: `base..head` cho cả PR vào `develop` lẫn `main`. Feature được cắt từ `main` và vào hai nhánh bằng cùng các commit (merge commit, không squash), nên range này đúng bằng các commit của feature. Header của chúng quyết định loại release, nên commit nào cũng bị lint.
+- `check`: `yarn install --immutable` → `yarn npm audit --recursive --severity high --environment production` (blocks when a production dependency has a high/critical vulnerability) → `yarn npm audit --all --recursive || true` (log only, dev/example/site tooling is not shipped) → commitlint the PR's commits → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` + `yarn typecheck:scripts` → `yarn build:all` → `yarn workspace site build` → `yarn workspace site check:links` → typecheck 3 examples (`yarn workspaces foreach -A --include '*-example' run typecheck`) → build `next-v4-example` and `nuxt-v4-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn check:smoke` → `node scripts/vite-dev-smoke.mjs` → `yarn typecheck:dist` → `yarn test:coverage` (`coverage.thresholds` limits) → `yarn test:types`.
+  - Commitlint range: `base..head` for PRs into both `develop` and `main`. A feature is branched from `main` and enters both branches with the same commits (merge commit, no squash), so this range is exactly the feature's commits. Their headers decide the release type, so every commit is linted.
 
 ### `ci-matrix.yml` — PR Matrix
 
-**Trigger:** Pull Request vào `main`, `develop` hoặc `release/**` (`types: [opened, synchronize, reopened, ready_for_review]`), trừ PR chỉ đổi `documents/**`: `paths-ignore: ["documents/**"]` ở mức workflow khiến GitHub không tạo run, nên không tốn phút. Bộ lọc này thay cho job `changes` cũ của `ci.yml`, vốn tốn tối thiểu 1 phút runner ở mọi PR chỉ để quyết định có chạy bốn job dưới đây hay không. `concurrency: ci-matrix-<ref>` riêng, `cancel-in-progress: true`. Mọi job có `if: github.event.pull_request.draft == false` như `check`.
+**Trigger:** Pull Request into `main`, `develop` or `release/**` (`types: [opened, synchronize, reopened, ready_for_review]`), except PRs that only change `documents/**`: `paths-ignore: ["documents/**"]` at the workflow level means GitHub does not create a run, so it costs no minutes. This filter replaces the old `changes` job of `ci.yml`, which cost at least 1 runner minute on every PR just to decide whether to run the four jobs below. It has its own `concurrency: ci-matrix-<ref>` with `cancel-in-progress: true`. Every job has `if: github.event.pull_request.draft == false`, like `check`.
 
-**Các job** (Node 22, trừ `node-floor`); mỗi job tự `yarn install` và `yarn build:all`:
+**Jobs** (Node 22, except `node-floor`); each job runs its own `yarn install` and `yarn build:all`:
 
 - `e2e`: `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`.
-- `tailwind-floor`: Ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
-- `node-floor`: Node `20.19.0` (sàn của `engines.node`) → `yarn install --immutable` → `yarn build:all` → `yarn check:smoke`; bước chạy script TypeScript do `init` sinh ra bị bỏ qua vì Node 20 không strip được type (script đó cần Node >= 22.18).
-- `peer-matrix`: 4 leg (`vite` 5/6/8, `typescript` 6). `yarn install --immutable` → `yarn build:all` → ghi `resolutions[<peer>] = ^<major>.0.0` (không commit) → `yarn install --no-immutable` → assert bản resolve ở root và `examples/react-v4` là `<major>.x` → build `examples/react-v4` → (leg `vite`) `node scripts/vite-dev-smoke.mjs` → typecheck example → `yarn typecheck:dist` → (leg `typescript`) `yarn test:types`. Mọi leg phải xanh (không leg nào có `continue-on-error`); leg TypeScript 7 đã bỏ vì Yarn 4.10 không cài được TypeScript 7 native, nên leg đó không bao giờ xanh và tốn khoảng 45 phút mỗi tháng. Leg xanh/đỏ quyết định range `peerDependencies` (sửa tay).
+- `tailwind-floor`: writes the Tailwind `resolutions` `~4.1.0` into the runner's `package.json` (not committed) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
+- `node-floor`: Node `20.19.0` (the floor of `engines.node`) → `yarn install --immutable` → `yarn build:all` → `yarn check:smoke`; the step that runs the TypeScript script generated by `init` is skipped because Node 20 cannot strip types (that script needs Node >= 22.18).
+- `peer-matrix`: 4 legs (`vite` 5/6/8, `typescript` 6). `yarn install --immutable` → `yarn build:all` → write `resolutions[<peer>] = ^<major>.0.0` (not committed) → `yarn install --no-immutable` → assert the version resolved at the root and in `examples/react-v4` is `<major>.x` → build `examples/react-v4` → (`vite` leg) `node scripts/vite-dev-smoke.mjs` → typecheck the example → `yarn typecheck:dist` → (`typescript` leg) `yarn test:types`. Every leg must be green (no leg has `continue-on-error`); the TypeScript 7 leg was dropped because Yarn 4.10 cannot install native TypeScript 7, so that leg was never green and cost about 45 minutes per month. Green/red legs decide the `peerDependencies` ranges (edited by hand).
 
-Browser Playwright **không** được cache, và đây là quyết định có đo đạc (PR #73). Khi hit, bước install mất 42 s; không có cache là 49–52 s; khi miss là 56–75 s, cộng 5–8 s để lưu cache, và mỗi ref PR tốn 383 MB. Cache không bỏ được bước `install-deps` (apt), vốn chiếm phần lớn thời gian. `ci-matrix.yml` chỉ chạy trên `pull_request`, nên không có cache của nhánh base để PR mới dùng lại. Kết quả là mọi PR mới đều chậm hơn. Dùng container `mcr.microsoft.com/playwright` chỉ đáng xem lại khi e2e trở thành nút cổ chai.
+Playwright browsers are **not** cached, and this is a measured decision (PR #73). On a hit the install step takes 42 s; with no cache it is 49–52 s; on a miss it is 56–75 s, plus 5–8 s to save the cache, and every PR ref costs 383 MB. The cache cannot skip the `install-deps` (apt) step, which accounts for most of the time. `ci-matrix.yml` only runs on `pull_request`, so there is no base-branch cache for a new PR to reuse. The result is that every new PR is slower. Using the `mcr.microsoft.com/playwright` container is only worth revisiting if e2e becomes the bottleneck.
 
 ### `pr-title.yml` — PR title lint
 
-**Trigger:** Pull Request vào `main`, `develop` hoặc `release/**`, `opened`, `edited`, `reopened` (`edited` bắt cả lần chỉ sửa tiêu đề). Không chạy ở `synchronize`: push commit mới không đổi tiêu đề, nên check chỉ gắn vào head lúc PR được mở/sửa/mở lại.
+**Trigger:** Pull Request into `main`, `develop` or `release/**`, `opened`, `edited`, `reopened` (`edited` also catches a title-only edit). It does not run on `synchronize`: pushing a new commit does not change the title, so the check is only attached to the head at the time the PR is opened/edited/reopened.
 
-Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR. Config này dùng lại `commitlint.config.ts` và chỉ tắt `defaultIgnores`, để tiêu đề `Revert "…"` (mặc định của GitHub khi revert PR) hay `Merge …` cũng fail. Range lint trong `ci.yml` vẫn dùng config chung vì ở đó có merge commit thật. Từ khi feature vào `develop` bằng merge commit, tiêu đề PR **không** còn quyết định release: dòng đầu của merge commit là `Merge pull request #N from …` (analyzer bỏ qua), tiêu đề PR chỉ nằm trong body. Check này giữ lại để tiêu đề PR dễ đọc và khớp với header của commit.
+Runs `commitlint --config commitlint.pr-title.config.ts` on the PR title. This config reuses `commitlint.config.ts` and only turns off `defaultIgnores`, so a `Revert "…"` title (GitHub's default when reverting a PR) or `Merge …` also fails. The lint range in `ci.yml` still uses the shared config because real merge commits appear there. Since features enter `develop` through merge commits, the PR title no longer decides the release: the first line of a merge commit is `Merge pull request #N from …` (ignored by the analyzer), and the PR title only appears in the body. This check is kept so PR titles stay readable and match the commit header.
 
 ### Pull Request & merge convention
 
-Rulesets bảo vệ `main`/`develop` (cần PR, chỉ merge commit, check `Build & Lint Check` bắt buộc); admin được bypass vì `release.yml`/`back-merge.yml` push bằng PAT. Người merge vẫn phải dừng khi check đỏ ngoài danh sách bắt buộc; lưới cuối là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag.
+Rulesets protect `main`/`develop` (a PR is required, merge commits only, the `Build & Lint Check` check is required); admins can bypass because `release.yml`/`back-merge.yml` push with a PAT. The merger must still stop when a check outside the required list is red; the last safety net is `yarn test` + `yarn test:types` in `release.yml`, which run before the tag is cut.
 
-| PR                  | Merge method                                                 | Ghi chú                                                                                                                                                  |
-| ------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Feature → `develop` | **Create a merge commit**                                    | Feature giữ nguyên SHA. Khi feature vào `main`, back-merge nhận ra các commit đó đã có trên `develop`, nên merge sạch và DEV sau đó không phân tích lại. |
-| Feature → `main`    | **Create a merge commit**                                    | Cùng nhánh feature, mở PR thứ hai sau khi đã duyệt trên `develop`.                                                                                       |
-| `develop` → `main`  | **Không dùng**                                               | `develop` chứa cả feature chưa duyệt; promote cả nhánh là ship thứ chưa duyệt.                                                                           |
-| Squash / Rebase     | Tắt (`allow_squash_merge=false`, `allow_rebase_merge=false`) | Squash tạo bản sao khác SHA: DEV phân tích lại feature đã ship và feature phụ thuộc bị conflict (đo trong plan `feature-from-main-flow`, phase 01).      |
+| PR                  | Merge method                                                 | Notes                                                                                                                                                                               |
+| ------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature → `develop` | **Create a merge commit**                                    | The feature keeps its SHAs. When the feature enters `main`, the back-merge recognizes those commits as already on `develop`, so it merges cleanly and DEV does not re-analyze them. |
+| Feature → `main`    | **Create a merge commit**                                    | Same feature branch, open a second PR after approval on `develop`.                                                                                                                  |
+| `develop` → `main`  | **Not used**                                                 | `develop` also contains unapproved features; promoting the whole branch ships unapproved work.                                                                                      |
+| Squash / Rebase     | Off (`allow_squash_merge=false`, `allow_rebase_merge=false`) | Squash creates a copy with a different SHA: DEV re-analyzes features already shipped and dependent features conflict (measured in plan `feature-from-main-flow`, phase 01).         |
 
-**Setting chịu tải:** `merge_commit_title = MERGE_MESSAGE` (dòng đầu `Merge pull request #N …`) và `merge_commit_message = PR_TITLE`. Đổi dòng đầu thành tiêu đề PR thì merge commit mang header `[type]`, và mọi merge commit chỉ có trên `develop` bị tính lại sau mỗi back-merge. Không đổi.
+**Load-bearing setting:** `merge_commit_title = MERGE_MESSAGE` (first line `Merge pull request #N …`) and `merge_commit_message = PR_TITLE`. If the first line becomes the PR title, the merge commit carries a `[type]` header, and every merge commit that exists only on `develop` is counted again after each back-merge. Do not change it.
 
-`delete_branch_on_merge` giữ `false`: nhánh feature còn cần cho PR thứ hai vào `main`.
+`delete_branch_on_merge` stays `false`: the feature branch is still needed for the second PR into `main`.
 
-Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hàng tháng thành **một** PR gộp (`groups`) nhắm vào `main` (`target-branch`), với prefix `"[ci] "` (dấu cách cuối để GitHub không chèn `:` sau `]`). Dependabot cắt nhánh từ nhánh đích, nên nhắm `main` thì nhánh của nó là một feature branch sạch. Land vào `develop` trước bằng PR thứ hai từ cùng nhánh (`gh pr create --base develop --head <nhánh dependabot>`), rồi mới merge PR của Dependabot vào `main`. Dependabot chỉ đọc file này trên nhánh mặc định `main`.
+Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) updates GitHub Actions monthly as **one** grouped PR (`groups`) targeting `main` (`target-branch`), with the prefix `"[ci] "` (trailing space so GitHub does not insert `:` after `]`). Dependabot branches off the target branch, so targeting `main` makes its branch a clean feature branch. Land it on `develop` first with a second PR from the same branch (`gh pr create --base develop --head <dependabot branch>`), then merge the Dependabot PR into `main`. Dependabot only reads this file on the default branch `main`.
 
-Mục `npm` cùng file chạy hàng tháng với cùng flow (nhắm `main`, prefix `"[ci] "`, tối đa 2 PR mở). Mọi bump minor/patch gộp vào **một** PR (nhóm `npm-minor-patch`); mỗi bump major là một PR riêng. Nó không bao giờ đề xuất major cho `tailwindcss`, `@tailwindcss/*`, `zod`, `vite` và `typescript`: các dòng này (và range peer) được theo dõi bằng tay, có job `tailwind-floor` và `peer-matrix` kiểm. Bump làm đổi range đã publish (`dependencies`/`peerDependencies`) phải đổi header sang `[fix]`/`[feat]` trước khi merge.
+The `npm` entry in the same file runs monthly with the same flow (targets `main`, prefix `"[ci] "`, at most 2 open PRs). All minor/patch bumps are grouped into **one** PR (group `npm-minor-patch`); each major bump is its own PR. It never proposes a major for `tailwindcss`, `@tailwindcss/*`, `zod`, `vite` and `typescript`: these lines (and the peer ranges) are tracked by hand, and the `tailwind-floor` and `peer-matrix` jobs check them. A bump that changes a published range (`dependencies`/`peerDependencies`) must change its header to `[fix]`/`[feat]` before merging.
 
-Cả hai mục đặt `rebase-strategy: disabled`: Dependabot không tự rebase PR đang mở mỗi khi `main` đổi, vì mỗi lần rebase chạy lại toàn bộ CI của PR. Cần cập nhật PR thì comment `@dependabot rebase`. PR mở trước khi tắt rebase vẫn được rebase tới 30 ngày sau khi mở (tài liệu `rebase-strategy` của GitHub). Dependabot alerts và security updates đã bật (`gh api repos/duydpdev/style-generator/automated-security-fixes --jq .enabled` in ra `true`): PR security update mở ngay khi có advisory, không theo lịch `schedule`, và nhắm nhánh mặc định `main` (land vào `develop` trước theo cùng flow).
+Both entries set `rebase-strategy: disabled`: Dependabot does not rebase open PRs on its own every time `main` changes, because each rebase re-runs the full CI of the PR. To update a PR, comment `@dependabot rebase`. PRs opened before rebase was disabled are still rebased up to 30 days after they were opened (GitHub's `rebase-strategy` documentation). Dependabot alerts and security updates are enabled (`gh api repos/duydpdev/style-generator/automated-security-fixes --jq .enabled` prints `true`): a security update PR opens as soon as an advisory appears, not on the `schedule`, and targets the default branch `main` (land it on `develop` first with the same flow).
 
 ---
 
 ### Local (Pre-commit) — Husky
 
-Dự án sử dụng **Husky** và **lint-staged** để chặn các commit không đạt tiêu chuẩn:
+The project uses **Husky** and **lint-staged** to block commits that do not meet the standard:
 
-- `.husky/pre-commit` chỉ gọi `yarn lint-staged` (cấu hình duy nhất: `lint-staged.config.js`). lint-staged ẩn thay đổi chưa stage trước, nên mọi bước chỉ thấy snapshot đã stage.
-- Với file code được stage: `eslint --fix` → `prettier --write` trên chính các file đó → `tsc --noEmit` cho cả project → `vitest related --run` (chỉ test import file được stage). File `json`/`md`/`yml`/`css` chỉ qua `prettier --write`.
-- Toàn bộ `yarn test`, `yarn test:types` và các gate `check:*` chạy ở CI, không chạy trong hook.
-- Hook được cài qua `postinstall: husky` (Yarn Berry không chạy `prepare`); `pinst` tắt `postinstall` trong tarball publish; release CI đặt `HUSKY=0`.
+- `.husky/pre-commit` only calls `yarn lint-staged` (the single configuration: `lint-staged.config.js`). lint-staged first stashes unstaged changes, so every step only sees the staged snapshot.
+- For staged code files: `eslint --fix` → `prettier --write` on those files → `tsc --noEmit` for the whole project → `vitest related --run` (only tests that import the staged files). `json`/`md`/`yml`/`css` files only go through `prettier --write`.
+- The full `yarn test`, `yarn test:types` and the `check:*` gates run in CI, not in the hook.
+- The hook is installed via `postinstall: husky` (Yarn Berry does not run `prepare`); `pinst` disables `postinstall` in the published tarball; release CI sets `HUSKY=0`.
 
 ---
 
 ### `release.yml` — Semantic Release Orchestrator
 
-**Trigger:** Push vào `main` hoặc `develop`. `concurrency: release-<ref>`, `cancel-in-progress: false`: một run release mỗi nhánh tại một thời điểm, run đang chạy không bao giờ bị huỷ (tránh tag đã push mà chưa publish). GitHub chỉ giữ một run chờ mỗi group, nên push mới thay run chờ cũ; run mới release một tập commit bao trùm.
+**Trigger:** Push to `main` or `develop`. `concurrency: release-<ref>`, `cancel-in-progress: false`: one release run per branch at a time, and a running run is never cancelled (to avoid a pushed tag without a publish). GitHub keeps only one pending run per group, so a new push replaces the older pending run; the new run releases a set of commits that covers both.
 
-**Các bước:**
+**Steps:**
 
-1. `yarn test` + `yarn test:types` trên commit vừa push, trước khi cắt tag
-2. Chạy `semantic-release` → tự động tính version, tạo git tag; chỉ trên `main` mới commit `package.json` + `CHANGELOG.md`
-3. Phát hiện tag của chính run: tag trên `HEAD`, chưa có trong snapshot trước khi chạy `semantic-release`, và đúng kênh của nhánh (`main`: `vX.Y.Z`; `develop`: `vX.Y.Z-DEV.N`). semantic-release fetch mọi tag remote trước khi chạy, nên tag do run của nhánh khác vừa push cũng xuất hiện local; so snapshot trước/sau như cũ có thể chọn nhầm tag đó. Đúng một tag → release; không có → không release (in `::warning` nếu nhánh remote đã đi tiếp, vì semantic-release bỏ qua nhánh bị tụt sau remote); nhiều hơn một → job fail, publish bằng tay theo [runbook](#publish-lại-một-tag-đã-push-nhưng-chưa-publish).
-4. Nếu có tag mới → trigger `deploy.yml`
-5. Trên `main`, sau khi job release thành công (có hoặc không có tag, `deploy` thành công hoặc bị skip) → trigger `back-merge.yml`
+1. `yarn test` + `yarn test:types` on the commit that was just pushed, before cutting the tag
+2. Run `semantic-release` → automatically computes the version and creates a git tag; only on `main` does it commit `package.json` + `CHANGELOG.md`
+3. Detect the run's own tag: a tag on `HEAD`, not in the snapshot taken before running `semantic-release`, and on the branch's own channel (`main`: `vX.Y.Z`; `develop`: `vX.Y.Z-DEV.N`). semantic-release fetches every remote tag before running, so a tag just pushed by another branch's run also appears locally; comparing the before/after snapshot as before could pick that tag by mistake. Exactly one tag → release; none → no release (prints a `::warning` if the remote branch has moved on, because semantic-release skips a branch that is behind the remote); more than one → the job fails, publish by hand following the [runbook](#re-publishing-a-tag-that-was-pushed-but-not-published).
+4. If there is a new tag → trigger `deploy.yml`
+5. On `main`, after the release job succeeds (with or without a tag, `deploy` succeeded or skipped) → trigger `back-merge.yml`
 
-`release.config.cjs` chỉ bật `@semantic-release/changelog` và `@semantic-release/git` khi nhánh là đúng `main`, và in `[release.config] branch=<b> commitsRelease=<bool>` vào log. Release DEV trên `develop` chỉ tạo tag, không commit `package.json`/`CHANGELOG.md`: nếu commit, `develop` và `main` sửa cùng dòng version/changelog và mọi back-merge sau stable release sẽ conflict.
+`release.config.cjs` only enables `@semantic-release/changelog` and `@semantic-release/git` when the branch is exactly `main`, and prints `[release.config] branch=<b> commitsRelease=<bool>` to the log. A DEV release on `develop` only creates a tag and does not commit `package.json`/`CHANGELOG.md`: if it did, `develop` and `main` would edit the same version/changelog lines and every back-merge after a stable release would conflict.
 
 ---
 
 ### `deploy.yml` — Build & Publish
 
-**Trigger:** Được gọi từ `release.yml` (workflow_call) khi có release mới, hoặc chạy tay (`workflow_dispatch`, input `tag`) để publish lại một tag. Checkout dùng `persist-credentials: false` (không có thao tác git nào sau đó).
+**Trigger:** Called from `release.yml` (workflow_call) when there is a new release, or run by hand (`workflow_dispatch`, input `tag`) to re-publish a tag. Checkout uses `persist-credentials: false` (no git operation happens afterwards).
 
-**Các bước:**
+**Steps:**
 
-1. Checkout tại tag mới
-2. Node 22 (Yarn Berry đọc registry từ `.yarnrc.yml`, không từ `.npmrc`)
+1. Checkout at the new tag
+2. Node 22 (Yarn Berry reads the registry from `.yarnrc.yml`, not from `.npmrc`)
 3. `yarn install --immutable`
-4. `npm pkg set version=<tag bỏ v>` rồi assert khớp tag (fail nếu tag rỗng). Bắt buộc cho DEV, vì `package.json` tại tag DEV vẫn là version stable gần nhất; trên `main` là no-op. Không commit.
+4. `npm pkg set version=<tag without v>` then assert it matches the tag (fails if the tag is empty). Required for DEV, because `package.json` at a DEV tag is still the latest stable version; on `main` it is a no-op. Not committed.
 5. `yarn build:all`
 6. `yarn check:externals`
-7. `yarn check:smoke` (build của tag chạy được: mọi subpath load ở ESM/CJS, `style-gen --version` in đúng version vừa set ở bước 4)
+7. `yarn check:smoke` (the tag's build works: every subpath loads in ESM/CJS, `style-gen --version` prints exactly the version just set in step 4)
 8. `yarn check:browser-safe`
 9. `yarn check:publish-target`
-10. `yarn npm publish --dry-run` (assert output chứa `npm.pkg.github.com`)
-11. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` built-in: tag có hậu tố (`-DEV.N`) publish với `--tag DEV`, tag stable publish `latest`
+10. `yarn npm publish --dry-run` (assert the output contains `npm.pkg.github.com`)
+11. Publish to **GitHub Packages** with `YARN_NPM_AUTH_TOKEN` = the built-in `GITHUB_TOKEN`: a tag with a suffix (`-DEV.N`) is published with `--tag DEV`, a stable tag is published as `latest`
 
-Test không chạy lại ở đây: `release.yml` đã test đúng commit này trước khi cắt tag. Chạy lại cùng cây code chỉ thêm khả năng flaky tạo ra tag + GitHub release mà không có package. `check:smoke` thì khác: nó kiểm build mang version của tag, là thứ duy nhất được publish.
+Tests do not run again here: `release.yml` already tested exactly this commit before cutting the tag. Re-running them on the same code tree only adds flakiness that would produce a tag + GitHub release without a package. `check:smoke` is different: it checks the build that carries the tag's version, which is the only thing that gets published.
 
-#### Publish lại một tag đã push nhưng chưa publish
+#### Re-publishing a tag that was pushed but not published
 
-semantic-release push tag trước khi chạy các plugin publish (GitHub release), nên một job `release` fail sau bước đó để lại tag mà không có package; chạy lại job sẽ không thấy tag mới. Publish tag đó bằng tay:
+semantic-release pushes the tag before running the publish plugins (GitHub release), so a `release` job that fails after that step leaves a tag without a package; re-running the job will not see a new tag. Publish that tag by hand:
 
 ```bash
-gh workflow run deploy.yml --ref main -f tag=v4.0.1   # hoặc v4.0.1-DEV.1
+gh workflow run deploy.yml --ref main -f tag=v4.0.1   # or v4.0.1-DEV.1
 gh run watch "$(gh run list --workflow=deploy.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
 
-`workflow_dispatch` chỉ chạy được với bản `deploy.yml` đã có trên `main`. Một version đã publish thì registry từ chối publish lại (409); không unpublish.
+`workflow_dispatch` can only run the version of `deploy.yml` that already exists on `main`. For a version that is already published, the registry rejects re-publishing (409); do not unpublish.
 
 ---
 
 ### `back-merge.yml` — Back-merge
 
-**Trigger:** Được gọi từ `release.yml` sau mọi push vào `main` (input `version` rỗng khi push đó không ra release)
+**Trigger:** Called from `release.yml` after every push to `main` (the `version` input is empty when that push produces no release)
 
-**Mục đích:** Merge `main` về `develop` để `develop` luôn chứa mọi commit của `main`: commit release, và feature `[ci]`/`[docs]` không tạo release.
+**Purpose:** Merge `main` back into `develop` so `develop` always contains every commit of `main`: release commits, and `[ci]`/`[docs]` features that do not create a release.
 
-Merge thường, **không** `-X theirs` (option đó chọn phía `main` cho mọi hunk conflict và âm thầm bỏ code mới hơn của `develop`). Feature vào `develop` trước `main` bằng cùng các commit, và DEV không commit gì, nên merge bình thường sạch. Khi conflict, job liệt kê file conflict, `git merge --abort` và fail; merge `main` vào `develop` bằng tay theo lệnh in trong log. Nếu push bị từ chối vì `develop` vừa có commit mới, job fetch lại, merge lại từ đỉnh mới và thử tối đa 3 lần. Message có `[skip ci]` nên không tạo DEV mới.
+A plain merge, **not** `-X theirs` (that option picks the `main` side for every conflicting hunk and silently drops newer code from `develop`). A feature enters `develop` before `main` with the same commits, and DEV commits nothing, so a normal merge is clean. On conflict, the job lists the conflicting files, runs `git merge --abort` and fails; merge `main` into `develop` by hand using the command printed in the log. If the push is rejected because `develop` just received a new commit, the job fetches again, merges again from the new tip and retries up to 3 times. The message contains `[skip ci]`, so it does not create a new DEV.
 
 ### `drift.yml` — Drift check
 
-**Trigger:** mỗi ngày lúc 06:17 UTC (`schedule`, `cron: "17 6 * * *"`) và `workflow_dispatch`. Lịch mỗi giờ tốn khoảng 675 phút runner mỗi tháng (mỗi lần chạy ~6 giây bị tính tròn 1 phút); back-merge hỏng giờ được báo muộn nhất một ngày.
+**Trigger:** every day at 06:17 UTC (`schedule`, `cron: "17 6 * * *"`) and `workflow_dispatch`. An hourly schedule costs about 675 runner minutes per month (each ~6-second run is rounded up to 1 minute); a broken back-merge is now reported at most one day late.
 
-Fail khi `git rev-list --count origin/develop..origin/main` > 0 và đỉnh `main` đã cũ hơn 60 phút (bỏ qua lúc một run release/back-merge đang chạy), in ra các commit bị thiếu. Giới hạn: số đếm không bắt được "revert trap" (xem [Gỡ feature bị reject](#gỡ-feature-bị-reject)).
+Fails when `git rev-list --count origin/develop..origin/main` > 0 and the tip of `main` is older than 60 minutes (skipped while a release/back-merge run is in progress), and prints the missing commits. Limitation: the count does not catch the "revert trap" (see [Removing a rejected feature](#removing-a-rejected-feature)).
 
 ---
 
 ## Branching Strategy
 
-| Branch        | Mục đích                                                                       |
-| ------------- | ------------------------------------------------------------------------------ |
-| `main`        | Stable releases. Mọi push → release flow + back-merge                          |
-| `develop`     | Tích hợp và test. Pre-release versions (DEV suffix, dist-tag `DEV`)            |
-| `feature/*`   | Cắt từ `main`. PR vào `develop`, rồi PR riêng vào `main` sau khi duyệt         |
-| `hotfix/*`    | Như feature: cắt từ `main`, vào `develop` trước rồi mới vào `main`             |
-| `integrate/*` | Nhánh tạm để resolve conflict của một feature với `develop`; chỉ vào `develop` |
+| Branch        | Purpose                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------- |
+| `main`        | Stable releases. Every push → release flow + back-merge                                 |
+| `develop`     | Integration and testing. Pre-release versions (DEV suffix, dist-tag `DEV`)              |
+| `feature/*`   | Branched from `main`. PR into `develop`, then a separate PR into `main` after approval  |
+| `hotfix/*`    | Like a feature: branched from `main`, enters `develop` first and then `main`            |
+| `integrate/*` | Temporary branch to resolve a feature's conflicts with `develop`; only enters `develop` |
 
-### Luồng một feature
+### Feature flow
 
-1. `git fetch origin && git switch -c feature/x origin/main`. Không bao giờ cắt từ `develop`.
-2. **Một commit, header đúng.** Loại release do header của các commit trong nhánh quyết định (merge commit bị analyzer bỏ qua). Trước PR đầu tiên, gom nhánh thành một commit `[type] subject` và dùng đúng header đó làm tiêu đề cả hai PR. Một commit `[feat] wip` sót lại sẽ thành minor dù PR tên `[fix] …`. Major: `[release] …`.
-3. PR `feature/x` → `develop`, **Create a merge commit**. Kết quả là `vX.Y.Z-DEV.N` trên dist-tag `DEV`. Consumer test bằng version chính xác (`@duydpdev/style-generator@4.1.0-DEV.3`), không dùng range: `^4.1.0-DEV.3` resolve lên `4.1.0` stable, có thể thiếu feature khác đang ở `develop`.
-4. Duyệt xong: PR `feature/x` → `main`, **Create a merge commit**. Release stable, publish `latest`, back-merge.
-5. **Phụ thuộc feature khác:** cắt từ nhánh feature kia, ghi rõ trong PR, và feature kia phải vào `main` trước.
-6. **Conflict khi vào `develop`:** **không** dùng nút "Resolve conflicts" hay "Update branch" của GitHub: cả hai merge `develop` vào `feature/x`, và PR vào `main` sau đó sẽ mang theo feature chưa duyệt. Thay vào đó: `git switch -c integrate/x origin/develop && git merge feature/x`, resolve, mở PR `integrate/x` → `develop` (merge commit), rồi xoá nhánh. `feature/x` giữ sạch cho `main`. Cập nhật `feature/x` chỉ bằng `git merge origin/main`.
+1. `git fetch origin && git switch -c feature/x origin/main`. Never branch from `develop`.
+2. **One commit, correct header.** The release type is decided by the headers of the commits in the branch (merge commits are ignored by the analyzer). Before the first PR, squash the branch into one `[type] subject` commit and use exactly that header as the title of both PRs. A leftover `[feat] wip` commit becomes a minor even if the PR is named `[fix] …`. Major: `[release] …`.
+3. PR `feature/x` → `develop`, **Create a merge commit**. The result is `vX.Y.Z-DEV.N` on the `DEV` dist-tag. Consumers test with the exact version (`@duydpdev/style-generator@4.1.0-DEV.3`), not a range: `^4.1.0-DEV.3` resolves up to stable `4.1.0`, which may lack another feature that is on `develop`.
+4. After approval: PR `feature/x` → `main`, **Create a merge commit**. Stable release, publishes `latest`, back-merge.
+5. **Depends on another feature:** branch from that other feature's branch, say so in the PR, and that other feature must enter `main` first.
+6. **Conflict when entering `develop`:** do **not** use GitHub's "Resolve conflicts" or "Update branch" button: both merge `develop` into `feature/x`, and the later PR into `main` would then carry the unapproved feature along. Instead: `git switch -c integrate/x origin/develop && git merge feature/x`, resolve, open a PR `integrate/x` → `develop` (merge commit), then delete the branch. `feature/x` stays clean for `main`. Update `feature/x` only with `git merge origin/main`.
 
-### Gỡ feature bị reject
+### Removing a rejected feature
 
-- **Khỏi `develop`:** PR `[revert] <feature>` (`git revert -m 1 <merge-commit>`), tạo một DEV patch mới. Không force-push `develop`.
-- **Revert trap:** commit của feature đã là tổ tiên của `develop`. Nếu sau đó merge lại đúng các commit đó (vào `develop` hay `main`), git coi là đã có: `develop` thiếu code mà `drift.yml` vẫn báo 0 (đo trong plan `feature-from-main-flow`, phase 01). Luật: trước khi feature đã bị revert land lại ở bất kỳ đâu, chạy `git rebase --force-rebase origin/main` trên nhánh để các commit có SHA mới.
-- **Khỏi `main`:** PR `[revert] <feature>` vào `develop` rồi vào `main`, ra một patch release. Version cũ đã publish vẫn nằm trên registry.
+- **From `develop`:** PR `[revert] <feature>` (`git revert -m 1 <merge-commit>`), which creates a new DEV patch. Never force-push `develop`.
+- **Revert trap:** the feature's commits are already ancestors of `develop`. If exactly those commits are merged again later (into `develop` or `main`), git considers them already present: `develop` lacks the code while `drift.yml` still reports 0 (measured in plan `feature-from-main-flow`, phase 01). Rule: before a reverted feature lands again anywhere, run `git rebase --force-rebase origin/main` on the branch so the commits get new SHAs.
+- **From `main`:** PR `[revert] <feature>` into `develop` and then into `main`, producing a patch release. The old published version remains on the registry.
 
 ---
 
 ## Release Process
 
 > [!IMPORTANT]
-> Dự án dùng **semantic-release** — version được tự động tính từ commit messages. **Không cần** tự tay chỉnh `package.json`.
-> Major release cần commit `[release] …` (xem bảng Commit Format).
+> The project uses **semantic-release** — the version is computed automatically from commit messages. There is **no need** to edit `package.json` by hand.
+> A major release needs a `[release] …` commit (see the Commit Format table).
 
-### Quy trình đúng
+### Correct process
 
-1. Cắt `feature/x` từ `main` (xem [Luồng một feature](#luồng-một-feature))
-2. Một commit theo format `[type] subject` (xem bên dưới)
-3. PR vào `develop`, CI pass → **Create a merge commit** → `release.yml` cắt `vX.Y.Z-DEV.N` (chỉ tag, không commit) và publish dist-tag `DEV`
-4. Duyệt xong → PR cùng nhánh vào `main`, CI pass → **Create a merge commit** → `release.yml`:
-   - Tính version mới từ header các commit của feature
-   - Commit `package.json` + `CHANGELOG.md` (`[chore] release x [skip ci]`) và tạo tag `vX.Y.Z`
-   - Trigger `deploy.yml` để publish lên GitHub Packages
-   - Trigger `back-merge.yml` merge `main` về `develop`
+1. Branch `feature/x` from `main` (see [Feature flow](#feature-flow))
+2. One commit in the format `[type] subject` (see below)
+3. PR into `develop`, CI passes → **Create a merge commit** → `release.yml` cuts `vX.Y.Z-DEV.N` (tag only, no commit) and publishes the dist-tag `DEV`
+4. After approval → PR from the same branch into `main`, CI passes → **Create a merge commit** → `release.yml`:
+   - Computes the new version from the headers of the feature's commits
+   - Commits `package.json` + `CHANGELOG.md` (`[chore] release x [skip ci]`) and creates the tag `vX.Y.Z`
+   - Triggers `deploy.yml` to publish to GitHub Packages
+   - Triggers `back-merge.yml` to merge `main` back into `develop`
 
 ### Required Secrets
 
-- `CI_WORKER_REPOSITORY_TOKEN`: PAT có quyền push release commit và tag về GitHub repo. Không khai báo ở mức workflow `env`; chỉ được truyền cho checkout + semantic-release (env `GITHUB_TOKEN`) trong `release.yml` và checkout trong `back-merge.yml` (job gọi nó dùng `secrets: inherit`). `deploy.yml` không nhận nó (job `deploy` không dùng `secrets: inherit`). Checkout của job `release` dùng `persist-credentials: false`, nên token không nằm trong `.git/config` lúc `yarn install`/test chạy: semantic-release tự đưa env `GITHUB_TOKEN` vào URL mọi lệnh fetch/push của nó, và bước phát hiện tag chỉ đọc tag local. `back-merge.yml` vẫn để mặc định (`true`) vì chính nó `git fetch`/`git push` sau checkout, và không cài dependency.
-- Publish dùng `GITHUB_TOKEN` built-in — không cần secret npm. `GITHUB_TOKEN` mặc định chỉ `contents: read` trong cả `release.yml`; chỉ job `deploy` mở `packages: write` (quyền của reusable workflow không vượt quá job gọi nó). `release` và `back-merge` push bằng PAT nên không cần `contents: write` trên `GITHUB_TOKEN`.
+- `CI_WORKER_REPOSITORY_TOKEN`: a PAT with permission to push the release commit and tag to the GitHub repo. It is not declared at the workflow-level `env`; it is only passed to checkout + semantic-release (env `GITHUB_TOKEN`) in `release.yml` and to checkout in `back-merge.yml` (the job that calls it uses `secrets: inherit`). `deploy.yml` does not receive it (the `deploy` job does not use `secrets: inherit`). The `release` job's checkout uses `persist-credentials: false`, so the token is not in `.git/config` while `yarn install`/tests run: semantic-release injects the env `GITHUB_TOKEN` into the URL of every fetch/push command itself, and the tag detection step only reads local tags. `back-merge.yml` keeps the default (`true`) because it does its own `git fetch`/`git push` after checkout, and it installs no dependencies.
+- Publishing uses the built-in `GITHUB_TOKEN` — no npm secret is needed. `GITHUB_TOKEN` defaults to `contents: read` only throughout `release.yml`; only the `deploy` job opens `packages: write` (a reusable workflow's permissions cannot exceed the job that calls it). `release` and `back-merge` push with the PAT, so they do not need `contents: write` on `GITHUB_TOKEN`.
 
 ---
 
 ## Commit Format
 
-Commit message format: `[type] subject`, type viết thường (`[Feat] …` bị commitlint từ chối, vì analyzer chỉ map type viết thường và sẽ không release).
+Commit message format: `[type] subject`, with the type in lowercase (`[Feat] …` is rejected by commitlint, because the analyzer only maps lowercase types and would not release).
 
-| Type                                                          | Version bump    | Ví dụ                                |
+| Type                                                          | Version bump    | Example                              |
 | ------------------------------------------------------------- | --------------- | ------------------------------------ |
 | `release`                                                     | Major (`2.0.0`) | `[release] ship public v2 API`       |
 | `feat`                                                        | Minor (`1.1.0`) | `[feat] add multi-theme support`     |
 | `fix`                                                         | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
 | `perf`                                                        | Patch (`1.0.1`) | `[perf] reduce generated CSS size`   |
 | `refactor`, `style`, `revert`                                 | Patch (`1.0.1`) | `[refactor] simplify registry walk`  |
-| `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | Không bump      | `[docs] update architecture guide`   |
+| `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | No bump         | `[docs] update architecture guide`   |
 
-Release notes dùng preset `conventionalcommits` (khai trong `devDependencies`) với template `changelog-template.hbs`; các section theo thứ tự: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Type không bump không vào notes. Body của commit `[feat]` và `[fix]` được in thụt lề ngay dưới entry (`finalizeContext` trong `release.config.cjs`). Vì `[fix]` thường siết validation, hãy viết body nói rõ cái gì giờ bị từ chối và cách chuyển đổi; body của `[feat]` liệt kê các thay đổi hành vi người dùng cần biết (default mới, ngữ nghĩa mới). Body của các type khác không vào notes.
+Release notes use the `conventionalcommits` preset (declared in `devDependencies`) with the `changelog-template.hbs` template; the sections are in this order: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Types that do not bump do not appear in the notes. The body of `[feat]` and `[fix]` commits is printed indented right under the entry (`finalizeContext` in `release.config.cjs`). Because `[fix]` often tightens validation, write a body that says clearly what is now rejected and how to migrate; the body of a `[feat]` lists the behavior changes users need to know about (new defaults, new semantics). The bodies of other types do not appear in the notes.
 
 ### Config
 
-Xem: [`commitlint.config.ts`](../commitlint.config.ts) và [`release.config.cjs`](../release.config.cjs)
+See: [`commitlint.config.ts`](../commitlint.config.ts) and [`release.config.cjs`](../release.config.cjs)
 
 ---
 
 ## Site (landing + examples)
 
-Landing site (`site/`) và `examples/react-v4` dùng thư viện qua dependency `link:`. Site **không được deploy** (chưa có kế hoạch host). `deploy-site.yml` và `site:deploy:manual` đã bị xoá (2026-09-30). Muốn bật lại cần một plan riêng.
+The landing site (`site/`) and `examples/react-v4` use the library through a `link:` dependency. The site is **not deployed** (there is no hosting plan yet). `deploy-site.yml` and `site:deploy:manual` were removed (2026-09-30). Re-enabling it needs a separate plan.
 
-Site vẫn được build trên mọi PR: job `check` của `ci.yml` chạy `yarn workspace site build` ngay sau `yarn build:all`, kể cả với PR chỉ đổi `documents/**`, vì site render `documents/*.md`. `yarn workspace site build` chạy `build:examples` (build `examples/react-v4` với base `./`, copy `examples/react-v4/dist` vào `site/public/examples/v4`), rồi Vite build site.
+The site is still built on every PR: the `check` job of `ci.yml` runs `yarn workspace site build` right after `yarn build:all`, even for PRs that only change `documents/**`, because the site renders `documents/*.md`. `yarn workspace site build` runs `build:examples` (builds `examples/react-v4` with base `./`, copies `examples/react-v4/dist` into `site/public/examples/v4`), then the Vite site build.
 
-### Vì sao `link:` thay vì `workspace:*`
+### Why `link:` instead of `workspace:*`
 
-Gói root chính là thư viện `@duydpdev/style-generator`. Với `nodeLinker: node-modules`, Yarn hoist một dependency `workspace:*` trỏ về root lên `node_modules` của root, coi đó là self-reference và bỏ đi. Kết quả là sau một lần `yarn install` sạch, không có `node_modules/@duydpdev/style-generator` ở đâu cả (`nmSelfReferences` không áp dụng cho trường hợp này). `link:..` (site) và `link:../..` (examples) tạo symlink trong `node_modules` của từng workspace. Không alias gói trong Vite: example phải đi qua `exports` thật của package.
+The root package is the `@duydpdev/style-generator` library itself. With `nodeLinker: node-modules`, Yarn hoists a `workspace:*` dependency pointing back at the root up to the root `node_modules`, treats it as a self-reference and drops it. The result is that after a clean `yarn install`, there is no `node_modules/@duydpdev/style-generator` anywhere (`nmSelfReferences` does not apply to this case). `link:..` (site) and `link:../..` (examples) create symlinks in each workspace's `node_modules`. Do not alias the package in Vite: the example must go through the package's real `exports`.
 
 ### Script aliases (root)
 
-| Script              | Description                                        |
-| ------------------- | -------------------------------------------------- |
-| `yarn site:dev`     | Vite dev server site (port 5174)                   |
-| `yarn site:build`   | Library build → site build → dist tại `site/dist/` |
-| `yarn site:preview` | Vite preview server đọc `site/dist/`               |
+| Script              | Description                                         |
+| ------------------- | --------------------------------------------------- |
+| `yarn site:dev`     | Vite dev server for the site (port 5174)            |
+| `yarn site:build`   | Library build → site build → output in `site/dist/` |
+| `yarn site:preview` | Vite preview server that reads `site/dist/`         |

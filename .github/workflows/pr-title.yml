@@ -1,14 +1,16 @@
 # ─────────────────────────────────────────────────────
-# PR Title — lint tiêu đề PR bằng commitlint.config.ts
+# PR Title — lint the PR title with commitlint.config.ts
 #
-# Feature vào develop và main bằng merge commit: dòng đầu là
-# `Merge pull request #N …` (analyzer bỏ qua), tiêu đề PR chỉ nằm trong body.
-# Header của các commit trong nhánh mới quyết định release (lint trong ci.yml).
-# Check này giữ tiêu đề PR dễ đọc và khớp với header đó.
-# `edited` bắt được cả khi chỉ sửa tiêu đề (ci.yml không chạy lại khi đó).
-# Không chạy ở `synchronize`: push commit mới không đổi tiêu đề. Hệ quả: check
-# chỉ gắn vào head lúc chạy; commit push sau đó không có check này (không có
-# branch protection nên không chặn merge).
+# Features land on develop and main through merge commits: the first line is
+# `Merge pull request #N …` (ignored by the analyzer), and the PR title lives
+# only in the body. The headers of the commits on the branch decide the release
+# (linted in ci.yml). This check keeps the PR title readable and consistent
+# with those headers.
+# `edited` also catches a title-only edit (ci.yml does not re-run then).
+# Does not run on `synchronize`: pushing a new commit does not change the title.
+# Consequence: the check attaches only to the head at the time it ran; commits
+# pushed afterwards do not carry this check (there is no branch protection, so
+# it does not block the merge).
 # ─────────────────────────────────────────────────────
 name: PR Title
 

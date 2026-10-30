@@ -34,7 +34,7 @@ export function DocsPage() {
     else window.scrollTo(0, 0);
   }, [slug, hash]);
 
-  // Tag the in-content "Mục lục" block so docs.css can restyle it to match
+  // Tag the in-content "Table of contents" block so docs.css can restyle it to match
   // the landing-page TOC look. Match by heading text (resilient to rehype-slug
   // Unicode ID variations) and only apply when the next sibling is a <ul>.
   useEffect(() => {
@@ -44,7 +44,7 @@ export function DocsPage() {
       const headings = root.querySelectorAll<HTMLHeadingElement>("h2");
       headings.forEach((h) => {
         const text = h.textContent.trim().toLowerCase();
-        if (text !== "mục lục") return;
+        if (text !== "table of contents") return;
         const next = h.nextElementSibling;
         if (!next || (next.tagName !== "UL" && next.tagName !== "OL")) return;
         h.classList.add("md-toc-heading");

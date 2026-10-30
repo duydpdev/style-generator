@@ -127,7 +127,7 @@ export type InferFontFamilyKeys<TTheme extends ThemeConfig> = StringKeysOf<
   NonNullable<TTheme["fontFamily"]>
 >;
 
-// ---- Tokens từ defaults + theme ----
+// ---- Tokens from defaults + theme ----
 
 export type InferBorderWidthOptions<TTheme extends ThemeConfig> =
   RawCategoryKey<TTheme, "borderWidth">;

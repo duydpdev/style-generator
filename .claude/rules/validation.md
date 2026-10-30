@@ -28,7 +28,7 @@ The pre-commit hook (Husky + lint-staged) runs, on the staged snapshot of the st
 | 3. SOLUTIONING    | plan | Architecture, design — NO CODE           |
 | 4. IMPLEMENTATION | edit | Code + tests                             |
 
-> 🔴 NEVER write code before the user approves the plan. Wait for explicit "ok", "proceed", "duyệt" or equivalent.
+> 🔴 NEVER write code before the user approves the plan. Wait for explicit "ok", "proceed", "approved" or equivalent.
 
 ### Plan layout
 

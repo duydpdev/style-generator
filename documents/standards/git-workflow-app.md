@@ -1,140 +1,140 @@
-# Chuẩn git workflow cho app có 4 nhánh môi trường
+# Git workflow standard for apps with 4 environment branches
 
-Chuẩn này dành cho app deploy qua 4 nhánh môi trường: `develop` → `staging` → `pre-release` → `release` (production). Mục tiêu là ship được từng feature độc lập: feature A lên production trong khi feature B vẫn nằm ở staging.
+This standard is for apps deployed through 4 environment branches: `develop` → `staging` → `pre-release` → `release` (production). The goal is to ship each feature independently: feature A reaches production while feature B is still on staging.
 
-Thư viện `@duydpdev/style-generator` không dùng chuẩn này. Nó chỉ có 2 nhánh `develop` và `main` và áp cùng nguyên tắc; xem [`../deploy.md`](../deploy.md).
+The `@duydpdev/style-generator` library does not use this standard. It has only 2 branches, `develop` and `main`, and applies the same principles; see [`../deploy.md`](../deploy.md).
 
-Các hành vi git được viện dẫn (squash tạo SHA mới, revert trap, back-merge) đã được đo bằng dry run nội bộ, không công bố.
+The git behaviors referred to here (squash creating new SHAs, the revert trap, back-merge) were measured in internal dry runs that are not published.
 
-## Sơ đồ
+## Diagram
 
 ```mermaid
 flowchart LR
-    R[release] -->|cắt| F["feat/x"]
+    R[release] -->|branch off| F["feat/x"]
     F -->|merge commit| D[develop]
     F -->|merge commit| S[staging]
-    F -->|merge commit, sau sign-off staging| P[pre-release]
+    F -->|merge commit, after staging sign-off| P[pre-release]
     P -->|merge| R
     R -.->|sync: merge| D
     R -.->|sync: merge| S
     R -.->|sync: fast-forward| P
 ```
 
-## Mô hình này bảo đảm gì, không bảo đảm gì
+## What this model guarantees, and what it does not
 
-Mô hình bảo đảm feature A không kéo code của feature B theo **lịch sử git**, với điều kiện giữ đủ 4 luật dưới đây.
+The model guarantees that feature A does not drag feature B's code along in **git history**, provided the 4 rules below are followed.
 
-Mô hình không bảo đảm rằng thứ đã test chính là thứ sẽ ship. Trên `develop` và `staging`, A luôn được test cùng B, C, nên B có thể chạy được chỉ vì A có mặt (helper, migration, config do A thêm vào). `pre-release` phải đúng bằng `release` + các feature đã duyệt, và là môi trường duy nhất test đúng tổ hợp sẽ ship.
+The model does not guarantee that what was tested is what will ship. On `develop` and `staging`, A is always tested together with B and C, so B may work only because A is present (helpers, migrations, config added by A). `pre-release` must be exactly `release` + the approved features, and is the only environment that tests the exact combination that will ship.
 
-## 4 luật cô lập
+## The 4 isolation rules
 
-1. Feature và hotfix luôn cắt từ `release`, không bao giờ cắt từ một nhánh môi trường.
-2. Không bao giờ merge nhánh môi trường vào feature branch. Muốn cập nhật feature thì chỉ merge `release` vào.
-3. Nhánh tạm dùng để resolve conflict (`feat/x-dev`, `feat/x-staging`) chỉ đi vào đúng môi trường của nó, rồi xoá ngay. Không merge nhánh tạm sang môi trường khác hay vào `release`, vì nó đã chứa code của môi trường đó.
-4. Không merge nhánh môi trường "xuôi" sang môi trường kế tiếp (`develop` → `staging`, `staging` → `pre-release`). Mỗi môi trường chỉ nhận feature branch. Ngoại lệ duy nhất là `pre-release` → `release`, vì theo định nghĩa `pre-release` chỉ chứa thứ đã được duyệt.
+1. Features and hotfixes are always branched from `release`, never from an environment branch.
+2. Never merge an environment branch into a feature branch. To update a feature, only merge `release` into it.
+3. A temporary branch used to resolve conflicts (`feat/x-dev`, `feat/x-staging`) only goes into its own environment, then is deleted immediately. Never merge a temporary branch into another environment or into `release`, because it already contains that environment's code.
+4. Never merge an environment branch "downstream" into the next environment (`develop` → `staging`, `staging` → `pre-release`). Each environment only receives feature branches. The only exception is `pre-release` → `release`, because by definition `pre-release` only contains what has been approved.
 
-Phụ thuộc thật giữa hai feature phải được khai báo: nếu B cần A thì cắt B từ A, ghi rõ trong PR, và A phải lên `release` trước B.
+A real dependency between two features must be declared: if B needs A, branch B from A, say so in the PR, and A must reach `release` before B.
 
-## Merge và ngưỡng vào môi trường
+## Merging and entry thresholds
 
-- **Merge commit (`--no-ff`) ở mọi môi trường, không squash.** Cùng một feature giữ cùng SHA ở cả 3 môi trường, nên khi sync `release` về, git nhận ra feature đã có và merge sạch. Squash tạo ở mỗi môi trường một bản sao khác SHA, dẫn tới conflict lúc sync và conflict cho các feature phụ thuộc.
-- **Vào `develop`:** khi PR pass CI.
-- **Vào `staging`:** khi dev đã test xong trên `develop`.
-- **Vào `pre-release`:** chỉ khi có sign-off staging của các bên liên quan, ghi trong PR hoặc ticket.
-- **Không dùng nút "Resolve conflicts" hay "Update branch" của GitHub** trên PR vào một nhánh môi trường. Cả hai đều merge nhánh môi trường vào feature branch, tức là phạm luật 2. Hãy resolve trên nhánh tạm:
+- **Merge commit (`--no-ff`) in every environment, no squash.** The same feature keeps the same SHA in all 3 environments, so when `release` is synced back, git recognizes that the feature is already present and merges cleanly. Squash creates a different-SHA copy in each environment, leading to conflicts at sync time and conflicts for dependent features.
+- **Into `develop`:** when the PR passes CI.
+- **Into `staging`:** when the developer has finished testing on `develop`.
+- **Into `pre-release`:** only with stakeholders' staging sign-off, recorded in the PR or ticket.
+- **Do not use GitHub's "Resolve conflicts" or "Update branch" button** on a PR into an environment branch. Both merge the environment branch into the feature branch, which violates rule 2. Resolve on a temporary branch instead:
 
   ```bash
   git switch -c feat/x-staging origin/staging
-  git merge feat/x          # resolve conflict tại đây
+  git merge feat/x          # resolve conflicts here
   git push -u origin feat/x-staging   # PR feat/x-staging → staging, merge commit
   ```
 
-  Phần resolve ở `pre-release` phải được review như code mới, vì staging chưa từng thấy nó.
+  A resolution done on `pre-release` must be reviewed as new code, because staging has never seen it.
 
-- Bật `git config --global rerere.enabled true` nếu thường xuyên phải resolve cùng một conflict ở nhiều môi trường: resolve một lần, git nhớ để áp lại.
+- Enable `git config --global rerere.enabled true` if you often have to resolve the same conflict in several environments: resolve once, git remembers and reapplies it.
 
-## Gỡ feature bị reject
+## Removing a rejected feature
 
-Việc gỡ đi theo từng môi trường:
+Removal is done per environment:
 
-- **`develop` / `staging`:** mở PR revert merge commit của feature (`git revert -m 1 <merge-commit>`), tiêu đề ghi rõ tên feature. Ghi vào ticket "đã revert ở <môi trường>".
-- **Revert trap:** các commit cũ của feature đã là tổ tiên của nhánh. Nếu merge lại đúng các commit đó, git coi là đã có, nên chỉ phần commit mới đi vào và **code cũ mất mà không báo gì**. Trước khi merge lại một feature đã bị revert, phải làm một trong hai việc:
-  - revert chính commit revert (`git revert <revert-sha>`) rồi mới merge feature, **hoặc**
-  - `git rebase --force-rebase origin/release` trên feature branch để các commit có SHA mới.
-- **`pre-release`:** không revert. Dựng lại `pre-release` = `release` + các feature còn được duyệt (merge lại từng nhánh), force-push và thông báo cho team. `pre-release` là nhánh dùng xong bỏ, nên dựng lại rẻ hơn và sạch hơn một chuỗi revert.
+- **`develop` / `staging`:** open a PR that reverts the feature's merge commit (`git revert -m 1 <merge-commit>`), with a title that names the feature. Record in the ticket "reverted in <environment>".
+- **Revert trap:** the feature's old commits are already ancestors of the branch. If exactly those commits are merged again, git considers them already present, so only the new commits go in and **the old code is lost silently**. Before merging a reverted feature again, do one of two things:
+  - revert the revert commit itself (`git revert <revert-sha>`) and then merge the feature, **or**
+  - `git rebase --force-rebase origin/release` on the feature branch so the commits get new SHAs.
+- **`pre-release`:** do not revert. Rebuild `pre-release` = `release` + the features that are still approved (merge each branch again), force-push and notify the team. `pre-release` is a throwaway branch, so rebuilding is cheaper and cleaner than a chain of reverts.
 
   ```bash
   git switch -C pre-release origin/release
-  git merge --no-ff feat/a feat/c        # chỉ các feature đã duyệt
+  git merge --no-ff feat/a feat/c        # only the approved features
   git push --force-with-lease origin pre-release
   ```
 
-- **Reset định kỳ:** sau mỗi release (hoặc mỗi sprint), cân nhắc dựng lại `develop` và `staging` từ `release` + các feature đang active. Việc này xoá các revert dồn lại và rác. Vì là force-push nên phải thông báo trước.
+- **Periodic reset:** after each release (or each sprint), consider rebuilding `develop` and `staging` from `release` + the active features. This clears accumulated reverts and clutter. Because it is a force-push, announce it beforehand.
 
 ## Hotfix
 
-Hotfix đi đủ chuỗi như feature (quyết định của team). Các bước:
+A hotfix goes through the full chain like a feature (a team decision). Steps:
 
-- Cắt `hotfix/x` từ `release`, rồi merge lần lượt vào `develop` → `staging` → `pre-release` → `release`.
-- Hotfix được ưu tiên xếp hàng và test rút gọn ở `develop`/`staging`.
-- Lúc có hotfix, `pre-release` có thể đang chứa feature đã duyệt nhưng chưa ship. Ship `pre-release` khi đó là ship luôn các feature ấy. Nếu không chấp nhận được, dựng lại `pre-release` = `release` + hotfix, ship, rồi merge lại các feature.
-- **Break-glass:** khi sự cố nghiêm trọng mà thời gian đi hết chuỗi vượt SLA, cho phép hotfix vào thẳng `release` rồi sync xuống, kèm biên bản. Đây là ngoại lệ có ghi nhận, không phải đường thường dùng.
+- Branch `hotfix/x` from `release`, then merge it in turn into `develop` → `staging` → `pre-release` → `release`.
+- A hotfix is queued with priority and gets abbreviated testing on `develop`/`staging`.
+- When a hotfix happens, `pre-release` may already contain approved features that have not shipped. Shipping `pre-release` then ships those features too. If that is not acceptable, rebuild `pre-release` = `release` + the hotfix, ship, then merge the features again.
+- **Break-glass:** when an incident is serious and the time to go through the whole chain exceeds the SLA, a hotfix is allowed straight into `release` and then synced downstream, with a written record. This is a documented exception, not the usual path.
 
-## Sync sau release
+## Sync after release
 
-1. `pre-release` fast-forward tới `release`. Sau khi `release` merge `pre-release`, hai nhánh phải bằng nhau:
+1. `pre-release` fast-forwards to `release`. After `release` merges `pre-release`, the two branches must be equal:
 
    ```bash
    git switch pre-release && git merge --ff-only origin/release && git push origin pre-release
    ```
 
-2. `develop` và `staging` merge `release` vào bằng merge commit. Không rebase, không `-X theirs`/`-X ours`: các option đó âm thầm bỏ code.
+2. `develop` and `staging` merge `release` in with a merge commit. No rebase, no `-X theirs`/`-X ours`: those options silently drop code.
 
-## Đo drift bằng lệnh
+## Measuring drift with commands
 
-Chạy các lệnh sau sau mỗi lần sync, và nên chạy theo lịch:
+Run these commands after every sync, and preferably on a schedule:
 
-| Kiểm tra                                      | Lệnh                                                                                              | Kết quả đúng                                                               |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `release` nằm trọn trong mọi môi trường       | `git rev-list --count origin/<env>..origin/release`                                               | `0` cho `develop`, `staging`, `pre-release`                                |
-| `pre-release` bằng `release` ngay sau release | `git diff origin/release origin/pre-release`                                                      | rỗng                                                                       |
-| Feature đang có ở một môi trường              | `git log --first-parent --merges --format=%s origin/release..origin/<env>`                        | khớp danh sách ticket đang active; feature không có ticket là rác, phải gỡ |
-| Nhánh tạm tồn tại quá lâu                     | `git for-each-ref --format='%(committerdate:relative) %(refname)' 'refs/remotes/origin/feat/*-*'` | không có nhánh nào cũ hơn 1 ngày                                           |
+| Check                                                | Command                                                                                           | Correct result                                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `release` is fully contained in every environment    | `git rev-list --count origin/<env>..origin/release`                                               | `0` for `develop`, `staging`, `pre-release`                                                   |
+| `pre-release` equals `release` right after a release | `git diff origin/release origin/pre-release`                                                      | empty                                                                                         |
+| Features currently present in an environment         | `git log --first-parent --merges --format=%s origin/release..origin/<env>`                        | matches the list of active tickets; a feature without a ticket is clutter and must be removed |
+| Temporary branches that live too long                | `git for-each-ref --format='%(committerdate:relative) %(refname)' 'refs/remotes/origin/feat/*-*'` | no branch older than 1 day                                                                    |
 
-Số đếm `rev-list` không bắt được revert trap: một feature đã revert rồi merge lại đúng SHA cũ vẫn cho kết quả `0`. Chỉ luật ở mục "Gỡ feature bị reject" chặn được.
+The `rev-list` count does not catch the revert trap: a feature that was reverted and then merged again with the exact old SHAs still yields `0`. Only the rule in the "Removing a rejected feature" section prevents it.
 
-## Checklist theo vai trò
+## Checklist by role
 
 **Developer**
 
-- [ ] Cắt `feat/x` từ `origin/release`
-- [ ] Gom nhánh thành một commit mang đúng header trước PR đầu tiên
-- [ ] Ghi rõ phụ thuộc (nếu có) trong PR
-- [ ] Conflict: resolve trên `feat/x-<env>`, xoá nhánh tạm sau khi merge
-- [ ] Feature từng bị revert: `--force-rebase` hoặc revert cái revert trước khi merge lại
+- [ ] Branch `feat/x` from `origin/release`
+- [ ] Squash the branch into one commit with the correct header before the first PR
+- [ ] State dependencies (if any) in the PR
+- [ ] Conflict: resolve on `feat/x-<env>`, delete the temporary branch after merging
+- [ ] A feature that was reverted before: `--force-rebase` or revert the revert before merging again
 
 **Reviewer**
 
-- [ ] PR vào môi trường dùng merge commit, không squash
-- [ ] Không có commit của nhánh môi trường trong feature branch (`git log origin/release..feat/x`)
-- [ ] PR vào `pre-release` có sign-off staging
+- [ ] PRs into an environment use a merge commit, not squash
+- [ ] No environment-branch commits in the feature branch (`git log origin/release..feat/x`)
+- [ ] The PR into `pre-release` has staging sign-off
 
 **Release owner**
 
-- [ ] `pre-release` chỉ chứa feature đã duyệt (lệnh `git log --first-parent --merges` ở trên)
-- [ ] Merge `pre-release` → `release`, rồi sync: fast-forward `pre-release`, merge `release` vào `develop` và `staging`
-- [ ] Các lệnh drift đều ra kết quả đúng
+- [ ] `pre-release` only contains approved features (the `git log --first-parent --merges` command above)
+- [ ] Merge `pre-release` → `release`, then sync: fast-forward `pre-release`, merge `release` into `develop` and `staging`
+- [ ] The drift commands all give the correct result
 
-## Khi nào mô hình không còn đúng
+## When the model stops being right
 
-- **Hầu hết feature đi thẳng từ `develop` tới `release` mà không bị giữ lại:** selective promotion chỉ còn chi phí mà không có lợi. Quay về promote cả nhánh.
-- **Tỷ lệ feature bị giữ lại hoặc bị gỡ tăng cao:** hướng đúng là trunk-based kết hợp feature flag, đổi lại phải đầu tư vào hạ tầng quản lý flag.
+- **Most features go straight from `develop` to `release` without being held back:** selective promotion is only cost with no benefit. Go back to promoting the whole branch.
+- **The share of features that are held back or removed rises sharply:** the right direction is trunk-based development combined with feature flags, at the price of investing in flag-management infrastructure.
 
-## Rollout (việc mỗi repo app phải tự làm)
+## Rollout (what each app repo must do itself)
 
-Repo thư viện này không làm được các việc sau; mỗi repo app áp dụng chuẩn phải tự thực hiện:
+This library repo cannot do the following; every app repo that adopts the standard must do it itself:
 
-- CI build và test **chính feature branch** (`release` + feature), không chỉ các nhánh môi trường.
-- Job theo lịch chạy các lệnh drift ở trên, báo lỗi khi kết quả sai.
-- Cấu hình repo: tắt squash và rebase merge, giữ nhánh feature sau khi merge (vì còn cần cho môi trường kế tiếp).
-- Chạy thử 1–2 sprint trên một repo, rút kinh nghiệm rồi mới nhân rộng.
+- CI builds and tests **the feature branch itself** (`release` + feature), not only the environment branches.
+- A scheduled job runs the drift commands above and reports an error when the result is wrong.
+- Repo configuration: disable squash and rebase merge, keep the feature branch after merging (it is still needed for the next environment).
+- Pilot for 1–2 sprints on one repo, learn from it, and only then roll out more widely.

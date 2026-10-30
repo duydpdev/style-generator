@@ -1,12 +1,12 @@
 # ─────────────────────────────────────────────────────
-# Release — Orchestrator chính
+# Release — Main orchestrator
 #
-# Trigger: push vào main hoặc develop
+# Trigger: push to main or develop
 # Flow:
-#   1. Semantic-release tạo tag & version bump
-#   2. Detect tag mới (so sánh trước/sau)
-#   3. Gọi deploy.yml để build & publish lên GitHub Packages
-#   4. Gọi back-merge.yml sau mọi push vào main (kể cả khi không có release)
+#   1. Semantic-release creates the tag & version bump
+#   2. Detect the new tag (compare before/after)
+#   3. Call deploy.yml to build & publish to GitHub Packages
+#   4. Call back-merge.yml after every push to main (even when there is no release)
 # ─────────────────────────────────────────────────────
 name: Release
 
@@ -33,7 +33,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # ── 1. Tạo tag ────────────────────────────────────
+  # ── 1. Create tag ────────────────────────────────────
   release:
     name: Create Release Tag
     runs-on: ubuntu-latest
@@ -140,7 +140,7 @@ jobs:
     # No `secrets: inherit`: deploy publishes with the built-in GITHUB_TOKEN,
     # which every called workflow receives, and must not see the write PAT.
 
-  # ── 3. Back-merge (mọi push vào main, có hay không có release) ──
+  # ── 3. Back-merge (every push to main, with or without a release) ──
   # Features land on develop and main separately, so a push to main that cuts
   # no release (a [ci]/[docs] feature) still leaves main ahead of develop.
   # Run after every successful release job on main; deploy may be skipped (no

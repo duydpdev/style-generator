@@ -1,23 +1,23 @@
 # User Guide
 
-Hướng dẫn tích hợp `@duydpdev/style-generator` 4.0.0 vào dự án **Tailwind CSS v4**. Tra cứu đầy đủ (option, export, CLI) nằm ở [`README.md`](../README.md); đang nâng cấp từ 3.x thì đọc [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
+How to integrate `@duydpdev/style-generator` 4.0.0 into a **Tailwind CSS v4** project. The full reference (options, exports, CLI) is in [`README.md`](../README.md); if you are upgrading from 3.x read [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
 
-## Mục lục
+## Table of contents
 
-1. [Cài đặt](#cài-đặt)
-2. [Tạo Theme Config](#tạo-theme-config)
-3. [Sinh CSS và import vào Tailwind](#sinh-css-và-import-vào-tailwind)
+1. [Installation](#installation)
+2. [Creating the theme config](#creating-the-theme-config)
+3. [Generating CSS and importing it into Tailwind](#generating-css-and-importing-it-into-tailwind)
 4. [Multi-axis theming](#multi-axis-theming)
 5. [Spacing Helpers](#spacing-helpers)
-6. [Design Tokens cho Component](#design-tokens-cho-component)
+6. [Design Tokens for Components](#design-tokens-for-components)
 7. [TypeScript Tips](#typescript-tips)
-8. [Nâng cấp từ bản cũ](#nâng-cấp-từ-bản-cũ)
+8. [Upgrading from older versions](#upgrading-from-older-versions)
 
 ---
 
-## Cài đặt
+## Installation
 
-Package được publish lên GitHub Packages. Cấu hình scope `@duydpdev` trong file mà package manager của bạn đọc (Yarn Berry đọc `.yarnrc.yml` và bỏ qua `.npmrc`); cách tạo PAT `read:packages` nằm ở mục Installation của [`README.md`](../README.md#1-installation).
+The package is published to GitHub Packages. Configure the `@duydpdev` scope in the file your package manager reads (Yarn Berry reads `.yarnrc.yml` and ignores `.npmrc`); how to create a `read:packages` PAT is covered in the Installation section of [`README.md`](../README.md#1-installation).
 
 Yarn Berry — `.yarnrc.yml`:
 
@@ -36,13 +36,13 @@ npm, pnpm, Yarn Classic — `.npmrc`:
 //npm.pkg.github.com/:_authToken=${GITHUB_PAT}
 ```
 
-Rồi cài:
+Then install:
 
 ```bash
 yarn add @duydpdev/style-generator
 ```
 
-**Peer dependencies:** `tailwindcss >=4.1.0` (Tailwind v3 không còn được hỗ trợ); `typescript ^5 || ^6` (tuỳ chọn, để type-check theo `.d.ts` của package) và `vite ^5 || ^6 || ^7 || ^8` (tuỳ chọn, chỉ khi dùng `styleGenVite`). Bản đã được CI kiểm: bảng peer trong [`README.md`](../README.md). `zod` là dependency thường của package — không cần cài riêng.
+**Peer dependencies:** `tailwindcss >=4.1.0` (Tailwind v3 is no longer supported); `typescript ^5 || ^6` (optional, to type-check against the package's `.d.ts`) and `vite ^5 || ^6 || ^7 || ^8` (optional, only when you use `styleGenVite`). The versions CI verifies are listed in the peer table in [`README.md`](../README.md). `zod` is a regular dependency of the package — no separate install needed.
 
 ```bash
 yarn add tailwindcss typescript
@@ -50,9 +50,9 @@ yarn add tailwindcss typescript
 
 ---
 
-## Tạo Theme Config
+## Creating the theme config
 
-Tạo `styles/theme.json` chứa toàn bộ design tokens. Chỉ `colors` là bắt buộc; mọi field khác đều tuỳ chọn. Theme được kiểm bằng một Zod schema **strict**: key lạ, giá trị không an toàn hay alias hỏng đều bị từ chối trước khi sinh CSS.
+Create `styles/theme.json` holding all your design tokens. Only `colors` is required; every other field is optional. The theme is checked by a **strict** Zod schema: unknown keys, unsafe values and broken aliases are all rejected before any CSS is generated.
 
 ```json
 {
@@ -81,20 +81,20 @@ Tạo `styles/theme.json` chứa toàn bộ design tokens. Chỉ `colors` là b�
 }
 ```
 
-| Field           | Sinh ra                                                            |
-| --------------- | ------------------------------------------------------------------ |
-| `colors`        | `bg-*`, `text-*`, `border-*` (bắt buộc)                            |
-| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)        |
-| `shadows`       | `shadow-*`                                                         |
-| `backDropBlurs` | `backdrop-blur-*`                                                  |
-| `borderRadius`  | `rounded-*` (+ biến thể `md:`/`lg:` theo breakpoint đang bật)      |
-| `fontFamily`    | `font-*` qua namespace `--font-*` của Tailwind                     |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l` (thay cho key `border` của bản 3.x) |
-| `themeAxes`     | override theo trục (xem [Multi-axis theming](#multi-axis-theming)) |
+| Field           | Generates                                                           |
+| --------------- | ------------------------------------------------------------------- |
+| `colors`        | `bg-*`, `text-*`, `border-*` (required)                             |
+| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)         |
+| `shadows`       | `shadow-*`                                                          |
+| `backDropBlurs` | `backdrop-blur-*`                                                   |
+| `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the enabled breakpoints)    |
+| `fontFamily`    | `font-*` through Tailwind's `--font-*` namespace                    |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l` (replaces the `border` key from 3.x) |
+| `themeAxes`     | per-axis overrides (see [Multi-axis theming](#multi-axis-theming))  |
 
-### Quy ước key
+### Key conventions
 
-Key màu là **camelCase** (hoặc kebab-case); lib tự đổi sang kebab-case cho biến CSS và class:
+Color keys are **camelCase** (or kebab-case); the library converts them to kebab-case for CSS variables and classes:
 
 | Theme key           | CSS variable                 | Tailwind class            |
 | ------------------- | ---------------------------- | ------------------------- |
@@ -103,19 +103,19 @@ Key màu là **camelCase** (hoặc kebab-case); lib tự đổi sang kebab-case 
 | `blue500`           | `--color-blue-500`           | `border-blue-500`         |
 | `primary`           | `--color-primary`            | `text-primary`            |
 
-- Letter→digit thêm dash (`blue500` → `blue-500`); key bắt đầu bằng số giữ nguyên (`2xl`). Hai key cùng kebab-case về một tên (`blue500` và `blue-500`) bị từ chối.
-- Key chỉ gồm chữ, số và `-`, bắt đầu bằng chữ hoặc số. **`_` bị từ chối ở mọi vị trí tên** (token, tên axis, tên variant): dùng `primaryActive` hoặc `primary-active`. Nguyên nhân: `toKebabCase` giữ `_` còn token có kiểu camelCase bỏ `_`, nên class do mapper sinh ra sẽ không tồn tại. CLI in lỗi dạng `colors.primary_active → … camelCase … kebab-case …`.
-- Giá trị không được chứa `;`, `{`, `}`, `<`, `@`, `\`, `/*` hay xuống dòng; dấu nháy phải cân, và ngoặc `(`/`[` ngoài chuỗi có nháy cũng phải cân (`rgb(0 0 0` bị từ chối tại path của nó).
-- Key typography phải kebab-case thành tên `@utility` hợp lệ (không bắt đầu bằng số hay dash): `heading1` → `.heading-1`.
-- Key `fontFamily` không được trùng tên độ đậm của Tailwind (`thin`, `light`, `normal`, `medium`, `bold`, `black`, …).
-- Hai key ở hai category khác nhau mà cho ra cùng một biến CSS bị từ chối (`colors.shadowPrimary` và `shadows.primary` đều thành `--sg-shadow-primary`; lỗi báo ở key khai báo sau và nêu tên cả hai). Namespace `--sg-sp-*` dành riêng cho spacing: key màu như `spP` (thành `--sg-sp-p`) bị từ chối.
-- Key có chuỗi chữ hoa mở đầu từ hai ký tự trở lên (`CTA`, `ABtn`, `HTMLParser`) bị từ chối kèm gợi ý đổi tên (`cta`): class do typed token sinh ra (`c-ta`) khác class trong CSS (`cta`). Một chữ hoa đơn (`Blue`) hoặc chuỗi hoa ở giữa (`primaryCTA`) vẫn hợp lệ.
-- Key `borderWidth` không được kebab-case trùng một key `colors` (cả hai cùng sinh class `border-<key>`).
-- Bảng tóm tắt mọi quy tắc đặt tên, kèm ví dụ bị từ chối và hợp lệ: [Key rules trong README](../README.md#key-rules).
+- A letter→digit boundary adds a dash (`blue500` → `blue-500`); keys that start with a digit are preserved (`2xl`). Two keys that kebab-case to the same name (`blue500` and `blue-500`) are rejected.
+- Keys may contain only letters, digits and `-`, and must start with a letter or digit. **`_` is rejected in every name position** (token, axis name, variant name): use `primaryActive` or `primary-active`. Reason: `toKebabCase` keeps `_` while the camelCase token drops it, so the class generated by the mapper would not exist. The CLI prints the error as `colors.primary_active → … camelCase … kebab-case …`.
+- Values must not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break; quotes must be balanced, and parentheses `(`/`[` outside quoted strings must be balanced too (`rgb(0 0 0` is rejected at its own path).
+- A typography key must kebab-case to a valid `@utility` name (not starting with a digit or dash): `heading1` → `.heading-1`.
+- A `fontFamily` key must not match a Tailwind font-weight name (`thin`, `light`, `normal`, `medium`, `bold`, `black`, …).
+- Two keys in two different categories that produce the same CSS variable are rejected (`colors.shadowPrimary` and `shadows.primary` both become `--sg-shadow-primary`; the error is reported at the key declared later and names both). The `--sg-sp-*` namespace is reserved for spacing: a color key such as `spP` (which becomes `--sg-sp-p`) is rejected.
+- A key that starts with a run of two or more capital letters (`CTA`, `ABtn`, `HTMLParser`) is rejected with a rename hint (`cta`): the class produced by the typed token (`c-ta`) differs from the class in the CSS (`cta`). A single capital (`Blue`) or an inner capital run (`primaryCTA`) is still valid.
+- A `borderWidth` key must not kebab-case to the same name as a `colors` key (both would generate the class `border-<key>`).
+- A summary of all naming rules, with rejected and valid examples: [Key rules in the README](../README.md#key-rules).
 
-### Alias `$key`
+### `$key` aliases
 
-Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phát thành `var(--<cssVarPrefix>-<kebab-key>)`, nên không phải lặp mã hex. Prefix thuộc về category (`sg` cho `colors`, `sg-shadow` cho `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`), nên alias `"$base"` trong `shadows` thành `var(--sg-shadow-base)` chứ không phải `var(--sg-base)`:
+A value `"$<key>"` points to another key **in the same category** and is emitted as `var(--<cssVarPrefix>-<kebab-key>)`, so you do not repeat hex codes. The prefix belongs to the category (`sg` for `colors`, `sg-shadow` for `shadows`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`), so the alias `"$base"` in `shadows` becomes `var(--sg-shadow-base)`, not `var(--sg-base)`:
 
 ```json
 {
@@ -124,34 +124,34 @@ Giá trị `"$<key>"` trỏ tới key khác **cùng category** và được phá
 }
 ```
 
-Đích là **key gốc** (`$blue500`, không phải `$blue-500`), phải tồn tại và đồ thị alias không được có chu trình. Không dùng alias trong `typography`.
+The target is the **raw key** (`$blue500`, not `$blue-500`); it must exist and the alias graph must not contain cycles. Aliases are not supported in `typography`.
 
-### Trạng thái hover/active
+### Hover/active states
 
-Khai báo key anh em cạnh màu gốc: `primary`, `primaryHover`, `primaryActive`. Registry tự sinh `hover:bg-primary-hover`, `active:bg-primary-active` (và dạng `text-`/`border-`), còn `createVariantMapper(..., { states: COLOR_STATES })` gộp chúng thành một chuỗi class (xem [Design Tokens](#design-tokens-cho-component)). Tên state được kebab-case (`focusVisible` → `focus-visible:`).
+Declare sibling keys next to the base color: `primary`, `primaryHover`, `primaryActive`. The registry generates `hover:bg-primary-hover` and `active:bg-primary-active` (and the `text-`/`border-` forms) automatically, and `createVariantMapper(..., { states: COLOR_STATES })` merges them into a single class string (see [Design Tokens](#design-tokens-for-components)). State names are kebab-cased (`focusVisible` → `focus-visible:`).
 
-### Autocomplete trong editor
+### Editor autocomplete
 
 ```bash
-yarn style-gen schema        # ghi theme.schema.json cạnh file theme
+yarn style-gen schema        # writes theme.schema.json next to the theme file
 ```
 
-Thêm `"$schema": "./theme.schema.json"` vào theme để editor gợi ý key và cảnh báo key lạ.
+Add `"$schema": "./theme.schema.json"` to the theme so the editor suggests keys and warns about unknown ones.
 
 ---
 
-## Sinh CSS và import vào Tailwind
+## Generating CSS and importing it into Tailwind
 
-`generate(theme, options)` trả về `{ css, tokens, schema }`. `css` là **một file duy nhất** để `@import` cạnh Tailwind — không có `@plugin`, không có file safelist:
+`generate(theme, options)` returns `{ css, tokens, schema }`. `css` is **a single file** to `@import` next to Tailwind — no `@plugin`, no safelist file:
 
 ```css
 @import "tailwindcss";
 @import "./theme.css";
 ```
 
-Chọn một cách để ghi `theme.css`:
+Pick one way to write `theme.css`:
 
-### Cách 1: Vite plugin (khuyến nghị)
+### Option 1: Vite plugin (recommended)
 
 ```typescript
 // vite.config.ts
@@ -165,16 +165,16 @@ export default defineConfig({
     react(),
     styleGenVite({
       themePath: "src/theme/theme.json",
-      outDir: "src/theme", // phải khớp đường dẫn @import trong CSS
+      outDir: "src/theme", // must match the @import path in your CSS
     }),
     tailwindcss(),
   ],
 });
 ```
 
-Plugin ghi `theme.css` (nguyên tử) khi khởi động dev, khi build và mỗi lần lưu theme JSON. Thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật. Nuxt chạy trên Vite nên đăng ký cùng plugin trong `nuxt.config.ts → vite.plugins` (xem `examples/nuxt-v4`); ví dụ Vite + React ở `examples/react-v4`.
+The plugin writes `theme.css` (atomically) on dev start, on build and every time the theme JSON is saved. Add `theme.css` to `.gitignore` if the theme JSON is the source of truth. Nuxt runs on Vite, so register the same plugin in `nuxt.config.ts → vite.plugins` (see `examples/nuxt-v4`); the Vite + React example is in `examples/react-v4`.
 
-### Cách 2: Next.js
+### Option 2: Next.js
 
 ```typescript
 // next.config.ts
@@ -189,24 +189,24 @@ export default styleGenNext({
 })(nextConfig);
 ```
 
-Chạy được với webpack lẫn Turbopack, không import `next` nên không thêm peer dependency. Chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả config mà không đọc theme. `nextConfig` có thể là object hoặc dạng hàm `(phase, { defaultConfig }) => config` (được gọi với đúng tham số của Next). Giới hạn: guard đường dẫn không `realpath` symlink. Xem `examples/next-v4`.
+Works with both webpack and Turbopack, and does not import `next`, so it adds no peer dependency. It writes `theme.css` only when Next loads the config in `phase-development-server` (`next dev`, with a watcher) or `phase-production-build` (`next build`); other phases (`next start`, export, …) return the config without reading the theme. `nextConfig` can be an object or a function `(phase, { defaultConfig }) => config` (called with Next's own arguments). Limitation: the path guard does not `realpath` symlinks. See `examples/next-v4`.
 
-### Cách 3: CLI
+### Option 3: CLI
 
 ```bash
-yarn style-gen init                 # scaffold theme + theme.schema.json + script generate() + style-gen.config.json
-yarn style-gen generate             # ghi styles/theme.css
-yarn style-gen generate --watch     # sinh lại khi lưu
-yarn style-gen doctor               # kiểm tra cấu hình, schema và cảnh báo va chạm utility
+yarn style-gen init                 # scaffold theme + theme.schema.json + generate() script + style-gen.config.json
+yarn style-gen generate             # writes styles/theme.css
+yarn style-gen generate --watch     # regenerates on save
+yarn style-gen doctor               # checks config, schema and warns about utility collisions
 ```
 
-Không chạy CLI qua `npx`: tên `style-gen` chưa có ai giữ trên npm public nên `npx` có thể tải nhầm package lạ. Dùng npm thì chạy `npm exec --no -- style-gen`.
+Do not run the CLI through `npx`: the name `style-gen` is not held by anyone on public npm, so `npx` could download a stranger's package. With npm, run `npm exec --no -- style-gen`.
 
-Flag `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Thứ tự resolve cấu hình, theo từng key: flags → file config → mặc định (`styles/theme.json` → `styles/theme.css`). File config là một trong hai nguồn, chọn theo kiểu _hoặc_: `style-gen.config.json` nếu nó tồn tại, nếu không thì `package.json["style-gen"]`; hai nguồn không bao giờ được merge (`style-gen.config.json` hỏng thì bị báo lỗi chứ không rơi sang `package.json`). File config được validate bằng cùng schema với option của `generate()`: gõ sai key (`breakpoint` thay vì `breakpoints`) hay giá trị không hợp lệ thì `generate` in `Invalid config (<file>):` kèm từng dòng `path → message`, không ghi file và thoát với mã 1; `doctor` báo `Config (<file>) ❌ Invalid` và cũng thoát với mã 1. File config không parse được JSON (hỏng) thì `generate` cảnh báo rồi dùng mặc định.
+`generate` flags: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Configuration is resolved per key in this order: flags → config file → defaults (`styles/theme.json` → `styles/theme.css`). The config file is one of two sources, chosen _either/or_: `style-gen.config.json` if it exists, otherwise `package.json["style-gen"]`; the two sources are never merged (a broken `style-gen.config.json` is reported as an error rather than falling through to `package.json`). The config file is validated with the same schema as the `generate()` options: a mistyped key (`breakpoint` instead of `breakpoints`) or an invalid value makes `generate` print `Invalid config (<file>):` followed by each `path → message` line, write no file and exit with code 1; `doctor` reports `Config (<file>) ❌ Invalid` and also exits with code 1. A config file that is not parseable JSON (broken) makes `generate` warn and then use the defaults.
 
-Script do `init` sinh và `style-gen generate` ghi cùng một file (`output` trong config); chạy một trong hai (`node plugins/theme-plugin.ts` cần Node >= 22.18). `doctor` chỉ kiểm tra script khi config có `plugin` — setup `styleGenVite`/`styleGenNext` hay chỉ dùng CLI không cần.
+The script generated by `init` and the one written by `style-gen generate` are the same file (`output` in the config); run either one (`node plugins/theme-plugin.ts` needs Node >= 22.18). `doctor` only checks the script when the config has `plugin` — a `styleGenVite`/`styleGenNext` setup or a CLI-only setup does not need it.
 
-### Cách 4: Script tự viết
+### Option 4: Custom script
 
 ```typescript
 import { writeFileSync } from "node:fs";
@@ -218,7 +218,7 @@ import {
 } from "@duydpdev/style-generator";
 import themeJson from "../styles/theme.json";
 
-const theme = defineTheme(themeJson); // type-check VÀ validate lúc chạy
+const theme = defineTheme(themeJson); // type-checked AND validated at runtime
 const options = defineOptions({
   screens: { md: "800px" },
   breakpoints: [Breakpoint.MD, Breakpoint.LG],
@@ -229,27 +229,27 @@ writeFileSync("styles/theme.css", css, "utf8");
 export { tokens };
 ```
 
-### Class dựng lúc runtime
+### Classes built at runtime
 
-Mọi màu luôn có `bg-*`/`text-*`/`border-*` nhờ `@source inline` do registry sinh. Class bạn ghép bằng template literal thì Tailwind không quét được — khai báo bằng `extraSources`:
+Every color always gets `bg-*`/`text-*`/`border-*` thanks to the `@source inline` lines the registry generates. Classes you assemble with template literals cannot be scanned by Tailwind — declare them with `extraSources`:
 
 ```typescript
 generate(theme, { extraSources: ["hover:bg-{primary,secondary}"] });
 ```
 
-### Thu hẹp `@source inline` theo category (`coverage`)
+### Narrowing `@source inline` per category (`coverage`)
 
-Mặc định mỗi category có một dòng `@source inline` phủ mọi key (màu: đủ ba tiền tố `bg-`/`text-`/`border-`). Bảng màu lớn làm dòng này dài; `coverage` thu hẹp nó theo từng category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
+By default each category has one `@source inline` line covering every key (colors: all three prefixes `bg-`/`text-`/`border-`). A large palette makes that line long; `coverage` narrows it per category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
 
-| `coverage.<category>` | Tác dụng                                                                                                                                                                                                                                                                                      |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| vắng, `true`, `{}`    | Đầu ra như cũ, giống từng byte.                                                                                                                                                                                                                                                               |
-| `false`               | Không phát dòng `@source inline` của category, kể cả dòng state (`hover:`, `active:`).                                                                                                                                                                                                        |
-| `{ prefixes: [...] }` | Chỉ giữ các tiền tố class liệt kê (`bg`, `rounded-t`, …). Mỗi tiền tố phải thuộc category đó, nếu không `generate()` ném lỗi; typography không có tiền tố (key chính là class).                                                                                                               |
-| `{ keys: "aliased" }` | Chỉ giữ các key có giá trị là alias `"$<key>"` (key _giữ alias_) ở bản gốc hoặc ở bất kỳ override `themeAxes` nào; primitive mà chúng trỏ tới không cần class. Dòng state theo sau: `hover:bg-x-hover` chỉ còn khi cả `x` và `xHover` còn. Không dùng được cho `typography` (không có alias). |
-| `{ keys: "all" }`     | Mặc định: mọi key.                                                                                                                                                                                                                                                                            |
+| `coverage.<category>` | Effect                                                                                                                                                                                                                                                                                                        |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| absent, `true`, `{}`  | Output as before, byte for byte.                                                                                                                                                                                                                                                                              |
+| `false`               | Emits no `@source inline` line for the category, state lines (`hover:`, `active:`) included.                                                                                                                                                                                                                  |
+| `{ prefixes: [...] }` | Keeps only the listed class prefixes (`bg`, `rounded-t`, …). Each prefix must belong to that category, otherwise `generate()` throws; typography has no prefixes (the key is the class).                                                                                                                      |
+| `{ keys: "aliased" }` | Keeps only keys whose value is an alias `"$<key>"` (_alias-holding_ keys) in the base or in any `themeAxes` override; the primitives they point to need no class. The state line follows: `hover:bg-x-hover` remains only when both `x` and `xHover` remain. Not usable for `typography` (it has no aliases). |
+| `{ keys: "all" }`     | Default: every key.                                                                                                                                                                                                                                                                                           |
 
-`prefixes` và `keys` kết hợp được; danh sách `prefixes` phải không rỗng. Với `keys: "aliased"` mà category không có key giữ alias nào (hoặc không khai báo key) thì không phát gì: giá trị mặc định không phải alias. `coverage` chỉ cắt `@source inline`: `@theme inline`, `@utility` và `DesignTokens` có kiểu giữ nguyên, nên class còn dùng mà không còn được phủ phải xuất hiện literal trong source hoặc khai báo qua `extraSources`.
+`prefixes` and `keys` can be combined; the `prefixes` list must be non-empty. With `keys: "aliased"`, if the category has no alias-holding key (or declares no keys), nothing is emitted: the default value is not an alias. `coverage` only trims `@source inline`: `@theme inline`, `@utility` and the typed `DesignTokens` stay unchanged, so a class that is still used but no longer covered must appear literally in the source or be declared through `extraSources`.
 
 ```typescript
 generate(theme, {
@@ -260,15 +260,15 @@ generate(theme, {
 });
 ```
 
-### Class bị trùng utility có sẵn của Tailwind
+### Classes that collide with built-in Tailwind utilities
 
-Key có class trùng utility của Tailwind (`none` trong `colors`/`shadows`/`borderRadius`, `borderWidth` toàn số, key typography thành `text-sm`, `h-1` (từ `h1`), `italic`…, màu `transparent`/`current`/`inherit`) không bị schema từ chối, nhưng rule nào thắng do Tailwind quyết định. Đặt tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các va chạm nó nhận ra được (chỉ là cảnh báo).
+A key whose class collides with a Tailwind utility (`none` in `colors`/`shadows`/`borderRadius`, an all-digit `borderWidth`, a typography key that becomes `text-sm`, `h-1` (from `h1`), `italic`…, the colors `transparent`/`current`/`inherit`) is not rejected by the schema, but which rule wins is decided by Tailwind. Pick another name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the collisions it recognizes (warnings only).
 
 ---
 
 ## Multi-axis theming
 
-`themeAxes` ánh xạ **tên trục** → **các variant**; mỗi variant chỉ liệt kê giá trị khác base. Nhiều trục bật cùng lúc:
+`themeAxes` maps an **axis name** → its **variants**; each variant lists only the values that differ from the base. Several axes can be active at once:
 
 ```json
 {
@@ -297,7 +297,7 @@ Key có class trùng utility của Tailwind (`none` trong `colors`/`shadows`/`bo
 }
 ```
 
-CSS sinh ra (sau `:root`, theo thứ tự khai báo):
+The generated CSS (after `:root`, in declaration order):
 
 ```css
 html[data-theme="dark"] { … }
@@ -305,7 +305,7 @@ html[data-palette="forest"] { … }
 html[data-palette="high-contrast"] { … }
 ```
 
-Kích hoạt trên phần tử `<html>`:
+Activate on the `<html>` element:
 
 ```html
 <html data-theme="dark" data-palette="high-contrast">
@@ -313,22 +313,22 @@ Kích hoạt trên phần tử `<html>`:
 </html>
 ```
 
-Quy tắc cần nhớ:
+Rules to remember:
 
-- **Selector ghim vào `html`.** Attribute đặt trên phần tử bọc khác không có tác dụng: alias `var()` được tính tại phần tử _khai báo_ biến (`:root`), nên override ở phần tử con không bao giờ tới được giá trị alias.
-- **Giá trị attribute là dạng kebab của key**: variant `highContrast` → `data-palette="high-contrast"`; trục `colorScheme` → `data-color-scheme`.
-- **Precedence = thứ tự khai báo**: hai trục cùng override một token có specificity ngang nhau, trục khai báo **sau** thắng.
-- **Tên trục/variant không được là số nguyên** (`100`, `2024`): JS liệt kê key kiểu số lên đầu và phá thứ tự. Dùng `contrast100`.
-- **Key override phải có ở base** — key chỉ có ở override không tạo utility nên bị từ chối lúc parse.
-- **Override ghép giữa các trục** (`[data-theme="dark"][data-palette="forest"]`) và biến ngoài `--sg-*` vẫn là CSS viết tay; bảng phạm vi ở `examples/nuxt-v4/README.md`.
+- **The selector is pinned to `html`.** An attribute placed on another wrapping element has no effect: a `var()` alias is evaluated at the element that _declares_ the variable (`:root`), so an override on a child element never reaches the alias value.
+- **The attribute value is the kebab form of the key**: variant `highContrast` → `data-palette="high-contrast"`; axis `colorScheme` → `data-color-scheme`.
+- **Precedence = declaration order**: two axes overriding the same token have equal specificity, and the axis declared **later** wins.
+- **Axis/variant names must not be integers** (`100`, `2024`): JS enumerates number-like keys first and breaks the order. Use `contrast100`.
+- **An override key must exist in the base** — a key that exists only in an override produces no utility and is rejected at parse time.
+- **Overrides combined across axes** (`[data-theme="dark"][data-palette="forest"]`) and variables outside `--sg-*` are still hand-written CSS; see the scope table in `examples/nuxt-v4/README.md`.
 
-`--sg-*` là lớp biến trung gian để tránh vòng tham chiếu khi đổi theme. Trong code ứng dụng, ưu tiên class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`. Các biến lib phát ra (`--sg-<màu>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là output công khai của 4.x: alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; tên được giữ nguyên suốt 4.x. Bản 5.0 đổi tên biến màu thành `--sg-color-<key>` và sẽ ghi đó là breaking change.
+`--sg-*` is an intermediate variable layer that avoids reference cycles when switching themes. In application code, prefer standard Tailwind classes (`bg-primary`) or `var(--color-primary)`. The variables the library emits (`--sg-<color>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, and spacing's `--sg-sp-*`) are public output of 4.x: aliases point into them and hand-written CSS may read or override them; the names are kept throughout 4.x. Version 5.0 renames the color variables to `--sg-color-<key>` and will document that as a breaking change.
 
 ---
 
 ## Spacing Helpers
 
-Lib sinh sẵn các utility `.sp-*` (một `@utility` cho mỗi key, chuỗi fallback breakpoint nằm trong chính utility) — không cần safelist theo từng giá trị. Component chỉ set biến inline `--sg-sp-*` bằng `resolveSpacingProps`:
+The library pre-generates the `.sp-*` utilities (one `@utility` per key, with the breakpoint fallback chain inside the utility itself) — no per-value safelist needed. Components only set the inline `--sg-sp-*` variables with `resolveSpacingProps`:
 
 ```tsx
 import {
@@ -387,18 +387,18 @@ const Box = ({
 // resolveSpacingProps({ gap: …, "gap-x": 2 }) → class="sp-gap sp-gap-x"
 ```
 
-- `classNames` là **chuỗi** (nối bằng dấu cách), không phải mảng.
-- **Quy tắc cùng phần tử:** biến `--sg-sp-*` được đăng ký với `inherits: false`, nên class `sp-*` chỉ đọc biến khai báo trên chính phần tử đó; giá trị của phần tử cha không rò xuống con.
-- Prop hợp lệ là `SpacingKey`: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`. `resolveSpacing(prop, value, unit?)` xử lý một prop; `unit` mặc định `0.25` rem.
-- Chỉ breakpoint trong `options.breakpoints` (mặc định `["md", "lg"]`) mới có chuỗi fallback. Kiểu mặc định cũng chỉ nhận `md`/`lg` (`DefaultBreakpointKeys`); khi đặt `options.breakpoints` khác, truyền cùng các key đó làm tham số kiểu: `resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`.
-- Tắt bằng `spacing: { enabled: false }`; tuỳ chỉnh bằng `spacing: { properties: { … } }` (map prop → khai báo CSS).
-- `generate()` kiểm tra mọi option bằng một schema strict và ném `ZodError` kèm path: key lạ bị từ chối (kể cả trong `spacing` và `typography`); `enableResponsive`, `spacing.enabled`, `typography.cssVarDriven` phải là boolean; phần tử `breakpoints`, key của `screens` và `spacing.properties` theo ngữ pháp key của theme (chữ, số, `-`); mỗi giá trị `screens` phải là một độ dài px/rem/em, và bản đồ sau khi gộp với `defaultScreens` (px) chỉ được dùng một đơn vị (lỗi báo ở `screens`); mỗi phần tử `breakpoints` phải là tên một screen trong `defaultScreens` hoặc `screens` (lỗi báo ở `breakpoints.<i>`); tên thuộc tính CSS trong `spacing.properties` phải viết thường (`padding`, `column-gap`, `--custom`).
+- `classNames` is a **string** (joined with spaces), not an array.
+- **Same-element rule:** the `--sg-sp-*` variables are registered with `inherits: false`, so an `sp-*` class only reads variables declared on that very element; a parent's values do not leak down to children.
+- Valid props are `SpacingKey`: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`. `resolveSpacing(prop, value, unit?)` handles a single prop; `unit` defaults to `0.25` rem.
+- Only the breakpoints in `options.breakpoints` (default `["md", "lg"]`) get a fallback chain. The default types also accept only `md`/`lg` (`DefaultBreakpointKeys`); when you set a different `options.breakpoints`, pass the same keys as the type argument: `resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`.
+- Disable with `spacing: { enabled: false }`; customize with `spacing: { properties: { … } }` (map prop → CSS declaration).
+- `generate()` checks every option with a strict schema and throws a `ZodError` with a path: unknown keys are rejected (including inside `spacing` and `typography`); `enableResponsive`, `spacing.enabled`, `typography.cssVarDriven` must be booleans; `breakpoints` elements, `screens` keys and `spacing.properties` follow the theme key grammar (letters, digits, `-`); each `screens` value must be a single px/rem/em length, and the map merged with `defaultScreens` (px) may use only one unit (the error is reported at `screens`); each `breakpoints` element must be the name of a screen in `defaultScreens` or `screens` (the error is reported at `breakpoints.<i>`); CSS property names in `spacing.properties` must be lowercase (`padding`, `column-gap`, `--custom`).
 
 ---
 
-## Design Tokens cho Component
+## Design Tokens for Components
 
-`generate()` trả `tokens`; cũng có thể dựng riêng, an toàn cho browser, bằng `createDesignTokens` từ `./tokens`:
+`generate()` returns `tokens`; you can also build a separate, browser-safe set with `createDesignTokens` from `./tokens`:
 
 ```typescript
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
@@ -410,36 +410,36 @@ const { DesignTokens } = createDesignTokens(theme, {
   breakpoints: ["md", "lg"],
 });
 
-// createVariantMapper luôn kebab-case cùng hàm với registry, nên mọi class trả ra đều tồn tại
+// createVariantMapper always kebab-cases with the same function as the registry, so every class it returns exists
 const button = cva("base-class", {
   variants: {
     color: createVariantMapper("bg", DesignTokens.Web.variantColor),
     // { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }
 
     text: createVariantMapper("", DesignTokens.Web.variantText),
-    // { text16Medium: "text-16-medium", … }   ("" = class trần, dùng cho typography)
+    // { text16Medium: "text-16-medium", … }   ("" = bare class, used for typography)
   },
 });
 ```
 
-**Tokens trong `DesignTokens.Web`:**
+**Tokens in `DesignTokens.Web`:**
 
-| Token                 | Mô tả                                                                         |
+| Token                 | Description                                                                   |
 | --------------------- | ----------------------------------------------------------------------------- |
-| `variantColor`        | Tất cả key màu (flat, camelCase)                                              |
-| `variantText`         | Key của `typography`                                                          |
-| `variantShadow`       | Key của `shadows`                                                             |
-| `variantBackdropBlur` | Key của `backDropBlurs`                                                       |
-| `variantFontFamily`   | Key của `fontFamily`                                                          |
-| `borderWidthOption`   | Key của `borderWidth` (mặc định `0, 1, 2, 4` khi vắng hoặc `{}`)              |
-| `roundedOption`       | Key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES` khi vắng hoặc `{}`) |
-| `spacingProperties`   | Danh sách spacing props                                                       |
-| `breakpoints`         | Breakpoint đang dùng — mặc định `["md", "lg"]`                                |
-| `screens`             | Bản đồ breakpoint → độ rộng                                                   |
+| `variantColor`        | All color keys (flat, camelCase)                                              |
+| `variantText`         | Keys of `typography`                                                          |
+| `variantShadow`       | Keys of `shadows`                                                             |
+| `variantBackdropBlur` | Keys of `backDropBlurs`                                                       |
+| `variantFontFamily`   | Keys of `fontFamily`                                                          |
+| `borderWidthOption`   | Keys of `borderWidth` (default `0, 1, 2, 4` when absent or `{}`)              |
+| `roundedOption`       | Keys of `borderRadius` (default `DEFAULT_ROUNDED_VALUES` when absent or `{}`) |
+| `spacingProperties`   | List of spacing props                                                         |
+| `breakpoints`         | Breakpoints in use — default `["md", "lg"]`                                   |
+| `screens`             | Breakpoint → width map                                                        |
 
-### Class trạng thái
+### State classes
 
-Với các key anh em `primaryHover`/`primaryActive` trong theme, `{ states }` gộp chúng vào class của key gốc:
+For sibling keys `primaryHover`/`primaryActive` in the theme, `{ states }` merges them into the base key's class:
 
 ```typescript
 import {
@@ -456,13 +456,13 @@ const bg = createVariantMapper(
 // primaryHover: "bg-primary-hover", primaryActive: "bg-primary-active", danger: "bg-danger"
 ```
 
-Luôn truyền `COLOR_STATES` thay vì gõ tay `["hover", "active"]` — đó là danh sách mà các dòng `@source inline` cũng dùng. Truyền key camelCase như `DesignTokens.Web.variantColor` cung cấp (`primaryHover`, không phải `primary-hover`).
+Always pass `COLOR_STATES` instead of typing `["hover", "active"]` by hand — it is the list the `@source inline` lines use as well. Pass camelCase keys like the ones `DesignTokens.Web.variantColor` provides (`primaryHover`, not `primary-hover`).
 
 ---
 
 ## TypeScript Tips
 
-### `defineTheme()` — type-check và validate
+### `defineTheme()` — type-check and validate
 
 ```typescript
 import { defineTheme } from "@duydpdev/style-generator";
@@ -480,7 +480,7 @@ const theme = defineTheme({
 });
 ```
 
-TypeScript báo lỗi ngay khi thiếu `colors`; lúc chạy `defineTheme` ném `ZodError` (có `path`) cho key lạ hoặc giá trị không an toàn. Chỉ có ở root barrel `.` — không nằm ở `./tokens`, để Zod không lọt vào các subpath dùng trên browser. `generate()` luôn validate lại nên `defineTheme` là tuỳ chọn. Để in lỗi dễ đọc, bọc lời gọi bằng `catch` rồi truyền `ZodError` cho `formatZodError` (cũng export từ `.`): hàm trả mỗi issue một dòng `path → message`.
+TypeScript reports an error right away when `colors` is missing; at runtime `defineTheme` throws a `ZodError` (with a `path`) for unknown keys or unsafe values. It exists only in the root barrel `.` — not in `./tokens`, so Zod does not leak into the subpaths used in the browser. `generate()` always re-validates, so `defineTheme` is optional. To print readable errors, wrap the call in `catch` and pass the `ZodError` to `formatZodError` (also exported from `.`): it returns one `path → message` line per issue.
 
 ### Semantic type aliases
 
@@ -501,26 +501,26 @@ type ButtonProps = {
 };
 ```
 
-Các alias có sẵn: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, `FontFamilyVariant`, `BorderWidthVariant`, `RoundedVariant`, cùng kiểu ánh xạ `DesignTokenKeys<T>`.
+Available aliases: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, `FontFamilyVariant`, `BorderWidthVariant`, `RoundedVariant`, plus the mapped type `DesignTokenKeys<T>`.
 
-### Responsive value — chế độ strict duy nhất
+### Responsive value — strict mode only
 
-`ResponsiveValueStrict` là kiểu responsive duy nhất; gõ sai breakpoint (`{ typo: 4 }`) là lỗi kiểu, và `base` luôn được phép:
+`ResponsiveValueStrict` is the only responsive type; a mistyped breakpoint (`{ typo: 4 }`) is a type error, and `base` is always allowed:
 
 ```typescript
 import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
 
-// "base" luôn hợp lệ; mọi key còn lại phải được khai báo trong `options.breakpoints`
-// và có mặt trong `screens` (hoặc `defaultScreens`), nếu không sẽ không có CSS tương ứng.
+// "base" is always valid; every other key must be declared in `options.breakpoints`
+// and present in `screens` (or `defaultScreens`), otherwise there is no matching CSS.
 type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop";
 export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 ```
 
 ---
 
-## Nâng cấp từ bản cũ
+## Upgrading from older versions
 
-- **3.x → 4.0.0** (breaking: chỉ Tailwind v4, `generate()` thay plugin + safelist, schema strict, `themeAxes`, `borderWidth`, `--sg-sp-*`): [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), gồm bảng trước/sau và runbook rollback.
-- Đợt subpath exports của 3.x (lịch sử, còn yêu cầu về `moduleResolution`): [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md).
-- Key `themes` một trục đã đổi tên thành `themeAxes`; theme còn dùng tên cũ bị từ chối kèm thông báo hướng dẫn đổi tên (nguyên văn trong guide migration).
-- Các major cũ hơn: 2 → 3 bỏ object màu lồng nhau và key `DEFAULT` (chỉ còn key flat camelCase); 1 → 2 làm phẳng các nhóm màu `base`/`text`/`common`.
+- **3.x → 4.0.0** (breaking: Tailwind v4 only, `generate()` replaces the plugin + safelist, strict schema, `themeAxes`, `borderWidth`, `--sg-sp-*`): [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), including a before/after table and a rollback runbook.
+- The 3.x subpath exports rollout (historical, still carries the `moduleResolution` requirement): [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md).
+- The single-axis `themes` key was renamed to `themeAxes`; a theme that still uses the old name is rejected with a message explaining the rename (verbatim in the migration guide).
+- Older majors: 2 → 3 removed nested color objects and the `DEFAULT` key (only flat camelCase keys remain); 1 → 2 flattened the `base`/`text`/`common` color groups.

@@ -66,6 +66,7 @@ function Folder({ folder, files, activePath, onOpen }: Readonly<FolderProps>) {
             key={f.path}
             type="button"
             className={`tree-file${f.path === activePath ? " active" : ""}`}
+            title={f.path}
             onClick={() => {
               onOpen(f.path);
             }}

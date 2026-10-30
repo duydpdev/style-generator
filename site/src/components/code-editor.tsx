@@ -75,9 +75,14 @@ export function CodeEditor({
 
       {active ? (
         <div className="code-body-wrap">
-          <pre className="code-gutter">{gutter}</pre>
-          <div className="code-body-scroll">
-            <pre dangerouslySetInnerHTML={{ __html: html }} />
+          <div className="code-body-inner">
+            <pre className="code-gutter" aria-hidden="true">
+              {gutter}
+            </pre>
+            <pre
+              className="code-source"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
           </div>
         </div>
       ) : (

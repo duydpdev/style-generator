@@ -115,7 +115,7 @@ export type CategoryTokenKey<
       : CamelCase<R>
     : never;
 
-// ---- Tokens từ defaults + theme ----
+// ---- Tokens from defaults + theme ----
 
 export type InferBorderWidthOptions<TTheme extends ThemeConfig> =
   RawCategoryKey<TTheme, "borderWidth">;

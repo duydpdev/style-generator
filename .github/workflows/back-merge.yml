@@ -1,9 +1,9 @@
 # ─────────────────────────────────────────────────────
-# Back-merge — Merge main ngược về develop sau mọi push vào main
+# Back-merge — Merge main back into develop after every push to main
 #
-# Reusable workflow, được gọi từ release.yml
-# Chạy sau mọi push vào main, có hoặc không có release (version rỗng)
-# Commit message chứa [skip ci] để KHÔNG tạo tag mới trên develop
+# Reusable workflow, called from release.yml
+# Runs after every push to main, with or without a release (empty version)
+# The commit message contains [skip ci] so NO new tag is created on develop
 # ─────────────────────────────────────────────────────
 name: Back-merge
 

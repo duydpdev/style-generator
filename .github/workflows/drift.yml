@@ -1,17 +1,20 @@
 # ─────────────────────────────────────────────────────
-# Drift — cảnh báo khi main có commit mà develop chưa có
+# Drift — warn when main has commits that develop does not
 #
-# Back-merge (release.yml → back-merge.yml) chạy sau mọi push vào main. Job này
-# bắt trường hợp back-merge fail hoặc không chạy: fail khi develop thiếu commit
-# của main quá 60 phút (bỏ qua khoảng thời gian một run release đang chạy).
+# Back-merge (release.yml → back-merge.yml) runs after every push to main. This
+# job catches the case where the back-merge failed or did not run: it fails when
+# develop has been missing main's commits for over 60 minutes (the window while
+# a release run is in progress is ignored).
 #
-# Chạy mỗi ngày lúc 06:17 UTC: lịch mỗi giờ tốn ~675 phút runner/tháng (job
-# ~6 giây nhưng mỗi lần tính tròn 1 phút); back-merge hỏng được báo muộn nhất một ngày.
+# Runs daily at 06:17 UTC: an hourly schedule costs ~675 runner minutes/month
+# (the job takes ~6 seconds but each run is billed as a full minute); a broken
+# back-merge is reported within a day at the latest.
 #
-# Giới hạn: đếm commit không bắt được "revert trap". Một feature đã bị revert
-# trên develop rồi merge vào main với cùng SHA thì back-merge không mang gì về,
-# develop thiếu code mà số đếm vẫn là 0. Chỉ luật `git rebase --force-rebase
-# origin/main` trước khi feature land lại (documents/deploy.md) chặn được.
+# Limitation: counting commits does not catch the "revert trap". A feature that
+# was reverted on develop and then merged into main with the same SHA makes the
+# back-merge bring nothing back; develop is missing code while the count stays
+# 0. Only the rule `git rebase --force-rebase origin/main` before the feature
+# lands again (documents/deploy.md) prevents it.
 # ─────────────────────────────────────────────────────
 name: Drift
 

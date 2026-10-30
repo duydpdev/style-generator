@@ -719,7 +719,7 @@
   color: var(--c-primary);
 }
 
-/* ============ In-content "Mục lục" (markdown TOC) ============
+/* ============ In-content "Table of contents" (markdown TOC) ============
    Matches the visual language of the landing-page SidebarToc:
    mono uppercase eyebrow + numbered list, no bullet underlines. */
 .doc-body .md-toc-heading {

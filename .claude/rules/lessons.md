@@ -1,71 +1,71 @@
 # Lessons Learned
 
-> **Self-Improvement Loop:** File này ghi lại lỗi đã mắc, các lần user sửa, và pattern riêng của project. **Đọc lại ở đầu mỗi session.**
+> **Self-Improvement Loop:** This file records mistakes made, user corrections, and project-specific patterns. **Re-read it at the start of every session.**
 
-Khi user sửa một lỗi:
+When the user corrects a mistake:
 
-1. Xác định pattern hoặc nguyên nhân gốc.
-2. Thêm một mục mới ở cuối file: ngày, bối cảnh/lỗi, rule mới.
+1. Identify the pattern or root cause.
+2. Add a new entry at the end of the file: date, context/mistake, new rule.
 
-Mục cũ bị rule mới thay thế thì sửa hoặc gộp tại chỗ, không để hai rule mâu thuẫn cùng tồn tại.
+When a new rule replaces an old entry, edit or merge it in place; never leave two contradictory rules in the file.
 
 ---
 
-### [2026-03-07 → 2026-09-29] - Luôn lập plan vật lý trước khi code, đúng layout
+### [2026-03-07 → 2026-09-29] - Always write a physical plan before coding, in the right layout
 
-- **Mistake (lặp lại 2026-03-07, 03-08, 03-13, 03-16):** code khi chưa có file plan; đặt plan sai thư mục; quên tick `[x]`; user đưa plan trong prompt thì bỏ qua bước tạo file.
+- **Mistake (repeated 2026-03-07, 03-08, 03-13, 03-16):** coded without a plan file; put the plan in the wrong directory; forgot to tick `[x]`; skipped creating the file when the user supplied the plan in the prompt.
 - **New Rule:**
-  1. Mọi task không tầm thường phải có plan directory `documents/plans/YYYY-MM-DD/<plan-slug>/` gồm `plan.md` + `phase-NN-<name>.md`, theo template trong `.claude/rules/validation.md`, TRƯỚC khi code. Không có `task.md` theo ngày.
-  2. User đưa plan inline ("Implement the following plan") vẫn phải materialize plan directory ở bước đầu tiên.
-  3. Xong task nào tick `[x]` ngay trong phase file và cập nhật cột Status của `plan.md` trong cùng thay đổi, trước khi báo cáo.
+  1. Every non-trivial task MUST have a plan directory `documents/plans/YYYY-MM-DD/<plan-slug>/` containing `plan.md` + `phase-NN-<name>.md`, following the template in `.claude/rules/validation.md`, BEFORE coding. There is no per-day `task.md`.
+  2. When the user supplies the plan inline ("Implement the following plan"), the plan directory MUST still be materialized as the first step.
+  3. When a task is done, tick `[x]` in the phase file and update the Status column of `plan.md` in the same change, before reporting.
 
-### [2026-03-07] - Không bao giờ thực thi mã khi chưa được approve plan
+### [2026-03-07] - Never execute code before the plan is approved
 
-- **Mistake (lặp lại 2026-03-08):** tự nhảy sang implementation khi user chưa duyệt; gộp giải thích lỗi + fix vào cùng một lượt.
-- **New Rule:** DỪNG LẠI CHỜ DUYỆT sau khi nộp plan ("ok", "duyệt", "triển khai" hoặc tương đương). `[ ] Task` chỉ chuyển `[x]` sau khi user đã đồng ý plan và gate đã exit 0.
+- **Mistake (repeated 2026-03-08):** jumped to implementation before the user approved; combined the error explanation and the fix in a single turn.
+- **New Rule:** STOP AND WAIT FOR APPROVAL after submitting a plan ("ok", "approved", "go ahead" or equivalent). A `[ ] Task` only becomes `[x]` after the user has agreed to the plan and the gate has exited 0.
 
-### [2026-03-07] - Đa nền tảng & test tự động
+### [2026-03-07] - Cross-platform and automated tests
 
-- **Mistake:** chỉ fix cho macOS và không phát hiện project thiếu test.
-- **New Rule:** script và code phải chạy trên Linux, Windows, macOS (script Node, không phụ thuộc shell riêng của một OS). Hàm mới phải có test chứng minh hành vi.
+- **Mistake:** fixed only for macOS and failed to notice the project lacked tests.
+- **New Rule:** scripts and code MUST run on Linux, Windows and macOS (Node scripts, no dependency on one OS's shell). A new function MUST have a test proving its behavior.
 
-### [2026-03-07] - Không dùng đường dẫn tuyệt đối trong docs
+### [2026-03-07] - No absolute paths in docs
 
-- **Mistake:** dùng `file://` + đường dẫn máy cá nhân trong README/plan — lộ cấu trúc thư mục cá nhân, hỏng link trên máy khác.
-- **New Rule:** mọi liên kết trong tài liệu git của project dùng **đường dẫn tương đối**.
+- **Mistake:** used `file://` + a personal machine path in a README/plan — it leaks a personal directory structure and breaks the link on other machines.
+- **New Rule:** every link in the project's git-tracked documentation uses a **relative path**.
 
-### [2026-03-07] - Gate trước khi báo hoàn thành
+### [2026-03-07] - Gate before reporting done
 
-- **Mistake:** không đọc hướng dẫn skill liên quan trước khi làm và báo hoàn thành khi chưa chạy gate kiểm tra.
-- **New Rule:** TUYỆT ĐỐI không đánh dấu task hoàn thành khi gate trong `.claude/rules/validation.md` chưa exit 0. Đọc skill phù hợp của runtime trước bước implementation.
+- **Mistake:** did not read the relevant skill instructions before starting, and reported done without running the verification gate.
+- **New Rule:** NEVER mark a task done while the gate in `.claude/rules/validation.md` has not exited 0. Read the appropriate runtime skill before the implementation step.
 
-### [2026-03-09] - Chú ý script trên môi trường ESM
+### [2026-03-09] - Watch out for scripts in an ESM environment
 
-- **Mistake:** chạy script `.js` dùng `require()` trong project `"type": "module"` → `ReferenceError: require is not defined in ES module scope`.
-- **New Rule:** trước khi tạo script Node, kiểm `package.json`. ESM thì dùng `import` hoặc đuôi `.cjs`.
+- **Mistake:** ran a `.js` script that uses `require()` in a `"type": "module"` project → `ReferenceError: require is not defined in ES module scope`.
+- **New Rule:** before creating a Node script, check `package.json`. If it is ESM, use `import` or a `.cjs` extension.
 
-### [2026-06-07] - CI token hết hạn + reusable workflow permissions + GitHub Packages
+### [2026-06-07] - Expired CI token + reusable workflow permissions + GitHub Packages
 
-- **Mistake/Context:** Release CI fail vì PAT `CI_WORKER_REPOSITORY_TOKEN` hết hạn (checkout "could not read Username") và npm publish 404 do `NPM_TOKEN` hết hạn. Khi chuyển sang GitHub Packages, suýt bỏ sót `packages: write` ở caller workflow.
+- **Mistake/Context:** Release CI failed because the PAT `CI_WORKER_REPOSITORY_TOKEN` expired (checkout "could not read Username") and npm publish returned 404 because `NPM_TOKEN` expired. When moving to GitHub Packages, `packages: write` was almost left out of the caller workflow.
 - **New Rule:**
-  1. Ưu tiên `GITHUB_TOKEN` built-in (tự hết hạn theo job, không cần xoay tay) thay PAT/npm-token có hạn cho CI publish/checkout. Nếu buộc dùng PAT → đặt expiry dài + lịch nhắc gia hạn.
-  2. **Reusable workflow (`workflow_call`)**: token permissions ⊆ caller job. Muốn job con (vd `deploy.yml`) có `packages: write` thì PHẢI khai quyền đó ở **job gọi** trong `release.yml` (job `deploy`, `permissions: { contents: read, packages: write }`), không chỉ ở file con. Top-level `permissions` của `release.yml` giữ `contents: read` (least privilege), không nâng lên `packages: write`.
-  3. Yarn Berry auth lấy từ `.yarnrc.yml` (`npmScopes.<scope>.npmAuthToken` interpolate env), KHÔNG từ `.npmrc` mà `setup-node registry-url` tạo. Set đúng env `YARN_NPM_AUTH_TOKEN`.
-  4. GitHub Packages trên private repo: chỉ collaborator/được-grant cài được, kể cả có PAT `read:packages` → muốn share người lạ phải invite hoặc dùng org.
+  1. Prefer the built-in `GITHUB_TOKEN` (it expires with the job and needs no manual rotation) over an expiring PAT/npm token for CI publish/checkout. If a PAT is unavoidable → set a long expiry + a renewal reminder.
+  2. **Reusable workflow (`workflow_call`)**: token permissions ⊆ caller job. For the called job (e.g. `deploy.yml`) to have `packages: write`, that permission MUST be declared on the **calling job** in `release.yml` (job `deploy`, `permissions: { contents: read, packages: write }`), not only in the called file. The top-level `permissions` of `release.yml` stay `contents: read` (least privilege), never raised to `packages: write`.
+  3. Yarn Berry auth comes from `.yarnrc.yml` (`npmScopes.<scope>.npmAuthToken` interpolating an env var), NOT from the `.npmrc` that `setup-node registry-url` creates. Set the env var `YARN_NPM_AUTH_TOKEN` correctly.
+  4. GitHub Packages on a private repo: only collaborators/granted users can install, even with a `read:packages` PAT → to share with outsiders, invite them or use an org.
 
-### [2026-06-07] - Example workspace KHÔNG được có `postinstall` build hook
+### [2026-06-07] - An example workspace MUST NOT have a `postinstall` build hook
 
-- **Mistake:** Thêm `"postinstall": "nuxt prepare"` vào `examples/nuxt-v4/package.json`. CI `yarn install --immutable` chạy hook này trong Link step — TRƯỚC khi lib `dist/` được build — `nuxt.config.ts` import `@duydpdev/style-generator/vite` không resolve được → workspace build fail (exit 1) → cả install fail. Local pass vì `dist/` đã tồn tại.
-- **New Rule:** Trong monorepo, example/consumer workspace TUYỆT ĐỐI không đặt lifecycle hook (`postinstall`/`prepare`) gọi tool cần lib đã build (vd `nuxt prepare`, codegen). `yarn install --immutable` chạy các hook đó trước khi root build → fail. Đổi thành script thủ công (`prepare:nuxt`) hoặc để `dev`/`build`/`typecheck` tự lo. Đối chiếu các example sẵn có (các example hiện có KHÔNG có install hook) trước khi thêm script.
-- **Liên quan:** root `tsconfig.json` dùng `"include": ["src", "e2e"]`, nên `examples/*` mới không nằm trong phạm vi `tsc --noEmit` của pre-commit và không cần thêm vào `exclude`. Mỗi example tự typecheck bằng script của chính nó (CI `peer-matrix` build/typecheck `examples/react-v4`).
+- **Mistake:** Added `"postinstall": "nuxt prepare"` to `examples/nuxt-v4/package.json`. CI `yarn install --immutable` runs this hook in the Link step — BEFORE the library `dist/` is built — and `nuxt.config.ts` importing `@duydpdev/style-generator/vite` could not resolve → the workspace build failed (exit 1) → the whole install failed. It passed locally because `dist/` already existed.
+- **New Rule:** In a monorepo, an example/consumer workspace MUST NEVER define a lifecycle hook (`postinstall`/`prepare`) that calls a tool needing the built library (e.g. `nuxt prepare`, codegen). `yarn install --immutable` runs those hooks before the root build → fails. Change it to a manual script (`prepare:nuxt`) or let `dev`/`build`/`typecheck` handle it themselves. Check the existing examples (the current examples have NO install hook) before adding a script.
+- **Related:** the root `tsconfig.json` uses `"include": ["src", "e2e"]`, so new `examples/*` are outside the scope of the pre-commit `tsc --noEmit` and need not be added to `exclude`. Each example type-checks with its own script (CI `peer-matrix` builds/type-checks `examples/react-v4`).
 
-### [2026-09-29] - Một cây tài liệu `documents/`; không vendor khung agent/skill; chỉ giữ lịch sử từ v4
+### [2026-09-29] - One `documents/` tree; do not vendor an agent/skill framework; keep history only from v4
 
-- **Context:** Khung agent Antigravity/Gemini (thư mục `.agent` ở root cùng bản sao agents/commands/skills trong `.claude`) lệch pha với runtime và bắt chạy script Python không có trong quy trình của một lib TypeScript. Tài liệu nằm rải ở `docs/` và `plans/` ở root; plan theo file phẳng + `task.md` theo ngày khó theo dõi khi một plan có nhiều phase. Plan/brainstorm trước 2026-09-28 mô tả API đã xoá ở 4.0.0.
+- **Context:** The Antigravity/Gemini agent framework (a root `.agent` directory plus copies of agents/commands/skills under `.claude`) was out of sync with the runtime and forced running Python scripts that are not part of a TypeScript library's workflow. Docs were scattered across root `docs/` and `plans/`; plans as flat files + a per-day `task.md` were hard to follow when one plan has several phases. Plans/brainstorms before 2026-09-28 describe the API removed in 4.0.0.
 - **New Rule:**
-  1. Nguồn sự thật cho agent là `.claude/CLAUDE.md` + `.claude/rules/*.md`. Không thêm lại thư mục agent/command/skill vào repo; dùng skill của runtime.
-  2. Mọi tài liệu nằm dưới `documents/` theo layout ở mục "Documentation layout" của `.claude/CLAUDE.md`; `.agentkit/config.yaml` trỏ `paths.docs`/`paths.plans` vào đó. Tool nào tạo `docs/` hoặc `plans/` ở root thì chuyển file vào `documents/` trước khi commit và sửa cấu hình của tool đó.
-  3. Lịch sử trước 2026-09-28 tra bằng git history, không khôi phục vào tree.
+  1. The source of truth for agents is `.claude/CLAUDE.md` + `.claude/rules/*.md`. Do not add agent/command/skill directories back to the repo; use the runtime's skills.
+  2. All documentation lives under `documents/` following the layout in the "Documentation layout" section of `.claude/CLAUDE.md`; `.agentkit/config.yaml` points `paths.docs`/`paths.plans` there. If any tool creates a root `docs/` or `plans/`, move the files into `documents/` before committing and fix that tool's configuration.
+  3. Look up pre-2026-09-28 history in git history; do not restore it into the tree.
 
 ### [2026-09-30] - "Local build green" is not proof when node_modules holds hand-made links
 

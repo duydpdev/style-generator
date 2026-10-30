@@ -1,9 +1,9 @@
 # ─────────────────────────────────────────────────────
-# Deploy — Build & publish package lên GitHub Packages (npm.pkg.github.com)
+# Deploy — Build & publish the package to GitHub Packages (npm.pkg.github.com)
 #
-# Reusable workflow, được gọi từ release.yml. Chạy tay (workflow_dispatch) để
-# publish lại một tag đã được push nhưng chưa publish (runbook: documents/deploy.md).
-# Input: tag name (e.g. v1.2.0 hoặc v1.2.0-DEV.1)
+# Reusable workflow, called from release.yml. Run it by hand (workflow_dispatch)
+# to publish a tag that was pushed but not yet published (runbook: documents/deploy.md).
+# Input: tag name (e.g. v1.2.0 or v1.2.0-DEV.1)
 # ─────────────────────────────────────────────────────
 name: Deploy
 

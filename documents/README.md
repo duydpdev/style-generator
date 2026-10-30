@@ -1,35 +1,35 @@
 # Documents
 
-Mục lục toàn bộ tài liệu của `@duydpdev/style-generator`. Tra cứu API, option và CLI nằm ở [`README.md`](../README.md) của repo; quy ước cho agent nằm ở [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
+Index of all documentation for `@duydpdev/style-generator`. API, option and CLI reference lives in the repo's [`README.md`](../README.md); conventions for agents live in [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
 
-## Tài liệu sống (hiển thị trên site `/docs`)
+## Living documents (shown on the site `/docs`)
 
-| File                                   | Nội dung                                                                     |
-| -------------------------------------- | ---------------------------------------------------------------------------- |
-| [`architecture.md`](./architecture.md) | Kiến trúc 4.0.0: data flow, registry, `themeAxes`, spacing, exports, site    |
-| [`guide.md`](./guide.md)               | Hướng dẫn tích hợp từng bước (tiếng Việt), link sang README cho bảng tra cứu |
-| [`testing.md`](./testing.md)           | Các lớp test, vì sao tồn tại, chạy ở đâu                                     |
-| [`deploy.md`](./deploy.md)             | Git flow (feature cắt từ `main`), CI, release, publish GitHub Packages       |
+| File                                   | Contents                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| [`architecture.md`](./architecture.md) | 4.0.0 architecture: data flow, registry, `themeAxes`, spacing, exports, site    |
+| [`guide.md`](./guide.md)               | Step-by-step integration guide, links to the README for reference tables        |
+| [`testing.md`](./testing.md)           | The test layers, why they exist, where they run                                 |
+| [`deploy.md`](./deploy.md)             | Git flow (features branch from `main`), CI, release, GitHub Packages publishing |
 
-Site render mọi file `documents/*.md` cấp cao nhất trừ file này (`site/src/lib/docs-content.ts`).
+The site renders every top-level `documents/*.md` file except this one (`site/src/lib/docs-content.ts`).
 
-## Standards (không hiển thị trên site)
+## Standards (not shown on the site)
 
-| File                                                               | Nội dung                                                                                                   |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| [`standards/git-workflow-app.md`](./standards/git-workflow-app.md) | Chuẩn git cho app có 4 nhánh môi trường (`develop` → `staging` → `pre-release` → `release`), dùng cho team |
+| File                                                               | Contents                                                                                                            |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| [`standards/git-workflow-app.md`](./standards/git-workflow-app.md) | Git standard for apps with 4 environment branches (`develop` → `staging` → `pre-release` → `release`), for team use |
 
 ## Migration
 
-| File                                                                                       | Nội dung                                                        |
-| ------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)                                     | Breaking changes 4.x → 5.0.0, recipe grep và diff CSS sinh ra   |
-| [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md)                                     | Breaking changes 3.x → 4.0.0 và runbook rollback                |
-| [`migration/4.0-to-4.1.md`](./migration/4.0-to-4.1.md)                                     | Validation siết chặt ở 4.1.0 (options, config, biến CSS, ngoặc) |
-| [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md)                   | Lịch sử subpath exports của 3.x                                 |
-| [`migration/v4-ac4-letterspacing-proof.md`](./migration/v4-ac4-letterspacing-proof.md)     | Bằng chứng thêm một category chạm đúng 3 file                   |
-| [`migration/v4-schema-autocomplete-proof.md`](./migration/v4-schema-autocomplete-proof.md) | Bằng chứng `theme.schema.json` từ chối key lạ (AC6)             |
-| [`migration/poc-custom-variant.md`](./migration/poc-custom-variant.md)                     | PoC `@custom-variant` cho state palette                         |
+| File                                                                                       | Contents                                                                |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)                                     | Breaking changes 4.x → 5.0.0, grep recipes and the generated CSS diff   |
+| [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md)                                     | Breaking changes 3.x → 4.0.0 and the rollback runbook                   |
+| [`migration/4.0-to-4.1.md`](./migration/4.0-to-4.1.md)                                     | Stricter validation in 4.1.0 (options, config, CSS variables, brackets) |
+| [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md)                   | History of the 3.x subpath exports                                      |
+| [`migration/v4-ac4-letterspacing-proof.md`](./migration/v4-ac4-letterspacing-proof.md)     | Proof that adding a category touches exactly 3 files                    |
+| [`migration/v4-schema-autocomplete-proof.md`](./migration/v4-schema-autocomplete-proof.md) | Proof that `theme.schema.json` rejects unknown keys (AC6)               |
+| [`migration/poc-custom-variant.md`](./migration/poc-custom-variant.md)                     | PoC of `@custom-variant` for the state palette                          |
 
 ## Local notes (not published)
 

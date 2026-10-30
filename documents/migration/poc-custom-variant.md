@@ -40,8 +40,8 @@ class), its `@apply` body is the only thing under test.
 
 ## Installed Tailwind version (verified, not assumed)
 
-The plan's Task 5 line assumed Tailwind **4.3.0 [UNVERIFIED cho tới khi PoC
-chạy]**. Running the PoC required first checking what's actually resolved.
+The plan's Task 5 line assumed Tailwind **4.3.0 [UNVERIFIED until the PoC
+ran]**. Running the PoC required first checking what's actually resolved.
 
 **Initial state (as found when the PoC was first run).** Root
 `node_modules/tailwindcss` was **4.2.1**, while `@tailwindcss/node` (which
@@ -88,7 +88,7 @@ or `result.build([])`.
 ## Recommendation
 
 **PASS → worth considering for a future 4.1 minor**, per the plan's own
-disposition rule ("PASS: đề xuất cân nhắc cho 4.1 minor"). Concretely, this
+disposition rule ("PASS: propose considering for the 4.1 minor"). Concretely, this
 opens the door to a `createStyleSystem`/`generate()` option that emits one
 `@custom-variant <state>-hover (&:hover)` (etc.) per `descriptor.states`
 entry, self-documenting the intent (`state-hover:` reads clearly at the call

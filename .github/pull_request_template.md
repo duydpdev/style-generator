@@ -5,7 +5,7 @@ first into `develop` (DEV prerelease), then, once approved, into `main`.
 The release type comes from the headers of the branch's commits, not from this
 title: `[release]` major, `[feat]` minor, `[fix]` `[perf]` `[refactor]` `[style]`
 `[revert]` patch, `[docs]` `[chore]` `[test]` `[build]` `[ci]` none.
-See documents/deploy.md → "Luồng một feature".
+See documents/deploy.md → "Feature flow".
 -->
 
 ## What and why

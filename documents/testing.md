@@ -1,57 +1,57 @@
 # Testing Guide
 
-Tài liệu mô tả cách kiểm thử `@duydpdev/style-generator` 4.x. Code test là nguồn sự thật cho _từng ca_; tài liệu này chỉ giữ _các lớp test_, _vì sao_ mỗi lớp tồn tại và _chạy ở đâu_.
+This document describes how `@duydpdev/style-generator` 4.x is tested. The test code is the source of truth for _each case_; this document only keeps the _test layers_, _why_ each layer exists and _where it runs_.
 
 ## CI/CD Pipeline
 
-Hệ thống kiểm tra hai lớp:
+The checks have two layers:
 
-1. **Local (pre-commit):** `Husky` + `lint-staged` chạy trên snapshot đã stage của các file code được stage: `eslint --fix` → `prettier --write` → `tsc --noEmit` → `vitest related --run` (chỉ test import file được stage). Husky được cài qua `postinstall` (Yarn Berry không chạy `prepare`).
-2. **Remote (GitHub Actions, `.github/workflows/ci.yml` và `.github/workflows/ci-matrix.yml`, PR vào `main`/`develop`/`release/**`):\*\*
-   - job `check`: audit dependency production (chặn high/critical) và audit toàn bộ (chỉ log) → commitlint → `build:all` (đứng trước lint vì ESLint có kiểu cũng quét `examples/**`, vốn import thư viện đã build qua `link:../..`) → lint → `prettier:check` → `tsc` → kiểm cú pháp (`node --check`) và type (`yarn typecheck:scripts`) của `scripts/*.mjs` và `site/scripts/*.mjs` → build site (`yarn workspace site build`) → `yarn workspace site check:links` (link tương đối và `#anchor` trong markdown mà site render) → typecheck 4 example (`design-system-example`, `react-v4-example`, `next-v4-example`, `nuxt-v4-example`) → `yarn workspace design-system-example test` (test DX, xem [lớp 6](#6-test-dx-của-example-design-system)) → build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `check:smoke` → `yarn check:types-pack` (đóng gói tarball rồi chạy `@arethetypeswrong/cli --profile node16`: ESM và CJS đều phải resolve ra đúng `.d.ts`/`.d.cts`) → smoke dev-server Vite (`node scripts/vite-dev-smoke.mjs`, hai kịch bản: (1) chỉ Vite ≥ 6 (Vite 5 không có lazy `buildStart`, kịch bản bị bỏ qua): `createServer()` không `listen()` rồi `transformRequest(..., { ssr: true })` — plugin đặt `perEnvironmentStartEndDuringDev: true` nên `buildStart` vẫn chạy và `theme.css` được ghi; (2) xoá `theme.css` của `examples/react-v4`, `await server.listen()` để `buildStart` ghi lại nó, rồi sửa theme (`examples/design-system/src/theme.json`) dưới dev server thật và chờ `theme.css` được ghi lại + `full-reload`) → `yarn typecheck:dist` (hai nửa: `tsconfig.dts-check.json` kiểm `dist/*.d.ts` và `dist/*.d.cts` với `skipLibCheck: false` dưới `module: ESNext` + Bundler; `tsconfig.dts-check.cjs.json` kiểm `dist/*.d.cts` như một consumer CommonJS thật — `module: node16`, `skipLibCheck: false`, file `scripts/dist-types.cjs.assert.cts` tự import qua tên package theo điều kiện `require`. Nửa CJS dùng `node16`, không dùng `nodenext`, vì từ TS 5.8 `nodenext` cho phép `require()` ESM và sẽ che `TS1479` trên peer ESM-only. `dist/vite.d.cts` là `vite.d.ts` với import `vite` viết lại thành `import type … assert { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`); attw không resolve peer type nên không thay được bước này) → `yarn test:coverage` (fail nếu coverage tụt dưới `coverage.thresholds` trong `vitest.config.ts`) → `yarn test:types`;
-   - job `e2e`: Playwright trên Chromium và WebKit (`build:all` → cài browser → `yarn test:e2e`);
-   - job `tailwind-floor`: pin các package Tailwind về `~4.1.0` (chỉ trong checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`, để peer `tailwindcss ^4.1.0` thực sự được kiểm — lockfile đang giải ở bản 4.3.x nên nếu không có job này ngưỡng dưới không bao giờ được chạm tới.
-   - job `node-floor`: build và chạy `check:smoke` trên Node `20.19.0`, sàn của `engines.node` (các job khác chạy Node 22);
-   - job `peer-matrix` (4 leg): build lib bằng toolchain đã commit, rồi ép **một** peer về bản mới nhất của **một** major qua `resolutions` (`vite` 5/6/8, `typescript` 6), assert bản đã resolve là `N.x`, rồi build `examples/react-v4`, (leg `vite`) smoke dev-server, typecheck example và `yarn typecheck:dist`, (leg `typescript`) `yarn test:types`. Mọi leg phải xanh (đỏ là CI đỏ); không còn leg `experimental`: leg TypeScript 7 đã bỏ vì Yarn 4.10 không cài được TypeScript 7 native. Kết quả quyết định range peer (sửa tay). Chỉ bản mới nhất của mỗi major được chạy; sàn của range (vd. `vite@5.0.0`) không được kiểm;
-   - `e2e`, `tailwind-floor`, `node-floor` và `peer-matrix` nằm trong `ci-matrix.yml`, có `paths-ignore: ["documents/**"]` ở mức workflow: PR chỉ đổi tài liệu không chạy workflow này. Job `check` của `ci.yml` vẫn chạy với PR đó vì site render `documents/*.md`. Mọi job của cả hai workflow bỏ qua PR draft (`if: github.event.pull_request.draft == false`) và chạy khi PR được đánh dấu ready (`ready_for_review`).
+1. **Local (pre-commit):** `Husky` + `lint-staged` run on the staged snapshot of the staged code files: `eslint --fix` → `prettier --write` → `tsc --noEmit` → `vitest related --run` (only tests that import the staged files). Husky is installed through `postinstall` (Yarn Berry does not run `prepare`).
+2. **Remote (GitHub Actions, `.github/workflows/ci.yml` and `.github/workflows/ci-matrix.yml`, PRs into `main`/`develop`/`release/**`):\*\*
+   - job `check`: production dependency audit (blocks high/critical) and full audit (log only) → commitlint → `build:all` (before lint because the type-aware ESLint also scans `examples/**`, which import the built library through `link:../..`) → lint → `prettier:check` → `tsc` → syntax check (`node --check`) and type check (`yarn typecheck:scripts`) of `scripts/*.mjs` and `site/scripts/*.mjs` → site build (`yarn workspace site build`) → `yarn workspace site check:links` (relative links and `#anchor`s in the markdown that the site renders) → typecheck of the 4 examples (`design-system-example`, `react-v4-example`, `next-v4-example`, `nuxt-v4-example`) → `yarn workspace design-system-example test` (DX test, see [layer 6](#6-dx-test-for-the-design-system-example)) → build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `check:smoke` → `yarn check:types-pack` (packs the tarball and then runs `@arethetypeswrong/cli --profile node16`: both ESM and CJS must resolve to the correct `.d.ts`/`.d.cts`) → Vite dev-server smoke (`node scripts/vite-dev-smoke.mjs`, two scenarios: (1) Vite ≥ 6 only (Vite 5 has no lazy `buildStart`, so the scenario is skipped): `createServer()` without `listen()` and then `transformRequest(..., { ssr: true })` — the plugin sets `perEnvironmentStartEndDuringDev: true`, so `buildStart` still runs and `theme.css` is written; (2) delete `theme.css` of `examples/react-v4`, `await server.listen()` so `buildStart` writes it again, then edit the theme (`examples/design-system/src/theme.json`) under a real dev server and wait for `theme.css` to be rewritten + `full-reload`) → `yarn typecheck:dist` (two halves: `tsconfig.dts-check.json` checks `dist/*.d.ts` and `dist/*.d.cts` with `skipLibCheck: false` under `module: ESNext` + Bundler; `tsconfig.dts-check.cjs.json` checks `dist/*.d.cts` as a real CommonJS consumer — `module: node16`, `skipLibCheck: false`, the file `scripts/dist-types.cjs.assert.cts` imports through the package name under the `require` condition itself. The CJS half uses `node16`, not `nodenext`, because since TS 5.8 `nodenext` allows `require()` of ESM and would mask `TS1479` on an ESM-only peer. `dist/vite.d.cts` is `vite.d.ts` with the `vite` import rewritten as `import type … assert { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`); attw does not resolve peer types, so it cannot replace this step) → `yarn test:coverage` (fails if coverage drops below `coverage.thresholds` in `vitest.config.ts`) → `yarn test:types`;
+   - job `e2e`: Playwright on Chromium and WebKit (`build:all` → install browsers → `yarn test:e2e`);
+   - job `tailwind-floor`: pins the Tailwind packages to `~4.1.0` (only in the runner's checkout) and then runs `yarn test` + `yarn test:e2e`, so the peer `tailwindcss ^4.1.0` is really checked — the lockfile currently resolves to 4.3.x, so without this job the lower bound would never be reached.
+   - job `node-floor`: builds and runs `check:smoke` on Node `20.19.0`, the floor of `engines.node` (the other jobs run Node 22);
+   - job `peer-matrix` (4 legs): builds the lib with the committed toolchain, then forces **one** peer to the latest version of **one** major through `resolutions` (`vite` 5/6/8, `typescript` 6), asserts that the resolved version is `N.x`, then builds `examples/react-v4`, (the `vite` leg) dev-server smoke, example typecheck and `yarn typecheck:dist`, (the `typescript` leg) `yarn test:types`. Every leg must be green (red means CI is red); there is no `experimental` leg any more: the TypeScript 7 leg was dropped because Yarn 4.10 cannot install native TypeScript 7. The results decide the peer ranges (edited by hand). Only the latest version of each major is run; the floor of a range (e.g. `vite@5.0.0`) is not checked;
+   - `e2e`, `tailwind-floor`, `node-floor` and `peer-matrix` live in `ci-matrix.yml`, which has `paths-ignore: ["documents/**"]` at the workflow level: a PR that only changes documentation does not run this workflow. The `check` job of `ci.yml` still runs for such a PR because the site renders `documents/*.md`. Every job in both workflows skips draft PRs (`if: github.event.pull_request.draft == false`) and runs when the PR is marked ready (`ready_for_review`).
 
-`check:publish-target` chạy trong `prepublish` và trong workflow publish (`deploy.yml`); `deploy.yml` chạy thêm `check:types-pack` ngay sau `build:all`, xem [`deploy.md`](./deploy.md).
+`check:publish-target` runs in `prepublish` and in the publish workflow (`deploy.yml`); `deploy.yml` additionally runs `check:types-pack` right after `build:all`, see [`deploy.md`](./deploy.md).
 
 ---
 
-## Các lớp test
+## Test layers
 
-### 1. Unit test (Vitest)
+### 1. Unit tests (Vitest)
 
 ```bash
-yarn test                                                   # toàn bộ *.test.ts
-yarn test:watch                                             # chế độ watch
-yarn test:coverage                                          # v8 coverage; fail dưới coverage.thresholds (vitest.config.ts)
-yarn vitest run src/features/registry/generateSourceInline.test.ts   # một file
+yarn test                                                   # all *.test.ts
+yarn test:watch                                             # watch mode
+yarn test:coverage                                          # v8 coverage; fails below coverage.thresholds (vitest.config.ts)
+yarn vitest run src/features/registry/generateSourceInline.test.ts   # a single file
 ```
 
-Test nằm cạnh code (`*.test.ts`). Nhóm chính:
+Tests sit next to the code (`*.test.ts`). The main groups:
 
-- `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên số nguyên, key không round-trip, va chạm `borderWidth`/`colors`, `fontWeight` 1–1000, key typography đè `sp-*`/`font-*`), `defineTheme`, kiểm tra option (`extraSources`, `screens`, `breakpoints`, `spacing.properties` dạng mảng), thử inject (cả `generateThemeCss`).
-- `src/features/registry/*` — descriptor, `flattenByCategory`, `generateSourceInline` (kể cả state lines).
-- `src/features/{theme-css,typography,spacing}/*` — từng khối CSS được sinh.
+- `src/core/*` — `generate()`, `ThemeSchema` (unknown keys, unsafe values, aliases, `themeAxes`, integer names, keys that do not round-trip, `borderWidth`/`colors` collisions, `fontWeight` 1–1000, typography keys that shadow `sp-*`/`font-*`), `defineTheme`, option validation (`extraSources`, `screens`, `breakpoints`, array-form `spacing.properties`), injection attempts (including `generateThemeCss`).
+- `src/features/registry/*` — descriptors, `flattenByCategory`, `generateSourceInline` (including state lines).
+- `src/features/{theme-css,typography,spacing}/*` — each generated CSS block.
 - `src/features/{tokens,cva}/*` — `createDesignTokens`, `createVariantMapper` (`{ states }`).
-- `src/features/{vite,next}/*` — plugin (emit trong `buildStart`, `addWatchFile`, watcher, path guard, plugin không tham số đọc `style-gen.config.json`).
-- `src/node/*` — runner Node dùng chung: `loadStyleGenConfig` (test chuyển từ `config.test.ts` cũ), `resolveProjectPath` (không viết lại dấu `/` đầu; theme ngoài root, `outDir` trong root), `themeEmitter` (nhãn từng bước, chỉ ghi khi nội dung đổi), `watchThemeFile` (đọc lại config; config sai giữ bản hợp lệ gần nhất), `resolvePluginTarget`.
-- `src/cli/*` — `run.test.ts` gọi `runCli(args, cwd)` trực tiếp (registry, `--help` từng lệnh, flag lạ → mã 1, `budget` flag lỗi → mã 2) vì lệnh trả mã thoát chứ không gọi `process.exit`; `index.test.ts` chỉ kiểm `process.exitCode`; `init`, `generate` (gồm `--watch` với chokidar thật và test sửa config khi đang watch, V5-06), `schema`, `tokens` (module sinh ra được import lại và so với `createDesignTokens`), `budget` (đo gzip trên file/thư mục tạm, ba mã thoát, hai dòng `OK:`/`OVER BUDGET:`), `doctor` (cảnh báo va chạm utility, `aliasHints`, lỗi theme × options, config sai dừng sớm; `legacyColorVars` quét biến `--sg-<màu>` kiểu 4.x trên thư mục tạm).
+- `src/features/{vite,next}/*` — plugins (emit in `buildStart`, `addWatchFile`, watcher, path guard, the no-argument plugin reading `style-gen.config.json`).
+- `src/node/*` — the shared Node runner: `loadStyleGenConfig` (tests moved from the old `config.test.ts`), `resolveProjectPath` (does not rewrite a leading `/`; theme outside the root, `outDir` inside the root), `themeEmitter` (per-stage labels, writes only when the content changed), `watchThemeFile` (re-reads the config; an invalid config keeps the last valid one), `resolvePluginTarget`.
+- `src/cli/*` — `run.test.ts` calls `runCli(args, cwd)` directly (registry, per-command `--help`, unknown flag → code 1, `budget` invalid flag → code 2) because commands return an exit code rather than calling `process.exit`; `index.test.ts` only checks `process.exitCode`; `init`, `generate` (including `--watch` with a real chokidar and a test that edits the config while watching, V5-06), `schema`, `tokens` (the generated module is re-imported and compared with `createDesignTokens`), `budget` (measures gzip on temporary files/directories, three exit codes, the two `OK:`/`OVER BUDGET:` lines), `doctor` (utility collision warnings, `aliasHints`, theme × options errors, an invalid config stops early; `legacyColorVars` scans for 4.x-style `--sg-<color>` variables in a temporary directory).
 - `src/shared/*` — `helpers` (kebab/camel), `writeFileAtomic`.
 
-Coverage dùng provider v8 với `include: ["src/**/*.ts"]`, nên file không có test nào import (vd `src/cli/index.ts`) vẫn hiện với 0 % thay vì bị bỏ qua. Loại trừ file test (`*.test.ts`, `*.test-d.ts`), `*.d.ts` và `src/__integration__/**`. Chưa có ngưỡng bắt buộc. Mốc đo ngày 2026-10-06: statements 91.35 %, branches 83.2 %, functions 92.48 %, lines 91.58 %; `src/cli/index.ts` 0 %.
+Coverage uses the v8 provider with `include: ["src/**/*.ts"]`, so a file that no test imports (e.g. `src/cli/index.ts`) still shows up at 0 % instead of being skipped. Test files (`*.test.ts`, `*.test-d.ts`), `*.d.ts` and `src/__integration__/**` are excluded. There is no mandatory threshold yet. Baseline measured on 2026-10-06: statements 91.35 %, branches 83.2 %, functions 92.48 %, lines 91.58 %; `src/cli/index.ts` 0 %.
 
-Bảng `text` gom theo thư mục (dòng `src/cli` rồi dòng `index.ts`), nên không `grep` theo đường dẫn file trên stdout; kiểm bằng `coverage/coverage-final.json`.
+The `text` table groups by directory (the `src/cli` row and then the `index.ts` row), so do not `grep` by file path on stdout; check `coverage/coverage-final.json` instead.
 
-### 2. Type test (`*.test-d.ts`)
+### 2. Type tests (`*.test-d.ts`)
 
 ```bash
-yarn test:types      # vitest run --typecheck.only (*.test-d.ts; `yarn test` không chạy chúng)
+yarn test:types      # vitest run --typecheck.only (*.test-d.ts; `yarn test` does not run them)
 ```
 
-Dùng `expectTypeOf` để khoá suy luận kiểu: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, chữ ký `createVariantMapper` (một `true` sót lại ở tham số thứ ba phải là lỗi TS), `resolveSpacing`/`ResponsiveValueStrict`, `SpacingProps`/`splitSpacingProps`/`themeAxisAttributes` (`src/features/recipes/*.test-d.ts`), kiểu config mà `styleGenNext` trả về (object hay dạng hàm), và các subpath export (`src/exports/subpath-exports.test-d.ts`).
+Uses `expectTypeOf` to lock down type inference: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, the `createVariantMapper` signature (a leftover `true` in the third parameter must be a TS error), `resolveSpacing`/`ResponsiveValueStrict`, `SpacingProps`/`splitSpacingProps`/`themeAxisAttributes` (`src/features/recipes/*.test-d.ts`), the config type that `styleGenNext` returns (object or function form), and the subpath exports (`src/exports/subpath-exports.test-d.ts`).
 
 ```typescript
 import { describe, it, expectTypeOf } from "vitest";
@@ -64,73 +64,73 @@ describe("CamelCase", () => {
 });
 ```
 
-### 3. Integration test (`src/__integration__/`)
+### 3. Integration tests (`src/__integration__/`)
 
-Chạy trong Vitest nhưng đưa `generate().css` qua **engine Tailwind v4 thật** (`@tailwindcss/node`), thông qua một helper duy nhất `compileFixtureCss` — API `compile()` không phải public API nên chỉ có một chỗ gọi nó.
+They run in Vitest but pass `generate().css` through the **real Tailwind v4 engine** (`@tailwindcss/node`), via a single helper `compileFixtureCss` — the `compile()` API is not public API, so there is only one place that calls it.
 
-Các mối quan tâm được khoá ở đây:
+The concerns locked down here:
 
-- CSS biên dịch ra đúng class/biến; `@source inline` là thứ làm các class xuất hiện dù danh sách candidate rỗng (có đối chứng âm khi bỏ nó đi).
-- Vòng tròn CVA: mọi class mà `createVariantMapper` trả về đều có trong CSS đã biên dịch.
-- Parity `toKebabCase` giữa runtime và kiểu (`kebab-parity`).
-- `themeAxes` nhiều trục trên theme thật của `examples/design-system` (`multi-axis.test.ts`; trục `theme` khai báo trước `palette`).
-- Mọi `theme.json` trong `examples/`/`site/` đều qua `ThemeSchema` strict và các `theme.schema.json` đã commit (`examples/`, `examples/design-system/src/`, `site/src/theme/`) khớp `z.toJSONSchema(ThemeSchema)`.
-- Không file nào trong `examples/{react-v4,next-v4,nuxt-v4}` trùng nội dung với file của app khác (`examples-dedup.test.ts`, allowlist rỗng): thứ gì dùng chung phải nằm ở `examples/design-system`.
-- Mẫu `THEME_JSON`/`THEME_CSS` trên landing site (`site-build-sample.test.ts`) là theme hợp lệ và là đoạn trích đúng thứ tự của `generate().css` thật.
-- Options không mặc định (`custom-options.test.ts`): `screens`/`breakpoints` tuỳ chỉnh, `spacing.properties`, `cssVarDriven`, `enableResponsive: false`, `spacing.enabled: false`.
-- Các script đo/kiểm CSS (`measure-css-output`, `diff-class-families`) có test riêng; ngân sách gzip của CSS nay là lệnh CLI `style-gen budget`, được test trong tiến trình (`src/cli/commands/budget.test.ts`) thay cho script `check-css-budget.mjs` và test spawn-process cũ.
-- Đối chứng âm cho gate publish (`publish-gates.test.ts`): dựng một `dist/` giả trong thư mục tạm, chép script vào `<root>/scripts/` rồi khẳng định `check:externals`, `check:sizes`, `check:browser-safe` thoát mã 1 khi inline dependency, thiếu sourcemap, thiếu budget, vượt budget (kể cả qua chunk) hay kéo Zod/Node built-in vào subpath browser-safe.
+- The compiled CSS has the right classes/variables; `@source inline` is what makes the classes appear even when the candidate list is empty (with a negative control that removes it).
+- The CVA round trip: every class that `createVariantMapper` returns is present in the compiled CSS.
+- `toKebabCase` parity between runtime and types (`kebab-parity`).
+- Multi-axis `themeAxes` on the real theme of `examples/design-system` (`multi-axis.test.ts`; the `theme` axis is declared before `palette`).
+- Every `theme.json` in `examples/`/`site/` passes the strict `ThemeSchema`, and the committed `theme.schema.json` files (`examples/`, `examples/design-system/src/`, `site/src/theme/`) match `z.toJSONSchema(ThemeSchema)`.
+- No file in `examples/{react-v4,next-v4,nuxt-v4}` has the same content as a file in another app (`examples-dedup.test.ts`, empty allowlist): anything shared must live in `examples/design-system`.
+- The `THEME_JSON`/`THEME_CSS` samples on the landing site (`site-build-sample.test.ts`) are a valid theme and an excerpt, in the right order, of the real `generate().css`.
+- Non-default options (`custom-options.test.ts`): custom `screens`/`breakpoints`, `spacing.properties`, `cssVarDriven`, `enableResponsive: false`, `spacing.enabled: false`.
+- The CSS measurement/check scripts (`measure-css-output`, `diff-class-families`) have their own tests; the CSS gzip budget is now the CLI command `style-gen budget`, tested in-process (`src/cli/commands/budget.test.ts`) in place of the `check-css-budget.mjs` script and the old spawn-process test.
+- Negative controls for the publish gates (`publish-gates.test.ts`): build a fake `dist/` in a temporary directory, copy the scripts into `<root>/scripts/`, and then assert that `check:externals`, `check:sizes` and `check:browser-safe` exit with code 1 on an inlined dependency, a missing sourcemap, a missing budget, an exceeded budget (including through a chunk), or Zod/Node built-ins pulled into a browser-safe subpath.
 
 ### 4. E2E (Playwright, Chromium + WebKit)
 
 ```bash
-yarn build:all        # e2e import mã nguồn nhưng CI luôn build trước
-yarn playwright install chromium webkit   # lần đầu
+yarn build:all        # e2e imports source code, but CI always builds first
+yarn playwright install chromium webkit   # first time only
 yarn test:e2e
 ```
 
-Chỉ những hành vi phụ thuộc engine trình duyệt mới nằm ở đây (`e2e/`):
+Only behaviors that depend on the browser engine live here (`e2e/`):
 
-- `spacing-inheritance.spec.ts` — `@property … inherits: false`: biến `--sg-sp-*` của phần tử cha không rò xuống phần tử con (quy tắc _cùng phần tử_).
-- `custom-breakpoint-spacing.spec.ts` — chuỗi fallback spacing ở breakpoint tuỳ chỉnh (md 800px, xl 1300px).
-- `multi-axis-precedence.spec.ts` — khi hai trục cùng override một token, trục khai báo sau thắng.
+- `spacing-inheritance.spec.ts` — `@property … inherits: false`: a parent element's `--sg-sp-*` variables do not leak down to the child element (the _same element_ rule).
+- `custom-breakpoint-spacing.spec.ts` — the spacing fallback chain at custom breakpoints (md 800px, xl 1300px).
+- `multi-axis-precedence.spec.ts` — when two axes override the same token, the axis declared later wins.
 
-Lý do chạy cả WebKit: ngữ nghĩa kế thừa của `@property` và cascade `var()` khác nhau giữa các engine.
+Why WebKit as well: the inheritance semantics of `@property` and the `var()` cascade differ between engines.
 
-### 5. Gate kiểm tra artifact (`scripts/*.mjs`)
+### 5. Artifact check gates (`scripts/*.mjs`)
 
-Chạy sau `yarn build:all`, cũng nằm trong `prepublish`:
+Run after `yarn build:all`, and also part of `prepublish`:
 
-| Script                                                                     | Kiểm tra                                                                                                                                                                                                                                                                                                 |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yarn check:externals`                                                     | không file nào trong `dist/` (entry, chunk chung, `dist/cli/index.mjs`) inline dependency/peer: đọc `sources` của mọi `dist/**/*.map` tìm `node_modules/<tên>/`; file JS thiếu sourcemap cũng làm gate fail. `tailwind-merge` (chỉ là devDependency, dùng trong test của `./recipes`) cũng bị cấm inline |
-| `yarn check:browser-safe`                                                  | `./tokens`, `./cva`, `./spacing`, `./recipes`, `./types` không kéo Zod, Node built-in hay `@tailwindcss/*` (kể cả qua chunk chung)                                                                                                                                                                       |
-| `yarn check:sizes`                                                         | ngân sách gzip cho từng subpath trong `package.json#exports`, tính cả mọi chunk mà entry import (transitive), và cho CLI `dist/cli/index.mjs` (`cli`)                                                                                                                                                    |
-| `yarn check:publish-target`                                                | publish đúng GitHub Packages                                                                                                                                                                                                                                                                             |
-| `yarn check:smoke` (CI, không nằm trong `prepublish`)                      | `import` + `require` mọi subpath qua tên package và so khớp tên export; `generate()` ESM/CJS cho cùng CSS; chạy CLI (`--version`, `schema`, `generate`, `init`, `tokens --help`, `budget --help`) và script TypeScript do `init` sinh ra                                                                 |
-| `yarn check:types-pack` (CI và `deploy.yml`, không nằm trong `prepublish`) | `yarn pack` rồi `@arethetypeswrong/cli --profile node16` trên tarball: mọi subpath resolve đúng cả khi `import` (`.d.ts`) lẫn `require` (`.d.cts`, sinh bởi `scripts/emit-cts-types.mjs` ở bước cuối của `yarn build`); `moduleResolution: node10` không được hỗ trợ và nằm ngoài profile                |
+| Script                                                                  | What it checks                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yarn check:externals`                                                  | no file in `dist/` (entries, shared chunks, `dist/cli/index.mjs`) inlines a dependency/peer: it reads the `sources` of every `dist/**/*.map` looking for `node_modules/<name>/`; a JS file without a sourcemap also fails the gate. `tailwind-merge` (only a devDependency, used in the `./recipes` tests) is also forbidden from being inlined |
+| `yarn check:browser-safe`                                               | `./tokens`, `./cva`, `./spacing`, `./recipes`, `./types` do not pull in Zod, Node built-ins or `@tailwindcss/*` (including through shared chunks)                                                                                                                                                                                               |
+| `yarn check:sizes`                                                      | gzip budget for every subpath in `package.json#exports`, counting every chunk the entry imports (transitively), and for the CLI `dist/cli/index.mjs` (`cli`)                                                                                                                                                                                    |
+| `yarn check:publish-target`                                             | publishes to the correct GitHub Packages                                                                                                                                                                                                                                                                                                        |
+| `yarn check:smoke` (CI, not part of `prepublish`)                       | `import` + `require` every subpath by package name and match the export names; `generate()` ESM/CJS yields the same CSS; runs the CLI (`--version`, `schema`, `generate`, `init`, `tokens --help`, `budget --help`) and the TypeScript script generated by `init`                                                                               |
+| `yarn check:types-pack` (CI and `deploy.yml`, not part of `prepublish`) | `yarn pack` and then `@arethetypeswrong/cli --profile node16` on the tarball: every subpath resolves correctly under both `import` (`.d.ts`) and `require` (`.d.cts`, generated by `scripts/emit-cts-types.mjs` as the last step of `yarn build`); `moduleResolution: node10` is unsupported and outside the profile                            |
 
-### 6. Test DX của example `design-system`
+### 6. DX test for the `design-system` example
 
 ```bash
-yarn build:all                                  # package link dist/*.d.ts của thư viện
+yarn build:all                                  # the package links the library's dist/*.d.ts
 yarn workspace design-system-example typecheck  # tsc --noEmit
 yarn workspace design-system-example test       # vitest run --typecheck
 ```
 
-Gate này nằm ngoài `yarn test` gốc (`vitest.config.ts` loại `examples/**`) vì cần `dist/` đã build; CI chạy nó ngay sau bước typecheck example, trước khi build `next-v4`/`nuxt-v4`. Nó khoá trải nghiệm của người dùng thư viện ở đầu cuối:
+This gate sits outside the root `yarn test` (`vitest.config.ts` excludes `examples/**`) because it needs a built `dist/`; CI runs it right after the example typecheck step, before building `next-v4`/`nuxt-v4`. It locks down the library user's end-to-end experience:
 
-- `tests/dx.test.ts` dùng TypeScript Compiler API: biên dịch `src/recipes/button.ts` với `theme.json` thật (không diagnostic), rồi với bản `theme.json` đã đổi tên `danger` → `dangerX` (chặn `host.getSourceFile` để thay nội dung JSON) và khẳng định có lỗi TS nằm đúng ở `src/recipes/button.ts` — tức là đổi tên một token trong theme làm hỏng recipe tại chỗ dùng nó, không phải ở runtime. Cùng file khẳng định `style-gen.config.json` (bản phản chiếu cho luồng CLI-only) khớp `options` trong `src/style-gen.options.ts`.
-- `tests/dx.test-d.ts` (`expectTypeOf`): union `Intent` (tuple `intents`, bị `satisfies` ràng buộc theo theme), `BreakpointKeys<typeof options>` là `"md" | "lg"`, `Box` với `{ xl: 4 }` không compile, kiểu của `axisAttributes`.
+- `tests/dx.test.ts` uses the TypeScript Compiler API: it compiles `src/recipes/button.ts` against the real `theme.json` (no diagnostics), then against a `theme.json` in which `danger` was renamed to `dangerX` (intercepting `host.getSourceFile` to swap the JSON content), and asserts that a TS error lands exactly in `src/recipes/button.ts` — that is, renaming a token in the theme breaks the recipe at the place that uses it, not at runtime. The same file asserts that `style-gen.config.json` (the mirror for the CLI-only flow) matches `options` in `src/style-gen.options.ts`.
+- `tests/dx.test-d.ts` (`expectTypeOf`): the `Intent` union (the `intents` tuple, constrained by `satisfies` against the theme), `BreakpointKeys<typeof options>` is `"md" | "lg"`, `Box` with `{ xl: 4 }` does not compile, the type of `axisAttributes`.
 
 ---
 
-## Viết test mới
+## Writing new tests
 
-1. Đặt `${name}.test.ts` (hoặc `${name}.test-d.ts` cho type test) cạnh file được test.
-2. Test **hành vi** (biên, bất biến, lỗi), không test wiring hay chép lại implementation.
-3. Cần CSS biên dịch thật → dùng `compileFixtureCss`, không gọi `compile()` trực tiếp.
-4. Chỉ thêm e2e khi hành vi phụ thuộc engine trình duyệt.
+1. Put `${name}.test.ts` (or `${name}.test-d.ts` for a type test) next to the file under test.
+2. Test **behavior** (boundaries, invariants, errors), not wiring, and do not copy the implementation.
+3. If you need real compiled CSS → use `compileFixtureCss`, do not call `compile()` directly.
+4. Add e2e only when the behavior depends on the browser engine.
 
 ```typescript
 import { describe, expect, it } from "vitest";

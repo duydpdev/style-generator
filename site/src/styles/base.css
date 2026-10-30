@@ -42,7 +42,6 @@ kbd {
   font-variant-ligatures: none;
   font-feature-settings: "calt" 0;
 }
-.ic,
 [data-part~="ic"] {
   width: 14px;
   height: 14px;

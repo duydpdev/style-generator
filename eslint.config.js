@@ -53,6 +53,18 @@ const UI_APP_FILES = [
   "site/src/components/docs-header.tsx",
   "site/src/components/docs-footer.tsx",
   "site/src/components/doc-markdown.tsx",
+  "site/src/pages/examples-page.tsx",
+  "site/src/components/examples-sidebar.tsx",
+  "site/src/components/examples-toolbar.tsx",
+  "site/src/components/examples-view-tabs.tsx",
+  "site/src/components/examples-workspace.tsx",
+  "site/src/components/file-tree.tsx",
+  "site/src/components/tree-folder.tsx",
+  "site/src/components/code-editor.tsx",
+  "site/src/components/code-tabs.tsx",
+  "site/src/components/code-statusbar.tsx",
+  "site/src/components/preview-frame.tsx",
+  "site/src/components/frame-titlebar.tsx",
 ];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { ThemeMode } from "../lib/use-theme";
+import { Box, Stack } from "../ui";
+
+import { FrameTitlebar } from "./frame-titlebar";
 
 interface Props {
   src: string;
@@ -71,37 +74,30 @@ export function PreviewFrame({
   }, []);
 
   return (
-    <div className="preview-stage">
-      <div className="preview-frame-wrap">
-        <div className="frame-titlebar">
-          <div className="traffic">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="url-pill">
-            <svg className="ic lock" viewBox="0 0 16 16" aria-hidden="true">
-              <rect x="3" y="7" width="10" height="7" rx="1" />
-              <path d="M5 7V5a3 3 0 016 0v2" />
-            </svg>
-            <span className="host">localhost:5174</span>
-            <span className="path">{pathLabel}</span>
-          </div>
-          <div className="frame-meta">
-            {metaPrefix} · {FRAME_THEME_LABEL[frameTheme] ?? frameTheme}
-          </div>
-        </div>
-        <iframe
+    <Stack data-part="preview-stage" p={{ base: 2, lg: 6 }}>
+      <Stack
+        data-part="preview-frame-wrap"
+        rounded="lg"
+        backgroundColor="paper"
+      >
+        <FrameTitlebar
+          pathLabel={pathLabel}
+          meta={`${metaPrefix} · ${FRAME_THEME_LABEL[frameTheme] ?? frameTheme}`}
+        />
+        <Box
+          as="iframe"
           key={src}
           ref={frameRef}
-          className="preview-iframe"
+          data-part="preview-iframe"
           data-testid="example-preview"
+          width="100%"
+          backgroundColor="paper"
           src={`${src}?theme=${initialTheme}`}
           title={title}
           sandbox="allow-scripts allow-same-origin allow-forms"
           loading="lazy"
         />
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }

@@ -2,6 +2,10 @@ import { useMemo } from "react";
 
 import type { ExampleFile } from "../lib/example-files";
 import { tokenize } from "../lib/tokenize";
+import { Box, Flex, Stack, Text } from "../ui";
+
+import { CodeStatusbar } from "./code-statusbar";
+import { CodeTabs } from "./code-tabs";
 
 interface Props {
   openTabs: ExampleFile[];
@@ -10,13 +14,14 @@ interface Props {
   onClose: (path: string) => void;
 }
 
-const LANG_LABEL: Record<string, string> = {
-  ts: "TypeScript JSX",
-  css: "CSS",
-  json: "JSON",
-  text: "Plain Text",
-};
-
+/**
+ * Read-only code viewer: tab strip, line numbers, highlighted source, status bar.
+ * @param root0 - Component props
+ * @param root0.openTabs - Files with an open tab
+ * @param root0.activePath - Path of the file shown
+ * @param root0.onPick - Activates a tab
+ * @param root0.onClose - Closes a tab
+ */
 export function CodeEditor({
   openTabs,
   activePath,
@@ -40,74 +45,47 @@ export function CodeEditor({
   );
 
   return (
-    <div className="code-pane">
-      <div className="code-tabs">
-        {openTabs.map((t) => {
-          const name = t.path.split("/").pop();
-          return (
-            <div
-              key={t.path}
-              className={`code-tab${t.path === activePath ? " active" : ""}`}
-            >
-              <button
-                type="button"
-                className="code-tab-pick"
-                onClick={() => {
-                  onPick(t.path);
-                }}
-              >
-                {name}
-              </button>
-              <button
-                type="button"
-                className="close"
-                aria-label={`Close ${name ?? t.path}`}
-                onClick={() => {
-                  onClose(t.path);
-                }}
-              >
-                ×
-              </button>
-            </div>
-          );
-        })}
-      </div>
+    <Stack data-part="code-pane">
+      <CodeTabs
+        openTabs={openTabs}
+        activePath={activePath}
+        onPick={onPick}
+        onClose={onClose}
+      />
 
       {active ? (
-        <div className="code-body-wrap">
-          <div className="code-body-inner">
-            <pre className="code-gutter" aria-hidden="true">
+        <Box data-part="code-body-wrap" position="relative" minHeight={0}>
+          <Flex minWidth="100%" width="max-content" minHeight="100%">
+            <Box
+              as="pre"
+              data-part="code-gutter"
+              width={56}
+              py={4}
+              pr={3}
+              aria-hidden="true"
+            >
               {gutter}
-            </pre>
-            <pre
-              className="code-source"
+            </Box>
+            <Text
+              as="pre"
+              data-part="code-source"
+              py={4}
+              px={5.5}
               dangerouslySetInnerHTML={{ __html: html }}
             />
-          </div>
-        </div>
+          </Flex>
+        </Box>
       ) : (
-        <div className="code-empty">
+        <Flex data-part="code-empty" align="center" justify="center" p={6}>
           Pick a file from the sidebar to start reading code.
-        </div>
+        </Flex>
       )}
 
-      <div className="code-statusbar">
-        <div className="left">
-          <span className="git-branch">⎇ main</span>
-          <span>{active?.path ?? "—"}</span>
-        </div>
-        <div className="right">
-          <span>
-            <b>UTF-8</b>
-          </span>
-          <span>
-            <b>{active ? (LANG_LABEL[active.lang] ?? "Plain") : "—"}</b>
-          </span>
-          <span>
-            {lineCount > 0 ? `${String(lineCount)} lines` : "0 lines"}
-          </span>
-        </div>
-      </div>
-    </div>
+      <CodeStatusbar
+        path={active?.path}
+        lang={active?.lang}
+        lineCount={lineCount}
+      />
+    </Stack>
   );
 }

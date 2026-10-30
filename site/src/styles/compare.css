@@ -85,15 +85,6 @@
   color: var(--c-fg);
 }
 
-/* Class half: examples-page.tsx still renders className="pill" (slice F). */
-.pill {
-  display: inline-block;
-  font-family: var(--f-mono);
-  font-size: 10.5px;
-  padding: 2px 7px;
-  border-radius: var(--r-pill);
-  margin-right: 6px;
-}
 [data-part~="pill"] {
   display: inline-block;
   font-family: var(--f-mono);

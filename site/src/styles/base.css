@@ -91,7 +91,7 @@ body::after {
     scroll-behavior: auto;
   }
   [data-part~="marquee-track"],
-  .terminal-body .cursor,
+  [data-part~="terminal-body"] .cursor,
   [data-part~="arrow-anim"] {
     animation: none !important;
   }

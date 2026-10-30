@@ -1,5 +1,5 @@
 import { ChapterHead } from "../components/chapter-head";
-import { Box } from "../ui";
+import { Box, Grid, Stack } from "../ui";
 import { KeyPoint } from "../components/key-point";
 import {
   TerminalTypewriter,
@@ -79,8 +79,8 @@ export function StartSection() {
         }
       />
 
-      <div className="split-grid" data-reveal="up">
-        <div className="kp-list">
+      <Grid data-part="split-grid" data-reveal="up" gap={6}>
+        <Stack gap={3}>
           <KeyPoint
             badge="01"
             title={<code>yarn style-gen init</code>}
@@ -105,9 +105,9 @@ export function StartSection() {
             title={<code>style-gen doctor</code>}
             body={<>Validates schema, checks wiring, warns on legacy shapes.</>}
           />
-        </div>
+        </Stack>
         <TerminalTypewriter lines={TERM_LINES} />
-      </div>
+      </Grid>
     </Box>
   );
 }

@@ -1,5 +1,5 @@
 import { ChapterHead } from "../components/chapter-head";
-import { Box } from "../ui";
+import { Box, Grid, Stack } from "../ui";
 import { CodeCard } from "../components/code-card";
 import { KeyPoint } from "../components/key-point";
 
@@ -51,8 +51,8 @@ export function ToolingSection() {
         }
       />
 
-      <div className="split-grid" data-reveal="up">
-        <div className="kp-list">
+      <Grid data-part="split-grid" data-reveal="up" gap={6}>
+        <Stack gap={3}>
           <KeyPoint
             badge="V1"
             title={<code>{"styleGenVite({ themePath, outDir })"}</code>}
@@ -87,14 +87,14 @@ export function ToolingSection() {
               <>Validates config and schema, warns on utility name clashes.</>
             }
           />
-        </div>
+        </Stack>
         <CodeCard
           filename="vite.config.ts"
           tag="plugin"
           lang="ts"
           code={VITE_CODE}
         />
-      </div>
+      </Grid>
     </Box>
   );
 }

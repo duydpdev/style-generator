@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Box, Flex, Grid, Text } from "../ui";
+
 interface Props {
   badge: string;
   title: ReactNode;
@@ -15,12 +17,26 @@ interface Props {
  */
 export function KeyPoint({ badge, title, body }: Readonly<Props>) {
   return (
-    <div className="kp">
-      <span className="badge">{badge}</span>
-      <div>
-        <h5>{title}</h5>
-        <p>{body}</p>
-      </div>
-    </div>
+    <Grid data-part="kp" gap={3} px={3.5} py={3} rounded="lg">
+      <Flex
+        as="span"
+        data-part="kp-badge"
+        align="center"
+        justify="center"
+        width={28}
+        height={28}
+        backgroundColor="primarySoft"
+      >
+        {badge}
+      </Flex>
+      <Box>
+        <Box as="h5" mb={0.75}>
+          {title}
+        </Box>
+        <Text as="p" color="muted">
+          {body}
+        </Text>
+      </Box>
+    </Grid>
   );
 }

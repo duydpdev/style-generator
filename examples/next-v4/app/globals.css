@@ -6,3 +6,4 @@
 
 /* Tailwind only scans this app by default; the recipes live in the design system. */
 @source "../../design-system/src";
+@source "../../../packages/ui-react/src";

@@ -1,5 +1,6 @@
 import { Box } from "../components/Box";
 import { Text } from "../components/Text";
+import { Box as UiBox } from "../ui";
 
 import { COLOR_ROWS, colorsFor } from "./palettes";
 import { SectionHead } from "./SectionHead";
@@ -45,11 +46,11 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
                 className="relative h-24"
                 style={{ background: `var(--color-${key})` }}
               >
-                <div className="sg-tone-strip">
+                <UiBox className="sg-tone-strip">
                   <span style={{ background: hex, opacity: 0.55 }} />
                   <span style={{ background: hex, opacity: 0.75 }} />
                   <span style={{ background: hex }} />
-                </div>
+                </UiBox>
               </div>
               <Box px={4} py={3} gap={1} className="flex flex-col">
                 <Text type="text14Regular" className="font-medium">

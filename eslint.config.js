@@ -88,10 +88,14 @@ export default pluginTs.config(
     },
   },
 
-  // Landing site components and the example apps: typed like src/, without
+  // Landing site components, the example apps and the workspace packages: typed like src/, without
   // mandatory JSDoc.
   {
-    files: ["site/src/**/*.{ts,tsx}", "examples/**/*.{ts,tsx}"],
+    files: [
+      "site/src/**/*.{ts,tsx}",
+      "examples/**/*.{ts,tsx}",
+      "packages/**/*.{ts,tsx}",
+    ],
     rules: Object.fromEntries(
       Object.keys(pluginJsdoc.rules ?? {})
         .filter((name) => name.startsWith("require-"))

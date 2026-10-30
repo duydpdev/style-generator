@@ -1,18 +1,4 @@
 /* ============ 3-column shell ============ */
-/* Class half: not-found.tsx still renders className="docs-shell" until slice G. */
-.docs-shell {
-  max-width: 1440px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: var(--docs-rail-w, 232px) minmax(0, 1fr) var(
-      --docs-toc-w,
-      220px
-    );
-  gap: var(--docs-gutter, 56px);
-  padding: 0 32px;
-  position: relative;
-  z-index: 1;
-}
 [data-part~="docs-shell"] {
   grid-template-columns: var(--docs-rail-w, 232px) minmax(0, 1fr) var(
       --docs-toc-w,
@@ -124,13 +110,6 @@
 }
 
 /* ============ Content column ============ */
-/* Class half: not-found.tsx still renders className="docs-content" until slice G. */
-.docs-content {
-  min-width: 0;
-  padding: 36px 0 120px;
-  max-width: 720px;
-}
-
 /* Docs switcher + "On this page" for <=860px (the rails are hidden there). */
 [data-part~="docs-mobile-nav"] {
   display: none;
@@ -441,7 +420,7 @@
   background: var(--c-success-soft);
   color: var(--c-success);
 }
-[data-part~="callout-body"] p:last-child {
+[data-part~="doc-body"] [data-part~="callout-body"] p:last-child {
   margin-bottom: 0;
 }
 [data-part~="callout-body"] strong {
@@ -836,9 +815,6 @@
 
 /* Responsive */
 @media (max-width: 1180px) {
-  .docs-shell {
-    grid-template-columns: 232px minmax(0, 1fr);
-  }
   [data-part~="docs-shell"] {
     grid-template-columns: 232px minmax(0, 1fr);
   }
@@ -847,10 +823,6 @@
   }
 }
 @media (max-width: 860px) {
-  .docs-shell {
-    grid-template-columns: 1fr;
-    padding: 0 20px;
-  }
   [data-part~="docs-shell"] {
     grid-template-columns: 1fr;
   }

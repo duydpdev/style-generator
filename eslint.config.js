@@ -65,6 +65,7 @@ const UI_APP_FILES = [
   "site/src/components/code-statusbar.tsx",
   "site/src/components/preview-frame.tsx",
   "site/src/components/frame-titlebar.tsx",
+  "site/src/pages/not-found.tsx",
 ];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;

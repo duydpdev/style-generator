@@ -18,6 +18,7 @@ export const Breakpoint = {
 } as const;
 export type Breakpoint = (typeof Breakpoint)[keyof typeof Breakpoint];
 
+/** Tailwind's default screen width per `Breakpoint` (`sm` 640px … `2xl` 1536px). `options.screens` is merged over it. */
 export const defaultScreens: Record<Breakpoint, string> = {
   [Breakpoint.SM]: "640px",
   [Breakpoint.MD]: "768px",
@@ -76,6 +77,7 @@ type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
   ? { prefixes?: never; keys?: "all" }
   : CoverageRule<CategoryPrefix<K>>;
 
+/** Options of `generate()` and `createDesignTokens()`; `defineOptions`, `style-gen.config.json` and the Vite/Next plugins take the same shape. Unknown keys are rejected. */
 export interface StyleGeneratorOptions {
   /**
    * Breakpoint keys to use for responsive class generation: a `Breakpoint`

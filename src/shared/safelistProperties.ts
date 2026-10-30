@@ -40,6 +40,7 @@ export const roundedProperties: (typeof ROUNDED_PREFIXES)[number][] = [
   ...ROUNDED_PREFIXES,
 ];
 
+/** Border class prefixes (`border`, `border-x` … `divide-y`) as a mutable array, typed so it passes `createVariantMapper(borderProperties, keys)` as is. */
 export const borderProperties: (typeof BORDER_PREFIXES)[number][] = [
   ...BORDER_PREFIXES,
 ];

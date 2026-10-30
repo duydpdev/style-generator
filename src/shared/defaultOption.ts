@@ -66,6 +66,8 @@ export const DEFAULT_BREAKPOINTS = ["md", "lg"] as const;
  */
 export type SpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
 
+/** One of `DEFAULT_ROUNDED_VALUES`, the radius keys used when `theme.borderRadius` is omitted. */
 export type DefaultRoundedValue = (typeof DEFAULT_ROUNDED_VALUES)[number];
 
+/** One of `DEFAULT_BORDER_VALUES` (`0 | 1 | 2 | 4`), the widths used when `theme.borderWidth` is omitted. */
 export type DefaultBorderValue = (typeof DEFAULT_BORDER_VALUES)[number];

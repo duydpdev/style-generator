@@ -1,4 +1,4 @@
-.hero {
+[data-part~="hero"] {
   padding: 72px 0 32px;
   position: relative;
   scroll-margin-top: 80px;

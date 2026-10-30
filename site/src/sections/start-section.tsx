@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 import { KeyPoint } from "../components/key-point";
 import {
   TerminalTypewriter,
@@ -52,28 +54,32 @@ const TERM_LINES: TermLine[] = [
  */
 export function StartSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="start"
-      className="chapter"
       data-ch="09"
       data-ch-label="Get started"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">09</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>09</b>
-        </span>
-        <span>· Three commands</span>
-      </div>
-      <h2 className="ch-title">
-        Scaffold. <em>Watch.</em> Validate.
-      </h2>
-      <p className="ch-lede">
-        The <code>style-gen</code> CLI ships with every install. Interactive
-        prompts on first run, flag-driven for CI.
-      </p>
+      <ChapterHead
+        num="09"
+        label="Three commands"
+        title={
+          <>
+            Scaffold. <em>Watch.</em> Validate.
+          </>
+        }
+        lede={
+          <>
+            The <code>style-gen</code> CLI ships with every install. Interactive
+            prompts on first run, flag-driven for CI.
+          </>
+        }
+      />
 
-      <div className="split-grid reveal">
+      <div className="split-grid" data-reveal="up">
         <div className="kp-list">
           <KeyPoint
             badge="01"
@@ -102,6 +108,6 @@ export function StartSection() {
         </div>
         <TerminalTypewriter lines={TERM_LINES} />
       </div>
-    </section>
+    </Box>
   );
 }

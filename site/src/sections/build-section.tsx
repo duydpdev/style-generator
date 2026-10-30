@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 import { CodeCard } from "../components/code-card";
 import { ArrowRight } from "../components/icon";
 import { THEME_CSS, THEME_JSON } from "../data/build-sample";
@@ -7,29 +9,34 @@ import { THEME_CSS, THEME_JSON } from "../data/build-sample";
  */
 export function BuildSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="build"
-      className="chapter"
       data-ch="03"
       data-ch-label="Input → Output"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">03</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>03</b>
-        </span>
-        <span>· From input to output</span>
-      </div>
-      <h2 className="ch-title">
-        JSON in. <em>Tailwind out.</em>
-      </h2>
-      <p className="ch-lede">
-        Every artifact downstream — CSS variables, dark theme overrides,
-        typography and spacing utilities, <code>@source inline</code> coverage,
-        typed tokens — is regenerated whenever <code>theme.json</code> changes.
-      </p>
+      <ChapterHead
+        num="03"
+        label="From input to output"
+        title={
+          <>
+            JSON in. <em>Tailwind out.</em>
+          </>
+        }
+        lede={
+          <>
+            Every artifact downstream — CSS variables, dark theme overrides,
+            typography and spacing utilities, <code>@source inline</code>{" "}
+            coverage, typed tokens — is regenerated whenever{" "}
+            <code>theme.json</code> changes.
+          </>
+        }
+      />
 
-      <div className="build-grid reveal">
+      <div className="build-grid" data-reveal="up">
         <CodeCard
           filename="theme.json"
           tag="source"
@@ -49,6 +56,6 @@ export function BuildSection() {
           code={THEME_CSS}
         />
       </div>
-    </section>
+    </Box>
   );
 }

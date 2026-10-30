@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 interface PreviewProps {
   variant: "light" | "dark";
   tag: string;
@@ -79,30 +81,34 @@ const DARK_SWATCHES = [
  */
 export function ThemingSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="theming"
-      className="chapter"
       data-ch="06"
       data-ch-label="Theming"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">06</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>06</b>
-        </span>
-        <span>· Theming</span>
-      </div>
-      <h2 className="ch-title">
-        Dark mode, <em>in JSON.</em>
-      </h2>
-      <p className="ch-lede">
-        Add a <code>themeAxes.theme.dark</code> block to your config.{" "}
-        <code>html[data-theme="dark"]</code> overrides — including shadows —
-        generate automatically. Switch by toggling one attribute on{" "}
-        <code>&lt;html&gt;</code>.
-      </p>
+      <ChapterHead
+        num="06"
+        label="Theming"
+        title={
+          <>
+            Dark mode, <em>in JSON.</em>
+          </>
+        }
+        lede={
+          <>
+            Add a <code>themeAxes.theme.dark</code> block to your config.{" "}
+            <code>html[data-theme="dark"]</code> overrides — including shadows —
+            generate automatically. Switch by toggling one attribute on{" "}
+            <code>&lt;html&gt;</code>.
+          </>
+        }
+      />
 
-      <div className="theme-grid reveal">
+      <div className="theme-grid" data-reveal="up">
         <Preview
           variant="light"
           tag='html[data-theme="light"]'
@@ -124,6 +130,6 @@ export function ThemingSection() {
           marker="→ vars resolve to themeAxes.theme.dark in JSON"
         />
       </div>
-    </section>
+    </Box>
   );
 }

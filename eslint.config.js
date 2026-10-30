@@ -25,6 +25,7 @@ const UI_APP_FILES = [
   "site/src/components/scroll-progress.tsx",
   "site/src/components/icon.tsx",
   "site/src/components/sidebar-toc.tsx",
+  "site/src/components/chapter-head.tsx",
   "site/src/pages/landing-page.tsx",
 ];
 

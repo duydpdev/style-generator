@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
+
 interface Feat {
   cls: string;
   tag: string;
@@ -79,28 +82,32 @@ const FEATS: Feat[] = [
  */
 export function FeaturesSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="features"
-      className="chapter"
       data-ch="04"
       data-ch-label="API surface"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">04</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>04</b>
-        </span>
-        <span>· What's in the box</span>
-      </div>
-      <h2 className="ch-title">
-        Seven primitives. <em>One pipeline.</em>
-      </h2>
-      <p className="ch-lede">
-        Each feature is an opt-in subpath import. Spacing helpers don't pull the
-        CLI; the types file has zero runtime. Pay only for what you use.
-      </p>
+      <ChapterHead
+        num="04"
+        label="What's in the box"
+        title={
+          <>
+            Seven primitives. <em>One pipeline.</em>
+          </>
+        }
+        lede={
+          <>
+            Each feature is an opt-in subpath import. Spacing helpers don't pull
+            the CLI; the types file has zero runtime. Pay only for what you use.
+          </>
+        }
+      />
 
-      <div className="bento reveal-stagger">
+      <div className="bento" data-reveal="stagger">
         {FEATS.map((f) => (
           <article key={f.tag + f.title} className={`feat ${f.cls}`}>
             <span className="feat-tag">{f.tag}</span>
@@ -109,6 +116,6 @@ export function FeaturesSection() {
           </article>
         ))}
       </div>
-    </section>
+    </Box>
   );
 }

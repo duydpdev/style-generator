@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 import { CodeCard } from "../components/code-card";
 
 const SPACING_CODE = `import { resolveSpacingProps } from
@@ -26,29 +28,33 @@ function Box({ p, m, gap, children }) {
  */
 export function SpacingSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="spacing"
-      className="chapter"
       data-ch="05"
       data-ch-label="Zero-safelist spacing"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">05</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>05</b>
-        </span>
-        <span>· The killer feature</span>
-      </div>
-      <h2 className="ch-title">
-        Zero-safelist <em>responsive spacing.</em>
-      </h2>
-      <p className="ch-lede">
-        The big win: responsive padding, margin and gap without inflating the
-        class list. Custom properties carry the values; one utility per axis
-        carries the rule.
-      </p>
+      <ChapterHead
+        num="05"
+        label="The killer feature"
+        title={
+          <>
+            Zero-safelist <em>responsive spacing.</em>
+          </>
+        }
+        lede={
+          <>
+            The big win: responsive padding, margin and gap without inflating
+            the class list. Custom properties carry the values; one utility per
+            axis carries the rule.
+          </>
+        }
+      />
 
-      <div className="spacing-grid reveal">
+      <div className="spacing-grid" data-reveal="up">
         <div>
           <div className="stat-pair">
             <div className="stat-card bad">
@@ -101,6 +107,6 @@ export function SpacingSection() {
           code={SPACING_CODE}
         />
       </div>
-    </section>
+    </Box>
   );
 }

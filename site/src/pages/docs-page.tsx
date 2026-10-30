@@ -128,7 +128,7 @@ export function DocsPage() {
             <b>{doc.title}</b>
           </div>
 
-          <header className="doc-head reveal is-in">
+          <header className="doc-head">
             <div>
               <h1>
                 {doc.title} <em>at a glance.</em>

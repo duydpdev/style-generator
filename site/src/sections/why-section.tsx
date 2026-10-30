@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 import { Check, Cross } from "../components/icon";
 
 interface Item {
@@ -48,29 +50,33 @@ const CONS: Item[] = [
  */
 export function WhySection() {
   return (
-    <section
+    <Box
+      as="section"
       id="why"
-      className="chapter"
       data-ch="01"
       data-ch-label="The Tailwind case"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">01</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>01</b>
-        </span>
-        <span>· The Tailwind case</span>
-      </div>
-      <h2 className="ch-title">
-        Tailwind ships fast, then <em>gets in your way.</em>
-      </h2>
-      <p className="ch-lede">
-        Tailwind is the right default for most apps — but anyone shipping a real
-        product has hit the same wall. Here's the lay of the land before{" "}
-        <b>style-generator</b> enters.
-      </p>
+      <ChapterHead
+        num="01"
+        label="The Tailwind case"
+        title={
+          <>
+            Tailwind ships fast, then <em>gets in your way.</em>
+          </>
+        }
+        lede={
+          <>
+            Tailwind is the right default for most apps — but anyone shipping a
+            real product has hit the same wall. Here's the lay of the land
+            before <b>style-generator</b> enters.
+          </>
+        }
+      />
 
-      <div className="judgement-grid reveal-stagger">
+      <div className="judgement-grid" data-reveal="stagger">
         <div className="judgement pro">
           <div className="judgement-head">
             <span className="j-tag">Strengths</span>
@@ -110,6 +116,6 @@ export function WhySection() {
           </ul>
         </div>
       </div>
-    </section>
+    </Box>
   );
 }

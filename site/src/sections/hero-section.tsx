@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 
+import { ChapterMarker } from "../components/chapter-head";
+import { Box } from "../ui";
 import { ArrowRight } from "../components/icon";
 
 const INSTALL_CMD = "yarn add @duydpdev/style-generator";
@@ -28,14 +30,15 @@ const MARQUEE_TOKENS = [
  */
 export function HeroSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="hero"
-      className="hero chapter"
+      data-part="hero"
       data-ch="00"
       data-ch-label="Cover"
     >
-      <div className="ch-marker">00</div>
-      <div className="reveal-stagger">
+      <ChapterMarker num="00" />
+      <div data-reveal="stagger">
         <div className="hero-eyebrow">
           <span className="dot" />
           Typed · Tailwind v4 · MIT
@@ -62,7 +65,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className="hero-stats reveal-stagger">
+      <div className="hero-stats" data-reveal="stagger">
         {STATS.map((s) => (
           <div key={s.k} className="stat">
             <span className="k">{s.k}</span>
@@ -79,6 +82,6 @@ export function HeroSection() {
           ))}
         </div>
       </div>
-    </section>
+    </Box>
   );
 }

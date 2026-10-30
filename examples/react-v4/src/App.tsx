@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { axisAttributes } from "design-system-example";
 
-import { Box } from "./components/Box";
+import {
+  FRAME_THEME_MESSAGE,
+  INITIAL,
+  SITE_THEME_MESSAGE,
+  THEME_CYCLE,
+  fromSiteTheme,
+  initialState,
+} from "./App.data";
 import { ButtonSection } from "./sections/ButtonSection";
 import { ColorSection } from "./sections/ColorSection";
 import { Footer } from "./sections/Footer";
@@ -12,39 +19,8 @@ import { Topbar } from "./sections/Topbar";
 import { TweaksPanel } from "./sections/TweaksPanel";
 import { TypographySection } from "./sections/TypographySection";
 import { UtilitiesSection } from "./sections/UtilitiesSection";
-import type { StyleGuideState, ThemeName, TweakSetter } from "./sections/types";
-
-const THEME_CYCLE: readonly ThemeName[] = ["base", "dark", "highContrast"];
-
-const INITIAL: StyleGuideState = {
-  palette: "base",
-  theme: "base",
-  voice: "editorial",
-  geometry: "soft",
-  surface: "lifted",
-};
-
-/**
- * Embedded in the style-generator site (`/examples`), the app follows the
- * site's light/dark theme: `?theme=light|dark` picks the first theme and the
- * shell posts `{ type: "sg-site-theme", theme }` on later toggles. Standalone
- * (no query, no message) it starts on `base`, exactly as before.
- */
-const SITE_THEME_MESSAGE = "sg-site-theme";
-const FRAME_THEME_MESSAGE = "sg-example-theme";
-
-const fromSiteTheme = (value: unknown): ThemeName | undefined => {
-  if (value === "light") return "base";
-  if (value === "dark") return "dark";
-  return undefined;
-};
-
-const initialState = (): StyleGuideState => {
-  const theme = fromSiteTheme(
-    new URLSearchParams(window.location.search).get("theme"),
-  );
-  return theme ? { ...INITIAL, theme } : INITIAL;
-};
+import type { StyleGuideState, TweakSetter } from "./sections/types";
+import { Container } from "./ui";
 
 export const App = () => {
   const [state, setState] = useState<StyleGuideState>(initialState);
@@ -120,7 +96,7 @@ export const App = () => {
         }}
       />
 
-      <Box className="mx-auto max-w-[1240px] px-8">
+      <Container maxWidth={1240} px={8}>
         <HeroSection
           palette={state.palette}
           onPickPalette={(id) => {
@@ -133,7 +109,7 @@ export const App = () => {
         <ButtonSection />
         <ResponsiveSpacingSection />
         <Footer />
-      </Box>
+      </Container>
 
       <JsonDrawer
         open={jsonOpen}

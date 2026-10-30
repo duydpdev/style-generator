@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { theme as baseTheme } from "design-system-example";
 
-import { Box } from "../components/Box";
-import { Button } from "../components/Button";
+import { Box, Button, Flex } from "../ui";
 
-import { PALETTES } from "./palettes";
+import { PALETTES } from "./paletteColors";
 import type { PaletteId } from "./types";
 
 interface JsonDrawerProps {
@@ -74,24 +73,28 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
   };
 
   return (
-    <aside
-      className="sg-json-drawer sg-glass-target"
+    <Box
+      as="aside"
+      data-part="sg-json-drawer sg-glass-target"
       data-open={open ? "true" : "false"}
       aria-hidden={!open}
     >
-      <Box
+      <Flex
         px={6}
         py={5}
-        className="flex items-center justify-between border-b"
+        align="center"
+        justify="between"
+        borderB="thin"
         style={{ borderColor: "var(--c-line)" }}
       >
-        <h3
-          className="sg-font-display m-0 text-[22px]"
+        <Box
+          as="h3"
+          data-part="sg-font-display drawer-title"
           style={{ color: "var(--color-foreground)" }}
         >
           theme.json
-        </h3>
-        <Box gap={1} className="flex">
+        </Box>
+        <Flex gap={1}>
           <Button
             variant="ghost"
             size="sm"
@@ -104,11 +107,11 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
           <Button variant="ghost" size="sm" onClick={onClose}>
             Close
           </Button>
-        </Box>
-      </Box>
-      <div className="sg-json-body">
+        </Flex>
+      </Flex>
+      <Box data-part="sg-json-body">
         <pre dangerouslySetInnerHTML={{ __html: highlight(activeJson) }} />
-      </div>
-    </aside>
+      </Box>
+    </Box>
   );
 };

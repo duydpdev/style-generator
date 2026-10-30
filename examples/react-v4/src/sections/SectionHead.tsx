@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Box } from "../components/Box";
+import { Box, Flex } from "../ui";
 
 interface SectionHeadProps {
   num: string;
@@ -10,22 +10,27 @@ interface SectionHeadProps {
 
 export const SectionHead = ({ num, title, desc }: SectionHeadProps) => {
   return (
-    <Box className="mb-9 flex flex-wrap items-baseline justify-between gap-6">
+    <Flex wrap justify="between" mb={9} gap={6} data-part="section-head">
       <Box>
-        <span className="sg-section-num">{num}</span>
-        <h2
-          className="sg-font-display m-0 mt-2 tracking-[-0.02em] text-[40px] leading-tight"
+        <Box as="span" data-part="sg-section-num">
+          {num}
+        </Box>
+        <Box
+          as="h2"
+          mt={2}
+          data-part="sg-font-display section-title"
           style={{ color: "var(--color-foreground)" }}
         >
           {title}
-        </h2>
+        </Box>
       </Box>
-      <p
-        className="m-0 max-w-[44ch] text-[14px]"
+      <Box
+        as="p"
+        data-part="section-desc"
         style={{ color: "var(--color-muted)" }}
       >
         {desc}
-      </p>
-    </Box>
+      </Box>
+    </Flex>
   );
 };

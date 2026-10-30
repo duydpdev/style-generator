@@ -1,4 +1,5 @@
 import { VERSION } from "../data/version";
+import { Box, Flex, Grid, Stack } from "../ui";
 
 /**
  *
@@ -6,52 +7,77 @@ import { VERSION } from "../data/version";
 export function CtaFooter() {
   return (
     <>
-      <div className="cta-card">
-        <div>
-          <h3>
+      <Grid
+        data-part="cta-card"
+        align="end"
+        gap={8}
+        mt={14}
+        p={12}
+        position="relative"
+      >
+        <Box>
+          <Box as="h3" mb={3}>
             Stop maintaining the plumbing.
             <br />
             Start shipping the design.
-          </h3>
-          <p>
+          </Box>
+          <Box as="p">
             One install, one JSON file, one pipeline. Tailwind v4. MIT licensed.
-          </p>
-        </div>
-        <div className="cta-row">
-          <a
-            className="btn btn-primary btn-lg"
+          </Box>
+        </Box>
+        <Flex data-part="cta-row" wrap gap={2.5} position="relative">
+          <Flex
+            as="a"
+            data-part="btn btn-primary btn-lg"
+            align="center"
+            gap={1.5}
+            px={5}
+            py={3}
             href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
             target="_blank"
             rel="noopener noreferrer"
           >
             Install from GitHub Packages ↗
-          </a>
-          <a
-            className="btn btn-outline btn-lg"
+          </Flex>
+          <Flex
+            as="a"
+            data-part="btn btn-outline btn-lg"
+            align="center"
+            gap={1.5}
+            px={5}
+            py={3}
             href="https://github.com/duydpdev/style-generator"
             target="_blank"
             rel="noopener noreferrer"
           >
             GitHub ↗
-          </a>
-        </div>
-      </div>
+          </Flex>
+        </Flex>
+      </Grid>
 
-      <div className="footer-inner">
-        <div>
-          <div className="brand">
-            <div className="brand-mark" />
-            <div className="brand-meta">
+      <Flex
+        data-part="footer-inner"
+        justify="between"
+        wrap
+        align="end"
+        gap={6}
+        py={14}
+        mt={16}
+      >
+        <Box>
+          <Flex data-part="brand" align="center" gap={3}>
+            <Box data-part="brand-mark" />
+            <Stack data-part="brand-meta">
               <b>@duydpdev/style-generator</b>
-              <span>v{VERSION} · MIT · 2026</span>
-            </div>
-          </div>
-          <p style={{ marginTop: 12 }}>
+              <Box as="span">v{VERSION} · MIT · 2026</Box>
+            </Stack>
+          </Flex>
+          <Box as="p" mt={3}>
             A TypeScript library and CLI for generating Tailwind design systems
             from a single JSON file.
-          </p>
-        </div>
-        <div className="footer-meta">
+          </Box>
+        </Box>
+        <Flex data-part="footer-meta" wrap gap={4}>
           <a
             href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
             target="_blank"
@@ -66,8 +92,8 @@ export function CtaFooter() {
           >
             github ↗
           </a>
-        </div>
-      </div>
+        </Flex>
+      </Flex>
     </>
   );
 }

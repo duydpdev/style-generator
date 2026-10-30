@@ -1,15 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  axisAttributes,
-  buttonRecipe,
-  cn,
-  stackRecipe,
-  textRecipe,
-} from "design-system-example";
+import { axisAttributes } from "design-system-example";
 
-import { Box } from "./ui";
+import { Button, Flex, Select, Stack, Text } from "./ui";
 
 type AxesState = Parameters<typeof axisAttributes>[0];
 type ThemeName = NonNullable<AxesState["theme"]>;
@@ -47,13 +41,13 @@ export function ThemeSwitch() {
   }, [state]);
 
   return (
-    <Box className={cn(stackRecipe({ direction: "row", wrap: true }), "gap-4")}>
-      <label className={cn(stackRecipe({ align: "start" }), "gap-1")}>
-        <span className={textRecipe({ type: "text12Mono", color: "muted" })}>
+    <Flex wrap gap={4}>
+      <Stack as="label" align="start" gap={1}>
+        <Text as="span" type="text12Mono" color="muted">
           theme
-        </span>
-        <select
-          className="rounded-md border border-current/20 bg-surface px-2 py-1"
+        </Text>
+        <Select
+          size="sm"
           value={state.theme}
           onChange={(event) => {
             setState((prev) => ({
@@ -67,14 +61,14 @@ export function ThemeSwitch() {
               {name}
             </option>
           ))}
-        </select>
-      </label>
-      <label className={cn(stackRecipe({ align: "start" }), "gap-1")}>
-        <span className={textRecipe({ type: "text12Mono", color: "muted" })}>
+        </Select>
+      </Stack>
+      <Stack as="label" align="start" gap={1}>
+        <Text as="span" type="text12Mono" color="muted">
           palette
-        </span>
-        <select
-          className="rounded-md border border-current/20 bg-surface px-2 py-1"
+        </Text>
+        <Select
+          size="sm"
           value={state.palette}
           onChange={(event) => {
             setState((prev) => ({
@@ -88,17 +82,17 @@ export function ThemeSwitch() {
               {name}
             </option>
           ))}
-        </select>
-      </label>
-      <button
-        type="button"
-        className={buttonRecipe({ variant: "ghost", size: "sm" })}
+        </Select>
+      </Stack>
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => {
           setState({ theme: "base", palette: "base" });
         }}
       >
         Reset
-      </button>
-    </Box>
+      </Button>
+    </Flex>
   );
 }

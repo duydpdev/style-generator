@@ -6,6 +6,41 @@ import pluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import pluginSonarjs from "eslint-plugin-sonarjs";
 import globals from "globals";
 import pluginTs from "typescript-eslint";
+import {
+  BANNED_TAGS,
+  UI_COMPONENT_NAMES,
+} from "./packages/ui-react/registry.mjs";
+
+// App code that renders only ui-react components. A tree joins this list
+// when it is migrated (phase 06: react-v4, next-v4, the site CTA footer;
+// phase 08 adds the rest of site/src).
+const UI_APP_FILES = [
+  "examples/react-v4/src/**/*.{ts,tsx}",
+  "examples/next-v4/app/**/*.{ts,tsx}",
+  "site/src/sections/cta-footer.tsx",
+];
+
+const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;
+const COMPONENT_SELECTOR = `JSXOpeningElement[name.name=/^(${UI_COMPONENT_NAMES.join("|")})$/]`;
+
+// Recipes, cn and the spacing helpers are for component authors; app code
+// uses the components' props. Shared with the nuxt-v4 rules (phase 07).
+const RESTRICTED_UI_IMPORTS = {
+  patterns: [
+    {
+      group: [
+        "design-system-example",
+        "design-system-example/*",
+        "@duydpdev/style-generator",
+        "@duydpdev/style-generator/*",
+      ],
+      importNamePattern:
+        "Recipe$|^cn$|^createCn$|^splitSpacingProps$|^createVariantMapper$",
+      message:
+        "App code renders ui components and passes props; recipes, cn, splitSpacingProps and createVariantMapper are for component authors.",
+    },
+  ],
+};
 
 export default pluginTs.config(
   pluginJs.configs.recommended,
@@ -132,6 +167,39 @@ export default pluginTs.config(
         .filter((name) => name.startsWith("require-"))
         .map((name) => [`jsdoc/${name}`, "off"]),
     ),
+  },
+
+  // Components-only app code: no layout/text tags, no className, no recipes,
+  // short files. Third-party components (NavLink, ReactMarkdown) may still
+  // take className.
+  {
+    files: UI_APP_FILES,
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 150, skipBlankLines: false, skipComments: false },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: TAG_SELECTOR,
+          message:
+            "Render a ui component (Box, Flex, Stack, Grid, Container, Text, Button, …) and keep the element with `as`.",
+        },
+        {
+          selector:
+            "JSXOpeningElement[name.name=/^[a-z]/] > JSXAttribute[name.name='className']",
+          message:
+            "No className in app code: use component props, or data-part for bespoke CSS.",
+        },
+        {
+          selector: `${COMPONENT_SELECTOR} > JSXAttribute[name.name='className']`,
+          message:
+            "No className on ui components: use their props, or data-part for bespoke CSS.",
+        },
+      ],
+      "no-restricted-imports": ["error", RESTRICTED_UI_IMPORTS],
+    },
   },
 
   // The design-system DX tests run in Node (TypeScript Compiler API, fs).

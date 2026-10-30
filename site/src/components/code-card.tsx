@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import { tokenize, type Lang } from "../lib/tokenize";
+import { Box, Flex, Stack, Text } from "../ui";
 
 interface Props {
   filename: string;
@@ -21,19 +22,25 @@ export function CodeCard({ filename, tag, lang, code }: Readonly<Props>) {
   const html = useMemo(() => tokenize(code, lang), [code, lang]);
 
   return (
-    <div className="code-card">
-      <div className="code-head">
-        <span className="dots">
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="filename">{filename}</span>
-        {tag ? <span className="tag">{tag}</span> : null}
-      </div>
-      <div className="code-body">
+    <Stack data-part="code-card" rounded="lg">
+      <Flex data-part="code-head" align="center" gap={2} px={4} py={3}>
+        <Flex as="span" gap={1.25}>
+          <Box as="span" data-part="dot" width={10} height={10} />
+          <Box as="span" data-part="dot" width={10} height={10} />
+          <Box as="span" data-part="dot" width={10} height={10} />
+        </Flex>
+        <Text as="span" data-part="filename" ml={1.5}>
+          {filename}
+        </Text>
+        {tag ? (
+          <Box as="span" data-part="tag" rounded="pill" px={1.75} py={0.5}>
+            {tag}
+          </Box>
+        ) : null}
+      </Flex>
+      <Box data-part="code-body" px={5.5} py={4.5}>
         <pre dangerouslySetInnerHTML={{ __html: html }} />
-      </div>
-    </div>
+      </Box>
+    </Stack>
   );
 }

@@ -34,30 +34,56 @@ export function CompareSection() {
         }
       />
 
-      <div className="compare-wrap" data-reveal="up">
-        <table className="compare">
+      <Box data-part="compare-wrap" data-reveal="up" rounded="lg">
+        <table data-part="compare">
           <thead>
             <tr>
-              <th style={{ width: "26%" }}>Capability</th>
-              <th className="col-tw" style={{ width: "37%" }}>
-                Bare Tailwind<small>v4</small>
-              </th>
-              <th className="col-us" style={{ width: "37%" }}>
-                + style-generator<small>v{VERSION}</small>
-              </th>
+              <Box as="th" px={5} py={4} style={{ width: "26%" }}>
+                Capability
+              </Box>
+              <Box
+                as="th"
+                data-part="col-tw"
+                px={5}
+                py={4}
+                style={{ width: "37%" }}
+              >
+                Bare Tailwind
+                <Box as="small" mt={0.75}>
+                  v4
+                </Box>
+              </Box>
+              <Box
+                as="th"
+                data-part="col-us"
+                px={5}
+                py={4}
+                style={{ width: "37%" }}
+              >
+                + style-generator
+                <Box as="small" mt={0.75}>
+                  v{VERSION}
+                </Box>
+              </Box>
             </tr>
           </thead>
           <tbody>
             {COMPARE_ROWS.map((r) => (
               <tr key={r.label}>
-                <td className="row-label">{r.label}</td>
-                <td className="cell-tw">{r.tw}</td>
-                <td className="cell-us">{r.us}</td>
+                <Box as="td" data-part="row-label" px={5} py={3.5}>
+                  {r.label}
+                </Box>
+                <Box as="td" data-part="cell-tw" px={5} py={3.5}>
+                  {r.tw}
+                </Box>
+                <Box as="td" data-part="cell-us" px={5} py={3.5}>
+                  {r.us}
+                </Box>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </Box>
     </Box>
   );
 }

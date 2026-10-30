@@ -27,6 +27,14 @@ const UI_APP_FILES = [
   "site/src/components/sidebar-toc.tsx",
   "site/src/components/chapter-head.tsx",
   "site/src/pages/landing-page.tsx",
+  "site/src/sections/hero-section.tsx",
+  "site/src/sections/why-section.tsx",
+  "site/src/sections/judgement-panel.tsx",
+  "site/src/sections/compare-section.tsx",
+  "site/src/sections/compare-rows.tsx",
+  "site/src/sections/build-section.tsx",
+  "site/src/components/code-card.tsx",
+  "site/src/components/pill.tsx",
 ];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;

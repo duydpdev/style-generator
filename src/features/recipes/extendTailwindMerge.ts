@@ -61,6 +61,9 @@ const BORDER_WIDTH_PREFIXES = [
  * text colour:
  * ```ts
  * import { extendTailwindMerge } from "tailwind-merge";
+ * import { createTailwindMergeExtension } from "@duydpdev/style-generator/recipes";
+ * import { tokens } from "./tokens";
+ *
  * const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
  * ```
  * - `shadows`, `backDropBlurs` and `borderWidth` (incl. side, logical and

@@ -8,7 +8,11 @@ import { toKebabCase } from "../../shared/helpers";
  * `html[data-<axis>="<variant>"]` selectors `generate()` emits. Spread the
  * result on the element the selectors target (`<html>` by default):
  * ```tsx
- * <html {...themeAxisAttributes({ theme: "dark", palette: "base" })}>
+ * import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
+ *
+ * const root = (
+ *   <html {...themeAxisAttributes({ theme: "dark", palette: "base" })} />
+ * );
  * // → data-theme="dark" (palette emits nothing)
  * ```
  * An axis that is `"base"` or `undefined` produces **no** attribute, so no

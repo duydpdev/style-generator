@@ -57,6 +57,9 @@ text colour:
 
 ```ts
 import { extendTailwindMerge } from "tailwind-merge";
+import { createTailwindMergeExtension } from "@duydpdev/style-generator/recipes";
+import { tokens } from "./tokens";
+
 const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
 ```
 
@@ -207,7 +210,11 @@ The DOM attributes that activate a theme's axis variants, mirroring the
 result on the element the selectors target (`<html>` by default):
 
 ```tsx
-<html {...themeAxisAttributes({ theme: "dark", palette: "base" })}>
+import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
+
+const root = (
+  <html {...themeAxisAttributes({ theme: "dark", palette: "base" })} />
+);
 // → data-theme="dark" (palette emits nothing)
 ```
 

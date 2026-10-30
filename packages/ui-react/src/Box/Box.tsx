@@ -1,27 +1,63 @@
-import { useMemo, type ReactElement } from "react";
+import type { JSX } from "react";
 
-import type { BoxStyles } from "./Box.styles";
-import type { BoxProps } from "./Box.types";
+import { mergeStyle, splitStyleProps } from "../shared/splitStyleProps";
+import type { LooseProps } from "../shared/types";
 
-/**
- * Binds `Box` to one app's styles; `createUi` calls it once per app.
- * @param styles - Lookup from `createBoxStyles(tokens.colors)`
- * @returns The app's `Box`
- */
-export function createBox(styles: BoxStyles) {
-  return function Box({
-    backgroundColor,
+import type { BoxDeps } from "./Box.types";
+
+const OVERLAY_KEYS = [
+  "borderColor",
+  "border",
+  "borderX",
+  "borderY",
+  "borderT",
+  "borderB",
+  "borderL",
+  "borderR",
+  "rounded",
+  "roundedT",
+  "roundedB",
+  "roundedL",
+  "roundedR",
+] as const;
+
+export const createBox = (deps: BoxDeps) =>
+  function Box({
+    as,
     className,
-    ...rest
-  }: BoxProps): ReactElement {
-    // useMemo keeps the class string stable across renders. It is also the
-    // hook that fails fast ("Invalid hook call") if an app bundles a second React.
-    const classes = useMemo(
-      () =>
-        [styles(backgroundColor), className].filter(Boolean).join(" ") ||
-        undefined,
-      [backgroundColor, className],
+    style,
+    innerBorder,
+    children,
+    ...props
+  }: LooseProps): JSX.Element {
+    const Component = as ?? "div";
+    const framed = innerBorder === true;
+    const extra = framed
+      ? { innerBorder: true, position: props.position ?? "relative" }
+      : {};
+    const split = splitStyleProps(props, deps.box, deps.spacing, extra);
+    const overlay = Object.fromEntries(
+      OVERLAY_KEYS.map((key) => [key, split.variants[key]]),
     );
-    return <div {...rest} className={classes} />;
+    return (
+      <Component
+        {...split.rest}
+        className={deps.cn(split.className, className)}
+        style={mergeStyle(split.style, style)}
+      >
+        {children}
+        {framed && (
+          <span
+            aria-hidden="true"
+            className={deps.cn(
+              deps.box({
+                ...overlay,
+                overlay: true,
+                position: "absolute",
+              }),
+            )}
+          />
+        )}
+      </Component>
+    );
   };
-}

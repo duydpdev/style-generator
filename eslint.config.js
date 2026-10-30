@@ -88,6 +88,27 @@ export default pluginTs.config(
     },
   },
 
+  // ui-react's component registry: plain ESM read by this config and the name test.
+  {
+    files: [
+      "packages/ui-react/registry.mjs",
+      "packages/ui-react/registry.d.mts",
+    ],
+    extends: [pluginTs.configs.disableTypeChecked],
+  },
+
+  // One file, one job (component, styles, types, test): brainstorm §3.4.
+  // Phase 06 adds UI_APP_FILES and phase 07 packages/ui-vue/** to this rule.
+  {
+    files: ["packages/ui-react/**/*.{ts,tsx}"],
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 150, skipBlankLines: false, skipComments: false },
+      ],
+    },
+  },
+
   // Landing site components, the example apps and the workspace packages: typed like src/, without
   // mandatory JSDoc.
   {

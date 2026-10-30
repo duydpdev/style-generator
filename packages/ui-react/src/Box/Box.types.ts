@@ -1,6 +1,8 @@
-import type { ComponentProps } from "react";
+import type { UiCn } from "../shared/cn";
+import type { BodyRecipe } from "../shared/splitStyleProps";
 
-/** Props of the `Box` body: every `div` prop plus the style props (typed per app in `shared/uiTypes.ts`). */
-export type BoxProps = ComponentProps<"div"> & {
-  backgroundColor?: string | undefined;
-};
+export interface BoxDeps {
+  readonly cn: UiCn;
+  readonly spacing: readonly string[];
+  readonly box: BodyRecipe;
+}

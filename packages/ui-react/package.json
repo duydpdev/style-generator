@@ -10,12 +10,16 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "design-system-example": "workspace:*"
+  },
   "peerDependencies": {
     "react": "^19.0.0"
   },
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",
     "@types/react": "^19.0.0",
+    "clsx": "^2.1.1",
     "react": "^19.0.0",
     "typescript": "^5.9.0"
   }

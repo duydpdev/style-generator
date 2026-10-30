@@ -87,6 +87,11 @@ const SECTION_ORDER = [
   "Design system",
 ];
 
+/** Drop `#region docs:` / `#endregion docs:` marker lines (they feed scripts/docs-embed.mjs). */
+function stripDocRegions(code: string): string {
+  return code.replace(/^.*#(?:end)?region docs:.*(?:\r?\n|$)/gm, "");
+}
+
 function buildVariant(
   raw: Record<string, string>,
   variant: Variant,
@@ -97,7 +102,11 @@ function buildVariant(
     if (!shouldInclude(fullPath)) continue;
     const rel = relativePath(fullPath, variant);
     const section = classify(rel);
-    const entry = { path: rel, code, lang: langFromExt(rel) };
+    const entry = {
+      path: rel,
+      code: stripDocRegions(code),
+      lang: langFromExt(rel),
+    };
     const list = sections.get(section);
     if (list) list.push(entry);
     else sections.set(section, [entry]);

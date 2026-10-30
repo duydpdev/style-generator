@@ -52,7 +52,7 @@ export function HeroSection() {
         <Flex wrap align="center" gap={3}>
           <Flex
             as={Link}
-            to="/docs/reference#1-installation"
+            to="/docs/introduction#install"
             data-part="install"
             align="center"
             gap={2.5}

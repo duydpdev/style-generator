@@ -1,0 +1,140 @@
+{
+  "README.md": {
+    "slug": "introduction",
+    "title": "Introduction",
+    "group": "Start",
+    "order": 1
+  },
+  "documents/getting-started/react-vite.md": {
+    "slug": "getting-started-react-vite",
+    "title": "React + Vite",
+    "group": "Start",
+    "order": 2
+  },
+  "documents/getting-started/next.md": {
+    "slug": "getting-started-next",
+    "title": "Next.js",
+    "group": "Start",
+    "order": 3
+  },
+  "documents/getting-started/nuxt-vue.md": {
+    "slug": "getting-started-nuxt-vue",
+    "title": "Nuxt + Vue",
+    "group": "Start",
+    "order": 4
+  },
+  "documents/components.md": {
+    "slug": "components",
+    "title": "Components",
+    "group": "Guides",
+    "order": 1
+  },
+  "documents/cookbook.md": {
+    "slug": "cookbook",
+    "title": "Cookbook",
+    "group": "Guides",
+    "order": 2
+  },
+  "documents/guide.md": {
+    "slug": "guide",
+    "title": "Guide",
+    "group": "Guides",
+    "order": 3
+  },
+  "documents/reference/core.md": {
+    "slug": "reference-core",
+    "title": "Core API",
+    "group": "Reference",
+    "order": 1
+  },
+  "documents/reference/theme.md": {
+    "slug": "reference-theme",
+    "title": "Theme config",
+    "group": "Reference",
+    "order": 2
+  },
+  "documents/reference/options.md": {
+    "slug": "reference-options",
+    "title": "Options",
+    "group": "Reference",
+    "order": 3
+  },
+  "documents/reference/cli.md": {
+    "slug": "reference-cli",
+    "title": "CLI",
+    "group": "Reference",
+    "order": 4
+  },
+  "documents/reference/tokens.md": {
+    "slug": "reference-tokens",
+    "title": "./tokens",
+    "group": "Reference",
+    "order": 5
+  },
+  "documents/reference/cva.md": {
+    "slug": "reference-cva",
+    "title": "./cva",
+    "group": "Reference",
+    "order": 6
+  },
+  "documents/reference/spacing.md": {
+    "slug": "reference-spacing",
+    "title": "./spacing",
+    "group": "Reference",
+    "order": 7
+  },
+  "documents/reference/types.md": {
+    "slug": "reference-types",
+    "title": "./types",
+    "group": "Reference",
+    "order": 8
+  },
+  "documents/reference/recipes.md": {
+    "slug": "reference-recipes",
+    "title": "./recipes",
+    "group": "Reference",
+    "order": 9
+  },
+  "documents/reference/vite.md": {
+    "slug": "reference-vite",
+    "title": "./vite",
+    "group": "Reference",
+    "order": 10
+  },
+  "documents/reference/next.md": {
+    "slug": "reference-next",
+    "title": "./next",
+    "group": "Reference",
+    "order": 11
+  },
+  "documents/migration/4.x-to-5.0.md": {
+    "slug": "migration-4x-to-5",
+    "title": "Migration 4.x → 5.0",
+    "group": "Reference",
+    "order": 12
+  },
+  "documents/migration/3.x-to-4.0.md": {
+    "slug": "migration-3x-to-4",
+    "title": "Migration 3.x → 4.0",
+    "group": "Reference",
+    "order": 13
+  },
+  "documents/architecture.md": {
+    "slug": "architecture",
+    "title": "Architecture",
+    "group": "Overview",
+    "order": 1
+  },
+  "documents/deploy.md": {
+    "slug": "deploy",
+    "title": "Deploy",
+    "group": "Operations",
+    "order": 1
+  },
+  "documents/testing.md": {
+    "slug": "testing",
+    "title": "Testing",
+    "group": "Operations",
+    "order": 2
+  }
+}

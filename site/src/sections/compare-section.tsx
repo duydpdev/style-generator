@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 import { VERSION } from "../data/version";
 
 import { COMPARE_ROWS } from "./compare-rows";
@@ -7,28 +9,32 @@ import { COMPARE_ROWS } from "./compare-rows";
  */
 export function CompareSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="compare"
-      className="chapter"
       data-ch="02"
       data-ch-label="Side by side"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">02</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>02</b>
-        </span>
-        <span>· Side by side</span>
-      </div>
-      <h2 className="ch-title">
-        Bare Tailwind <em>vs</em> style-generator.
-      </h2>
-      <p className="ch-lede">
-        Same problems, different ergonomics. style-generator doesn't replace
-        Tailwind — it absorbs the repetitive plumbing on top of it.
-      </p>
+      <ChapterHead
+        num="02"
+        label="Side by side"
+        title={
+          <>
+            Bare Tailwind <em>vs</em> style-generator.
+          </>
+        }
+        lede={
+          <>
+            Same problems, different ergonomics. style-generator doesn't replace
+            Tailwind — it absorbs the repetitive plumbing on top of it.
+          </>
+        }
+      />
 
-      <div className="compare-wrap reveal">
+      <div className="compare-wrap" data-reveal="up">
         <table className="compare">
           <thead>
             <tr>
@@ -52,6 +58,6 @@ export function CompareSection() {
           </tbody>
         </table>
       </div>
-    </section>
+    </Box>
   );
 }

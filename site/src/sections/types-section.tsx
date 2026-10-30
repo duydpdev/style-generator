@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 import { CodeCard } from "../components/code-card";
 import { KeyPoint } from "../components/key-point";
 
@@ -26,28 +28,32 @@ interface BoxProps {
  */
 export function TypesSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="types"
-      className="chapter"
       data-ch="07"
       data-ch-label="TypeScript"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">07</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>07</b>
-        </span>
-        <span>· TypeScript inference</span>
-      </div>
-      <h2 className="ch-title">
-        Typed tokens. <em>Compile-time safety.</em>
-      </h2>
-      <p className="ch-lede">
-        Your JSON becomes a type. Props infer from it. No more drift between CSS
-        values and component variants.
-      </p>
+      <ChapterHead
+        num="07"
+        label="TypeScript inference"
+        title={
+          <>
+            Typed tokens. <em>Compile-time safety.</em>
+          </>
+        }
+        lede={
+          <>
+            Your JSON becomes a type. Props infer from it. No more drift between
+            CSS values and component variants.
+          </>
+        }
+      />
 
-      <div className="split-grid reveal">
+      <div className="split-grid" data-reveal="up">
         <div className="kp-list">
           <KeyPoint
             badge="T1"
@@ -81,6 +87,6 @@ export function TypesSection() {
         </div>
         <CodeCard filename="Box.tsx" tag="typed" lang="ts" code={TS_CODE} />
       </div>
-    </section>
+    </Box>
   );
 }

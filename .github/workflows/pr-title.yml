@@ -9,8 +9,10 @@
 # `edited` also catches a title-only edit (ci.yml does not re-run then).
 # Does not run on `synchronize`: pushing a new commit does not change the title.
 # Consequence: the check attaches only to the head at the time it ran; commits
-# pushed afterwards do not carry this check (there is no branch protection, so
-# it does not block the merge).
+# pushed afterwards do not carry this check (it is not a required check of the
+# rulesets, so it does not block the merge).
+# The "Check branch name" step checks the head branch name with
+# scripts/check-branch-name.sh, the same rule as .husky/pre-push.
 # ─────────────────────────────────────────────────────
 name: PR Title
 
@@ -35,6 +37,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Check branch name
+        # Same rule as .husky/pre-push (scripts/check-branch-name.sh); runs
+        # before the install so a bad name fails in seconds. The head ref goes
+        # through env, never interpolated into the script.
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: sh scripts/check-branch-name.sh "$HEAD_REF"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7

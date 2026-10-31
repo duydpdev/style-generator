@@ -3,7 +3,7 @@ name: CI Check
 on:
   pull_request:
     branches: [main, develop, "release/**"]
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened]
 
 # Cancel any in-progress run for the same PR when new commits are pushed.
 concurrency:
@@ -19,11 +19,10 @@ jobs:
     name: Build & Lint Check
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Draft PRs skip CI: keep a PR in draft until the local gate is green;
-    # `ready_for_review` (in `on.pull_request.types`) then runs it. No paths
-    # filter here: the site build renders documents/*.md, so docs-only PRs
-    # still need this job.
-    if: github.event.pull_request.draft == false
+    # Draft PRs run CI too (a pushed draft must not stay without a result;
+    # Actions minutes are free on this public repo). No paths filter here:
+    # the site build renders documents/*.md, so docs-only PRs still need
+    # this job, and the required check must always report.
 
     steps:
       - name: Checkout
@@ -61,7 +60,18 @@ jobs:
           echo "Linting commits $BASE_SHA..$HEAD_SHA"
           yarn commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
 
+      - name: Build
+        run: yarn build:all
+
+      - name: Prepare nuxt-v4 types
+        # ESLint lints examples/nuxt-v4/app/**, whose tsconfig references
+        # .nuxt/tsconfig.*.json. `nuxt prepare` writes them and needs dist/
+        # (nuxt.config.ts imports the built library), so it runs after Build.
+        run: yarn workspace nuxt-v4-example prepare:nuxt
+
       - name: Lint
+        # Type-aware ESLint also covers examples/**, which import the built
+        # library through `link:../..`; without dist/ their types are unresolved.
         run: yarn lint
 
       - name: Prettier check
@@ -78,9 +88,6 @@ jobs:
           done
           yarn typecheck:scripts
 
-      - name: Build
-        run: yarn build:all
-
       - name: Build site
         # site/ and examples/react-v4 dogfood the library through `link:` deps,
         # and the site renders documents/*.md, so this runs for docs-only PRs too.
@@ -91,9 +98,39 @@ jobs:
         # Relative links and #anchors in the markdown the site renders.
         run: yarn workspace site check:links
 
+      - name: Check embedded doc code
+        # Tutorial blocks with an `<!-- embed: path#region -->` marker must
+        # equal that region of the real example file (yarn docs:embed).
+        run: yarn check:docs-embed
+
+      - name: Type-check doc snippets
+        # Every ts/tsx block in README.md and documents/ (not plans,
+        # brainstorm, migration) against dist/*.d.ts; opt-outs need a reason
+        # and stay at or below 10% of all blocks.
+        run: yarn check:doc-snippets
+
+      - name: Check reference coverage of exports
+        # Every export of every package.json#exports subpath needs a heading
+        # in documents/reference/<subpath>.md with a signature block that
+        # matches dist/*.d.ts and a non-empty TSDoc (yarn docs:signatures).
+        run: yarn check:doc-exports
+
       - name: Typecheck examples
-        # The examples consume the built library through `link:../..`.
-        run: yarn workspaces foreach -A --include '*-example' run typecheck
+        # The examples, the site, packages/ui-react and packages/ui-vue consume the built library through `link:../..`.
+        run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' --include '@duydpdev/ui-vue' --include site run typecheck
+
+      - name: Test examples (design-system DX)
+        # Compiles the recipes against a mutated theme.json and expects the
+        # error in src/recipes/button.ts; needs dist/*.d.ts from the build.
+        run: yarn workspace design-system-example test
+
+      - name: Test ui-react (unit, types, recipe names, Tailwind coverage)
+        # Own vitest runner (its tsconfig has jsx); needs dist/ from the build above.
+        run: yarn workspace @duydpdev/ui-react test
+
+      - name: Test ui-vue (SSR render, types, names)
+        # Own vitest runner (root vitest excludes packages/**); needs dist/.
+        run: yarn workspace @duydpdev/ui-vue test
 
       - name: Build examples
         # react-v4 is already built by the site build above.
@@ -115,13 +152,19 @@ jobs:
         # TypeScript generator script that `style-gen init` scaffolds.
         run: yarn check:smoke
 
+      - name: Check types resolve for ESM and CJS (attw, node16 profile)
+        # Packs the package and runs @arethetypeswrong/cli on the tarball;
+        # needs dist/*.d.cts from `yarn build:all`.
+        run: yarn check:types-pack
+
       - name: Vite dev-server smoke (styleGenVite configureServer)
         # `vite build` never runs configureServer; this edits the example
         # theme under a real dev server and expects a re-emit + full-reload.
         run: node scripts/vite-dev-smoke.mjs
 
-      - name: Type-check dist/*.d.ts with library checking on
-        # tsconfig.dts-check.json; the examples set skipLibCheck.
+      - name: Type-check dist/*.d.ts (ESM, Bundler) and dist/*.d.cts (CJS, node16) with library checking on
+        # tsconfig.dts-check.json and tsconfig.dts-check.cjs.json; attw
+        # (above) never resolves peer types. The examples set skipLibCheck.
         run: yarn typecheck:dist
 
       - name: Test (with coverage thresholds)

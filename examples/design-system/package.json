@@ -1,0 +1,32 @@
+{
+  "name": "design-system-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./recipes": "./src/recipes/factories/index.ts",
+    "./style-gen.options": "./src/style-gen.options.ts",
+    "./theme.json": "./src/theme.json",
+    "./styles/*": "./src/styles/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --typecheck",
+    "generate": "node ../../dist/cli/index.mjs generate",
+    "doctor": "node ../../dist/cli/index.mjs doctor",
+    "schema": "node ../../dist/cli/index.mjs schema"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.0"
+  },
+  "devDependencies": {
+    "@duydpdev/style-generator": "link:../..",
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.11"
+  }
+}

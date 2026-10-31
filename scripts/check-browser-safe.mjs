@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
  * Verify the browser-safe subpaths (`./tokens`, `./cva`, `./spacing`,
- * `./types`) never transitively import Zod, a Node builtin, or
- * `@tailwindcss/*` — even through a shared chunk (`helpers-*`,
+ * `./recipes`, `./types`) never transitively import Zod, a Node builtin,
+ * `@tailwindcss/*` or any other runtime `dependency` of the package (the
+ * bundler leaves those as bare imports: `chokidar`, `@clack/prompts`, ...) —
+ * even through a shared chunk (`helpers-*`,
  * `defaultOption-*`, `safelistProperties-*`, ...).
  *
  * Unlike `check-externals.mjs` (which only logs external refs in the root
@@ -21,14 +23,25 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-const BROWSER_SAFE_SUBPATHS = ["tokens", "cva", "spacing", "types"];
+const BROWSER_SAFE_SUBPATHS = ["tokens", "cva", "spacing", "recipes", "types"];
+
+const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+
+/**
+ * Every runtime `dependency` except Zod (own rule in `isForbidden`) is
+ * Node-only here; no browser-safe subpath imports any of them. A future
+ * dependency a browser subpath legitimately needs must be filtered out here.
+ */
+const nodeOnlyDependencies = new Set(
+  Object.keys(pkg.dependencies ?? {}).filter((name) => name !== "zod"),
+);
 
 const builtinNames = new Set(builtinModules);
 
 /**
  * Whether a (non-relative) import specifier is forbidden in a browser-safe
- * bundle: Zod, any Node builtin (bare or `node:`-prefixed), or a
- * `@tailwindcss/*` package.
+ * bundle: Zod, any Node builtin (bare or `node:`-prefixed), a
+ * `@tailwindcss/*` package, or a Node-only runtime dependency.
  * @param {string} specifier - Raw import/require specifier
  * @returns {boolean} `true` when the specifier must not appear
  */
@@ -36,8 +49,12 @@ const isForbidden = (specifier) => {
   if (specifier === "zod" || specifier.startsWith("zod/")) return true;
   if (specifier.startsWith("node:")) return true;
   if (specifier.startsWith("@tailwindcss/")) return true;
-  const bare = specifier.split("/")[0];
-  return builtinNames.has(specifier) || builtinNames.has(bare);
+  const parts = specifier.split("/");
+  const packageName = specifier.startsWith("@")
+    ? parts.slice(0, 2).join("/")
+    : parts[0];
+  if (nodeOnlyDependencies.has(packageName)) return true;
+  return builtinNames.has(specifier) || builtinNames.has(parts[0]);
 };
 
 /**

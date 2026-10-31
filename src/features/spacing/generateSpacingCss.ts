@@ -39,23 +39,22 @@ const buildFallbackChain = (
  * No bare selector is ever emitted — Tailwind's variant engine only picks
  * up `hover:`/`md:` modifiers on classes defined via `@utility`.
  * @param {string} key - Spacing property key
- * @param {Record<string, string>} cssProps - CSS property → `var()` template map for this key
+ * @param {readonly string[]} cssProps - CSS properties this key sets
  * @param {readonly ResolvedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
  * @returns {string} `@utility sp-<key> { ... }` block
  */
 const buildUtilityBlock = (
   key: string,
-  cssProps: Record<string, string>,
+  cssProps: readonly string[],
   sortedBreakpoints: readonly ResolvedBreakpoint[],
 ): string => {
-  const cssPropNames = Object.keys(cssProps);
-  const baseSection = cssPropNames
+  const baseSection = cssProps
     .map((cssProp) => `  ${cssProp}: var(--sg-sp-${key});`)
     .join("\n");
 
   const mediaSections = sortedBreakpoints.map((bp, i) => {
     const chain = buildFallbackChain(key, sortedBreakpoints, i);
-    const lines = cssPropNames
+    const lines = cssProps
       .map((cssProp) => `    ${cssProp}: ${chain};`)
       .join("\n");
     return `  @media (width >= ${bp.value}) {\n${lines}\n  }`;

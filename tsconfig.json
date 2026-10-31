@@ -21,5 +21,5 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src", "e2e"]
+  "include": ["src", "e2e", "e2e-site"]
 }

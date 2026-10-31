@@ -1,9 +1,12 @@
-import type { z } from "zod";
+import { z } from "zod";
 
 import { cssVarCategories } from "../features/registry/builtInCategories";
+import { axisAttributeName } from "../shared/axisAttributeName";
 import { toKebabCase } from "../shared/helpers";
 
-import type { ThemeCssVarSource } from "./themeSchema";
+import type { ResolvedOptions } from "./resolveOptions";
+import type { ThemeConfig } from "./themeSchema";
+import { ALIAS_VALUE_RE } from "./tokenGrammar";
 
 /**
  * Tailwind's built-in `font-<name>` font-weight utility suffixes. A
@@ -90,9 +93,20 @@ export const checkBorderWidthColorCollision = (
 };
 
 /**
+ * `--font-weight-*` and `--font-size-*` live in the `--font-` theme
+ * namespace Tailwind reads for font families, but it ignores them as
+ * families and instead reads them as the weight/size scale — a
+ * `fontFamily` key `weightBold` would overwrite `--font-weight-bold`
+ * (`font-bold`) and `sizeLg` the `font-size-lg` variable.
+ */
+const FONT_SCALE_NAMESPACE_RE = /^(weight|size)(-|$)/;
+
+/**
  * Reject a `fontFamily` key whose kebab-case form matches one of
  * Tailwind's built-in font-weight utility suffixes (see
- * {@link TAILWIND_FONT_WEIGHT_UTILITY_NAMES}).
+ * {@link TAILWIND_FONT_WEIGHT_UTILITY_NAMES}), or that starts with the
+ * `weight`/`size` segment of Tailwind's `--font-weight-*`/`--font-size-*`
+ * theme variables.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} fontFamily - Base `fontFamily` record
  * @returns {void}
@@ -106,80 +120,328 @@ export const checkFontFamilyWeightNames = (
   const weightNames: readonly string[] = TAILWIND_FONT_WEIGHT_UTILITY_NAMES;
   for (const key of Object.keys(fontFamily)) {
     const kebab = toKebabCase(key);
-    if (!weightNames.includes(kebab)) continue;
+    if (weightNames.includes(kebab)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fontFamily", key],
+        message: `fontFamily key "${key}" collides with Tailwind's built-in font-weight utility "font-${kebab}" — rename it.`,
+      });
+    } else if (FONT_SCALE_NAMESPACE_RE.test(kebab)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fontFamily", key],
+        message: `fontFamily key "${key}" emits "--font-${kebab}", which is Tailwind's font-weight/font-size theme namespace (--font-weight-*, --font-size-*): it is not a font family and would overwrite that scale — rename it so it does not start with "weight" or "size".`,
+      });
+    }
+  }
+};
+
+/**
+ * Map every class a CSS-var category emits (`<prefix>-<kebab key>`) to the
+ * `category.key` that owns it.
+ * @param {ThemeConfig} theme - Base theme
+ * @returns {Map<string, string>} Class name → first owning `category.key`
+ */
+const classOwners = (theme: ThemeConfig): Map<string, string> => {
+  const owner = new Map<string, string>();
+  for (const descriptor of cssVarCategories) {
+    for (const key of Object.keys(theme[descriptor.key] ?? {})) {
+      for (const prefix of descriptor.classPrefixes ?? []) {
+        const className = `${prefix}-${toKebabCase(key)}`;
+        if (!owner.has(className)) {
+          owner.set(className, `${descriptor.key}.${key}`);
+        }
+      }
+    }
+  }
+  return owner;
+};
+
+/**
+ * Reject a `typography` key whose kebab-case form equals the class another
+ * category emits (`<prefix>-<kebab key>`, e.g. `colors.primary` →
+ * `text-primary`, so `typography.textPrimary` → `@utility text-primary`
+ * would collide). Typography emits the bare `@utility <kebab-key>`, so its
+ * class set is just its keys; state classes are not considered.
+ * @param {z.RefinementCtx} ctx - Zod refinement context
+ * @param {ThemeConfig} theme - Base theme
+ * @returns {void}
+ */
+export const checkTypographyClassCollisions = (
+  ctx: z.RefinementCtx,
+  theme: ThemeConfig,
+): void => {
+  if (!theme.typography) return;
+
+  const owner = classOwners(theme);
+
+  for (const key of Object.keys(theme.typography)) {
+    const className = toKebabCase(key);
+    const other = owner.get(className);
+    if (other === undefined) continue;
     ctx.addIssue({
       code: "custom",
-      path: ["fontFamily", key],
-      message: `fontFamily key "${key}" collides with Tailwind's built-in font-weight utility "font-${kebab}" — rename it.`,
+      path: ["typography", key],
+      message: `typography key "${key}" emits "@utility ${className}", the same class theme.${other} emits — rename one.`,
+    });
+  }
+};
+
+/** A CSS-var category key (`colors`, `shadows`, …). */
+type ThemeCssCategory = (typeof cssVarCategories)[number]["key"];
+
+/** The one issue shape the `axes` checks report. */
+interface AxesIssue {
+  code: "custom";
+  path: (string | number)[];
+  message: string;
+}
+
+/**
+ * Where the `axes` and reset checks report to: a `z.RefinementCtx` satisfies
+ * it, and so does the plain collector {@link assertThemeOptions} uses.
+ */
+interface AxesIssueCtx {
+  addIssue: (issue: AxesIssue) => void;
+}
+
+/** One `holder: "$target"` declaration and where it was written. */
+interface AliasDecl {
+  holder: string;
+  target: string;
+  /** `"base"` or `"<axis>.<variant>"`. */
+  where: string;
+}
+
+/** A declaration that would not follow the variant it is nested in. */
+interface StaleHolder extends AliasDecl {
+  /** The key the variant overrides that this holder depends on (maybe via a chain). */
+  root: string;
+}
+
+/**
+ * Every `$`-alias declaration of one category in the base theme and in every
+ * variant of every axis except `skip`: a holder declared anywhere can sit on
+ * an ancestor element of the one a variant is applied to.
+ * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
+ * @param {string} category - CSS-var category key
+ * @param {object} skip - The variant override being checked (its own entries are "re-declared", not stale)
+ * @returns {AliasDecl[]} Declarations, base first then variants in declaration order
+ */
+const collectAliasDecls = (
+  theme: ThemeConfig,
+  category: ThemeCssCategory,
+  skip: object,
+): AliasDecl[] => {
+  const decls: AliasDecl[] = [];
+  const add = (
+    record: Readonly<Record<string, string>> | undefined,
+    where: string,
+  ): void => {
+    for (const [holder, value] of Object.entries(record ?? {})) {
+      const target = ALIAS_VALUE_RE.exec(value)?.[1];
+      if (target !== undefined) decls.push({ holder, target, where });
+    }
+  };
+
+  add(theme[category], "base");
+  for (const [axis, variants] of Object.entries(theme.themeAxes ?? {})) {
+    for (const [variant, override] of Object.entries(variants)) {
+      if (override !== skip) add(override[category], `${axis}.${variant}`);
+    }
+  }
+  return decls;
+};
+
+/**
+ * The declarations that alias a key the variant overrides (directly, or
+ * through a chain of stale holders) without being re-declared in it, in
+ * discovery order. A stale holder is itself a changed key, so declarations
+ * aliasing it follow (fixpoint; each holder is reported once, so it ends).
+ * @param {AliasDecl[]} decls - Candidate alias declarations of the category
+ * @param {Readonly<Record<string, string>>} overrideRecord - The variant's record of the same category
+ * @returns {StaleHolder[]} Stale holders
+ */
+const findStaleHolders = (
+  decls: readonly AliasDecl[],
+  overrideRecord: Readonly<Record<string, string>>,
+): StaleHolder[] => {
+  // changed key → the overridden key it traces back to
+  const rootOf = new Map(Object.keys(overrideRecord).map((key) => [key, key]));
+  const stale: StaleHolder[] = [];
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const decl of decls) {
+      const root = rootOf.get(decl.target);
+      if (root === undefined || rootOf.has(decl.holder)) continue;
+      rootOf.set(decl.holder, root);
+      stale.push({ ...decl, root });
+      grew = true;
+    }
+  }
+  return stale;
+};
+
+const staleHolderMessage = (
+  category: ThemeCssCategory,
+  variantLabel: string,
+  { holder, target, root, where }: StaleHolder,
+): string => {
+  const why =
+    target === root
+      ? `variant "${variantLabel}" overrides "${target}"`
+      : `"${target}" is itself stale in variant "${variantLabel}" (it follows the overridden "${root}")`;
+  return (
+    `theme.${category}.${holder} is the alias "$${target}" (declared in ${where}) and ${why}, ` +
+    `but an alias is computed where it is declared (:root), so with axes.scope "element" it would not follow the variant — ` +
+    `re-declare "${holder}" in this variant (a literal or "$${target}") or use axes.scope "root".`
+  );
+};
+
+/**
+ * Check a theme against `axes.scope: "element"`. These checks need both the
+ * theme and the options, so they cannot live in `ThemeSchema` (which is
+ * options-independent and published as JSON Schema).
+ *
+ * With `scope: "element"` a `themeAxes.<axis>.<variant>` block applies to an
+ * arbitrary element, but a `$`-alias `var(--sg-<category>-<target>)` is
+ * computed where the custom property is DECLARED (`:root`, or the ancestor
+ * element a variant already applies to). So when a variant overrides `T` and
+ * an entry `H: "$T"`, written in the base theme or in any other variant of
+ * any axis, is not re-declared in the same variant, `H` keeps the other
+ * value inside the scoped element — a silently stale token. Runs over every
+ * CSS-var category (`$base` in `shadows` is an alias too) and follows the
+ * chain: a stale holder is itself a changed key, so an entry aliasing it is
+ * reported as well. Each stale holder is reported at
+ * `["themeAxes", axis, variant, category, key]`, `key` being the overridden
+ * key the staleness traces back to.
+ * @param {AxesIssueCtx} ctx - Where issues are reported
+ * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
+ * @returns {void}
+ */
+export const checkElementScopeAliases = (
+  ctx: AxesIssueCtx,
+  theme: ThemeConfig,
+): void => {
+  for (const [axis, variants] of Object.entries(theme.themeAxes ?? {})) {
+    for (const [variant, override] of Object.entries(variants)) {
+      for (const { key: category } of cssVarCategories) {
+        const overrideRecord = override[category];
+        if (!overrideRecord) continue;
+        const decls = collectAliasDecls(theme, category, override);
+        for (const stale of findStaleHolders(decls, overrideRecord)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["themeAxes", axis, variant, category, stale.root],
+            message: staleHolderMessage(category, `${axis}.${variant}`, stale),
+          });
+        }
+      }
+    }
+  }
+};
+
+/**
+ * Check `axes.attribute` against the theme's axes, whatever the scope: every
+ * key must name a `themeAxes` axis, and no two axes may resolve to the same
+ * attribute name (their variant blocks would answer to one attribute). Both
+ * are reported at `["axes", "attribute", axis]` — for a clash, at the axis
+ * that has an explicit entry (else the later one). Attribute names are
+ * lowercase by the schema, and so are the `data-<kebab>` defaults, so a plain
+ * string comparison is enough.
+ * @param {AxesIssueCtx} ctx - Where issues are reported
+ * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
+ * @param {Readonly<Record<string, string>>} attribute - Resolved `axes.attribute` map
+ * @returns {void}
+ */
+export const checkAxesAttribute = (
+  ctx: AxesIssueCtx,
+  theme: ThemeConfig,
+  attribute: Readonly<Record<string, string>>,
+): void => {
+  const axes = Object.keys(theme.themeAxes ?? {});
+
+  for (const axis of Object.keys(attribute)) {
+    if (axes.includes(axis)) continue;
+    ctx.addIssue({
+      code: "custom",
+      path: ["axes", "attribute", axis],
+      message: `axes.attribute names axis "${axis}", which is not declared in theme.themeAxes — fix the name or declare the axis.`,
+    });
+  }
+
+  const firstAxisByName = new Map<string, string>();
+  for (const axis of axes) {
+    const name = axisAttributeName(axis, attribute);
+    const first = firstAxisByName.get(name);
+    if (first === undefined) {
+      firstAxisByName.set(name, axis);
+      continue;
+    }
+    ctx.addIssue({
+      code: "custom",
+      path: [
+        "axes",
+        "attribute",
+        Object.hasOwn(attribute, axis) ? axis : first,
+      ],
+      message: `Axes "${first}" and "${axis}" would both use the attribute "${name}" — give one of them a different name in axes.attribute.`,
     });
   }
 };
 
 /**
- * Variable-name prefixes no theme key may produce: the spacing utilities own
- * `--sg-sp-<key>[-<bp>]` (see `generateSpacingCss.ts`), so a color such as
- * `spP` (→ `--sg-sp-p`) would silently redefine a spacing variable.
+ * Check `resetTailwindDefaults` against the theme: clearing Tailwind's
+ * `--color-*`, `--radius-*` or `--shadow-*` defaults while the theme declares
+ * no replacement would leave `bg-red-500`/`rounded-md`/`shadow-md` compiling
+ * to nothing with no theme value to take over. `ThemeSchema` accepts
+ * `colors: {}`, so `"colors"` needs a non-empty record like the others.
+ * @param {AxesIssueCtx} ctx - Issue collector
+ * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
+ * @param {ResolvedOptions["resetTailwindDefaults"]} reset - Resolved `resetTailwindDefaults`
+ * @returns {void}
  */
-const RESERVED_CSS_VAR_PREFIXES = ["--sg-sp-"] as const;
-
-/** Where a `--sg-*` variable was first produced. */
-interface CssVarOwner {
-  category: string;
-  key: string;
-}
-
-/**
- * Why `owner` may not produce `varName`, or `undefined` when it may.
- * @param {string} varName - The `--<cssVarPrefix>-<kebab-key>` variable
- * @param {CssVarOwner} owner - The category and key producing it
- * @param {CssVarOwner | undefined} prev - The first owner of the same variable, if any
- * @returns {string | undefined} The issue message, or `undefined`
- */
-const cssVarCollisionMessage = (
-  varName: string,
-  owner: CssVarOwner,
-  prev: CssVarOwner | undefined,
-): string | undefined => {
-  if (RESERVED_CSS_VAR_PREFIXES.some((p) => varName.startsWith(p))) {
-    return `${owner.category}.${owner.key} produces ${varName}, which is reserved for the spacing utilities (--sg-sp-*); rename the key`;
+export const checkResetTailwindDefaults = (
+  ctx: AxesIssueCtx,
+  theme: ThemeConfig,
+  reset: ResolvedOptions["resetTailwindDefaults"],
+): void => {
+  const needs = [
+    ["colors", "colors"],
+    ["radius", "borderRadius"],
+    ["shadow", "shadows"],
+  ] as const;
+  for (const [name, category] of needs) {
+    const index = reset.indexOf(name);
+    if (index === -1) continue;
+    if (Object.keys(theme[category] ?? {}).length > 0) continue;
+    ctx.addIssue({
+      code: "custom",
+      path: ["resetTailwindDefaults", index],
+      message: `resetTailwindDefaults "${name}" clears Tailwind's default ${name} values but the theme declares no "${category}" to replace them — add "${category}" or drop "${name}".`,
+    });
   }
-  if (prev && prev.category !== owner.category) {
-    return `${owner.category}.${owner.key} and ${prev.category}.${prev.key} both produce the CSS variable ${varName}; the later one silently overwrites the earlier — rename one of them`;
-  }
-  return undefined;
 };
 
 /**
- * Reject two keys from different CSS-var categories that produce the same
- * `--<cssVarPrefix>-<kebab-key>` variable (e.g. `colors.shadowPrimary` and
- * `shadows.primary` both give `--sg-shadow-primary`; the later declaration
- * silently overwrites the earlier one in `:root`), and any key whose
- * variable falls in {@link RESERVED_CSS_VAR_PREFIXES}. Variable names come
- * from the registry's `cssVarPrefix` descriptors, so a prefix rename flows
- * in automatically. Same-category duplicates are left to
- * {@link reportKebabCollisions}. Runs on the base theme only: every
- * `themeAxes` override key must already exist in the base record, so the
- * base pass covers it.
- * @param {z.RefinementCtx} ctx - Zod refinement context
- * @param {ThemeCssVarSource} theme - Base theme (CSS-var categories only)
+ * Run every check that needs both the theme and the options and throw every
+ * issue as one `ZodError`, like the other `generate()` option and theme
+ * failures: {@link checkAxesAttribute} always, {@link checkElementScopeAliases}
+ * only for `scope: "element"` (with `"root"` the `html` anchor keeps every
+ * alias in step), and {@link checkResetTailwindDefaults}.
+ * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
+ * @param {Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">} resolved - Resolved options
  * @returns {void}
+ * @throws {z.ZodError} on an unknown or clashing attribute, a stale alias holder, or a reset with no theme replacement
  */
-export const checkCssVarCollisions = (
-  ctx: z.RefinementCtx,
-  theme: ThemeCssVarSource,
+export const assertThemeOptions = (
+  theme: ThemeConfig,
+  resolved: Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">,
 ): void => {
-  const seen = new Map<string, CssVarOwner>();
-  for (const category of cssVarCategories) {
-    for (const key of Object.keys(theme[category.key] ?? {})) {
-      const varName = `--${category.cssVarPrefix}-${toKebabCase(key)}`;
-      const owner = { category: category.key, key };
-      const prev = seen.get(varName);
-      const message = cssVarCollisionMessage(varName, owner, prev);
-      if (message) {
-        ctx.addIssue({ code: "custom", path: [owner.category, key], message });
-      } else if (!prev) {
-        seen.set(varName, owner);
-      }
-    }
-  }
+  const issues: z.core.$ZodIssue[] = [];
+  const ctx: AxesIssueCtx = { addIssue: (issue) => issues.push(issue) };
+  checkAxesAttribute(ctx, theme, resolved.axes.attribute);
+  if (resolved.axes.scope === "element") checkElementScopeAliases(ctx, theme);
+  checkResetTailwindDefaults(ctx, theme, resolved.resetTailwindDefaults);
+  if (issues.length > 0) throw new z.ZodError(issues);
 };

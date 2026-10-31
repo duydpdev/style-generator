@@ -1,15 +1,42 @@
-import { Link, NavLink } from "react-router-dom";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useLocation } from "react-router-dom";
 
-import { VERSION } from "../data/version";
+import { Box, Container, Flex, Text } from "../ui";
 
-import { Sun } from "./icon";
-
-export type ActiveRoute = "landing" | "docs" | "examples";
+import { TopbarActions } from "./topbar-actions";
+import { type ActiveRoute, TopbarNav } from "./topbar-nav";
 
 interface Props {
   activeChapter: { num: string; label: string } | null;
   onToggleTheme: () => void;
   activeRoute?: ActiveRoute;
+}
+
+const PAGE_MAX_WIDTH =
+  "calc(var(--content-w) + var(--sidebar-w) + var(--gutter) * 2)";
+
+/**
+ * Subscribes to the `data-theme` attribute of <html>, which every page's
+ * `useTheme()` writes, so the topbar reflects the theme without owning it.
+ * @param {() => void} onChange - Called whenever the attribute changes
+ * @returns {() => void} Unsubscribe function
+ */
+function subscribeTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  return () => {
+    observer.disconnect();
+  };
+}
+
+/**
+ * @returns {boolean} Whether the dark theme is currently applied
+ */
+function isDarkTheme(): boolean {
+  return document.documentElement.dataset.theme === "dark";
 }
 
 export function Topbar({
@@ -18,78 +45,87 @@ export function Topbar({
   activeRoute = "landing",
 }: Readonly<Props>) {
   const showReading = activeChapter !== null;
+  const dark = useSyncExternalStore(subscribeTheme, isDarkTheme);
+  const { pathname } = useLocation();
+  // The dropdown is open only for the route it was opened on, so any route
+  // change closes it without an effect.
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const menuOpen = openAt === pathname;
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenAt(null);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const header = headerRef.current;
+      if (header && event.target instanceof Node) {
+        if (!header.contains(event.target)) setOpenAt(null);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [menuOpen]);
+
+  const closeMenu = () => {
+    setOpenAt(null);
+  };
 
   return (
-    <header className="topbar">
-      <div className="topbar-inner">
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <Link to="/" className="brand">
-            <div className="brand-mark" />
-            <div className="brand-meta">
-              <b>@duydpdev/style-generator</b>
-              <span>v{VERSION} · tailwind v4</span>
-            </div>
-          </Link>
-          <nav className="topbar-nav">
-            <NavLink
-              to="/"
-              end
-              className={activeRoute === "landing" ? "active" : ""}
-            >
-              Landing
-            </NavLink>
-            <NavLink
-              to="/docs"
-              className={activeRoute === "docs" ? "active" : ""}
-            >
-              Docs
-            </NavLink>
-            <NavLink
-              to="/examples/v4"
-              className={activeRoute === "examples" ? "active" : ""}
-            >
-              Examples
-            </NavLink>
-          </nav>
-        </div>
+    <Box as="header" data-part="topbar" position="sticky" ref={headerRef}>
+      <Container maxWidth={PAGE_MAX_WIDTH}>
+        <Flex
+          data-part="topbar-inner"
+          align="center"
+          justify="between"
+          height={60}
+          gap={6}
+          px={8}
+        >
+          <TopbarNav
+            activeRoute={activeRoute}
+            menuOpen={menuOpen}
+            closeMenu={closeMenu}
+          />
 
-        <div className={`now-reading${showReading ? " visible" : ""}`}>
-          <span className="pulse" />
-          Reading{" "}
-          <span className="now-ch">
-            {activeChapter
-              ? `Ch. ${activeChapter.num} — ${activeChapter.label}`
-              : "— Cover"}
-          </span>
-        </div>
+          <Flex
+            data-part={`now-reading${showReading ? " visible" : ""}`}
+            align="center"
+            gap={2.5}
+            py={1.25}
+            px={3}
+            rounded="pill"
+          >
+            <Box
+              as="span"
+              data-part="pulse"
+              width={6}
+              height={6}
+              backgroundColor="success"
+            />
+            Reading{" "}
+            <Text as="span" data-part="now-ch" color="foreground">
+              {activeChapter
+                ? `Ch. ${activeChapter.num} — ${activeChapter.label}`
+                : "— Cover"}
+            </Text>
+          </Flex>
 
-        <div className="topbar-actions">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={onToggleTheme}
-            aria-label="Toggle theme"
-          >
-            <Sun />
-          </button>
-          <a
-            className="btn btn-outline"
-            href="https://github.com/duydpdev/style-generator"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub ↗
-          </a>
-          <a
-            className="btn btn-primary"
-            href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            package ↗
-          </a>
-        </div>
-      </div>
-    </header>
+          <TopbarActions
+            dark={dark}
+            menuOpen={menuOpen}
+            onToggleTheme={onToggleTheme}
+            onToggleMenu={() => {
+              setOpenAt(menuOpen ? null : pathname);
+            }}
+          />
+        </Flex>
+      </Container>
+    </Box>
   );
 }

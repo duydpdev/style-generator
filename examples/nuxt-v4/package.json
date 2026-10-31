@@ -9,21 +9,19 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "prepare:nuxt": "nuxt prepare",
-    "typecheck": "nuxt typecheck",
-    "doctor": "node ../../dist/cli/index.mjs doctor"
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^3.0.0",
-    "vue": "^3.5.0"
+    "@duydpdev/ui-vue": "workspace:*",
+    "design-system-example": "workspace:*",
+    "vue": "^3.5.44"
   },
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",
     "@tailwindcss/vite": "^4.2.0",
-    "nuxt": "^3.21.10",
+    "nuxt": "~4.4.8",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.9.0",
-    "vue-tsc": "^2.1.0"
+    "vue-tsc": "^3.3.0"
   }
 }

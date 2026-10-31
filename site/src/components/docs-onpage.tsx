@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
 import type { RefObject } from "react";
 
-interface Heading {
-  id: string;
-  text: string;
-  level: 2 | 3;
-}
+import {
+  jumpToHeading,
+  useDocHeadings,
+  useDocScroll,
+} from "../lib/use-doc-headings";
+import { Box, Flex, Stack } from "../ui";
 
 interface Props {
   contentRef: RefObject<HTMLElement | null>;
@@ -18,120 +18,101 @@ export function DocsOnPage({
   rawMarkdown,
   quicklinks = [],
 }: Readonly<Props>) {
-  const [headings, setHeadings] = useState<Heading[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-
-  // Re-scan headings whenever the markdown changes
-  useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-    const raf = requestAnimationFrame(() => {
-      const list: Heading[] = Array.from(
-        el.querySelectorAll("h2[id], h3[id]"),
-      ).map((h) => ({
-        id: h.id,
-        text: h.textContent.replace(/`/g, ""),
-        level: h.tagName === "H3" ? 3 : 2,
-      }));
-      setHeadings(list);
-    });
-    return () => {
-      cancelAnimationFrame(raf);
-    };
-  }, [contentRef, rawMarkdown]);
-
-  // Scroll spy + progress fill
-  useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const winH = window.innerHeight;
-        const rect = el.getBoundingClientRect();
-        const total = Math.max(1, el.offsetHeight - winH * 0.6);
-        const read = Math.min(1, Math.max(0, -rect.top / total));
-        setProgress(read);
-
-        const trigger = 110;
-        let active: string | null = null;
-        for (const h of headings) {
-          const node = document.getElementById(h.id);
-          if (!node) continue;
-          if (node.getBoundingClientRect().top <= trigger) active = h.id;
-        }
-        setActiveId(active);
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [contentRef, headings]);
-
-  const jump = (id: string) => {
-    const node = document.getElementById(id);
-    if (!node) return;
-    const top = node.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top, behavior: "smooth" });
-  };
+  const headings = useDocHeadings(contentRef, rawMarkdown);
+  const { activeId, progress } = useDocScroll(contentRef, headings);
 
   return (
-    <aside className="toc-rail">
-      <div className="toc-rail-sticky">
-        <div className="toc-rail-label">On this page</div>
-        <ol className="onpage">
-          {headings.map((h) => (
-            <li
-              key={h.id}
-              className={`h${String(h.level)}${h.id === activeId ? " active" : ""}`}
-            >
-              <button
-                type="button"
-                aria-current={h.id === activeId ? "location" : undefined}
-                onClick={() => {
-                  jump(h.id);
-                }}
-              >
-                {h.text}
-              </button>
-            </li>
-          ))}
-        </ol>
-
-        <div className="toc-rail-progress">
-          <span>READ</span>
-          <span className="toc-progress-track">
-            <span
-              className="toc-progress-fill"
-              style={{ transform: `scaleX(${String(progress)})` }}
-            />
-          </span>
-          <span>{Math.round(progress * 100)}%</span>
-        </div>
-
-        {quicklinks.length > 0 ? (
-          <div className="toc-quicklinks">
-            {quicklinks.map((q) => (
-              <a
-                key={q.href}
-                href={q.href}
-                target={q.href.startsWith("http") ? "_blank" : undefined}
-                rel={
-                  q.href.startsWith("http") ? "noopener noreferrer" : undefined
+    <Box as="aside" data-part="toc-rail" position="relative" pt={9}>
+      <Stack
+        data-part="toc-rail-sticky"
+        gap={3.5}
+        pl={1.5}
+        maxHeight="calc(100vh - 100px)"
+      >
+        <Flex data-part="toc-rail-label" align="center" gap={2.5}>
+          On this page
+        </Flex>
+        <Stack as="ol" data-part="onpage" gap={0.25} position="relative">
+          {headings.map((h) => {
+            const active = h.id === activeId;
+            return (
+              <li
+                key={h.id}
+                data-part={
+                  [h.level === 3 && "h3", active && "active"]
+                    .filter(Boolean)
+                    .join(" ") || undefined
                 }
               >
-                <span>{q.label}</span>
-                <span className="arr">{q.arr ?? "↗"}</span>
-              </a>
-            ))}
-          </div>
+                <Box
+                  as="button"
+                  type="button"
+                  width="100%"
+                  pl={h.level === 3 ? 6.5 : 3.5}
+                  py={1.25}
+                  aria-current={active ? "location" : undefined}
+                  onClick={() => {
+                    jumpToHeading(h.id);
+                  }}
+                >
+                  {h.text}
+                </Box>
+              </li>
+            );
+          })}
+        </Stack>
+
+        <Flex
+          data-part="toc-rail-progress"
+          align="center"
+          justify="between"
+          mt={1.5}
+        >
+          <Box as="span">READ</Box>
+          <Box
+            as="span"
+            data-part="toc-progress-track"
+            height={2}
+            mx={2.5}
+            backgroundColor="line"
+          >
+            <Box
+              as="span"
+              data-part="toc-progress-fill"
+              height="100%"
+              backgroundColor="primary"
+              style={{ transform: `scaleX(${String(progress)})` }}
+            />
+          </Box>
+          <Box as="span">{Math.round(progress * 100)}%</Box>
+        </Flex>
+
+        {quicklinks.length > 0 ? (
+          <Stack data-part="toc-quicklinks" gap={1} pt={3.5}>
+            {quicklinks.map((q) => {
+              const external = q.href.startsWith("http");
+              return (
+                <Flex
+                  as="a"
+                  key={q.href}
+                  href={q.href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noopener noreferrer" : undefined}
+                  align="center"
+                  justify="between"
+                  gap={2}
+                  py={1}
+                >
+                  <Box as="span">{q.label}</Box>
+                  <Box as="span" data-part="arr">
+                    {q.arr ?? "↗"}
+                  </Box>
+                </Flex>
+              );
+            })}
+          </Stack>
         ) : null}
-      </div>
-    </aside>
+      </Stack>
+    </Box>
   );
 }

@@ -19,8 +19,12 @@ src/__integration__/__fixtures__/dev1-baseline-compiled.css
 # reads only the root .gitignore, not the examples' nested ones.
 examples/react-v4/src/theme/theme.css
 examples/next-v4/app/theme/theme.css
-examples/nuxt-v4/theme/theme.css
+examples/nuxt-v4/app/assets/css/theme.css
+examples/design-system/src/styles/theme.css
 next-env.d.ts
 .next
 .nuxt
 .output
+
+# Google Fonts responses pinned verbatim for the site screenshots (e2e-site/site.spec.ts)
+e2e-site/fixtures/

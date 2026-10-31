@@ -16,6 +16,10 @@ import { ThemingSection } from "../sections/theming-section";
 import { ToolingSection } from "../sections/tooling-section";
 import { TypesSection } from "../sections/types-section";
 import { WhySection } from "../sections/why-section";
+import { Box, Container, Grid } from "../ui";
+
+const PAGE_MAX_WIDTH =
+  "calc(var(--content-w) + var(--sidebar-w) + var(--gutter) * 2)";
 
 export function LandingPage() {
   const { toggle } = useTheme();
@@ -28,26 +32,33 @@ export function LandingPage() {
     <>
       <ScrollProgress progress={progress} />
       <Topbar activeChapter={activeChapter} onToggleTheme={toggle} />
-      <div className="shell">
-        <SidebarToc
-          chapters={chapters}
-          activeIndex={activeIndex}
-          onJump={scrollToChapter}
-        />
-        <main className="content">
-          <HeroSection />
-          <WhySection />
-          <CompareSection />
-          <BuildSection />
-          <FeaturesSection />
-          <SpacingSection />
-          <ThemingSection />
-          <TypesSection />
-          <ToolingSection />
-          <StartSection />
-          <CtaFooter />
-        </main>
-      </div>
+      <Container
+        data-part="shell"
+        maxWidth={PAGE_MAX_WIDTH}
+        px={8}
+        position="relative"
+      >
+        <Grid data-part="shell-grid" gap={{ base: 0, lg: 24 }}>
+          <SidebarToc
+            chapters={chapters}
+            activeIndex={activeIndex}
+            onJump={scrollToChapter}
+          />
+          <Box as="main" minWidth={0}>
+            <HeroSection />
+            <WhySection />
+            <CompareSection />
+            <BuildSection />
+            <FeaturesSection />
+            <SpacingSection />
+            <ThemingSection />
+            <TypesSection />
+            <ToolingSection />
+            <StartSection />
+            <CtaFooter />
+          </Box>
+        </Grid>
+      </Container>
     </>
   );
 }

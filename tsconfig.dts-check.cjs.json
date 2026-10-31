@@ -1,0 +1,19 @@
+{
+  // `yarn typecheck:dist`, CommonJS half: a self-referencing `.cts` file imports
+  // every subpath through its `require` condition, so the `dist/*.d.cts` are
+  // checked the way a CommonJS consumer's compiler reads them, with library
+  // checking on. `node16`, not `nodenext`: since TS 5.8 `nodenext` allows
+  // `require()` of ESM and would hide TS1479 on ESM-only peers (Vite 7/8);
+  // `node16` is the strictest consumer and matches the attw profile. attw
+  // never resolves peer imports, so this is the only gate for them.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false
+  },
+  "include": ["scripts/dist-types.cjs.assert.cts"]
+}

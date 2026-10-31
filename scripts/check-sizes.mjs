@@ -25,17 +25,68 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // Re-measured 2026-10-06 (4.2.0: coverage option, resolveOptions, schema
 // split): index 10071, vite 10110, next 9997, cli 34703; tokens 1619 (the shared
 // internals live in the entry chunk, see `preserveEntrySignatures` in
-// vite.config.ts); cva, spacing and types are unchanged.
-// Budgets = measured + ~10% headroom.
+// vite.config.ts); cva, spacing and types are unchanged. Re-measured
+// 2026-10-07 (5.0.0-DEV.1: borderWidth via `--border-width-*`, spacing arrays,
+// `Breakpoint` object, collision check removed, doctor scanner): index 9664,
+// tokens 1492, spacing 791, vite 9698, next 9586, cli 34188; cva and types
+// are unchanged. No budget raised. Re-measured 2026-10-28 (5.0.0-DEV.N,
+// phase 09: inferred token types, `aliasedColors`): index 9907, tokens 1688
+// (1591 without `aliasedColors`; it walks the base and every `themeAxes`
+// override, and the unused `axisOverrides` field was dropped), cva 729,
+// spacing 791, types 55, vite 9916, next 9803, cli 34991. Budget raised:
+// tokens 1700 -> 1850 (measured 1688 + ~10%; `aliasedColors` is intrinsic).
+// Re-measured 2026-10-28 (5.0.0-DEV.N, phase 10): recipes 2076 (new
+// `./recipes` subpath: its entry plus the `helpers`, `spacing`,
+// `defaultOption` and `axisAttributeName` chunks it shares), budget 2284 =
+// measured + ~10%. index 10954, vite 10967 and next 10854 grew by ~1.05 kB
+// (vs phase 09; cli 34991 -> 37694 = +2.7 kB because the tsdown bundle is
+// unminified and keeps every JSDoc block) from the `axes` option (options schema, resolve,
+// `assertAxesOptions`/`checkElementScopeAliases`, `generateThemeCss`
+// signature), NOT from `./recipes`: index measured 10504 without it, before
+// the last axes checks landed. tokens 1686, cva 727, spacing 788 and types
+// 55 are back at their phase-09 values. With the default chunking
+// `./recipes` splits `helpers`/`colorStates` and `spacingHelpers` off their
+// entry chunks and pushed tokens to 1861, cva to 902 and spacing to 919; the
+// `manualChunks` rule in vite.config.ts pins those modules to stable chunks,
+// and `axisAttributeName` lives in its own module so `./tokens`/`./cva` do
+// not carry it. Budgets raised for the measured intrinsic `axes` growth
+// (measured + ~10%): index 11100 -> 12050, vite 11150 -> 12050, next 11050 ->
+// 11950, cli 38000 -> 41450; plus the new `recipes` entry.
+// 2026-10-28 (phase 11, node runner): `vite` and `next` now carry the
+// shared emitter (config loader, `prepareGenerate`, atomic write, watcher
+// glue) and import the `tokens` chunk (the `./tokens` internals are pinned to
+// it in `vite.config.ts`, which keeps `./tokens` at one entry + two shared
+// chunks). Measured vite 12742 B, next 13163 B (+~10%): vite 12050 -> 14050,
+// next 11950 -> 14450. `cli` fell 37694 -> 22496 B after tsdown stopped
+// emitting JSDoc (`comments.jsdoc: false`); budget = measured + ~10%:
+// 41450 -> 24750.
+// tokens 1688, cva 724 and spacing 790 measured in phase 11 are +2/-3/+2 B
+// against the phase-10 values (1686/727/788). Their runtime sources are
+// unchanged since phase 10 (the only edit under their import closure is a
+// type-only addition to `core/Options.ts`), so the delta is chunk-hash import
+// specifiers (`./helpers-<hash>.js`, gzip-sensitive) and the `tokens` chunk
+// layout, not code; inferred from the unchanged sources, not byte-compared
+// with a phase-10 build.
+// 2026-10-29 (review fixes): the cross-axis alias-cycle pass
+// (`validateCrossAxisAliasCycles`), the typography/font-family class
+// collision checks and the strict plugin-options schema are intrinsic schema
+// code shared by `index`, `vite`, `next` and `cli`. Measured index 12326, vite
+// 14022, next 14177, cli 23685 (vs 12742/13163/22496 for vite/next/cli in
+// phase 11). Budgets raised to measured + ~10%: index 12050 -> 13560, vite
+// 14050 -> 15430; next (98%) and cli (96%) keep theirs. tokens 1686, recipes
+// 2076 are unchanged.
+// Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
+// unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
-  index: 11_100,
-  tokens: 1_700,
+  index: 13_560,
+  tokens: 1_850,
   cva: 800,
   spacing: 1_000,
+  recipes: 2_284,
   types: 100,
-  vite: 11_150,
-  next: 11_050,
-  cli: 38_000,
+  vite: 15_430,
+  next: 14_450,
+  cli: 24_750,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.

@@ -1,4 +1,10 @@
 {
-  // Nuxt generates the real config under .nuxt/tsconfig.json after `nuxt prepare`.
-  "extends": "./.nuxt/tsconfig.json"
+  // Nuxt 4 generates the real configs under .nuxt/ after `nuxt prepare`.
+  "files": [],
+  "references": [
+    { "path": "./.nuxt/tsconfig.app.json" },
+    { "path": "./.nuxt/tsconfig.server.json" },
+    { "path": "./.nuxt/tsconfig.shared.json" },
+    { "path": "./.nuxt/tsconfig.node.json" }
+  ]
 }

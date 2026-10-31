@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { Box, Flex, Stack, Text } from "../ui";
+
 export interface TermLine {
   html: string;
   delay: number;
@@ -21,7 +23,7 @@ export function TerminalTypewriter({
   filename = "~/my-app · zsh",
 }: Readonly<Props>) {
   const bodyRef = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState<TermLine[]>([]);
+  const [shown, setShown] = useState(0);
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function TerminalTypewriter({
     const tick = () => {
       if (cancel || idx >= lines.length) return;
       const line = lines[idx];
-      setShown((s) => [...s, line]);
+      setShown(idx + 1);
       idx++;
       window.setTimeout(tick, line.delay);
     };
@@ -61,30 +63,47 @@ export function TerminalTypewriter({
     };
   }, [started, lines]);
 
+  // Every line is rendered from the first paint (hidden until revealed), so
+  // the box never grows; this only matters when the body itself overflows.
   useEffect(() => {
     const el = bodyRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [shown]);
 
   return (
-    <div className="terminal">
-      <div className="code-head">
-        <span className="dots">
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="filename">{filename}</span>
-      </div>
-      <div ref={bodyRef} className="terminal-body">
-        {shown.map((l, i) => (
-          <div
-            key={i}
-            className="line"
-            dangerouslySetInnerHTML={{ __html: l.html }}
-          />
-        ))}
-      </div>
-    </div>
+    <Stack data-part="terminal" minHeight={320} rounded="lg">
+      <Flex data-part="code-head" align="center" gap={2} px={4} py={3}>
+        <Flex as="span" gap={1.25}>
+          <Box as="span" data-part="dot" width={10} height={10} />
+          <Box as="span" data-part="dot" width={10} height={10} />
+          <Box as="span" data-part="dot" width={10} height={10} />
+        </Flex>
+        <Text as="span" data-part="filename" ml={1.5}>
+          {filename}
+        </Text>
+      </Flex>
+      <Box
+        ref={bodyRef}
+        data-part="terminal-body"
+        data-testid="terminal-body"
+        px={4.5}
+        py={4}
+      >
+        {lines.map((l, i) => {
+          const revealed = i < shown;
+          return (
+            <Text
+              as="div"
+              key={i}
+              data-part="line"
+              data-line-state={revealed ? "shown" : "pending"}
+              aria-hidden={!revealed}
+              style={{ visibility: revealed ? "visible" : "hidden" }}
+              dangerouslySetInnerHTML={{ __html: l.html }}
+            />
+          );
+        })}
+      </Box>
+    </Stack>
   );
 }

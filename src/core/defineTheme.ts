@@ -1,5 +1,6 @@
-import type { StyleGeneratorOptions } from "./Options";
-import { ThemeSchema, type ThemeConfig } from "./themeSchema";
+import type { ExactOptions, StyleGeneratorOptions } from "./Options";
+import { parseTheme } from "./parseTheme";
+import type { ThemeConfig } from "./themeSchema";
 
 /**
  * Runtime-validated theme config helper — the only place `defineTheme` is
@@ -22,20 +23,20 @@ import { ThemeSchema, type ThemeConfig } from "./themeSchema";
  * });
  */
 export function defineTheme<const T extends ThemeConfig>(config: T): T {
-  // `ThemeSchema.parse` returns `ThemeConfig` (widened), not `T` — cast back
-  // to preserve the caller's literal key/value types for downstream
-  // inference (e.g. `DesignTokensResult<T>`). Safe: a successful parse is
-  // structurally identical to `config` (no coercion/defaults in this
-  // schema), so the cast doesn't paper over an actual shape mismatch.
-  return ThemeSchema.parse(config) as T;
+  return parseTheme(config);
 }
 
 /**
- * Type-safe options helper. Zero runtime cost.
- * @template T
- * @param {T} options - Style generator options
- * @returns {T} The same options object (type-preserving)
+ * Type-safe options helper. Zero runtime cost. `const O` keeps the literal
+ * `breakpoints`, `screens` and `spacing.properties` keys, which flow into
+ * `DesignTokensWeb<T, O>` when the same object is passed to `generate()` or
+ * `createDesignTokens()`.
+ * @template O
+ * @param {O} options - Style generator options
+ * @returns {O} The same options object (type-preserving)
  */
-export function defineOptions<T extends StyleGeneratorOptions>(options: T): T {
+export function defineOptions<const O extends StyleGeneratorOptions>(
+  options: ExactOptions<O>,
+): O {
   return options;
 }

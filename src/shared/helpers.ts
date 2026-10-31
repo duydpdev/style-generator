@@ -1,3 +1,8 @@
+/**
+ * Converts a camelCase token key to the kebab-case used in class names and CSS variables: `"blue500"` → `"blue-500"`, `"primaryFG"` → `"primary-fg"`, `"2xl"` → `"2xl"`.
+ * @param {string} str - A camelCase token key
+ * @returns {string} The kebab-case form of `str`
+ */
 export const toKebabCase = (str: string) => {
   return str
     .replaceAll(/([a-z])([A-Z])/g, "$1-$2")

@@ -1,9 +1,8 @@
-import { Box } from "../components/Box";
-import { Text } from "../components/Text";
+import { Box, Grid, Stack, Text } from "../ui";
 
-import { COLOR_ROWS, PALETTES, type PaletteId } from "./palettes";
+import { COLOR_ROWS, colorsFor } from "./palettes";
 import { SectionHead } from "./SectionHead";
-import type { ThemeName } from "./types";
+import type { PaletteId, ThemeName } from "./types";
 
 interface ColorSectionProps {
   palette: PaletteId;
@@ -11,11 +10,13 @@ interface ColorSectionProps {
 }
 
 export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
-  const set = PALETTES[palette][theme];
+  const set = colorsFor(palette, theme);
 
   return (
-    <section
-      className="border-t py-14"
+    <Box
+      as="section"
+      borderT="thin"
+      py={14}
       style={{ borderColor: "var(--c-line)" }}
     >
       <SectionHead
@@ -30,7 +31,7 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
         }
       />
 
-      <Box className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <Grid columns={{ base: 2, md: 4 }} gap={4}>
         {COLOR_ROWS.map(({ key, label, desc }) => {
           const hex = set[key];
           return (
@@ -38,21 +39,19 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
               key={key}
               backgroundColor="surface"
               rounded="lg"
-              className="sg-color-card sg-glass-target overflow-hidden border"
+              border="thin"
+              data-part="sg-color-card sg-glass-target color-card"
               style={{ borderColor: "var(--c-line)" }}
             >
-              <div
-                className="relative h-24"
-                style={{ background: `var(--color-${key})` }}
-              >
-                <div className="sg-tone-strip">
-                  <span style={{ background: hex, opacity: 0.55 }} />
-                  <span style={{ background: hex, opacity: 0.75 }} />
-                  <span style={{ background: hex }} />
-                </div>
-              </div>
-              <Box px={4} py={3} gap={1} className="flex flex-col">
-                <Text type="text14Regular" className="font-medium">
+              <Box height={96} style={{ background: `var(--color-${key})` }}>
+                <Box data-part="sg-tone-strip">
+                  <Box as="span" style={{ background: hex, opacity: 0.55 }} />
+                  <Box as="span" style={{ background: hex, opacity: 0.75 }} />
+                  <Box as="span" style={{ background: hex }} />
+                </Box>
+              </Box>
+              <Stack px={4} py={3} gap={1}>
+                <Text type="text14Regular" data-part="text-medium">
                   {label}
                 </Text>
                 <Text type="text12Mono" color="muted">
@@ -61,11 +60,11 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
                 <Text type="text12Mono" color="muted">
                   {desc} · {hex.toUpperCase()}
                 </Text>
-              </Box>
+              </Stack>
             </Box>
           );
         })}
-      </Box>
-    </section>
+      </Grid>
+    </Box>
   );
 };

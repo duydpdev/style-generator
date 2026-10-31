@@ -1,0 +1,59 @@
+name: Site visual update
+
+# Rewrites changed or missing site screenshot baselines (Linux) and uploads
+# them as the `site-visual-baselines` artifact. Started only by adding the
+# PR label `visual-update` (works on drafts). The update runs only after the
+# exact list of changed snapshots (from the `site-visual-report` artifact of
+# visual.yml) has been approved: see documents/testing.md, section 7.
+on:
+  pull_request:
+    branches: [main, develop, "release/**"]
+    types: [labeled]
+
+# One group per label name: another label added at the same time gets its
+# own (skipped) run and cannot cancel this one.
+concurrency:
+  group: visual-update-${{ github.ref }}-${{ github.event.label.name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Site visual baselines (chromium)
+    if: github.event.label.name == 'visual-update'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build library and site
+        run: yarn site:build
+
+      # No browser cache on purpose (documents/deploy.md, PR #73).
+      - name: Install Playwright Chromium
+        run: yarn playwright install --with-deps chromium
+
+      - name: Rewrite changed or missing baselines
+        run: yarn test:visual:update
+
+      - name: Upload baselines
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-visual-baselines
+          path: e2e-site/__screenshots__/
+          if-no-files-found: error
+          retention-days: 7

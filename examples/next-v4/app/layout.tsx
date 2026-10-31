@@ -9,17 +9,13 @@ export const metadata: Metadata = {
     "Token-driven design system demo for @duydpdev/style-generator on Next.js App Router with Tailwind CSS v4.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
+  // No `data-theme` / `data-palette`: the base variants need no attribute. The
+  // client-only `ThemeSwitch` adds them on `<html>` once the user picks one.
   return (
-    <html
-      lang="en"
-      data-palette="cobalt"
-      data-theme="light"
-      data-voice="editorial"
-      data-geometry="soft"
-      data-surface="lifted"
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -28,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>

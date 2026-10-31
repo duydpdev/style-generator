@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Pill } from "../components/pill";
+
 export interface CompareRow {
   label: string;
   tw: ReactNode;
@@ -11,14 +13,13 @@ export const COMPARE_ROWS: CompareRow[] = [
     label: "Source of truth",
     tw: (
       <>
-        <span className="pill pill-warn">scattered</span>Split across config,
-        CSS, props.
+        <Pill tone="warn">scattered</Pill>Split across config, CSS, props.
       </>
     ),
     us: (
       <>
-        <span className="pill pill-good">single file</span>One <b>theme.json</b>{" "}
-        drives everything.
+        <Pill tone="good">single file</Pill>One <b>theme.json</b> drives
+        everything.
       </>
     ),
   },
@@ -55,13 +56,13 @@ export const COMPARE_ROWS: CompareRow[] = [
     label: "Responsive spacing",
     tw: (
       <>
-        <span className="pill pill-warn">~4 800 classes</span>Every axis × size
-        × bp safelisted.
+        <Pill tone="warn">~4 800 classes</Pill>Every axis × size × bp
+        safelisted.
       </>
     ),
     us: (
       <>
-        <span className="pill pill-good">21 utilities</span>
+        <Pill tone="good">21 utilities</Pill>
         <code>.sp-p</code> + CSS custom-property chains.
       </>
     ),
@@ -93,8 +94,8 @@ export const COMPARE_ROWS: CompareRow[] = [
     tw: <>None. A typo in a token name fails silently in CSS.</>,
     us: (
       <>
-        <span className="pill pill-info">build-time</span>Unknown keys and
-        unsafe values rejected by the schema.
+        <Pill tone="info">build-time</Pill>Unknown keys and unsafe values
+        rejected by the schema.
       </>
     ),
   },
@@ -114,7 +115,7 @@ export const COMPARE_ROWS: CompareRow[] = [
   {
     label: "Bundle impact",
     tw: <>Glue code for each feature lives in your app.</>,
-    us: <>7 subpath imports · gzip-budgeted · side-effect free.</>,
+    us: <>8 subpath imports · gzip-budgeted · side-effect free.</>,
   },
   {
     label: "Scaffolding",

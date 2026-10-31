@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { z } from "zod";
 
 import type { ThemeConfig } from "../../core/themeSchema";
 
@@ -18,10 +19,10 @@ describe("generateThemeCss", () => {
       },
     };
     const css = generateThemeCss(config);
-    expect(css).toContain("--sg-primary: #007AFF;");
-    expect(css).toContain("--sg-secondary: #FF9500;");
-    expect(css).toContain("--color-primary: var(--sg-primary);");
-    expect(css).toContain("--color-secondary: var(--sg-secondary);");
+    expect(css).toContain("--sg-color-primary: #007AFF;");
+    expect(css).toContain("--sg-color-secondary: #FF9500;");
+    expect(css).toContain("--color-primary: var(--sg-color-primary);");
+    expect(css).toContain("--color-secondary: var(--sg-color-secondary);");
     expect(css).toContain("@theme inline");
   });
 
@@ -38,10 +39,10 @@ describe("generateThemeCss", () => {
       },
     };
     const css = generateThemeCss(config);
-    expect(css).toContain("--sg-sidebar-foreground: #fff;");
-    expect(css).toContain("--sg-primary-blue: #007;");
+    expect(css).toContain("--sg-color-sidebar-foreground: #fff;");
+    expect(css).toContain("--sg-color-primary-blue: #007;");
     expect(css).toContain(
-      "--color-sidebar-foreground: var(--sg-sidebar-foreground);",
+      "--color-sidebar-foreground: var(--sg-color-sidebar-foreground);",
     );
   });
 
@@ -66,7 +67,7 @@ describe("generateThemeCss", () => {
     };
     const css = generateThemeCss(config);
     expect(css).toContain('html[data-theme="dark"]');
-    expect(css).toContain("--sg-primary: #0A84FF;");
+    expect(css).toContain("--sg-color-primary: #0A84FF;");
   });
 
   it("resolves an alias declared inside a variant override to the target's --sg var, pinned to html", () => {
@@ -79,7 +80,7 @@ describe("generateThemeCss", () => {
     const css = generateThemeCss(config);
     const block = css.slice(css.indexOf('html[data-palette="rose"]'));
     expect(block).toMatch(
-      /^html\[data-palette="rose"\] \{\s*--sg-primary: var\(--sg-blue-500\);\s*\}/,
+      /^html\[data-palette="rose"\] \{\s*--sg-color-primary: var\(--sg-color-blue-500\);\s*\}/,
     );
   });
 
@@ -95,7 +96,7 @@ describe("generateThemeCss", () => {
       borderWidth: { hairline: "1px", card: "$hairline" },
     };
     const root = generateThemeCss(config).split(":root {")[1]?.split("}")[0];
-    expect(root).toContain("--sg-primary: var(--sg-brand);");
+    expect(root).toContain("--sg-color-primary: var(--sg-color-brand);");
     expect(root).toContain("--sg-shadow-card: var(--sg-shadow-soft);");
     expect(root).toContain(
       "--sg-backdrop-blur-panel: var(--sg-backdrop-blur-light);",
@@ -113,7 +114,7 @@ describe("generateThemeCss", () => {
       themeAxes: { highContrast: { onDark: { colors: { primary: "#000" } } } },
     });
     expect(css).toMatch(
-      /^html\[data-high-contrast="on-dark"\] \{\s*--sg-primary: #000;\s*\}/m,
+      /^html\[data-high-contrast="on-dark"\] \{\s*--sg-color-primary: #000;\s*\}/m,
     );
     expect(css).not.toMatch(/highContrast|onDark/);
   });
@@ -208,13 +209,46 @@ describe("generateThemeCss", () => {
       backDropBlurs: { sm: "4px" },
     };
     const themeBlock = generateThemeCss(config).split("@theme inline")[1];
-    expect(themeBlock).toContain("--color-primary: var(--sg-primary);");
+    expect(themeBlock).toContain("--color-primary: var(--sg-color-primary);");
     expect(themeBlock).toContain("--shadow-sm: var(--sg-shadow-sm);");
     expect(themeBlock).toContain("--radius-md: var(--sg-radius-md);");
     expect(themeBlock).toContain(
       "--backdrop-blur-sm: var(--sg-backdrop-blur-sm);",
     );
     expect(themeBlock).not.toMatch(/--color-(shadow|radius|backdrop-blur)-/);
+  });
+
+  it("maps borderWidth keys into Tailwind's --border-width-* namespace, last in @theme inline", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      borderRadius: { md: "8px" },
+      borderWidth: { thin: "1px", thick: "$thin" },
+    };
+    const themeBlock = generateThemeCss(config).split("@theme inline")[1] ?? "";
+    const lines = themeBlock
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("--"));
+
+    expect(lines.slice(-2)).toEqual([
+      "--border-width-thin: var(--sg-border-width-thin);",
+      "--border-width-thick: var(--sg-border-width-thick);",
+    ]);
+    expect(lines.indexOf("--radius-md: var(--sg-radius-md);")).toBeLessThan(
+      lines.indexOf("--border-width-thin: var(--sg-border-width-thin);"),
+    );
+  });
+
+  it("keeps a color named like another category's key in its own --sg-color- namespace", () => {
+    const config: ThemeConfig = {
+      colors: { shadowPrimary: "#ff0000", spP: "#00ff00" },
+      shadows: { primary: "0 1px 2px #000" },
+    };
+    const css = generateThemeCss(config);
+    expect(css).toContain("--sg-color-shadow-primary: #ff0000;");
+    expect(css).toContain("--sg-shadow-primary: 0 1px 2px #000;");
+    expect(css).toContain("--sg-color-sp-p: #00ff00;");
+    expect(css).not.toMatch(/--sg-sp-p\b/);
   });
 
   it("should return minimal output for empty config", () => {
@@ -232,5 +266,181 @@ describe("generateThemeCss", () => {
     const css = generateThemeCss(config);
     // No colors or shadows → no :root block, no @theme
     expect(css).toBe("\n");
+  });
+
+  describe("options.axes", () => {
+    const config: ThemeConfig = {
+      colors: { brand: "#00f", primary: "$brand", surface: "#fff" },
+      themeAxes: {
+        theme: { dark: { colors: { brand: "#0af", primary: "$brand" } } },
+        highContrast: { on: { colors: { surface: "#000" } } },
+      },
+    };
+
+    it("pins the selector to html and data-<axis-kebab> by default", () => {
+      const css = generateThemeCss(config);
+      expect(css).toContain('html[data-theme="dark"] {');
+      expect(css).toContain('html[data-high-contrast="on"] {');
+      expect(generateThemeCss(config, {})).toBe(css);
+    });
+
+    it("renames the attribute of the listed axes only", () => {
+      const css = generateThemeCss(config, {
+        axes: { attribute: { highContrast: "data-contrast" } },
+      });
+      expect(css).toContain('html[data-contrast="on"] {');
+      expect(css).toContain('html[data-theme="dark"] {');
+      expect(css).not.toContain("data-high-contrast");
+    });
+
+    it('drops the html anchor with scope "element"', () => {
+      const css = generateThemeCss(config, {
+        axes: { scope: "element", attribute: { theme: "data-mode" } },
+      });
+      expect(css).toContain('\n[data-mode="dark"] {');
+      expect(css).toContain('\n[data-high-contrast="on"] {');
+      expect(css).not.toContain("html[");
+    });
+
+    it("runs the options parse: an unsafe attribute name throws", () => {
+      expect(() =>
+        generateThemeCss(config, {
+          axes: { attribute: { theme: 'x"] { color: red } [y' } },
+        }),
+      ).toThrow(z.ZodError);
+    });
+
+    it('runs the element-scope alias check, which does not apply to scope "root"', () => {
+      const stale: ThemeConfig = {
+        ...config,
+        themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
+      };
+      expect(() =>
+        generateThemeCss(stale, { axes: { scope: "element" } }),
+      ).toThrow(z.ZodError);
+      expect(() =>
+        generateThemeCss(stale, { axes: { scope: "root" } }),
+      ).not.toThrow();
+    });
+  });
+
+  describe("options.resetTailwindDefaults", () => {
+    const config: ThemeConfig = {
+      colors: { primary: "#007AFF" },
+      borderRadius: { md: "6px" },
+      shadows: { soft: "0 1px 2px #0003" },
+    };
+
+    const themeBlock = (css: string): string =>
+      /@theme inline \{\n([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+
+    it("is byte-identical to no option when absent, empty or []", () => {
+      const css = generateThemeCss(config);
+      expect(generateThemeCss(config, {})).toBe(css);
+      expect(generateThemeCss(config, { resetTailwindDefaults: [] })).toBe(css);
+      expect(css).not.toContain("initial");
+    });
+
+    it.each([
+      ["colors", "--color-*: initial;"],
+      ["radius", "--radius-*: initial;"],
+      ["shadow", "--shadow-*: initial;"],
+    ] as const)(
+      "%s emits %s as the first line of @theme inline, before the mapping",
+      (name, line) => {
+        const lines = themeBlock(
+          generateThemeCss(config, { resetTailwindDefaults: [name] }),
+        ).split("\n");
+        expect(lines[0]).toBe(`  ${line}`);
+        expect(lines.filter((l) => l.includes("initial"))).toHaveLength(1);
+        expect(lines).toContain("  --color-primary: var(--sg-color-primary);");
+      },
+    );
+
+    it("emits several namespaces in a fixed order, each once, whatever the written order", () => {
+      const expected = themeBlock(
+        generateThemeCss(config, {
+          resetTailwindDefaults: ["colors", "radius", "shadow"],
+        }),
+      );
+      expect(expected.split("\n").slice(0, 3)).toEqual([
+        "  --color-*: initial;",
+        "  --radius-*: initial;",
+        "  --shadow-*: initial;",
+      ]);
+      expect(
+        themeBlock(
+          generateThemeCss(config, {
+            resetTailwindDefaults: ["shadow", "colors", "radius", "colors"],
+          }),
+        ),
+      ).toBe(expected);
+    });
+
+    it("only adds the reset lines: the rest of the CSS is unchanged", () => {
+      const plain = generateThemeCss(config);
+      const reset = generateThemeCss(config, {
+        resetTailwindDefaults: ["colors"],
+      });
+      expect(reset.replace("  --color-*: initial;\n", "")).toBe(plain);
+    });
+
+    it("rejects radius without theme.borderRadius and shadow without theme.shadows, at the option's path", () => {
+      const colorsOnly: ThemeConfig = { colors: { primary: "#007AFF" } };
+      const issuePaths = (
+        options: Parameters<typeof generateThemeCss>[1],
+      ): (string | number)[][] => {
+        try {
+          generateThemeCss(colorsOnly, options);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            return error.issues.map((i) => i.path as (string | number)[]);
+          }
+          throw error;
+        }
+        return [];
+      };
+
+      expect(
+        issuePaths({ resetTailwindDefaults: ["colors", "radius"] }),
+      ).toEqual([["resetTailwindDefaults", 1]]);
+      expect(issuePaths({ resetTailwindDefaults: ["shadow"] })).toEqual([
+        ["resetTailwindDefaults", 0],
+      ]);
+      expect(issuePaths({ resetTailwindDefaults: ["colors"] })).toEqual([]);
+    });
+
+    it("treats an empty borderRadius/shadows record as no replacement", () => {
+      expect(() =>
+        generateThemeCss(
+          { colors: { primary: "#007AFF" }, borderRadius: {} },
+          { resetTailwindDefaults: ["radius"] },
+        ),
+      ).toThrow(z.ZodError);
+    });
+
+    it('treats an empty colors record as no replacement for "colors", at the option\'s path', () => {
+      let error: unknown;
+      try {
+        generateThemeCss(
+          { colors: {}, borderRadius: { md: "6px" } },
+          { resetTailwindDefaults: ["radius", "colors"] },
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeInstanceOf(z.ZodError);
+      const issues = (error as z.ZodError).issues;
+      expect(issues.map((i) => i.path)).toEqual([["resetTailwindDefaults", 1]]);
+      expect(issues[0]?.message).toContain('"colors"');
+      // Without the option an empty colors record stays valid.
+      expect(() => generateThemeCss({ colors: {} })).not.toThrow();
+    });
+
+    it("rejects an unknown namespace in the options parse", () => {
+      expect(() =>
+        generateThemeCss(config, { resetTailwindDefaults: ["fonts" as never] }),
+      ).toThrow(z.ZodError);
+    });
   });
 });

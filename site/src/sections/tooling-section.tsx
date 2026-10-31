@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box, Grid, Stack } from "../ui";
 import { CodeCard } from "../components/code-card";
 import { KeyPoint } from "../components/key-point";
 
@@ -24,29 +26,33 @@ export default defineConfig({
  */
 export function ToolingSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="tooling"
-      className="chapter"
       data-ch="08"
       data-ch-label="Vite plugin"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">08</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>08</b>
-        </span>
-        <span>· Tooling</span>
-      </div>
-      <h2 className="ch-title">
-        Vite plugin <em>+</em> CLI.
-      </h2>
-      <p className="ch-lede">
-        No prebuild scripts. No manual regen. Drop the plugin into{" "}
-        <code>vite.config.ts</code> and the CLI scaffolds the rest.
-      </p>
+      <ChapterHead
+        num="08"
+        label="Tooling"
+        title={
+          <>
+            Vite plugin <em>+</em> CLI.
+          </>
+        }
+        lede={
+          <>
+            No prebuild scripts. No manual regen. Drop the plugin into{" "}
+            <code>vite.config.ts</code> and the CLI scaffolds the rest.
+          </>
+        }
+      />
 
-      <div className="split-grid reveal">
-        <div className="kp-list">
+      <Grid data-part="split-grid" data-reveal="up" gap={6}>
+        <Stack gap={3}>
           <KeyPoint
             badge="V1"
             title={<code>{"styleGenVite({ themePath, outDir })"}</code>}
@@ -81,14 +87,14 @@ export function ToolingSection() {
               <>Validates config and schema, warns on utility name clashes.</>
             }
           />
-        </div>
+        </Stack>
         <CodeCard
           filename="vite.config.ts"
           tag="plugin"
           lang="ts"
           code={VITE_CODE}
         />
-      </div>
-    </section>
+      </Grid>
+    </Box>
   );
 }

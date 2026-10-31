@@ -57,7 +57,7 @@ jobs:
       - name: Run e2e tests
         run: yarn test:e2e
 
-  # The published peer range is `tailwindcss >=4.1.0`, but the lockfile pins
+  # The published peer range is `tailwindcss ^4.1.0`, but the lockfile pins
   # 4.3.0, so the floor is otherwise never exercised. This leg re-resolves the
   # Tailwind packages to the latest 4.1.x via `resolutions` (edited in this
   # runner's checkout only — the committed package.json/yarn.lock are not
@@ -206,7 +206,7 @@ jobs:
       - name: Type-check the react-v4 example against dist
         run: yarn workspace react-v4-example typecheck
 
-      - name: Type-check dist/*.d.ts with library checking on
+      - name: Type-check dist/*.d.ts (ESM, Bundler) and dist/*.d.cts (CJS, node16) with library checking on
         # The example sets skipLibCheck, so it never checks the package's own
         # declarations (or the vite/zod types they reference).
         run: yarn typecheck:dist

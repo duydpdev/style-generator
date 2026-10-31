@@ -1,3 +1,5 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box } from "../ui";
 import { VERSION } from "../data/version";
 
 import { COMPARE_ROWS } from "./compare-rows";
@@ -7,51 +9,81 @@ import { COMPARE_ROWS } from "./compare-rows";
  */
 export function CompareSection() {
   return (
-    <section
+    <Box
+      as="section"
       id="compare"
-      className="chapter"
       data-ch="02"
       data-ch-label="Side by side"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">02</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>02</b>
-        </span>
-        <span>· Side by side</span>
-      </div>
-      <h2 className="ch-title">
-        Bare Tailwind <em>vs</em> style-generator.
-      </h2>
-      <p className="ch-lede">
-        Same problems, different ergonomics. style-generator doesn't replace
-        Tailwind — it absorbs the repetitive plumbing on top of it.
-      </p>
+      <ChapterHead
+        num="02"
+        label="Side by side"
+        title={
+          <>
+            Bare Tailwind <em>vs</em> style-generator.
+          </>
+        }
+        lede={
+          <>
+            Same problems, different ergonomics. style-generator doesn't replace
+            Tailwind — it absorbs the repetitive plumbing on top of it.
+          </>
+        }
+      />
 
-      <div className="compare-wrap reveal">
-        <table className="compare">
+      <Box data-part="compare-wrap" data-reveal="up" rounded="lg">
+        <table data-part="compare">
           <thead>
             <tr>
-              <th style={{ width: "26%" }}>Capability</th>
-              <th className="col-tw" style={{ width: "37%" }}>
-                Bare Tailwind<small>v4</small>
-              </th>
-              <th className="col-us" style={{ width: "37%" }}>
-                + style-generator<small>v{VERSION}</small>
-              </th>
+              <Box as="th" px={5} py={4} style={{ width: "26%" }}>
+                Capability
+              </Box>
+              <Box
+                as="th"
+                data-part="col-tw"
+                px={5}
+                py={4}
+                style={{ width: "37%" }}
+              >
+                Bare Tailwind
+                <Box as="small" mt={0.75}>
+                  v4
+                </Box>
+              </Box>
+              <Box
+                as="th"
+                data-part="col-us"
+                px={5}
+                py={4}
+                style={{ width: "37%" }}
+              >
+                + style-generator
+                <Box as="small" mt={0.75}>
+                  v{VERSION}
+                </Box>
+              </Box>
             </tr>
           </thead>
           <tbody>
             {COMPARE_ROWS.map((r) => (
               <tr key={r.label}>
-                <td className="row-label">{r.label}</td>
-                <td className="cell-tw">{r.tw}</td>
-                <td className="cell-us">{r.us}</td>
+                <Box as="td" data-part="row-label" px={5} py={3.5}>
+                  {r.label}
+                </Box>
+                <Box as="td" data-part="cell-tw" px={5} py={3.5}>
+                  {r.tw}
+                </Box>
+                <Box as="td" data-part="cell-us" px={5} py={3.5}>
+                  {r.us}
+                </Box>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-    </section>
+      </Box>
+    </Box>
   );
 }

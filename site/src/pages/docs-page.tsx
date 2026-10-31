@@ -1,19 +1,20 @@
 import { useEffect, useRef } from "react";
-import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 
 import { DocMarkdown } from "../components/doc-markdown";
+import { DocEdit, DocFooter } from "../components/docs-footer";
+import { DocBreadcrumb, DocHead } from "../components/docs-header";
+import { DocsMobileNav } from "../components/docs-mobile-nav";
+import { DocsMobileOnPage } from "../components/docs-mobile-onpage";
 import { DocsOnPage } from "../components/docs-onpage";
 import { DocsSidebar } from "../components/docs-sidebar";
 import { Topbar } from "../components/topbar";
 import { adjacentDocs, docs, getDoc, REPO_BLOB_URL } from "../lib/docs-content";
+import { approxReadMinutes, docBody } from "../lib/docs-body";
 import { useTheme } from "../lib/use-theme";
+import { Box, Container, Grid } from "../ui";
 
 import { NotFound } from "./not-found";
-
-function approxReadMinutes(source: string): number {
-  const words = source.trim().split(/\s+/).length;
-  return Math.max(1, Math.round(words / 220));
-}
 
 export function DocsPage() {
   const { slug } = useParams<{ slug?: string }>();
@@ -57,7 +58,7 @@ export function DocsPage() {
   }, [slug]);
 
   if (!slug) {
-    return <Navigate to={`/docs/${docs[0]?.slug ?? "guide"}`} replace />;
+    return <Navigate to={`/docs/${docs[0]?.slug ?? "introduction"}`} replace />;
   }
 
   const doc = getDoc(slug);
@@ -65,125 +66,46 @@ export function DocsPage() {
 
   if (!doc) return <NotFound missingDoc={slug} />;
 
-  // The page header already renders the title as an <h1>; drop the file's own.
-  const lines = doc.source.split("\n");
-  const titleAt = lines.findIndex((l) => l.trim() !== "");
-  const body =
-    titleAt >= 0 && lines[titleAt].startsWith("# ")
-      ? lines.slice(titleAt + 1).join("\n")
-      : doc.source;
-  const readMin = approxReadMinutes(body);
+  const body = docBody(doc.source);
   const ghUrl = `${REPO_BLOB_URL}${doc.repoPath}`;
 
   return (
     <>
       <Topbar activeChapter={null} activeRoute="docs" onToggleTheme={toggle} />
-      <div className="docs-shell">
-        <DocsSidebar activeSlug={doc.slug} />
+      <Container maxWidth={1440} px={{ base: 5, lg: 8 }}>
+        <Grid data-part="docs-shell" gap={14} position="relative">
+          <DocsSidebar activeSlug={doc.slug} />
 
-        <main className="docs-content" ref={contentRef}>
-          <div className="doc-breadcrumb">
-            <Link to="/docs">Docs</Link>
-            <span className="sep">/</span>
-            <span>{doc.group}</span>
-            <span className="sep">/</span>
-            <b>{doc.title}</b>
-          </div>
+          <Box
+            as="main"
+            ref={contentRef}
+            minWidth={0}
+            maxWidth={720}
+            pt={9}
+            pb={30}
+          >
+            <DocsMobileNav activeSlug={doc.slug}>
+              <DocsMobileOnPage contentRef={contentRef} rawMarkdown={body} />
+            </DocsMobileNav>
 
-          <header className="doc-head reveal is-in">
-            <div>
-              <h1>
-                {doc.title}
-                <em> at a glance.</em>
-              </h1>
-              <p className="lede">
-                <b>{doc.title}</b> — synced from <code>{doc.repoPath}</code>.
-                All artifacts stay in lockstep with the source.
-              </p>
-            </div>
-            <div className="doc-meta">
-              <div className="row">
-                <span className="pulse" />
-                <span>up to date</span>
-              </div>
-              <div className="row">
-                <span>FILE</span>
-                <code>{doc.repoPath}</code>
-              </div>
-              <div className="row">
-                <span>GROUP</span>
-                <span>{doc.group}</span>
-              </div>
-              <div className="row">
-                <span>READ</span>
-                <span>~{readMin} min</span>
-              </div>
-            </div>
-          </header>
+            <DocBreadcrumb doc={doc} />
+            <DocHead doc={doc} readMin={approxReadMinutes(body)} />
 
-          <article className="doc-body">
-            <DocMarkdown source={body} repoPath={doc.repoPath} />
-          </article>
+            <Box as="article" data-part="doc-body">
+              <DocMarkdown source={body} repoPath={doc.repoPath} />
+            </Box>
 
-          <div className="doc-footer">
-            {prev ? (
-              <Link to={`/docs/${prev.slug}`} className="nav-card prev">
-                <span className="lbl">← Previous</span>
-                <span className="ttl">
-                  <em>{prev.title}</em>
-                </span>
-              </Link>
-            ) : (
-              <span />
-            )}
-            {next ? (
-              <Link to={`/docs/${next.slug}`} className="nav-card next">
-                <span className="lbl">Next →</span>
-                <span className="ttl">
-                  <em>{next.title}</em>
-                </span>
-              </Link>
-            ) : (
-              <span />
-            )}
-          </div>
+            <DocFooter prev={prev} next={next} />
+            <DocEdit ghUrl={ghUrl} />
+          </Box>
 
-          <div className="doc-edit">
-            <a href={ghUrl} target="_blank" rel="noopener noreferrer">
-              Edit this page on GitHub ↗
-            </a>
-            <a
-              href="https://github.com/duydpdev/style-generator/issues/new"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Report an issue ↗
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              style={{
-                background: "transparent",
-                border: 0,
-                color: "inherit",
-                font: "inherit",
-                cursor: "pointer",
-                padding: 0,
-              }}
-            >
-              Back to top ↑
-            </button>
-          </div>
-        </main>
-
-        <DocsOnPage
-          contentRef={contentRef}
-          rawMarkdown={body}
-          quicklinks={[{ label: "Edit on GitHub", href: ghUrl }]}
-        />
-      </div>
+          <DocsOnPage
+            contentRef={contentRef}
+            rawMarkdown={body}
+            quicklinks={[{ label: "Edit on GitHub", href: ghUrl }]}
+          />
+        </Grid>
+      </Container>
     </>
   );
 }

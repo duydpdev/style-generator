@@ -1,4 +1,13 @@
-export type DocGroup = "Overview" | "Operations" | "Reference";
+import META_JSON from "./docs-meta.json";
+import { stripHtmlComments } from "./strip-html-comments";
+
+export type DocGroup =
+  | "Start"
+  | "Guides"
+  | "Reference"
+  | "Overview"
+  | "Operations"
+  | "Migration";
 
 export interface DocEntry {
   slug: string;
@@ -16,7 +25,10 @@ const raw = import.meta.glob<string>(
   [
     "../../../documents/*.md",
     "!../../../documents/README.md",
+    "../../../documents/getting-started/*.md",
+    "../../../documents/reference/*.md",
     "../../../README.md",
+    "../../../documents/migration/4.x-to-5.0.md",
     "../../../documents/migration/3.x-to-4.0.md",
   ],
   {
@@ -27,70 +39,49 @@ const raw = import.meta.glob<string>(
 );
 
 interface DocMeta {
-  slug?: string;
+  slug: string;
   title: string;
   group: DocGroup;
   order: number;
   badge?: string;
 }
 
-/** Per-file presentation, keyed by `repoPath`. Files not listed here fall back to their basename and first heading. */
-const META: Record<string, DocMeta | undefined> = {
-  "documents/architecture.md": {
-    title: "Architecture",
-    group: "Overview",
-    order: 1,
-  },
-  "documents/guide.md": { title: "Guide", group: "Overview", order: 2 },
-  "documents/deploy.md": { title: "Deploy", group: "Operations", order: 1 },
-  "documents/testing.md": { title: "Testing", group: "Operations", order: 2 },
-  "README.md": {
-    slug: "reference",
-    title: "Reference",
-    group: "Reference",
-    order: 1,
-  },
-  "documents/migration/3.x-to-4.0.md": {
-    slug: "migration-3x-to-4",
-    title: "Migration 3.x → 4.0",
-    group: "Reference",
-    order: 2,
-  },
+/** Per-file presentation, keyed by `repoPath`; `site/scripts/check-doc-links.mjs` fails when a rendered file has no entry. */
+const META = META_JSON as Record<string, DocMeta | undefined>;
+const GROUP_ORDER: Record<DocGroup, number> = {
+  Start: 0,
+  Guides: 1,
+  Reference: 2,
+  Overview: 3,
+  Operations: 4,
+  Migration: 5,
 };
-
-function firstHeading(md: string): string | null {
-  const m = /^#[ \t]+([^ \t].*)$/m.exec(md);
-  return m ? m[1].trim() : null;
-}
 
 export const docs: DocEntry[] = Object.entries(raw)
   .map(([key, source]): DocEntry => {
     // `../../../documents/guide.md` → `documents/guide.md`
     const repoPath = key.replace(/^(?:\.\.\/)+/, "");
     const meta = META[repoPath];
-    const slug =
-      meta?.slug ?? repoPath.replace(/^.*\//, "").replace(/\.md$/, "");
+    if (!meta) {
+      throw new Error(
+        `site/src/lib/docs-meta.json has no entry for ${repoPath}`,
+      );
+    }
     return {
-      slug,
-      title: meta?.title ?? firstHeading(source) ?? slug,
-      source,
+      slug: meta.slug,
+      title: meta.title,
+      source: stripHtmlComments(source),
       repoPath,
-      group: meta?.group ?? "Reference",
-      order: meta?.order ?? 99,
-      badge: meta?.badge,
+      group: meta.group,
+      order: meta.order,
+      badge: meta.badge,
     };
   })
-  .sort((a, b) => {
-    if (a.group !== b.group) {
-      const groupOrder: Record<DocGroup, number> = {
-        Overview: 0,
-        Operations: 1,
-        Reference: 2,
-      };
-      return groupOrder[a.group] - groupOrder[b.group];
-    }
-    return a.order - b.order;
-  });
+  .sort((a, b) =>
+    a.group === b.group
+      ? a.order - b.order
+      : GROUP_ORDER[a.group] - GROUP_ORDER[b.group],
+  );
 
 export function getDoc(slug: string): DocEntry | undefined {
   return docs.find((d) => d.slug === slug);
@@ -107,12 +98,19 @@ export type DocLink =
   /** Any other repo file: its GitHub blob URL. */
   | { kind: "repo"; href: string };
 
-/** Classify a markdown link `href` found in the doc at `fromRepoPath`. */
+/**
+ * Classify a markdown link `href` found in the doc at `fromRepoPath`. An
+ * absolute `REPO_BLOB_URL` link (README.md uses them so the published package
+ * page works off GitHub) is treated like the repo-relative link it points to.
+ */
 export function resolveDocLink(href: string, fromRepoPath: string): DocLink {
-  if (href.startsWith("#") || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) {
+  const local = href.startsWith(REPO_BLOB_URL)
+    ? `/${href.slice(REPO_BLOB_URL.length)}`
+    : href;
+  if (local.startsWith("#") || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(local)) {
     return { kind: "native", href };
   }
-  const url = new URL(href, `https://repo.invalid/${fromRepoPath}`);
+  const url = new URL(local, `https://repo.invalid/${fromRepoPath}`);
   const repoPath = url.pathname.slice(1);
   const target = docs.find((d) => d.repoPath === decodeURIComponent(repoPath));
   if (target)

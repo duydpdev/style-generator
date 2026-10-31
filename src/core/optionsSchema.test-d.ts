@@ -41,9 +41,45 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
       | undefined
     >();
     expectTypeOf<CoverageRule>().toEqualTypeOf<{
-      prefixes?: readonly RegistryPrefix[];
+      prefixes?: readonly [RegistryPrefix, ...RegistryPrefix[]];
       keys?: "aliased" | "all";
     }>();
+  });
+
+  it("axes is { attribute?: map, scope?: 'root' | 'element' } on both sides", () => {
+    expectTypeOf<
+      keyof NonNullable<StyleGeneratorOptions["axes"]>
+    >().toEqualTypeOf<keyof NonNullable<In["axes"]>>();
+    expectTypeOf<
+      NonNullable<StyleGeneratorOptions["axes"]>["scope"]
+    >().toEqualTypeOf<"root" | "element" | undefined>();
+    expectTypeOf<NonNullable<In["axes"]>["scope"]>().toEqualTypeOf<
+      "root" | "element" | undefined
+    >();
+    expectTypeOf<{
+      attribute: { theme: "data-mode" };
+      scope: "element";
+    }>().toExtend<NonNullable<StyleGeneratorOptions["axes"]>>();
+    // A function is not a valid `attribute`: the option must be expressible
+    // in `style-gen.config.json`.
+    expectTypeOf<{
+      attribute: (axis: string) => string;
+    }>().not.toExtend<NonNullable<StyleGeneratorOptions["axes"]>>();
+  });
+
+  it("resetTailwindDefaults is a list of the literal namespaces on both sides", () => {
+    expectTypeOf<
+      NonNullable<StyleGeneratorOptions["resetTailwindDefaults"]>[number]
+    >().toEqualTypeOf<"colors" | "radius" | "shadow">();
+    expectTypeOf<
+      NonNullable<In["resetTailwindDefaults"]>[number]
+    >().toEqualTypeOf<"colors" | "radius" | "shadow">();
+    expectTypeOf<{
+      resetTailwindDefaults: ["colors", "radius"];
+    }>().toExtend<StyleGeneratorOptions>();
+    expectTypeOf<{
+      resetTailwindDefaults: ["fonts"];
+    }>().not.toExtend<StyleGeneratorOptions>();
   });
 
   it("coverage prefixes are typed per category", () => {
@@ -65,8 +101,30 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
     expectTypeOf<{
       typography: { prefixes: ["bg"] };
     }>().not.toExtend<Coverage>();
+    // `typography` has no `$` aliases: `keys: "aliased"` is rejected at runtime.
     expectTypeOf<{
       typography: { keys: "aliased" };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      typography: { keys: "all" };
     }>().toExtend<Coverage>();
+    expectTypeOf<{ typography: false }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { keys: "aliased"; prefixes: ["bg"] };
+      shadows: { keys: "aliased" };
+    }>().toExtend<Coverage>();
+  });
+
+  it("coverage prefixes are a non-empty list, like the schema's min(1)", () => {
+    type Coverage = NonNullable<StyleGeneratorOptions["coverage"]>;
+
+    expectTypeOf<{ colors: { prefixes: [] } }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { prefixes: readonly [] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { prefixes: ["bg", "text"] };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{ colors: { keys: "aliased" } }>().toExtend<Coverage>();
   });
 });

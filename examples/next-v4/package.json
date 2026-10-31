@@ -7,16 +7,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "doctor": "node ../../dist/cli/index.mjs doctor"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
-    "next": "^15.5.24",
+    "@duydpdev/ui-react": "workspace:*",
+    "design-system-example": "workspace:*",
+    "next": "^16.4.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.0.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",

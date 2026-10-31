@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import { compile } from "@tailwindcss/node";
+import { Scanner } from "@tailwindcss/oxide";
 
 /**
  * Inside the repo so Tailwind's module resolution still walks up to
@@ -69,4 +70,27 @@ export async function compileFixtureCss(
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
+}
+
+/**
+ * Compile like an app build: `source(none)` turns off automatic detection,
+ * Tailwind's own scanner reads the `@source` paths in `css` (relative to
+ * `base`), and the build gets exactly those candidates plus `@source inline`.
+ * @param {string} css - CSS appended after `@import "tailwindcss" source(none);`
+ * @param {string} base - Absolute directory the `@source` paths are relative to
+ * @returns {Promise<{ css: string; candidates: string[] }>} Compiled CSS and the scanned candidates
+ */
+export async function compileScannedCss(
+  css: string,
+  base: string,
+): Promise<{ css: string; candidates: string[] }> {
+  const compiler = await compile(
+    `@import "tailwindcss" source(none);\n${css}`,
+    {
+      base,
+      onDependency: () => undefined,
+    },
+  );
+  const candidates = new Scanner({ sources: compiler.sources }).scan();
+  return { css: compiler.build(candidates), candidates };
 }

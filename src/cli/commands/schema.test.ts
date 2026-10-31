@@ -4,20 +4,18 @@ import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+import { logger } from "../logger";
+
 import { schemaCommand } from "./schema";
 
 describe("schemaCommand", () => {
   let tmp: string;
-  let origCwd: string;
 
   beforeEach(() => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-schema-"));
-    origCwd = process.cwd();
-    process.chdir(tmp);
   });
 
   afterEach(() => {
-    process.chdir(origCwd);
     fs.rmSync(tmp, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
@@ -29,7 +27,7 @@ describe("schemaCommand", () => {
       JSON.stringify({ theme: "custom/theme.json" }),
     );
 
-    schemaCommand({});
+    expect(schemaCommand({}, tmp)).toBe(0);
 
     const outPath = path.join(tmp, "custom/theme.schema.json");
     expect(fs.existsSync(outPath)).toBe(true);
@@ -43,40 +41,62 @@ describe("schemaCommand", () => {
   });
 
   it("writes to a custom --out path, creating parent directories", () => {
-    schemaCommand({ out: "generated/theme.schema.json" });
+    expect(schemaCommand({ out: "generated/theme.schema.json" }, tmp)).toBe(0);
 
-    const outPath = path.join(tmp, "generated/theme.schema.json");
-    expect(fs.existsSync(outPath)).toBe(true);
+    expect(fs.existsSync(path.join(tmp, "generated/theme.schema.json"))).toBe(
+      true,
+    );
   });
 
-  it("exits with code 1 and writes nothing when the config file has schema issues", () => {
+  it("returns 1 and writes nothing when the config file has schema issues", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
       JSON.stringify({ theme: "custom/theme.json", breakpoint: ["xl"] }),
     );
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const origExitCode = process.exitCode;
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
 
-    try {
-      schemaCommand({});
-      expect(process.exitCode).toBe(1);
-    } finally {
-      process.exitCode = origExitCode;
-    }
+    expect(schemaCommand({}, tmp)).toBe(1);
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/^Invalid config \(style-gen\.config\.json\):/),
+    );
     expect(fs.existsSync(path.join(tmp, "custom"))).toBe(false);
     expect(fs.existsSync(path.join(tmp, "styles"))).toBe(false);
   });
 
-  it("keeps a leading-slash theme path inside the project, like generate", () => {
+  it("returns 1 when --out escapes the project root", () => {
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
+
+    expect(schemaCommand({ out: "../elsewhere/theme.schema.json" }, tmp)).toBe(
+      1,
+    );
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "--out escapes project root: ../elsewhere/theme.schema.json",
+    );
+    expect(fs.existsSync(path.join(tmp, "..", "elsewhere"))).toBe(false);
+  });
+
+  it("treats a leading-slash theme as the absolute path it says it is, so the derived schema target escapes the root", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
       JSON.stringify({ theme: "/custom/theme.json" }),
     );
+    const errorSpy = vi
+      .spyOn(logger, "error")
+      .mockImplementation(() => undefined);
 
-    schemaCommand({});
+    expect(schemaCommand({}, tmp)).toBe(1);
 
-    expect(fs.existsSync(path.join(tmp, "custom/theme.schema.json"))).toBe(
-      true,
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^schema output escapes project root: .*\n💡 Pass --out/,
+      ),
     );
+    expect(fs.existsSync(path.join(tmp, "custom"))).toBe(false);
   });
 });

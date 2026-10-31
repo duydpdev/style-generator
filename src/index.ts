@@ -13,6 +13,7 @@ export {
   DEFAULT_SPACING_PROPERTIES,
 } from "./shared/defaultOption";
 export { COLOR_STATES } from "./shared/colorStates";
+export { toKebabCase } from "./shared/helpers";
 export {
   roundedProperties,
   borderProperties,

@@ -19,7 +19,7 @@ import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
  * CSS variable at all) flatten to `{}`.
  * @param {TokenCategoryDescriptor} descriptor - Category descriptor
  * @param {Record<string, string> | undefined} data - Flat key-value theme data for this category
- * @returns {Record<string, string>} CSS variable map, e.g. `{ "--sg-primary": "#fff" }`
+ * @returns {Record<string, string>} CSS variable map, e.g. `{ "--sg-color-primary": "#fff" }`
  */
 export const flattenByCategory = (
   descriptor: TokenCategoryDescriptor,

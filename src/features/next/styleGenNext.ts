@@ -1,21 +1,21 @@
-import { mkdirSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-
-import { watch, type FSWatcher } from "chokidar";
-import { z } from "zod";
-
-import { generate } from "../../core/generate";
 import type { StyleGeneratorOptions } from "../../core/Options";
-import { ThemeSchema, formatZodError } from "../../core/themeSchema";
-import { resolveSafePath } from "../../shared/resolveSafePath";
-import { writeFileAtomic } from "../../shared/writeFileAtomic";
+import { resolvePluginTarget } from "../../node/resolvePluginTarget";
+import { emitThemeCss, type EmitTarget } from "../../node/themeEmitter";
+import {
+  watchThemeFile,
+  type ThemeWatchHandle,
+} from "../../node/watchThemeFile";
 
+/** Options of `styleGenNext()`, which wraps a Next.js config and emits `theme.css` for `next dev` and `next build`. */
 export interface StyleGenNextOptions {
-  /** Path to theme JSON, resolved relative to `process.cwd()`. */
+  /**
+   * Path to theme JSON, resolved relative to `process.cwd()`. An absolute
+   * path, or one that leaves the project (`../shared/theme.json`), is allowed.
+   */
   themePath: string;
   /**
-   * Directory to write `theme.css`. Defaults to `dirname(themePath)`.
-   * MUST match the path that consumer CSS `@import`s from.
+   * Directory to write `theme.css`, inside the project. Defaults to
+   * `dirname(themePath)`. MUST match the path that consumer CSS `@import`s from.
    */
   outDir?: string;
   /** Forwarded to `generate()` internals (theme CSS). */
@@ -47,51 +47,26 @@ type ResolvedNextConfig<T> = T extends (...args: never[]) => infer R ? R : T;
  * once per process (Next re-reads it for phase detection, then again for
  * the actual dev server, and again per worker in some setups) — a second
  * `styleGenNext(...)(...)(...)` call in the same process must reuse the
- * existing watcher instead of spawning another one on the same file.
+ * existing watcher instead of spawning another one on the same file. A call
+ * for another theme or output file replaces it.
  */
-let devWatcher: FSWatcher | null = null;
-let devWatcherThemePath: string | null = null;
+let devWatcher: ThemeWatchHandle | null = null;
+let devWatcherKey: string | null = null;
 
-const debounce = <Args extends unknown[]>(
-  fn: (...args: Args) => void,
-  ms: number,
-): ((...args: Args) => void) => {
-  let timer: NodeJS.Timeout | undefined;
-  return (...args: Args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      timer = undefined;
-      fn(...args);
-    }, ms);
-  };
+/**
+ * Close a watcher without letting its rejection escape: nothing can react to
+ * a failed close during a swap or teardown.
+ * @param {ThemeWatchHandle} watcher - The watcher to close
+ */
+const closeQuietly = (watcher: ThemeWatchHandle): void => {
+  watcher.close().catch(() => undefined);
 };
 
 /**
- * Parse+generate `theme.css` and write it atomically (`writeFileAtomic`:
- * sibling temp file + `renameSync`), so readers (webpack's
- * `@tailwindcss/postcss`, Turbopack's CSS loader) never observe a
- * partially-written file.
- * @param {string} themePathAbs - Absolute path to the theme JSON.
- * @param {string} outDirAbs - Absolute directory to write `theme.css` into.
- * @param {StyleGeneratorOptions} options - Forwarded to `generate()`.
- */
-const emit = (
-  themePathAbs: string,
-  outDirAbs: string,
-  options: StyleGeneratorOptions,
-): void => {
-  const raw = readFileSync(themePathAbs, "utf8");
-  const theme = ThemeSchema.parse(JSON.parse(raw));
-
-  const themeCss = generate(theme, options).css;
-
-  mkdirSync(outDirAbs, { recursive: true });
-  writeFileAtomic(resolve(outDirAbs, "theme.css"), themeCss);
-};
-
-/**
- * Start (or reuse) the singleton dev watcher for `themePathAbs`. `next dev`
- * re-emits `theme.css` on save, debounced the same 200ms as the Vite plugin.
+ * Start (or reuse) the singleton dev watcher for `target`. `next dev`
+ * re-emits `theme.css` on save, debounced by `watchThemeFile` (200ms, like
+ * the Vite plugin). A failed re-emit or a watcher error is logged and the
+ * watcher keeps running, so the next good save recovers.
  *
  * `persistent: false`: this watcher must never be what keeps a Node
  * process alive. The real long-running process during `next dev` is
@@ -101,33 +76,30 @@ const emit = (
  * `persistent: true` watcher would hang that process forever since
  * nothing else keeps its event loop busy. `persistent: false` lets Node
  * exit on its own schedule regardless of who's holding this reference.
- * @param {string} themePathAbs - Absolute path to the theme JSON to watch.
- * @param {string} outDirAbs - Absolute directory to re-emit `theme.css` into.
- * @param {StyleGeneratorOptions} options - Forwarded to `generate()`.
+ * @param {EmitTarget} target - Theme file, output file and options to re-emit with
  */
-const startDevWatcher = (
-  themePathAbs: string,
-  outDirAbs: string,
-  options: StyleGeneratorOptions,
-): void => {
-  if (devWatcher && devWatcherThemePath === themePathAbs) return;
+const startDevWatcher = (target: EmitTarget): void => {
+  // Options take part in the key: a re-evaluated config with the same paths
+  // but other generator options must not keep the watcher (and its options)
+  // of the earlier evaluation.
+  const key = JSON.stringify([
+    target.themeFile,
+    target.outFile,
+    target.options,
+  ]);
+  if (devWatcher && devWatcherKey === key) return;
+  if (devWatcher) closeQuietly(devWatcher);
 
-  const reemit = debounce(() => {
-    try {
-      emit(themePathAbs, outDirAbs, options);
-    } catch (err) {
-      console.error(
-        `[${PLUGIN_NAME}] Re-emit failed for ${themePathAbs}:\n${err instanceof z.ZodError ? formatZodError(err) : (err as Error).message}`,
-      );
-    }
-  }, 200);
-
-  devWatcher = watch(themePathAbs, {
-    persistent: false,
-    ignoreInitial: true,
-  });
-  devWatcher.on("change", reemit);
-  devWatcherThemePath = themePathAbs;
+  devWatcher = watchThemeFile(
+    target,
+    (result) => {
+      if (!result.ok) {
+        console.error(`[${PLUGIN_NAME}] Re-emit failed:\n${result.message}`);
+      }
+    },
+    { persistent: false },
+  );
+  devWatcherKey = key;
 };
 
 /**
@@ -143,9 +115,14 @@ const startDevWatcher = (
  * export default styleGenNext({ themePath: "./theme.json" })(nextConfig);
  * ```
  *
- * Path traversal guard: `themePath`/`outDir` resolved against
- * `process.cwd()` and rejected if either escapes it (`..`, or an absolute
- * path outside the project).
+ * Called with no argument it reads `style-gen.config.json` (else
+ * `package.json#style-gen`) from `process.cwd()` — the `theme`, `output` and
+ * every `generate()` option — exactly as `style-gen generate` does:
+ * `styleGenNext()(nextConfig)`.
+ *
+ * Path rules (`resolveProjectPath`, against `process.cwd()`): the theme may
+ * live anywhere (absolute, or `..` out of the project: a monorepo shares one);
+ * `outDir` must stay inside the project.
  *
  * Only `phase-development-server` and `phase-production-build` read the
  * theme and write `theme.css`; every other phase (`phase-production-server`,
@@ -155,20 +132,19 @@ const startDevWatcher = (
  * is returned.
  *
  * **Limitation:**
- * - **Symlinks are not `realpath`'d.** `resolveSafePath` compares the
- *   logical (non-dereferenced) path against `root`; it never calls
- *   `fs.realpathSync`. A `themePath`/`outDir` that is itself a symlink
- *   living inside `root` is accepted even if its TARGET resolves outside
- *   `root` — the traversal guard only rejects a literal `..`-escaping
- *   input path, not a symlink whose target escapes after the filesystem
- *   resolves it.
- * @param {StyleGenNextOptions} opts - Plugin configuration
+ * - **Symlinks are not `realpath`'d.** `resolveProjectPath` compares the
+ *   logical (non-dereferenced) path against `process.cwd()`; it never calls
+ *   `fs.realpathSync`. An `outDir` that is itself a symlink living inside
+ *   the project is accepted even if its TARGET resolves outside it — the
+ *   guard only rejects a literal `..`-escaping input path, not a symlink
+ *   whose target escapes after the filesystem resolves it.
+ * @param {StyleGenNextOptions} [opts] - Plugin configuration; omit it to read `style-gen.config.json`
  * @returns {(nextConfig: unknown) => (phase: string, ctx?: object) => unknown}
  *   A function that takes the consumer's Next config and returns the
  *   phase-aware config function Next.js expects from `next.config.*`.
  */
 export const styleGenNext =
-  (opts: StyleGenNextOptions) =>
+  (opts?: StyleGenNextOptions) =>
   <TConfig>(
     nextConfig: TConfig,
   ): ((
@@ -191,42 +167,23 @@ export const styleGenNext =
     ) as ResolvedNextConfig<TConfig>;
     if (!EMIT_PHASES.has(phase)) return resolvedConfig;
 
-    const root = process.cwd();
-    const generatorOptions: StyleGeneratorOptions = opts.options ?? {};
+    const target = resolvePluginTarget(process.cwd(), opts, PLUGIN_NAME);
 
-    const themePathAbs = resolveSafePath(
-      root,
-      opts.themePath,
-      `[${PLUGIN_NAME}] themePath`,
-    );
-    const outDirOption = opts.outDir ?? dirname(opts.themePath);
-    const outDirAbs = resolveSafePath(
-      root,
-      outDirOption,
-      `[${PLUGIN_NAME}] outDir`,
-    );
-
-    try {
-      emit(themePathAbs, outDirAbs, generatorOptions);
-    } catch (err) {
-      throw new Error(
-        `[${PLUGIN_NAME}] invalid theme in ${themePathAbs}:\n${err instanceof z.ZodError ? formatZodError(err) : (err as Error).message}`,
-        { cause: err },
-      );
+    const result = emitThemeCss(target);
+    if (!result.ok) {
+      throw new Error(`[${PLUGIN_NAME}] ${result.message}`, {
+        cause: result.cause,
+      });
     }
 
-    if (phase === "phase-development-server") {
-      startDevWatcher(themePathAbs, outDirAbs, generatorOptions);
-    }
+    if (phase === "phase-development-server") startDevWatcher(target);
 
     return resolvedConfig;
   };
 
 /** Test-only: reset module-level state. Not part of public API. */
 export const __resetForTests = (): void => {
-  devWatcher?.close().catch(() => {
-    // Best-effort close during test teardown — nothing to react to.
-  });
+  if (devWatcher) closeQuietly(devWatcher);
   devWatcher = null;
-  devWatcherThemePath = null;
+  devWatcherKey = null;
 };

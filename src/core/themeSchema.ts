@@ -2,11 +2,14 @@ import { z } from "zod";
 
 import { UTILITY_NAME_RE, toKebabCase } from "../shared/helpers";
 
-import { validateCategoryAliasGraph } from "./aliasGraph";
+import {
+  validateCategoryAliasGraph,
+  validateCrossAxisAliasCycles,
+} from "./aliasGraph";
 import {
   checkBorderWidthColorCollision,
-  checkCssVarCollisions,
   checkFontFamilyWeightNames,
+  checkTypographyClassCollisions,
   reportKebabCollisions,
 } from "./crossFieldChecks";
 import { TokenKey, TokenValue, TypographyValue } from "./tokenGrammar";
@@ -21,11 +24,16 @@ import { TokenKey, TokenValue, TypographyValue } from "./tokenGrammar";
 export const TypographyStyleSchema = z.strictObject({
   fontSize: TypographyValue,
   lineHeight: TypographyValue,
-  fontWeight: z.number(),
+  // CSS Fonts 4: `font-weight` is a <number [1,1000]>; fractions are legal
+  // (variable fonts), so no `.int()`.
+  fontWeight: z.number().min(1).max(1000),
   letterSpacing: TypographyValue.optional(),
   fontFamily: TypographyValue.optional(),
   fontStyle: TypographyValue.optional(),
 });
+
+/** Utility families a typography `@utility` would shadow: `sp-*` and `font-*`. */
+const SHADOWED_UTILITY_FAMILIES = /^(sp|font)-/;
 
 /**
  * `theme.typography` keys become Tailwind v4 `@utility` names via
@@ -33,6 +41,8 @@ export const TypographyStyleSchema = z.strictObject({
  * form doesn't match `UTILITY_NAME_RE` (e.g. starts with a digit or a dash)
  * would otherwise only fail at CSS-generation time. Rejecting it here, at
  * parse time, surfaces a `ZodError` with the offending key in its `path`.
+ * Keys kebab-casing to `sp-*` or `font-*` are rejected too: they would
+ * shadow the generated spacing and font utilities.
  */
 const TypographyRecordSchema = z
   .record(TokenKey, TypographyStyleSchema)
@@ -52,6 +62,19 @@ const TypographyRecordSchema = z
       });
     }
     reportKebabCollisions(ctx, typography, []);
+    for (const key of Object.keys(typography)) {
+      const family = SHADOWED_UTILITY_FAMILIES.exec(toKebabCase(key))?.[1];
+      if (family === undefined) continue;
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message:
+          `Typography key "${key}" kebab-cases to "${toKebabCase(key)}", ` +
+          `which shadows the generated ${family}-* utilities ` +
+          `(${family === "sp" ? "spacing" : "font-family and font-weight"}) ` +
+          `— rename the key so it does not start with "${family}-".`,
+      });
+    }
   });
 
 /**
@@ -179,6 +202,18 @@ const integerLikeNameMessage = (kind: "axis" | "variant", name: string) =>
   `themeAxes ${kind} name "${name}" is a canonical integer; JS object key order puts integer-like keys first (ascending) regardless of declaration order, which would silently break the "last declared wins" precedence — rename it (e.g. "contrast${name}" or "c${name}")`;
 
 /**
+ * `"base"` is the "no override" sentinel of `ThemeAxesState` and
+ * `themeAxisAttributes()`: a variant of that name could never be switched on
+ * (it would emit no `data-<axis>` attribute), so it is rejected rather than
+ * left as a block nothing can activate. An AXIS named `base` is fine: it is
+ * only a key of the state object, and its own variants are not affected.
+ */
+const RESERVED_VARIANT_NAME = "base";
+
+const reservedVariantMessage = () =>
+  `themeAxes variant name "${RESERVED_VARIANT_NAME}" is reserved: ThemeAxesState and themeAxisAttributes() read "${RESERVED_VARIANT_NAME}" as "no override" on the axis, so this variant could never be switched on — rename it (e.g. "default" or "standard"). The base theme already is what an axis shows without an override.`;
+
+/**
  * `themeAxes` — replaces the single-axis `themes` field. Outer key is the
  * axis name (e.g. `"theme"`, `"palette"`), inner key is the variant name
  * within that axis (e.g. `"dark"`, `"forest"`) — both use the
@@ -186,12 +221,16 @@ const integerLikeNameMessage = (kind: "axis" | "variant", name: string) =>
  * selector/attribute-value character. Multiple axes can be declared and
  * toggled independently (`html[data-theme]` + `html[data-palette]`, ...);
  * `generateThemeCss.ts` emits one `html[data-<axis-kebab>="<variant-kebab>"]`
- * block per variant, in declaration order, after `:root`.
+ * block per variant, in declaration order, after `:root` — with the default
+ * `axes.scope: "root"` and no `axes.attribute` rename (`options.axes` changes
+ * the attribute name and, for `"element"`, drops the `html` anchor).
  *
  * Axis and variant names that are canonical integers (`/^(0|[1-9]\d*)$/`)
  * are rejected: `JSON.parse`/object enumeration hoists them ahead of all
  * other keys, so declaration order — and with it the emit-order precedence
  * contract — would be lost before this library ever sees the object.
+ *
+ * A variant named `base` is rejected too (see {@link RESERVED_VARIANT_NAME}).
  */
 const ThemeAxesSchema = z
   .record(TokenKey, z.record(TokenKey, ThemeOverrideSchema))
@@ -205,6 +244,13 @@ const ThemeAxesSchema = z
         });
       }
       for (const variantName of Object.keys(variants)) {
+        if (variantName === RESERVED_VARIANT_NAME) {
+          ctx.addIssue({
+            code: "custom",
+            path: [axisName, variantName],
+            message: reservedVariantMessage(),
+          });
+        }
         if (INTEGER_LIKE_NAME_RE.test(variantName)) {
           ctx.addIssue({
             code: "custom",
@@ -213,6 +259,7 @@ const ThemeAxesSchema = z
           });
         }
       }
+      reportKebabCollisions(ctx, variants, [axisName]);
     }
   });
 
@@ -266,9 +313,9 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
   themeAxes: ThemeAxesSchema.optional(),
 }).superRefine((theme, ctx) => {
   validateBaseCategories(ctx, theme);
-  checkCssVarCollisions(ctx, theme);
   checkBorderWidthColorCollision(ctx, theme.colors, theme.borderWidth);
   checkFontFamilyWeightNames(ctx, theme.fontFamily);
+  checkTypographyClassCollisions(ctx, theme);
 
   if (!theme.themeAxes) return;
   for (const [axisName, variants] of Object.entries(theme.themeAxes)) {
@@ -280,6 +327,25 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
         override,
       );
     }
+  }
+
+  for (const category of ALIAS_CATEGORIES) {
+    validateCrossAxisAliasCycles(
+      ctx,
+      theme[category],
+      Object.fromEntries(
+        Object.entries(theme.themeAxes).map(([axisName, variants]) => [
+          axisName,
+          Object.fromEntries(
+            Object.entries(variants).map(([variantName, override]) => [
+              variantName,
+              override[category],
+            ]),
+          ),
+        ]),
+      ),
+      category,
+    );
   }
 });
 

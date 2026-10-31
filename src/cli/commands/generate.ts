@@ -1,18 +1,22 @@
-import fs from "node:fs";
 import path from "node:path";
 
-import { watch } from "chokidar";
-import { z } from "zod";
-
-import { generate } from "../../core/generate";
-import { ThemeSchema, formatZodError } from "../../core/themeSchema";
-import { writeFileAtomic } from "../../shared/writeFileAtomic";
 import {
   readConfigFile,
   resolveConfig,
-  normalizePath,
   toGeneratorOptions,
-} from "../config";
+  type StyleGenConfig,
+  type StyleGenConfigFlags,
+} from "../../node/loadStyleGenConfig";
+import { resolveProjectPath } from "../../node/resolveProjectPath";
+import { emitThemeCss } from "../../node/themeEmitter";
+import type { EmitResult, EmitTarget } from "../../node/themeEmitter";
+import {
+  watchThemeFile,
+  type ConfigIssues,
+  type ThemeWatchHandle,
+  type WatchThemeOptions,
+} from "../../node/watchThemeFile";
+import { loadCliConfig } from "../loadCliConfig";
 import { logger } from "../logger";
 
 export interface GenerateArgs {
@@ -22,157 +26,138 @@ export interface GenerateArgs {
 }
 
 /** Handle on a `--watch` run, so callers can stop it. */
-export interface GenerateWatchHandle {
-  /** Resolves once the theme-file watcher is attached. */
-  ready: Promise<void>;
-  /** Cancel any pending regeneration and stop watching. */
-  close: () => Promise<void>;
+export type GenerateWatchHandle = ThemeWatchHandle;
+
+/** Test seams of {@link generateCommand}; the CLI passes none. */
+export interface GenerateHooks {
+  /** Receives the watcher handle in `--watch` mode as soon as it exists. */
+  onHandle?: (handle: GenerateWatchHandle) => void;
+  /** Replaces `chokidar.watch`. */
+  watch?: WatchThemeOptions["watch"];
+  /** Quiet period before a change is re-emitted. */
+  debounceMs?: number;
 }
 
 /**
- * Generate command handler: reads the theme, validates it, runs `generate()`,
- * and writes the resulting CSS (`@theme`/`@theme inline`/typography/spacing/
- * `@source inline` blocks) to disk. Consumers `@import` the written file
- * directly next to `@import "tailwindcss";`.
- *
- * A failed one-shot generation sets `process.exitCode = 1` so scripts and CI
- * stop; in watch mode a failure is logged and watching continues.
- * @param {GenerateArgs} args - Generate arguments from CLI
- * @returns {GenerateWatchHandle | undefined} The watch handle in `--watch` mode, else `undefined`
+ * The emit target a resolved configuration points at. The theme may live
+ * outside the project root (a theme shared by a monorepo); the CSS output
+ * may not.
+ * @param {string} cwd - Project root
+ * @param {StyleGenConfig} config - Resolved configuration
+ * @returns {EmitTarget} Absolute theme and output paths plus the generator options
+ * @throws {Error} When the output path escapes the project root
  */
-export function generateCommand(
-  args: GenerateArgs,
-): GenerateWatchHandle | undefined {
-  try {
-    const configFlags: Parameters<typeof resolveConfig>[0] = {};
+function toEmitTarget(cwd: string, config: StyleGenConfig): EmitTarget {
+  return {
+    themeFile: resolveProjectPath(cwd, config.theme, "theme", {
+      allowOutsideRoot: true,
+    }),
+    outFile: resolveProjectPath(cwd, config.output, "output"),
+    options: toGeneratorOptions(config),
+  };
+}
 
-    if (args.theme !== undefined) {
-      configFlags.theme = args.theme;
-    }
-
-    if (args.out !== undefined) {
-      configFlags.output = args.out;
-    }
-
-    const configFile = readConfigFile(process.cwd());
-    if (configFile.error) {
-      logger.warn(`Ignoring ${configFile.error}; using defaults`);
-    }
-    if (configFile.issues) {
-      // Read once at startup (not watched), like the missing-theme check
-      // below, so this also ends a `--watch` run.
-      logger.error(
-        `Invalid config (${configFile.source ?? "style-gen.config.json"}):\n${configFile.issues}`,
-      );
-      process.exitCode = 1;
-      return;
-    }
-    const options = resolveConfig(configFlags, configFile);
-
-    const themePath = path.resolve(process.cwd(), normalizePath(options.theme));
-
-    if (!fs.existsSync(themePath)) {
-      logger.error(
-        `Theme file not found at ${options.theme} (resolved: ${themePath})\n💡 Run: yarn style-gen init`,
-      );
-      process.exit(1);
-    }
-
-    const stat = fs.statSync(themePath);
-    if (stat.isDirectory()) {
-      logger.error(
-        `The path provided for --theme is a directory, not a file: ${themePath}\n💡 Did you mean: ${options.theme.replace(/\/$/, "")}/theme.json?`,
-      );
-      process.exit(1);
-    }
-
-    const outPath = path.resolve(process.cwd(), options.output);
-
-    const performGenerate = (): boolean => {
-      // The theme is parsed here, so a ZodError thrown by `generate()` comes
-      // from the options (e.g. `extraSources`), not from the theme.
-      let stage: "theme" | "options" = "theme";
-      try {
-        const theme = ThemeSchema.parse(
-          JSON.parse(fs.readFileSync(themePath, "utf8")),
-        );
-        stage = "options";
-        const { css } = generate(theme, toGeneratorOptions(options));
-
-        const outDir = path.dirname(outPath);
-        if (!fs.existsSync(outDir)) {
-          fs.mkdirSync(outDir, { recursive: true });
-        }
-
-        writeFileAtomic(outPath, css);
-        logger.success(`CSS written to ${options.output}`);
-        return true;
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          logger.error(
-            stage === "theme"
-              ? `Invalid theme (${options.theme}):\n${formatZodError(error)}`
-              : `Invalid options:\n${formatZodError(error)}`,
-          );
-        } else if (error instanceof Error) {
-          logger.error(`Failed to generate CSS: ${error.message}`);
-        } else {
-          logger.error(`Unknown error occurred.`);
-        }
-        return false;
-      }
-    };
-
-    if (args.watch) {
-      logger.info(`Watching for changes in ${options.theme}...`);
-
-      let timeout: NodeJS.Timeout | undefined;
-      const debouncedGenerate = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-          performGenerate();
-        }, 200);
-      };
-
-      // Initial generation
-      debouncedGenerate();
-
-      const watcher = watch(themePath, {
-        persistent: true,
-        ignoreInitial: true,
-      });
-
-      watcher.on("change", () => {
-        logger.info("Theme file changed. Regenerating...");
-        debouncedGenerate();
-      });
-
-      // Plain executor: the repo's ES2022 lib has no Promise.withResolvers.
-      let markReady: () => void = () => undefined;
-      const ready = new Promise<void>((resolve) => {
-        markReady = resolve;
-      });
-      watcher.once("ready", markReady);
-      return {
-        ready,
-        close: () => {
-          clearTimeout(timeout);
-          // chokidar never emits `ready` once closed; don't leave awaiters hanging.
-          markReady();
-          return watcher.close();
-        },
-      };
-    }
-    if (!performGenerate()) {
-      process.exitCode = 1;
-    }
-    return undefined;
-  } catch (error) {
-    if (error instanceof Error) {
-      logger.error(`Configuration error: ${error.message}`);
-    } else {
-      logger.error(`Unknown configuration error.`);
-    }
-    process.exit(1);
+/**
+ * Print one emit outcome the way the command always has.
+ * @param {string} cwd - Project root, for the relative output path
+ * @param {EmitResult} result - What `emitThemeCss`/`watchThemeFile` reported
+ */
+function report(cwd: string, result: EmitResult): void {
+  if (result.ok) {
+    const out = path.relative(cwd, result.outFile);
+    logger.success(
+      result.changed ? `CSS written to ${out}` : `CSS is up to date: ${out}`,
+    );
+    return;
   }
+  const hint =
+    result.stage === "read" && result.message.startsWith("Theme file not found")
+      ? "\n💡 Run: yarn style-gen init"
+      : "";
+  logger.error(`${result.message}${hint}`);
+}
+
+/**
+ * Generate command handler: reads the theme, validates it, runs the same
+ * pipeline as `generate()` (through the shared Node runner) and writes the
+ * resulting CSS (`@theme`/`@theme inline`/typography/spacing/`@source
+ * inline` blocks) to disk, only when it changed. Consumers `@import` the
+ * written file directly next to `@import "tailwindcss";`.
+ *
+ * One-shot: returns 1 on any failure so scripts and CI stop. `--watch`:
+ * emits once, then re-emits when the theme or the config file changes. A
+ * failure after startup is logged and watching continues; an invalid config
+ * edit keeps the last valid one. An unreadable theme or an invalid config at
+ * startup still returns 1, before any watcher starts. In watch mode the
+ * promise resolves 0 once the watcher is attached; chokidar then keeps the
+ * process alive.
+ * @param {GenerateArgs} args - Generate arguments from CLI
+ * @param {string} [cwd] - Project root; defaults to `process.cwd()`
+ * @param {GenerateHooks} [hooks] - Test seams
+ * @returns {Promise<number>} The process exit code
+ */
+export async function generateCommand(
+  args: GenerateArgs,
+  cwd: string = process.cwd(),
+  hooks: GenerateHooks = {},
+): Promise<number> {
+  const flags: StyleGenConfigFlags = {
+    ...(args.theme !== undefined && { theme: args.theme }),
+    ...(args.out !== undefined && { output: args.out }),
+  };
+
+  const loaded = loadCliConfig(cwd, flags);
+  if (!loaded) return 1;
+  const { config, file } = loaded;
+
+  let target: EmitTarget;
+  try {
+    target = toEmitTarget(cwd, config);
+  } catch (error) {
+    logger.error(error instanceof Error ? error.message : String(error));
+    return 1;
+  }
+
+  const first = emitThemeCss(target);
+  report(cwd, first);
+
+  if (!args.watch) return first.ok ? 0 : 1;
+
+  // A theme that cannot be read at all (missing, a directory) is a usage
+  // error, not an edit in progress: do not start watching.
+  if (!first.ok && first.stage === "read") return 1;
+
+  logger.info(`Watching for changes in ${config.theme}...`);
+
+  // Flags still win after a reload; a malformed or invalid config keeps the
+  // last valid target (the watcher reports it) instead of falling back to
+  // defaults halfway through an edit.
+  const reloadTarget = (): EmitTarget | ConfigIssues => {
+    const reloaded = readConfigFile(cwd);
+    const problem = reloaded.issues ?? reloaded.error;
+    if (problem !== undefined) {
+      return {
+        issues: problem,
+        ...(reloaded.source !== undefined && { source: reloaded.source }),
+      };
+    }
+    return toEmitTarget(cwd, resolveConfig(flags, reloaded));
+  };
+
+  const handle = watchThemeFile(
+    target,
+    (result) => {
+      report(cwd, result);
+    },
+    {
+      // Also when no config exists yet: creating one is picked up.
+      configFile: path.resolve(cwd, file.source ?? "style-gen.config.json"),
+      reloadTarget,
+      ...(hooks.watch !== undefined && { watch: hooks.watch }),
+      ...(hooks.debounceMs !== undefined && { debounceMs: hooks.debounceMs }),
+    },
+  );
+  hooks.onHandle?.(handle);
+  await handle.ready;
+  return 0;
 }

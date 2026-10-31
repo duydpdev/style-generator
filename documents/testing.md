@@ -7,15 +7,17 @@ This document describes how `@duydpdev/style-generator` 4.x is tested. The test 
 The checks have two layers:
 
 1. **Local (pre-commit):** `Husky` + `lint-staged` run on the staged snapshot of the staged code files: `eslint --fix` → `prettier --write` → `tsc --noEmit` → `vitest related --run` (only tests that import the staged files). Husky is installed through `postinstall` (Yarn Berry does not run `prepare`).
-2. **Remote (GitHub Actions, `.github/workflows/ci.yml` and `.github/workflows/ci-matrix.yml`, PRs into `main`/`develop`/`release/**`):\*\*
-   - job `check`: production dependency audit (blocks high/critical) and full audit (log only) → commitlint → lint → `prettier:check` → `tsc` → syntax check (`node --check`) and type check (`yarn typecheck:scripts`) of `scripts/*.mjs` and `site/scripts/*.mjs` → `build:all` → site build (`yarn workspace site build`) → `yarn workspace site check:links` (relative links and `#anchor`s in the markdown that the site renders) → typecheck of 3 examples, build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `check:smoke` → Vite dev-server smoke (`node scripts/vite-dev-smoke.mjs`: edit the theme of `examples/react-v4` under a real dev server and wait for `theme.css` to be rewritten + `full-reload`) → `yarn typecheck:dist` (`tsconfig.dts-check.json`: `dist/*.d.ts` with `skipLibCheck: false`) → `yarn test:coverage` (fails if coverage drops below `coverage.thresholds` in `vitest.config.ts`) → `yarn test:types`;
+2. **Remote** (GitHub Actions, `.github/workflows/ci.yml` and `.github/workflows/ci-matrix.yml`, PRs into `main`/`develop`/`release/**`):
+   - job `check`: production dependency audit (blocks high/critical) and full audit (log only) → commitlint → `build:all` (before lint because the type-aware ESLint also scans `examples/**`, which import the built library through `link:../..`) → `yarn workspace nuxt-v4-example prepare:nuxt` (writes the `.nuxt/tsconfig.*.json` files that ESLint needs for `examples/nuxt-v4/app/**`) → lint → `prettier:check` → `tsc` → syntax check (`node --check`) and type check (`yarn typecheck:scripts`) of `scripts/*.mjs` and `site/scripts/*.mjs` → site build (`yarn workspace site build`) → `yarn workspace site check:links` (relative links, absolute `https://github.com/duydpdev/style-generator/blob/main/…` links as README.md writes them, and `#anchor`s in the markdown that the site renders) → `yarn check:docs-embed` (tutorial code equals the example regions it embeds) → `yarn check:doc-snippets` (every `ts`/`tsx` block in the docs type-checks against `dist/*.d.ts`) → `yarn check:doc-exports` (every export has a reference heading, a matching signature block and a non-empty TSDoc, see [layer 9](#9-docs-embed-snippet-export)) → typecheck of the 4 examples (`design-system-example`, `react-v4-example`, `next-v4-example`, `nuxt-v4-example`), of `site`, `@duydpdev/ui-react` and `@duydpdev/ui-vue` (one `yarn workspaces foreach` call; the root `tsconfig.json` does not include `site/`, so this is the only place a wrong prop type in `site/src` fails) → `yarn workspace design-system-example test` (DX test, see [layer 6](#6-dx-test-for-the-design-system-example)) → `yarn workspace @duydpdev/ui-react test` (see [layer 8](#8-tests-of-packagesui-react)) → `yarn workspace @duydpdev/ui-vue test` (SSR render, types, names) → build `next-v4`/`nuxt-v4` → `check:externals` → `check:browser-safe` → `check:sizes` → `check:smoke` → `yarn check:types-pack` (packs the tarball and then runs `@arethetypeswrong/cli --profile node16`: both ESM and CJS must resolve to the correct `.d.ts`/`.d.cts`) → Vite dev-server smoke (`node scripts/vite-dev-smoke.mjs`, two scenarios: (1) Vite ≥ 6 only (Vite 5 has no lazy `buildStart`, so the scenario is skipped): `createServer()` without `listen()` and then `transformRequest(..., { ssr: true })` — the plugin sets `perEnvironmentStartEndDuringDev: true`, so `buildStart` still runs and `theme.css` is written; (2) delete `theme.css` of `examples/react-v4`, `await server.listen()` so `buildStart` writes it again, then edit the theme (`examples/design-system/src/theme.json`) under a real dev server and wait for `theme.css` to be rewritten + `full-reload`) → `yarn typecheck:dist` (two halves: `tsconfig.dts-check.json` checks `dist/*.d.ts` and `dist/*.d.cts` with `skipLibCheck: false` under `module: ESNext` + Bundler; `tsconfig.dts-check.cjs.json` checks `dist/*.d.cts` as a real CommonJS consumer — `module: node16`, `skipLibCheck: false`, the file `scripts/dist-types.cjs.assert.cts` imports through the package name under the `require` condition itself. The CJS half uses `node16`, not `nodenext`, because since TS 5.8 `nodenext` allows `require()` of ESM and would mask `TS1479` on an ESM-only peer. `dist/vite.d.cts` is `vite.d.ts` with the `vite` import rewritten as `import type … assert { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`); attw does not resolve peer types, so it cannot replace this step) → `yarn test:coverage` (fails if coverage drops below `coverage.thresholds` in `vitest.config.ts`) → `yarn test:types`;
    - job `e2e`: Playwright on Chromium and WebKit (`build:all` → install browsers → `yarn test:e2e`);
-   - job `tailwind-floor`: pins the Tailwind packages to `~4.1.0` (only in the runner's checkout) and then runs `yarn test` + `yarn test:e2e`, so the peer `tailwindcss >=4.1.0` is really checked — the lockfile currently resolves to 4.3.x, so without this job the lower bound would never be reached.
+   - job `tailwind-floor`: pins the Tailwind packages to `~4.1.0` (only in the runner's checkout) and then runs `yarn test` + `yarn test:e2e`, so the peer `tailwindcss ^4.1.0` is really checked — the lockfile currently resolves to 4.3.x, so without this job the lower bound would never be reached.
    - job `node-floor`: builds and runs `check:smoke` on Node `20.19.0`, the floor of `engines.node` (the other jobs run Node 22);
    - job `peer-matrix` (4 legs): builds the lib with the committed toolchain, then forces **one** peer to the latest version of **one** major through `resolutions` (`vite` 5/6/8, `typescript` 6), asserts that the resolved version is `N.x`, then builds `examples/react-v4`, (the `vite` leg) dev-server smoke, example typecheck and `yarn typecheck:dist`, (the `typescript` leg) `yarn test:types`. Every leg must be green (red means CI is red); there is no `experimental` leg any more: the TypeScript 7 leg was dropped because Yarn 4.10 cannot install native TypeScript 7. The results decide the peer ranges (edited by hand). Only the latest version of each major is run; the floor of a range (e.g. `vite@5.0.0`) is not checked;
-   - `e2e`, `tailwind-floor`, `node-floor` and `peer-matrix` live in `ci-matrix.yml`, which has `paths-ignore: ["documents/**"]` at the workflow level: a PR that only changes documentation does not run this workflow. The `check` job of `ci.yml` still runs for such a PR because the site renders `documents/*.md`. Every job in both workflows skips draft PRs (`if: github.event.pull_request.draft == false`) and runs when the PR is marked ready (`ready_for_review`).
+   - `e2e`, `tailwind-floor`, `node-floor` and `peer-matrix` live in `ci-matrix.yml`, which has `paths-ignore: ["documents/**"]` at the workflow level: a PR that only changes documentation does not run this workflow. The `check` job of `ci.yml` still runs for such a PR because the site renders `documents/*.md`. The `check` job of `ci.yml` also runs on draft PRs, so a pushed draft always gets a result (Actions minutes are free on this public repo); every job of `ci-matrix.yml` skips draft PRs (`if: github.event.pull_request.draft == false`) and runs when the PR is marked ready (`ready_for_review`).
 
-`check:publish-target` runs in `prepublish` and in the publish workflow (`deploy.yml`), see [`deploy.md`](./deploy.md).
+`check:publish-target` runs in `prepublish` and in the publish workflow (`deploy.yml`); `deploy.yml` additionally runs `check:types-pack` right after `build:all`, see [`deploy.md`](./deploy.md).
+
+Two separate workflows screenshot the built site: `.github/workflows/visual.yml` (job `Site visual regression (chromium)`) only compares against the committed Linux baselines and runs for non-draft PRs that change `site/**`, `packages/**`, `examples/**`, `e2e-site/**`, `src/**`, `documents/**` (the site renders them), `package.json`, `yarn.lock`, `playwright.site.config.ts` or `.github/workflows/visual.yml` itself; `.github/workflows/visual-update.yml` (job `Site visual baselines (chromium)`) runs only when the `visual-update` label is added and rewrites the baselines. See [layer 7](#7-site-visual-regression-playwright-chromium).
 
 ---
 
@@ -32,13 +34,14 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # a single 
 
 Tests sit next to the code (`*.test.ts`). The main groups:
 
-- `src/core/*` — `generate()`, `ThemeSchema` (unknown keys, unsafe values, aliases, `themeAxes`, integer names, keys that do not round-trip, `borderWidth`/`colors` collisions), `defineTheme`, option validation (`extraSources`, `screens`, `breakpoints`, `spacing.properties`), injection attempts (including `generateThemeCss`).
+- `src/core/*` — `generate()`, `ThemeSchema` (unknown keys, unsafe values, aliases, `themeAxes`, integer names, keys that do not round-trip, `borderWidth`/`colors` collisions, `fontWeight` 1–1000, typography keys that shadow `sp-*`/`font-*`), `defineTheme`, option validation (`extraSources`, `screens`, `breakpoints`, array-form `spacing.properties`), injection attempts (including `generateThemeCss`).
 - `src/features/registry/*` — descriptors, `flattenByCategory`, `generateSourceInline` (including state lines).
 - `src/features/{theme-css,typography,spacing}/*` — each generated CSS block.
 - `src/features/{tokens,cva}/*` — `createDesignTokens`, `createVariantMapper` (`{ states }`).
-- `src/features/{vite,next}/*` — plugins (emit-only, watcher, path guard).
-- `src/cli/*` — `init`, `generate`, `schema`, `doctor` (utility collision warnings), `config`.
-- `src/shared/*` — `helpers` (kebab/camel), `resolveSafePath`, `writeFileAtomic`.
+- `src/features/{vite,next}/*` — plugins (emit in `buildStart`, `addWatchFile`, watcher, path guard, the no-argument plugin reading `style-gen.config.json`).
+- `src/node/*` — the shared Node runner: `loadStyleGenConfig` (tests moved from the old `config.test.ts`), `resolveProjectPath` (does not rewrite a leading `/`; theme outside the root, `outDir` inside the root), `themeEmitter` (per-stage labels, writes only when the content changed), `watchThemeFile` (re-reads the config; an invalid config keeps the last valid one), `resolvePluginTarget`.
+- `src/cli/*` — `run.test.ts` calls `runCli(args, cwd)` directly (registry, per-command `--help`, unknown flag → code 1, `budget` invalid flag → code 2) because commands return an exit code rather than calling `process.exit`; `index.test.ts` only checks `process.exitCode`; `init`, `generate` (including `--watch` with a real chokidar and a test that edits the config while watching, V5-06), `schema`, `tokens` (the generated module is re-imported and compared with `createDesignTokens`), `budget` (measures gzip on temporary files/directories, three exit codes, the two `OK:`/`OVER BUDGET:` lines), `doctor` (utility collision warnings, `aliasHints`, theme × options errors, an invalid config stops early; `legacyColorVars` scans for 4.x-style `--sg-<color>` variables in a temporary directory).
+- `src/shared/*` — `helpers` (kebab/camel), `writeFileAtomic`.
 
 Coverage uses the v8 provider with `include: ["src/**/*.ts"]`, so a file that no test imports (e.g. `src/cli/index.ts`) still shows up at 0 % instead of being skipped. Test files (`*.test.ts`, `*.test-d.ts`), `*.d.ts` and `src/__integration__/**` are excluded. There is no mandatory threshold yet. Baseline measured on 2026-10-06: statements 91.35 %, branches 83.2 %, functions 92.48 %, lines 91.58 %; `src/cli/index.ts` 0 %.
 
@@ -50,7 +53,9 @@ The `text` table groups by directory (the `src/cli` row and then the `index.ts` 
 yarn test:types      # vitest run --typecheck.only (*.test-d.ts; `yarn test` does not run them)
 ```
 
-Uses `expectTypeOf` to lock down type inference: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, the `createVariantMapper` signature (a leftover `true` in the third parameter must be a TS error), `resolveSpacing`/`ResponsiveValueStrict`, the config type that `styleGenNext` returns (object or function form), and the subpath exports (`src/exports/subpath-exports.test-d.ts`).
+Uses `expectTypeOf` to lock down type inference: `DesignTokens.Web.*`, `ColorVariant<T>` …, `ThemeConfig`, the `createVariantMapper` signature (a leftover `true` in the third parameter must be a TS error), `resolveSpacing`/`ResponsiveValueStrict`, `SpacingProps`/`splitSpacingProps`/`themeAxisAttributes` (`src/features/recipes/*.test-d.ts`), the config type that `styleGenNext` returns (object or function form), and the subpath exports (`src/exports/subpath-exports.test-d.ts`).
+
+<!-- snippet: no-check imports repo-internal src/ modules -->
 
 ```typescript
 import { describe, it, expectTypeOf } from "vitest";
@@ -72,11 +77,12 @@ The concerns locked down here:
 - The compiled CSS has the right classes/variables; `@source inline` is what makes the classes appear even when the candidate list is empty (with a negative control that removes it).
 - The CVA round trip: every class that `createVariantMapper` returns is present in the compiled CSS.
 - `toKebabCase` parity between runtime and types (`kebab-parity`).
-- Multi-axis `themeAxes` on the real theme of `examples/nuxt-v4`.
-- Every `theme.json` in `examples/`/`site/` passes the strict `ThemeSchema`, and the committed `theme.schema.json` files match `z.toJSONSchema(ThemeSchema)`.
+- Multi-axis `themeAxes` on the real theme of `examples/design-system` (`multi-axis.test.ts`; the `theme` axis is declared before `palette`).
+- Every `theme.json` in `examples/`/`site/` passes the strict `ThemeSchema`, and the committed `theme.schema.json` files (`examples/`, `examples/design-system/src/`, `site/src/theme/`) match `z.toJSONSchema(ThemeSchema)`.
+- No file in `examples/{react-v4,next-v4,nuxt-v4}` has the same content as a file in another app (`examples-dedup.test.ts`, empty allowlist): anything shared must live in `examples/design-system`.
 - The `THEME_JSON`/`THEME_CSS` samples on the landing site (`site-build-sample.test.ts`) are a valid theme and an excerpt, in the right order, of the real `generate().css`.
 - Non-default options (`custom-options.test.ts`): custom `screens`/`breakpoints`, `spacing.properties`, `cssVarDriven`, `enableResponsive: false`, `spacing.enabled: false`.
-- The CSS budget measurement/check scripts (`measure-css-output`, `diff-class-families`, `check-css-budget`) have their own tests.
+- The CSS measurement/check scripts (`measure-css-output`, `diff-class-families`) have their own tests; the CSS gzip budget is now the CLI command `style-gen budget`, tested in-process (`src/cli/commands/budget.test.ts`) in place of the `check-css-budget.mjs` script and the old spawn-process test.
 - Negative controls for the publish gates (`publish-gates.test.ts`): build a fake `dist/` in a temporary directory, copy the scripts into `<root>/scripts/`, and then assert that `check:externals`, `check:sizes` and `check:browser-safe` exit with code 1 on an inlined dependency, a missing sourcemap, a missing budget, an exceeded budget (including through a chunk), or Zod/Node built-ins pulled into a browser-safe subpath.
 
 ### 4. E2E (Playwright, Chromium + WebKit)
@@ -99,14 +105,72 @@ Why WebKit as well: the inheritance semantics of `@property` and the `var()` cas
 
 Run after `yarn build:all`, and also part of `prepublish`:
 
-| Script                                            | What it checks                                                                                                                                                                                                                     |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yarn check:externals`                            | no file in `dist/` (entries, shared chunks, `dist/cli/index.mjs`) inlines a dependency/peer: it reads the `sources` of every `dist/**/*.map` looking for `node_modules/<name>/`; a JS file without a sourcemap also fails the gate |
-| `yarn check:browser-safe`                         | `./tokens`, `./cva`, `./spacing`, `./types` do not pull in Zod, Node built-ins or `@tailwindcss/*` (including through shared chunks)                                                                                               |
-| `yarn check:sizes`                                | gzip budget for every subpath in `package.json#exports`, counting every chunk the entry imports (transitively), and for the CLI `dist/cli/index.mjs` (`cli`)                                                                       |
-| `yarn check:publish-target`                       | publishes to the correct GitHub Packages                                                                                                                                                                                           |
-| `yarn check:smoke` (CI, not part of `prepublish`) | `import` + `require` every subpath by package name and match the export names; `generate()` ESM/CJS yields the same CSS; runs the CLI (`--version`, `schema`, `generate`, `init`) and the TypeScript script generated by `init`    |
-| `scripts/check-css-budget.mjs` (no yarn script)   | gzip budget for the compiled CSS of a consuming app; a plain Node script, can be copied to another repo                                                                                                                            |
+| Script                                                                  | What it checks                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yarn check:externals`                                                  | no file in `dist/` (entries, shared chunks, `dist/cli/index.mjs`) inlines a dependency/peer: it reads the `sources` of every `dist/**/*.map` looking for `node_modules/<name>/`; a JS file without a sourcemap also fails the gate. `tailwind-merge` (only a devDependency, used in the `./recipes` tests) is also forbidden from being inlined |
+| `yarn check:browser-safe`                                               | `./tokens`, `./cva`, `./spacing`, `./recipes`, `./types` do not pull in Zod, Node built-ins or `@tailwindcss/*` (including through shared chunks)                                                                                                                                                                                               |
+| `yarn check:sizes`                                                      | gzip budget for every subpath in `package.json#exports`, counting every chunk the entry imports (transitively), and for the CLI `dist/cli/index.mjs` (`cli`)                                                                                                                                                                                    |
+| `yarn check:publish-target`                                             | publishes to the correct GitHub Packages                                                                                                                                                                                                                                                                                                        |
+| `yarn check:smoke` (CI, not part of `prepublish`)                       | `import` + `require` every subpath by package name and match the export names; `generate()` ESM/CJS yields the same CSS; runs the CLI (`--version`, `schema`, `generate`, `init`, `tokens --help`, `budget --help`) and the TypeScript script generated by `init`                                                                               |
+| `yarn check:types-pack` (CI and `deploy.yml`, not part of `prepublish`) | `yarn pack` and then `@arethetypeswrong/cli --profile node16` on the tarball: every subpath resolves correctly under both `import` (`.d.ts`) and `require` (`.d.cts`, generated by `scripts/emit-cts-types.mjs` as the last step of `yarn build`); `moduleResolution: node10` is unsupported and outside the profile                            |
+
+### 6. DX test for the `design-system` example
+
+```bash
+yarn build:all                                  # the package links the library's dist/*.d.ts
+yarn workspace design-system-example typecheck  # tsc --noEmit
+yarn workspace design-system-example test       # vitest run --typecheck
+```
+
+This gate sits outside the root `yarn test` (`vitest.config.ts` excludes `examples/**` and `packages/**`) because it needs a built `dist/`; CI runs it right after the example typecheck step, before building `next-v4`/`nuxt-v4`. It locks down the library user's end-to-end experience:
+
+- `tests/dx.test.ts` uses the TypeScript Compiler API: it compiles `src/recipes/button.ts` against the real `theme.json` (no diagnostics), then against a `theme.json` in which `danger` was renamed to `dangerX` (intercepting `host.getSourceFile` to swap the JSON content), and asserts that a TS error lands exactly in `src/recipes/button.ts` — that is, renaming a token in the theme breaks the recipe at the place that uses it, not at runtime. The same file asserts that `style-gen.config.json` (the mirror for the CLI-only flow) matches `options` in `src/style-gen.options.ts`.
+- `tests/dx.test-d.ts` (`expectTypeOf`): the `Intent` union (the `intents` tuple, constrained by `satisfies` against the theme), `BreakpointKeys<typeof options>` is `"md" | "lg"`, `Box` with `{ xl: 4 }` does not compile, the type of `axisAttributes`.
+
+### 7. Site visual regression (Playwright, Chromium)
+
+```bash
+yarn site:build              # the suite screenshots the BUILT site (vite preview, port 4173)
+yarn test:visual             # compare against the committed baselines
+yarn test:visual:update      # rewrite changed/missing baselines (--update-snapshots=changed)
+```
+
+`playwright.site.config.ts` (separate from `playwright.config.ts` so that `yarn test:e2e` needs no server) runs `e2e-site/site.spec.ts`: 3 routes (`/`, `/docs/architecture`, `/examples` → `/examples/v4` with the `react-v4` iframe) × 3 viewports (375×812, 768×1024, 1280×800) × the `light`/`dark` theme (set through `localStorage["sg-site-theme"]` with `addInitScript`). Full-page images are cut into 1800 px slices (`-p0`, `-p1`, …): Chromium cannot produce one image taller than 16384 px, and 1800 px (about two desktop viewports) keeps every baseline tile readable in review and a diff local to its tile. Threshold `maxDiffPixelRatio: 0.001`, `animations: "disabled"`, `reducedMotion: "reduce"` (the `prefers-reduced-motion` block in `site/src/styles/base.css` turns off smooth scroll and the looping animations).
+
+Before capturing, the spec scrolls the whole page so every IntersectionObserver has fired, then checks readiness through fixed test hooks, never through classes: at least one `[data-reveal-state]` element and none with `data-reveal-state="pending"` (`site/src/lib/use-reveal.ts`); every line of `data-testid="terminal-body"` (`site/src/components/terminal-typewriter.tsx`) has left `data-line-state="pending"` (all lines exist from the first paint, hidden, so the box never grows) and the `data-testid="terminal-cursor"` cursor (`site/src/sections/start-section.tsx`) is inside it; the `data-testid="example-preview"` iframe (`site/src/components/preview-frame.tsx`) has rendered `#root`. No CSS reads these hooks; keep them when you change the site markup.
+
+Layout guard: `e2e-site/layout.spec.ts` (same config, no screenshots) asserts for `/`, `/docs/architecture|guide|testing|deploy` and `/examples/v4` at 1280×800, 768×1024 and 375×812 that `document.documentElement.scrollWidth <= clientWidth`; at ≤860 px that the topbar `Menu` button (`aria-expanded`, `aria-controls`) opens the `Pages` navigation (Docs and Examples links), `Escape` closes it and a link click closes it; and on mobile that the theme toggle lies inside the viewport. `yarn test:visual` runs both specs, so the compare job fails on a layout regression too. Set `SITE_PORT` to run the preview server on another port than 4173.
+
+Fonts: `e2e-site/pin-fonts.ts` (shared by both specs) blocks every request to `fonts.googleapis.com`/`fonts.gstatic.com` and answers with the pinned copies in `e2e-site/fixtures/fonts/` (`site.css`, `react-v4.css` and the `.woff2` files); each test asserts that no font request reached the network. When you change the Google Fonts link in `site/index.html` or `examples/react-v4/index.html`, refresh the fixtures and update `FONT_CSS` in `e2e-site/pin-fonts.ts`. To refresh: download each stylesheet URL listed in `FONT_CSS` with a current Chrome `User-Agent` (so Google returns `woff2` `@font-face` rules) into `e2e-site/fixtures/fonts/<css file>`, keeping the `url(https://fonts.gstatic.com/…)` references unchanged; then download every referenced `https://fonts.gstatic.com/<path>` into the same directory as `<path>` with each `/` replaced by `_` (for example `s/geist/v5/x.woff2` → `s_geist_v5_x.woff2`), which is the name the spec looks up, and delete fixture files that are no longer referenced.
+
+Baselines exist only for Linux (`*-chromium-linux.png`; `.gitignore` excludes the `-darwin`/`-win32` ones) because font rendering differs between macOS and Linux. Running locally on macOS is only for debugging (create temporary darwin baselines with `yarn test:visual:update`). To update the baselines after an intentional UI change: run the compare first (a non-draft PR), download the `site-visual-report` artifact to get the exact list of changed images, get that list approved, and only then add the `visual-update` label (`gh pr edit <N> --add-label visual-update`). Download the `site-visual-baselines` artifact of the `Site visual update` run into a temporary directory, check the run's `headSha` against `HEAD`, copy the files into `e2e-site/__screenshots__/`, commit them and remove the label.
+
+### 8. Tests of `packages/ui-react`
+
+```bash
+yarn build:all                           # the package links the library's dist/*.d.ts
+yarn workspace @duydpdev/ui-react test   # vitest run --typecheck
+```
+
+Like layer 6, this runner is outside the root `yarn test` (`packages/**` is excluded) and has its own `vitest.config.ts` and a `tsconfig.json` with `jsx`. CI runs it as one step of the `check` job, right after the design-system DX test.
+
+- `src/<Name>/<Name>.test.tsx`: unit tests with `renderToStaticMarkup` (no DOM library).
+- `src/<Name>/<Name>.test-d.tsx` and `tests/roles.test-d.tsx`: type tests; wrong token keys, wrong breakpoints, wrong `as` props and missing roles must fail to compile.
+- `tests/recipe-names.test.ts`: recipes and components compared by name (allow-lists `PART_RECIPES`/`SHARED_RECIPE`); the registry matches `createUi`.
+- `tests/tailwind-classes.test.ts`: `compileScannedCss` (Tailwind's own `Scanner` over the `@source` paths) asserts that every class the recipe tables can emit is in the CSS, for the design-system theme and for the site theme, plus a negative control.
+
+`packages/ui-vue` has its own runner too: `yarn workspace @duydpdev/ui-vue test` (SSR render with `vue/server-renderer`, `*.test-d.ts` type tests, names compared with `UI_COMPONENT_NAMES`).
+
+### 9. Docs (embed, snippet, export)
+
+```bash
+yarn build:all              # snippets and exports read dist/*.d.ts
+yarn check:docs-embed       # a block with <!-- embed: path#region --> must equal that region of the real example file
+yarn check:doc-snippets     # every ts/tsx block in README.md and documents/ (not plans, brainstorm, migration) must type-check
+yarn check:doc-exports      # every export of every subpath needs a heading in documents/reference/<subpath>.md, a signature block matching dist/*.d.ts and a non-empty TSDoc (fix with yarn docs:signatures)
+```
+
+Why: tutorials never hold hand-copied code (so they cannot drift from the example that runs), and an example in the docs cannot silently break when the API changes. Opt-out: a `<!-- snippet: no-check <reason> -->` line right before the block; the reason is required and opted-out blocks stay at or below 10% of all blocks. Mark a region in the source file with `#region docs:<name>` / `#endregion docs:<name>` in that language's comment syntax; `site/src/lib/example-files.ts` drops these lines from the examples page. Tests: `src/__integration__/doc-scripts.test.ts`.
 
 ---
 
@@ -116,6 +180,8 @@ Run after `yarn build:all`, and also part of `prepublish`:
 2. Test **behavior** (boundaries, invariants, errors), not wiring, and do not copy the implementation.
 3. If you need real compiled CSS → use `compileFixtureCss`, do not call `compile()` directly.
 4. Add e2e only when the behavior depends on the browser engine.
+
+<!-- snippet: no-check imports repo-internal src/ modules -->
 
 ```typescript
 import { describe, expect, it } from "vitest";

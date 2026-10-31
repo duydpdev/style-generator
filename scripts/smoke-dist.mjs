@@ -3,13 +3,18 @@
  * Smoke-run the built package the way consumers load it (CI-04). Run after
  * `yarn build:all`:
  *
- * 1. every file named in `package.json#exports` and `bin` exists;
+ * 1. every file named in `package.json#exports` and `bin` exists (nested
+ *    `import`/`require` → `types`/`default` conditions included), and each
+ *    `.d.cts` is its `.d.ts` rewritten by `scripts/cjs-declaration.mjs`;
  * 2. every subpath loads through the package name with both `import` and
- *    `require` and exposes the same export names;
+ *    `require`, exposes the same export names, and those names match the
+ *    value exports its `.d.ts` declares (`./tokens` may add one-letter
+ *    internal aliases);
  * 3. `generate()` from the ESM and CJS builds returns identical CSS;
  * 4. the CLI bundle runs: `--version`, `schema`, `generate` (same CSS as the
- *    library) and `init` in an empty project, whose scaffolded TypeScript
- *    generator script then runs under Node's type stripping.
+ *    library), `tokens`, `budget` (each also with `--help`) and `init` in an
+ *    empty project, whose scaffolded TypeScript generator script then runs
+ *    under Node's type stripping.
  *
  * Run: node scripts/smoke-dist.mjs
  * Exits 1 on the first failed step.
@@ -30,11 +35,17 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { toCjsDeclaration } from "./cjs-declaration.mjs";
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const cli = join(root, pkg.bin["style-gen"]);
 const exampleTheme = join(root, "examples/theme.json");
 const require = createRequire(import.meta.url);
+// `typescript` is CommonJS without a default export; `require` keeps the
+// namespace intact (named ESM imports of it are not statically analysable).
+/** @type {typeof import("typescript")} */
+const ts = require("typescript");
 
 /**
  * Stop the smoke run with a message.
@@ -72,17 +83,85 @@ const runNode = (label, argv, cwd) => {
 const subpaths = Object.keys(pkg.exports).filter(
   (key) => key !== "./package.json",
 );
+/**
+ * Every file path an `exports` target names, however deeply the conditions
+ * (`import`/`require` → `types`/`default`) nest.
+ * @param {string | Record<string, unknown>} target - An `exports` value
+ * @returns {string[]} File paths
+ */
+const targetFiles = (target) =>
+  typeof target === "string"
+    ? [target]
+    : Object.values(target).flatMap((value) =>
+        targetFiles(/** @type {string | Record<string, unknown>} */ (value)),
+      );
+
 for (const key of subpaths) {
-  for (const target of Object.values(pkg.exports[key])) {
+  for (const target of targetFiles(pkg.exports[key])) {
     if (!existsSync(join(root, target))) {
       fail(`exports["${key}"] points at missing ${target}`);
     }
+  }
+  // The `.d.cts` is its `.d.ts` rewritten by scripts/cjs-declaration.mjs.
+  const { import: esm, require: cjs } = pkg.exports[key];
+  if (
+    readFileSync(join(root, cjs.types), "utf8") !==
+    toCjsDeclaration(readFileSync(join(root, esm.types), "utf8"), esm.types)
+  ) {
+    fail(`exports["${key}"]: ${cjs.types} differs from ${esm.types}`);
   }
 }
 if (!existsSync(cli)) fail(`bin points at missing ${pkg.bin["style-gen"]}`);
 console.log(`✓ ${subpaths.length} export targets and the bin exist`);
 
 /* ---------- 2. Every subpath loads in both formats ---------- */
+
+/**
+ * The value (runtime) export names a built `.d.ts` declares, read with the
+ * TypeScript checker so `export declare const`, `export { a as b }` and
+ * re-exports all count; type-only exports do not.
+ * @param {string} dtsFile - Absolute path of a built declaration file
+ * @returns {string[]} Sorted value export names
+ */
+const dtsValueExports = (dtsFile) => {
+  const program = ts.createProgram([dtsFile], {
+    module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    skipLibCheck: true,
+    noEmit: true,
+    types: [],
+  });
+  const checker = program.getTypeChecker();
+  const source = program.getSourceFile(dtsFile);
+  const moduleSymbol = source && checker.getSymbolAtLocation(source);
+  if (!moduleSymbol) return [];
+  return checker
+    .getExportsOfModule(moduleSymbol)
+    .filter((symbol) => {
+      // `export type { X }` re-exports a name that is also a value elsewhere
+      // (e.g. `Breakpoint`) but ships no runtime export.
+      const typeOnly = symbol.declarations?.every(
+        (declaration) =>
+          ts.isExportSpecifier(declaration) &&
+          (declaration.isTypeOnly || declaration.parent.parent.isTypeOnly),
+      );
+      if (typeOnly) return false;
+      const target =
+        symbol.flags & ts.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(symbol)
+          : symbol;
+      return (target.flags & ts.SymbolFlags.Value) !== 0;
+    })
+    .map((symbol) => symbol.name)
+    .sort();
+};
+
+// `./tokens` is built with `preserveEntrySignatures: "allow-extension"` (see
+// vite.config.ts), so its runtime keys are a superset of its declared ones:
+// the extras are minified internal chunk exports, always one letter. Every
+// other entry keeps strict equality, which is what makes that global
+// setting safe.
+const MINIFIED_EXTRAS_ALLOWED = new Set(["./tokens"]);
 
 for (const key of subpaths) {
   const specifier = key === "." ? pkg.name : `${pkg.name}/${key.slice(2)}`;
@@ -97,7 +176,22 @@ for (const key of subpaths) {
   if (key !== "./types" && esmKeys.length === 0) {
     fail(`${specifier}: no runtime exports`);
   }
-  console.log(`✓ ${specifier} — import + require (${esmKeys.length} exports)`);
+
+  const dtsKeys = dtsValueExports(join(root, pkg.exports[key].import.types));
+  const missing = dtsKeys.filter((name) => !esmKeys.includes(name));
+  if (missing.length > 0) {
+    fail(`${specifier}: declared but not exported at runtime: [${missing}]`);
+  }
+  const extras = esmKeys.filter((name) => !dtsKeys.includes(name));
+  const illegal = MINIFIED_EXTRAS_ALLOWED.has(key)
+    ? extras.filter((name) => name.length !== 1)
+    : extras;
+  if (illegal.length > 0) {
+    fail(`${specifier}: exported at runtime but not declared: [${illegal}]`);
+  }
+  console.log(
+    `✓ ${specifier} — import + require (${esmKeys.length} exports, ${dtsKeys.length} declared)`,
+  );
 }
 
 /* ---------- 3. ESM and CJS builds agree ---------- */
@@ -135,6 +229,33 @@ runNode(
 if (readFileSync(join(work, "theme.css"), "utf8") !== esmCss) {
   fail("style-gen generate CSS differs from generate().css");
 }
+
+for (const command of ["tokens", "budget"]) {
+  const help = runNode(
+    `style-gen ${command} --help`,
+    [cli, command, "--help"],
+    work,
+  );
+  if (!help.includes(`Usage: style-gen ${command}`)) {
+    fail(`${command} --help printed no "Usage: style-gen ${command}" line`);
+  }
+}
+
+runNode(
+  "style-gen tokens",
+  [cli, "tokens", "--theme", "theme.json", "--out", "theme.tokens.ts"],
+  work,
+);
+if (!readFileSync(join(work, "theme.tokens.ts"), "utf8").includes("tokens")) {
+  fail("style-gen tokens wrote no tokens export");
+}
+
+// A generous budget: the smoke checks the command runs and exits 0, not the size.
+runNode(
+  "style-gen budget",
+  [cli, "budget", "theme.css", "--max-gzip", "100000"],
+  work,
+);
 
 // `init` in an empty ESM project that resolves the package by name.
 const project = join(work, "project");

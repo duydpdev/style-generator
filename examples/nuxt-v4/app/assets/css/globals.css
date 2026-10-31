@@ -1,0 +1,11 @@
+/* Nuxt entry: Tailwind v4, the generated theme, then the shared design-system styles. */
+/* #region docs:css-entry */
+@import "tailwindcss";
+@import "./theme.css";
+@import "design-system-example/styles/palettes.css";
+@import "design-system-example/styles/style-guide.css";
+
+/* Tailwind only scans this app by default; recipes live in the design system, components in packages/ui-vue. */
+@source "../../../../design-system/src";
+@source "../../../../../packages/ui-vue/src";
+/* #endregion docs:css-entry */

@@ -36,7 +36,13 @@ kbd {
   border-radius: 4px;
   background: color-mix(in srgb, var(--c-fg) 8%, transparent);
 }
-.ic {
+code,
+pre,
+kbd {
+  font-variant-ligatures: none;
+  font-feature-settings: "calt" 0;
+}
+[data-part~="ic"] {
   width: 14px;
   height: 14px;
   stroke: currentColor;
@@ -83,9 +89,9 @@ body::after {
   html {
     scroll-behavior: auto;
   }
-  .marquee-track,
-  .terminal-body .cursor,
-  .arrow-anim {
+  [data-part~="marquee-track"],
+  [data-part~="terminal-body"] .cursor,
+  [data-part~="arrow-anim"] {
     animation: none !important;
   }
 }

@@ -70,6 +70,10 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Site visual baselines: only the Linux ones rendered by visual-update.yml are committed
+e2e-site/__screenshots__/**/*-darwin.png
+e2e-site/__screenshots__/**/*-win32.png
+
 # System files
 .DS_Store
 .AppleDouble

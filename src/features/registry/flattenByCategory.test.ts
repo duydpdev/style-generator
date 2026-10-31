@@ -10,16 +10,16 @@ import {
 } from "./builtInCategories";
 
 describe("flattenByCategory", () => {
-  it('flattens colors into --sg-<key> vars, matching the old flattenToVars("sg", ...) output', () => {
+  it("flattens colors into --sg-color-<key> vars", () => {
     expect(flattenByCategory(colorsCategory, { primary: "#fff" })).toEqual({
-      "--sg-primary": "#fff",
+      "--sg-color-primary": "#fff",
     });
   });
 
   it("converts camelCase keys to kebab-case", () => {
     expect(
       flattenByCategory(colorsCategory, { sidebarForeground: "#111827" }),
-    ).toEqual({ "--sg-sidebar-foreground": "#111827" });
+    ).toEqual({ "--sg-color-sidebar-foreground": "#111827" });
   });
 
   it("uses the category's own cssVarPrefix for shadows", () => {

@@ -1,6 +1,4 @@
-import { Box } from "../components/Box";
-import { Button } from "../components/Button";
-import { Text } from "../components/Text";
+import { Box, Button, Flex, Grid, Text } from "../ui";
 
 import { SectionHead } from "./SectionHead";
 
@@ -15,70 +13,69 @@ const SIZES = ["sm", "md", "lg"] as const;
 
 export const ButtonSection = () => {
   return (
-    <section
-      className="border-t py-14"
+    <Box
+      as="section"
+      borderT="thin"
+      py={14}
       style={{ borderColor: "var(--c-line)" }}
     >
+      {/* #region docs:usage */}
       <SectionHead
         num="04 — Button"
         title="cva × compoundVariants."
         desc={
           <>
-            Sixteen permutations from a single <code>style.ts</code>. Each cell
-            here is the rendered class chain — final classes are merged through{" "}
-            <code>cn(clsx, twMerge)</code>.
+            Sixteen permutations from a single <code>buttonRecipe</code>. Each
+            cell here is the rendered class chain — final classes are merged
+            through <code>cn(clsx, twMerge)</code>.
           </>
         }
       />
 
-      <Box className="grid grid-cols-[120px_repeat(4,1fr)] items-center gap-x-4 gap-y-4">
-        <div />
-        {COLORS.map((c) => (
-          <Text key={c} type="text12Mono" color="muted">
-            {c}
-          </Text>
-        ))}
-        {VARIANTS.map((v) => (
-          <Box key={v.id} className="contents">
-            <Text
-              type="text12Mono"
-              color="muted"
-              className="uppercase tracking-wider"
-            >
-              {v.label}
+      <Box mx={-8} px={8} py={2} data-part="scroll-x">
+        <Grid align="center" gapX={4} gapY={4} data-part="button-matrix">
+          <Box />
+          {COLORS.map((c) => (
+            <Text key={c} type="text12Mono" color="muted">
+              {c}
             </Text>
-            {COLORS.map((c) => (
-              <Box key={`${v.id}-${c}`}>
-                <Button variant={v.id} color={c}>
-                  {v.label.toLowerCase()}
-                </Button>
-              </Box>
-            ))}
-          </Box>
-        ))}
+          ))}
+          {VARIANTS.map((v) => (
+            <Box key={v.id} data-part="display-contents">
+              <Text type="text12Mono" color="muted" data-part="caps-wide">
+                {v.label}
+              </Text>
+              {COLORS.map((c) => (
+                <Box key={`${v.id}-${c}`}>
+                  <Button variant={v.id} color={c}>
+                    {v.label.toLowerCase()}
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          ))}
+        </Grid>
       </Box>
 
       <Box
         mt={10}
         pt={7}
-        className="border-t border-dashed"
+        borderT="thin"
+        data-part="dashed"
         style={{ borderColor: "var(--c-line)" }}
       >
-        <Text
-          type="text12Mono"
-          color="muted"
-          className="mb-4 block uppercase tracking-wider"
-        >
+        <Text type="text12Mono" color="muted" mb={4} data-part="caps-wide">
           Sizes
         </Text>
-        <Box gap={3} className="flex flex-wrap items-center">
+        <Flex wrap align="center" gap={3}>
           {SIZES.map((s) => (
             <Button key={s} variant="fill" color="primary" size={s}>
               size · {s}
             </Button>
           ))}
-        </Box>
+        </Flex>
       </Box>
-    </section>
+      {/* #endregion docs:usage */}
+    </Box>
   );
 };

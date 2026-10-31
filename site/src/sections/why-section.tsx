@@ -1,11 +1,10 @@
+import { ChapterHead } from "../components/chapter-head";
+import { Box, Grid } from "../ui";
 import { Check, Cross } from "../components/icon";
 
-interface Item {
-  title: string;
-  meta: string;
-}
+import { JudgementPanel, type JudgementItem } from "./judgement-panel";
 
-const PROS: Item[] = [
+const PROS: JudgementItem[] = [
   {
     title: "Velocity from day one",
     meta: "Utility-first means no naming, no context-switching. Bottomless palette of primitives.",
@@ -24,7 +23,7 @@ const PROS: Item[] = [
   },
 ];
 
-const CONS: Item[] = [
+const CONS: JudgementItem[] = [
   {
     title: "Dynamic classes are a minefield",
     meta: "JIT can't see bg-${x}. Hand-rolled safelists or duplicated markup.",
@@ -43,73 +42,61 @@ const CONS: Item[] = [
   },
 ];
 
+const PANELS = [
+  {
+    part: "pro",
+    tint: "successSoft",
+    tag: "Strengths",
+    heading: "What it nails.",
+    items: PROS,
+    icon: <Check />,
+  },
+  {
+    part: "con",
+    tint: "dangerSoft",
+    tag: "Friction",
+    heading: "Where it hurts.",
+    items: CONS,
+    icon: <Cross />,
+  },
+] as const;
+
 /**
  *
  */
 export function WhySection() {
   return (
-    <section
+    <Box
+      as="section"
       id="why"
-      className="chapter"
       data-ch="01"
       data-ch-label="The Tailwind case"
+      pt={14}
+      pb={2}
+      mt={6}
     >
-      <div className="ch-marker">01</div>
-      <div className="ch-eyebrow">
-        <span>
-          Ch. <b>01</b>
-        </span>
-        <span>· The Tailwind case</span>
-      </div>
-      <h2 className="ch-title">
-        Tailwind ships fast, then <em>gets in your way.</em>
-      </h2>
-      <p className="ch-lede">
-        Tailwind is the right default for most apps — but anyone shipping a real
-        product has hit the same wall. Here's the lay of the land before{" "}
-        <b>style-generator</b> enters.
-      </p>
+      <ChapterHead
+        num="01"
+        label="The Tailwind case"
+        title={
+          <>
+            Tailwind ships fast, then <em>gets in your way.</em>
+          </>
+        }
+        lede={
+          <>
+            Tailwind is the right default for most apps — but anyone shipping a
+            real product has hit the same wall. Here's the lay of the land
+            before <b>style-generator</b> enters.
+          </>
+        }
+      />
 
-      <div className="judgement-grid reveal-stagger">
-        <div className="judgement pro">
-          <div className="judgement-head">
-            <span className="j-tag">Strengths</span>
-            <h3 className="j-head-title">What it nails.</h3>
-          </div>
-          <ul className="j-list">
-            {PROS.map((it) => (
-              <li key={it.title}>
-                <span className="mark">
-                  <Check />
-                </span>
-                <div>
-                  <b>{it.title}</b>
-                  <span className="meta">{it.meta}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="judgement con">
-          <div className="judgement-head">
-            <span className="j-tag">Friction</span>
-            <h3 className="j-head-title">Where it hurts.</h3>
-          </div>
-          <ul className="j-list">
-            {CONS.map((it) => (
-              <li key={it.title}>
-                <span className="mark">
-                  <Cross />
-                </span>
-                <div>
-                  <b>{it.title}</b>
-                  <span className="meta">{it.meta}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
+      <Grid data-part="judgement-grid" data-reveal="stagger" gap={6}>
+        {PANELS.map((p) => (
+          <JudgementPanel key={p.part} {...p} />
+        ))}
+      </Grid>
+    </Box>
   );
 }

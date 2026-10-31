@@ -1,0 +1,93 @@
+/* ============================================================
+   Cross-axis compound overrides (example-only, hand-written)
+   ------------------------------------------------------------
+   themeAxes generates the single-axis blocks in theme.css from
+   theme.json — html[data-theme="dark"] and each
+   html[data-palette="forest|sunset|mono"] — but a "dark AND a
+   specific palette at once" override isn't representable by a
+   single ThemeOverride: it needs BOTH data attributes on one
+   selector simultaneously. These 6 compound blocks (dark and
+   high-contrast, each with forest / sunset / mono) stay
+   hand-written CSS (outside the 4.0.0 themeAxes scope — see the
+   README's scope table). Their (0,2,0) specificity (two attribute
+   selectors, no type selector) still beats either single-axis
+   html[data-...] rule the library emits (0,1,1), so e.g. dark×forest
+   or high-contrast×mono resolve correctly whenever both attributes
+   are set together on <html>. High contrast keeps each palette's
+   brand colors from its dark block and forces the black / white
+   surfaces of the high-contrast theme.
+   ============================================================ */
+
+[data-theme="dark"][data-palette="forest"] {
+  --sg-color-primary: #7dba9e;
+  --sg-color-primary-hover: #9ccdb3;
+  --sg-color-primary-active: #b4dac4;
+  --sg-color-secondary: #e3b47a;
+  --sg-color-success: #9dcc85;
+  --sg-color-danger: #e8866a;
+  --sg-color-background: #0f1612;
+  --sg-color-surface: #1a2520;
+  --sg-color-foreground: #eae5d9;
+  --sg-color-muted: #91998f;
+}
+[data-theme="dark"][data-palette="sunset"] {
+  --sg-color-primary: #f08967;
+  --sg-color-primary-hover: #f4a187;
+  --sg-color-primary-active: #f8b9a3;
+  --sg-color-secondary: #c99098;
+  --sg-color-success: #9dba8a;
+  --sg-color-danger: #e36868;
+  --sg-color-background: #1a0f0a;
+  --sg-color-surface: #251913;
+  --sg-color-foreground: #faeedf;
+  --sg-color-muted: #b59a82;
+}
+[data-theme="dark"][data-palette="mono"] {
+  --sg-color-primary: #fafafa;
+  --sg-color-primary-hover: #e5e5e5;
+  --sg-color-primary-active: #d4d4d4;
+  --sg-color-secondary: #a3a3a3;
+  --sg-color-success: #6ee7b7;
+  --sg-color-danger: #f87171;
+  --sg-color-background: #0a0a0a;
+  --sg-color-surface: #141414;
+  --sg-color-foreground: #fafafa;
+  --sg-color-muted: #a3a3a3;
+}
+
+[data-theme="high-contrast"][data-palette="forest"] {
+  --sg-color-primary: #7dba9e;
+  --sg-color-primary-hover: #9ccdb3;
+  --sg-color-primary-active: #b4dac4;
+  --sg-color-secondary: #e3b47a;
+  --sg-color-success: #9dcc85;
+  --sg-color-danger: #e8866a;
+  --sg-color-background: #000000;
+  --sg-color-surface: #000000;
+  --sg-color-foreground: #ffffff;
+  --sg-color-muted: #d0d0d0;
+}
+[data-theme="high-contrast"][data-palette="sunset"] {
+  --sg-color-primary: #f08967;
+  --sg-color-primary-hover: #f4a187;
+  --sg-color-primary-active: #f8b9a3;
+  --sg-color-secondary: #c99098;
+  --sg-color-success: #9dba8a;
+  --sg-color-danger: #e36868;
+  --sg-color-background: #000000;
+  --sg-color-surface: #000000;
+  --sg-color-foreground: #ffffff;
+  --sg-color-muted: #d0d0d0;
+}
+[data-theme="high-contrast"][data-palette="mono"] {
+  --sg-color-primary: #fafafa;
+  --sg-color-primary-hover: #e5e5e5;
+  --sg-color-primary-active: #d4d4d4;
+  --sg-color-secondary: #a3a3a3;
+  --sg-color-success: #6ee7b7;
+  --sg-color-danger: #f87171;
+  --sg-color-background: #000000;
+  --sg-color-surface: #000000;
+  --sg-color-foreground: #ffffff;
+  --sg-color-muted: #d0d0d0;
+}

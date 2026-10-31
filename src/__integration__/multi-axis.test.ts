@@ -11,18 +11,18 @@ import { compileFixtureCss } from "./compileFixtureCss";
 const repoRoot = join(__dirname, "..", "..");
 
 /**
- * `examples/nuxt-v4/theme/theme.json` declares two `themeAxes` — `theme`
+ * `examples/design-system/src/theme.json` declares two `themeAxes` — `theme`
  * (before `palette` in the file) — each with one or more variants. This
  * asserts the ported real-world theme, not a synthetic fixture, so a
  * regression in axis/variant declaration-order handling shows up against
  * the actual example consumers ship.
  */
-describe("integration: themeAxes — multiple simultaneous axes (ported nuxt-v4 theme)", () => {
+describe("integration: themeAxes — multiple simultaneous axes (ported design-system theme)", () => {
   const themePath = join(
     repoRoot,
     "examples",
-    "nuxt-v4",
-    "theme",
+    "design-system",
+    "src",
     "theme.json",
   );
   const theme = ThemeSchema.parse(JSON.parse(readFileSync(themePath, "utf8")));
@@ -57,9 +57,9 @@ describe("integration: themeAxes — multiple simultaneous axes (ported nuxt-v4 
     const { css } = generate(theme);
     const compiled = await compileFixtureCss(css, []);
 
-    expect(compiled).toMatch(/--sg-primary:\s*#8FA6FF/i); // themeAxes.theme.dark
-    expect(compiled).toMatch(/--sg-primary:\s*#2f5f47/i); // themeAxes.palette.forest
-    expect(compiled).toMatch(/--sg-primary:\s*#b23a1b/i); // themeAxes.palette.sunset
-    expect(compiled).toMatch(/--sg-primary:\s*#0a0a0a/i); // themeAxes.palette.mono
+    expect(compiled).toMatch(/--sg-color-primary:\s*#8FA6FF/i); // themeAxes.theme.dark
+    expect(compiled).toMatch(/--sg-color-primary:\s*#2f5f47/i); // themeAxes.palette.forest
+    expect(compiled).toMatch(/--sg-color-primary:\s*#b23a1b/i); // themeAxes.palette.sunset
+    expect(compiled).toMatch(/--sg-color-primary:\s*#0a0a0a/i); // themeAxes.palette.mono
   });
 });

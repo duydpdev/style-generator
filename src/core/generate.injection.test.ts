@@ -109,10 +109,10 @@ const optionInjectionCases: {
   },
   {
     label: "spacing.properties CSS property injects an @plugin at-rule",
-    path: 'spacing.properties.p.padding:0}@plugin "x";a{b',
+    path: "spacing.properties.p.0",
     options: {
       spacing: {
-        properties: { p: { 'padding:0}@plugin "x";a{b': "var(--sg-sp-p)" } },
+        properties: { p: ['padding:0}@plugin "x";a{b'] },
       },
     },
   },
@@ -120,7 +120,7 @@ const optionInjectionCases: {
     label: "spacing.properties key breaks out of the @utility name",
     path: "spacing.properties.p{}@plugin x;",
     options: {
-      spacing: { properties: { "p{}@plugin x;": { padding: "0" } } },
+      spacing: { properties: { "p{}@plugin x;": ["padding"] } },
     },
   },
   {

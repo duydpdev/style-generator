@@ -2,20 +2,20 @@
 
 ## Gate before reporting done
 
-A task is done only when this chain exits 0 at the repo root:
+A task is done only when this chain exits 0 at the repo root (`yarn build:all` comes first because type-aware ESLint also covers `examples/**`, which import the built library through `link:../..`):
 
 ```bash
-yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types
+yarn build:all && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types
 ```
 
 Add the rows that match the change:
 
-| When the change touches                                                         | Also run                                                                                                                                                                                                                     |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/**`, `package.json`, `vite.config.ts`, `tsdown.config.ts`, `scripts/*.mjs` | `yarn typecheck:scripts && yarn build:all && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target && yarn check:smoke && node scripts/vite-dev-smoke.mjs` |
-| Spacing, generated CSS, `@source inline`, `themeAxes`                           | `yarn build:all && yarn test:e2e`                                                                                                                                                                                            |
-| `documents/*.md`, `site/**`, `examples/**`                                      | `yarn site:build`                                                                                                                                                                                                            |
-| Release/publish config (`release.config.cjs`, `.github/workflows/deploy.yml`)   | `yarn build:all && yarn npm publish --dry-run` — output must contain `npm.pkg.github.com`                                                                                                                                    |
+| When the change touches                                                         | Also run                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/**`, `package.json`, `vite.config.ts`, `tsdown.config.ts`, `scripts/*.mjs` | `yarn typecheck:scripts && yarn build:all && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs` |
+| Spacing, generated CSS, `@source inline`, `themeAxes`                           | `yarn build:all && yarn test:e2e`                                                                                                                                                                                                                     |
+| `README.md`, `documents/**/*.md`, `site/**`, `examples/**`, `packages/**`       | `yarn site:build && yarn workspace site typecheck && yarn workspace site check:links && yarn check:docs-embed && yarn check:doc-snippets && yarn check:doc-exports`                                                                                   |
+| Release/publish config (`release.config.cjs`, `.github/workflows/deploy.yml`)   | `yarn build:all && yarn npm publish --dry-run` — output must contain `npm.pkg.github.com`                                                                                                                                                             |
 
 The pre-commit hook (Husky + lint-staged) runs, on the staged snapshot of the staged code files: eslint → prettier → `tsc --noEmit` → `vitest related --run` (only tests that import a staged file). It does not replace the gate above: it skips the rest of `yarn test`, `test:types`, `check:*`, e2e and the site build.
 

@@ -3,7 +3,7 @@ name: CI Check
 on:
   pull_request:
     branches: [main, develop, "release/**"]
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened]
 
 # Cancel any in-progress run for the same PR when new commits are pushed.
 concurrency:
@@ -19,11 +19,10 @@ jobs:
     name: Build & Lint Check
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Draft PRs skip CI: keep a PR in draft until the local gate is green;
-    # `ready_for_review` (in `on.pull_request.types`) then runs it. No paths
-    # filter here: the site build renders documents/*.md, so docs-only PRs
-    # still need this job.
-    if: github.event.pull_request.draft == false
+    # Draft PRs run CI too (a pushed draft must not stay without a result;
+    # Actions minutes are free on this public repo). No paths filter here:
+    # the site build renders documents/*.md, so docs-only PRs still need
+    # this job, and the required check must always report.
 
     steps:
       - name: Checkout
@@ -117,8 +116,8 @@ jobs:
         run: yarn check:doc-exports
 
       - name: Typecheck examples
-        # The examples, packages/ui-react and packages/ui-vue consume the built library through `link:../..`.
-        run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' --include '@duydpdev/ui-vue' run typecheck
+        # The examples, the site, packages/ui-react and packages/ui-vue consume the built library through `link:../..`.
+        run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' --include '@duydpdev/ui-vue' --include site run typecheck
 
       - name: Test examples (design-system DX)
         # Compiles the recipes against a mutated theme.json and expects the

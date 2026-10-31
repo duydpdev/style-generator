@@ -12,7 +12,9 @@
 # pushed afterwards do not carry this check (it is not a required check of the
 # rulesets, so it does not block the merge).
 # The "Check branch name" step checks the head branch name with
-# scripts/check-branch-name.sh, the same rule as .husky/pre-push.
+# scripts/check-branch-name.sh, the same rule as .husky/pre-push. It is skipped
+# for fork PRs (outside contributors cannot follow the naming rule); the title
+# check runs for everyone.
 # ─────────────────────────────────────────────────────
 name: PR Title
 
@@ -41,7 +43,10 @@ jobs:
       - name: Check branch name
         # Same rule as .husky/pre-push (scripts/check-branch-name.sh); runs
         # before the install so a bad name fails in seconds. The head ref goes
-        # through env, never interpolated into the script.
+        # through env, never interpolated into the script. Skipped when the
+        # head lives in a fork: its branch names (`patch-1`, `main`) are the
+        # contributor's, not ours.
+        if: github.event.pull_request.head.repo.full_name == github.repository
         env:
           HEAD_REF: ${{ github.head_ref }}
         run: sh scripts/check-branch-name.sh "$HEAD_REF"

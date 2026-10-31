@@ -1,3 +1,174 @@
+# [5.0.0](https://github.com/duydpdev/style-generator/compare/v4.2.0...v5.0.0) (2026-10-31)
+
+### Release
+
+- 5.0 breaking renames ([73d17e5](https://github.com/duydpdev/style-generator/commit/73d17e55fb04311d8f22e5b579c1085840832090))
+
+### Features
+
+- apply generic token types and strict mapping ([091e800](https://github.com/duydpdev/style-generator/commit/091e8003187d5fe534020414cd85a2c5f92daec2))
+
+  Register IDs: V3-01, V3-02, V3-03, V3-04, V3-05, V3-06, V3-07.
+  Migration notes: documents/migration/4.x-to-5.0.md ("Types").
+
+  - generate()/createDesignTokens() take the options as a const generic;
+    DesignTokens.Web breakpoints, spacingProperties and screens are literal
+    readonly arrays derived from them. Without options the library defaults
+    apply; an annotated or explicitly typed call falls back to string.
+  - An optional-declared borderRadius/borderWidth is typed string (was the
+    default keys); absent keeps the defaults.
+  - createVariantMapper({ states }) returns literal chained classes; the
+    prefix is constrained to the registry prefixes (and "") with an
+    allowUnregisteredPrefix opt-out; VariantMapperStatesOptions is removed.
+  - ThemeAxisName / ThemeAxisVariant / ThemeAxesState types, aliasedColors
+    token array (same set as coverage.keys "aliased"), toKebabCase exported
+    from "." and "./cva", more types exported from "./types".
+  - parseTheme() is the single ThemeSchema.parse cast.
+  - smoke-dist compares each subpath's runtime exports with its built .d.ts;
+    dist-types.assert.ts asserts the consumer-facing literals on dist.
+
+  Also commits the phase 08 journal entry.
+
+- examples/design-system and thinned apps ([8058993](https://github.com/duydpdev/style-generator/commit/805899307adf00c0515afedcb0d3e8a37432fada))
+
+  Register IDs: V6-01, V6-02, V6-03, V6-04, V6-05, DOC-10, CI-06 (examples).
+  Migration notes: documents/migration/4.x-to-5.0.md.
+
+  - New private workspace examples/design-system: expanded theme.json
+    (primaryHover/primaryActive, $alias keys, fontFamily, borderWidth,
+    theme.highContrast), one dependency-free style-gen.options.ts
+    (`as const satisfies StyleGeneratorOptions`, shared by the three apps
+    and by createDesignTokens), tokens, cn (tailwind-merge extension from
+    ./recipes), axisAttributes, eight headless cva recipes (button, input,
+    card, badge, stack, dialog, text, box) and the shared CSS. A
+    style-gen.config.json mirror drives the CLI-only flow.
+  - DX tests: a TypeScript Compiler API test renames `danger` in
+    theme.json in memory and expects recipe diagnostics; a type test pins
+    the intent/breakpoint/axis types; the config mirror is pinned equal to
+    `options`.
+  - react-v4, next-v4 and nuxt-v4 keep only wiring plus one
+    framework-specific component each (react keeps sections/ for the site
+    demo). examples-dedup.test.ts asserts no byte-identical file spans two
+    apps.
+  - Next 16.4 (clears the critical advisory on 15.5.27) and Nuxt 4.4.8
+    (`~4.4.8`: Nuxt >= 4.5 needs Vite 8, blocked by the root vite
+    resolution) with the Nuxt 4 app/ layout; vue 3.5.44, vue-tsc 3.
+  - CI-06: examples are linted (narrow ignores), root vitest excludes
+    examples/**, ci.yml runs the design-system test, deploy.yml runs
+    check:types-pack. Site example explorer lists the design system.
+  - Docs: guide walkthrough "Build components", README, examples README,
+    architecture, testing, deploy, migration (failing CLI invocations,
+    config read once), CLAUDE.md publishing guards.
+
+- export recipes subpath with tailwind-merge and React helpers ([a4e7b0c](https://github.com/duydpdev/style-generator/commit/a4e7b0cac4ea1bb4717f2ec2b1b9eb467560868c))
+
+  Register IDs: V4-01, V4-02, V4-03, V4-04, V4-05.
+  Migration notes: documents/migration/4.x-to-5.0.md ("New in 5.0").
+
+  - New browser-safe subpath ./recipes: createTailwindMergeExtension
+    (structural extension for tailwind-merge v3 built from the emitted
+    tokens: border-w* / shadow / backdrop-blur groups, sg-typography with its
+    conflicts, theme.radius for every rounded-* prefix), splitSpacingProps
+    (typed split of spacing props from component props) and
+    themeAxisAttributes (typed data-* attributes for the active theme axes).
+    Nothing is imported from tailwind-merge in src; recipes are not
+    re-exported from the root.
+  - New option axes { attribute, scope }: attribute is an axis -> attribute
+    name map (also settable from style-gen.config.json), scope "element"
+    drops the html anchor and rejects stale alias holders at validation time;
+    unknown or duplicate attribute axes are rejected for every scope.
+    generateThemeCss takes the options as an optional second argument;
+    generate() now validates options before the theme.
+  - resolveSpacing accepts any string prop name (SpacingKey | string & {}).
+  - vite.config manualChunks pins helpers/colorStates, spacing/spacingHelpers
+    and defaultOption to stable chunks so a new entry cannot split ./tokens
+    and ./cva; check-sizes budgets: recipes 2284 added; index/vite/next/cli
+    raised for the measured axes growth.
+  - Real-Tailwind compile and Playwright cases prove scope "element" on a
+    nested element.
+
+- runner, config loader, and CLI commands ([d3e6359](https://github.com/duydpdev/style-generator/commit/d3e635988bd80f69b061cbbae0b0ae4a6b18f5b0))
+
+  Register IDs: V5-01, V5-02, V5-03, V5-04, V5-05, V5-06, V5-07, V5-08,
+  V5-09, V5-10, V5-11, Q7 (no-op: phase-05 peer matrix is green for vite
+  5/6/8; typescript 7 is not in the peer range).
+  Migration notes: documents/migration/4.x-to-5.0.md.
+
+  - generate(), generateThemeCss() and the new Node runner share one
+    prepareGenerate(); generateFromParsed() assembles the CSS only.
+    src/node/{themeEmitter,watchThemeFile,loadStyleGenConfig,
+    resolveProjectPath,resolvePluginTarget} are used by the Vite plugin,
+    the Next integration and the CLI (never by browser-safe subpaths).
+  - Vite plugin: emits in buildStart (also per environment in dev), watches
+    the theme, no closeBundle, works without arguments. Next integration:
+    function-form config and ctx pass-through, no-argument form, one
+    watcher per target+options. resolveProjectPath replaces resolveSafePath
+    (no leading-slash rewrite; the theme may live outside the root).
+  - CLI: command registry (runCli) with strict per-command flags and --help,
+    no process.exit inside commands, generate --watch reloads
+    style-gen.config.json and keeps the last valid config; new `tokens`
+    (keys-only manifest) and `budget` commands replace
+    scripts/check-css-budget.mjs; doctor validates theme x options and
+    hints redundant override values as $aliases.
+  - resetTailwindDefaults option (colors, radius, shadow) with cross-field
+    checks; the variant name `base` is reserved (breaking).
+  - dist/*.d.cts for the 8 subpaths, nested require conditions,
+    `yarn check:types-pack` (attw, node16) in CI. The .d.cts is its .d.ts
+    with the `vite` import rewritten to a type-only import with
+    resolution-mode import (scripts/cjs-declaration.mjs; `assert`, since
+    `with` does not parse on TypeScript < 5.3). `yarn typecheck:dist` also
+    checks the .d.cts as a CommonJS consumer (module node16,
+    skipLibCheck false). tsdown strips JSDoc from the CLI bundle
+    (37.7 kB -> 22.5 kB gzip).
+  - vite-dev-smoke scenario 1 (createServer without listen) runs on Vite
+    >= 6 only: Vite 5 has no lazy buildStart.
+
+
+### Bug Fixes
+
+- review findings for phases 01-12 ([7b44f02](https://github.com/duydpdev/style-generator/commit/7b44f02468ba097daf56da40716ca2c882947174))
+
+  Verified by a five-reviewer pass over v4.0.3..release/5.0 and triaged by
+  the advisor. Contract-visible changes land before 5.0.0 stable.
+
+  Schema (themeSchema, crossFieldChecks, aliasGraph)
+  - reject alias cycles that only exist when two axes are active together
+    (base + one variant per axis, last declared axis wins)
+  - reject fontFamily keys `weight*`/`size*` (they overwrite Tailwind's
+    font-weight and font-size scales)
+  - reject typography keys equal to another category's generated class
+    (`textPrimary` next to a `primary` color)
+  - reject variants of one axis that kebab-case to the same selector
+
+  Types
+  - keep numeric keys (`{ 2: "2px" }`, `{ 500: "$primary" }`) in inferred
+    token types; they were dropped and diverged from the runtime
+  - type borderProperties/roundedProperties for createVariantMapper
+  - reject top-level option typos in generate, createDesignTokens and
+    defineOptions (`ExactOptions`)
+  - keep non-spacing props when options are annotated StyleGeneratorOptions
+  - `coverage` types match the runtime schema (typography keys, non-empty
+    prefixes)
+
+  Node
+  - Vite duplicate-instance warning is owner-keyed: no false warning on a
+    dev-server restart or in builder mode, and real duplicates stay caught
+  - validate plugin object options strictly with a labelled error
+  - `style-gen tokens --out` accepts only .ts/.mts/.cts and skips identical
+    writes
+
+  Gates and packaging
+  - deploy.yml runs typecheck:dist before publishing
+  - check-browser-safe forbids Node-only runtime dependencies
+  - check-externals fails on any inlined node_modules source
+  - tailwindcss peer range is ^4.1.0
+  - budgets raised to measured + ~10% for index (13560) and vite (15430)
+
+  Examples and docs
+  - design-system button has a visible focus ring; react/next examples
+    derive axis attributes from themeAxisAttributes
+  - migration guide, README and architecture export lists match the code
+
 # [4.2.0](https://github.com/duydpdev/style-generator/compare/v4.1.2...v4.2.0) (2026-10-07)
 
 ### Features

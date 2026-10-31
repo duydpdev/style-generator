@@ -13,6 +13,10 @@ on:
       - "packages/**"
       - "examples/**"
       - "e2e-site/**"
+      - "src/**"
+      - "package.json"
+      - "yarn.lock"
+      - "documents/**"
       - "playwright.site.config.ts"
       - ".github/workflows/visual.yml"
 

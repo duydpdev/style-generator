@@ -263,6 +263,22 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
     expect(result.output).toContain("signature blocks are out of date");
   });
 
+  it("reports an unclosed signature block and never rewrites the page", () => {
+    const page =
+      "# Core\n\n<!-- signature: generate -->\n\nstale\n\n## `generate`\n\nprose\n\n## Notes\n\nprose\n";
+    const file = join(t.dir, "documents/reference/core.md");
+    put(t.dir, "documents/reference/core.md", page);
+    for (const args of [[], ["--write"]]) {
+      const result = run("check-doc-exports", t.dir, args);
+      expect(result.status).toBe(1);
+      expect(result.output).toContain(
+        "documents/reference/core.md: unclosed signature block at line 3",
+      );
+      expect(result.output).not.toContain("have a reference heading");
+      expect(readFileSync(file, "utf8")).toBe(page);
+    }
+  });
+
   it("fails on an export without TSDoc", () => {
     put(
       t.dir,

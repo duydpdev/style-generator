@@ -86,19 +86,21 @@ function headingNames(text) {
 /**
  * Removes every generated signature block from a page.
  * @param {string} text - Page text
- * @returns {string[]} Remaining lines
+ * @returns {{ kept: string[], unclosedAt: number | null }} Remaining lines, and the 1-based line of a `<!-- signature:` marker that is never closed (everything after it would be dropped), else `null`
  */
 function withoutBlocks(text) {
   /** @type {string[]} */
   const kept = [];
-  let inBlock = false;
-  for (const line of text.split("\n")) {
+  let openedAt = null;
+  for (const [index, line] of text.split("\n").entries()) {
     const trimmed = line.trim();
-    if (!inBlock && trimmed.startsWith("<!-- signature: ")) inBlock = true;
-    else if (inBlock && trimmed === "<!-- /signature -->") inBlock = false;
-    else if (!inBlock) kept.push(line);
+    if (openedAt === null && trimmed.startsWith("<!-- signature: ")) {
+      openedAt = index + 1;
+    } else if (openedAt !== null && trimmed === "<!-- /signature -->") {
+      openedAt = null;
+    } else if (openedAt === null) kept.push(line);
   }
-  return kept;
+  return { kept, unclosedAt: openedAt };
 }
 
 /**
@@ -173,15 +175,17 @@ function blockLines(checker, s) {
  * @param {Subpath} sub - The page's subpath
  * @param {string} text - Current page text
  * @param {string} abs - Absolute path of the page (selects the Prettier config)
- * @returns {Promise<{ next: string, blocks: number }>} Formatted text and block count
+ * @returns {Promise<{ next: string, blocks: number } | { unclosedAt: number }>} Formatted text and block count, or the line of an unclosed signature marker (the page must not be rewritten then)
  */
 async function expectedPage(checker, sub, text, abs) {
+  const stripped = withoutBlocks(text);
+  if (stripped.unclosedAt !== null) return { unclosedAt: stripped.unclosedAt };
   const bySymbol = new Map(sub.symbols.map((s) => [s.name, s]));
   const assigned = new Set();
   /** @type {string[]} */
   const out = [];
   let blocks = 0;
-  for (const { line, fenced } of tagLines(withoutBlocks(text).join("\n"))) {
+  for (const { line, fenced } of tagLines(stripped.kept.join("\n"))) {
     out.push(line);
     if (fenced) continue;
     const names = headingIdentifiers(line).filter(
@@ -340,10 +344,18 @@ async function signatureErrors(root, checker, subpaths, pages, write) {
     const text = pages.get(sub.page);
     if (text === undefined) continue;
     const result = await expectedPage(checker, sub, text, join(root, path));
+    if ("unclosedAt" in result) {
+      errors.push(
+        `${path}: unclosed signature block at line ${String(result.unclosedAt)}`,
+      );
+      continue;
+    }
     blocks += result.blocks;
     if (result.next === text) continue;
     if (write) {
       writeFileSync(join(root, path), result.next);
+      // Coverage below must see the text that is on disk now.
+      pages.set(sub.page, result.next);
       console.log(`check-doc-exports: wrote signature blocks in ${path}`);
     } else {
       errors.push(

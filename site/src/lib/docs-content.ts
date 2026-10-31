@@ -98,12 +98,19 @@ export type DocLink =
   /** Any other repo file: its GitHub blob URL. */
   | { kind: "repo"; href: string };
 
-/** Classify a markdown link `href` found in the doc at `fromRepoPath`. */
+/**
+ * Classify a markdown link `href` found in the doc at `fromRepoPath`. An
+ * absolute `REPO_BLOB_URL` link (README.md uses them so the published package
+ * page works off GitHub) is treated like the repo-relative link it points to.
+ */
 export function resolveDocLink(href: string, fromRepoPath: string): DocLink {
-  if (href.startsWith("#") || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) {
+  const local = href.startsWith(REPO_BLOB_URL)
+    ? `/${href.slice(REPO_BLOB_URL.length)}`
+    : href;
+  if (local.startsWith("#") || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(local)) {
     return { kind: "native", href };
   }
-  const url = new URL(href, `https://repo.invalid/${fromRepoPath}`);
+  const url = new URL(local, `https://repo.invalid/${fromRepoPath}`);
   const repoPath = url.pathname.slice(1);
   const target = docs.find((d) => d.repoPath === decodeURIComponent(repoPath));
   if (target)

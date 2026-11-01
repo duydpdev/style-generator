@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import type { ExampleFile } from "../lib/example-files";
 import { tokenize } from "../lib/tokenize";
-import { Box, Flex, Stack, Text } from "../ui";
+import { Box, Flex, Grid, Stack, Text } from "../ui";
 
 import { CodeStatusbar } from "./code-statusbar";
 import { CodeTabs } from "./code-tabs";
@@ -76,9 +76,9 @@ export function CodeEditor({
           </Flex>
         </Box>
       ) : (
-        <Flex data-part="code-empty" align="center" justify="center" p={6}>
+        <Grid data-part="code-empty" columns={1} align="center" p={6}>
           Pick a file from the sidebar to start reading code.
-        </Flex>
+        </Grid>
       )}
 
       <CodeStatusbar

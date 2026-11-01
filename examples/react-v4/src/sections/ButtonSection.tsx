@@ -13,12 +13,7 @@ const SIZES = ["sm", "md", "lg"] as const;
 
 export const ButtonSection = () => {
   return (
-    <Box
-      as="section"
-      borderT="thin"
-      py={14}
-      style={{ borderColor: "var(--c-line)" }}
-    >
+    <Box as="section" borderT="thin" py={14} borderColor="line">
       {/* #region docs:usage */}
       <SectionHead
         num="04 — Button"
@@ -33,7 +28,16 @@ export const ButtonSection = () => {
       />
 
       <Box mx={-8} px={8} py={2} data-part="scroll-x">
-        <Grid align="center" gapX={4} gapY={4} data-part="button-matrix">
+        <Grid
+          columns={{
+            base: "72px repeat(4, minmax(0, 1fr))",
+            md: "120px repeat(4, minmax(0, 1fr))",
+          }}
+          align="center"
+          gapX={4}
+          gapY={4}
+          data-part="button-matrix"
+        >
           <Box />
           {COLORS.map((c) => (
             <Text key={c} type="text12Mono" color="muted">
@@ -57,13 +61,7 @@ export const ButtonSection = () => {
         </Grid>
       </Box>
 
-      <Box
-        mt={10}
-        pt={7}
-        borderT="thin"
-        data-part="dashed"
-        style={{ borderColor: "var(--c-line)" }}
-      >
+      <Box mt={10} pt={7} borderT="thin" data-part="dashed" borderColor="line">
         <Text type="text12Mono" color="muted" mb={4} data-part="caps-wide">
           Sizes
         </Text>

@@ -1,23 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`bound recipe output (frozen before the factory refactor) > badgeRecipe 1`] = `
-[
-  "{} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-primary/10 text-primary",
-  "{"color":"primary","variant":"soft"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-primary/10 text-primary",
-  "{"color":"primary","variant":"solid"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-primary text-on-primary",
-  "{"color":"primary","variant":"outline"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono bg-transparent border-primary text-primary",
-  "{"color":"secondary","variant":"soft"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-secondary/10 text-secondary",
-  "{"color":"secondary","variant":"solid"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-secondary text-background",
-  "{"color":"secondary","variant":"outline"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono bg-transparent border-secondary text-secondary",
-  "{"color":"success","variant":"soft"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-success/10 text-success",
-  "{"color":"success","variant":"solid"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-success text-background",
-  "{"color":"success","variant":"outline"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono bg-transparent border-success text-success",
-  "{"color":"danger","variant":"soft"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-danger/10 text-danger",
-  "{"color":"danger","variant":"solid"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono border-transparent bg-danger text-background",
-  "{"color":"danger","variant":"outline"} => inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-pill border-thin text-12-mono bg-transparent border-danger text-danger",
-]
-`;
-
 exports[`bound recipe output (frozen before the factory refactor) > boxRecipe 1`] = `
 [
   "{} => relative",
@@ -33,6 +15,7 @@ exports[`bound recipe output (frozen before the factory refactor) > boxRecipe 1`
   "{"backgroundColor":"surface"} => relative bg-surface",
   "{"backgroundColor":"foreground"} => relative bg-foreground",
   "{"backgroundColor":"muted"} => relative bg-muted",
+  "{"backgroundColor":"line"} => relative bg-line",
   "{"borderColor":"primary"} => relative border-primary",
   "{"borderColor":"primaryHover"} => relative border-primary-hover",
   "{"borderColor":"primaryActive"} => relative border-primary-active",
@@ -45,6 +28,7 @@ exports[`bound recipe output (frozen before the factory refactor) > boxRecipe 1`
   "{"borderColor":"surface"} => relative border-surface",
   "{"borderColor":"foreground"} => relative border-foreground",
   "{"borderColor":"muted"} => relative border-muted",
+  "{"borderColor":"line"} => relative border-line",
   "{"border":"thin"} => relative border-thin",
   "{"border":"thick"} => relative border-thick",
   "{"borderX":"thin"} => relative border-x-thin",
@@ -159,55 +143,6 @@ exports[`bound recipe output (frozen before the factory refactor) > buttonRecipe
 ]
 `;
 
-exports[`bound recipe output (frozen before the factory refactor) > cardRecipe 1`] = `
-[
-  "{} => relative flex flex-col text-foreground rounded-lg border-thin bg-surface border-muted shadow-sm p-5",
-  "{"tone":"surface","padding":"none"} => relative flex flex-col text-foreground rounded-lg border-thin bg-surface border-muted shadow-sm p-0",
-  "{"tone":"surface","padding":"sm"} => relative flex flex-col text-foreground rounded-lg border-thin bg-surface border-muted shadow-sm p-3",
-  "{"tone":"surface","padding":"md"} => relative flex flex-col text-foreground rounded-lg border-thin bg-surface border-muted shadow-sm p-5",
-  "{"tone":"surface","padding":"lg"} => relative flex flex-col text-foreground rounded-lg border-thin bg-surface border-muted shadow-sm p-8",
-  "{"tone":"muted","padding":"none"} => relative flex flex-col text-foreground rounded-lg border-thin bg-background border-muted p-0",
-  "{"tone":"muted","padding":"sm"} => relative flex flex-col text-foreground rounded-lg border-thin bg-background border-muted p-3",
-  "{"tone":"muted","padding":"md"} => relative flex flex-col text-foreground rounded-lg border-thin bg-background border-muted p-5",
-  "{"tone":"muted","padding":"lg"} => relative flex flex-col text-foreground rounded-lg border-thin bg-background border-muted p-8",
-  "{"tone":"outline","padding":"none"} => relative flex flex-col text-foreground rounded-lg border-thin bg-transparent border-foreground p-0",
-  "{"tone":"outline","padding":"sm"} => relative flex flex-col text-foreground rounded-lg border-thin bg-transparent border-foreground p-3",
-  "{"tone":"outline","padding":"md"} => relative flex flex-col text-foreground rounded-lg border-thin bg-transparent border-foreground p-5",
-  "{"tone":"outline","padding":"lg"} => relative flex flex-col text-foreground rounded-lg border-thin bg-transparent border-foreground p-8",
-]
-`;
-
-exports[`bound recipe output (frozen before the factory refactor) > dialogOverlayRecipe 1`] = `
-[
-  "{} => fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-md",
-  "{"blur":"none"} => fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4",
-  "{"blur":"sm"} => fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm",
-  "{"blur":"md"} => fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-md",
-  "{"blur":"lg"} => fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-lg",
-]
-`;
-
-exports[`bound recipe output (frozen before the factory refactor) > dialogRecipe 1`] = `
-[
-  "{} => relative flex w-full flex-col gap-4 p-6 bg-surface text-foreground border-muted border-thin rounded-lg shadow-lg max-w-md",
-  "{"size":"sm"} => relative flex w-full flex-col gap-4 p-6 bg-surface text-foreground border-muted border-thin rounded-lg shadow-lg max-w-sm",
-  "{"size":"md"} => relative flex w-full flex-col gap-4 p-6 bg-surface text-foreground border-muted border-thin rounded-lg shadow-lg max-w-md",
-  "{"size":"lg"} => relative flex w-full flex-col gap-4 p-6 bg-surface text-foreground border-muted border-thin rounded-lg shadow-lg max-w-lg",
-]
-`;
-
-exports[`bound recipe output (frozen before the factory refactor) > inputRecipe 1`] = `
-[
-  "{} => w-full outline-none transition-colors duration-150 placeholder:text-muted focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 bg-surface text-foreground border-thin rounded-md text-14-regular h-9 px-3 border-muted",
-  "{"size":"sm","invalid":true} => w-full outline-none transition-colors duration-150 placeholder:text-muted focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 bg-surface text-foreground border-thin rounded-md text-14-regular h-8 px-2.5 border-danger",
-  "{"size":"sm","invalid":false} => w-full outline-none transition-colors duration-150 placeholder:text-muted focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 bg-surface text-foreground border-thin rounded-md text-14-regular h-8 px-2.5 border-muted",
-  "{"size":"md","invalid":true} => w-full outline-none transition-colors duration-150 placeholder:text-muted focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 bg-surface text-foreground border-thin rounded-md text-14-regular h-9 px-3 border-danger",
-  "{"size":"md","invalid":false} => w-full outline-none transition-colors duration-150 placeholder:text-muted focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 bg-surface text-foreground border-thin rounded-md text-14-regular h-9 px-3 border-muted",
-  "{"size":"lg","invalid":true} => w-full outline-none transition-colors duration-150 placeholder:text-muted focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 bg-surface text-foreground border-thin rounded-md text-14-regular h-11 px-4 border-danger",
-  "{"size":"lg","invalid":false} => w-full outline-none transition-colors duration-150 placeholder:text-muted focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 bg-surface text-foreground border-thin rounded-md text-14-regular h-11 px-4 border-muted",
-]
-`;
-
 exports[`bound recipe output (frozen before the factory refactor) > stackRecipe 1`] = `
 [
   "{} => flex flex-col",
@@ -246,6 +181,7 @@ exports[`bound recipe output (frozen before the factory refactor) > textRecipe 1
   "{"color":"surface"} => wrap-anywhere whitespace-pre-wrap text-surface",
   "{"color":"foreground"} => wrap-anywhere whitespace-pre-wrap text-foreground",
   "{"color":"muted"} => wrap-anywhere whitespace-pre-wrap text-muted",
+  "{"color":"line"} => wrap-anywhere whitespace-pre-wrap text-line",
   "{"decoration":"underline"} => wrap-anywhere whitespace-pre-wrap underline",
   "{"decoration":"lineThrough"} => wrap-anywhere whitespace-pre-wrap line-through",
   "{"decoration":"none"} => wrap-anywhere whitespace-pre-wrap no-underline",

@@ -81,6 +81,7 @@ export function DocsOnPage({
               data-part="toc-progress-fill"
               height="100%"
               backgroundColor="primary"
+              // eslint-disable-next-line no-restricted-syntax -- scaleX follows the live reading progress
               style={{ transform: `scaleX(${String(progress)})` }}
             />
           </Box>

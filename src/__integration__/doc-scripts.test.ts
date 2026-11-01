@@ -103,6 +103,7 @@ describe("integration: docs-embed", { timeout: 60_000 }, () => {
     ["/etc/hosts", "embed path /etc/hosts not allowed"],
     ["README.md", "not allowed"],
     ["examples/a.txt", "not allowed"],
+    ["packages/a.ts", "embed path packages/a.ts not allowed"],
   ])("rejects the embed path %s", (target, message) => {
     put(t.dir, "examples/a.txt", "text\n");
     put(t.dir, "README.md", marked(target));

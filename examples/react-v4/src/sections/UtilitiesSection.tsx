@@ -31,12 +31,7 @@ const UtilTitle = ({ children }: { children: string }) => (
 
 export const UtilitiesSection = () => {
   return (
-    <Box
-      as="section"
-      borderT="thin"
-      py={14}
-      style={{ borderColor: "var(--c-line)" }}
-    >
+    <Box as="section" borderT="thin" py={14} borderColor="line">
       <SectionHead
         num="03 — Spacing, radius & shadow"
         title="A measured cadence."
@@ -54,12 +49,13 @@ export const UtilitiesSection = () => {
         {SPACING.map(({ name, px }) => (
           <Grid
             key={name}
+            columns="80px 1fr 80px"
             align="center"
             gap={4}
             borderT="thin"
             py={3}
-            data-part="dashed padding-row"
-            style={{ borderColor: "var(--c-line)" }}
+            data-part="dashed"
+            borderColor="line"
           >
             <Text type="text12Mono" color="muted">
               {name}
@@ -67,7 +63,7 @@ export const UtilitiesSection = () => {
             <Box>
               <Box
                 data-part="sg-spacing-bar"
-                style={{ width: `${String((px / 48) * 100)}%` }}
+                width={`${String((px / 48) * 100)}%`}
               />
             </Box>
             <Text type="text12Mono" align="right">
@@ -87,18 +83,13 @@ export const UtilitiesSection = () => {
                 align="end"
                 justify="center"
                 pb={2}
-                style={{
-                  width,
-                  height: 80,
-                  background: "var(--c-primary-soft)",
-                  border: `1px dashed color-mix(in srgb, var(--color-primary) 40%, transparent)`,
-                  borderRadius: `var(--radius-${key})`,
-                }}
+                width={width}
+                height={80}
+                rounded={key}
+                border="thin"
+                data-part="radius-swatch"
               >
-                <Text
-                  type="text12Mono"
-                  style={{ color: "var(--color-primary)" }}
-                >
+                <Text type="text12Mono" color="primary">
                   {key}
                 </Text>
               </Flex>
@@ -120,7 +111,7 @@ export const UtilitiesSection = () => {
                 justify="center"
                 pb={3}
                 data-part="sg-glass-target grow-1"
-                style={{ borderColor: "var(--c-line)" }}
+                borderColor="line"
               >
                 <Text type="text12Mono" color="muted">
                   {key}

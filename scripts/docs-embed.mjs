@@ -24,14 +24,14 @@ import {
 } from "./doc-markdown.mjs";
 
 const EMBED_MARKER = /^<!-- embed: ([^\s#]+)(?:#([a-z0-9-]+))? -->$/;
-const ALLOWED_DIRS = /^(examples|packages|src)\//;
+const ALLOWED_DIRS = /^(examples|src)\//;
 const ALLOWED_EXT = /\.(ts|tsx|vue|css|json)$/;
 const USAGE = "usage: docs-embed.mjs --write|--check [--root <dir>]";
 
 /**
- * Whether an embed path may be read: a repo file under `examples/`,
- * `packages/` or `src/` with a code extension, not leaving the repo through
- * `..`, an absolute path or a symlink.
+ * Whether an embed path may be read: a repo file under `examples/` or
+ * `src/` with a code extension, not leaving the repo through `..`, an
+ * absolute path or a symlink.
  * @param {string} root - Repository root
  * @param {string} p - Path captured from the embed marker
  * @returns {{ ok: boolean, abs: string }} `ok` is false for a rejected path
@@ -111,7 +111,7 @@ async function embedFile(root, md, text, errors) {
     const { ok, abs } = confine(root, p);
     if (!ok) {
       errors.push(
-        `${at}: embed path ${p} not allowed (repo file under examples/, packages/ or src/ with extension .ts .tsx .vue .css .json)`,
+        `${at}: embed path ${p} not allowed (repo file under examples/ or src/ with extension .ts .tsx .vue .css .json)`,
       );
       continue;
     }

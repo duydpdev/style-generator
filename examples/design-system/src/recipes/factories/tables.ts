@@ -17,7 +17,7 @@ export interface RecipeTokens {
 /** Variant name → option → classes. */
 export type VariantTable = Record<string, Record<string, ClassValue>>;
 
-/** A recipe as plain data: the cva input, also walked by ui-react's Tailwind coverage test. */
+/** A recipe as plain data: the cva input. */
 export interface RecipeTables {
   readonly base: ClassValue;
   readonly variants: VariantTable;
@@ -34,7 +34,7 @@ export type RecipeProps = Readonly<
   Record<string, string | boolean | null | undefined>
 >;
 
-/** A recipe built from tables; bound modules and ui-react type the exact props. */
+/** A recipe built from tables; bound modules and the sample components type the exact props. */
 export type RecipeFn = (props?: RecipeProps) => string;
 
 /** cva over a factory's tables; compound and default entries are loose, so they are cast here once. */

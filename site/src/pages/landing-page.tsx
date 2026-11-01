@@ -16,7 +16,7 @@ import { ThemingSection } from "../sections/theming-section";
 import { ToolingSection } from "../sections/tooling-section";
 import { TypesSection } from "../sections/types-section";
 import { WhySection } from "../sections/why-section";
-import { Box, Container, Grid } from "../ui";
+import { Box, Grid } from "../ui";
 
 const PAGE_MAX_WIDTH =
   "calc(var(--content-w) + var(--sidebar-w) + var(--gutter) * 2)";
@@ -32,8 +32,8 @@ export function LandingPage() {
     <>
       <ScrollProgress progress={progress} />
       <Topbar activeChapter={activeChapter} onToggleTheme={toggle} />
-      <Container
-        data-part="shell"
+      <Box
+        data-part="shell container"
         maxWidth={PAGE_MAX_WIDTH}
         px={8}
         position="relative"
@@ -58,7 +58,7 @@ export function LandingPage() {
             <CtaFooter />
           </Box>
         </Grid>
-      </Container>
+      </Box>
     </>
   );
 }

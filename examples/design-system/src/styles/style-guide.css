@@ -1,7 +1,7 @@
 /* ============================================================
    Style Guide — design tokens & component styles
    ------------------------------------------------------------
-   Owns: font families, derived color tokens (line / soft),
+   Owns: font families, derived color tokens (soft, line-strong),
    voice / geometry / surface tweaks, and the bespoke chrome
    (topbar, hero, json drawer, tweaks panel) that the library
    components do not natively render.
@@ -25,7 +25,6 @@
   );
   --c-success-soft: color-mix(in srgb, var(--color-success) 8%, transparent);
   --c-danger-soft: color-mix(in srgb, var(--color-danger) 8%, transparent);
-  --c-line: color-mix(in srgb, var(--color-foreground) 8%, transparent);
   --c-line-strong: color-mix(in srgb, var(--color-foreground) 14%, transparent);
 }
 
@@ -69,7 +68,7 @@
   --sg-shadow-sm: none;
   --sg-shadow-md: none;
   --sg-shadow-lg: none;
-  --c-line: var(--c-line-strong);
+  --sg-color-line: var(--c-line-strong);
 }
 [data-surface="flat"] [data-part~="sg-glass-target"] {
   border-width: 1.5px;
@@ -190,7 +189,7 @@ body {
   background: color-mix(in srgb, var(--color-background) 80%, transparent);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
-  border-bottom: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--sg-color-line);
 }
 
 /* Color card hover lift + tone strip */
@@ -234,7 +233,7 @@ body {
   padding: 8px 14px 8px 8px;
   border-radius: 999px;
   background: var(--color-surface);
-  border: 1px solid var(--c-line);
+  border: 1px solid var(--sg-color-line);
   cursor: pointer;
   transition:
     border-color 0.15s,
@@ -351,7 +350,7 @@ body {
   cursor: pointer;
   background: transparent;
   color: var(--color-foreground);
-  border: 1px solid var(--c-line);
+  border: 1px solid var(--sg-color-line);
   border-radius: 10px;
   padding: 10px 6px 8px;
   display: flex;
@@ -390,13 +389,13 @@ body {
   border: 1.5px solid var(--color-foreground);
 }
 [data-part~="sg-tweak-surf-lifted"] {
-  border: 1px solid var(--c-line);
+  border: 1px solid var(--sg-color-line);
   box-shadow:
     0 4px 8px -2px rgba(0, 0, 0, 0.18),
     0 1px 2px rgba(0, 0, 0, 0.06);
 }
 [data-part~="sg-tweak-surf-glass"] {
-  border: 1px solid var(--c-line);
+  border: 1px solid var(--sg-color-line);
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--color-surface) 60%, transparent),
@@ -409,7 +408,7 @@ body {
 code {
   font-family: var(--f-mono);
   font-size: 0.88em;
-  background: var(--c-line);
+  background: var(--sg-color-line);
   padding: 1px 5px;
   border-radius: 4px;
   color: var(--color-foreground);

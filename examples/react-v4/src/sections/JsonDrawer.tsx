@@ -85,13 +85,9 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
         align="center"
         justify="between"
         borderB="thin"
-        style={{ borderColor: "var(--c-line)" }}
+        borderColor="line"
       >
-        <Box
-          as="h3"
-          data-part="sg-font-display drawer-title"
-          style={{ color: "var(--color-foreground)" }}
-        >
+        <Box as="h3" data-part="sg-font-display drawer-title">
           theme.json
         </Box>
         <Flex gap={1}>

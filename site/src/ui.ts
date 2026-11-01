@@ -1,10 +1,16 @@
-import { createUi } from "@duydpdev/ui-react";
+import {
+  createBox,
+  createFlex,
+  createGrid,
+  createStack,
+  createText,
+} from "react-v4-example/ui";
 
-import { presets } from "./ui-presets";
 import { tokens } from "./ui-tokens";
 
-/** The site's token-typed components: one `createUi` call for the whole app. */
-export const { Box, Container, Flex, Grid, Stack, Text } = createUi(
-  tokens,
-  presets,
-);
+/** The site's components: react-v4's sample factories bound to the site theme (no recipe presets). */
+export const Box = createBox(tokens);
+export const Flex = createFlex(tokens);
+export const Grid = createGrid(tokens);
+export const Stack = createStack(tokens);
+export const Text = createText(tokens);

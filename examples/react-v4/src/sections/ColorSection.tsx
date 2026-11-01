@@ -13,12 +13,7 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
   const set = colorsFor(palette, theme);
 
   return (
-    <Box
-      as="section"
-      borderT="thin"
-      py={14}
-      style={{ borderColor: "var(--c-line)" }}
-    >
+    <Box as="section" borderT="thin" py={14} borderColor="line">
       <SectionHead
         num="01 — Color"
         title="A four-role palette."
@@ -41,13 +36,13 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
               rounded="lg"
               border="thin"
               data-part="sg-color-card sg-glass-target color-card"
-              style={{ borderColor: "var(--c-line)" }}
+              borderColor="line"
             >
-              <Box height={96} style={{ background: `var(--color-${key})` }}>
+              <Box height={96} backgroundColor={key}>
                 <Box data-part="sg-tone-strip">
-                  <Box as="span" style={{ background: hex, opacity: 0.55 }} />
-                  <Box as="span" style={{ background: hex, opacity: 0.75 }} />
-                  <Box as="span" style={{ background: hex }} />
+                  <Box as="span" backgroundColor={key} data-part="tone-55" />
+                  <Box as="span" backgroundColor={key} data-part="tone-75" />
+                  <Box as="span" backgroundColor={key} />
                 </Box>
               </Box>
               <Stack px={4} py={3} gap={1}>

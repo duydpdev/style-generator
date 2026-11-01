@@ -1,17 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  badgeRecipe,
   boxRecipe,
   buttonRecipe,
-  cardRecipe,
-  containerRecipe,
-  dialogOverlayRecipe,
-  dialogRecipe,
   gridRecipe,
-  inputRecipe,
   intents,
-  selectRecipe,
   stackRecipe,
   textRecipe,
   tokens,
@@ -57,41 +50,6 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
           size: sizes,
         }),
       ),
-    ).toMatchSnapshot();
-  });
-  it("badgeRecipe", () => {
-    expect(
-      run(
-        badgeRecipe,
-        cartesian({
-          color: intents,
-          variant: ["soft", "solid", "outline"],
-        }),
-      ),
-    ).toMatchSnapshot();
-  });
-  it("cardRecipe", () => {
-    expect(
-      run(
-        cardRecipe,
-        cartesian({
-          tone: ["surface", "muted", "outline"],
-          padding: ["none", "sm", "md", "lg"],
-        }),
-      ),
-    ).toMatchSnapshot();
-  });
-  it("inputRecipe", () => {
-    expect(
-      run(inputRecipe, cartesian({ size: sizes, invalid: [true, false] })),
-    ).toMatchSnapshot();
-  });
-  it("dialogRecipe", () => {
-    expect(run(dialogRecipe, cartesian({ size: sizes }))).toMatchSnapshot();
-  });
-  it("dialogOverlayRecipe", () => {
-    expect(
-      run(dialogOverlayRecipe, cartesian({ blur: ["none", "sm", "md", "lg"] })),
     ).toMatchSnapshot();
   });
   it("stackRecipe", () => {
@@ -150,8 +108,7 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
     ).toMatchSnapshot();
   });
 
-  it("containerRecipe and gridRecipe (new, exact)", () => {
-    expect(containerRecipe()).toBe("mx-auto w-full");
+  it("gridRecipe (exact)", () => {
     expect(gridRecipe()).toBe("grid");
     expect(gridRecipe({ align: "center", flow: "dense" })).toBe(
       "grid items-center grid-flow-dense",
@@ -169,9 +126,19 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
     );
   });
 
-  it("selectRecipe() equals nuxt-v4 ThemeSwitch.vue's hand-written select string", () => {
-    expect(selectRecipe()).toBe(
-      "rounded-md border border-current/20 bg-surface px-2 py-1",
-    );
+  it("gridColumns takes CSS track strings", () => {
+    expect(gridColumns("80px 1fr 80px")).toEqual({
+      className: "grid-cols-(--ui-grid-cols)",
+      style: { "--ui-grid-cols": "80px 1fr 80px" },
+    });
+    expect(gridColumns({ base: 1, md: "220px 1fr" })).toEqual({
+      className: "grid-cols-(--ui-grid-cols) md:grid-cols-(--ui-grid-cols-md)",
+      style: {
+        "--ui-grid-cols": "repeat(1, minmax(0, 1fr))",
+        "--ui-grid-cols-md": "220px 1fr",
+      },
+    });
+    expect(() => gridColumns("  ")).toThrow(RangeError);
+    expect(() => gridColumns({ md: "" })).toThrow(RangeError);
   });
 });

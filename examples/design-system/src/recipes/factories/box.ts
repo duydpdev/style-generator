@@ -12,7 +12,7 @@ export interface BoxPreset {
   readonly base?: string | undefined;
 }
 
-/** Layout style props that are box-recipe variants; ui-react splits props with this list. */
+/** Layout style props that are box-recipe variants; the sample components split props with this list. */
 export const BOX_VARIANT_KEYS = [
   "backgroundColor",
   "borderColor",

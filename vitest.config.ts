@@ -4,14 +4,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    // e2e/** and e2e-site/** are Playwright specs; examples/** and packages/** are separate workspaces with their own
+    // e2e/** and e2e-site/** are Playwright specs; examples/** are separate workspaces with their own
     // vitest config (`yarn workspace design-system-example test`, CI: after `build:all`).
     exclude: [
       ...configDefaults.exclude,
       "e2e/**",
       "e2e-site/**",
       "examples/**",
-      "packages/**",
     ],
     coverage: {
       provider: "v8",
@@ -38,7 +37,7 @@ export default defineConfig({
     typecheck: {
       checker: "tsc",
       include: ["**/*.test-d.ts"],
-      exclude: [...configDefaults.exclude, "examples/**", "packages/**"],
+      exclude: [...configDefaults.exclude, "examples/**"],
     },
   },
 });

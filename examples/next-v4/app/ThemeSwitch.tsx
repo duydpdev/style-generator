@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { axisAttributes } from "design-system-example";
 
-import { Button, Flex, Select, Stack, Text } from "./ui";
-
 type AxesState = Parameters<typeof axisAttributes>[0];
 type ThemeName = NonNullable<AxesState["theme"]>;
 type PaletteName = NonNullable<AxesState["palette"]>;
@@ -12,13 +10,17 @@ type PaletteName = NonNullable<AxesState["palette"]>;
 const THEMES: readonly ThemeName[] = ["base", "dark", "highContrast"];
 const PALETTES: readonly PaletteName[] = ["base", "forest", "sunset", "mono"];
 
+const LABEL = "flex flex-col gap-1 font-mono text-12-mono text-muted";
+const SELECT =
+  "rounded-md border-thin border-muted bg-surface px-2 py-1 font-sans text-14-regular text-foreground";
+
 /**
- * Next-specific piece: a client component, because the axis attributes live on
- * `<html>`, which a server component cannot reach after hydration. The
- * attribute map comes from the design system's `axisAttributes`; a variant that
- * is `"base"` produces no attribute, so the keys the previous map had and the
- * next one lacks are removed.
- * @returns The two axis pickers.
+ * Client component: the `themeAxes` variants switch on through `data-*`
+ * attributes on `<html>`, which a server component cannot change after
+ * hydration. The attribute map comes from the design system's
+ * `axisAttributes`; a variant that is `"base"` produces no attribute, so the
+ * names the previous map had and the next one lacks are removed.
+ * @returns The two axis pickers and a reset button.
  */
 export function ThemeSwitch() {
   const [state, setState] = useState<AxesState>({
@@ -41,13 +43,11 @@ export function ThemeSwitch() {
   }, [state]);
 
   return (
-    <Flex wrap gap={4}>
-      <Stack as="label" align="start" gap={1}>
-        <Text as="span" type="text12Mono" color="muted">
-          theme
-        </Text>
-        <Select
-          size="sm"
+    <div className="flex flex-wrap items-end gap-4">
+      <label className={LABEL}>
+        theme
+        <select
+          className={SELECT}
           value={state.theme}
           onChange={(event) => {
             setState((prev) => ({
@@ -61,14 +61,12 @@ export function ThemeSwitch() {
               {name}
             </option>
           ))}
-        </Select>
-      </Stack>
-      <Stack as="label" align="start" gap={1}>
-        <Text as="span" type="text12Mono" color="muted">
-          palette
-        </Text>
-        <Select
-          size="sm"
+        </select>
+      </label>
+      <label className={LABEL}>
+        palette
+        <select
+          className={SELECT}
           value={state.palette}
           onChange={(event) => {
             setState((prev) => ({
@@ -82,17 +80,17 @@ export function ThemeSwitch() {
               {name}
             </option>
           ))}
-        </Select>
-      </Stack>
-      <Button
-        variant="ghost"
-        size="sm"
+        </select>
+      </label>
+      <button
+        type="button"
+        className="rounded-md px-3 py-1 text-14-regular text-primary hover:bg-surface"
         onClick={() => {
           setState({ theme: "base", palette: "base" });
         }}
       >
         Reset
-      </Button>
-    </Flex>
+      </button>
+    </div>
   );
 }

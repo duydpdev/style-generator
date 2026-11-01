@@ -7,7 +7,7 @@ import { inputPreset } from "./input";
 import { selectPreset } from "./select";
 import { textPreset } from "./text";
 
-/** The design-system's role map: `createUi(tokens, presets)` in react-v4, next-v4 and nuxt-v4. */
+/** The design-system's role map: `createUi(tokens, presets)` in react-v4 and nuxt-v4. */
 export const presets = {
   box: boxPreset,
   text: textPreset,

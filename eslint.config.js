@@ -13,12 +13,10 @@ import {
   UI_COMPONENT_NAMES,
 } from "./packages/ui-react/registry.mjs";
 
-// App code that renders only ui-react components. A tree joins this list
-// when it is migrated (phase 06: react-v4, next-v4; phase 08: every site TSX
-// file).
+// App code that renders only ui-react components: the react-v4 example
+// and every site TSX file.
 const UI_APP_FILES = [
   "examples/react-v4/src/**/*.{ts,tsx}",
-  "examples/next-v4/app/**/*.{ts,tsx}",
   "site/src/**/*.tsx",
 ];
 

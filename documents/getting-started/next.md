@@ -1,6 +1,6 @@
 # Getting started: Next.js
 
-This tutorial wires `@duydpdev/style-generator` into a Next.js app (webpack or Turbopack) and renders token-typed components. Every code block below is copied from [`examples/next-v4`](../../examples/next-v4/README.md), which is built and type-checked in CI.
+This tutorial wires `@duydpdev/style-generator` into a Next.js app (webpack or Turbopack) and styles a page with the utilities your theme generates. Every code block below is copied from [`examples/next-v4`](../../examples/next-v4/README.md), which is built and type-checked in CI.
 
 ## Install
 
@@ -8,7 +8,7 @@ Install the package and its peer dependencies as described in [Install](../../RE
 
 ## Share the theme options
 
-The theme is a JSON file ([`examples/design-system/src/theme.json`](../../examples/design-system/src/theme.json), 161 lines, not embedded here). The generator options live in one module that the bundler config, the typed tokens and the recipes all import, so the three never drift apart.
+The theme is a JSON file ([`examples/design-system/src/theme.json`](../../examples/design-system/src/theme.json), not embedded here). The generator options live in one module that the bundler config, the typed tokens and the recipes all import, so the three never drift apart.
 
 <!-- embed: examples/design-system/src/style-gen.options.ts#options -->
 
@@ -20,23 +20,28 @@ export const options = {
 
 ## Generate theme.css with the Next.js wrapper
 
-`styleGenNext` writes `theme.css` when `next dev` or `next build` loads the config. The design system and the component package ship TypeScript source, so `transpilePackages` lets Next compile them.
+`styleGenNext` writes `theme.css` when `next dev` or `next build` loads the config. The example's design system is a workspace package that ships TypeScript source, so `transpilePackages` lets Next compile it; an app that keeps its theme and options in its own directory needs no `transpilePackages`.
 
 <!-- embed: examples/next-v4/next.config.ts#next-config -->
 
 ```ts
+import type { NextConfig } from "next";
+import { styleGenNext } from "@duydpdev/style-generator/next";
+import { options } from "design-system-example/style-gen.options";
+
 const nextConfig: NextConfig = {
-  // The design system and @duydpdev/ui-react ship TypeScript source (no build step): let Next compile them.
-  transpilePackages: ["design-system-example", "@duydpdev/ui-react"],
+  // The design system ships TypeScript source (no build step), and the theme
+  // switch imports `axisAttributes` from it: let Next compile it.
+  transpilePackages: ["design-system-example"],
 };
 
 // Next.js runs on Turbopack/webpack (no Vite), so the Vite-only `styleGenVite`
-// plugin used by the React/Nuxt examples does not apply. `styleGenNext` is the
-// Next-equivalent: it does not import `next`, so it works identically under
-// both bundlers. It writes `app/theme/theme.css` when Next loads this config in
-// `phase-development-server` (`next dev`, which also watches the theme JSON) or
-// `phase-production-build` (`next build`). The theme and the generator options
-// are shared with the other examples through the `design-system-example` package.
+// plugin does not apply. `styleGenNext` does not import `next`, so it works
+// under both bundlers. It writes `app/theme/theme.css` when Next loads this
+// config in `phase-development-server` (`next dev`, which also watches the
+// theme JSON) or `phase-production-build` (`next build`). The theme and the
+// generator options are shared with the other examples through the
+// `design-system-example` package.
 export default styleGenNext({
   themePath: "../design-system/src/theme.json",
   outDir: "app/theme",
@@ -44,112 +49,161 @@ export default styleGenNext({
 })(nextConfig);
 ```
 
-## Import the CSS and scan the components
+## Import the CSS
 
-Import the generated file next to Tailwind. Tailwind only scans the app directory, so the `@source` lines point it at the design system and the component package, which hold the class names.
+Import the generated file next to Tailwind. No `@source` line is needed: Tailwind scans `app/`, and `theme.css` lists every token utility in `@source inline(...)`. `palettes.css` holds this example's hand-written dark × palette overrides; your app needs it only if its theme has such combinations.
 
 <!-- embed: examples/next-v4/app/globals.css#css-entry -->
 
 ```css
 @import "tailwindcss";
 @import "./theme/theme.css";
+/* Example-only: the dark × palette overrides that themeAxes cannot express. */
 @import "design-system-example/styles/palettes.css";
-@import "design-system-example/styles/style-guide.css";
-
-/* Tailwind only scans this app by default; the recipes live in the design system. */
-@source "../../design-system/src";
-@source "../../../packages/ui-react/src";
 ```
 
-## Create the components once
+## Use the generated utilities
 
-`@duydpdev/ui-react` and `@duydpdev/ui-vue` are example packages inside this repository (`packages/ui-react`, `packages/ui-vue`). They are not published: copy the package folder into your project instead of installing it. A package with the same name from another registry is not ours.
-
-`createUi(tokens, presets)` takes the typed tokens and the recipe presets; every role in `presets` is optional.
-
-<!-- embed: examples/next-v4/app/ui.ts -->
-
-```ts
-"use client";
-
-import { createUi } from "@duydpdev/ui-react";
-import { presets, tokens } from "design-system-example";
-
-/** One createUi call; next-v4 renders every role, so it passes all 8 presets. */
-const ui = createUi(tokens, presets);
-
-export const Box = ui.Box;
-export const Flex = ui.Flex;
-export const Stack = ui.Stack;
-export const Grid = ui.Grid;
-export const Container = ui.Container;
-export const Text = ui.Text;
-export const Button = ui.Button;
-export const Card = ui.Card;
-export const Badge = ui.Badge;
-export const Input = ui.Input;
-export const Select = ui.Select;
-export const Dialog = ui.Dialog;
-```
-
-## Use them
+Every class below comes from a `theme.json` token: `bg-primary` and `text-on-primary` from `colors`, `text-12-mono` and `display-56-serif` from `typography`, `rounded-pill` from `borderRadius`, `shadow-md` from `shadows`, `font-serif` from `fontFamily`. The page is a server component.
 
 <!-- embed: examples/next-v4/app/page.tsx#usage -->
 
 ```tsx
-<Stack as="header" justify="between" wrap>
-  <Box>
-    <Text type="text12Mono" color="muted">
+<header className="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <p className="font-mono text-12-mono text-muted">
       @duydpdev/style-generator · Next.js 16
-    </Text>
-    <Text as="h1" type="display56Serif">
-      Shared design system
-    </Text>
-  </Box>
+    </p>
+    <h1 className="font-serif display-56-serif">Generated utilities</h1>
+  </div>
   <ThemeSwitch />
-</Stack>
+</header>
 
-<Card as="section" tone="surface" padding="lg">
-  <Stack gap={{ base: 2, md: 4 }}>
-    <Text as="h2" type="text20Semibold">
-      Buttons
-    </Text>
-    {intents.map((color) => (
-      <Flex key={color} wrap gap={2}>
-        <Badge color={color}>{color}</Badge>
-        {BUTTON_VARIANTS.map((variant) => (
-          <Button key={variant} variant={variant} color={color}>
-            {variant}
-          </Button>
-        ))}
-      </Flex>
+<section className="flex flex-col gap-4 rounded-lg bg-surface p-6 shadow-md">
+  <h2 className="text-20-semibold">Colors</h2>
+  <ul className="flex flex-wrap gap-2">
+    {SWATCHES.map(({ name, className }) => (
+      <li key={name} className={className}>
+        {name}
+      </li>
     ))}
-  </Stack>
-</Card>
+  </ul>
+  <button
+    type="button"
+    className="self-start rounded-md bg-primary px-4 py-2 text-16-medium text-on-primary hover:bg-primary-hover active:bg-primary-active"
+  >
+    Primary action
+  </button>
+</section>
+```
 
-<Card as="section" tone="outline" padding="md">
-  <Stack gap={3}>
-    <Text as="h2" type="text20Semibold">
-      Inputs
-    </Text>
-    <Input size="md" placeholder="Default input" />
-    <Input size="md" invalid placeholder="Invalid input" />
-  </Stack>
-</Card>
+## Switch the theme axes
 
-<Box
-  as="section"
-  backgroundColor="surface"
-  rounded="lg"
-  shadow="md"
-  p={6}
->
-  <DialogDemo />
-</Box>
+Each `themeAxes` variant is switched on by a `data-*` attribute on `<html>`. The design system's `axisAttributes()` wraps `themeAxisAttributes` from `@duydpdev/style-generator/recipes` and is typed by the theme's axes; a client component applies the attributes after hydration.
+
+<!-- embed: examples/next-v4/app/ThemeSwitch.tsx -->
+
+```tsx
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { axisAttributes } from "design-system-example";
+
+type AxesState = Parameters<typeof axisAttributes>[0];
+type ThemeName = NonNullable<AxesState["theme"]>;
+type PaletteName = NonNullable<AxesState["palette"]>;
+
+const THEMES: readonly ThemeName[] = ["base", "dark", "highContrast"];
+const PALETTES: readonly PaletteName[] = ["base", "forest", "sunset", "mono"];
+
+const LABEL = "flex flex-col gap-1 font-mono text-12-mono text-muted";
+const SELECT =
+  "rounded-md border-thin border-muted bg-surface px-2 py-1 font-sans text-14-regular text-foreground";
+
+/**
+ * Client component: the `themeAxes` variants switch on through `data-*`
+ * attributes on `<html>`, which a server component cannot change after
+ * hydration. The attribute map comes from the design system's
+ * `axisAttributes`; a variant that is `"base"` produces no attribute, so the
+ * names the previous map had and the next one lacks are removed.
+ * @returns The two axis pickers and a reset button.
+ */
+export function ThemeSwitch() {
+  const [state, setState] = useState<AxesState>({
+    theme: "base",
+    palette: "base",
+  });
+
+  const applied = useRef<readonly string[]>([]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const attributes = axisAttributes(state);
+    for (const name of applied.current) {
+      if (!(name in attributes)) root.removeAttribute(name);
+    }
+    for (const [name, value] of Object.entries(attributes)) {
+      root.setAttribute(name, value);
+    }
+    applied.current = Object.keys(attributes);
+  }, [state]);
+
+  return (
+    <div className="flex flex-wrap items-end gap-4">
+      <label className={LABEL}>
+        theme
+        <select
+          className={SELECT}
+          value={state.theme}
+          onChange={(event) => {
+            setState((prev) => ({
+              ...prev,
+              theme: event.target.value as ThemeName,
+            }));
+          }}
+        >
+          {THEMES.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={LABEL}>
+        palette
+        <select
+          className={SELECT}
+          value={state.palette}
+          onChange={(event) => {
+            setState((prev) => ({
+              ...prev,
+              palette: event.target.value as PaletteName,
+            }));
+          }}
+        >
+          {PALETTES.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button
+        type="button"
+        className="rounded-md px-3 py-1 text-14-regular text-primary hover:bg-surface"
+        onClick={() => {
+          setState({ theme: "base", palette: "base" });
+        }}
+      >
+        Reset
+      </button>
+    </div>
+  );
+}
 ```
 
 ## Next steps
 
-- [Components](../components.md): the props of every component and how to author a new one.
+- [Components](../components.md): token-typed components over the design-system recipes, for an app that needs a component layer.
 - [Theme config](../reference/theme.md): every theme key and its rules.
 - [Next.js](../reference/next.md): the wrapper options.

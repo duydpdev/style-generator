@@ -1,75 +1,62 @@
-import { intents } from "design-system-example";
-
-import { DialogDemo } from "./DialogDemo";
 import { ThemeSwitch } from "./ThemeSwitch";
-import {
-  Badge,
-  Box,
-  Button,
-  Card,
-  Container,
-  Flex,
-  Input,
-  Stack,
-  Text,
-} from "./ui";
 
-const BUTTON_VARIANTS = ["fill", "outline", "soft", "ghost", "link"] as const;
+// Every class below comes from a theme.json token: theme.css lists them in
+// `@source inline(...)`, so Tailwind emits them without scanning a recipe.
+const SWATCHES = [
+  {
+    name: "primary",
+    className: "rounded-pill bg-primary px-3 py-1 text-12-mono text-on-primary",
+  },
+  {
+    name: "secondary",
+    className:
+      "rounded-pill bg-secondary px-3 py-1 text-12-mono text-background",
+  },
+  {
+    name: "accent",
+    className: "rounded-pill bg-accent px-3 py-1 text-12-mono text-background",
+  },
+  {
+    name: "success",
+    className: "rounded-pill bg-success px-3 py-1 text-12-mono text-background",
+  },
+  {
+    name: "danger",
+    className: "rounded-pill bg-danger px-3 py-1 text-12-mono text-background",
+  },
+] as const;
 
 export default function Page() {
   return (
-    <Container as="main" maxWidth={960} py={{ base: 6, md: 10 }} px={4}>
+    <main className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10">
       {/* #region docs:usage */}
-      <Stack as="header" justify="between" wrap>
-        <Box>
-          <Text type="text12Mono" color="muted">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="font-mono text-12-mono text-muted">
             @duydpdev/style-generator · Next.js 16
-          </Text>
-          <Text as="h1" type="display56Serif">
-            Shared design system
-          </Text>
-        </Box>
+          </p>
+          <h1 className="font-serif display-56-serif">Generated utilities</h1>
+        </div>
         <ThemeSwitch />
-      </Stack>
+      </header>
 
-      <Card as="section" tone="surface" padding="lg">
-        <Stack gap={{ base: 2, md: 4 }}>
-          <Text as="h2" type="text20Semibold">
-            Buttons
-          </Text>
-          {intents.map((color) => (
-            <Flex key={color} wrap gap={2}>
-              <Badge color={color}>{color}</Badge>
-              {BUTTON_VARIANTS.map((variant) => (
-                <Button key={variant} variant={variant} color={color}>
-                  {variant}
-                </Button>
-              ))}
-            </Flex>
+      <section className="flex flex-col gap-4 rounded-lg bg-surface p-6 shadow-md">
+        <h2 className="text-20-semibold">Colors</h2>
+        <ul className="flex flex-wrap gap-2">
+          {SWATCHES.map(({ name, className }) => (
+            <li key={name} className={className}>
+              {name}
+            </li>
           ))}
-        </Stack>
-      </Card>
-
-      <Card as="section" tone="outline" padding="md">
-        <Stack gap={3}>
-          <Text as="h2" type="text20Semibold">
-            Inputs
-          </Text>
-          <Input size="md" placeholder="Default input" />
-          <Input size="md" invalid placeholder="Invalid input" />
-        </Stack>
-      </Card>
-
-      <Box
-        as="section"
-        backgroundColor="surface"
-        rounded="lg"
-        shadow="md"
-        p={6}
-      >
-        <DialogDemo />
-      </Box>
+        </ul>
+        <button
+          type="button"
+          className="self-start rounded-md bg-primary px-4 py-2 text-16-medium text-on-primary hover:bg-primary-hover active:bg-primary-active"
+        >
+          Primary action
+        </button>
+      </section>
       {/* #endregion docs:usage */}
-    </Container>
+    </main>
   );
 }

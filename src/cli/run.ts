@@ -70,29 +70,29 @@ const flag = (values: CliValues, key: string): boolean | undefined => {
 
 const initCli: CliCommand = {
   name: "init",
-  description: "Scaffold project files",
+  description: "Scaffold the theme and print the bundler wiring",
   usage: `Usage: style-gen init [options]
 
-Scaffold the theme JSON, its JSON Schema, a generator script and style-gen.config.json.
+Scaffold the theme JSON, its JSON Schema and style-gen.config.json, then print
+the plugin snippet for the stack found in the project root (nuxt.config.*,
+next.config.*, vite.config.*) or the \`style-gen generate\` fallback. Never edits
+the bundler config.
 
 Options:
-  --theme <path>    Theme JSON location (default: styles/theme.json, or src/styles/theme.json)
-  --plugin <path>   Generator script location (default: plugins/theme-plugin.ts)
+  --theme <path>    Theme JSON location (default: styles/theme.json, src/styles/theme.json
+                    with a src/ directory, app/assets/css/theme.json for Nuxt 4)
   --dark            Include a dark mode variant in the theme template`,
   options: {
     theme: { type: "string" },
-    plugin: { type: "string" },
     dark: { type: "boolean" },
   },
   allowPositionals: false,
   run: (values, _positionals, ctx) => {
     const theme = str(values, "theme");
-    const plugin = str(values, "plugin");
     const dark = flag(values, "dark");
     return initCommand(
       {
         ...(theme !== undefined && { theme }),
-        ...(plugin !== undefined && { plugin }),
         ...(dark !== undefined && { dark }),
       },
       ctx.cwd,

@@ -8,20 +8,24 @@ import { logger } from "../logger";
 import {
   themeTemplate,
   themeTemplateDark,
-  getPluginTemplate,
+  getBundlerSnippet,
+  getCssImport,
 } from "../templates";
 
+import {
+  detectStack,
+  type BundlerStack,
+  type DetectedStack,
+} from "./detectStack";
 import { schemaCommand } from "./schema";
 
 export interface InitArgs {
   theme?: string;
-  plugin?: string;
   dark?: boolean;
 }
 
 interface InteractiveConfig {
   themeLoc: string;
-  pluginLoc: string;
   includeDark: boolean;
 }
 
@@ -66,22 +70,6 @@ function ensureDir(filePath: string): void {
 function writeFile(filePath: string, content: string): void {
   ensureDir(filePath);
   fs.writeFileSync(filePath, content, "utf8");
-}
-
-/**
- * Convert absolute paths to a relative import path.
- * @param {string} from The source file path.
- * @param {string} to The target file path.
- * @returns {string} The relative import path.
- */
-function toImportPath(from: string, to: string): string {
-  let rel = path.relative(path.dirname(from), to);
-
-  if (!rel.startsWith(".")) {
-    rel = `./${rel}`;
-  }
-
-  return rel.replaceAll("\\", "/");
 }
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -139,7 +127,7 @@ interface MergeBase {
   configPath: string;
   /** Where `content` came from; `undefined` when `init` starts empty. */
   source?: "style-gen.config.json" | "package.json";
-  /** Keys `init` merges `theme`/`plugin`/`output` into. */
+  /** Keys `init` merges `theme`/`output` into (an existing `plugin` key is kept). */
   content: Record<string, unknown>;
 }
 
@@ -165,25 +153,121 @@ function loadMergeBase(cwd: string): MergeBase {
     : { configPath, content: {} };
 }
 
+/**
+ * Repo-relative POSIX form of an absolute path under `cwd`, the only form
+ * `init` writes to the config or prints.
+ * @param {string} cwd - The project root
+ * @param {string} abs - An absolute path inside `cwd`
+ * @returns {string} e.g. `src/styles/theme.json`
+ */
+function toRepoPath(cwd: string, abs: string): string {
+  return path.relative(cwd, abs).split(path.sep).join("/");
+}
+
+/** Display names for the next-steps message. */
+const STACK_NAMES: Record<BundlerStack, string> = {
+  vite: "Vite",
+  next: "Next.js",
+  nuxt: "Nuxt",
+};
+
+/**
+ * Default theme location. `styleGenVite` writes only inside the Vite root,
+ * which Nuxt 4 sets to `app/`, so a Nuxt theme (and the `theme.css` next to
+ * it) defaults to `<srcDir>/assets/css`.
+ * @param {DetectedStack} detected - The detected stack
+ * @param {string} cwd - The project root
+ * @returns {string} Project-relative theme path
+ */
+function defaultThemeLoc(detected: DetectedStack, cwd: string): string {
+  const has = (dir: string): boolean => fs.existsSync(path.resolve(cwd, dir));
+  if (detected.stack === "nuxt") {
+    return has("app") ? "app/assets/css/theme.json" : "assets/css/theme.json";
+  }
+  return has("src") ? "src/styles/theme.json" : "styles/theme.json";
+}
+
+/**
+ * The CSS entry the stack's starter template uses; only the directory
+ * matters, for the relative `@import` path.
+ * @param {BundlerStack} stack - The detected stack
+ * @param {string} cwd - The project root
+ * @returns {string} Project-relative POSIX path
+ */
+function cssEntryFile(stack: BundlerStack, cwd: string): string {
+  const has = (dir: string): boolean => fs.existsSync(path.resolve(cwd, dir));
+  if (stack === "vite") return has("src") ? "src/index.css" : "index.css";
+  if (stack === "next") {
+    return has("src/app") ? "src/app/globals.css" : "app/globals.css";
+  }
+  return has("app") ? "app/assets/css/main.css" : "assets/css/main.css";
+}
+
+/**
+ * Print what to do after scaffolding: the bundler snippet for the detected
+ * stack (never written to the config file), or the CLI fallback.
+ * @param {DetectedStack} detected - The detected stack
+ * @param {{ theme: string; output: string }} written - Paths written to the config
+ * @param {string} written.theme - Project-relative theme file
+ * @param {string} written.output - Project-relative generated CSS file
+ * @param {string} cwd - The project root
+ */
+function printNextSteps(
+  detected: DetectedStack,
+  written: { theme: string; output: string },
+  cwd: string,
+): void {
+  const outDir = path.posix.dirname(written.output);
+  if (detected.stack === "none") {
+    logger.info(
+      `📝 Next steps (no vite.config.*, next.config.* or nuxt.config.* found):
+   1. Edit ${written.theme} with your design tokens
+   2. Write ${written.output}: \`yarn style-gen generate\` (add --watch while you edit the theme)
+   3. Import it next to Tailwind from a CSS file in ${outDir}/:`,
+    );
+    logger.log(
+      getCssImport(cwd, path.posix.join(outDir, "index.css"), written.output),
+    );
+    return;
+  }
+  const entry = cssEntryFile(detected.stack, cwd);
+  logger.info(
+    `📝 Next steps (${STACK_NAMES[detected.stack]}: ${detected.configFile}):
+   1. Edit ${written.theme} with your design tokens
+   2. Add the plugin to ${detected.configFile} (merge it into your config; init never edits it):`,
+  );
+  logger.log(getBundlerSnippet(detected, { theme: written.theme, outDir }));
+  if (detected.stack === "nuxt") {
+    logger.info(
+      "   With explicit paths the plugin does not read style-gen.config.json; that file then serves only the CLI (generate, doctor, tokens).",
+    );
+    const appDir = fs.existsSync(path.resolve(cwd, "app"));
+    if (appDir && !written.output.startsWith("app/")) {
+      logger.warn(
+        `${written.output} is outside app/: Nuxt 4 sets Vite's root to app/ and styleGenVite writes only inside it, so the dev server will reject this outDir. Re-run init with --theme under app/ (default app/assets/css/theme.json).`,
+      );
+    }
+  }
+  logger.info(
+    `   3. Import the generated CSS next to Tailwind in ${entry} (or the CSS file in ${path.posix.dirname(entry)}/ that imports Tailwind):`,
+  );
+  logger.log(getCssImport(cwd, entry, written.output));
+  logger.info(
+    `   4. Start the dev server: it writes ${written.output} and rewrites it on every theme save`,
+  );
+}
+
 /* ------------------ Interactive Prompts ------------------ */
 
 /**
  * Prompt user interactively for configuration.
- * @param {InitArgs} args The initial CLI arguments.
- * @param {string} cwd The project root.
+ * @param {string} defaultTheme - The stack's default theme location
  * @returns {Promise<InteractiveConfig>} The collected configuration.
  */
 async function getInteractiveConfig(
-  args: InitArgs,
-  cwd: string,
+  defaultTheme: string,
 ): Promise<InteractiveConfig> {
   p.intro("🚀 style-gen init");
-
-  const hasSrc = fs.existsSync(path.resolve(cwd, "src"));
-  const defaultTheme = hasSrc ? "src/styles/theme.json" : "styles/theme.json";
-  const defaultPlugin = hasSrc
-    ? "src/plugins/theme-plugin.ts"
-    : "plugins/theme-plugin.ts";
 
   const themeRes = await p.text({
     message: "Theme file location?",
@@ -192,13 +276,6 @@ async function getInteractiveConfig(
   });
   handleCancel(themeRes);
 
-  const pluginRes = await p.text({
-    message: "Generator script location?",
-    initialValue: defaultPlugin,
-    placeholder: defaultPlugin,
-  });
-  handleCancel(pluginRes);
-
   const darkRes = await p.confirm({
     message: "Include dark mode template?",
     initialValue: false,
@@ -206,12 +283,10 @@ async function getInteractiveConfig(
   handleCancel(darkRes);
 
   const theme = themeRes as string;
-  const plugin = pluginRes as string;
   const dark = darkRes as boolean;
 
   return {
-    themeLoc: theme || (args.theme ?? defaultTheme),
-    pluginLoc: plugin || (args.plugin ?? defaultPlugin),
+    themeLoc: theme || defaultTheme,
     includeDark: dark,
   };
 }
@@ -231,7 +306,7 @@ async function confirmOverwrite(
     return "refused";
   }
   const overwrite = await p.confirm({
-    message: "Theme, schema or generator script already exists. Overwrite?",
+    message: "Theme or schema already exists. Overwrite?",
     initialValue: false,
   });
   handleCancel(overwrite);
@@ -252,39 +327,30 @@ async function confirmOverwrite(
 async function scaffold(args: InitArgs, cwd: string): Promise<number> {
   const isInteractive = process.stdin.isTTY;
 
-  const hasSrc = fs.existsSync(path.resolve(cwd, "src"));
+  const detected = detectStack(cwd);
+  const defaultTheme = defaultThemeLoc(detected, cwd);
 
-  let themeLoc =
-    args.theme ?? (hasSrc ? "src/styles/theme.json" : "styles/theme.json");
-  let pluginLoc =
-    args.plugin ??
-    (hasSrc ? "src/plugins/theme-plugin.ts" : "plugins/theme-plugin.ts");
+  let themeLoc = args.theme ?? defaultTheme;
   let includeDark = args.dark ?? false;
 
   if (isInteractive && Object.keys(args).length === 0) {
-    const config = await getInteractiveConfig(args, cwd);
+    const config = await getInteractiveConfig(defaultTheme);
     themeLoc = config.themeLoc;
-    pluginLoc = config.pluginLoc;
     includeDark = config.includeDark;
   }
 
-  themeLoc = path.normalize(themeLoc.trim());
-  pluginLoc = path.normalize(pluginLoc.trim());
-
-  // Everything `init` scaffolds stays inside the project root.
-  const themeAbsPath = resolveProjectPath(cwd, themeLoc, "theme");
-  const pluginAbsPath = resolveProjectPath(cwd, pluginLoc, "plugin");
-  const schemaAbsPath = resolveProjectPath(
-    cwd,
-    path.join(path.dirname(themeLoc), "theme.schema.json"),
-    "schema output",
+  // Everything `init` scaffolds stays inside the project root. From here
+  // on only the repo-relative POSIX form is used (an absolute --theme
+  // inside the root is stored and printed relative).
+  const themeAbsPath = resolveProjectPath(cwd, themeLoc.trim(), "theme");
+  themeLoc = toRepoPath(cwd, themeAbsPath);
+  const schemaLoc = path.posix.join(
+    path.posix.dirname(themeLoc),
+    "theme.schema.json",
   );
+  const schemaAbsPath = resolveProjectPath(cwd, schemaLoc, "schema output");
 
-  if (
-    fs.existsSync(themeAbsPath) ||
-    fs.existsSync(pluginAbsPath) ||
-    fs.existsSync(schemaAbsPath)
-  ) {
+  if (fs.existsSync(themeAbsPath) || fs.existsSync(schemaAbsPath)) {
     const proceed = await confirmOverwrite(isInteractive);
     if (proceed !== "overwrite") return proceed === "kept" ? 0 : 1;
   }
@@ -300,33 +366,14 @@ async function scaffold(args: InitArgs, cwd: string): Promise<number> {
   logger.success(`Created ${themeLoc}`);
 
   // The theme template references "./theme.schema.json" via "$schema".
-  const schemaCode = schemaCommand(
-    { out: path.join(path.dirname(themeLoc), "theme.schema.json") },
-    cwd,
-  );
+  const schemaCode = schemaCommand({ out: schemaLoc }, cwd);
   if (schemaCode !== 0) return schemaCode;
-
-  /* ---------- Generator script ---------- */
-
-  const outLoc = path.join(path.dirname(themeLoc), "theme.css");
-  const outAbsPath = path.resolve(cwd, outLoc);
-
-  writeFile(
-    pluginAbsPath,
-    getPluginTemplate(
-      toImportPath(pluginAbsPath, themeAbsPath),
-      toImportPath(pluginAbsPath, outAbsPath),
-    ),
-  );
-
-  logger.success(`Created ${pluginLoc}`);
 
   /* ---------- Config file (merged into the existing one) ---------- */
 
   const written = {
-    theme: themeLoc.replaceAll("\\", "/"),
-    plugin: pluginLoc.replaceAll("\\", "/"),
-    output: outLoc.replaceAll("\\", "/"),
+    theme: themeLoc,
+    output: path.posix.join(path.posix.dirname(themeLoc), "theme.css"),
   };
   writeFile(
     mergeBase.configPath,
@@ -344,14 +391,7 @@ async function scaffold(args: InitArgs, cwd: string): Promise<number> {
   /* ---------- Next steps ---------- */
 
   logger.info("✅ Tailwind v4 configuration scaffolded successfully");
-
-  logger.info(
-    `📝 Next steps:
-   1. Edit ${written.theme} with your design tokens
-   2. Generate ${written.output}: \`node ${written.plugin}\` (Node >= 22.18, which strips the types) or \`yarn style-gen generate\` — both write the same file
-   3. Add \`@import "./theme.css";\` to your CSS entry point, next to \`@import "tailwindcss";\`
-   4. Start your dev server`,
-  );
+  printNextSteps(detected, written, cwd);
 
   if (isInteractive) {
     p.outro("You're all set!");

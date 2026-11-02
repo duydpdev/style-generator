@@ -126,6 +126,13 @@ describe("runCli", () => {
       expect(generateCommand).not.toHaveBeenCalled();
     });
 
+    it("rejects init's removed --plugin flag and no longer lists it", async () => {
+      expect(await runCli(["init", "--plugin", "p.ts"], CWD)).toBe(1);
+      expect(initCommand).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.error).mock.calls[0]?.[0]).toContain("--plugin");
+      expect(printed()).not.toContain("--plugin");
+    });
+
     it("budget keeps exit code 2 for flag errors", async () => {
       expect(await runCli(["budget", "a.css", "--max"], CWD)).toBe(2);
       expect(budgetCommand).not.toHaveBeenCalled();

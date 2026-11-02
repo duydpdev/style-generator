@@ -18,10 +18,6 @@ const TERM_LINES: TermLine[] = [
     delay: 380,
   },
   {
-    html: '<span class="dim">◇</span>  Generator script location?  <span class="acc">src/plugins/theme-plugin.ts</span>',
-    delay: 380,
-  },
-  {
     html: '<span class="dim">◇</span>  Include dark mode template?  <span class="acc">yes</span>',
     delay: 380,
   },
@@ -31,16 +27,16 @@ const TERM_LINES: TermLine[] = [
     delay: 220,
   },
   {
-    html: '<span class="good">✓</span>  wrote <span class="acc">theme-plugin.ts</span>',
-    delay: 220,
+    html: '<span class="good">✓</span>  wrote <span class="acc">style-gen.config.json</span>',
+    delay: 280,
   },
   {
-    html: '<span class="good">✓</span>  wrote <span class="acc">style-gen.config.json</span>',
+    html: '<span class="good">✓</span>  found <span class="acc">vite.config.ts</span> · printed the <span class="acc">styleGenVite()</span> snippet',
     delay: 280,
   },
   { html: '<span class="dim">│</span>', delay: 50 },
   {
-    html: '<span class="dim">└</span>  <span class="good">You\'re all set!</span> · <span class="dim">run <span class="acc">style-gen generate</span></span>',
+    html: '<span class="dim">└</span>  <span class="good">You\'re all set!</span> · <span class="dim">paste the snippet, run <span class="acc">yarn dev</span></span>',
     delay: 350,
   },
   {
@@ -86,8 +82,9 @@ export function StartSection() {
             title={<code>yarn style-gen init</code>}
             body={
               <>
-                Interactive wizard. Theme and script paths, optional dark
-                template — writes the theme, its JSON Schema and the config.
+                Interactive wizard. Theme path, optional dark template — writes
+                the theme, its JSON Schema and the config, then prints the
+                snippet for your Vite, Next.js or Nuxt config.
               </>
             }
           />
@@ -96,7 +93,8 @@ export function StartSection() {
             title={<code>style-gen generate --watch</code>}
             body={
               <>
-                Regenerates theme.css on every save. Pair with the Vite plugin.
+                Regenerates theme.css on every save. The route without a bundler
+                plugin.
               </>
             }
           />

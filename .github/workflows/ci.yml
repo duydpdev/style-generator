@@ -140,8 +140,8 @@ jobs:
         run: yarn check:sizes
 
       - name: Smoke-run built artifacts
-        # Loads every subpath via import + require, runs the CLI and the
-        # TypeScript generator script that `style-gen init` scaffolds.
+        # Loads every subpath via import + require and runs the CLI,
+        # including `init` (stack detection) and `generate` in a fresh project.
         run: yarn check:smoke
 
       - name: Check types resolve for ESM and CJS (attw, node16 profile)

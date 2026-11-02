@@ -56,6 +56,9 @@ describe("createTailwindMergeExtension — real twMerge", () => {
     // modifiers are stripped before the group lookup
     ["md:rounded-t-pill md:rounded-t-lg", "md:rounded-t-lg"],
     ["hover:shadow-card shadow-lg", "hover:shadow-card shadow-lg"],
+    ["bg-primary/10 bg-blue-500/20", "bg-blue-500/20"],
+    ["bg-primary/10 bg-primary", "bg-primary"],
+    ["border-thin border-primary/20", "border-thin border-primary/20"],
   ])("%s → %s", (input, expected) => {
     expect(twMerge(input)).toBe(expected);
   });

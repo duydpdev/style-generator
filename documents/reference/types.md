@@ -95,8 +95,9 @@ export declare interface CoverageRule<P extends string = RegistryPrefix> {
 ```
 
 How much of one token category's `@source inline` coverage to emit.
-`coverage` only trims the `@source inline(...)` safelist lines
-(class-name coverage for classes Tailwind cannot see in source files); it
+`coverage` only changes the `@source inline(...)` lines (class-name
+coverage for classes Tailwind cannot see in source files): it trims
+them, and `coverage.colors.opacities` adds one opacity-modifier line. It
 never changes the `@theme inline` mapping, the `@utility` blocks or the
 typed `DesignTokens`.
 

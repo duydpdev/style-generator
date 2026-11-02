@@ -149,6 +149,7 @@ const resolveCategoryKeys = (
  * @param {string[]} keys - Resolved keys (see `resolveCategoryKeys`)
  * @param {readonly string[]} prefixes - Class prefixes to emit
  * @param {readonly string[]} breakpointKeys - Breakpoint keys to alternate with when `descriptor.responsive` is set
+ * @param {string} [modifierPart] - Appended after the keys group, e.g. the opacity line's `/{10,20}`
  * @returns {string | undefined} `@source inline(...)` directive, or `undefined`
  */
 const buildCategoryLine = (
@@ -156,6 +157,7 @@ const buildCategoryLine = (
   keys: string[],
   prefixes: readonly string[],
   breakpointKeys: readonly string[],
+  modifierPart = "",
 ): string | undefined => {
   if (prefixes.length === 0 || keys.length === 0) {
     return undefined;
@@ -168,7 +170,7 @@ const buildCategoryLine = (
       ? "{" + breakpointKeys.map((bp) => bp + ":").join(",") + ",}"
       : "";
 
-  return `@source inline("${bpPart}${prefixPart}${keysPart}");`;
+  return `@source inline("${bpPart}${prefixPart}${keysPart}${modifierPart}");`;
 };
 
 /**
@@ -246,8 +248,11 @@ const buildStateLines = (
  * `options.coverage` trims the per-category lines: `false` drops a
  * category's lines (state lines included), `prefixes` keeps only the listed
  * class prefixes and `keys: "aliased"` only the alias holders (keys whose
- * value is a `$` alias; the primitives they point to need no class). Absent
- * (or `true`) leaves the output unchanged.
+ * value is a `$` alias; the primitives they point to need no class).
+ * `opacities` (colors only) adds one line right after the category line:
+ * the same prefixes and keys with a `/{10,20}` modifier group, never
+ * crossed with the state lines. Absent (or `true`, `{}`) leaves the output
+ * unchanged.
  *
  * Each category gets its OWN line (not one giant merged directive) so a
  * single category exceeding a reasonable brace-expansion size never
@@ -272,13 +277,26 @@ export const generateSourceInline = (
     if (rule?.enabled === false) continue;
 
     const keys = resolveCategoryKeys(descriptor, theme, rule);
+    const prefixes = coveredPrefixes(descriptor, rule);
     const line = buildCategoryLine(
       descriptor,
       keys,
-      coveredPrefixes(descriptor, rule),
+      prefixes,
       options.breakpoints,
     );
     if (line) lines.push(line);
+
+    const opacities = rule?.opacities ?? [];
+    if (opacities.length > 0) {
+      const opacityLine = buildCategoryLine(
+        descriptor,
+        keys,
+        prefixes,
+        options.breakpoints,
+        `/{${opacities.join(",")}}`,
+      );
+      if (opacityLine) lines.push(opacityLine);
+    }
     lines.push(...buildStateLines(descriptor, theme, rule));
   }
 

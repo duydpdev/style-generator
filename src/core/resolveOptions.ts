@@ -19,6 +19,8 @@ export interface ResolvedCoverageRule {
   prefixes: readonly string[] | undefined;
   /** `"aliased"` keeps only the keys whose value is a `$<key>` alias. */
   keys: "aliased" | "all";
+  /** Opacity-modifier steps to cover (`/10`), ascending; `[]`: none. */
+  opacities: readonly number[];
 }
 
 /**
@@ -77,8 +79,13 @@ const resolveCoverage = (
   for (const [key, rule] of Object.entries(coverage ?? {})) {
     resolved[key] =
       typeof rule === "boolean"
-        ? { enabled: rule, prefixes: undefined, keys: "all" }
-        : { enabled: true, prefixes: rule.prefixes, keys: rule.keys ?? "all" };
+        ? { enabled: rule, prefixes: undefined, keys: "all", opacities: [] }
+        : {
+            enabled: true,
+            prefixes: rule.prefixes,
+            keys: rule.keys ?? "all",
+            opacities: [...(rule.opacities ?? [])].sort((a, b) => a - b),
+          };
   }
   return resolved;
 };

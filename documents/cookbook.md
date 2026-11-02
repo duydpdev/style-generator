@@ -64,4 +64,4 @@ Class names built at runtime (a template literal such as `` `bg-${variant}` ``) 
 
 ## Trim the generated `@source inline` lines
 
-`coverage` drops a category's `@source inline` lines or keeps only some prefixes or the aliased keys; see [`coverage`](./reference/options.md#coverage-trim-the-source-inline-lines-per-category).
+`coverage` drops a category's `@source inline` lines or keeps only some prefixes or the aliased keys, and `coverage.colors.opacities` adds the `bg-primary/10`-style classes; see [`coverage`](./reference/options.md#coverage-trim-the-source-inline-lines-per-category).

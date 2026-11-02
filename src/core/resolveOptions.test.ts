@@ -5,7 +5,7 @@ import {
   DEFAULT_SPACING_PROPERTIES,
 } from "../shared/defaultOption";
 
-import { defaultScreens } from "./Options";
+import { defaultScreens, type StyleGeneratorOptions } from "./Options";
 import { resolveOptions } from "./resolveOptions";
 
 describe("resolveOptions", () => {
@@ -53,6 +53,36 @@ describe("resolveOptions", () => {
       resolveOptions({ resetTailwindDefaults: ["shadow", "colors"] })
         .resetTailwindDefaults,
     ).toEqual(["shadow", "colors"]);
+  });
+
+  it("resolves coverage opacities ascending, and [] when a rule has none", () => {
+    const options: StyleGeneratorOptions = {
+      coverage: { colors: { opacities: [20, 5, 10] } },
+    };
+    const snapshot = structuredClone(options);
+    expect(resolveOptions(options).coverage.colors).toEqual({
+      enabled: true,
+      prefixes: undefined,
+      keys: "all",
+      opacities: [5, 10, 20],
+    });
+    expect(options).toEqual(snapshot);
+    expect(
+      resolveOptions({ coverage: { colors: true, shadows: {} } }).coverage,
+    ).toEqual({
+      colors: {
+        enabled: true,
+        prefixes: undefined,
+        keys: "all",
+        opacities: [],
+      },
+      shadows: {
+        enabled: true,
+        prefixes: undefined,
+        keys: "all",
+        opacities: [],
+      },
+    });
   });
 
   it("sorts breakpoints ascending by resolved width, not by declaration order", () => {

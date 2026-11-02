@@ -60,6 +60,15 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   responsive?: boolean;
   /** Interactive state suffixes this category supports (e.g. `["hover"]`). */
   states?: readonly string[];
+  /**
+   * `true` when this category's utilities take Tailwind's `/<n>` opacity
+   * modifier (`bg-primary/10` compiles to `color-mix(in oklab,
+   * var(--sg-color-primary) 10%, transparent)`); it gates
+   * `coverage.<key>.opacities`. Only color utilities do: `shadow-<key>/<n>`
+   * sets `--tw-shadow-alpha`, but the shadow colours sit inside the opaque
+   * `var(--sg-shadow-<key>)` and stay unchanged.
+   */
+  opacityModifier?: boolean;
   /** Fallback values used when the theme config omits this category. */
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];
 }

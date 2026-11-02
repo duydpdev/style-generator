@@ -266,4 +266,46 @@ describe("generateSourceInline coverage", () => {
     expect(lines).toContain('@source inline("{bg}-{brand,brand-hover}");');
     expect(lines).toContain('@source inline("hover:{bg}-{brand-hover}");');
   });
+
+  it("`opacities` adds one ascending `/{…}` line right after the category line", () => {
+    const lines = linesOf({ coverage: { colors: { opacities: [20, 10] } } });
+    expect(lines.slice(0, 3)).toEqual([
+      '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}");',
+      '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}/{10,20}");',
+      '@source inline("hover:{bg,text,border}-{primary-hover,brand-hover}");',
+    ]);
+  });
+
+  it("without the `opacities` line the output is the option-less output, byte for byte", () => {
+    const absent = generateSourceInline(theme, base);
+    const withOpacities = generateSourceInline(theme, {
+      ...base,
+      coverage: { colors: { opacities: [10] } },
+    });
+    expect(
+      withOpacities.replace(
+        '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}/{10}");\n',
+        "",
+      ),
+    ).toBe(absent);
+  });
+
+  it("`opacities` follows `prefixes` and `keys` and never crosses the state lines", () => {
+    const lines = linesOf({
+      coverage: {
+        colors: { prefixes: ["bg"], keys: "aliased", opacities: [10] },
+      },
+    });
+    expect(lines).toContain('@source inline("{bg}-{brand,brand-hover}/{10}");');
+    expect(lines).toContain('@source inline("hover:{bg}-{brand-hover}");');
+    expect(lines.filter((l) => l.includes("/{"))).toHaveLength(1);
+  });
+
+  it('`opacities` emits nothing when no key survives `keys: "aliased"`', () => {
+    const css = generateSourceInline(
+      { colors: { primary: "#fff" } },
+      { ...base, coverage: { colors: { keys: "aliased", opacities: [10] } } },
+    );
+    expect(css).not.toContain("/{");
+  });
 });

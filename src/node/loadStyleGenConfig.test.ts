@@ -281,6 +281,19 @@ describe("resolveConfig", () => {
     });
   });
 
+  it("forwards `coverage.colors.opacities` from style-gen.config.json", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ coverage: { colors: { opacities: [10, 20] } } }),
+    );
+
+    const file = readConfigFile(tmp);
+    expect(file.issues).toBeUndefined();
+    expect(toGeneratorOptions(resolveConfig({}, file)).coverage).toEqual({
+      colors: { opacities: [10, 20] },
+    });
+  });
+
   it("accepts `axes` from style-gen.config.json and forwards it to generate() options", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
@@ -330,6 +343,10 @@ describe("readConfigFile schema validation (X-04)", () => {
     [{ theme: 123 }, /^theme → /m],
     [{ breakpoints: "md" }, /^breakpoints → /m],
     [{ breakpoints: ["tablet"] }, /^breakpoints\.0 → /m],
+    [
+      { coverage: { shadows: { opacities: [10] } } },
+      /^coverage\.shadows\.opacities → /m,
+    ],
     [
       { typography: { cssVarDriven: "false" } },
       /^typography\.cssVarDriven → /m,

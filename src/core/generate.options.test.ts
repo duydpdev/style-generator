@@ -132,6 +132,33 @@ describe("generate() coverage validation", () => {
       "coverage.typography.keys",
     ],
     [{ coverage: { colors: { extra: true } } }, "coverage.colors"],
+    [{ coverage: { colors: { opacities: [] } } }, "coverage.colors.opacities"],
+    [
+      { coverage: { colors: { opacities: [0] } } },
+      "coverage.colors.opacities.0",
+    ],
+    [
+      { coverage: { colors: { opacities: [10, 101] } } },
+      "coverage.colors.opacities.1",
+    ],
+    [
+      { coverage: { colors: { opacities: [10, 20, 10] } } },
+      "coverage.colors.opacities",
+    ],
+    [{ coverage: { colors: { opacities: [12.5] } } }, "coverage.colors"],
+    [{ coverage: { colors: { opacities: ["10"] } } }, "coverage.colors"],
+    [
+      { coverage: { shadows: { opacities: [10] } } },
+      "coverage.shadows.opacities",
+    ],
+    [
+      { coverage: { typography: { opacities: [10] } } },
+      "coverage.typography.opacities",
+    ],
+    [
+      { coverage: { borderWidth: { opacities: [10] } } },
+      "coverage.borderWidth.opacities",
+    ],
   ])("rejects %o with an issue at %s", (options, path) => {
     expect(issuesOf(options).map((i) => i.path)).toContain(path);
   });
@@ -146,6 +173,19 @@ describe("generate() coverage validation", () => {
           borderWidth: { keys: "aliased" },
           typography: { keys: "all" },
           fontFamily: {},
+        },
+      }),
+    ).toEqual([]);
+  });
+
+  it("accepts `opacities` on colors, alone or with prefixes and keys", () => {
+    expect(
+      issuesOf({ coverage: { colors: { opacities: [1, 10, 100] } } }),
+    ).toEqual([]);
+    expect(
+      issuesOf({
+        coverage: {
+          colors: { prefixes: ["bg"], keys: "aliased", opacities: [10] },
         },
       }),
     ).toEqual([]);
@@ -174,6 +214,12 @@ describe("generate() coverage validation", () => {
     );
     expect(text({ coverage: { colors: "off" } })).toMatch(
       /^coverage\.colors → Expected a boolean or \{ prefixes/m,
+    );
+    expect(text({ coverage: { shadows: { opacities: [10] } } })).toMatch(
+      /^coverage\.shadows\.opacities → "shadows" utilities take no `\/<n>` opacity modifier \(only color utilities do\)$/m,
+    );
+    expect(text({ coverage: { colors: { opacities: [10, 10] } } })).toMatch(
+      /^coverage\.colors\.opacities → Opacity steps must be unique$/m,
     );
   });
 });

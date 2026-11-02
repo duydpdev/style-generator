@@ -17,6 +17,7 @@ export const colorsCategory = {
   cssVarPrefix: "sg-color",
   themeNamespace: "--color-",
   classPrefixes: ["bg", "text", "border"],
+  opacityModifier: true,
   /**
    * Sibling state tokens: a flat key `t` + Pascal-cased state (e.g.
    * `primary` + `primaryHover`/`primaryActive`) opts a token into the
@@ -145,6 +146,16 @@ export type CategoryKey = BuiltInCategory["key"];
 export type CssVarCategoryKey = Extract<
   BuiltInCategory,
   { cssVarPrefix: string }
+>["key"];
+
+/**
+ * Keys of the categories whose utilities take Tailwind's `/<n>` opacity
+ * modifier (`opacityModifier` set): only they accept
+ * `coverage.<key>.opacities`.
+ */
+export type OpacityCategoryKey = Extract<
+  BuiltInCategory,
+  { opacityModifier: true }
 >["key"];
 
 /**

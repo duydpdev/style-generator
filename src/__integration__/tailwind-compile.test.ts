@@ -138,6 +138,27 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     }
   });
 
+  it("coverage.colors.opacities builds the /<n> color classes via @source inline (build([]))", async () => {
+    const { css: themeCss } = generate(theme, {
+      coverage: { colors: { opacities: [10] } },
+    });
+    const compiled = await compileFixtureCss(themeCss, []);
+
+    expect(compiled).toContain(".bg-primary\\/10");
+    expect(compiled).toContain(".text-primary\\/10");
+    expect(compiled).toContain(".border-primary\\/10");
+    expect(
+      declsOf(compiled, ".bg-primary\\/10").get("background-color"),
+    ).toContain("var(--sg-color-primary) 10%");
+    // Not crossed with the state lines.
+    expect(compiled).not.toContain(".hover\\:bg-primary-hover\\/10");
+  });
+
+  it("negative control: without opacities, build([]) emits no /<n> color class", async () => {
+    const compiled = await compileFixtureCss(generate(theme).css, []);
+    expect(compiled).not.toContain(".bg-primary\\/10");
+  });
+
   // Tripwire: `--border-width-*` is an undocumented Tailwind theme namespace
   // (see `borderWidthCategory`). If a Tailwind release stops resolving
   // border widths from it, this fails instead of the classes silently

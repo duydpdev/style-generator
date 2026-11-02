@@ -72,12 +72,17 @@ const CoverageCategoryKey = z.enum(
   ],
 );
 
+/** One opacity-modifier step (`bg-primary/10` → `10`): an integer 1–100. */
+const OpacityStep = z.number().int().min(1).max(100);
+
 /**
  * Per-category `@source inline` coverage. A bare boolean switches the
  * category on/off; the object form narrows it to some class prefixes
  * and/or to the alias holders. Every `prefixes` entry must be a real class
  * prefix of that category (`bg`, `rounded-t`, …): a typo would otherwise
- * silently drop the category's coverage.
+ * silently drop the category's coverage. `opacities` (colors only, distinct
+ * integers 1–100) adds the `/<n>` opacity-modifier classes of the covered
+ * prefixes and keys.
  */
 const CoverageSchema = z
   .partialRecord(
@@ -88,11 +93,19 @@ const CoverageSchema = z
         z.strictObject({
           prefixes: z.array(z.string()).min(1).optional(),
           keys: z.enum(["aliased", "all"]).optional(),
+          opacities: z
+            .array(OpacityStep)
+            .min(1)
+            .refine(
+              (steps) => new Set(steps).size === steps.length,
+              "Opacity steps must be unique",
+            )
+            .optional(),
         }),
       ],
       {
         error:
-          'Expected a boolean or { prefixes?: string[] (non-empty), keys?: "aliased" | "all" }',
+          'Expected a boolean or { prefixes?: string[] (non-empty), keys?: "aliased" | "all", opacities?: integers 1–100 (non-empty, colors only) }',
       },
     ),
   )
@@ -106,6 +119,13 @@ const CoverageSchema = z
           code: "custom",
           path: [descriptor.key, "keys"],
           message: `"${descriptor.key}" has no \`$\` aliases, so \`keys: "aliased"\` would drop all its coverage; use \`false\` to drop it deliberately`,
+        });
+      }
+      if (rule.opacities && !("opacityModifier" in descriptor)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [descriptor.key, "opacities"],
+          message: `"${descriptor.key}" utilities take no \`/<n>\` opacity modifier (only color utilities do)`,
         });
       }
       if (!rule.prefixes) continue;

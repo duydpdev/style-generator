@@ -1,6 +1,7 @@
 import type {
   BuiltInCategory,
   CategoryKey,
+  OpacityCategoryKey,
   RegistryPrefix,
 } from "../features/registry/builtInCategories";
 
@@ -35,8 +36,9 @@ export type SpacingPropertyMap = Readonly<Record<string, readonly string[]>>;
 
 /**
  * How much of one token category's `@source inline` coverage to emit.
- * `coverage` only trims the `@source inline(...)` safelist lines
- * (class-name coverage for classes Tailwind cannot see in source files); it
+ * `coverage` only changes the `@source inline(...)` lines (class-name
+ * coverage for classes Tailwind cannot see in source files): it trims
+ * them, and `coverage.colors.opacities` adds one opacity-modifier line. It
  * never changes the `@theme inline` mapping, the `@utility` blocks or the
  * typed `DesignTokens`.
  * @template P Class prefixes the category accepts
@@ -67,15 +69,35 @@ type CategoryPrefix<K extends CategoryKey> = Exclude<
 >;
 
 /**
+ * The opacity-modifier part of a `coverage` rule, accepted only by the
+ * categories whose utilities take Tailwind's `/<n>` modifier (`colors`).
+ */
+interface OpacityCoverage {
+  /**
+   * Also cover `<prefix>-<key>/<n>` (`bg-primary/10`) for every kept
+   * prefix and key and each listed step, in one extra `@source inline`
+   * line after the category's own line. Distinct integers 1–100
+   * (non-empty), emitted ascending. Not crossed with the state lines:
+   * `hover:bg-primary-hover/10` still needs `extraSources` or a literal
+   * class. Every step adds `prefixes × keys` classes to the built CSS.
+   */
+  opacities?: readonly [number, ...number[]];
+}
+
+/**
  * The `coverage` rule of category `K`: its own prefixes only. A category
  * without class prefixes or `$` aliases (`typography`) takes neither
- * `prefixes` nor `keys: "aliased"` — `generate()` rejects both.
+ * `prefixes` nor `keys: "aliased"`, and only an opacity-modifier category
+ * (`colors`) takes `opacities` — `generate()` rejects the rest.
  */
 type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
   never,
 ]
-  ? { prefixes?: never; keys?: "all" }
-  : CoverageRule<CategoryPrefix<K>>;
+  ? { prefixes?: never; keys?: "all"; opacities?: never }
+  : CoverageRule<CategoryPrefix<K>> &
+      ([K] extends [OpacityCategoryKey]
+        ? OpacityCoverage
+        : { opacities?: never });
 
 /** Options of `generate()` and `createDesignTokens()`; `defineOptions`, `style-gen.config.json` and the Vite/Next plugins take the same shape. Unknown keys are rejected. */
 export interface StyleGeneratorOptions {
@@ -148,16 +170,21 @@ export interface StyleGeneratorOptions {
   extraSources?: readonly string[];
 
   /**
-   * Trim the `@source inline(...)` coverage per token category. Absent, or
-   * `true`, keeps today's output (one line per category covering every key
-   * and prefix, plus the colors state lines). `false` omits the category's
-   * lines (and its state lines); a {@link CoverageRule} keeps only the
-   * listed `prefixes` and/or the alias holders (`keys: "aliased"`). Typed
+   * Trim or extend the `@source inline(...)` coverage per token category.
+   * Absent, `true` or `{}` keeps today's output (one line per category
+   * covering every key and prefix, plus the colors state lines). `false`
+   * omits the category's lines (and its state lines); a {@link CoverageRule}
+   * keeps only the listed `prefixes` and/or the alias holders
+   * (`keys: "aliased"`). `colors` also takes `opacities` (e.g. `[10, 20]`):
+   * one extra line covering `<prefix>-<key>/<n>` for the kept prefixes and
+   * keys (`bg-primary/10`), never crossed with the state lines. Typed
    * tokens and the `@theme`/`@utility` CSS are unaffected.
    *
    * Validated by `generate()`: keys must be built-in category names, every
-   * `prefixes` entry a class prefix of that category, and `keys: "aliased"`
-   * is rejected for `typography` (it has no `$` aliases).
+   * `prefixes` entry a class prefix of that category, `keys: "aliased"`
+   * is rejected for `typography` (it has no `$` aliases), and `opacities`
+   * must be a non-empty list of distinct integers 1–100, accepted only for
+   * `colors`.
    */
   coverage?: { [K in CategoryKey]?: boolean | CategoryCoverageRule<K> };
 

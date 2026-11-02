@@ -31,12 +31,13 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
     >().toEqualTypeOf<CategoryKey>();
   });
 
-  it("a coverage entry is a boolean or a { prefixes, keys } rule", () => {
+  it("a coverage entry is a boolean or a { prefixes, keys, opacities } rule", () => {
     expectTypeOf<NonNullable<In["coverage"]>["colors"]>().toEqualTypeOf<
       | boolean
       | {
           prefixes?: string[] | undefined;
           keys?: "aliased" | "all" | undefined;
+          opacities?: number[] | undefined;
         }
       | undefined
     >();
@@ -126,5 +127,31 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
       colors: { prefixes: ["bg", "text"] };
     }>().toExtend<Coverage>();
     expectTypeOf<{ colors: { keys: "aliased" } }>().toExtend<Coverage>();
+  });
+
+  it("coverage opacities are typed for colors only, as a non-empty number list", () => {
+    type Coverage = NonNullable<StyleGeneratorOptions["coverage"]>;
+
+    expectTypeOf<{ colors: { opacities: [10, 20] } }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { opacities: readonly [10] };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { prefixes: ["bg"]; keys: "aliased"; opacities: [10] };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{ colors: { opacities: [] } }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { opacities: ["10"] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{ shadows: { opacities: [10] } }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      shadows: { keys: "all"; opacities: [10] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      typography: { opacities: [10] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      borderWidth: { opacities: [10] };
+    }>().not.toExtend<Coverage>();
   });
 });

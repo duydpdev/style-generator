@@ -98,6 +98,7 @@ export function TerminalTypewriter({
               data-part="line"
               data-line-state={revealed ? "shown" : "pending"}
               aria-hidden={!revealed}
+              // eslint-disable-next-line no-restricted-syntax -- visibility follows each line's reveal state; data-line-state is a test hook CSS must not key on
               style={{ visibility: revealed ? "visible" : "hidden" }}
               dangerouslySetInnerHTML={{ __html: l.html }}
             />

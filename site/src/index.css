@@ -17,6 +17,4 @@
 @import "./styles/docs.css";
 @import "./styles/examples.css";
 
-/* @duydpdev/ui-react ships TypeScript source; Tailwind scans only this app by default. */
-@source "../../packages/ui-react/src";
 @source "../../examples/design-system/src/recipes/factories";

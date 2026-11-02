@@ -1,7 +1,9 @@
 /*
  * Bespoke styles of the demo sections, keyed by data-part (app code has
- * no className). Each rule holds only classes no component prop covers;
- * spacing is always a prop. `@layer utilities` keeps the old cascade: the
+ * no className and no inline styles). A rule holds what no component prop
+ * covers: theme-token utilities through @apply first, plain
+ * declarations only where no token exists (each says why). Spacing is
+ * always a prop. `@layer utilities` keeps the old cascade: the
  * unlayered style-guide.css still wins, and these rules come after the
  * component utilities.
  */
@@ -24,6 +26,9 @@
   [data-part~="display-contents"] {
     @apply contents;
   }
+  [data-part~="container"] {
+    @apply mx-auto w-full;
+  }
   [data-part~="dashed"] {
     @apply border-dashed;
   }
@@ -43,7 +48,7 @@
     @apply leading-tight;
   }
   [data-part~="hero-title"] {
-    @apply max-w-[14ch] tracking-[-0.025em] text-[clamp(56px,8vw,104px)] leading-[0.94];
+    @apply max-w-[14ch] tracking-[-0.025em] text-[clamp(56px,8vw,104px)] leading-[0.94] text-foreground;
   }
   [data-part~="hero-lede"] {
     @apply max-w-[56ch] text-[18px] leading-[1.55];
@@ -52,46 +57,43 @@
     @apply items-baseline;
   }
   [data-part~="section-title"] {
-    @apply tracking-[-0.02em] text-[40px] leading-tight;
+    @apply tracking-[-0.02em] text-[40px] leading-tight text-foreground;
   }
   [data-part~="section-desc"] {
-    @apply max-w-[44ch] text-[14px];
+    @apply max-w-[44ch] text-[14px] text-muted;
   }
   [data-part~="color-card"] {
     @apply overflow-hidden;
   }
   [data-part~="typo-grid"] {
-    @apply items-baseline md:grid-cols-[220px_1fr];
+    @apply items-baseline;
   }
   [data-part~="typo-display"] {
-    @apply text-[clamp(40px,6vw,80px)] tracking-[-0.025em] leading-none;
+    @apply text-[clamp(40px,6vw,80px)] tracking-[-0.025em] leading-none text-foreground;
   }
   [data-part~="typo-heading"] {
-    @apply text-[32px] font-bold tracking-[-0.02em] leading-tight;
+    @apply text-[32px] font-bold tracking-[-0.02em] leading-tight text-foreground;
   }
   [data-part~="typo-body"] {
-    @apply text-[16px] font-medium leading-relaxed;
+    @apply text-[16px] font-medium leading-relaxed text-foreground;
   }
   [data-part~="typo-mono"] {
-    @apply text-[13px];
-  }
-  [data-part~="padding-row"] {
-    @apply grid-cols-[80px_1fr_80px];
+    @apply text-[13px] text-muted;
   }
   [data-part~="button-matrix"] {
-    @apply min-w-[520px] grid-cols-[72px_repeat(4,minmax(0,1fr))] md:min-w-0 md:grid-cols-[120px_repeat(4,minmax(0,1fr))];
+    @apply min-w-[520px] md:min-w-0;
   }
   [data-part~="footer-quote"] {
-    @apply max-w-[38ch] text-[28px] leading-tight;
+    @apply max-w-[38ch] text-[28px] leading-tight text-foreground;
   }
   [data-part~="drawer-title"] {
-    @apply text-[22px];
+    @apply text-[22px] text-foreground;
   }
   [data-part~="tweak-opt-name"] {
     @apply text-[12px] font-medium;
   }
   [data-part~="tweak-opt-meta"] {
-    @apply text-[9.5px];
+    @apply text-[9.5px] text-muted;
   }
   [data-part~="no-shrink"] {
     @apply shrink-0;
@@ -104,5 +106,48 @@
   }
   [data-part~="scroll-x"] {
     @apply overflow-x-auto;
+  }
+  [data-part~="fg"] {
+    @apply text-foreground;
+  }
+  [data-part~="tone-55"] {
+    @apply opacity-55;
+  }
+  [data-part~="tone-75"] {
+    @apply opacity-75;
+  }
+  [data-part~="dot-ring"] {
+    @apply ring-1 ring-foreground/35;
+  }
+  [data-part~="radius-swatch"] {
+    @apply border-dashed border-primary/40 bg-primary/8;
+  }
+  /* No token: no typography token is 22px, and line-height 1 is a one-off. */
+  [data-part~="voice-sample"] {
+    font-size: 22px;
+    line-height: 1;
+  }
+  [data-part~="voice-editorial"] {
+    @apply font-serif italic;
+  }
+  /* No token: the Voice tweak's preview fonts are not theme fonts. */
+  [data-part~="voice-industrial"] {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 600;
+  }
+  [data-part~="voice-humanist"] {
+    font-family: "DM Serif Display", serif;
+  }
+  /* No token: fixed preview radii; the geometry tweak rewrites
+     --sg-radius-* itself (style-guide.css), so rounded="md" would show
+     the active geometry, not this option. */
+  [data-part~="shape-sharp"] {
+    border-radius: 0;
+  }
+  [data-part~="shape-soft"] {
+    border-radius: 10px;
+  }
+  [data-part~="shape-pillowy"] {
+    border-radius: 20px;
   }
 }

@@ -38,28 +38,16 @@ export function CompareSection() {
         <table data-part="compare">
           <thead>
             <tr>
-              <Box as="th" px={5} py={4} style={{ width: "26%" }}>
+              <Box as="th" px={5} py={4} width="26%">
                 Capability
               </Box>
-              <Box
-                as="th"
-                data-part="col-tw"
-                px={5}
-                py={4}
-                style={{ width: "37%" }}
-              >
+              <Box as="th" data-part="col-tw" px={5} py={4} width="37%">
                 Bare Tailwind
                 <Box as="small" mt={0.75}>
                   v4
                 </Box>
               </Box>
-              <Box
-                as="th"
-                data-part="col-us"
-                px={5}
-                py={4}
-                style={{ width: "37%" }}
-              >
+              <Box as="th" data-part="col-us" px={5} py={4} width="37%">
                 + style-generator
                 <Box as="small" mt={0.75}>
                   v{VERSION}

@@ -14,19 +14,12 @@ export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
       <Box as="span" mb={7} data-part="sg-eyebrow">
         A token-driven design system
       </Box>
-      <Box
-        as="h1"
-        mb={7}
-        data-part="sg-font-display sg-hero-title hero-title"
-        style={{ color: "var(--color-foreground)" }}
-      >
+      <Box as="h1" mb={7} data-part="sg-font-display sg-hero-title hero-title">
         Tokens, <em>composed</em> with intention.
       </Box>
       <Text color="muted" mb={10} data-part="hero-lede">
         A small, opinionated set of design primitives —{" "}
-        <b style={{ color: "var(--color-foreground)", fontWeight: 500 }}>
-          colors, type, spacing, radii, shadows
-        </b>{" "}
+        <b data-part="fg text-medium">colors, type, spacing, radii, shadows</b>{" "}
         — that compile down to Tailwind utilities and inline CSS variables. Pick
         a palette below to remix every component on this page in real time.
       </Text>
@@ -49,12 +42,9 @@ export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
                   <Box
                     as="span"
                     key={c}
-                    data-part="sg-palette-dot"
-                    style={{
-                      background: c,
-                      boxShadow:
-                        "0 0 0 1px color-mix(in srgb, var(--color-foreground) 35%, transparent)",
-                    }}
+                    data-part="sg-palette-dot dot-ring"
+                    // eslint-disable-next-line no-restricted-syntax -- the dot colour is palette data (a hex per palette), not a theme token
+                    style={{ background: c }}
                   />
                 ))}
               </Flex>

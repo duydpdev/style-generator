@@ -15,20 +15,11 @@ export const SectionHead = ({ num, title, desc }: SectionHeadProps) => {
         <Box as="span" data-part="sg-section-num">
           {num}
         </Box>
-        <Box
-          as="h2"
-          mt={2}
-          data-part="sg-font-display section-title"
-          style={{ color: "var(--color-foreground)" }}
-        >
+        <Box as="h2" mt={2} data-part="sg-font-display section-title">
           {title}
         </Box>
       </Box>
-      <Box
-        as="p"
-        data-part="section-desc"
-        style={{ color: "var(--color-muted)" }}
-      >
+      <Box as="p" data-part="section-desc">
         {desc}
       </Box>
     </Flex>

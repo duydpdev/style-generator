@@ -38,7 +38,7 @@ export const Root = () => (
 );
 ```
 
-A complete, tested version (`cn`, `axisAttributes`, eight headless recipes, shared CSS) lives in [`examples/design-system`](../../examples/design-system/README.md). [Components](../components.md) shows how `ui-react` builds components on these recipes; [`guide.md`](../guide.md#build-components) walks through it step by step.
+A complete, tested version (`cn`, `axisAttributes`, the headless recipes of the six sample components, shared CSS) lives in [`examples/design-system`](../../examples/design-system/README.md). [Components](../components.md) shows how the sample components of `examples/react-v4` and `examples/nuxt-v4` wrap these recipes; [`guide.md`](../guide.md#build-components) walks through it step by step.
 
 ## `createTailwindMergeExtension`, `TailwindMergeExtension`, `TailwindMergeTokens`
 

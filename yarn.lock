@@ -905,18 +905,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-react%40workspace%3Apackages%2Fui-react":
-  version: 0.0.0-use.local
-  resolution: "@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-react%40workspace%3Apackages%2Fui-react"
-  languageName: node
-  linkType: soft
-
-"@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-vue%40workspace%3Apackages%2Fui-vue":
-  version: 0.0.0-use.local
-  resolution: "@duydpdev/style-generator@link:../..::locator=%40duydpdev%2Fui-vue%40workspace%3Apackages%2Fui-vue"
-  languageName: node
-  linkType: soft
-
 "@duydpdev/style-generator@link:../..::locator=design-system-example%40workspace%3Aexamples%2Fdesign-system":
   version: 0.0.0-use.local
   resolution: "@duydpdev/style-generator@link:../..::locator=design-system-example%40workspace%3Aexamples%2Fdesign-system"
@@ -1003,40 +991,6 @@ __metadata:
       optional: true
   bin:
     style-gen: dist/cli/index.mjs
-  languageName: unknown
-  linkType: soft
-
-"@duydpdev/ui-react@workspace:*, @duydpdev/ui-react@workspace:packages/ui-react":
-  version: 0.0.0-use.local
-  resolution: "@duydpdev/ui-react@workspace:packages/ui-react"
-  dependencies:
-    "@duydpdev/style-generator": "link:../.."
-    "@types/node": "npm:^25.3.3"
-    "@types/react": "npm:^19.0.0"
-    "@types/react-dom": "npm:^19.0.0"
-    clsx: "npm:^2.1.1"
-    design-system-example: "workspace:*"
-    react: "npm:^19.0.0"
-    react-dom: "npm:^19.0.0"
-    typescript: "npm:^5.9.0"
-    vitest: "npm:^4.1.11"
-  peerDependencies:
-    react: ^19.0.0
-  languageName: unknown
-  linkType: soft
-
-"@duydpdev/ui-vue@workspace:*, @duydpdev/ui-vue@workspace:packages/ui-vue":
-  version: 0.0.0-use.local
-  resolution: "@duydpdev/ui-vue@workspace:packages/ui-vue"
-  dependencies:
-    "@duydpdev/style-generator": "link:../.."
-    "@types/node": "npm:^25.3.3"
-    design-system-example: "workspace:*"
-    typescript: "npm:^5.9.0"
-    vitest: "npm:^4.1.11"
-    vue: "npm:^3.5.44"
-  peerDependencies:
-    vue: ^3.5.0
   languageName: unknown
   linkType: soft
 
@@ -11920,7 +11874,6 @@ __metadata:
   resolution: "nuxt-v4-example@workspace:examples/nuxt-v4"
   dependencies:
     "@duydpdev/style-generator": "link:../.."
-    "@duydpdev/ui-vue": "workspace:*"
     "@tailwindcss/vite": "npm:^4.2.0"
     design-system-example: "workspace:*"
     nuxt: "npm:~4.4.8"
@@ -13530,12 +13483,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-v4-example@workspace:examples/react-v4":
+"react-v4-example@workspace:*, react-v4-example@workspace:examples/react-v4":
   version: 0.0.0-use.local
   resolution: "react-v4-example@workspace:examples/react-v4"
   dependencies:
     "@duydpdev/style-generator": "link:../.."
-    "@duydpdev/ui-react": "workspace:*"
     "@tailwindcss/vite": "npm:^4.2.0"
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"
@@ -14583,7 +14535,6 @@ __metadata:
   resolution: "site@workspace:site"
   dependencies:
     "@duydpdev/style-generator": "link:.."
-    "@duydpdev/ui-react": "workspace:*"
     "@tailwindcss/vite": "npm:^4.2.0"
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"
@@ -14593,6 +14544,7 @@ __metadata:
     react-dom: "npm:^19.0.0"
     react-markdown: "npm:^9.0.1"
     react-router-dom: "npm:^7.1.1"
+    react-v4-example: "workspace:*"
     rehype-highlight: "npm:^7.0.1"
     rehype-slug: "npm:^6.0.0"
     remark-gfm: "npm:^4.0.0"

@@ -19,12 +19,7 @@ export const TweakGroup = <T extends string>({
   onPick,
   first,
 }: TweakGroupProps<T>) => (
-  <Box
-    pt={4}
-    mt={first ? 0 : 4}
-    borderT="thin"
-    style={{ borderColor: "var(--c-line)" }}
-  >
+  <Box pt={4} mt={first ? 0 : 4} borderT="thin" borderColor="line">
     <Flex mb={2} align="center" justify="between">
       <Text type="text12Mono" color="muted" data-part="caps-wide">
         {label}
@@ -49,11 +44,7 @@ export const TweakGroup = <T extends string>({
           <Box as="span" data-part="tweak-opt-name">
             {o.name}
           </Box>
-          <Box
-            as="span"
-            data-part="sg-font-mono tweak-opt-meta"
-            style={{ color: "var(--color-muted)" }}
-          >
+          <Box as="span" data-part="sg-font-mono tweak-opt-meta">
             {o.meta}
           </Box>
         </Box>

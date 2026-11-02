@@ -10,7 +10,7 @@ Index of all documentation for `@duydpdev/style-generator`. API, option and CLI 
 | [`guide.md`](./guide.md)                 | Step-by-step integration guide, links to `reference/` for the tables                  |
 | [`testing.md`](./testing.md)             | The test layers, why they exist, where they run                                       |
 | [`deploy.md`](./deploy.md)               | Git flow (features branch from `main`), CI, release, GitHub Packages publishing       |
-| [`components.md`](./components.md)       | Using and writing `ui-react` components; recipes for component authors                |
+| [`components.md`](./components.md)       | The six sample components (examples, not an API) and how to add one                   |
 | [`cookbook.md`](./cookbook.md)           | Task-oriented recipes                                                                 |
 | [`getting-started/`](./getting-started/) | Getting started for React + Vite, Next.js, Nuxt + Vue; code embedded from `examples/` |
 | [`reference/`](./reference/)             | One page per subpath plus `cli`, `options` and `theme`                                |

@@ -10,7 +10,6 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "site/**"
-      - "packages/**"
       - "examples/**"
       - "e2e-site/**"
       - "src/**"

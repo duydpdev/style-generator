@@ -1,4 +1,4 @@
-import { Box, Container, Flex } from "../ui";
+import { Box, Flex } from "../ui";
 
 import { Lock } from "./icon";
 
@@ -33,8 +33,9 @@ export function FrameTitlebar({ pathLabel, meta }: Readonly<Props>) {
           />
         ))}
       </Flex>
-      <Container
-        data-part="url-pill"
+      <Flex
+        data-part="url-pill container"
+        align="center"
         rounded="pill"
         backgroundColor="bg"
         height={24}
@@ -50,7 +51,7 @@ export function FrameTitlebar({ pathLabel, meta }: Readonly<Props>) {
         <Box as="span" data-part="url-path">
           {pathLabel}
         </Box>
-      </Container>
+      </Flex>
       <Box data-part="frame-meta">{meta}</Box>
     </Flex>
   );

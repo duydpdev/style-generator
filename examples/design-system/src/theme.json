@@ -12,7 +12,8 @@
     "background": "#FAF7F2",
     "surface": "#FFFFFF",
     "foreground": "#0F1530",
-    "muted": "#6B6D7A"
+    "muted": "#6B6D7A",
+    "line": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)"
   },
   "typography": {
     "text12Mono": {

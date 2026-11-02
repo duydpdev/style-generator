@@ -116,21 +116,13 @@ jobs:
         run: yarn check:doc-exports
 
       - name: Typecheck examples
-        # The examples, the site, packages/ui-react and packages/ui-vue consume the built library through `link:../..`.
-        run: yarn workspaces foreach -A --include '*-example' --include '@duydpdev/ui-react' --include '@duydpdev/ui-vue' --include site run typecheck
+        # The examples and the site consume the built library through `link:../..`.
+        run: yarn workspaces foreach -A --include '*-example' --include site run typecheck
 
       - name: Test examples (design-system DX)
         # Compiles the recipes against a mutated theme.json and expects the
         # error in src/recipes/button.ts; needs dist/*.d.ts from the build.
         run: yarn workspace design-system-example test
-
-      - name: Test ui-react (unit, types, recipe names, Tailwind coverage)
-        # Own vitest runner (its tsconfig has jsx); needs dist/ from the build above.
-        run: yarn workspace @duydpdev/ui-react test
-
-      - name: Test ui-vue (SSR render, types, names)
-        # Own vitest runner (root vitest excludes packages/**); needs dist/.
-        run: yarn workspace @duydpdev/ui-vue test
 
       - name: Build examples
         # react-v4 is already built by the site build above.

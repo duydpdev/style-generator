@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
 
-import { Box, Container, Flex, Text } from "../ui";
+import { Box, Flex, Text } from "../ui";
 
 import { TopbarActions } from "./topbar-actions";
 import { type ActiveRoute, TopbarNav } from "./topbar-nav";
@@ -78,7 +78,7 @@ export function Topbar({
 
   return (
     <Box as="header" data-part="topbar" position="sticky" ref={headerRef}>
-      <Container maxWidth={PAGE_MAX_WIDTH}>
+      <Box data-part="container" maxWidth={PAGE_MAX_WIDTH}>
         <Flex
           data-part="topbar-inner"
           align="center"
@@ -125,7 +125,7 @@ export function Topbar({
             }}
           />
         </Flex>
-      </Container>
+      </Box>
     </Box>
   );
 }

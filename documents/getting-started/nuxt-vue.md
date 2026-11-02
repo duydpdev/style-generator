@@ -69,9 +69,9 @@ export default defineNuxtConfig({
 });
 ```
 
-## Import the CSS and scan the components
+## Import the CSS
 
-Import the generated file next to Tailwind. Tailwind only scans the app directory, so the `@source` lines point it at the design system and the component package, which hold the class names.
+Import the generated file next to Tailwind. Tailwind only scans the app directory, so the `@source` line points it at the design system, whose recipes hold the class names; the components in `app/ui/` are inside the app and scanned by default.
 
 <!-- embed: examples/nuxt-v4/app/assets/css/globals.css#css-entry -->
 
@@ -81,45 +81,77 @@ Import the generated file next to Tailwind. Tailwind only scans the app director
 @import "design-system-example/styles/palettes.css";
 @import "design-system-example/styles/style-guide.css";
 
-/* Tailwind only scans this app by default; recipes live in the design system, components in packages/ui-vue. */
+/* Tailwind only scans this app by default (app/ui included); the recipes live in the design system. */
 @source "../../../../design-system/src";
-@source "../../../../../packages/ui-vue/src";
 ```
 
-## Create the components once
+## Use a component file
 
-`@duydpdev/ui-react` and `@duydpdev/ui-vue` are example packages inside this repository (`packages/ui-react`, `packages/ui-vue`). They are not published: copy the package folder into your project instead of installing it. A package with the same name from another registry is not ours.
+Each of the six sample components is one single-file component in `app/ui/` (`<script setup lang="ts">` with typed `defineProps`/`defineSlots`, and `defineEmits` on `Button`). They are example code, not an API: copy the folder (see [Components](../components.md)). Pages import the file they render explicitly, for example `import Button from "~/ui/Button.vue"`:
 
-`createUi(tokens, presets)` takes the typed tokens and the recipe presets; every role in `presets` is optional.
+<!-- embed: examples/nuxt-v4/app/ui/Button.vue -->
 
-<!-- embed: examples/nuxt-v4/app/ui.ts -->
-
-```ts
-import { createUi } from "@duydpdev/ui-vue";
-import { presets, tokens } from "design-system-example";
+```vue
+<script setup lang="ts">
+import {
+  buttonRecipe,
+  cn,
+  splitSpacingProps,
+  tokens,
+} from "design-system-example";
+import type { BoxSpacingProps, ButtonRecipeProps } from "design-system-example";
+import { useAttrs } from "vue";
 
 /**
- * The app's components, typed by the design-system theme. nuxt-v4 renders
- * every role, so it passes the full presets. Import them explicitly from "~/ui".
+ * Button: variant, intent color and size from the design-system button
+ * recipe. Emits `click`; the `prefix`/`suffix` slots wrap icons around the
+ * label. Renders `type="button"` when `as` is `button`; a caller's `type`
+ * attribute wins. Spacing props work as in Box.
  */
-export const {
-  Box,
-  Flex,
-  Stack,
-  Grid,
-  Container,
-  Text,
-  Link,
-  List,
-  ListItem,
-  Code,
-  Button,
-  Card,
-  Badge,
-  Input,
-  Select,
-  Dialog,
-} = createUi(tokens, presets);
+export interface ButtonProps extends /* @vue-ignore */ BoxSpacingProps {
+  as?: string;
+  variant?: NonNullable<ButtonRecipeProps["variant"]>;
+  color?: NonNullable<ButtonRecipeProps["color"]>;
+  size?: NonNullable<ButtonRecipeProps["size"]>;
+}
+
+defineOptions({ inheritAttrs: false });
+const props = withDefaults(defineProps<ButtonProps>(), { as: "button" });
+const emit = defineEmits<{ click: [event: MouseEvent] }>();
+const slots = defineSlots<{
+  default?: () => unknown;
+  prefix?: () => unknown;
+  suffix?: () => unknown;
+}>();
+const attrs = useAttrs();
+
+// Root attributes: defaults, the caller's other attributes, then class and style.
+const root = () => {
+  const { spacing, rest } = splitSpacingProps(
+    attrs as BoxSpacingProps & Record<string, unknown>,
+    tokens.spacingProperties,
+  );
+  return {
+    type: props.as === "button" ? "button" : undefined,
+    "data-slot": "button",
+    ...rest,
+    class: cn(buttonRecipe(props), spacing.className),
+    ...(spacing.className === "" ? {} : { style: spacing.style }),
+  };
+};
+
+const onClick = (event: MouseEvent) => {
+  emit("click", event);
+};
+</script>
+
+<template>
+  <component :is="props.as" v-bind="root()" @click="onClick">
+    <span v-if="slots.prefix" data-icon="start"><slot name="prefix" /></span>
+    <span><slot /></span>
+    <span v-if="slots.suffix" data-icon="end"><slot name="suffix" /></span>
+  </component>
+</template>
 ```
 
 ## Use them
@@ -128,53 +160,69 @@ export const {
 
 ```vue
 <template>
-  <Container as="main" :maxWidth="960" :py="{ base: 6, md: 10 }" :px="4">
-    <Stack as="header" justify="between" wrap>
-      <Box>
-        <Text type="text12Mono" color="muted">
-          @duydpdev/style-generator · Nuxt 4
-        </Text>
-        <Text as="h1" type="display56Serif">Shared design system</Text>
-      </Box>
-      <ThemeSwitch />
-    </Stack>
+  <Stack as="main" align="center" :py="{ base: 6, md: 10 }" :px="4">
+    <Stack width="100%" :maxWidth="960" :gap="6">
+      <Flex as="header" justify="between" align="end" wrap :gap="4">
+        <Box>
+          <Text type="text12Mono" color="muted">
+            @duydpdev/style-generator · Nuxt 4
+          </Text>
+          <Text as="h1" type="display56Serif">Shared design system</Text>
+        </Box>
+        <ThemeSwitch />
+      </Flex>
 
-    <Card as="section" tone="surface" padding="lg">
-      <Stack :gap="{ base: 2, md: 4 }">
-        <Text as="h2" type="text20Semibold">Buttons</Text>
-        <Flex v-for="color in intents" :key="color" wrap :gap="2">
-          <Badge :color="color">{{ color }}</Badge>
-          <Button
-            v-for="variant in BUTTON_VARIANTS"
-            :key="variant"
-            :variant="variant"
-            :color="color"
+      <Box
+        as="section"
+        backgroundColor="surface"
+        borderColor="line"
+        border="thin"
+        rounded="lg"
+        shadow="sm"
+        :p="8"
+      >
+        <Stack :gap="{ base: 2, md: 4 }">
+          <Text as="h2" type="text20Semibold">Buttons</Text>
+          <Flex
+            v-for="color in intents"
+            :key="color"
+            wrap
+            align="center"
+            :gap="2"
           >
-            {{ variant }}
-          </Button>
-        </Flex>
-      </Stack>
-    </Card>
+            <Text as="span" type="text12Mono" :color="color">{{ color }}</Text>
+            <Button
+              v-for="variant in BUTTON_VARIANTS"
+              :key="variant"
+              :variant="variant"
+              :color="color"
+            >
+              {{ variant }}
+            </Button>
+          </Flex>
+        </Stack>
+      </Box>
 
-    <Card as="section" tone="outline" padding="md">
-      <Stack :gap="3">
-        <Text as="h2" type="text20Semibold">Inputs</Text>
-        <Input size="md" placeholder="Default input" />
-        <Input size="md" invalid placeholder="Invalid input" />
-      </Stack>
-    </Card>
-
-    <Box as="section" backgroundColor="surface" rounded="lg" shadow="md" :p="6">
-      <Button variant="outline" @click="dialogOpen = true">Open dialog</Button>
-      <Dialog :open="dialogOpen" size="sm" @close="dialogOpen = false">
-        <Text as="h2" type="text20Semibold">Dialog</Text>
-        <Text type="text14Regular" color="muted">
-          The component owns the overlay, Escape and outside click; the page
-          owns the open state.
-        </Text>
-      </Dialog>
-    </Box>
-  </Container>
+      <Box as="section" borderColor="line" border="thin" rounded="lg" :p="5">
+        <Stack :gap="3">
+          <Text as="h2" type="text20Semibold">Layout</Text>
+          <Grid :columns="{ base: 1, md: 3 }" :gap="3">
+            <Box
+              v-for="name in CELLS"
+              :key="name"
+              backgroundColor="background"
+              borderColor="line"
+              border="thin"
+              rounded="md"
+              :p="4"
+            >
+              <Text type="text14Regular">{{ name }}</Text>
+            </Box>
+          </Grid>
+        </Stack>
+      </Box>
+    </Stack>
+  </Stack>
 </template>
 ```
 

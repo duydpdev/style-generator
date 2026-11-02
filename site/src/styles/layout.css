@@ -342,3 +342,13 @@
     display: none;
   }
 }
+
+/* Centred full-width page column (the former container component's
+   mx-auto w-full). In the utilities layer like those classes, so unlayered
+   rules (the url-pill's margin: 0 under 860px) still win. */
+@layer utilities {
+  [data-part~="container"] {
+    margin-inline: auto;
+    width: 100%;
+  }
+}

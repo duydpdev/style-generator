@@ -20,7 +20,7 @@ import { TweaksPanel } from "./sections/TweaksPanel";
 import { TypographySection } from "./sections/TypographySection";
 import { UtilitiesSection } from "./sections/UtilitiesSection";
 import type { StyleGuideState, TweakSetter } from "./sections/types";
-import { Container } from "./ui";
+import { Box } from "./ui";
 
 export const App = () => {
   const [state, setState] = useState<StyleGuideState>(initialState);
@@ -96,7 +96,7 @@ export const App = () => {
         }}
       />
 
-      <Container maxWidth={1240} px={8}>
+      <Box data-part="container" maxWidth={1240} px={8}>
         <HeroSection
           palette={state.palette}
           onPickPalette={(id) => {
@@ -109,7 +109,7 @@ export const App = () => {
         <ButtonSection />
         <ResponsiveSpacingSection />
         <Footer />
-      </Container>
+      </Box>
 
       <JsonDrawer
         open={jsonOpen}

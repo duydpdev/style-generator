@@ -59,6 +59,7 @@ export function ThemePreview({
               data-part="sw"
               width={16}
               height={16}
+              // eslint-disable-next-line no-restricted-syntax -- swatch colours come from the previewed theme's data, not this site's tokens
               style={{
                 background: s.color,
                 ...(s.border ? { border: s.border } : null),

@@ -39,9 +39,9 @@ export default defineConfig({
 });
 ```
 
-## Import the CSS and scan the components
+## Import the CSS
 
-Import the generated file next to Tailwind. Tailwind only scans the app directory, so the `@source` lines point it at the design system and the component package, which hold the class names.
+Import the generated file next to Tailwind. Tailwind only scans the app directory, so the `@source` line points it at the design system, whose recipes hold the class names; the components in `src/ui/` are inside the app and scanned by default.
 
 <!-- embed: examples/react-v4/src/index.css#css-entry -->
 
@@ -52,33 +52,36 @@ Import the generated file next to Tailwind. Tailwind only scans the app director
 @import "design-system-example/styles/style-guide.css";
 @import "./parts.css";
 @source "../../design-system/src";
-@source "../../../packages/ui-react/src";
 ```
 
-## Create the components once
+## Bind the components once
 
-`@duydpdev/ui-react` and `@duydpdev/ui-vue` are example packages inside this repository (`packages/ui-react`, `packages/ui-vue`). They are not published: copy the package folder into your project instead of installing it. A package with the same name from another registry is not ours.
-
-`createUi(tokens, presets)` takes the typed tokens and the recipe presets; every role in `presets` is optional.
+The six sample components are example code inside the app, one self-contained file each in `src/ui/`: copy the folder instead of installing anything (see [Components](../components.md)). Each file exports a factory, and `src/ui.ts` binds them to the design system's tokens and presets once:
 
 <!-- embed: examples/react-v4/src/ui.ts -->
 
 ```ts
-import { createUi } from "@duydpdev/ui-react";
-import { presets as designPresets, tokens } from "design-system-example";
-
-/** The roles this app renders; an omitted role is not returned by createUi. */
-const presets = {
-  box: designPresets.box,
-  text: designPresets.text,
-  button: designPresets.button,
-};
-
-/** The example's token-typed components: one `createUi` call for the whole app. */
-export const { Box, Button, Container, Flex, Grid, Stack, Text } = createUi(
+import {
+  boxPreset,
+  buttonPreset,
+  textPreset,
   tokens,
-  presets,
-);
+} from "design-system-example";
+
+import { createBox } from "./ui/Box";
+import { createButton } from "./ui/Button";
+import { createFlex } from "./ui/Flex";
+import { createGrid } from "./ui/Grid";
+import { createStack } from "./ui/Stack";
+import { createText } from "./ui/Text";
+
+/** The example's components, bound once to the design system's tokens and presets. */
+export const Box = createBox(tokens, boxPreset);
+export const Button = createButton(tokens, buttonPreset);
+export const Flex = createFlex(tokens);
+export const Grid = createGrid(tokens);
+export const Stack = createStack(tokens);
+export const Text = createText(tokens, textPreset);
 ```
 
 ## Use them
@@ -99,7 +102,16 @@ export const { Box, Button, Container, Flex, Grid, Stack, Text } = createUi(
 />
 
 <Box mx={-8} px={8} py={2} data-part="scroll-x">
-  <Grid align="center" gapX={4} gapY={4} data-part="button-matrix">
+  <Grid
+    columns={{
+      base: "72px repeat(4, minmax(0, 1fr))",
+      md: "120px repeat(4, minmax(0, 1fr))",
+    }}
+    align="center"
+    gapX={4}
+    gapY={4}
+    data-part="button-matrix"
+  >
     <Box />
     {COLORS.map((c) => (
       <Text key={c} type="text12Mono" color="muted">
@@ -123,13 +135,7 @@ export const { Box, Button, Container, Flex, Grid, Stack, Text } = createUi(
   </Grid>
 </Box>
 
-<Box
-  mt={10}
-  pt={7}
-  borderT="thin"
-  data-part="dashed"
-  style={{ borderColor: "var(--c-line)" }}
->
+<Box mt={10} pt={7} borderT="thin" data-part="dashed" borderColor="line">
   <Text type="text12Mono" color="muted" mb={4} data-part="caps-wide">
     Sizes
   </Text>

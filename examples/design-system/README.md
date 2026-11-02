@@ -1,6 +1,6 @@
 # design-system-example
 
-The shared design system behind the `react-v4`, `next-v4` and `nuxt-v4` examples: one theme, one options object, typed tokens, a `cn()` helper, eight headless recipes and the shared CSS. The three apps keep only their wiring and one framework-specific component each; everything else lives here, so the same `theme.json` drives React, Next.js and Nuxt.
+The shared design system behind the `react-v4`, `next-v4` and `nuxt-v4` examples: one theme, one options object, typed tokens, a `cn()` helper, the headless recipes of the six sample components and the shared CSS. The apps keep only their wiring, their demo code and (in `react-v4` and `nuxt-v4`) the six sample components in their own `ui/` folder; everything else lives here, so the same `theme.json` drives React, Next.js and Nuxt.
 
 This is a private Yarn workspace of the repo root (`"design-system-example": "workspace:*"` in the apps). It depends on the library through `"@duydpdev/style-generator": "link:../.."`, so the library must be built first.
 
@@ -27,7 +27,7 @@ examples/design-system
 │   ├── tokens.ts           `theme`, `Theme`, `tokens` (createDesignTokens from the browser-safe /tokens subpath)
 │   ├── cn.ts               clsx + tailwind-merge extended with the theme's tokens
 │   ├── axes.ts             `axisAttributes()` — the `data-*` attributes of the active themeAxes
-│   ├── recipes/            button, input, card, badge, stack, dialog, text, box
+│   ├── recipes/            box, text, stack, grid, button (bound) + factories/ (theme-free)
 │   ├── styles/             palettes.css (dark × palette), style-guide.css (bespoke chrome)
 │   └── index.ts            the public surface of the package
 └── tests/
@@ -53,16 +53,13 @@ export const Button = ({ variant, color, size, className, ...props }) => (
 );
 ```
 
-| Recipe                                 | Variants                                                                                                     |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `buttonRecipe`                         | `variant` (fill, outline, soft, ghost, link) × `color` (`Intent`) × `size`                                   |
-| `inputRecipe`                          | `size`, `invalid`                                                                                            |
-| `cardRecipe`                           | `tone` (surface, muted, outline), `padding`                                                                  |
-| `badgeRecipe`                          | `color` (`Intent`), `variant` (soft, solid, outline)                                                         |
-| `stackRecipe`                          | `direction`, `align`, `justify`, `wrap` (gap = a spacing prop)                                               |
-| `dialogOverlayRecipe` / `dialogRecipe` | `blur` / `size`                                                                                              |
-| `textRecipe`                           | `type` (typography), `color`, `decoration`, `align`                                                          |
-| `boxRecipe`                            | `backgroundColor`, `borderColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `innerBorder` |
+| Recipe         | Variants                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `buttonRecipe` | `variant` (fill, outline, soft, ghost, link) × `color` (`Intent`) × `size`                                                                  |
+| `stackRecipe`  | `direction`, `align`, `justify`, `wrap` (gap = a spacing prop)                                                                              |
+| `gridRecipe`   | `align`, `justify`, `flow` (columns = `gridColumns` from `design-system-example/recipes`: a count, a CSS track list or a breakpoint record) |
+| `textRecipe`   | `type` (typography), `color`, `decoration`, `align`                                                                                         |
+| `boxRecipe`    | `backgroundColor`, `borderColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `innerBorder`                                |
 
 Spacing is not a variant. Split the responsive spacing props off with the library helper and merge the result:
 

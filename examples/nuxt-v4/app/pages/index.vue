@@ -1,74 +1,82 @@
 <script setup lang="ts">
 import { intents } from "design-system-example";
-import { ref } from "vue";
 
 import ThemeSwitch from "~/components/ThemeSwitch.vue";
-import {
-  Badge,
-  Box,
-  Button,
-  Card,
-  Container,
-  Dialog,
-  Flex,
-  Input,
-  Stack,
-  Text,
-} from "~/ui";
+import Box from "~/ui/Box.vue";
+import Button from "~/ui/Button.vue";
+import Flex from "~/ui/Flex.vue";
+import Grid from "~/ui/Grid.vue";
+import Stack from "~/ui/Stack.vue";
+import Text from "~/ui/Text.vue";
 
 const BUTTON_VARIANTS = ["fill", "outline", "soft", "ghost", "link"] as const;
-
-const dialogOpen = ref(false);
+const CELLS = ["Box", "Stack", "Flex"] as const;
 </script>
 
 <!-- #region docs:usage -->
 <template>
-  <Container as="main" :maxWidth="960" :py="{ base: 6, md: 10 }" :px="4">
-    <Stack as="header" justify="between" wrap>
-      <Box>
-        <Text type="text12Mono" color="muted">
-          @duydpdev/style-generator · Nuxt 4
-        </Text>
-        <Text as="h1" type="display56Serif">Shared design system</Text>
-      </Box>
-      <ThemeSwitch />
-    </Stack>
+  <Stack as="main" align="center" :py="{ base: 6, md: 10 }" :px="4">
+    <Stack width="100%" :maxWidth="960" :gap="6">
+      <Flex as="header" justify="between" align="end" wrap :gap="4">
+        <Box>
+          <Text type="text12Mono" color="muted">
+            @duydpdev/style-generator · Nuxt 4
+          </Text>
+          <Text as="h1" type="display56Serif">Shared design system</Text>
+        </Box>
+        <ThemeSwitch />
+      </Flex>
 
-    <Card as="section" tone="surface" padding="lg">
-      <Stack :gap="{ base: 2, md: 4 }">
-        <Text as="h2" type="text20Semibold">Buttons</Text>
-        <Flex v-for="color in intents" :key="color" wrap :gap="2">
-          <Badge :color="color">{{ color }}</Badge>
-          <Button
-            v-for="variant in BUTTON_VARIANTS"
-            :key="variant"
-            :variant="variant"
-            :color="color"
+      <Box
+        as="section"
+        backgroundColor="surface"
+        borderColor="line"
+        border="thin"
+        rounded="lg"
+        shadow="sm"
+        :p="8"
+      >
+        <Stack :gap="{ base: 2, md: 4 }">
+          <Text as="h2" type="text20Semibold">Buttons</Text>
+          <Flex
+            v-for="color in intents"
+            :key="color"
+            wrap
+            align="center"
+            :gap="2"
           >
-            {{ variant }}
-          </Button>
-        </Flex>
-      </Stack>
-    </Card>
+            <Text as="span" type="text12Mono" :color="color">{{ color }}</Text>
+            <Button
+              v-for="variant in BUTTON_VARIANTS"
+              :key="variant"
+              :variant="variant"
+              :color="color"
+            >
+              {{ variant }}
+            </Button>
+          </Flex>
+        </Stack>
+      </Box>
 
-    <Card as="section" tone="outline" padding="md">
-      <Stack :gap="3">
-        <Text as="h2" type="text20Semibold">Inputs</Text>
-        <Input size="md" placeholder="Default input" />
-        <Input size="md" invalid placeholder="Invalid input" />
-      </Stack>
-    </Card>
-
-    <Box as="section" backgroundColor="surface" rounded="lg" shadow="md" :p="6">
-      <Button variant="outline" @click="dialogOpen = true">Open dialog</Button>
-      <Dialog :open="dialogOpen" size="sm" @close="dialogOpen = false">
-        <Text as="h2" type="text20Semibold">Dialog</Text>
-        <Text type="text14Regular" color="muted">
-          The component owns the overlay, Escape and outside click; the page
-          owns the open state.
-        </Text>
-      </Dialog>
-    </Box>
-  </Container>
+      <Box as="section" borderColor="line" border="thin" rounded="lg" :p="5">
+        <Stack :gap="3">
+          <Text as="h2" type="text20Semibold">Layout</Text>
+          <Grid :columns="{ base: 1, md: 3 }" :gap="3">
+            <Box
+              v-for="name in CELLS"
+              :key="name"
+              backgroundColor="background"
+              borderColor="line"
+              border="thin"
+              rounded="md"
+              :p="4"
+            >
+              <Text type="text14Regular">{{ name }}</Text>
+            </Box>
+          </Grid>
+        </Stack>
+      </Box>
+    </Stack>
+  </Stack>
 </template>
 <!-- #endregion docs:usage -->

@@ -1,4 +1,4 @@
-import { Box, Button, Container, Flex, Stack, Text } from "../ui";
+import { Box, Button, Flex, Stack, Text } from "../ui";
 
 import type { ThemeName } from "./types";
 
@@ -23,7 +23,7 @@ export const Topbar = ({
 }: TopbarProps) => {
   return (
     <Box as="header" data-part="sg-topbar">
-      <Container maxWidth={1240} px={{ base: 4, md: 8 }}>
+      <Box data-part="container" maxWidth={1240} px={{ base: 4, md: 8 }}>
         <Flex
           wrap
           align="center"
@@ -60,7 +60,7 @@ export const Topbar = ({
             </Button>
           </Flex>
         </Flex>
-      </Container>
+      </Box>
     </Box>
   );
 };

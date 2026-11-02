@@ -75,7 +75,7 @@ export const TweaksPanel = ({
         align="center"
         justify="between"
         borderT="thin"
-        style={{ borderColor: "var(--c-line)" }}
+        borderColor="line"
       >
         <Button variant="ghost" size="sm" onClick={onReset}>
           Reset

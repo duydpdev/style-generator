@@ -18,10 +18,11 @@ export const GRID_COLUMN_CLASSES = {
   "2xl": "2xl:grid-cols-(--ui-grid-cols-2xl)",
 } as const;
 
-/** `3`, or `{ base: 1, md: 3 }` (breakpoint keys checked by ui-react's types). */
+/** `3`, `"72px 1fr"`, or `{ base: 1, md: "220px 1fr" }` (breakpoint keys checked by the sample components' types). */
 export type GridColumnsValue =
   | number
-  | Readonly<Record<string, number | undefined>>;
+  | string
+  | Readonly<Record<string, number | string | undefined>>;
 
 export interface GridColumns {
   readonly className: string;
@@ -30,24 +31,35 @@ export interface GridColumns {
 
 const known: Readonly<Record<string, string>> = GRID_COLUMN_CLASSES;
 
-/** Column classes + `--ui-grid-cols*` track variables; throws on an unknown breakpoint or a non-positive count. */
+/** A count → `repeat(n, minmax(0, 1fr))`; a string is the track list as written. */
+const trackList = (count: number | string): string => {
+  if (typeof count === "string") {
+    if (count.trim() === "") {
+      throw new RangeError("Grid columns track list must not be empty");
+    }
+    return count;
+  }
+  if (!Number.isInteger(count) || count < 1) {
+    throw new RangeError(
+      `Grid columns must be a positive integer, got ${String(count)}`,
+    );
+  }
+  return `repeat(${String(count)}, minmax(0, 1fr))`;
+};
+
+/** Column classes + `--ui-grid-cols*` track variables; throws on an unknown breakpoint, a non-positive count or an empty track list. */
 export const gridColumns = (value: GridColumnsValue): GridColumns => {
-  const entries: [string, number | undefined][] =
-    typeof value === "number" ? [["base", value]] : Object.entries(value);
+  const entries: [string, number | string | undefined][] =
+    typeof value === "object" ? Object.entries(value) : [["base", value]];
   const classes: string[] = [];
   const style: Record<string, string> = {};
   for (const [bp, count] of entries) {
     if (count === undefined) continue;
     const cls = known[bp];
     if (cls === undefined) throw new Error(`Grid: unknown breakpoint "${bp}"`);
-    if (!Number.isInteger(count) || count < 1) {
-      throw new RangeError(
-        `Grid columns must be a positive integer, got ${String(count)}`,
-      );
-    }
     classes.push(cls);
     style[bp === "base" ? "--ui-grid-cols" : `--ui-grid-cols-${bp}`] =
-      `repeat(${String(count)}, minmax(0, 1fr))`;
+      trackList(count);
   }
   return { className: classes.join(" "), style };
 };

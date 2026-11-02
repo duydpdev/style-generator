@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { axisAttributes } from "design-system-example";
 
-import { Button, Flex, Select, Stack, Text } from "~/ui";
+import Button from "~/ui/Button.vue";
+import Flex from "~/ui/Flex.vue";
+import Stack from "~/ui/Stack.vue";
+import Text from "~/ui/Text.vue";
 
 type AxesState = Parameters<typeof axisAttributes>[0];
 type ThemeName = NonNullable<AxesState["theme"]>;
@@ -16,11 +19,11 @@ const state = useThemeAxes();
 // `"base"` axis; `useHead` applies the map to <html> and drops stale keys.
 useHead(() => ({ htmlAttrs: axisAttributes(state.value) }));
 
-const setTheme = (value: string) => {
-  state.value = { ...state.value, theme: value as ThemeName };
+const setTheme = (theme: ThemeName) => {
+  state.value = { ...state.value, theme };
 };
-const setPalette = (value: string) => {
-  state.value = { ...state.value, palette: value as PaletteName };
+const setPalette = (palette: PaletteName) => {
+  state.value = { ...state.value, palette };
 };
 
 const reset = () => {
@@ -29,26 +32,36 @@ const reset = () => {
 </script>
 
 <template>
-  <Flex wrap :gap="4">
-    <Stack as="label" align="start" :gap="1">
+  <Flex wrap align="end" :gap="4">
+    <Stack role="group" aria-label="theme" :gap="1">
       <Text as="span" type="text12Mono" color="muted">theme</Text>
-      <Select size="sm" :modelValue="state.theme" @update:modelValue="setTheme">
-        <option v-for="name in THEMES" :key="name" :value="name">
+      <Flex wrap :gap="1">
+        <Button
+          v-for="name in THEMES"
+          :key="name"
+          size="sm"
+          :variant="state.theme === name ? 'fill' : 'ghost'"
+          :aria-pressed="state.theme === name"
+          @click="setTheme(name)"
+        >
           {{ name }}
-        </option>
-      </Select>
+        </Button>
+      </Flex>
     </Stack>
-    <Stack as="label" align="start" :gap="1">
+    <Stack role="group" aria-label="palette" :gap="1">
       <Text as="span" type="text12Mono" color="muted">palette</Text>
-      <Select
-        size="sm"
-        :modelValue="state.palette"
-        @update:modelValue="setPalette"
-      >
-        <option v-for="name in PALETTES" :key="name" :value="name">
+      <Flex wrap :gap="1">
+        <Button
+          v-for="name in PALETTES"
+          :key="name"
+          size="sm"
+          :variant="state.palette === name ? 'fill' : 'ghost'"
+          :aria-pressed="state.palette === name"
+          @click="setPalette(name)"
+        >
           {{ name }}
-        </option>
-      </Select>
+        </Button>
+      </Flex>
     </Stack>
     <Button variant="ghost" size="sm" @click="reset">Reset</Button>
   </Flex>

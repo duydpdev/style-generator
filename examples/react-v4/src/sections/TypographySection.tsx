@@ -38,29 +38,21 @@ const ROWS: TypoRow[] = [
 
 export const TypographySection = () => {
   return (
-    <Box
-      as="section"
-      borderT="thin"
-      py={14}
-      style={{ borderColor: "var(--c-line)" }}
-    >
+    <Box as="section" borderT="thin" py={14} borderColor="line">
       <SectionHead
         num="02 — Typography"
         title="Two voices, one rhythm."
         desc={
           <>
-            <b style={{ color: "var(--color-foreground)" }}>Instrument Serif</b>{" "}
-            handles display and editorial accents;{" "}
-            <b style={{ color: "var(--color-foreground)" }}>Geist</b> carries
-            every body and UI surface;{" "}
-            <b style={{ color: "var(--color-foreground)" }}>JetBrains Mono</b>{" "}
-            stamps the code.
+            <b data-part="fg">Instrument Serif</b> handles display and editorial
+            accents; <b data-part="fg">Geist</b> carries every body and UI
+            surface; <b data-part="fg">JetBrains Mono</b> stamps the code.
           </>
         }
       />
 
       <Grid
-        columns={1}
+        columns={{ base: 1, md: "220px 1fr" }}
         gapY={8}
         gapX={{ base: 0, md: 12 }}
         data-part="typo-grid"
@@ -73,16 +65,7 @@ export const TypographySection = () => {
               </Text>
               <Text type="text12Mono">{row.spec}</Text>
             </Stack>
-            <Box
-              data-part={row.part}
-              style={
-                row.label === "Mono · code"
-                  ? { color: "var(--color-muted)" }
-                  : { color: "var(--color-foreground)" }
-              }
-            >
-              {row.body}
-            </Box>
+            <Box data-part={row.part}>{row.body}</Box>
           </Box>
         ))}
       </Grid>

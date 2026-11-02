@@ -5,5 +5,4 @@
 @import "design-system-example/styles/style-guide.css";
 @import "./parts.css";
 @source "../../design-system/src";
-@source "../../../packages/ui-react/src";
 /* #endregion docs:css-entry */

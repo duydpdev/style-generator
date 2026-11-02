@@ -1,354 +1,323 @@
-# Components
+# Components: examples, not an API
 
-Apps import their components from their own `ui.ts`, which calls `createUi(tokens, presets)` once. The typed tokens and the recipe presets come from the shared design system, and every role in `presets` is optional: a component whose role is not declared is not returned.
+The six components on this page (`Box`, `Text`, `Stack`, `Flex`, `Grid` and `Button`) are sample code inside the example apps, not a package: nothing is published and nothing is versioned. Copy the files you need into your app and change them freely. The React versions are self-contained `*.tsx` files in [`examples/react-v4/src/ui/`](../examples/react-v4/src/ui/index.ts); the landing site imports the same files through `react-v4-example/ui` and binds them to its own theme. The Vue versions are single-file components with `<script setup lang="ts">` in [`examples/nuxt-v4/app/ui/`](../examples/nuxt-v4/app/ui/Button.vue). Both wrap the headless recipes of [`examples/design-system`](../examples/design-system/README.md), so renaming a theme token fails to compile in the recipe instead of failing at runtime.
 
-`@duydpdev/ui-react` and `@duydpdev/ui-vue` are example packages inside this repository (`packages/ui-react`, `packages/ui-vue`). They are not published: copy the package folder into your project instead of installing it. A package with the same name from another registry is not ours.
+Until commit `2045cce`, Dialog, Select, List, ListItem, Card, Badge, Code, Container, Input and Link lived in `packages/ui-react` and `packages/ui-vue` behind one `createUi(tokens, presets)` call; `git show 2045cce:packages/ui-react/src/Dialog/Dialog.tsx` recovers one as a starting point.
 
 ## Using components
+
+In React, each file in `src/ui/` exports a factory (`createBox`, `createText`, …) that takes the app's tokens and, where the component has one, a preset. `src/ui.ts` binds them once, and app code imports the components from there:
 
 <!-- embed: examples/react-v4/src/ui.ts -->
 
 ```ts
-import { createUi } from "@duydpdev/ui-react";
-import { presets as designPresets, tokens } from "design-system-example";
-
-/** The roles this app renders; an omitted role is not returned by createUi. */
-const presets = {
-  box: designPresets.box,
-  text: designPresets.text,
-  button: designPresets.button,
-};
-
-/** The example's token-typed components: one `createUi` call for the whole app. */
-export const { Box, Button, Container, Flex, Grid, Stack, Text } = createUi(
+import {
+  boxPreset,
+  buttonPreset,
+  textPreset,
   tokens,
-  presets,
-);
+} from "design-system-example";
+
+import { createBox } from "./ui/Box";
+import { createButton } from "./ui/Button";
+import { createFlex } from "./ui/Flex";
+import { createGrid } from "./ui/Grid";
+import { createStack } from "./ui/Stack";
+import { createText } from "./ui/Text";
+
+/** The example's components, bound once to the design system's tokens and presets. */
+export const Box = createBox(tokens, boxPreset);
+export const Button = createButton(tokens, buttonPreset);
+export const Flex = createFlex(tokens);
+export const Grid = createGrid(tokens);
+export const Stack = createStack(tokens);
+export const Text = createText(tokens, textPreset);
 ```
 
-Every component accepts the spacing props of the theme (`p`, `px`, `mt`, `gapX`, …). The table lists the other props that are specific to each component; the rendered element's own attributes pass through as well.
+In Vue there is no binding step: each SFC imports the bound recipes of `design-system-example` itself, and a page imports the file it renders explicitly (`import Button from "~/ui/Button.vue"`).
 
-| Component   | Replaces tags                                                           | Main props                                                                                                                                   |
-| ----------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Box`       | `div`, `section`, `header`, `footer`, `aside`, `main`, `nav`, `article` | `backgroundColor`, `borderColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `width`/`height` (and min/max), `innerBorder` |
-| `Flex`      | none                                                                    | `direction`, `align`, `justify`, `wrap`, plus the `Box` layout props                                                                         |
-| `Stack`     | none                                                                    | The `Flex` props with `direction="column"` as the default                                                                                    |
-| `Grid`      | none                                                                    | `columns` (a number or `{ base, md, lg }`), `align`, `justify`, `flow`, plus the `Box` layout props                                          |
-| `Container` | none                                                                    | The `Box` layout props without horizontal margins: it centres itself                                                                         |
-| `Text`      | `span`, `p`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`                         | `type` (a typography key), `color`, `align`, `decoration`                                                                                    |
-| `Link`      | none                                                                    | `color`, `underline` (`always`, `hover`, `none`)                                                                                             |
-| `List`      | none                                                                    | `marker` (`none`, `disc`, `decimal`), `position` (`inside`, `outside`), plus the `Box` layout props                                          |
-| `ListItem`  | none                                                                    | The `Box` layout props                                                                                                                       |
-| `Code`      | none                                                                    | `type`, `color`                                                                                                                              |
-| `Button`    | `button`                                                                | `variant` (`fill`, `outline`, `soft`, `ghost`, `link`), `color`, `size`, `prefix`, `suffix`                                                  |
-| `Card`      | none                                                                    | `tone` (`surface`, `muted`, `outline`), `padding` (`none`, `sm`, `md`, `lg`)                                                                 |
-| `Badge`     | none                                                                    | `color`, `variant` (`soft`, `solid`, `outline`)                                                                                              |
-| `Input`     | `input`                                                                 | `size`, `invalid`, plus the `<input>` attributes                                                                                             |
-| `Select`    | `select`                                                                | `size`, `invalid`, plus the `<select>` attributes                                                                                            |
-| `Dialog`    | none                                                                    | `open`, `onClose`, `size`, `blur`                                                                                                            |
+Every component accepts the spacing props of the theme (`p`, `px`, `mt`, `gapX`, …). The table lists the other props of each component; the rendered element's own attributes pass through as well.
+
+| Component | Replaces tags                                                           | Main props                                                                                                                                                |
+| --------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Box`     | `div`, `section`, `header`, `footer`, `aside`, `main`, `nav`, `article` | `backgroundColor`, `borderColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `width`/`height` (and min/max), `innerBorder`              |
+| `Text`    | `span`, `p`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`                         | `type` (a typography key), `color`, `align`, `decoration`                                                                                                 |
+| `Stack`   | none                                                                    | `align`, `justify`, `wrap`, plus the `Box` layout props; vertical by default                                                                              |
+| `Flex`    | none                                                                    | `direction`, `align`, `justify`, `wrap`, plus the `Box` layout props                                                                                      |
+| `Grid`    | none                                                                    | `columns` (a count, a CSS track list such as `"80px 1fr 80px"`, or `{ base, md, lg }` of either), `align`, `justify`, `flow`, plus the `Box` layout props |
+| `Button`  | `button`                                                                | `variant` (`fill`, `outline`, `soft`, `ghost`, `link`), `color`, `size`, `prefix`, `suffix`                                                               |
 
 The rules for app code:
 
 - Boolean variants are written bare: `<Flex wrap>`, not `wrap={true}`.
 - Spacing props are numbers on the spacing scale or `{ base, md, lg }` objects: `<Box p={4} />`, `<Stack gap={{ base: 2, md: 4 }} />`.
-- App code passes no `className`; a variant or a token prop expresses the style instead.
-- App code imports no recipe; recipes are only used inside the component package.
+- App code passes no `className` and no `style`; a variant or a token prop expresses the style instead. A value no prop can express (a computed transform or width) keeps its `style` behind `// eslint-disable-next-line no-restricted-syntax -- <reason>`.
+- App code imports no recipe; recipes are used only inside the `ui/` component files.
 
-ESLint enforces the last two rules and bans the tags of the table above in app files, so a plain `<div>` is reported.
+ESLint enforces the last two rules and bans the tags of the table above in app files, so a plain `<div>` is reported. The component names and their tags come from [`examples/ui-registry.mjs`](../examples/ui-registry.mjs).
+
+## Layout by intent
+
+- **`Stack`** is the vertical, single-column flow: a page section, a form, a card body. Space its children with `gap`, not with a margin on each child.
+- **`Flex`** is a row, or a wrapping set of two or more children. Never wrap a single child in `Flex` to align or space it: put those props on the child itself or on the parent `Stack`. One exception: a `Flex` whose second flex item is a CSS pseudo-element (a `::before`/`::after` rule line next to a label) has two flex items even though its markup shows one child; the site's `docs-onpage.tsx`, `docs-sidebar.tsx` and `sidebar-toc.tsx` labels work this way. ESLint cannot report this rule (whitespace text between JSX tags counts as a child), so review checks it.
+- **`Grid`** always has `columns`: a count (`columns={3}`), a CSS track list (`columns="220px 1fr"`), or a `{ base, md, lg }` record of either (`columns={{ base: 1, md: "220px 1fr" }}`). A `Grid` without `columns` is a single-column `Stack` in disguise. ESLint reports `<Grid>` without `columns` in `examples/react-v4/src` and in the nuxt-v4 templates; the landing site is exempt, because its grids use desktop-first CSS templates under `@media (max-width: …)` that the mobile-first `columns` prop cannot express.
 
 ## Polymorphic `as`
 
-Components that render a layout or text element accept `as` to pick the root element, and the other props are then typed for that element: `<Text as="h1" type="display56Serif">` accepts the `<h1>` attributes, and `<Box as="section">` the `<section>` ones. The types are in [`packages/ui-react/src/shared/types/polymorphic.ts`](../packages/ui-react/src/shared/types/polymorphic.ts).
+The layout components and `Text` accept `as` to pick the root element, and the other props are then typed for that element: `<Text as="h1" type="display56Serif">` accepts the `<h1>` attributes, and `<Box as="section">` the `<section>` ones. Each React file declares its own small `Polymorphic` type; see [`examples/react-v4/src/ui/Box.tsx`](../examples/react-v4/src/ui/Box.tsx).
 
-## Authoring a component
+## Adding a component
 
-A component is a recipe, a preset that binds it to the theme, and a small folder in the component package. `Badge` is the smallest complete example.
+`Text` is the worked example. A new component touches these places; skip the ones that do not apply:
 
-### 1. Recipe factory
+1. **Recipe factory** in `examples/design-system/src/recipes/factories/<name>.ts`, exported from `factories/index.ts` (the `design-system-example/recipes` subpath).
+2. **Bound recipe and preset** in `examples/design-system/src/recipes/<name>.ts`, exported from `src/index.ts`. The Vue SFC uses the bound recipe; the React app binds the factory with the preset.
+3. **React component file** `examples/react-v4/src/ui/<Name>.tsx`: its own prop types and its own `Polymorphic` type, no shared type module. It splits its props with `src/ui/layout.ts`: `splitLayout` for a layout component, `splitSpacing` for any other.
+4. **Export** from `examples/react-v4/src/ui/index.ts`.
+5. **Binding** in `examples/react-v4/src/ui.ts`, and in `site/src/ui.ts` when the site renders it.
+6. **Vue SFC** `examples/nuxt-v4/app/ui/<Name>.vue`.
+7. **Registry entry** `{ name: "<Name>", tags: [...] }` in `examples/ui-registry.mjs`, with the lowercase tags it replaces (an empty list when none); ESLint builds the React and Vue rules from it.
+8. **Type checks**: a few lines in `examples/react-v4/tests/ui-types.tsx` and `examples/nuxt-v4/tests/nuxt/ui-props.vue`, including one `@ts-expect-error` / `@vue-expect-error` for a wrong token.
 
-The factory turns the theme's tokens and a preset into the variant tables of one recipe. It lives in the design system and knows no theme values.
+The factory knows no theme values:
 
-<!-- embed: examples/design-system/src/recipes/factories/badge.ts -->
+<!-- embed: examples/design-system/src/recipes/factories/text.ts -->
 
 ```ts
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 
 import {
-  borderWidthClass,
-  contrastText,
-  pick,
   recipeFromTables,
   type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
 } from "./tables";
 
-export interface BadgePreset {
-  readonly intents: readonly string[];
-  /** Solid-variant text colour of an intent without an `on<Intent>` sibling. */
-  readonly background: string;
-  readonly radius: string;
-  /** Omitted → Tailwind's `border` (1px). */
-  readonly borderWidth?: string | undefined;
-  readonly type: string;
-  /** Literal soft-variant classes per intent (`bg-primary/10 text-primary`). */
-  readonly soft: Readonly<Record<string, string>>;
+/** Text defaults; every field omitted → `<Text>` emits no class of its own. */
+export interface TextPreset {
+  readonly base?: string | undefined;
+  readonly defaultType?: string | undefined;
+  readonly defaultColor?: string | undefined;
 }
 
-export const badgeTables = (
+export const textTables = (
   t: RecipeTokens,
-  preset: BadgePreset,
-): RecipeTables => {
-  const bg = createVariantMapper("bg", t.colors);
-  const text = createVariantMapper("text", t.colors);
-  const border = createVariantMapper("border", t.colors);
-  return {
-    base: [
-      "inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5",
-      pick(createVariantMapper("rounded", t.borderRadius), preset.radius),
-      borderWidthClass(t.borderWidth, preset.borderWidth),
-      pick(createVariantMapper("", t.typography), preset.type),
-    ],
-    variants: {
-      color: Object.fromEntries(preset.intents.map((intent) => [intent, ""])),
-      variant: {
-        soft: "border-transparent",
-        solid: "border-transparent",
-        outline: "bg-transparent",
-      },
+  preset?: TextPreset,
+): RecipeTables => ({
+  base: preset?.base ?? "",
+  variants: {
+    type: createVariantMapper("", t.typography),
+    decoration: {
+      underline: "underline",
+      lineThrough: "line-through",
+      none: "no-underline",
     },
-    compoundVariants: preset.intents.flatMap((intent) => [
-      { color: intent, variant: "soft", class: pick(preset.soft, intent) },
-      {
-        color: intent,
-        variant: "solid",
-        class: [
-          pick(bg, intent),
-          contrastText(t.colors, intent, preset.background),
-        ],
-      },
-      {
-        color: intent,
-        variant: "outline",
-        class: `${pick(border, intent)} ${pick(text, intent)}`,
-      },
-    ]),
-    defaultVariants: { color: preset.intents[0], variant: "soft" },
-  };
-};
+    align: {
+      center: "text-center",
+      left: "text-left",
+      right: "text-right",
+    },
+    color: createVariantMapper("text", t.colors),
+  },
+});
 
-export const createBadgeRecipe = (
+/** Text recipe for one theme: `type`, `color`, `decoration`, `align`. */
+export const createTextRecipe = (
   t: RecipeTokens,
-  preset: BadgePreset,
-): RecipeFn => recipeFromTables(badgeTables(t, preset));
+  preset?: TextPreset,
+): RecipeFn => recipeFromTables(textTables(t, preset));
 ```
 
-### 2. Bound recipe and preset
+The preset holds the theme's values, and the bound recipe applies the factory to the design system's tokens (`textRecipe({ type, color, decoration, align })`):
 
-The preset holds the theme's values (intents, radius, border width, typography key); the bound recipe applies the factory to the design system's tokens and exposes `badgeRecipe({ color, variant })`.
-
-<!-- embed: examples/design-system/src/recipes/badge.ts -->
+<!-- embed: examples/design-system/src/recipes/text.ts -->
 
 ```ts
 import type { VariantProps } from "class-variance-authority";
+import type {
+  ColorVariant,
+  TextVariant,
+} from "@duydpdev/style-generator/types";
 
-import { tokens } from "../tokens";
+import { tokens, type Theme } from "../tokens";
 
-import { intents, type Intent } from "./button";
-import { createBadgeRecipe, type BadgePreset } from "./factories/badge";
+import { createTextRecipe, type TextPreset } from "./factories/text";
 
-export const badgePreset = {
-  intents,
-  background: "background",
-  radius: "pill",
-  borderWidth: "thin",
-  type: "text12Mono",
-  // Opacity-modified classes stay literal: the registry's coverage has none.
-  soft: {
-    primary: "bg-primary/10 text-primary",
-    secondary: "bg-secondary/10 text-secondary",
-    success: "bg-success/10 text-success",
-    danger: "bg-danger/10 text-danger",
-  },
-} as const satisfies BadgePreset;
+export const textAlign = ["left", "center", "right"] as const;
+export const textDecoration = ["underline", "lineThrough", "none"] as const;
 
-/** Props of the bound badge recipe. */
-export type BadgeRecipeProps = Readonly<{
-  color?: Intent | null | undefined;
-  variant?: "soft" | "solid" | "outline" | null | undefined;
+/** Design-system text defaults; `<Text>` applies them when `type`/`color` are omitted. */
+export const textPreset = {
+  base: "wrap-anywhere whitespace-pre-wrap",
+  defaultType: "text16Medium",
+  defaultColor: "foreground",
+} as const satisfies TextPreset & {
+  readonly defaultType: TextVariant<Theme>;
+  readonly defaultColor: ColorVariant<Theme>;
+};
+
+/** Props of the bound text recipe. */
+export type TextRecipeProps = Readonly<{
+  type?: TextVariant<Theme> | null | undefined;
+  color?: ColorVariant<Theme> | null | undefined;
+  decoration?: (typeof textDecoration)[number] | null | undefined;
+  align?: (typeof textAlign)[number] | null | undefined;
 }>;
 
-/** Headless badge recipe: `badgeRecipe({ color, variant })`. */
-export const badgeRecipe: (props?: BadgeRecipeProps) => string =
-  createBadgeRecipe(tokens, badgePreset);
+/**
+ * Headless text recipe: `textRecipe({ type, color, decoration, align })`.
+ * `type` is a typography utility (`text-16-medium`), `color` a `text-*` color.
+ */
+export const textRecipe: (props?: TextRecipeProps) => string = createTextRecipe(
+  tokens,
+  textPreset,
+);
 
-export type BadgeVariants = VariantProps<typeof badgeRecipe>;
-```
+export type TextVariants = VariantProps<typeof textRecipe>;
 
-### 3. Component folder
-
-The folder holds the dependencies type, the styles that build the classes, and the component.
-
-<!-- embed: packages/ui-react/src/Badge/Badge.types.ts -->
-
-```ts
-import type { UiCn } from "../shared/cn";
-import type { BodyRecipe } from "../shared/splitStyleProps";
-
-export interface BadgeDeps {
-  readonly cn: UiCn;
-  readonly spacing: readonly string[];
-  readonly badge: BodyRecipe;
+/** Props a framework `Text` component adds on top of the element's own props. */
+export interface TextStyleProps {
+  type?: TextVariant<Theme>;
+  color?: ColorVariant<Theme>;
+  decoration?: (typeof textDecoration)[number];
+  align?: (typeof textAlign)[number];
 }
 ```
 
-<!-- embed: packages/ui-react/src/Badge/Badge.styles.ts -->
+The React file exports a factory that takes the app's tokens and the preset, so the site can bind the same file to its own theme:
 
-```ts
-import {
-  createBadgeRecipe,
-  type BadgePreset,
-  type RecipeTokens,
-} from "design-system-example/recipes";
-
-import type { BadgeDeps } from "./Badge.types";
-
-export const createBadgeStyles = (
-  tokens: RecipeTokens,
-  preset: BadgePreset,
-): Pick<BadgeDeps, "badge"> => ({ badge: createBadgeRecipe(tokens, preset) });
-```
-
-<!-- embed: packages/ui-react/src/Badge/Badge.tsx -->
+<!-- embed: examples/react-v4/src/ui/Text.tsx -->
 
 ```tsx
-import type { JSX } from "react";
+import {
+  createCn,
+  createTextRecipe,
+  type RecipeTokens,
+  type TextPreset,
+} from "design-system-example/recipes";
+import type {
+  ComponentPropsWithRef,
+  CSSProperties,
+  ElementType,
+  JSX,
+} from "react";
 
-import { mergeStyle, splitSpacing } from "../shared/splitStyleProps";
-import type { LooseProps } from "../shared/types";
+import { mergeStyle, splitSpacing, type ThemeSpacingProps } from "./layout";
 
-import type { BadgeDeps } from "./Badge.types";
+/** Own props `P` win over the props of the rendered element `T`; `as` picks `T`. */
+type Polymorphic<T extends ElementType, P extends object> = P & {
+  readonly as?: T | undefined;
+} & Omit<ComponentPropsWithRef<T>, keyof P | "as">;
 
-export const createBadge = (deps: BadgeDeps) =>
-  function Badge({
+type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
+  readonly type?: W["typography"][number] | undefined;
+  readonly color?: W["colors"][number] | undefined;
+  readonly align?: "left" | "center" | "right" | undefined;
+  readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
+  readonly className?: string | undefined;
+  readonly style?: CSSProperties | undefined;
+};
+
+/** `Text`: typography/color/align/decoration from the text recipe, preset defaults, spacing props. */
+export const createText = <W extends RecipeTokens>(
+  tokens: W,
+  preset?: TextPreset,
+) => {
+  const cn = createCn(tokens);
+  const text = createTextRecipe(tokens, preset);
+  const spacingKeys = tokens.spacingProperties;
+  return function Text<T extends ElementType = "p">({
     as,
     className,
     style,
-    color,
-    variant,
+    type = preset?.defaultType,
+    color = preset?.defaultColor,
+    align,
+    decoration,
     ...props
-  }: LooseProps): JSX.Element {
-    const Component = as ?? "span";
-    const spacing = splitSpacing(props, deps.spacing);
+  }: Polymorphic<T, TextOwnProps<W>>): JSX.Element {
+    const Component: ElementType = as ?? "p";
+    const split = splitSpacing(props, spacingKeys);
     return (
       <Component
-        {...spacing.rest}
-        className={deps.cn(
-          deps.badge({ color, variant }),
-          spacing.className,
-          className,
-        )}
-        style={mergeStyle(spacing.style, style)}
+        {...split.rest}
+        className={
+          cn(
+            text({ type, color, align, decoration }),
+            split.className,
+            className,
+          ) || undefined
+        }
+        style={mergeStyle(split.style, style)}
       />
     );
   };
+};
 ```
 
-### 4. Register it
+The Vue SFC imports the bound recipe from `design-system-example` and declares its props with `defineProps`:
 
-`createUi` returns the component when its role is in `presets`.
+<!-- embed: examples/nuxt-v4/app/ui/Text.vue -->
 
-<!-- embed: packages/ui-react/src/createUi.ts#create-ui -->
+```vue
+<script setup lang="ts">
+import {
+  cn,
+  splitSpacingProps,
+  textPreset,
+  textRecipe,
+  tokens,
+} from "design-system-example";
+import type { BoxSpacingProps, TextStyleProps } from "design-system-example";
+import { useAttrs } from "vue";
 
-```ts
 /**
- * Bind every component to one app's tokens (`createDesignTokens(theme, options).DesignTokens.Web`)
- * and role presets. Box/Flex/Stack/Grid/Container/Text/Link/List/ListItem/Code are always
- * returned; Button, Badge, Card, Input, Select and Dialog only when `presets` declares their
- * role. Call once per app.
+ * Text: typography, color, alignment and decoration from the theme. `type`
+ * and `color` default to the design-system text preset. Spacing props work
+ * as in Box (declared with `@vue-ignore`, read from the attributes).
  */
-export function createUi<
-  W extends UiTokens,
-  B extends ColorKey<W> = never,
-  G extends ColorKey<W> = never,
-  const P extends UiPresets<W, B, G> = UiPresets<W, B, G>,
->(tokens: W, presets: P & UiPresets<W, B, G>): Ui<W, B, G, P> {
-  const roles = presets as Roles;
-  const cn = createUiCn(tokens);
-  const spacing = tokens.spacingProperties;
-  const { box, layout } = createBoxStyles(tokens, roles.box);
-  const flex = { cn, spacing, layout, ...createFlexStyles() };
-  const ui: Record<string, unknown> = {
-    Box: createBox({ cn, spacing, box }),
-    Flex: createFlex(flex, "row"),
-    Stack: createStack(flex),
-    Grid: createGrid({ cn, spacing, layout, ...createGridStyles(tokens) }),
-    Container: createContainer({
-      cn,
-      spacing,
-      layout,
-      ...createContainerStyles(),
-    }),
-    Text: createText({
-      cn,
-      spacing,
-      ...createTextStyles(tokens, roles.text),
-    }),
-    Link: createLink({ cn, spacing, ...createLinkStyles(tokens) }),
-    List: createList({ cn, spacing, layout, ...createListStyles() }),
-    ListItem: createListItem({ cn, spacing, layout }),
-    Code: createCode({
-      cn,
-      spacing,
-      ...createCodeStyles(tokens, roles.code),
-    }),
-  };
-  if (roles.button)
-    ui.Button = createButton({
-      cn,
-      spacing,
-      ...createButtonStyles(tokens, roles.button),
-    });
-  if (roles.badge)
-    ui.Badge = createBadge({
-      cn,
-      spacing,
-      ...createBadgeStyles(tokens, roles.badge),
-    });
-  if (roles.card)
-    ui.Card = createCard({
-      cn,
-      spacing,
-      ...createCardStyles(tokens, roles.card),
-    });
-  if (roles.input)
-    ui.Input = createInput({
-      cn,
-      ...createInputStyles(tokens, roles.input),
-    });
-  if (roles.select)
-    ui.Select = createSelect({
-      cn,
-      ...createSelectStyles(tokens, roles.select),
-    });
-  if (roles.dialog)
-    ui.Dialog = createDialog({
-      cn,
-      ...createDialogStyles(tokens, roles.dialog),
-    });
-  // Bodies are untyped (LooseProps); the typed surface is restored once, here.
-  return ui as unknown as Ui<W, B, G, P>;
+export interface TextProps
+  extends /* @vue-ignore */ BoxSpacingProps, TextStyleProps {
+  as?: string;
 }
+
+defineOptions({ inheritAttrs: false });
+const props = withDefaults(defineProps<TextProps>(), {
+  as: "p",
+  type: textPreset.defaultType,
+  color: textPreset.defaultColor,
+});
+defineSlots<{ default?: () => unknown }>();
+const attrs = useAttrs();
+
+// Root attributes: the caller's other attributes, then class and style.
+const root = () => {
+  const { spacing, rest } = splitSpacingProps(
+    attrs as BoxSpacingProps & Record<string, unknown>,
+    tokens.spacingProperties,
+  );
+  return {
+    ...rest,
+    class: cn(textRecipe(props), spacing.className),
+    ...(spacing.className === "" ? {} : { style: spacing.style }),
+  };
+};
+</script>
+
+<template>
+  <component :is="props.as" v-bind="root()"><slot /></component>
+</template>
 ```
 
-Add a `{ name: "Badge", … }` entry to `UI_COMPONENTS` in [`registry.mjs`](../packages/ui-react/registry.mjs) so ESLint bans the tags the component replaces.
+## Checks
 
-### 5. Tests to add
+The examples have no test runner. Their checks are compile-time and lint-time, and all of them read the library's built `dist/`, so run `yarn build:all` first:
 
-- `Badge.test.tsx` renders the component and checks its classes.
-- `Badge.test-d.tsx` pins the prop types.
-- `tests/recipe-names.test.ts` fails until every recipe has a component, so a new recipe without one is caught.
+- `yarn workspace react-v4-example typecheck` compiles `src/ui/*.tsx` and `tests/ui-types.tsx`, whose `@ts-expect-error` lines must each be consumed by a real type error.
+- `yarn workspace nuxt-v4-example typecheck` (`nuxt typecheck`) compiles `app/ui/*.vue` and `tests/nuxt/ui-props.vue` the same way, with `@vue-expect-error`.
+- `yarn lint` applies the registry rules (banned tags, no `className`/`style`, `Grid` needs `columns`).
+- `yarn workspace site build` (which builds `react-v4`) and `yarn workspace nuxt-v4-example build` prove the apps render.
 
 ## Recipes without components
 
-Use `@duydpdev/style-generator/recipes` directly when your framework has no component package, or for one-off markup: the helpers are browser-safe and framework-free. See [Recipes](./reference/recipes.md) and [CVA helpers](./reference/cva.md).
+Use `@duydpdev/style-generator/recipes` directly when your framework has no sample component, or for one-off markup: the helpers are browser-safe and framework-free. See [Recipes](./reference/recipes.md) and [CVA helpers](./reference/cva.md).

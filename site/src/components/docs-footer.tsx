@@ -65,14 +65,7 @@ export function DocEdit({ ghUrl }: Readonly<{ ghUrl: string }>) {
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
-        style={{
-          background: "transparent",
-          border: 0,
-          color: "inherit",
-          font: "inherit",
-          cursor: "pointer",
-          padding: 0,
-        }}
+        data-part="back-to-top"
       >
         Back to top ↑
       </Box>

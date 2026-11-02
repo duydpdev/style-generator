@@ -32,6 +32,8 @@ const EXCLUDE_PATTERNS = [
   // read) and the generated stylesheet.
   /examples\/design-system\/tests\//,
   /examples\/design-system\/src\/styles\/theme\.css$/,
+  // react-v4's compile-time type checks, not part of the demo app.
+  /examples\/react-v4\/tests\//,
 ];
 
 function shouldInclude(path: string): boolean {

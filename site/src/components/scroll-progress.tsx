@@ -15,6 +15,7 @@ export function ScrollProgress({ progress }: Readonly<Props>) {
       data-part="scroll-progress"
       position="fixed"
       height={2}
+      // eslint-disable-next-line no-restricted-syntax -- scaleX follows the live scroll progress
       style={{ transform: `scaleX(${String(progress)})` }}
     />
   );

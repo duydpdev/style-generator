@@ -595,6 +595,15 @@
 [data-part~="doc-edit"] a:hover {
   color: var(--c-fg);
 }
+/* Button reset (keywords only, no design token involved). */
+[data-part~="doc-edit"] [data-part~="back-to-top"] {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
 
 /* ============ Right rail — On this page ============ */
 [data-part~="toc-rail-sticky"] {

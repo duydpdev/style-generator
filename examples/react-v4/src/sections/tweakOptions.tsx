@@ -15,15 +15,7 @@ export const VOICE_OPTS: Option<Voice>[] = [
     name: "Editorial",
     meta: "Instrument Serif",
     render: () => (
-      <Box
-        as="span"
-        style={{
-          fontFamily: '"Instrument Serif", serif',
-          fontStyle: "italic",
-          fontSize: 22,
-          lineHeight: 1,
-        }}
-      >
+      <Box as="span" data-part="voice-sample voice-editorial">
         Aa
       </Box>
     ),
@@ -33,15 +25,7 @@ export const VOICE_OPTS: Option<Voice>[] = [
     name: "Industrial",
     meta: "Space Grotesk",
     render: () => (
-      <Box
-        as="span"
-        style={{
-          fontFamily: '"Space Grotesk", sans-serif',
-          fontWeight: 600,
-          fontSize: 22,
-          lineHeight: 1,
-        }}
-      >
+      <Box as="span" data-part="voice-sample voice-industrial">
         Aa
       </Box>
     ),
@@ -51,14 +35,7 @@ export const VOICE_OPTS: Option<Voice>[] = [
     name: "Humanist",
     meta: "DM Serif + Sans",
     render: () => (
-      <Box
-        as="span"
-        style={{
-          fontFamily: '"DM Serif Display", serif',
-          fontSize: 22,
-          lineHeight: 1,
-        }}
-      >
+      <Box as="span" data-part="voice-sample voice-humanist">
         Aa
       </Box>
     ),
@@ -70,25 +47,19 @@ export const GEOMETRY_OPTS: Option<Geometry>[] = [
     val: "sharp",
     name: "Sharp",
     meta: "0–4px",
-    render: () => (
-      <Box as="span" data-part="sg-tweak-shape" style={{ borderRadius: 0 }} />
-    ),
+    render: () => <Box as="span" data-part="sg-tweak-shape shape-sharp" />,
   },
   {
     val: "soft",
     name: "Soft",
     meta: "6–16px",
-    render: () => (
-      <Box as="span" data-part="sg-tweak-shape" style={{ borderRadius: 10 }} />
-    ),
+    render: () => <Box as="span" data-part="sg-tweak-shape shape-soft" />,
   },
   {
     val: "pillowy",
     name: "Pillowy",
     meta: "12–32px",
-    render: () => (
-      <Box as="span" data-part="sg-tweak-shape" style={{ borderRadius: 20 }} />
-    ),
+    render: () => <Box as="span" data-part="sg-tweak-shape shape-pillowy" />,
   },
 ];
 

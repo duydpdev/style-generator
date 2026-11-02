@@ -12,7 +12,7 @@ import { Topbar } from "../components/topbar";
 import { adjacentDocs, docs, getDoc, REPO_BLOB_URL } from "../lib/docs-content";
 import { approxReadMinutes, docBody } from "../lib/docs-body";
 import { useTheme } from "../lib/use-theme";
-import { Box, Container, Grid } from "../ui";
+import { Box, Grid } from "../ui";
 
 import { NotFound } from "./not-found";
 
@@ -72,7 +72,7 @@ export function DocsPage() {
   return (
     <>
       <Topbar activeChapter={null} activeRoute="docs" onToggleTheme={toggle} />
-      <Container maxWidth={1440} px={{ base: 5, lg: 8 }}>
+      <Box data-part="container" maxWidth={1440} px={{ base: 5, lg: 8 }}>
         <Grid data-part="docs-shell" gap={14} position="relative">
           <DocsSidebar activeSlug={doc.slug} />
 
@@ -105,7 +105,7 @@ export function DocsPage() {
             quicklinks={[{ label: "Edit on GitHub", href: ghUrl }]}
           />
         </Grid>
-      </Container>
+      </Box>
     </>
   );
 }

@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "exports": {
+    "./ui": "./src/ui/index.ts",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,7 +14,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@duydpdev/ui-react": "workspace:*",
     "design-system-example": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

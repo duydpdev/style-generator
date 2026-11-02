@@ -49,6 +49,25 @@ describe("loadStyleGenConfig", () => {
     expect(loaded.source).toBeUndefined();
   });
 
+  it("still loads a config written by init before 5.2.0 (plugin key)", () => {
+    const legacy = {
+      theme: "styles/theme.json",
+      plugin: "plugins/theme-plugin.ts",
+      output: "styles/theme.css",
+    };
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify(legacy),
+    );
+
+    const loaded = loadStyleGenConfig(tmp);
+
+    expect(loaded.issues).toBeUndefined();
+    expect(loaded.error).toBeUndefined();
+    expect(loaded.config).toEqual(legacy);
+    expect(toGeneratorOptions(loaded.config)).toEqual({});
+  });
+
   it("passes schema issues through and merges nothing from the bad file", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),

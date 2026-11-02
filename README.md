@@ -4,6 +4,8 @@ TypeScript library + CLI that turns a theme JSON into a complete **design system
 
 Published on **GitHub Packages** as `@duydpdev/style-generator` (installing needs a token, see [Install](#install)).
 
+> **New in 5.2.0:** `style-gen init` detects Vite, Next.js or Nuxt and prints the plugin snippet for your config instead of scaffolding `plugins/theme-plugin.ts`; `--plugin` is gone. A `plugin` key in an existing `style-gen.config.json` still loads. See [`style-gen init`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md#style-gen-init).
+>
 > **Upgrading from 4.x?** 5.0.0 is a breaking release (color variables `--sg-<color>` → `--sg-color-<color>`, `@theme`-driven `borderWidth`, array-form `spacing.properties`, `DesignTokens.Web` keys renamed to the theme keys, readonly and options-typed token arrays, stricter typography). Read [`documents/migration/4.x-to-5.0.md`](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md).
 >
 > **Upgrading from 3.x?** 4.0.0 is a breaking release (Tailwind v4 only, `generate()` instead of a plugin + safelist, strict theme schema, `themeAxes`). Read [`documents/migration/3.x-to-4.0.md`](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
@@ -54,8 +56,6 @@ export GITHUB_PAT=ghp_xxxxxxxxxxxxxxxxxxxx
 
 ```bash
 yarn add @duydpdev/style-generator
-# or
-npm install @duydpdev/style-generator
 ```
 
 > Access is granted per collaborator. If install returns `404`/`401`, your token
@@ -67,11 +67,116 @@ Peer dependencies and the versions CI tests: [reference/core.md](https://github.
 
 ## Quickstart
 
+Start from an app that already builds with Tailwind CSS v4, then:
+
 ```bash
 yarn style-gen init
 ```
 
 > **Warning:** Install the package first and always run the CLI through your package manager (`yarn style-gen …`). Never run it through `npx`: the `style-gen` name is unclaimed on the public npm registry, so `npx` can fetch an unrelated package. With npm, use `npm exec --no -- style-gen` so it only resolves your local installation.
+
+`init` writes the theme JSON, its `theme.schema.json` and `style-gen.config.json`, looks for `nuxt.config.*`, `next.config.*` or `vite.config.*` in the project root and prints the snippet for that file and the CSS `@import` lines. It never edits your config: copy the snippet in. These are the snippets it prints for a new project.
+
+### Vite
+
+With a `src/` directory the theme goes to `src/styles/theme.json`. Add the plugin before `tailwindcss()`; without arguments it reads `style-gen.config.json`:
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+
+export default defineConfig({
+  // No arguments: reads style-gen.config.json (theme, output, options).
+  plugins: [styleGenVite(), tailwindcss()],
+});
+```
+
+The CSS entry your `src/main.*` imports, `src/index.css`:
+
+```css
+@import "tailwindcss";
+@import "./styles/theme.css";
+```
+
+### Next.js
+
+The theme goes to `styles/theme.json` (`src/styles/theme.json` with a `src/` directory). Tailwind runs through `@tailwindcss/postcss` (`postcss.config.mjs`), as in `create-next-app --tailwind`. Wrap your config; `styleGenNext()` reads `style-gen.config.json` and works with webpack and Turbopack:
+
+```ts
+// next.config.ts
+import type { NextConfig } from "next";
+import { styleGenNext } from "@duydpdev/style-generator/next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+// No arguments: reads style-gen.config.json (theme, output, options).
+export default styleGenNext()(nextConfig);
+```
+
+`app/globals.css`, imported by `app/layout.tsx`:
+
+```css
+@import "tailwindcss";
+@import "../styles/theme.css";
+```
+
+### Nuxt
+
+Nuxt 4 sets Vite's root to `app/`, so the theme goes to `app/assets/css/theme.json` and the plugin gets absolute paths. With explicit paths it does not read `style-gen.config.json` (that file then serves only the CLI): put generator options in `options`.
+
+```ts
+// nuxt.config.ts
+import { fileURLToPath } from "node:url";
+import { defineNuxtConfig } from "nuxt/config";
+import tailwindcss from "@tailwindcss/vite";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+
+export default defineNuxtConfig({
+  css: ["~/assets/css/main.css"],
+  vite: {
+    plugins: [
+      // Absolute paths: Nuxt 4 sets Vite's root to app/.
+      styleGenVite({
+        themePath: fileURLToPath(
+          new URL("./app/assets/css/theme.json", import.meta.url),
+        ),
+        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
+        options: {}, // style-gen.config.json is NOT read when paths are passed; put generate() options here
+      }),
+      tailwindcss(),
+    ],
+  },
+});
+```
+
+Create `app/assets/css/main.css` (`init` does not create it; `css` in `nuxt.config.ts` loads it):
+
+```css
+@import "tailwindcss";
+@import "./theme.css";
+```
+
+### No bundler plugin
+
+Without a bundler config, `init` prints the CLI route. The theme goes to `styles/theme.json`:
+
+```bash
+yarn style-gen generate            # writes styles/theme.css
+yarn style-gen generate --watch    # regenerate on save
+```
+
+A CSS file in `styles/`:
+
+```css
+@import "tailwindcss";
+@import "./theme.css";
+```
+
+### The theme
 
 Colors are a **flat object**; only `colors` is required:
 
@@ -88,20 +193,41 @@ Colors are a **flat object**; only `colors` is required:
 }
 ```
 
-```bash
-yarn style-gen generate            # writes styles/theme.css
-yarn style-gen generate --watch    # regenerate on save
-yarn style-gen schema              # writes theme.schema.json next to the theme (editor autocomplete)
-```
-
-```css
-@import "tailwindcss";
-@import "./theme.css";
-```
-
 That is the whole wiring — there is no `@plugin` and no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`heading1` → `.heading-1`, `text16Medium` → `.text-16-medium`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available.
 
-Prefer no CLI step? Use [`styleGenVite`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/vite.md) or [`styleGenNext`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/next.md), which write the same file for you.
+Need opacity modifiers such as `bg-primary/10`? List the steps in `coverage.colors.opacities`, for example `"coverage": { "colors": { "opacities": [10, 20] } }` in `style-gen.config.json` (Nuxt: in the snippet's `options`); see [`documents/reference/options.md`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md).
+
+---
+
+## Commands
+
+Run each as `yarn style-gen <command>`; flags are in [`documents/reference/cli.md`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md).
+
+| Command    | What it does                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------ |
+| `init`     | Scaffold the theme, its JSON Schema and `style-gen.config.json`; print the wiring for your stack |
+| `generate` | Validate the theme and write `theme.css`                                                         |
+| `doctor`   | Check the config, the theme × options pair, utility name clashes and pre-5.0 leftovers           |
+| `schema`   | Write `theme.schema.json` for editor autocomplete                                                |
+| `tokens`   | Write a keys-only `theme.tokens.ts` for client bundles                                           |
+| `budget`   | Fail when the gzip size of the built CSS exceeds a budget                                        |
+
+---
+
+## Subpaths
+
+| Import      | What it holds                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------- |
+| `.`         | `generate`, `defineTheme`, `defineOptions`, `formatZodError` and most other exports; pulls in Zod |
+| `./tokens`  | `createDesignTokens`, `Breakpoint`, `COLOR_STATES`: browser-safe token constants                  |
+| `./cva`     | `createVariantMapper`, `toKebabCase`: token keys → class names for CVA                            |
+| `./spacing` | `resolveSpacing`, `resolveSpacingProps`: spacing props → `.sp-*` classes and style                |
+| `./recipes` | `createTailwindMergeExtension`, `splitSpacingProps`, `themeAxisAttributes` (not in `.`)           |
+| `./types`   | Types only: `ThemeConfig`, `StyleGeneratorOptions`, the variant types                             |
+| `./vite`    | `styleGenVite`, the Vite plugin (also for Nuxt); Node only                                        |
+| `./next`    | `styleGenNext`, the Next.js config wrapper; Node only                                             |
+
+Import a subpath as `@duydpdev/style-generator/<name>`; every export by subpath: [`documents/reference/core.md`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md#all-exports-by-subpath).
 
 ---
 

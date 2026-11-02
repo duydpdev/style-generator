@@ -78,7 +78,12 @@ export function ToolingSection() {
           <KeyPoint
             badge="C1"
             title={<code>style-gen init</code>}
-            body={<>Interactive scaffold — paths, optional dark template.</>}
+            body={
+              <>
+                Interactive scaffold — theme path, dark template, printed
+                bundler wiring.
+              </>
+            }
           />
           <KeyPoint
             badge="C2"

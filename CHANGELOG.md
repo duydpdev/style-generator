@@ -1,3 +1,11 @@
+# [5.1.0](https://github.com/duydpdev/style-generator/compare/v5.0.0...v5.1.0) (2026-11-02)
+
+### Features
+
+- add opacity-modifier coverage for color categories ([c4f9272](https://github.com/duydpdev/style-generator/commit/c4f927292586e3e7b312602d2d62b55c2ae26e21))
+
+  coverage.colors.opacities (distinct integers 1-100, non-empty) emits one extra @source inline line, {bg,text,border}-{keys}/{steps}, right after the colors line, honouring prefixes and keys. Not crossed with the hover/active state lines; rejected for every other category. Output is byte-identical when the option is absent.
+
 # [5.0.0](https://github.com/duydpdev/style-generator/compare/v4.2.0...v5.0.0) (2026-10-31)
 
 ### Release

@@ -1,3 +1,28 @@
+# [5.2.0](https://github.com/duydpdev/style-generator/compare/v5.1.0...v5.2.0) (2026-11-02)
+
+### Features
+
+- detect the stack in init and print the bundler wiring ([26cf990](https://github.com/duydpdev/style-generator/commit/26cf9902364e0809fcf8440e377336f72cb22166))
+
+  - `style-gen init` detects the stack from the config file in the project
+    root (nuxt.config.* before next.config.* before vite.config.*) and
+    prints the styleGenVite()/styleGenNext() snippet for it plus the two CSS
+    @import lines; without a bundler config it prints the
+    `style-gen generate` fallback. It never edits the bundler config.
+  - Nuxt: the theme defaults to app/assets/css/theme.json (assets/css
+    without app/), inside the Vite root that Nuxt 4 sets to app/. The
+    Nuxt snippet passes absolute paths and `options: {}`, because with
+    explicit paths the plugin does not read style-gen.config.json; init
+    warns when the theme is outside app/.
+  - init no longer scaffolds plugins/theme-plugin.ts: the "Generator script
+    location?" prompt and the --plugin flag are removed (`init --plugin`
+    now fails as an unknown option), and init no longer writes `plugin`
+    into style-gen.config.json.
+  - The `plugin` config key is still accepted: configs written by 5.0/5.1
+    keep loading and `doctor` still checks that script. Delete the script
+    and the key once the bundler plugin or `style-gen generate` writes
+    theme.css.
+
 # [5.1.0](https://github.com/duydpdev/style-generator/compare/v5.0.0...v5.1.0) (2026-11-02)
 
 ### Features

@@ -109,8 +109,7 @@ jobs:
   # `engines.node` is `^20.19.0 || >=22.12.0`, while every other job runs
   # Node 22. This leg loads the built package on the floor release: every
   # subpath via import + require (the CJS entries `require` ESM-only
-  # chokidar 5, unflagged only from 20.19) and the CLI. The init-scaffolded
-  # TypeScript script is skipped here; it needs Node >= 22.18.
+  # chokidar 5, unflagged only from 20.19) and the CLI, `init` included.
   node-floor:
     name: Node engines floor (20.19.0)
     runs-on: ubuntu-latest

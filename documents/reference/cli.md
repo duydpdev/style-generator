@@ -8,22 +8,34 @@ The `style-gen` command-line tool: `init`, `generate`, `schema`, `doctor`, `toke
 
 ### `style-gen init`
 
-Scaffold the theme JSON, its JSON Schema, a generator script and `style-gen.config.json`.
+> **Changed in 5.2.0:** `init` no longer scaffolds `plugins/theme-plugin.ts`, no longer asks for a generator-script location and rejects `--plugin` (unknown option, exit code 1); it prints the bundler wiring below instead and stops writing `plugin` into `style-gen.config.json`. A config that still has `plugin` loads unchanged, and `doctor` still checks that the script exists. To migrate, add the printed snippet to your bundler config (or run `style-gen generate`), then delete the script and the `plugin` key.
 
-The wizard asks for the theme file location (default `styles/theme.json`), the location of the generator script (default `plugins/theme-plugin.ts`) and whether to include a dark-mode template. Non-interactive: `yarn style-gen init --dark`. It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), a small script that calls `generate()`, and `style-gen.config.json` (merging `theme`, `plugin` and `output` into an existing one and keeping its other keys). If the theme, its schema or the script already exists, it asks before overwriting (non-interactive: exits with code 1). The script and `style-gen generate` write the same file, `theme.css` next to the theme; run either one (`node plugins/theme-plugin.ts` needs Node >= 22.18, which strips the types). Type-checking the script needs `"module": "esnext"`, `"nodenext"` or `"preserve"` with `resolveJsonModule`, because it imports the theme `with { type: "json" }`.
+Scaffold the theme JSON, its JSON Schema and `style-gen.config.json`, then print how to wire them into your stack. `init` never edits a bundler config.
+
+The wizard asks for the theme file location and whether to include a dark-mode template. Non-interactive: `yarn style-gen init --dark`. It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`) and `style-gen.config.json` (merging `theme` and `output` into an existing one and keeping its other keys, `plugin` included). If the theme or its schema already exists, it asks before overwriting (non-interactive: exits with code 1).
+
+It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the two CSS `@import` lines:
+
+| Config file found | Printed wiring                                                                                                                 | `@import` lines printed for                                      |
+| :---------------- | :----------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| `nuxt.config.*`   | `styleGenVite({ themePath, outDir, options: {} })` in `vite.plugins` with absolute paths, and `css: ["~/assets/css/main.css"]` | `app/assets/css/main.css` (`assets/css/main.css` without `app/`) |
+| `next.config.*`   | `styleGenNext()(nextConfig)`                                                                                                   | `app/globals.css` (`src/app/globals.css` when `src/app/` exists) |
+| `vite.config.*`   | `styleGenVite()` before `tailwindcss()` in `plugins`                                                                           | `src/index.css` (`index.css` without `src/`)                     |
+| none              | `yarn style-gen generate` (`--watch` while you edit the theme)                                                                 | a CSS file next to the generated `theme.css`                     |
+
+`*` is `.ts`, `.mts`, `.cts`, `.js`, `.mjs` or `.cjs`; only files directly in the project root count (symlinks are followed). A framework config wins over `vite.config.*` because Next.js and Nuxt apps often keep one for Vitest. `styleGenVite()` and `styleGenNext()` without arguments read `style-gen.config.json` from the Vite root and from `process.cwd()`, so the theme, the output and every option stay in that file. Nuxt 4 sets Vite's root to `app/`, and `styleGenVite` writes only inside the root, so the Nuxt snippet passes absolute paths and the Nuxt theme defaults to `app/assets/css/theme.json`; with an `app/` directory, a `--theme` outside it prints a warning (exit code 0) because the dev server would reject that `outDir`. With explicit paths the plugin does not read `style-gen.config.json`: put generator options in the snippet's `options: {}`, as `examples/nuxt-v4/nuxt.config.ts` does; `style-gen.config.json` then serves only the CLI (`generate`, `doctor`, `tokens`). Every printed or stored path is relative to the project root with `/` separators (an absolute `--theme` inside the root is stored relative), and paths inside printed string literals are JSON-escaped. The snippets use ES module syntax; a CommonJS config (`.cjs`, or `.js` without `"type": "module"`) loads the same functions with `require()`. A JavaScript `next.config.*` gets a JSDoc `@type` comment instead of `import type`.
 
 ```bash
 yarn style-gen init            # Interactive mode
 yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
 ```
 
-| Flag       | Type      | Default                   | Description                         |
-| :--------- | :-------- | :------------------------ | :---------------------------------- |
-| `--theme`  | `string`  | `styles/theme.json`       | Path to the theme file              |
-| `--plugin` | `string`  | `plugins/theme-plugin.ts` | Path to the generator script        |
-| `--dark`   | `boolean` | `false`                   | Include the dark-mode axis template |
+| Flag      | Type      | Default             | Description                         |
+| :-------- | :-------- | :------------------ | :---------------------------------- |
+| `--theme` | `string`  | `styles/theme.json` | Path to the theme file              |
+| `--dark`  | `boolean` | `false`             | Include the dark-mode axis template |
 
-(Both defaults become `src/…` when a `src/` directory exists.)
+The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The CSS is written next to the theme (`theme.css`).
 
 ### `style-gen generate`
 
@@ -105,13 +117,12 @@ Print the installed CLI version.
 {
   "theme": "styles/theme.json",
   "output": "styles/theme.css",
-  "plugin": "plugins/theme-plugin.ts",
   "breakpoints": ["md", "lg"],
   "extraSources": ["hover:bg-{primary,secondary}"]
 }
 ```
 
-`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `extraSources`, `coverage`, `axes` and `resetTailwindDefaults` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, or a legacy 3.x key such as `responsiveModules` — is rejected; only `$schema`, `theme`, `output` and `plugin` are accepted besides the forwarded keys. `plugin` is optional: it names the script `init` scaffolded, and only `doctor` reads it. `styleGenVite()` and `styleGenNext()` called **without an argument** read this same file (see [Vite](./vite.md) / [Next](./next.md)). The CLI resolves configuration in this order, per key:
+`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `extraSources`, `coverage`, `axes` and `resetTailwindDefaults` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, or a legacy 3.x key such as `responsiveModules` — is rejected; only `$schema`, `theme`, `output` and `plugin` are accepted besides the forwarded keys. `plugin` is optional: `init` wrote it before 5.2.0 to name the generator script it scaffolded; it is still accepted so those configs keep loading, and only `doctor` reads it (it checks that the file exists). `styleGenVite()` and `styleGenNext()` called **without an argument** read this same file (see [Vite](./vite.md) / [Next](./next.md)). The CLI resolves configuration in this order, per key:
 
 1. command flags
 2. `style-gen.config.json`

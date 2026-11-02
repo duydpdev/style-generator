@@ -12,9 +12,10 @@
  *    internal aliases);
  * 3. `generate()` from the ESM and CJS builds returns identical CSS;
  * 4. the CLI bundle runs: `--version`, `schema`, `generate` (same CSS as the
- *    library), `tokens`, `budget` (each also with `--help`) and `init` in an
- *    empty project, whose scaffolded TypeScript generator script then runs
- *    under Node's type stripping.
+ *    library), `tokens`, `budget` (each also with `--help`) and `init`: in an
+ *    empty project it prints the `style-gen generate` fallback and writes no
+ *    generator script (`generate` then builds CSS from what it scaffolded);
+ *    next to a `vite.config.ts` it prints the `styleGenVite()` snippet.
  *
  * Run: node scripts/smoke-dist.mjs
  * Exits 1 on the first failed step.
@@ -27,7 +28,6 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
-  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
@@ -257,45 +257,39 @@ runNode(
   work,
 );
 
-// `init` in an empty ESM project that resolves the package by name.
+// `init` in an empty project: no bundler config, so it prints the
+// `style-gen generate` fallback; `generate` then writes the CSS from what
+// `init` scaffolded. No generator script exists any more (5.2.0).
 const project = join(work, "project");
-mkdirSync(join(project, "node_modules", "@duydpdev"), { recursive: true });
-symlinkSync(
-  root,
-  join(project, "node_modules", pkg.name),
-  process.platform === "win32" ? "junction" : "dir",
-);
-writeFileSync(
-  join(project, "package.json"),
-  JSON.stringify({ name: "smoke", private: true, type: "module" }),
-);
-runNode("style-gen init", [cli, "init"], project);
-
+mkdirSync(project);
+const initOut = runNode("style-gen init", [cli, "init"], project);
+if (!initOut.includes("style-gen generate")) {
+  fail(
+    `init without a bundler config printed no style-gen generate fallback:\n${initOut}`,
+  );
+}
 const config = JSON.parse(
   readFileSync(join(project, "style-gen.config.json"), "utf8"),
 );
-// Node >= 22.18 / 23.6 strips types by default; 22.6–22.17 needs the flag.
-// Node 20.19 (the `engines` floor) cannot run a .ts file at all; `init`
-// documents that its script needs Node >= 22.18, so only that step is skipped.
-const stripsByDefault = Boolean(process.features.typescript);
-const acceptsStripFlag = process.allowedNodeEnvironmentFlags.has(
-  "--experimental-strip-types",
-);
-if (!stripsByDefault && !acceptsStripFlag) {
-  console.log(
-    `- scaffolded ${config.plugin} not run: Node ${process.version} cannot strip TypeScript types`,
+if ("plugin" in config || existsSync(join(project, "plugins"))) {
+  fail("init still scaffolds a generator script (plugin key or plugins/)");
+}
+runNode("style-gen generate (init project)", [cli, "generate"], project);
+if (
+  !readFileSync(join(project, config.output), "utf8").includes("@theme inline")
+) {
+  fail(`${config.output} written by style-gen generate has no @theme inline`);
+}
+
+// Next to a vite.config.ts, `init` prints the styleGenVite() snippet.
+const viteProject = join(work, "vite-project");
+mkdirSync(viteProject);
+writeFileSync(join(viteProject, "vite.config.ts"), "");
+const viteOut = runNode("style-gen init (vite)", [cli, "init"], viteProject);
+if (!viteOut.includes("styleGenVite()")) {
+  fail(
+    `init next to vite.config.ts printed no styleGenVite() snippet:\n${viteOut}`,
   );
-} else {
-  const stripFlag = stripsByDefault ? [] : ["--experimental-strip-types"];
-  runNode(
-    `scaffolded ${config.plugin}`,
-    [...stripFlag, config.plugin],
-    project,
-  );
-  const scaffolded = readFileSync(join(project, config.output), "utf8");
-  if (!scaffolded.includes("@theme inline")) {
-    fail(`${config.output} written by ${config.plugin} has no @theme inline`);
-  }
 }
 
 console.log("✓ smoke-dist passed");

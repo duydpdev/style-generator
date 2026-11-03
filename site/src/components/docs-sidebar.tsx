@@ -1,7 +1,9 @@
 import { type ReactNode, useRef } from "react";
 
 import { VERSION } from "../data/version";
-import { docs } from "../lib/docs-content";
+import { docsOf } from "../lib/docs-content";
+import { UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import { useScrollActiveIntoView } from "../lib/use-scroll-active";
 import { Box, Flex, Stack } from "../ui";
 
@@ -24,6 +26,8 @@ function FootRow({
 }
 
 export function DocsSidebar({ activeSlug }: Readonly<Props>) {
+  const locale = useLocale();
+  const t = UI_TEXT[locale];
   const navRef = useRef<HTMLDivElement>(null);
   useScrollActiveIntoView(navRef, activeSlug);
 
@@ -36,20 +40,20 @@ export function DocsSidebar({ activeSlug }: Readonly<Props>) {
         maxHeight="calc(100vh - 100px)"
       >
         <Flex data-part="rail-label" align="center" gap={2.5} mb={1}>
-          Documentation
+          {t.documentation}
         </Flex>
         <Box data-part="docs-rail-nav" ref={navRef}>
           <DocsNavGroups activeSlug={activeSlug} />
         </Box>
 
         <Stack data-part="rail-foot" mt={7.5} pt={3.5} gap={2}>
-          <FootRow label="VERSION">
+          <FootRow label={t.versionLabel}>
             <Box as="span">v{VERSION}</Box>
           </FootRow>
-          <FootRow label="LICENSE">
+          <FootRow label={t.licenseLabel}>
             <Box as="span">MIT</Box>
           </FootRow>
-          <FootRow label="SOURCE">
+          <FootRow label={t.sourceLabel}>
             <a
               href="https://github.com/duydpdev/style-generator"
               target="_blank"
@@ -58,8 +62,8 @@ export function DocsSidebar({ activeSlug }: Readonly<Props>) {
               github ↗
             </a>
           </FootRow>
-          <FootRow label="DOCS">
-            <Box as="span">{docs.length} pages</Box>
+          <FootRow label={t.docsLabel}>
+            <Box as="span">{t.pages(docsOf(locale).length)}</Box>
           </FootRow>
         </Stack>
       </Stack>

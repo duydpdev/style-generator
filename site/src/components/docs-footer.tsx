@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 
 import type { DocEntry } from "../lib/docs-content";
+import { docPath, UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import { Box, Flex, Grid, Stack, Text } from "../ui";
 
 interface CardProps {
@@ -10,10 +12,11 @@ interface CardProps {
 
 function NavCard({ doc, dir }: Readonly<CardProps>) {
   if (!doc) return <Box as="span" />;
+  const t = UI_TEXT[doc.locale];
   return (
     <Stack
       as={Link}
-      to={`/docs/${doc.slug}`}
+      to={docPath(doc.locale, doc.slug)}
       data-part={dir === "next" ? "nav-card next" : "nav-card"}
       rounded="lg"
       px={5}
@@ -21,7 +24,7 @@ function NavCard({ doc, dir }: Readonly<CardProps>) {
       gap={1}
     >
       <Text as="span" data-part="lbl" color="muted">
-        {dir === "next" ? "Next →" : "← Previous"}
+        {dir === "next" ? t.next : t.previous}
       </Text>
       <Text as="span" data-part="ttl">
         <em>{doc.title}</em>
@@ -47,17 +50,18 @@ export function DocFooter({ prev, next }: Readonly<FooterProps>) {
 
 /** "Edit on GitHub" row under the page. */
 export function DocEdit({ ghUrl }: Readonly<{ ghUrl: string }>) {
+  const t = UI_TEXT[useLocale()];
   return (
     <Flex data-part="doc-edit" wrap gap={4.5} mt={7}>
       <a href={ghUrl} target="_blank" rel="noopener noreferrer">
-        Edit this page on GitHub ↗
+        {t.editPage}
       </a>
       <a
         href="https://github.com/duydpdev/style-generator/issues/new"
         target="_blank"
         rel="noopener noreferrer"
       >
-        Report an issue ↗
+        {t.reportIssue}
       </a>
       <Box
         as="button"
@@ -67,7 +71,7 @@ export function DocEdit({ ghUrl }: Readonly<{ ghUrl: string }>) {
         }}
         data-part="back-to-top"
       >
-        Back to top ↑
+        {t.backToTop}
       </Box>
     </Flex>
   );

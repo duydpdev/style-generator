@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 
 import { ALERTS, isMermaidBlock, parseAlert } from "../lib/doc-alerts";
 import { resolveDocLink } from "../lib/docs-content";
+import { localeOfRepoPath, UI_TEXT } from "../lib/locale";
 import { Box, Grid, Text } from "../ui";
 
 const remarkPlugins = [remarkGfm];
@@ -27,8 +28,9 @@ interface Props {
  * is bundled).
  */
 export function DocMarkdown({ source, repoPath }: Readonly<Props>) {
-  const components = useMemo<Components>(
-    () => ({
+  const components = useMemo<Components>(() => {
+    const t = UI_TEXT[localeOfRepoPath(repoPath)];
+    return {
       // `node` (the hast element) must not reach the DOM, so pull it out of `rest`.
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       a({ node: _node, href, children, ...rest }) {
@@ -93,7 +95,7 @@ export function DocMarkdown({ source, repoPath }: Readonly<Props>) {
                 color="foreground"
                 mb={1}
               >
-                {meta.title}
+                {t.alerts[alert.kind]}
               </Text>
               {alert.body}
             </Box>
@@ -107,14 +109,13 @@ export function DocMarkdown({ source, repoPath }: Readonly<Props>) {
         }
         return (
           <Box as="figure" data-part="diagram-source" minWidth={0} mb={6}>
-            <figcaption>Diagram source (mermaid)</figcaption>
+            <figcaption>{t.diagramSource}</figcaption>
             <pre {...rest}>{children}</pre>
           </Box>
         );
       },
-    }),
-    [repoPath],
-  );
+    };
+  }, [repoPath]);
 
   return (
     <ReactMarkdown

@@ -2,7 +2,9 @@ import { Link } from "react-router-dom";
 
 import { DocsSidebar } from "../components/docs-sidebar";
 import { Topbar } from "../components/topbar";
-import { docs } from "../lib/docs-content";
+import { docsOf } from "../lib/docs-content";
+import { docPath, UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import { useTheme } from "../lib/use-theme";
 import { Box, Grid, Text } from "../ui";
 
@@ -13,24 +15,28 @@ interface Props {
 
 export function NotFound({ missingDoc }: Readonly<Props>) {
   const { toggle } = useTheme();
+  const locale = useLocale();
+  const t = UI_TEXT[locale];
   const inDocs = missingDoc !== undefined;
 
   const body = (
     <>
-      <Text as="h1">Not found</Text>
+      <Text as="h1">{t.notFound}</Text>
       <Text as="p">
         {inDocs ? (
           <>
-            Doc <code>{missingDoc}</code> does not exist.
+            {t.docWord} <code>{missingDoc}</code> {t.doesNotExist}
           </>
         ) : (
-          "This page does not exist."
+          t.pageMissing
         )}
       </Text>
       <Text as="p">
-        <Link to="/">Landing page</Link> ·{" "}
-        <Link to={`/docs/${docs[0]?.slug ?? "introduction"}`}>Docs</Link> ·{" "}
-        <Link to="/examples/v4">Examples</Link>
+        <Link to="/">{t.landingPage}</Link> ·{" "}
+        <Link to={docPath(locale, docsOf(locale)[0]?.slug ?? "introduction")}>
+          {t.docs}
+        </Link>{" "}
+        · <Link to="/examples/v4">{t.examples}</Link>
       </Text>
     </>
   );

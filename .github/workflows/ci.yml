@@ -107,6 +107,13 @@ jobs:
         # equal that region of the real example file (yarn docs:embed).
         run: yarn check:docs-embed
 
+      - name: Check the Vietnamese docs mirror
+        # Every doc the site renders has a documents/vi/ twin whose recorded
+        # source hash, heading levels, doc-script markers and code blocks
+        # match the English file (yarn check:docs-i18n). After
+        # check:docs-embed: the hash is taken of the embedded file.
+        run: yarn check:docs-i18n
+
       - name: Type-check doc snippets
         # Every ts/tsx block in README.md and documents/ (not plans,
         # brainstorm, migration) against dist/*.d.ts; opt-outs need a reason

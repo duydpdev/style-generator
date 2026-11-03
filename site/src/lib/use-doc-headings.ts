@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import type { RefObject } from "react";
 
+import { TOC_TITLES } from "./locale";
+
 export interface DocHeading {
   id: string;
   text: string;
   level: 2 | 3;
 }
-
-/** The in-content TOC heading is not worth a navigation entry. */
-const TOC_TITLE = "table of contents";
 
 /** The `h2`/`h3` headings of the rendered doc; re-scanned when the markdown changes. */
 export function useDocHeadings(
@@ -23,7 +22,8 @@ export function useDocHeadings(
     const raf = requestAnimationFrame(() => {
       const found = Array.from(el.querySelectorAll("h2[id], h3[id]"));
       const list: DocHeading[] = found
-        .filter((h) => h.textContent.trim().toLowerCase() !== TOC_TITLE)
+        // The in-content TOC heading is not worth a navigation entry.
+        .filter((h) => !TOC_TITLES.includes(h.textContent.trim().toLowerCase()))
         .map((h) => ({
           id: h.id,
           text: h.textContent.replace(/`/g, ""),

@@ -32,7 +32,7 @@ updates:
       interval: monthly
     # Same as github-actions above.
     rebase-strategy: disabled
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 0
     groups:
       # Report §3.6 item 4: every minor/patch bump in ONE PR. Majors are not
       # grouped, so each gets its own PR (the ignore list below still drops

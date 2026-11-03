@@ -1,3 +1,11 @@
+# [5.3.0](https://github.com/duydpdev/style-generator/compare/v5.2.0...v5.3.0) (2026-11-03)
+
+### Features
+
+- publish the styleless ui kit as ./ui and ./ui-react ([6ad0b3b](https://github.com/duydpdev/style-generator/commit/6ad0b3bf09cfda220ccbd9153aca60c86ac44337))
+
+  New subpaths: ./ui (recipeFromTables, pick, contrastText, createCn, splitSpacing, splitLayout, mergeStyle and their types) and the type-only ./ui-react (Polymorphic). class-variance-authority (^0.7.0), clsx (^1.2.0 || ^2.0.0), tailwind-merge (^3.0.0) and @types/react (^18.0.0 || ^19.0.0) are optional peer dependencies; check:externals allows the runtime ones only in ./ui, and the ui-peer-floor CI job tests their floors. splitLayout takes the variant and size key lists and turns numeric sizes into px. The example design system and react-v4 components import the kit instead of keeping copies. scripts/cjs-declaration.mjs is fail-closed (identity rules for the four peers; any unhandled external reference fails the build); check:browser-safe, check:smoke and typecheck:dist cover both subpaths; vite.config.ts pins the recipes entry chunk and the shared axisAttributeName module so index, tokens, cva and spacing stay byte-identical; dependabot ignores the peers' majors; docs: reference pages ui.md and ui-react.md, architecture/components/guide updated, the site counts 10 subpaths. Apps pinning a version outside a peer range may need --legacy-peer-deps on npm. Budgets for index, tokens, cva and spacing are unchanged.
+
 # [5.2.0](https://github.com/duydpdev/style-generator/compare/v5.1.0...v5.2.0) (2026-11-02)
 
 ### Features

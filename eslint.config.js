@@ -76,6 +76,26 @@ const RESTRICTED_UI_IMPORTS = {
   ],
 };
 
+// Plain examples: copy-paste component folders over the published kit
+// (@duydpdev/style-generator/ui). className and style are allowed; the
+// harness packages are not, so a copied folder needs only the package.
+const PLAIN_APP_FILES = ["examples/plain-react/src/**/*.{ts,tsx}"];
+
+const PLAIN_RESTRICTED_IMPORTS = {
+  patterns: [
+    {
+      group: [
+        "design-system-example",
+        "design-system-example/*",
+        "react-v4-example",
+        "react-v4-example/*",
+      ],
+      message:
+        "Plain examples import only the package, their own files and src/theme.ts; the harness (design-system-example, react-v4-example) stays out.",
+    },
+  ],
+};
+
 export default pluginTs.config(
   pluginJs.configs.recommended,
   pluginPrettierRecommended,
@@ -213,6 +233,13 @@ export default pluginTs.config(
     },
   },
 
+  {
+    files: PLAIN_APP_FILES,
+    rules: {
+      "no-restricted-imports": ["error", PLAIN_RESTRICTED_IMPORTS],
+    },
+  },
+
   // nuxt-v4 SFCs: vue-eslint-parser hands <script lang="ts"> to the TS parser.
   // Type-aware rules stay off for .vue (the project service cannot open SFCs);
   // vue-tsc (`nuxt typecheck`) type-checks them, tests/nuxt/** included.
@@ -313,6 +340,15 @@ export default pluginTs.config(
   // The design-system DX tests run in Node (TypeScript Compiler API, fs).
   {
     files: ["examples/design-system/tests/**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+
+  // plain-react's Node scripts (copy-out smoke): plain JS like scripts/.
+  {
+    files: ["examples/plain-react/scripts/**/*.mjs"],
+    extends: [pluginTs.configs.disableTypeChecked],
     languageOptions: {
       globals: globals.node,
     },

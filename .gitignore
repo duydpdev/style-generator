@@ -74,6 +74,10 @@ playwright/.cache/
 e2e-site/__screenshots__/**/*-darwin.png
 e2e-site/__screenshots__/**/*-win32.png
 
+# Vitest browser failure screenshots (examples/plain-react tests and stories)
+examples/plain-react/**/__screenshots__/
+examples/plain-react/.vitest-attachments/
+
 # System files
 .DS_Store
 .AppleDouble

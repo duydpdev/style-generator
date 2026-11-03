@@ -39,6 +39,16 @@ import type {
   ThemeAxesState,
   ThemeConfig,
 } from "@duydpdev/style-generator/types";
+import {
+  createCn,
+  mergeStyle,
+  recipeFromTables,
+  splitLayout,
+  type RecipeFn,
+  type Split,
+  type StyleRecord,
+} from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
 
 type Eq<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
@@ -87,6 +97,10 @@ const split = splitSpacingProps(
   web.spacingProperties,
 );
 const axisAttributes = themeAxisAttributes<typeof theme>({ theme: "dark" });
+const uiCn = createCn(web);
+const uiRecipe = recipeFromTables({ base: "flex", variants: {} });
+const uiStyle = mergeStyle<StyleRecord>({ width: 1 });
+const uiSplit = splitLayout({}, uiRecipe, [], [], []);
 
 const states = createVariantMapper(
   "bg",
@@ -149,4 +163,10 @@ export type DistTypeChecks = [
   // Numeric theme keys are the stringified keys the runtime sees.
   Assert<Eq<typeof numeric.borderWidth, readonly "2"[]>>,
   Assert<Eq<typeof numeric.aliasedColors, readonly "500"[]>>,
+  // UI kit: the tokens feed `cn`; the splitters return their documented shapes; `./ui-react` adds `Polymorphic`.
+  Assert<Eq<ReturnType<typeof uiCn>, string>>,
+  Assert<Eq<typeof uiRecipe, RecipeFn>>,
+  Assert<Eq<typeof uiStyle, StyleRecord | undefined>>,
+  Assert<Eq<typeof uiSplit, Split>>,
+  Assert<Eq<Polymorphic<"a", { readonly tone: "loud" }>["tone"], "loud">>,
 ];

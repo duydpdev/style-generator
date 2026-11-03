@@ -1,11 +1,10 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
-
 import {
   recipeFromTables,
   type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
-} from "./tables";
+} from "@duydpdev/style-generator/ui";
 
 /** `base`: classes every Box gets (design-system: `"relative"`); omitted → none. */
 export interface BoxPreset {

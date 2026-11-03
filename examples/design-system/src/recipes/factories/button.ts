@@ -2,7 +2,6 @@ import {
   COLOR_STATES,
   createVariantMapper,
 } from "@duydpdev/style-generator/cva";
-
 import {
   contrastText,
   pick,
@@ -10,7 +9,7 @@ import {
   type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
-} from "./tables";
+} from "@duydpdev/style-generator/ui";
 
 export type ButtonTint = "outline" | "soft" | "ghost" | "link";
 export const BUTTON_TINTS = [

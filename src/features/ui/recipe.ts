@@ -1,8 +1,13 @@
 import { cva } from "class-variance-authority";
-import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import type { ClassValue } from "clsx";
 
-/** The token arrays a factory reads: a structural subset of `DesignTokens.Web`. */
+import { createVariantMapper } from "../cva/createVariantMapper";
+
+/**
+ * The token arrays a recipe factory reads: a structural subset of
+ * `DesignTokens.Web`, so `generate().tokens.Web` and
+ * `createDesignTokens().DesignTokens.Web` are assignable to it.
+ */
 export interface RecipeTokens {
   readonly colors: readonly string[];
   readonly typography: readonly string[];
@@ -14,7 +19,7 @@ export interface RecipeTokens {
   readonly breakpoints: readonly string[];
 }
 
-/** Variant name → option → classes. */
+/** Variant name → option → classes (the `variants` of a cva config). */
 export type VariantTable = Record<string, Record<string, ClassValue>>;
 
 /** A recipe as plain data: the cva input. */
@@ -34,10 +39,15 @@ export type RecipeProps = Readonly<
   Record<string, string | boolean | null | undefined>
 >;
 
-/** A recipe built from tables; bound modules and the sample components type the exact props. */
+/** A recipe built from tables: props in, one class string out; components type the exact props. */
 export type RecipeFn = (props?: RecipeProps) => string;
 
-/** cva over a factory's tables; compound and default entries are loose, so they are cast here once. */
+/**
+ * cva over a recipe's tables. Compound and default entries are loose
+ * records, so they are cast here once instead of in every recipe.
+ * @param {RecipeTables} tables - Base classes, variants, compound and default variants
+ * @returns {RecipeFn} The recipe
+ */
 export const recipeFromTables = (tables: RecipeTables): RecipeFn =>
   cva<VariantTable>(tables.base, {
     variants: tables.variants,
@@ -45,7 +55,13 @@ export const recipeFromTables = (tables: RecipeTables): RecipeFn =>
     defaultVariants: tables.defaultVariants as never,
   }) as RecipeFn;
 
-/** `map[key]`, or a thrown error naming the missing token (never `undefined`). */
+/**
+ * `map[key]`, or a thrown error naming the missing token, so a renamed
+ * theme token fails loudly instead of rendering no class.
+ * @param {object} map - A class map, for example from `createVariantMapper`
+ * @param {string} key - The token key
+ * @returns {string} The class
+ */
 export const pick = (map: object, key: string): string => {
   const value: unknown = (map as Readonly<Record<string, unknown>>)[key];
   if (typeof value !== "string")
@@ -53,16 +69,14 @@ export const pick = (map: object, key: string): string => {
   return value;
 };
 
-/** `border-<key>` from the theme's borderWidth tokens, or Tailwind's `border` (1px) when `key` is omitted. */
-export const borderWidthClass = (
-  widths: readonly string[],
-  key: string | undefined,
-): string =>
-  key === undefined
-    ? "border"
-    : pick(createVariantMapper("border", widths), key);
-
-/** `text-on-<intent>` when the theme declares the `on<Intent>` sibling, else `text-<fallback>`. */
+/**
+ * `text-on-<intent>` when the theme declares the `on<Intent>` sibling
+ * color, else `text-<fallback>`.
+ * @param {readonly string[]} colors - The theme's `colors` tokens
+ * @param {string} intent - A color key (`primary`)
+ * @param {string} fallback - The color key used when `on<Intent>` is missing
+ * @returns {string} The text color class
+ */
 export const contrastText = (
   colors: readonly string[],
   intent: string,

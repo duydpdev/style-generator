@@ -64,7 +64,7 @@ ESLint enforces the last two rules and bans the tags of the table above in app f
 
 ## Polymorphic `as`
 
-The layout components and `Text` accept `as` to pick the root element, and the other props are then typed for that element: `<Text as="h1" type="display56Serif">` accepts the `<h1>` attributes, and `<Box as="section">` the `<section>` ones. Each React file declares its own small `Polymorphic` type; see [`examples/react-v4/src/ui/Box.tsx`](../examples/react-v4/src/ui/Box.tsx).
+The layout components and `Text` accept `as` to pick the root element, and the other props are then typed for that element: `<Text as="h1" type="display56Serif">` accepts the `<h1>` attributes, and `<Box as="section">` the `<section>` ones. Each React file types its props with `Polymorphic` from `@duydpdev/style-generator/ui-react`; see [`examples/react-v4/src/ui/Box.tsx`](../examples/react-v4/src/ui/Box.tsx).
 
 ## Adding a component
 
@@ -72,7 +72,7 @@ The layout components and `Text` accept `as` to pick the root element, and the o
 
 1. **Recipe factory** in `examples/design-system/src/recipes/factories/<name>.ts`, exported from `factories/index.ts` (the `design-system-example/recipes` subpath).
 2. **Bound recipe and preset** in `examples/design-system/src/recipes/<name>.ts`, exported from `src/index.ts`. The Vue SFC uses the bound recipe; the React app binds the factory with the preset.
-3. **React component file** `examples/react-v4/src/ui/<Name>.tsx`: its own prop types and its own `Polymorphic` type, no shared type module. It splits its props with `src/ui/layout.ts`: `splitLayout` for a layout component, `splitSpacing` for any other.
+3. **React component file** `examples/react-v4/src/ui/<Name>.tsx`: its own prop types over `Polymorphic` from `@duydpdev/style-generator/ui-react`. It splits its props with the kit in `@duydpdev/style-generator/ui`: `splitLayout` (with `BOX_VARIANT_KEYS` and the `LAYOUT_SIZE_KEYS` of `src/ui/layout.ts`) for a layout component, `splitSpacing` for any other.
 4. **Export** from `examples/react-v4/src/ui/index.ts`.
 5. **Binding** in `examples/react-v4/src/ui.ts`, and in `site/src/ui.ts` when the site renders it.
 6. **Vue SFC** `examples/nuxt-v4/app/ui/<Name>.vue`.
@@ -85,13 +85,12 @@ The factory knows no theme values:
 
 ```ts
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
-
 import {
   recipeFromTables,
   type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
-} from "./tables";
+} from "@duydpdev/style-generator/ui";
 
 /** Text defaults; every field omitted → `<Text>` emits no class of its own. */
 export interface TextPreset {
@@ -191,23 +190,17 @@ The React file exports a factory that takes the app's tokens and the preset, so 
 ```tsx
 import {
   createCn,
-  createTextRecipe,
+  mergeStyle,
+  splitSpacing,
   type RecipeTokens,
+  type ThemeSpacingProps,
+} from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import {
+  createTextRecipe,
   type TextPreset,
 } from "design-system-example/recipes";
-import type {
-  ComponentPropsWithRef,
-  CSSProperties,
-  ElementType,
-  JSX,
-} from "react";
-
-import { mergeStyle, splitSpacing, type ThemeSpacingProps } from "./layout";
-
-/** Own props `P` win over the props of the rendered element `T`; `as` picks `T`. */
-type Polymorphic<T extends ElementType, P extends object> = P & {
-  readonly as?: T | undefined;
-} & Omit<ComponentPropsWithRef<T>, keyof P | "as">;
+import type { CSSProperties, ElementType, JSX } from "react";
 
 type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly type?: W["typography"][number] | undefined;
@@ -320,4 +313,4 @@ The examples have no test runner. Their checks are compile-time and lint-time, a
 
 ## Recipes without components
 
-Use `@duydpdev/style-generator/recipes` directly when your framework has no sample component, or for one-off markup: the helpers are browser-safe and framework-free. See [Recipes](./reference/recipes.md) and [CVA helpers](./reference/cva.md).
+Use `@duydpdev/style-generator/recipes` directly when your framework has no sample component, or for one-off markup: the helpers are browser-safe and framework-free. See [Recipes](./reference/recipes.md) and [CVA helpers](./reference/cva.md). The same kit the sample components use is published as [`./ui`](./reference/ui.md) (`recipeFromTables`, `createCn`, `splitLayout`, `mergeStyle`) and [`./ui-react`](./reference/ui-react.md) (`Polymorphic`).

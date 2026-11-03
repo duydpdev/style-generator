@@ -1,26 +1,22 @@
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/types";
 import {
-  createBoxRecipe,
   createCn,
+  mergeStyle,
+  splitLayout,
+  type RecipeTokens,
+} from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import {
+  BOX_VARIANT_KEYS,
+  createBoxRecipe,
   createGridRecipe,
   gridColumns,
   type FlexAlign,
   type FlexJustify,
-  type RecipeTokens,
 } from "design-system-example/recipes";
-import type { ResponsiveValueStrict } from "@duydpdev/style-generator/types";
-import type {
-  ComponentPropsWithRef,
-  CSSProperties,
-  ElementType,
-  JSX,
-} from "react";
+import type { CSSProperties, ElementType, JSX } from "react";
 
-import { mergeStyle, splitLayout, type LayoutProps } from "./layout";
-
-/** Own props `P` win over the props of the rendered element `T`; `as` picks `T`. */
-type Polymorphic<T extends ElementType, P extends object> = P & {
-  readonly as?: T | undefined;
-} & Omit<ComponentPropsWithRef<T>, keyof P | "as">;
+import { LAYOUT_SIZE_KEYS, type LayoutProps } from "./layout";
 
 type GridOwnProps<W extends RecipeTokens> = LayoutProps<W> & {
   /** A count or a CSS track list (`"80px 1fr"`), per breakpoint. */
@@ -51,7 +47,13 @@ export const createGrid = <W extends RecipeTokens>(tokens: W) => {
     ...props
   }: Polymorphic<T, GridOwnProps<W>>): JSX.Element {
     const Component: ElementType = as ?? "div";
-    const split = splitLayout(props, layout, spacingKeys);
+    const split = splitLayout(
+      props,
+      layout,
+      spacingKeys,
+      BOX_VARIANT_KEYS,
+      LAYOUT_SIZE_KEYS,
+    );
     const cols = columns === undefined ? undefined : gridColumns(columns);
     return (
       <Component

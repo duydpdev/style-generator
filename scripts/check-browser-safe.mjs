@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Verify the browser-safe subpaths (`./tokens`, `./cva`, `./spacing`,
- * `./recipes`, `./types`) never transitively import Zod, a Node builtin,
+ * `./recipes`, `./types`, `./ui`, `./ui-react`) never transitively import Zod, a Node builtin,
  * `@tailwindcss/*` or any other runtime `dependency` of the package (the
  * bundler leaves those as bare imports: `chokidar`, `@clack/prompts`, ...) —
  * even through a shared chunk (`helpers-*`,
@@ -23,7 +23,15 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-const BROWSER_SAFE_SUBPATHS = ["tokens", "cva", "spacing", "recipes", "types"];
+const BROWSER_SAFE_SUBPATHS = [
+  "tokens",
+  "cva",
+  "spacing",
+  "recipes",
+  "types",
+  "ui",
+  "ui-react",
+];
 
 const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 

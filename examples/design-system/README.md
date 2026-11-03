@@ -25,7 +25,7 @@ examples/design-system
 │   ├── theme.schema.json   `yarn schema`
 │   ├── style-gen.options.ts  `options` — `as const satisfies StyleGeneratorOptions`, dependency-free
 │   ├── tokens.ts           `theme`, `Theme`, `tokens` (createDesignTokens from the browser-safe /tokens subpath)
-│   ├── cn.ts               clsx + tailwind-merge extended with the theme's tokens
+│   ├── cn.ts               cn = createCn(tokens) from the /ui subpath
 │   ├── axes.ts             `axisAttributes()` — the `data-*` attributes of the active themeAxes
 │   ├── recipes/            box, text, stack, grid, button (bound) + factories/ (theme-free)
 │   ├── styles/             palettes.css (dark × palette), style-guide.css (bespoke chrome)
@@ -35,7 +35,7 @@ examples/design-system
     └── dx.test-d.ts        type assertions (`expectTypeOf`)
 ```
 
-Nothing under `src/` imports the library root (`@duydpdev/style-generator`): that entry carries the Zod schemas, and these modules run in the browser. They use the subpaths `/tokens`, `/cva`, `/recipes` and `/types` only.
+Nothing under `src/` imports the library root (`@duydpdev/style-generator`): that entry carries the Zod schemas, and these modules run in the browser. They use the subpaths `/tokens`, `/cva`, `/recipes`, `/ui` and `/types` only; the factories build their recipes with `recipeFromTables` from `/ui`.
 
 ### The recipes
 

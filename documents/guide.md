@@ -623,19 +623,15 @@ The example's recipes all follow this pattern. Classes with an opacity modifier 
 
 ### 5. `cn`: merging classes with awareness of the theme's tokens
 
-By default `tailwind-merge` does not know your theme's `text-16-medium`, `shadow-md` or `rounded-pill`, so it may keep the wrong class. `createTailwindMergeExtension` (from `./recipes`) registers them in the right class groups; `tailwind-merge` remains a dependency of the application:
+By default `tailwind-merge` does not know your theme's `text-16-medium`, `shadow-md` or `rounded-pill`, so it may keep the wrong class. `createCn` (from `./ui`) wraps `clsx` and a `tailwind-merge` extended with `createTailwindMergeExtension` (from `./recipes`); `class-variance-authority`, `clsx` and `tailwind-merge` remain dependencies of the application:
 
 ```typescript
 // src/cn.ts
-import { clsx, type ClassValue } from "clsx";
-import { extendTailwindMerge } from "tailwind-merge";
-import { createTailwindMergeExtension } from "@duydpdev/style-generator/recipes";
+import { createCn } from "@duydpdev/style-generator/ui";
 
 import { tokens } from "./tokens";
 
-const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
-
-export const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs));
+export const cn = createCn(tokens);
 ```
 
 `cn("text-16-medium", "text-32-bold")` keeps the latter class, and so does `cn("rounded-md", "rounded-pill")`. Components call `cn(buttonRecipe({ … }), className)`.

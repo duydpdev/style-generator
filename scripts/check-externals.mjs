@@ -3,10 +3,13 @@
  * Verify dist bundles do NOT inline any third-party module.
  *
  * Peers and dependencies are externalised by the bundler, so the only thing
- * that can end up inlined is a devDependency (e.g. `tailwind-merge`,
- * `class-variance-authority`) imported by mistake from a shipped source. A
- * duplicate of a user-installed package is bad for tree-shaking and for the
- * peer-dep contracts.
+ * that can end up inlined is a devDependency imported by mistake from a
+ * shipped source. A duplicate of a user-installed package is bad for
+ * tree-shaking and for the peer-dep contracts. The UI kit's optional peers
+ * (`class-variance-authority`, `clsx`, `tailwind-merge`, `react`) are
+ * externalised too, so a second pass walks every entry's relative import
+ * closure: only `./ui` may import the first three, and no entry imports
+ * `react` at runtime (`./ui-react` is type-only).
  *
  * Detection reads every `dist/**\/*.map` (library entries, shared chunks and
  * the CLI bundle): an inlined module shows up in `sources` as
@@ -110,6 +113,88 @@ for (const map of maps) {
       `✗ ${relative(root, map)} inlines third-party module source:\n    ${inlined.join("\n    ")}`,
     );
     ok = false;
+  }
+}
+
+// UI kit peers: externalised like every peer, so the sourcemap pass above
+// cannot see an accidental import. Only `./ui` may reach the three runtime
+// peers; no entry may reach `react` (`./ui-react` is type-only). Shared
+// chunks count for every entry that imports them.
+const UI_RUNTIME_PEERS = ["class-variance-authority", "clsx", "tailwind-merge"];
+const UI_PEERS = new Set([...UI_RUNTIME_PEERS, "react"]);
+
+/**
+ * Every import/require/export-from specifier of a bundle file (same
+ * patterns as `scripts/check-browser-safe.mjs`).
+ * @param {string} src - File source text
+ * @returns {string[]} Every specifier found (not deduped)
+ */
+const extractSpecifiers = (src) => {
+  const patterns = [
+    /\bfrom\s+["'`]([^"'`]+)["'`]/g,
+    /\bimport\s*["'`]([^"'`]+)["'`]/g,
+    /\bimport\s*\(\s*["'`]([^"'`]+)["'`]/g,
+    /\brequire\(\s*["'`]([^"'`]+)["'`]\s*\)/g,
+  ];
+  const specifiers = [];
+  for (const pattern of patterns) {
+    for (const match of src.matchAll(pattern)) specifiers.push(match[1]);
+  }
+  return specifiers;
+};
+
+/**
+ * @param {string} specifier - A bare import specifier
+ * @returns {string} Its package name (`@scope/name` or `name`)
+ */
+const packageNameOf = (specifier) => {
+  const parts = specifier.split("/");
+  return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
+};
+
+/**
+ * Every UI-peer import reachable from `entryPath` through relative imports.
+ * @param {string} entryPath - Absolute path of an entry file
+ * @returns {string[][]} One import chain per hit (last item = the specifier)
+ */
+const uiPeerChains = (entryPath) => {
+  /** @type {string[][]} */
+  const hits = [];
+  const visited = new Set();
+  /**
+   * @param {string} filePath - Absolute path of the file to inspect
+   * @param {string[]} chain - Repo-relative paths leading here
+   * @returns {void}
+   */
+  const walkFrom = (filePath, chain) => {
+    if (visited.has(filePath) || !existsSync(filePath)) return;
+    visited.add(filePath);
+    for (const specifier of extractSpecifiers(readFileSync(filePath, "utf8"))) {
+      if (specifier.startsWith(".")) {
+        const next = resolve(dirname(filePath), specifier);
+        walkFrom(next, [...chain, relative(root, next)]);
+      } else if (UI_PEERS.has(packageNameOf(specifier))) {
+        hits.push([...chain, specifier]);
+      }
+    }
+  };
+  walkFrom(entryPath, [relative(root, entryPath)]);
+  return hits;
+};
+
+for (const entry of entries) {
+  const allowed = new Set(entry === "ui" ? UI_RUNTIME_PEERS : []);
+  for (const ext of ["js", "cjs"]) {
+    const file = resolve(dist, `${entry}.${ext}`);
+    if (!existsSync(file)) continue; // reported above as a missing artifact
+    for (const chain of uiPeerChains(file)) {
+      const specifier = chain[chain.length - 1];
+      if (allowed.has(packageNameOf(specifier))) continue;
+      console.error(
+        `✗ ${relative(root, file)} imports the UI peer "${specifier}": ${chain.join(" -> ")}`,
+      );
+      ok = false;
+    }
   }
 }
 

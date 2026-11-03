@@ -172,8 +172,8 @@ for (const key of subpaths) {
       `${specifier}: ESM exports [${esmKeys}] differ from CJS exports [${cjsKeys}]`,
     );
   }
-  // `./types` is type-only; every other subpath ships runtime values.
-  if (key !== "./types" && esmKeys.length === 0) {
+  // `./types` and `./ui-react` are type-only; every other subpath ships runtime values.
+  if (key !== "./types" && key !== "./ui-react" && esmKeys.length === 0) {
     fail(`${specifier}: no runtime exports`);
   }
 

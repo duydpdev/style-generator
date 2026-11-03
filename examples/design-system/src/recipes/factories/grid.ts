@@ -3,7 +3,7 @@ import {
   type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
-} from "./tables";
+} from "@duydpdev/style-generator/ui";
 
 /**
  * Literal per-breakpoint column classes, so Tailwind's scanner sees them;

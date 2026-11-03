@@ -1,22 +1,16 @@
 import {
   createCn,
-  createTextRecipe,
+  mergeStyle,
+  splitSpacing,
   type RecipeTokens,
+  type ThemeSpacingProps,
+} from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import {
+  createTextRecipe,
   type TextPreset,
 } from "design-system-example/recipes";
-import type {
-  ComponentPropsWithRef,
-  CSSProperties,
-  ElementType,
-  JSX,
-} from "react";
-
-import { mergeStyle, splitSpacing, type ThemeSpacingProps } from "./layout";
-
-/** Own props `P` win over the props of the rendered element `T`; `as` picks `T`. */
-type Polymorphic<T extends ElementType, P extends object> = P & {
-  readonly as?: T | undefined;
-} & Omit<ComponentPropsWithRef<T>, keyof P | "as">;
+import type { CSSProperties, ElementType, JSX } from "react";
 
 type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly type?: W["typography"][number] | undefined;

@@ -45,8 +45,10 @@ updates:
           - "patch"
     ignore:
       # Majors that change a supported range are done by hand: the Tailwind
-      # and Zod lines (tailwind-floor leg) and the vite/typescript peers
-      # (peer matrix, CI-05). Minor and patch bumps still come through.
+      # and Zod lines (tailwind-floor leg), the vite/typescript peers
+      # (peer matrix, CI-05) and the optional peers of `./ui` (`@types/react`,
+      # `class-variance-authority`, `clsx`, `tailwind-merge`). Minor and patch
+      # bumps still come through.
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@tailwindcss/*"
@@ -56,6 +58,14 @@ updates:
       - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
       - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "class-variance-authority"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "clsx"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwind-merge"
         update-types: ["version-update:semver-major"]
     commit-message:
       # `[ci]` cuts no release. The root's runtime ranges are carets, so an

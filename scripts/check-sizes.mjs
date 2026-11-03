@@ -75,6 +75,7 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // phase 11). Budgets raised to measured + ~10%: index 12050 -> 13560, vite
 // 14050 -> 15430; next (98%) and cli (96%) keep theirs. tokens 1686, recipes
 // 2076 are unchanged.
+// 2026-11-03 (./ui, ./ui-react): measured ui 3414 B, ui-react 58 B transitive; budgets = measured + ~10 %, rounded up to 10 B. index, tokens, cva, spacing unchanged.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -84,6 +85,8 @@ const budgets = {
   spacing: 1_000,
   recipes: 2_284,
   types: 100,
+  ui: 3_760,
+  "ui-react": 70,
   vite: 15_430,
   next: 14_450,
   cli: 24_750,

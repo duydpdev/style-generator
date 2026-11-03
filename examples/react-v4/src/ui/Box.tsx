@@ -1,23 +1,18 @@
 import {
-  createBoxRecipe,
   createCn,
-  type BoxPreset,
+  mergeStyle,
+  splitLayout,
   type RecipeTokens,
+} from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import {
+  BOX_VARIANT_KEYS,
+  createBoxRecipe,
+  type BoxPreset,
 } from "design-system-example/recipes";
-import type {
-  ComponentPropsWithRef,
-  CSSProperties,
-  ElementType,
-  JSX,
-  ReactNode,
-} from "react";
+import type { CSSProperties, ElementType, JSX, ReactNode } from "react";
 
-import { mergeStyle, splitLayout, type LayoutProps } from "./layout";
-
-/** Own props `P` win over the props of the rendered element `T`; `as` picks `T`. */
-type Polymorphic<T extends ElementType, P extends object> = P & {
-  readonly as?: T | undefined;
-} & Omit<ComponentPropsWithRef<T>, keyof P | "as">;
+import { LAYOUT_SIZE_KEYS, type LayoutProps } from "./layout";
 
 type BoxOwnProps<W extends RecipeTokens> = LayoutProps<W> & {
   /** A 1px frame drawn by an overlay span instead of the element's border. */
@@ -63,10 +58,17 @@ export const createBox = <W extends RecipeTokens>(
     const Component: ElementType = as ?? "div";
     const framed = innerBorder === true;
     const pos = position ?? (framed ? "relative" : undefined);
-    const split = splitLayout(props, box, spacingKeys, {
-      ...(pos === undefined ? {} : { position: pos }),
-      ...(framed ? { innerBorder: true } : {}),
-    });
+    const split = splitLayout(
+      props,
+      box,
+      spacingKeys,
+      BOX_VARIANT_KEYS,
+      LAYOUT_SIZE_KEYS,
+      {
+        ...(pos === undefined ? {} : { position: pos }),
+        ...(framed ? { innerBorder: true } : {}),
+      },
+    );
     const overlay = Object.fromEntries(
       OVERLAY_KEYS.map((key) => [key, split.variants[key]]),
     );

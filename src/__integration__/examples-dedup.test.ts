@@ -7,12 +7,12 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = join(__dirname, "..", "..");
 
-/** The framework apps; anything they share belongs in `examples/design-system`. */
-const APP_DIRS = [
-  "examples/react-v4",
-  "examples/next-v4",
-  "examples/nuxt-v4",
-] as const;
+/**
+ * The harness apps; anything they share belongs in `examples/design-system`.
+ * The plain apps (plain-react, next-v4, plain-nuxt) share files on purpose:
+ * `yarn check:plain-ui` (scripts/check-plain-ui.mjs) governs them.
+ */
+const APP_DIRS = ["examples/react-v4", "examples/nuxt-v4"] as const;
 
 /**
  * Repo-relative files that may be byte-identical across apps. Keep it empty:

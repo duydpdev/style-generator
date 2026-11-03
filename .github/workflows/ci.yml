@@ -69,6 +69,10 @@ jobs:
         # (nuxt.config.ts imports the built library), so it runs after Build.
         run: yarn workspace nuxt-v4-example prepare:nuxt
 
+      - name: Prepare plain-nuxt types
+        # Same as above for examples/plain-nuxt/app/**.
+        run: yarn workspace plain-nuxt-example prepare:nuxt
+
       - name: Lint
         # Type-aware ESLint also covers examples/**, which import the built
         # library through `link:../..`; without dist/ their types are unresolved.
@@ -130,6 +134,8 @@ jobs:
           yarn workspace next-v4-example build
           yarn workspace nuxt-v4-example build
           yarn workspace plain-react-example build
+          yarn workspace plain-nuxt-example build
+          yarn workspace plain-nuxt-example generate
 
       - name: Check plain UI folders
         # examples/plain-react/src/ui/<folder>/ holds style.ts, types.ts, <Name>.tsx

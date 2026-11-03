@@ -79,7 +79,10 @@ const RESTRICTED_UI_IMPORTS = {
 // Plain examples: copy-paste component folders over the published kit
 // (@duydpdev/style-generator/ui). className and style are allowed; the
 // harness packages are not, so a copied folder needs only the package.
-const PLAIN_APP_FILES = ["examples/plain-react/src/**/*.{ts,tsx}"];
+const PLAIN_APP_FILES = [
+  "examples/plain-react/src/**/*.{ts,tsx}",
+  "examples/next-v4/src/**/*.{ts,tsx}",
+];
 
 const PLAIN_RESTRICTED_IMPORTS = {
   patterns: [
@@ -240,13 +243,18 @@ export default pluginTs.config(
     },
   },
 
-  // nuxt-v4 SFCs: vue-eslint-parser hands <script lang="ts"> to the TS parser.
+  // nuxt-v4 and plain-nuxt SFCs: vue-eslint-parser hands <script lang="ts"> to the TS parser.
   // Type-aware rules stay off for .vue (the project service cannot open SFCs);
   // vue-tsc (`nuxt typecheck`) type-checks them, tests/nuxt/** included.
   // Auto-imports (useHead, useState) are declared in .nuxt/ types, so
   // no-undef is off, as typescript-eslint recommends for TS sources.
   {
-    files: ["examples/nuxt-v4/app/**/*.vue", "examples/nuxt-v4/tests/**/*.vue"],
+    files: [
+      "examples/nuxt-v4/app/**/*.vue",
+      "examples/nuxt-v4/tests/**/*.vue",
+      "examples/plain-nuxt/app/**/*.vue",
+      "examples/plain-nuxt/tests/**/*.vue",
+    ],
     extends: [pluginTs.configs.disableTypeChecked],
     plugins: { vue: pluginVue },
     languageOptions: {
@@ -334,6 +342,15 @@ export default pluginTs.config(
     ignores: ["examples/nuxt-v4/app/ui/**"],
     rules: {
       "no-restricted-imports": ["error", RESTRICTED_UI_IMPORTS],
+    },
+  },
+  // plain-nuxt app code: copy-paste components, never the harness. The .ts
+  // files are type-aware; run `yarn workspace plain-nuxt-example
+  // prepare:nuxt` (after `yarn build:all`) before linting.
+  {
+    files: ["examples/plain-nuxt/app/**/*.{ts,vue}"],
+    rules: {
+      "no-restricted-imports": ["error", PLAIN_RESTRICTED_IMPORTS],
     },
   },
 

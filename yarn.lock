@@ -1056,6 +1056,12 @@ __metadata:
   languageName: node
   linkType: soft
 
+"@duydpdev/style-generator@link:../..::locator=plain-nuxt-example%40workspace%3Aexamples%2Fplain-nuxt":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:../..::locator=plain-nuxt-example%40workspace%3Aexamples%2Fplain-nuxt"
+  languageName: node
+  linkType: soft
+
 "@duydpdev/style-generator@link:../..::locator=plain-react-example%40workspace%3Aexamples%2Fplain-react":
   version: 0.0.0-use.local
   resolution: "@duydpdev/style-generator@link:../..::locator=plain-react-example%40workspace%3Aexamples%2Fplain-react"
@@ -12300,10 +12306,12 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"
-    design-system-example: "workspace:*"
+    class-variance-authority: "npm:^0.7.0"
+    clsx: "npm:^2.1.1"
     next: "npm:^16.4.3"
     react: "npm:^19.0.0"
     react-dom: "npm:^19.0.0"
+    tailwind-merge: "npm:^3.0.0"
     tailwindcss: "npm:^4.2.0"
     typescript: "npm:^5.9.0"
   languageName: unknown
@@ -13908,6 +13916,23 @@ __metadata:
   checksum: 10c0/37d08d561428ab3dc09eebddd8860d9ab7851bbceeaa99d3b7fb246bdc4638d22be2cc1f8e8e38b440c5c7b30df7c20f2cbd8f0d74bb343d26a836cd9accd931
   languageName: node
   linkType: hard
+
+"plain-nuxt-example@workspace:examples/plain-nuxt":
+  version: 0.0.0-use.local
+  resolution: "plain-nuxt-example@workspace:examples/plain-nuxt"
+  dependencies:
+    "@duydpdev/style-generator": "link:../.."
+    "@tailwindcss/vite": "npm:^4.2.0"
+    class-variance-authority: "npm:^0.7.0"
+    clsx: "npm:^2.1.1"
+    nuxt: "npm:~4.4.8"
+    tailwind-merge: "npm:^3.0.0"
+    tailwindcss: "npm:^4.2.0"
+    typescript: "npm:^5.9.0"
+    vue: "npm:^3.5.44"
+    vue-tsc: "npm:^3.3.0"
+  languageName: unknown
+  linkType: soft
 
 "plain-react-example@workspace:examples/plain-react":
   version: 0.0.0-use.local

@@ -1,8 +1,8 @@
 import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 
 /**
- * The generator options, shared by the three apps' bundler configs
- * (`styleGenVite` / `styleGenNext`), by `tokens.ts` and by the typed recipes.
+ * The generator options, shared by the two harness apps' bundler configs
+ * (`styleGenVite`), by `tokens.ts` and by the typed recipes.
  *
  * Dependency-free on purpose: bundler configs load this file through Node's
  * type stripping, and `tokens.ts` runs in the browser — so it uses

@@ -1,2 +1,4 @@
+/* #region docs:css-entry */
 @import "tailwindcss";
 @import "./theme/theme.css";
+/* #endregion docs:css-entry */

@@ -1,11 +1,10 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
-
 import {
   recipeFromTables,
   type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
-} from "./tables";
+} from "@duydpdev/style-generator/ui";
 
 /** Text defaults; every field omitted → `<Text>` emits no class of its own. */
 export interface TextPreset {

@@ -16,6 +16,8 @@ import * as tokens from "./tokens";
 import * as cva from "./cva";
 import * as spacing from "./spacing";
 import * as recipes from "./recipes";
+import type * as ui from "./ui";
+import type * as uiReact from "./ui-react";
 import type * as types from "./types";
 
 interface AxesTheme extends ThemeConfig {
@@ -129,6 +131,25 @@ describe("subpath exports — symbols match root barrel", () => {
         | "themeAxisAttributes"
       >
     >().toBeNever();
+  });
+
+  it("ui subpath runtime exports are exactly the documented list and are not part of the root", () => {
+    expectTypeOf<keyof typeof ui>().toEqualTypeOf<
+      | "contrastText"
+      | "createCn"
+      | "mergeStyle"
+      | "pick"
+      | "recipeFromTables"
+      | "splitLayout"
+      | "splitSpacing"
+    >();
+    expectTypeOf<Extract<keyof typeof root, keyof typeof ui>>().toBeNever();
+  });
+
+  it("ui-react subpath carries the Polymorphic type", () => {
+    expectTypeOf<
+      uiReact.Polymorphic<"a", { readonly tone: "loud" }>["tone"]
+    >().toEqualTypeOf<"loud">();
   });
 
   it("removed 4.x helper VariantMapperStatesOptions is gone from every subpath", () => {

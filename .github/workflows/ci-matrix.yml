@@ -213,3 +213,83 @@ jobs:
       - name: Type tests
         if: matrix.peer == 'typescript'
         run: yarn test:types
+
+  # The floors of the four optional UI-kit peer ranges (`./ui`,
+  # `./ui-react`). `peer-matrix` tests latest majors of vite/typescript;
+  # nothing else would ever install the OLDEST version a consumer may
+  # have. The job builds with the committed toolchain, then forces each
+  # peer to the exact floor through `resolutions` (this runner's checkout
+  # only), proves the install picked the floor, and runs what a consumer
+  # of the kit runs: the `dist/*.d.ts` + `dist/*.d.cts` type-check and
+  # the kit's unit tests. It fails when a floor stops being the minimum
+  # of the range in package.json, so range and job cannot drift.
+  # Two harness-only pins mirror what a consumer actually gets: cva 0.7.0
+  # needs clsx 2.0.0 exactly, so it keeps its own nested copy, and
+  # @types/scheduler is held at 0.16.8, the last version with
+  # `scheduler/tracing`, which @types/react <=18.2.71 imports.
+  ui-peer-floor:
+    name: UI-kit peer floors (cva 0.7.0, clsx 1.2.0, tailwind-merge 3.0.0, @types/react 18.0.0)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event.pull_request.draft == false
+    env:
+      FLOORS: '{"class-variance-authority":"0.7.0","clsx":"1.2.0","tailwind-merge":"3.0.0","@types/react":"18.0.0"}'
+      HARNESS_PINS: '{"class-variance-authority/clsx":"2.0.0","@types/scheduler":"0.16.8"}'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Check that each floor is the minimum of its peer range
+        run: |
+          node -e '
+            const semver = require("semver");
+            const peers = require("./package.json").peerDependencies;
+            let bad = false;
+            for (const [name, floor] of Object.entries(JSON.parse(process.env.FLOORS))) {
+              const min = semver.minVersion(peers[name]).version;
+              console.log(name, peers[name], "min", min, "floor", floor);
+              if (min !== floor) { console.error("::error::" + name + " range " + peers[name] + " has minimum " + min + ", the job pins " + floor); bad = true; }
+            }
+            process.exit(bad ? 1 : 0);
+          '
+
+      - name: Re-resolve the four peers to their floors
+        run: |
+          jq --argjson pins "$HARNESS_PINS" --argjson floors "$FLOORS" '.resolutions = (.resolutions + $pins + $floors)' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          yarn install --no-immutable
+          # A red job must mean "the floor fails", never "the lockfile copy ran":
+          node -e '
+            const { readFileSync } = require("fs");
+            const { resolve } = require("path");
+            for (const [name, floor] of Object.entries(JSON.parse(process.env.FLOORS))) {
+              const got = JSON.parse(readFileSync(resolve("node_modules", name, "package.json"), "utf8")).version;
+              console.log(name, got);
+              if (got !== floor) { console.error("::error::resolved " + name + " " + got + ", expected " + floor); process.exit(1); }
+            }
+            for (const [path, expected] of [["class-variance-authority/node_modules/clsx", "2.0.0"], ["@types/scheduler", "0.16.8"]]) {
+              const got = JSON.parse(readFileSync(resolve("node_modules", path, "package.json"), "utf8")).version;
+              console.log(path, got);
+              if (got !== expected) { console.error("::error::resolved " + path + " " + got + ", expected " + expected); process.exit(1); }
+            }
+          '
+
+      - name: Type-check dist/*.d.ts (ESM, Bundler) and dist/*.d.cts (CJS, node16) with library checking on
+        run: yarn typecheck:dist
+
+      - name: Kit unit tests
+        run: yarn vitest run src/features/ui

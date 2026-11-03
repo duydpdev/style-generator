@@ -107,6 +107,18 @@
     "group": "Reference",
     "order": 11
   },
+  "documents/reference/ui.md": {
+    "slug": "reference-ui",
+    "title": "./ui",
+    "group": "Reference",
+    "order": 12
+  },
+  "documents/reference/ui-react.md": {
+    "slug": "reference-ui-react",
+    "title": "./ui-react",
+    "group": "Reference",
+    "order": 13
+  },
   "documents/migration/4.x-to-5.0.md": {
     "slug": "migration-4x-to-5",
     "title": "Migration 4.x → 5.0",

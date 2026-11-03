@@ -68,6 +68,7 @@ src/
 │   ├── tokens/                 # createDesignTokens / buildDesignTokens
 │   ├── cva/                    # createVariantMapper
 │   ├── recipes/                # ./recipes: createTailwindMergeExtension, splitSpacingProps, themeAxisAttributes
+│   ├── ui/                     # ./ui + ./ui-react: recipeFromTables, createCn, splitLayout, mergeStyle, Polymorphic
 │   ├── vite/                   # styleGenVite
 │   └── next/                   # styleGenNext
 ├── shared/                     # helpers (kebab/camel), defaults, COLOR_STATES, writeFileAtomic
@@ -78,9 +79,9 @@ src/
 └── index.ts                    # root barrel
 ```
 
-`src/exports/*` determines which subpaths are browser-safe (they pull in neither Zod nor Node built-ins): `./tokens`, `./cva`, `./spacing`, `./recipes`, `./types`. This constraint is checked by `scripts/check-browser-safe.mjs`. `./recipes` exists only as a subpath (it is not re-exported from `.`), like `./vite`/`./next`, so the `index` budget does not carry component-side helpers.
+`src/exports/*` determines which subpaths are browser-safe (they pull in neither Zod nor Node built-ins): `./tokens`, `./cva`, `./spacing`, `./recipes`, `./types`, `./ui`, `./ui-react`. This constraint is checked by `scripts/check-browser-safe.mjs`. `./recipes` exists only as a subpath (it is not re-exported from `.`), like `./vite`/`./next`, so the `index` budget does not carry component-side helpers. `./ui` imports `class-variance-authority`, `clsx` and `tailwind-merge` (optional peers); `check:externals` fails if any other entry, or any chunk they share, imports them.
 
-**Where Node code goes:** everything that touches `node:fs`/`node:path`/chokidar lives in `src/node/` and may only be imported from `src/cli/**`, `src/features/vite/**`, `src/features/next/**` — never from `src/core`, `src/exports/{tokens,cva,spacing,recipes,types}` or the root barrel; otherwise `dist/index.js` and the browser-safe subpaths would pull Node into the bundle (`check:browser-safe` and the `check:sizes` budget catch this).
+**Where Node code goes:** everything that touches `node:fs`/`node:path`/chokidar lives in `src/node/` and may only be imported from `src/cli/**`, `src/features/vite/**`, `src/features/next/**` — never from `src/core`, `src/exports/{tokens,cva,spacing,recipes,types,ui,ui-react}` or the root barrel; otherwise `dist/index.js` and the browser-safe subpaths would pull Node into the bundle (`check:browser-safe` and the `check:sizes` budget catch this).
 
 ---
 
@@ -180,6 +181,10 @@ Three component-side helpers, browser-safe, with no `tailwind-merge` import (the
 - `createTailwindMergeExtension(tokens)` → `{ extend: { classGroups, conflictingClassGroups, theme } }` for `extendTailwindMerge`. Tokens are camelCase keys, so they go through `toKebabCase` before becoming classes. `borderRadius` goes into `theme.radius` (the scale that every `rounded-*` group of tailwind-merge reads, so `rounded-tl-pill` and `rounded-s-pill` merge correctly too); `shadows`, `backDropBlurs` and `borderWidth` are class groups. The prefix table for `border`/`divide-*` (→ id `border-w*`), `shadow` and `backdrop-blur` is local to the module so the registry is not pulled into the `./tokens` chunk; `extendTailwindMerge.test.ts` pins this table to the registry's `classPrefixes`. `colors` and `fontFamily` are not listed because tailwind-merge's default groups already accept any value.
 - `splitSpacingProps(props, keys, unit)` + `SpacingProps<BKeys, K>` → `{ spacing: { className, style }, rest }`; it calls `resolveSpacing` once per key (so import `./spacing` through the shared chunk) and removes every spacing key from `rest`, even when the value is `undefined`.
 - `themeAxisAttributes(state, { attribute })` → the DOM attributes of the active axes, using the same `axisAttributeName` formula as the selectors that `generate()` emits; an axis that is `"base"`/`undefined` emits no attribute.
+
+### UI kit (`./ui`, `./ui-react`)
+
+The styleless kit the example components are built on, in `src/features/ui/`: `recipeFromTables(tables)` (cva over plain class tables), `pick`/`contrastText` (token → class, throwing on a missing token), `createCn(tokens)` (`clsx` + `tailwind-merge` with `createTailwindMergeExtension`), and `splitSpacing`/`splitLayout`/`mergeStyle` (props → classes, inline style and the rest). `splitLayout` takes the recipe's variant prop names and the size prop names as arguments, so the kit knows no design system and no layout prop type; it turns a numeric size into px (`320` → `"320px"`, `0` → `"0"`, strings kept). `class-variance-authority`, `clsx` and `tailwind-merge` are optional peer dependencies: only `./ui` imports them, guarded by `check:externals`. `./ui-react` is type-only (`Polymorphic`) so `./ui` stays free of React types. Neither is re-exported from `.`.
 
 ---
 

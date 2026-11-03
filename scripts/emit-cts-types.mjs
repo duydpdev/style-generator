@@ -6,8 +6,10 @@
  * ("Masquerading as ESM" in `@arethetypeswrong/cli`).
  *
  * `vite-plugin-dts` runs with `rollupTypes: true`, so every
- * `dist/<name>.d.ts` is self-contained (its only external specifiers are
- * `zod` and `vite`) and no relative `.js` specifier needs rewriting to
+ * `dist/<name>.d.ts` is self-contained (its external specifiers are the
+ * packages with a rule in `cjs-declaration.mjs`: `zod`, `vite`, and for
+ * `./ui`/`./ui-react` `class-variance-authority`, `clsx`, `tailwind-merge`,
+ * `react`) and no relative `.js` specifier needs rewriting to
  * `.cjs`. The script fails if one appears, which means the declaration
  * bundling changed. The copy is byte-identical except for the rules in
  * `cjs-declaration.mjs` (the `vite` import resolves as ESM: Vite has no

@@ -69,7 +69,10 @@ export default defineConfig({
         // split it again). `tokens`, `cva`, `spacing` and `index` must not
         // drift when a new shared module or entry appears: re-run
         // `yarn build:all && yarn check:sizes` and pin the module here (or
-        // restructure the import) instead of raising their budgets.
+        // restructure the import) instead of raising their budgets. A manual
+        // chunk also absorbs every unassigned module in its static import
+        // closure, so every shared module reachable from a pinned module must
+        // be pinned too.
         // Vite 8 / Rolldown deprecates `manualChunks` in favour of
         // `advancedChunks`: revisit this rule when upgrading.
         manualChunks: (id) => {
@@ -86,12 +89,32 @@ export default defineConfig({
           if (/[/\\]src[/\\]shared[/\\]defaultOption\.ts$/.test(id)) {
             return "defaultOption";
           }
+          // `axisAttributeName` is shared by the generator (`.`, `./vite`,
+          // `./next`) and `./recipes` (`themeAxisAttributes`). A manual chunk
+          // absorbs its whole unassigned static closure (Rollup
+          // `addStaticDependenciesToManualChunk`), so without this pin the
+          // `recipes` rule would swallow it and `index` would load all of
+          // `recipes.js` (+617 B, measured 2026-11-03).
+          if (/[/\\]src[/\\]shared[/\\]axisAttributeName\.ts$/.test(id)) {
+            return "axisAttributeName";
+          }
           if (
             /[/\\]src[/\\](exports[/\\]tokens|core[/\\](Options|resolveTokenOptions)|features[/\\]registry[/\\]categoryTokenMeta|shared[/\\]safelistProperties)\.ts$/.test(
               id,
             )
           ) {
             return "tokens";
+          }
+          // `./ui` shares the tailwind-merge extension and spacing props with
+          // `./recipes`. Keep those modules in the entry chunk (chunk name =
+          // entry name, as for `spacing`) so the new entry cannot split them
+          // out.
+          if (
+            /[/\\]src[/\\](exports[/\\]recipes|features[/\\]recipes[/\\](extendTailwindMerge|spacingProps|themeAxisAttributes))\.ts$/.test(
+              id,
+            )
+          ) {
+            return "recipes";
           }
           return undefined;
         },

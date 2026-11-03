@@ -140,6 +140,54 @@ describe("integration: publish gates reject bad builds", () => {
       expect(output).toContain("node_modules/zod/v4/classic/schemas.js");
     });
 
+    it("fails when ./recipes imports a UI peer", () => {
+      bundle(
+        dir,
+        "dist/recipes.js",
+        'import { extendTailwindMerge } from "tailwind-merge";\nexport const recipes = extendTailwindMerge;\n',
+        ["../src/exports/recipes.ts"],
+      );
+      const { status, output } = runGate(dir, "check-externals");
+      expect(status).toBe(1);
+      expect(output).toContain("dist/recipes.js");
+      expect(output).toContain("tailwind-merge");
+    });
+
+    it("fails when a chunk reached from the root CJS entry requires a UI peer", () => {
+      bundle(
+        dir,
+        "dist/index.cjs",
+        'require("./shared-abc.cjs");\nexports.index = 1;\n',
+        ["../src/index.ts"],
+      );
+      bundle(dir, "dist/shared-abc.cjs", 'exports.c = require("clsx");\n', [
+        "../src/shared/helpers.ts",
+      ]);
+      const { status, output } = runGate(dir, "check-externals");
+      expect(status).toBe(1);
+      expect(output).toContain("dist/shared-abc.cjs");
+      expect(output).toContain("clsx");
+    });
+
+    it("fails when ./ui-react imports react at runtime", () => {
+      bundle(dir, "dist/ui-react.js", 'import "react";\n', [
+        "../src/exports/ui-react.ts",
+      ]);
+      const { status, output } = runGate(dir, "check-externals");
+      expect(status).toBe(1);
+      expect(output).toContain('"react"');
+    });
+
+    it("accepts ./ui importing class-variance-authority, clsx and tailwind-merge", () => {
+      bundle(
+        dir,
+        "dist/ui.js",
+        'import { cva } from "class-variance-authority";\nimport { clsx } from "clsx";\nimport { extendTailwindMerge } from "tailwind-merge";\nexport const ui = [cva, clsx, extendTailwindMerge];\n',
+        ["../src/exports/ui.ts"],
+      );
+      expect(runGate(dir, "check-externals").status).toBe(0);
+    });
+
     it("fails when the CLI bundle inlines a scoped dependency (Yarn cache path)", () => {
       bundle(dir, "dist/cli/index.mjs", "#!/usr/bin/env node\n", [
         "../../src/cli/index.ts",

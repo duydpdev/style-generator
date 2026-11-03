@@ -1,4 +1,8 @@
-import { recipeFromTables, type RecipeFn, type RecipeTables } from "./tables";
+import {
+  recipeFromTables,
+  type RecipeFn,
+  type RecipeTables,
+} from "@duydpdev/style-generator/ui";
 
 export type FlexAlign = "start" | "center" | "end" | "stretch";
 export type FlexJustify = "start" | "center" | "end" | "between";

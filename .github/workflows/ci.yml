@@ -129,6 +129,12 @@ jobs:
         run: |
           yarn workspace next-v4-example build
           yarn workspace nuxt-v4-example build
+          yarn workspace plain-react-example build
+
+      - name: Check plain UI folders
+        # examples/plain-react/src/ui/<folder>/ holds style.ts, types.ts, <Name>.tsx
+        # and index.ts, and imports only ./…, ../../theme and its package allow-list (scripts/check-plain-ui.mjs).
+        run: yarn check:plain-ui
 
       - name: Check externals
         run: yarn check:externals
@@ -165,3 +171,46 @@ jobs:
 
       - name: Type tests
         run: yarn test:types
+
+  # examples/plain-react: the stories run as Vitest browser tests (project
+  # `storybook`), the plain-vs-harness class parity gate (project `parity`)
+  # compares the six shared components with react-v4-example/ui, and a copied
+  # src/ui/button/ type-checks against the packed tarball and its peers only.
+  # The workspace scripts run `style-gen generate` first, so dist/ must be
+  # built. A job of its own (not a step of `check`) with no paths filter and
+  # no draft skip, so it reports on every PR like `check`; its name is the
+  # check the `main-develop` ruleset requires.
+  plain-react:
+    name: Plain React (Storybook + parity)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      STORYBOOK_DISABLE_TELEMETRY: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Install Playwright Chromium
+        run: yarn playwright install --with-deps chromium
+
+      - name: Stories and parity gate (Vitest browser)
+        run: yarn workspace plain-react-example test
+
+      - name: Copy-out smoke (packed tarball + peers only)
+        run: node examples/plain-react/scripts/copy-out-smoke.mjs

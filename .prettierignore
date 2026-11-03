@@ -21,6 +21,7 @@ examples/react-v4/src/theme/theme.css
 examples/next-v4/app/theme/theme.css
 examples/nuxt-v4/app/assets/css/theme.css
 examples/design-system/src/styles/theme.css
+examples/plain-react/src/theme/theme.css
 next-env.d.ts
 .next
 .nuxt

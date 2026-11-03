@@ -4,16 +4,16 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "style-generator · Next.js + Tailwind v4 Example",
+  title: "style-generator · Next.js plain example",
   description:
-    "Token-driven design system demo for @duydpdev/style-generator on Next.js App Router with Tailwind CSS v4.",
+    "Landing page built from copy-paste components over @duydpdev/style-generator on Next.js App Router with Tailwind CSS v4.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  // No `data-theme` / `data-palette`: the base variants need no attribute. The
-  // client-only `ThemeSwitch` adds them on `<html>` once the user picks one.
+  // No `data-theme`: the light theme needs no attribute. The client-only
+  // `ThemeSwitch` adds `data-theme="dark"` on `<html>`.
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

@@ -1,48 +1,62 @@
 # Getting started: Nuxt + Vue
 
-This tutorial wires `@duydpdev/style-generator` into a Nuxt 4 app and renders token-typed Vue components. Every code block below is copied from [`examples/nuxt-v4`](../../examples/nuxt-v4/README.md), which is built and type-checked in CI.
+This tutorial wires `@duydpdev/style-generator` into a Nuxt 4 app and builds a landing page from copy-paste Vue components. Every code block below is copied from [`examples/plain-nuxt`](../../examples/plain-nuxt/README.md), which is built and type-checked in CI.
 
 ## Install
 
-Install the package and its peer dependencies as described in [Install](../../README.md#install).
+Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`. See [Install](../../README.md#install) for configuring the `@duydpdev` scope registry and the GitHub Personal Access Token.
 
-## Share the theme options
+```bash
+yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+```
 
-The theme is a JSON file ([`examples/design-system/src/theme.json`](../../examples/design-system/src/theme.json), 161 lines, not embedded here). The generator options live in one module that the bundler config, the typed tokens and the recipes all import, so the three never drift apart.
+## Own the theme
 
-<!-- embed: examples/design-system/src/style-gen.options.ts#options -->
+The theme JSON is [`app/theme/theme.json`](../../examples/plain-nuxt/app/theme/theme.json) (not embedded here). `app/theme.ts` turns it into typed tokens and the `cn` helper:
+
+<!-- embed: examples/plain-nuxt/app/theme.ts -->
 
 ```ts
-export const options = {
-  breakpoints: ["md", "lg"],
-} as const satisfies StyleGeneratorOptions;
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import { createCn } from "@duydpdev/style-generator/ui";
+
+import themeJson from "./theme/theme.json";
+
+/** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
+export const theme = themeJson;
+
+/** Typed token arrays; no options, like `styleGenVite` in vite.config.ts. */
+export const tokens = createDesignTokens(themeJson).DesignTokens.Web;
+
+/** clsx + a tailwind-merge that knows this theme's utilities. */
+export const cn = createCn(tokens);
 ```
 
 ## Generate theme.css with the Vite plugin
 
-Nuxt runs on Vite, so `styleGenVite` goes under `vite.plugins`. Nuxt 4 sets the Vite root to `app/`, so the paths are absolute.
+Nuxt runs on Vite, so `styleGenVite` goes under `vite.plugins`. Nuxt 4 sets the Vite root to `app/`, so the paths are absolute; no generator options are needed:
 
-<!-- embed: examples/nuxt-v4/nuxt.config.ts#nuxt-config -->
+<!-- embed: examples/plain-nuxt/nuxt.config.ts#nuxt-config -->
 
 ```ts
 export default defineNuxtConfig({
   compatibilityDate: "2025-01-01",
   devtools: { enabled: false },
 
-  // Global stylesheet entry (Tailwind v4 + generated theme.css + shared design-system styles).
+  // Global stylesheet entry: Tailwind v4 + the generated theme.css.
   css: ["~/assets/css/globals.css"],
 
-  // Nuxt runs on Vite, so the styleGenVite plugin works exactly like the
-  // react-v4 example. Nuxt 4 sets the Vite `root` to `app/` (its `srcDir`), so
-  // the paths are absolute: a relative `themePath` would resolve from `app/`.
+  // Nuxt runs on Vite, so styleGenVite works as in plain-react. Nuxt 4 sets
+  // the Vite `root` to `app/`, so the paths are absolute. No generator
+  // options: the defaults (breakpoints `md` and `lg`) are what
+  // `app/theme.ts` types the tokens with.
   vite: {
     plugins: [
       styleGenVite({
         themePath: fileURLToPath(
-          new URL("../design-system/src/theme.json", import.meta.url),
+          new URL("./app/theme/theme.json", import.meta.url),
         ),
-        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
-        options,
+        outDir: fileURLToPath(new URL("./app/theme", import.meta.url)),
       }),
       tailwindcss(),
     ],
@@ -50,7 +64,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "style-generator · Nuxt + Tailwind v4 Example",
+      title: "style-generator · Nuxt plain example",
       htmlAttrs: { lang: "en" },
       link: [
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -71,53 +85,56 @@ export default defineNuxtConfig({
 
 ## Import the CSS
 
-Import the generated file next to Tailwind. Tailwind only scans the app directory, so the `@source` line points it at the design system, whose recipes hold the class names; the components in `app/ui/` are inside the app and scanned by default.
+Import the generated file next to Tailwind. There is no `@source` line, because Tailwind scans `app/`, which holds every class literal (`app/ui` included), and `theme.css` lists the token utilities:
 
-<!-- embed: examples/nuxt-v4/app/assets/css/globals.css#css-entry -->
+<!-- embed: examples/plain-nuxt/app/assets/css/globals.css#css-entry -->
 
 ```css
 @import "tailwindcss";
-@import "./theme.css";
-@import "design-system-example/styles/palettes.css";
-@import "design-system-example/styles/style-guide.css";
-
-/* Tailwind only scans this app by default (app/ui included); the recipes live in the design system. */
-@source "../../../../design-system/src";
+@import "../../theme/theme.css";
 ```
 
-## Use a component file
+## Build a component
 
-Each of the six sample components is one single-file component in `app/ui/` (`<script setup lang="ts">` with typed `defineProps`/`defineSlots`, and `defineEmits` on `Button`). They are example code, not an API: copy the folder (see [Components](../components.md)). Pages import the file they render explicitly, for example `import Button from "~/ui/Button.vue"`:
+Components use one folder per component. `style.ts` is the same file as in React and Next. The Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`. Components are imported explicitly, for example `import Button from "~/ui/button/Button.vue"`:
 
-<!-- embed: examples/nuxt-v4/app/ui/Button.vue -->
+<!-- embed: examples/plain-nuxt/app/ui/button/types.ts -->
+
+```ts
+import type { ThemeSpacingProps } from "@duydpdev/style-generator/ui";
+
+import type { tokens } from "../../theme";
+
+import type { ButtonIntent } from "./style";
+
+/** Button props; spacing props arrive as attributes (`@vue-ignore`). */
+export interface ButtonProps extends /* @vue-ignore */ ThemeSpacingProps<
+  typeof tokens
+> {
+  as?: string;
+  variant?: "fill" | "outline" | "soft" | "ghost" | "link";
+  /** One of `buttonIntents`. */
+  color?: ButtonIntent;
+  size?: "sm" | "md" | "lg";
+}
+```
+
+<!-- embed: examples/plain-nuxt/app/ui/button/Button.vue -->
 
 ```vue
 <script setup lang="ts">
-import {
-  buttonRecipe,
-  cn,
-  splitSpacingProps,
-  tokens,
-} from "design-system-example";
-import type { BoxSpacingProps, ButtonRecipeProps } from "design-system-example";
+import { splitSpacing } from "@duydpdev/style-generator/ui";
 import { useAttrs } from "vue";
 
-/**
- * Button: variant, intent color and size from the design-system button
- * recipe. Emits `click`; the `prefix`/`suffix` slots wrap icons around the
- * label. Renders `type="button"` when `as` is `button`; a caller's `type`
- * attribute wins. Spacing props work as in Box.
- */
-export interface ButtonProps extends /* @vue-ignore */ BoxSpacingProps {
-  as?: string;
-  variant?: NonNullable<ButtonRecipeProps["variant"]>;
-  color?: NonNullable<ButtonRecipeProps["color"]>;
-  size?: NonNullable<ButtonRecipeProps["size"]>;
-}
+import { cn, tokens } from "../../theme";
+
+import { buttonRecipe } from "./style";
+import type { ButtonProps } from "./types";
+
+type ClassValue = Parameters<typeof cn>[number];
 
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<ButtonProps>(), { as: "button" });
-const emit = defineEmits<{ click: [event: MouseEvent] }>();
 const slots = defineSlots<{
   default?: () => unknown;
   prefix?: () => unknown;
@@ -125,28 +142,30 @@ const slots = defineSlots<{
 }>();
 const attrs = useAttrs();
 
-// Root attributes: defaults, the caller's other attributes, then class and style.
+// Root attributes: defaults, the caller's attributes, then class and style.
 const root = () => {
-  const { spacing, rest } = splitSpacingProps(
-    attrs as BoxSpacingProps & Record<string, unknown>,
-    tokens.spacingProperties,
-  );
+  const split = splitSpacing(attrs, tokens.spacingProperties);
+  const { class: klass, style, ...rest } = split.rest;
   return {
     type: props.as === "button" ? "button" : undefined,
-    "data-slot": "button",
     ...rest,
-    class: cn(buttonRecipe(props), spacing.className),
-    ...(spacing.className === "" ? {} : { style: spacing.style }),
+    "data-slot": "button",
+    class: cn(
+      buttonRecipe({
+        variant: props.variant,
+        color: props.color,
+        size: props.size,
+      }),
+      split.className,
+      klass as ClassValue,
+    ),
+    style: [split.style, style],
   };
-};
-
-const onClick = (event: MouseEvent) => {
-  emit("click", event);
 };
 </script>
 
 <template>
-  <component :is="props.as" v-bind="root()" @click="onClick">
+  <component :is="props.as" v-bind="root()">
     <span v-if="slots.prefix" data-icon="start"><slot name="prefix" /></span>
     <span><slot /></span>
     <span v-if="slots.suffix" data-icon="end"><slot name="suffix" /></span>
@@ -156,78 +175,46 @@ const onClick = (event: MouseEvent) => {
 
 ## Use them
 
-<!-- embed: examples/nuxt-v4/app/pages/index.vue#usage -->
+<!-- embed: examples/plain-nuxt/app/pages/index.vue#usage -->
 
 ```vue
 <template>
-  <Stack as="main" align="center" :py="{ base: 6, md: 10 }" :px="4">
-    <Stack width="100%" :maxWidth="960" :gap="6">
-      <Flex as="header" justify="between" align="end" wrap :gap="4">
-        <Box>
-          <Text type="text12Mono" color="muted">
-            @duydpdev/style-generator · Nuxt 4
-          </Text>
-          <Text as="h1" type="display56Serif">Shared design system</Text>
-        </Box>
-        <ThemeSwitch />
-      </Flex>
-
-      <Box
-        as="section"
-        backgroundColor="surface"
-        borderColor="line"
-        border="thin"
-        rounded="lg"
-        shadow="sm"
-        :p="8"
-      >
-        <Stack :gap="{ base: 2, md: 4 }">
-          <Text as="h2" type="text20Semibold">Buttons</Text>
-          <Flex
-            v-for="color in intents"
-            :key="color"
-            wrap
-            align="center"
-            :gap="2"
-          >
-            <Text as="span" type="text12Mono" :color="color">{{ color }}</Text>
-            <Button
-              v-for="variant in BUTTON_VARIANTS"
-              :key="variant"
-              :variant="variant"
-              :color="color"
-            >
-              {{ variant }}
-            </Button>
+  <Box backgroundColor="background" class="min-h-screen text-foreground">
+    <Box
+      as="header"
+      position="sticky"
+      backdropBlur="md"
+      borderB="thin"
+      borderColor="line"
+      class="top-0 z-10 bg-background/80"
+    >
+      <Container>
+        <Flex align="center" justify="between" :gap="4" :py="4">
+          <Link href="#hero" tone="foreground" underline="none">
+            <Text as="span" type="text16Medium">style-generator</Text>
+          </Link>
+          <Flex as="nav" aria-label="Main" align="center" :gap="4">
+            <Link href="#features" tone="muted">Features</Link>
+            <Link href="#pricing" tone="muted">Pricing</Link>
+            <Link :href="DOCS_URL" tone="muted">Docs</Link>
+            <ThemeSwitch />
           </Flex>
-        </Stack>
-      </Box>
-
-      <Box as="section" borderColor="line" border="thin" rounded="lg" :p="5">
-        <Stack :gap="3">
-          <Text as="h2" type="text20Semibold">Layout</Text>
-          <Grid :columns="{ base: 1, md: 3 }" :gap="3">
-            <Box
-              v-for="name in CELLS"
-              :key="name"
-              backgroundColor="background"
-              borderColor="line"
-              border="thin"
-              rounded="md"
-              :p="4"
-            >
-              <Text type="text14Regular">{{ name }}</Text>
-            </Box>
-          </Grid>
-        </Stack>
-      </Box>
-    </Stack>
-  </Stack>
+        </Flex>
+      </Container>
+    </Box>
+    <main>
+      <Hero />
+      <Features />
+      <Pricing />
+      <Cta />
+    </main>
+    <Footer />
+  </Box>
 </template>
 ```
 
 ## Next steps
 
-- [Components](../components.md): the props of every component and how to author a new one.
+- [Components](../components.md#plain-examples-copy-these): copy-paste components for your app.
 - [Theme config](../reference/theme.md): every theme key and its rules.
 - [Vite and Nuxt](../reference/vite.md): the plugin options.

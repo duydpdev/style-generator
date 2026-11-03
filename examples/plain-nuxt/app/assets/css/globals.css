@@ -1,0 +1,6 @@
+/* Nuxt entry: Tailwind v4 and the generated theme. No @source line: Tailwind
+   scans app/ (app/ui included), and theme.css lists every token utility. */
+/* #region docs:css-entry */
+@import "tailwindcss";
+@import "../../theme/theme.css";
+/* #endregion docs:css-entry */

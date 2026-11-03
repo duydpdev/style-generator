@@ -1,10 +1,405 @@
 # Components: examples, not an API
 
-The six components on this page (`Box`, `Text`, `Stack`, `Flex`, `Grid` and `Button`) are sample code inside the example apps, not a package: nothing is published and nothing is versioned. Copy the files you need into your app and change them freely. The React versions are self-contained `*.tsx` files in [`examples/react-v4/src/ui/`](../examples/react-v4/src/ui/index.ts); the landing site imports the same files through `react-v4-example/ui` and binds them to its own theme. The Vue versions are single-file components with `<script setup lang="ts">` in [`examples/nuxt-v4/app/ui/`](../examples/nuxt-v4/app/ui/Button.vue). Both wrap the headless recipes of [`examples/design-system`](../examples/design-system/README.md), so renaming a theme token fails to compile in the recipe instead of failing at runtime.
+There are two sets. The plain examples are what you copy: one folder per component over the published `./ui` kit ([UI kit](./reference/ui.md)). The harness is the repo's own DX test and site demo.
+
+## Plain examples (copy these)
+
+### Where they live
+
+`examples/plain-react` (Vite + React, Storybook, parity gate), `examples/next-v4` (Next.js App Router), `examples/plain-nuxt` (Nuxt 4). All three render the same landing page from the same ten components.
+
+### One folder per component
+
+```text
+<app>/src/theme/theme.json        # the app's own theme (Nuxt: app/theme/theme.json)
+<app>/src/theme.ts                # export { theme, tokens, cn }  (Nuxt: app/theme.ts)
+<app>/src/ui/<kebab-name>/        # one folder per component (Nuxt: app/ui/<kebab-name>/)
+  style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
+  types.ts                        # exported <Name>OwnProps/<Name>Props (React/Next: may also import "react" + "@duydpdev/style-generator/ui-react")
+  <Name>.tsx | <Name>.vue         # the component
+  <Name>.stories.tsx              # plain-react only
+  index.ts                        # required in .tsx apps (plain-react, next-v4); absent in plain-nuxt
+<app>/src/sections/*.tsx          # landing sections + page helpers (Section, Container, SectionHead); app code, not scanned by check:plain-ui (Nuxt: app/sections/*.vue)
+```
+
+- `theme.json` is the reduced theme token configuration.
+- `theme.ts` exports `theme`, `tokens`, and `cn` for the application.
+- `style.ts` is the same file in all three apps; it holds the variant tables and the headless recipe.
+- `types.ts` is the same in React and Next; the Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`.
+- `<Name>.tsx` / `<Name>.vue` renders the component markup and applies the recipe and spacing utilities.
+- `<Name>.stories.tsx` isolates the component for Storybook in `plain-react`.
+- `index.ts` re-exports the component and its types in `.tsx` apps (absent in `plain-nuxt`).
+- `sections/*.tsx` contains the application landing sections and layout helpers.
+
+### The theme module
+
+The theme module exports `theme`, `tokens` created with `createDesignTokens()`, and the `cn` helper.
+
+<!-- embed: examples/plain-react/src/theme.ts -->
+
+```ts
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import { createCn } from "@duydpdev/style-generator/ui";
+
+import themeJson from "./theme/theme.json";
+
+/** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
+export const theme = themeJson;
+
+/** Typed token arrays; no options, like `styleGenVite` in vite.config.ts. */
+export const tokens = createDesignTokens(themeJson).DesignTokens.Web;
+
+/** clsx + a tailwind-merge that knows this theme's utilities. */
+export const cn = createCn(tokens);
+```
+
+### A component folder
+
+<!-- embed: examples/plain-react/src/ui/button/style.ts -->
+
+```ts
+import {
+  COLOR_STATES,
+  createVariantMapper,
+} from "@duydpdev/style-generator/cva";
+import type { ColorVariant } from "@duydpdev/style-generator/types";
+import {
+  contrastText,
+  pick,
+  recipeFromTables,
+  type RecipeFn,
+  type RecipeTables,
+} from "@duydpdev/style-generator/ui";
+
+import { tokens, type theme } from "../../theme";
+
+/**
+ * The intents `color` offers. `satisfies` is the DX anchor: rename or
+ * remove one of these colors in theme.json and the compiler fails here.
+ */
+export const buttonIntents = [
+  "primary",
+  "secondary",
+  "success",
+  "danger",
+] as const satisfies readonly ColorVariant<typeof theme>[];
+
+export type ButtonIntent = (typeof buttonIntents)[number];
+
+const BUTTON_TINTS = ["outline", "soft", "ghost", "link"] as const;
+
+type ButtonTint = (typeof BUTTON_TINTS)[number];
+
+/** Literal classes, so Tailwind's scanner sees them: the registry emits no `outline-*` or `/10` classes. */
+const focusRing = {
+  primary: "focus-visible:outline-primary",
+  secondary: "focus-visible:outline-secondary",
+  success: "focus-visible:outline-success",
+  danger: "focus-visible:outline-danger",
+} as const satisfies Record<ButtonIntent, string>;
+
+const tint = {
+  primary: {
+    outline: "border-primary text-primary hover:bg-primary/10",
+    soft: "bg-primary/10 text-primary hover:bg-primary/15",
+    ghost: "text-primary hover:bg-primary/10",
+    link: "text-primary",
+  },
+  secondary: {
+    outline: "border-secondary text-secondary hover:bg-secondary/10",
+    soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
+    ghost: "text-secondary hover:bg-secondary/10",
+    link: "text-secondary",
+  },
+  success: {
+    outline: "border-success text-success hover:bg-success/10",
+    soft: "bg-success/10 text-success hover:bg-success/15",
+    ghost: "text-success hover:bg-success/10",
+    link: "text-success",
+  },
+  danger: {
+    outline: "border-danger text-danger hover:bg-danger/10",
+    soft: "bg-danger/10 text-danger hover:bg-danger/15",
+    ghost: "text-danger hover:bg-danger/10",
+    link: "text-danger",
+  },
+} as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
+
+const colors: readonly string[] = tokens.colors;
+// `bg-primary hover:bg-primary-hover active:bg-primary-active` when the theme declares the state siblings.
+const bgStates = createVariantMapper("bg", tokens.colors, {
+  states: COLOR_STATES,
+});
+const bg = createVariantMapper("bg", tokens.colors);
+const rounded = createVariantMapper("rounded", tokens.borderRadius);
+const type = createVariantMapper("", tokens.typography);
+
+/** A filled intent: state backgrounds, `on<Intent>` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
+const fill = (intent: ButtonIntent): string[] => {
+  const classes = [
+    pick(bgStates, intent),
+    contrastText(colors, intent, "background"),
+  ];
+  if (!colors.includes(`${intent}Hover`)) classes.push("hover:opacity-90");
+  return classes;
+};
+
+/** Button as data: variant × intent × size. */
+export const buttonTables = {
+  base: [
+    "inline-flex shrink-0 items-center justify-center gap-1.5",
+    `${pick(rounded, "md")} border`,
+    `cursor-pointer ${pick(type, "text16Medium")} whitespace-nowrap outline-hidden select-none`,
+    "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2",
+    "transition-[background-color,color,opacity] duration-150",
+    "disabled:cursor-not-allowed disabled:opacity-50",
+  ],
+  variants: {
+    variant: {
+      fill: "border-transparent active:scale-[0.98]",
+      outline: `${pick(bg, "background")} active:scale-[0.98]`,
+      soft: "border-transparent active:scale-[0.98]",
+      ghost: "border-transparent active:scale-[0.98]",
+      link: "border-transparent underline-offset-4 hover:underline",
+    },
+    color: focusRing,
+    size: {
+      sm: "h-7 px-2.5",
+      md: "h-9 px-3.5",
+      lg: `h-11 px-5 ${pick(type, "text32Bold")}`,
+    },
+  },
+  compoundVariants: buttonIntents.flatMap((intent) => [
+    { color: intent, variant: "fill", class: fill(intent) },
+    ...BUTTON_TINTS.map((variant) => ({
+      color: intent,
+      variant,
+      class: tint[intent][variant],
+    })),
+  ]),
+  defaultVariants: {
+    variant: "fill",
+    color: buttonIntents[0],
+    size: "md",
+  },
+} satisfies RecipeTables;
+
+export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
+```
+
+<!-- embed: examples/plain-react/src/ui/button/types.ts -->
+
+```ts
+import type { ThemeSpacingProps } from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
+
+import type { tokens } from "../../theme";
+
+import type { ButtonIntent } from "./style";
+
+export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
+  readonly variant?: "fill" | "outline" | "soft" | "ghost" | "link" | undefined;
+  /** One of `buttonIntents`. */
+  readonly color?: ButtonIntent | undefined;
+  readonly size?: "sm" | "md" | "lg" | undefined;
+  readonly prefix?: ReactNode;
+  readonly suffix?: ReactNode;
+  readonly children?: ReactNode;
+  readonly className?: string | undefined;
+  readonly style?: CSSProperties | undefined;
+};
+
+export type ButtonProps<T extends ElementType = "button"> = Polymorphic<
+  T,
+  ButtonOwnProps
+>;
+```
+
+<!-- embed: examples/plain-react/src/ui/button/Button.tsx -->
+
+```tsx
+import { mergeStyle, splitSpacing } from "@duydpdev/style-generator/ui";
+import type { ElementType, JSX } from "react";
+
+import { cn, tokens } from "../../theme";
+
+import { buttonRecipe } from "./style";
+import type { ButtonProps } from "./types";
+
+/** `Button`: variant × intent × size; a `<button>` gets `type="button"` unless one is passed. */
+export function Button<T extends ElementType = "button">({
+  as,
+  className,
+  style,
+  variant,
+  color,
+  size,
+  prefix,
+  suffix,
+  children,
+  ...props
+}: ButtonProps<T>): JSX.Element {
+  const Component: ElementType = as ?? "button";
+  const split = splitSpacing(props, tokens.spacingProperties);
+  return (
+    <Component
+      type={Component === "button" ? "button" : undefined}
+      {...split.rest}
+      data-slot="button"
+      className={
+        cn(
+          buttonRecipe({ variant, color, size }),
+          split.className,
+          className,
+        ) || undefined
+      }
+      style={mergeStyle(split.style, style)}
+    >
+      {prefix != null && <span data-icon="start">{prefix}</span>}
+      <span>{children}</span>
+      {suffix != null && <span data-icon="end">{suffix}</span>}
+    </Component>
+  );
+}
+```
+
+The Vue implementation in `plain-nuxt` shares `style.ts`, uses an SFC-compatible `types.ts`, and renders a single-file component:
+
+<!-- embed: examples/plain-nuxt/app/ui/button/types.ts -->
+
+```ts
+import type { ThemeSpacingProps } from "@duydpdev/style-generator/ui";
+
+import type { tokens } from "../../theme";
+
+import type { ButtonIntent } from "./style";
+
+/** Button props; spacing props arrive as attributes (`@vue-ignore`). */
+export interface ButtonProps extends /* @vue-ignore */ ThemeSpacingProps<
+  typeof tokens
+> {
+  as?: string;
+  variant?: "fill" | "outline" | "soft" | "ghost" | "link";
+  /** One of `buttonIntents`. */
+  color?: ButtonIntent;
+  size?: "sm" | "md" | "lg";
+}
+```
+
+<!-- embed: examples/plain-nuxt/app/ui/button/Button.vue -->
+
+```vue
+<script setup lang="ts">
+import { splitSpacing } from "@duydpdev/style-generator/ui";
+import { useAttrs } from "vue";
+
+import { cn, tokens } from "../../theme";
+
+import { buttonRecipe } from "./style";
+import type { ButtonProps } from "./types";
+
+type ClassValue = Parameters<typeof cn>[number];
+
+defineOptions({ inheritAttrs: false });
+const props = withDefaults(defineProps<ButtonProps>(), { as: "button" });
+const slots = defineSlots<{
+  default?: () => unknown;
+  prefix?: () => unknown;
+  suffix?: () => unknown;
+}>();
+const attrs = useAttrs();
+
+// Root attributes: defaults, the caller's attributes, then class and style.
+const root = () => {
+  const split = splitSpacing(attrs, tokens.spacingProperties);
+  const { class: klass, style, ...rest } = split.rest;
+  return {
+    type: props.as === "button" ? "button" : undefined,
+    ...rest,
+    "data-slot": "button",
+    class: cn(
+      buttonRecipe({
+        variant: props.variant,
+        color: props.color,
+        size: props.size,
+      }),
+      split.className,
+      klass as ClassValue,
+    ),
+    style: [split.style, style],
+  };
+};
+</script>
+
+<template>
+  <component :is="props.as" v-bind="root()">
+    <span v-if="slots.prefix" data-icon="start"><slot name="prefix" /></span>
+    <span><slot /></span>
+    <span v-if="slots.suffix" data-icon="end"><slot name="suffix" /></span>
+  </component>
+</template>
+```
+
+### Copy a component into your app
+
+1. Install the required dependencies:
+
+   ```bash
+   yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+   ```
+
+   See the README [Install](../README.md#install) section to configure the `@duydpdev` scope registry and your Personal Access Token; without the scope config npmjs serves an unrelated `3.0.0`.
+
+2. Wire `theme.css` for your bundler ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
+
+3. Copy `theme.ts` and your theme JSON, once.
+
+4. Copy the folder. Nothing else is needed: a folder imports only its own files, `../../theme` and packages.
+
+### The ten components
+
+| Folder   | Component | Parity gate |
+| -------- | --------- | ----------- |
+| `box`    | Box       | yes         |
+| `text`   | Text      | yes         |
+| `stack`  | Stack     | yes         |
+| `flex`   | Flex      | yes         |
+| `grid`   | Grid      | yes         |
+| `button` | Button    | yes         |
+| `card`   | Card      | no          |
+| `badge`  | Badge     | no          |
+| `input`  | Input     | no          |
+| `link`   | Link      | no          |
+
+"yes" means `yarn workspace plain-react-example test` fails when the plain React classes differ from the harness component's.
+
+### Rules
+
+- `className`/`class` and `style` are allowed on tags.
+- A pattern that has a rule or repeats becomes a component with typed props.
+- No `data-part`.
+- `src/**` (Nuxt `app/**`) never imports `design-system-example` or `react-v4-example` (ESLint).
+- A ui folder imports only `./…`, `../../theme` and packages.
+
+### Adding a plain component
+
+Add the folder in `plain-react` with a `<Name>.stories.tsx`, copy it (without the story) to `examples/next-v4/src/ui/`, copy `style.ts` to `examples/plain-nuxt/app/ui/<folder>/` and write its `types.ts` and `<Name>.vue`; then run `yarn check:plain-ui`.
+
+### Checks
+
+- `yarn check:plain-ui`
+- `yarn workspace plain-react-example test`
+- The three `typecheck`/`build` scripts
+- `yarn lint` (after `yarn build:all` and both `prepare:nuxt`)
+
+## Harness (repo-internal)
+
+The harness is not meant to be copied: it is the repo's own DX test and site demo.
 
 Until commit `2045cce`, Dialog, Select, List, ListItem, Card, Badge, Code, Container, Input and Link lived in `packages/ui-react` and `packages/ui-vue` behind one `createUi(tokens, presets)` call; `git show 2045cce:packages/ui-react/src/Dialog/Dialog.tsx` recovers one as a starting point.
 
-## Using components
+### Using components
 
 In React, each file in `src/ui/` exports a factory (`createBox`, `createText`, …) that takes the app's tokens and, where the component has one, a preset. `src/ui.ts` binds them once, and app code imports the components from there:
 
@@ -56,17 +451,17 @@ The rules for app code:
 
 ESLint enforces the last two rules and bans the tags of the table above in app files, so a plain `<div>` is reported. The component names and their tags come from [`examples/ui-registry.mjs`](../examples/ui-registry.mjs).
 
-## Layout by intent
+### Layout by intent
 
 - **`Stack`** is the vertical, single-column flow: a page section, a form, a card body. Space its children with `gap`, not with a margin on each child.
 - **`Flex`** is a row, or a wrapping set of two or more children. Never wrap a single child in `Flex` to align or space it: put those props on the child itself or on the parent `Stack`. One exception: a `Flex` whose second flex item is a CSS pseudo-element (a `::before`/`::after` rule line next to a label) has two flex items even though its markup shows one child; the site's `docs-onpage.tsx`, `docs-sidebar.tsx` and `sidebar-toc.tsx` labels work this way. ESLint cannot report this rule (whitespace text between JSX tags counts as a child), so review checks it.
 - **`Grid`** always has `columns`: a count (`columns={3}`), a CSS track list (`columns="220px 1fr"`), or a `{ base, md, lg }` record of either (`columns={{ base: 1, md: "220px 1fr" }}`). A `Grid` without `columns` is a single-column `Stack` in disguise. ESLint reports `<Grid>` without `columns` in `examples/react-v4/src` and in the nuxt-v4 templates; the landing site is exempt, because its grids use desktop-first CSS templates under `@media (max-width: …)` that the mobile-first `columns` prop cannot express.
 
-## Polymorphic `as`
+### Polymorphic `as`
 
 The layout components and `Text` accept `as` to pick the root element, and the other props are then typed for that element: `<Text as="h1" type="display56Serif">` accepts the `<h1>` attributes, and `<Box as="section">` the `<section>` ones. Each React file types its props with `Polymorphic` from `@duydpdev/style-generator/ui-react`; see [`examples/react-v4/src/ui/Box.tsx`](../examples/react-v4/src/ui/Box.tsx).
 
-## Adding a component
+### Adding a component
 
 `Text` is the worked example. A new component touches these places; skip the ones that do not apply:
 
@@ -302,7 +697,7 @@ const root = () => {
 </template>
 ```
 
-## Checks
+### Checks
 
 The examples have no test runner. Their checks are compile-time and lint-time, and all of them read the library's built `dist/`, so run `yarn build:all` first:
 

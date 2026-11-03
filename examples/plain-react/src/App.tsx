@@ -1,57 +1,61 @@
 import type { JSX } from "react";
 
+import { Cta } from "./sections/Cta";
+import { DOCS_URL } from "./sections/content";
+import { Features } from "./sections/Features";
+import { Footer } from "./sections/Footer";
+import { Hero } from "./sections/Hero";
+import { Pricing } from "./sections/Pricing";
+import { Container } from "./sections/Section";
+import { ThemeSwitch } from "./ThemeSwitch";
 import { Box } from "./ui/box";
-import { Button } from "./ui/button";
 import { Flex } from "./ui/flex";
-import { Grid } from "./ui/grid";
-import { Stack } from "./ui/stack";
+import { Link } from "./ui/link";
 import { Text } from "./ui/text";
 
-/** A smoke page: each component once. */
+/** The landing page: header, four sections, footer. */
 export function App(): JSX.Element {
   return (
-    <Stack
-      as="main"
-      gap={6}
-      p={8}
-      minHeight="100vh"
-      backgroundColor="background"
-    >
-      <Text as="h1" type="display56Serif">
-        Plain React example
-      </Text>
+    <Box backgroundColor="background" className="min-h-screen text-foreground">
       <Box
-        innerBorder
+        as="header"
+        position="sticky"
+        backdropBlur="md"
+        borderB="thin"
         borderColor="line"
-        rounded="lg"
-        p={6}
-        backgroundColor="surface"
+        className="top-0 z-10 bg-background/80"
       >
-        <Text color="muted">A Box with an inner border.</Text>
+        <Container>
+          <Flex align="center" justify="between" gap={4} py={4}>
+            <Link href="#hero" tone="foreground" underline="none">
+              <Text as="span" type="text16Medium">
+                style-generator
+              </Text>
+            </Link>
+            <Flex as="nav" aria-label="Main" align="center" gap={4}>
+              <Link href="#features" tone="muted">
+                Features
+              </Link>
+              <Link href="#pricing" tone="muted">
+                Pricing
+              </Link>
+              <Link href={DOCS_URL} tone="muted">
+                Docs
+              </Link>
+              <ThemeSwitch />
+            </Flex>
+          </Flex>
+        </Container>
       </Box>
-      <Flex gap={3} align="center" wrap>
-        <Button>Fill</Button>
-        <Button variant="outline" color="secondary">
-          Outline
-        </Button>
-        <Button variant="soft" color="success" size="sm">
-          Soft
-        </Button>
-        <Button variant="ghost" color="danger" size="lg">
-          Ghost
-        </Button>
-      </Flex>
-      <Grid columns={{ base: 1, md: 3 }} gap={4}>
-        <Box p={4} rounded="md" border="thin" borderColor="line">
-          <Text>One</Text>
-        </Box>
-        <Box p={4} rounded="md" border="thin" borderColor="line">
-          <Text>Two</Text>
-        </Box>
-        <Box p={4} rounded="md" border="thin" borderColor="line">
-          <Text>Three</Text>
-        </Box>
-      </Grid>
-    </Stack>
+      {/* #region docs:usage */}
+      <main>
+        <Hero />
+        <Features />
+        <Pricing />
+        <Cta />
+      </main>
+      {/* #endregion docs:usage */}
+      <Footer />
+    </Box>
   );
 }

@@ -21,14 +21,28 @@ yarn workspace plain-react-example dev
 
 ## Components
 
-| Folder    | Component | Notes                                                                            |
-| --------- | --------- | -------------------------------------------------------------------------------- |
-| `box/`    | `Box`     | Token, size and spacing props; `innerBorder` draws a 1px overlay frame           |
-| `text/`   | `Text`    | `type`, `color`, `align`, `decoration`; defaults `text16Medium` and `foreground` |
-| `stack/`  | `Stack`   | One column of items                                                              |
-| `flex/`   | `Flex`    | A row of two or more items                                                       |
-| `grid/`   | `Grid`    | `columns`: a count or a CSS track list, per breakpoint                           |
-| `button/` | `Button`  | `variant` × `color` (intent) × `size`, optional `prefix`/`suffix`                |
+Every folder is self-contained: it imports only the package, `react`, `../../theme` and its own files (`yarn check:plain-ui` enforces this). Copying `card/` needs nothing else from this app.
+
+To use a folder in your own app: `yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge`, then copy the folder plus `src/theme.ts` and `src/theme/theme.json`. The package comes from GitHub Packages, so set up the scope registry and token first ([root README, Install](../../README.md#install)); without that config npmjs serves an unrelated `3.0.0`.
+
+| Folder           | Component | Parity gate | Notes                                                                            |
+| ---------------- | --------- | ----------- | -------------------------------------------------------------------------------- |
+| `src/ui/box/`    | `Box`     | yes         | Token, size and spacing props; `innerBorder` draws a 1px overlay frame           |
+| `src/ui/text/`   | `Text`    | yes         | `type`, `color`, `align`, `decoration`; defaults `text16Medium` and `foreground` |
+| `src/ui/stack/`  | `Stack`   | yes         | One column of items                                                              |
+| `src/ui/flex/`   | `Flex`    | yes         | A row of two or more items                                                       |
+| `src/ui/grid/`   | `Grid`    | yes         | `columns`: a count or a CSS track list, per breakpoint                           |
+| `src/ui/button/` | `Button`  | yes         | `variant` × `color` (intent) × `size`, optional `prefix`/`suffix`                |
+| `src/ui/card/`   | `Card`    | no          | tone, padding, radius, shadow, border                                            |
+| `src/ui/badge/`  | `Badge`   | no          | color × variant (`soft`, `solid`, `outline`)                                     |
+| `src/ui/input/`  | `Input`   | no          | native `<input>`; `size`, `invalid` (sets `aria-invalid`)                        |
+| `src/ui/link/`   | `Link`    | no          | tone, underline; `as` for a router link or a button                              |
+
+"Parity gate: yes" means `tests/parity/<folder>.parity.test.tsx` checks that the component renders the same classes as the harness component in `examples/react-v4`. `Card`, `Badge`, `Input` and `Link` exist only in the plain examples, so their stories are their only check.
+
+## Landing page
+
+`src/App.tsx` is a landing page built from the ten components: a header with `ThemeSwitch`, then `src/sections/` `Hero`, `Features`, `Pricing`, `Cta` and `Footer`. The copy lives in `src/sections/content.ts`. `Section`, `Container` and `SectionHead` are app helpers for patterns the page repeats; one-off layout is `className` on the element. `src/ThemeSwitch.tsx` sets `data-theme="dark"` on `<html>` through `themeAxisAttributes` from `@duydpdev/style-generator/recipes`. Every section has a story under `Sections/`, and the whole page is `Pages/Landing`.
 
 ## Add a component
 

@@ -1,10 +1,8 @@
-# Next.js + Tailwind v4 example
+# Next.js + Tailwind v4 example (plain)
 
-Wiring-only Next.js 16 (App Router, React 19) app: `styleGenNext` in `next.config.ts`, a CSS entry that imports the generated `theme.css`, and one page styled with the utilities the theme generates (`bg-primary`, `text-12-mono`, `rounded-pill`, `shadow-md`, …). It has no component layer. The theme JSON, the generator options, `axisAttributes()` and the hand-written cross-axis CSS come from the shared [`design-system`](../design-system/README.md) package. CI type-checks it and runs `next build`, so it is the working reference for the [Next.js tutorial](../../documents/getting-started/next.md).
+Next.js 16 (App Router, React 19) app that renders a landing page built from plain, copy-paste components. CI type-checks and builds it, making it the working reference for the [Next.js tutorial](../../documents/getting-started/next.md). The files in `src/ui`, `src/sections` and `src/App.tsx` are copies of `examples/plain-react`, and `yarn check:plain-ui` keeps `style.ts` and `types.ts` identical.
 
 ## Prerequisites
-
-`package.json` depends on the library through `"@duydpdev/style-generator": "link:../.."` and on the design system through `"design-system-example": "workspace:*"`, so the library **must be built first**. The example is a Yarn workspace of the repo root, so the root install also installs it. Node >= 22.18 is required (the config imports a `.ts` module from the design system):
 
 ```bash
 # From the repo root
@@ -12,20 +10,25 @@ yarn install
 yarn build:all   # lib (dist/) + CLI (dist/cli/index.mjs)
 ```
 
+Upgrading an older checkout: delete the root `app/` folder once with `rm -rf examples/next-v4/app` (Next prefers it over `src/app`, and `next.config.ts` throws while it exists).
+
 ## Run the example
 
 ```bash
 cd examples/next-v4
-yarn dev          # Next.js dev server on http://localhost:3000
+yarn dev
 ```
 
-## How theme generation works (no Vite)
+## Copy a component
 
-Next.js runs on Turbopack/webpack, so the Vite-only `styleGenVite` plugin does not apply. `next.config.ts` wraps the Next config in `styleGenNext` from `@duydpdev/style-generator/next`. Whenever Next loads the config in `next dev` or `next build`, it calls the programmatic `generate()` API and writes `app/theme/theme.css` (gitignored) from `../design-system/src/theme.json`. The generator options come from `design-system-example/style-gen.options`. `transpilePackages: ["design-system-example"]` lets Next compile the design system's TypeScript source, which the theme switch imports.
-
-`app/globals.css` imports `tailwindcss`, the generated `theme.css` and the design system's `palettes.css` (the dark × palette overrides that `themeAxes` cannot express). It needs no `@source` line: Tailwind scans `app/`, and `theme.css` already lists every token utility in `@source inline(...)`.
-
-`app/ThemeSwitch.tsx` is a client component. It sets the `data-theme`/`data-palette` attributes on `<html>` with the design system's `axisAttributes()`, which is typed by the theme's axes.
+1. Install the package and the libraries a copied folder uses:
+   ```bash
+   yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+   ```
+   `@duydpdev/style-generator` comes from GitHub Packages, so set up the `@duydpdev` scope registry and a personal access token first (see the [Install](../../README.md#install) section of the repository README); without the scope config npmjs serves an unrelated `3.0.0`.
+2. Wire `theme.css` for Next.js: wrap your config in `styleGenNext` (`next.config.ts`) and import `@import "tailwindcss";` and `@import "./theme/theme.css";` in `src/app/globals.css`. See the [Next.js tutorial](../../documents/getting-started/next.md).
+3. Copy `src/theme/theme.json` (or use your own theme) and `src/theme.ts`. If you pass generator options to `styleGenNext`, pass the same object to `createDesignTokens` in `theme.ts`.
+4. Copy one component folder from `src/ui/`, for example `src/ui/button/`. A folder imports only its own files, `../../theme` and the packages, so nothing else comes with it. See [Components](../../documents/components.md#plain-examples-copy-these).
 
 ## Scripts
 
@@ -36,20 +39,30 @@ Next.js runs on Turbopack/webpack, so the Vite-only `styleGenVite` plugin does n
 | `yarn start`     | Serve the production build                                      |
 | `yarn typecheck` | `tsc --noEmit`                                                  |
 
-## Layout (App Router)
+## Layout
 
 ```text
 examples/next-v4
-├── next.config.ts        # styleGenNext + transpilePackages: ["design-system-example"]
-├── postcss.config.mjs    # @tailwindcss/postcss
+├── next.config.ts
+├── postcss.config.mjs
 ├── package.json
 ├── tsconfig.json
-└── app/
-    ├── layout.tsx        # <html> + Google Fonts + body utilities
-    ├── page.tsx          # server component styled with generated utilities
-    ├── ThemeSwitch.tsx   # "use client": native <select>s that set the data-* axis attributes on <html> via axisAttributes
-    ├── globals.css       # tailwindcss + theme.css + palettes.css
-    └── theme/theme.css   # generated by styleGenNext (gitignored)
+└── src/
+    ├── theme/
+    │   ├── theme.json
+    │   └── theme.css (generated, gitignored)
+    ├── theme.ts
+    ├── ui/
+    │   └── <folder>/
+    │       ├── style.ts
+    │       ├── types.ts
+    │       ├── <Name>.tsx
+    │       └── index.ts
+    ├── sections/
+    ├── App.tsx
+    ├── ThemeSwitch.tsx ("use client")
+    └── app/
+        ├── layout.tsx
+        ├── page.tsx
+        └── globals.css
 ```
-
-The multi-axis scope table (which overrides the library generates and which stay hand-written CSS) lives in the [design-system README](../design-system/README.md#theme-axes).

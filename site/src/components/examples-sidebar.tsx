@@ -1,5 +1,5 @@
 import { EXAMPLE_FILES, type Variant } from "../lib/example-files";
-import { META } from "../lib/examples-meta";
+import { META, PLAIN_EXAMPLES } from "../lib/examples-meta";
 import { Box, Flex, Grid, Stack, Text } from "../ui";
 
 import { FileTree } from "./file-tree";
@@ -15,8 +15,8 @@ interface Props {
 const FOOT_LINK = "https://github.com/duydpdev/style-generator/tree/main";
 
 /**
- * Examples sidebar: version switcher, file tree and source footer. Below 860px
- * it is an overlay (`open` slides it in).
+ * Examples sidebar: version switcher, file tree, source footer and the
+ * plain-example links. Below 860px it is an overlay (`open` slides it in).
  * @param root0 - Component props
  * @param root0.variant - Active example variant
  * @param root0.open - Whether the overlay is open
@@ -121,6 +121,22 @@ export function ExamplesSidebar({
             github ↗
           </a>
         </Flex>
+        <Flex justify="between">
+          <Box as="span">PLAIN</Box>
+          <Box as="span">copy these</Box>
+        </Flex>
+        {PLAIN_EXAMPLES.map(({ label, dir }) => (
+          <Flex key={dir} justify="between">
+            <Box as="span">{label}</Box>
+            <a
+              href={`${FOOT_LINK}/examples/${dir}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {dir} ↗
+            </a>
+          </Flex>
+        ))}
       </Stack>
     </Stack>
   );

@@ -1,0 +1,7 @@
+/* Next.js entry: Tailwind v4 and the generated theme. No @source line: Tailwind
+   scans the project (src/ui included), and theme.css lists every token utility
+   in @source inline(...). */
+/* #region docs:css-entry */
+@import "tailwindcss";
+@import "../theme/theme.css";
+/* #endregion docs:css-entry */

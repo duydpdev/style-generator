@@ -62,10 +62,39 @@ export const APPS = [
     component: ".tsx",
     stories: true,
   },
+  {
+    name: "next-v4",
+    uiDir: "examples/next-v4/src/ui",
+    component: ".tsx",
+    stories: false,
+  },
+  {
+    name: "plain-nuxt",
+    uiDir: "examples/plain-nuxt/app/ui",
+    component: ".vue",
+    stories: false,
+  },
 ];
 
 /** @type {readonly IdenticalRule[]} */
-export const IDENTICAL = [];
+export const IDENTICAL = [
+  {
+    scope: "folder",
+    file: "style.ts",
+    apps: ["plain-react", "next-v4", "plain-nuxt"],
+  },
+  { scope: "folder", file: "types.ts", apps: ["plain-react", "next-v4"] },
+  {
+    scope: "app",
+    file: "theme.ts",
+    apps: ["plain-react", "next-v4", "plain-nuxt"],
+  },
+  {
+    scope: "app",
+    file: "theme/theme.json",
+    apps: ["plain-react", "next-v4", "plain-nuxt"],
+  },
+];
 
 const KEBAB = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const THEME_IMPORT = "../../theme";

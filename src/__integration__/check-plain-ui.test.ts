@@ -26,6 +26,8 @@ interface Report {
 }
 /** The script's exports this test calls (the root tsconfig has no allowJs). */
 interface CheckPlainUiModule {
+  readonly APPS: readonly PlainApp[];
+  readonly IDENTICAL: readonly IdenticalRule[];
   readonly checkPlainUi: (
     root: string,
     apps?: readonly PlainApp[],
@@ -337,5 +339,124 @@ describe("integration: scripts/check-plain-ui.mjs", () => {
         [{ scope: "folder", file: "style.ts", apps: ["react", "nuxt"] }],
       ).errors,
     ).toEqual(["IDENTICAL style.ts: unknown app(s) nuxt"]);
+  });
+});
+
+describe("check-plain-ui: the repo's plain apps", () => {
+  let dir: string;
+  let mod: CheckPlainUiModule;
+
+  beforeAll(async () => {
+    mod = (await import(pathToFileURL(script).href)) as CheckPlainUiModule;
+  });
+
+  /**
+   * The valid fixture: one `button` folder per app of `APPS`, plus the
+   * app-scope theme files.
+   * @param {string} root - Fixture root
+   */
+  function validFixture(root: string) {
+    for (const app of mod.APPS) {
+      const ui = app.uiDir;
+      put(root, `${ui}/button/style.ts`, "export const s = 1;\n");
+      put(root, `${ui}/button/types.ts`, "export type T = 1;\n");
+      put(
+        root,
+        `${ui}/button/Button${app.component}`,
+        app.component === ".vue"
+          ? "<template><button /></template>\n"
+          : "export {};\n",
+      );
+      if (app.component === ".tsx") {
+        put(root, `${ui}/button/index.ts`, "export {};\n");
+      }
+      if (app.stories)
+        put(root, `${ui}/button/Button.stories.tsx`, "export {};\n");
+      put(root, `${dirname(ui)}/theme.ts`, "export const theme = 1;\n");
+      put(root, `${dirname(ui)}/theme/theme.json`, "{}\n");
+    }
+  }
+
+  const check = () => mod.checkPlainUi(dir);
+  const mentions = (errors: readonly string[], text: string) =>
+    errors.some((error) => error.includes(text));
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "sg-plain-"));
+    validFixture(dir);
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("accepts identical shared files", () => {
+    expect(check()).toEqual({ errors: [], warnings: [] });
+  });
+
+  it("rejects a next-v4 style.ts that differs", () => {
+    put(
+      dir,
+      "examples/next-v4/src/ui/button/style.ts",
+      "export const s = 2;\n",
+    );
+    expect(mentions(check().errors, "next-v4")).toBe(true);
+  });
+
+  it("rejects a next-v4 types.ts that differs", () => {
+    put(dir, "examples/next-v4/src/ui/button/types.ts", "export type T = 2;\n");
+    expect(mentions(check().errors, "next-v4")).toBe(true);
+  });
+
+  it("allows a plain-nuxt types.ts of its own", () => {
+    put(
+      dir,
+      "examples/plain-nuxt/app/ui/button/types.ts",
+      "export interface ButtonProps { as?: string }\n",
+    );
+    expect(check().errors).toEqual([]);
+  });
+
+  it("rejects a plain-nuxt folder without its .vue component", () => {
+    rmSync(join(dir, "examples/plain-nuxt/app/ui/button/Button.vue"));
+    expect(mentions(check().errors, "plain-nuxt")).toBe(true);
+  });
+
+  it("rejects a theme.ts that differs in plain-nuxt", () => {
+    put(dir, "examples/plain-nuxt/app/theme.ts", "export const theme = 2;\n");
+    expect(mentions(check().errors, "plain-nuxt")).toBe(true);
+  });
+
+  it("rejects a theme.json that differs in next-v4", () => {
+    put(dir, "examples/next-v4/src/theme/theme.json", '{"a":1}\n');
+    expect(mentions(check().errors, "next-v4")).toBe(true);
+  });
+
+  it("warns, never fails, on a folder that exists in one app only", () => {
+    const ui = "examples/plain-react/src/ui/card";
+    put(dir, `${ui}/style.ts`, "export const s = 1;\n");
+    put(dir, `${ui}/types.ts`, "export type T = 1;\n");
+    put(dir, `${ui}/Card.tsx`, "export {};\n");
+    put(dir, `${ui}/Card.stories.tsx`, "export {};\n");
+    put(dir, `${ui}/index.ts`, "export {};\n");
+    const { errors, warnings } = check();
+    expect(errors).toEqual([]);
+    expect(warnings.some((warning) => warning.includes("card"))).toBe(true);
+  });
+
+  it("rejects a forbidden package import", () => {
+    put(
+      dir,
+      "examples/plain-nuxt/app/ui/button/Button.vue",
+      '<script setup lang="ts">\nimport { clsx } from "clsx";\n</script>\n',
+    );
+    expect(mentions(check().errors, "clsx")).toBe(true);
+  });
+
+  it("requires index.ts in .tsx apps and rejects it in plain-nuxt", () => {
+    put(dir, "examples/plain-nuxt/app/ui/button/index.ts", "export {};\n");
+    expect(mentions(check().errors, "plain-nuxt")).toBe(true);
+    rmSync(join(dir, "examples/plain-nuxt/app/ui/button/index.ts"));
+    rmSync(join(dir, "examples/next-v4/src/ui/button/index.ts"));
+    expect(mentions(check().errors, "next-v4")).toBe(true);
   });
 });

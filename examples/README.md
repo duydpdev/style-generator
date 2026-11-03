@@ -10,14 +10,20 @@ Upgrading an existing project? See [`../documents/migration/4.x-to-5.0.md`](../d
 | ---------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`design-system`](./design-system) | shared, no UI | The theme, the generator `options`, typed tokens, `cn()`, `axisAttributes()`, the headless CVA recipes of the six sample components, the shared CSS and the DX tests. Private workspace. |
 | [`react-v4`](./react-v4)           | app           | Vite + React 19 + Tailwind v4: `styleGenVite` in `vite.config.ts`, `@tailwindcss/vite`.                                                                                                  |
-| [`next-v4`](./next-v4)             | app           | Next.js 16 (App Router) + Tailwind v4: no Vite, so `styleGenNext` in `next.config.ts` (webpack and Turbopack), `@tailwindcss/postcss`. Wiring only, no component layer.                  |
-| [`nuxt-v4`](./nuxt-v4)             | app           | Nuxt 4 (Vue 3) + Tailwind v4: Nuxt runs on Vite, so it reuses `styleGenVite` through `nuxt.config.ts`.                                                                                   |
+| [`next-v4`](./next-v4)             | app           | Next.js 16 (App Router) + Tailwind v4: `styleGenNext` in `next.config.ts`, `@tailwindcss/postcss`. Plain example: the landing page from copy-paste components, no shared workspace.      |
+| [`nuxt-v4`](./nuxt-v4)             | app           | Nuxt 4 (Vue 3) + Tailwind v4: `styleGenVite` through `nuxt.config.ts`.                                                                                                                   |
+| [`plain-react`](./plain-react)     | app           | Vite + React 19 + Tailwind v4. Plain example with Storybook and the parity gate.                                                                                                         |
+| [`plain-nuxt`](./plain-nuxt)       | app           | Nuxt 4 (Vue 3) + Tailwind v4: `styleGenVite` through `nuxt.config.ts`. Plain example: the same landing page as single-file components.                                                   |
 
-The three apps share one `theme.json` (with `"$schema"` and two `themeAxes`, `theme` and `palette`), one `options` module and the CSS from `design-system` (`"design-system-example": "workspace:*"`); each keeps only its wiring (bundler config, global stylesheet) and its framework-specific code (the demo sections in `react-v4`, the theme switch in `next-v4` and `nuxt-v4`). `react-v4` renders its six sample components from `src/ui/*.tsx` (the landing site imports the same files through `react-v4-example/ui`) and `nuxt-v4` its six single-file components from `app/ui/*.vue`, both over the `design-system` recipes; `next-v4` has no component layer: one page styled with the generated utilities. Overrides that combine two axes, and variables outside `--sg-*`, stay hand-written CSS (`palettes.css`, `style-guide.css`); the scope table is in [`design-system/README.md`](./design-system/README.md#theme-axes). Start there to see how the pieces fit.
+The harness apps (`react-v4`, `nuxt-v4`) share one `theme.json` (with `"$schema"` and two `themeAxes`, `theme` and `palette`), one `options` module and the CSS from `design-system` (`"design-system-example": "workspace:*"`); each keeps only its wiring (bundler config, global stylesheet) and its framework-specific code (the demo sections in `react-v4`, the theme switch in `nuxt-v4`). `react-v4` renders its six sample components from `src/ui/*.tsx` (the landing site imports the same files through `react-v4-example/ui`) and `nuxt-v4` its six single-file components from `app/ui/*.vue`, both over the `design-system` recipes. Overrides that combine two axes, and variables outside `--sg-*`, stay hand-written CSS (`palettes.css`, `style-guide.css`); the scope table is in [`design-system/README.md`](./design-system/README.md#theme-axes). Start there to see how the pieces fit.
+
+## Plain examples (copy these)
+
+`plain-react`, `next-v4`, `plain-nuxt` render the same landing page from ten one-folder components over `@duydpdev/style-generator/ui`; each owns `theme.json` + `theme.ts`; copy a folder with [Components](../documents/components.md#plain-examples-copy-these).
 
 ## Prerequisites
 
-**Node >= 22.18.** The bundler configs import `design-system-example/style-gen.options`, a `.ts` file inside a workspace package, and Node loads it through its built-in type stripping. (The library itself runs on Node `^20.19.0 || >=22.12.0`; the floor above is for the examples only.) No example has a `postinstall` or `prepare` hook.
+**Node >= 22.18 for the harness apps.** Their bundler configs import `design-system-example/style-gen.options`, a `.ts` file inside a workspace package, and Node loads it through its built-in type stripping. (The library itself runs on Node `^20.19.0 || >=22.12.0`; the floor above is for the examples only.) No example has a `postinstall` or `prepare` hook.
 
 Build the local library and the CLI first (the examples consume the built `dist/` through the `link:../..` dependency). The examples are workspaces of the repo root, so the root install also installs them:
 
@@ -30,11 +36,11 @@ yarn build:all
 ## Run an example
 
 ```bash
-cd examples/react-v4   # or next-v4 / nuxt-v4
+cd examples/react-v4   # or next-v4 / nuxt-v4 / plain-react / plain-nuxt
 yarn dev
 ```
 
-Each app exposes `dev`, `build` and `typecheck` (`nuxt-v4` also `prepare:nuxt`, `generate`, `preview`); preview a production build with `yarn preview` (`react-v4`, `nuxt-v4`) or `yarn start` (`next-v4`). The `style-gen` CLI scripts (`generate`, `doctor`, `schema`) and the tests live in `design-system`:
+Each app exposes `dev`, `build` and `typecheck` (the Nuxt apps also `prepare:nuxt`, `generate`, `preview`); preview a production build with `yarn preview` (the Vite and Nuxt apps) or `yarn start` (`next-v4`). The `style-gen` CLI scripts (`generate`, `doctor`, `schema`) and the tests live in `design-system`:
 
 ```bash
 yarn workspace design-system-example doctor

@@ -1,8 +1,0 @@
-/* Next.js entry: Tailwind v4 and the generated theme. No @source line: Tailwind
-   scans app/, and theme.css lists every token utility in @source inline(...). */
-/* #region docs:css-entry */
-@import "tailwindcss";
-@import "./theme/theme.css";
-/* Example-only: the dark × palette overrides that themeAxes cannot express. */
-@import "design-system-example/styles/palettes.css";
-/* #endregion docs:css-entry */

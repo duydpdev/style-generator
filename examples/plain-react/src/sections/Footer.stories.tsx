@@ -1,4 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from "@storybook/react";
+import { expect, within } from "storybook/test";
 
 import { Footer } from "./Footer";
 
@@ -11,4 +12,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+/** Footer takes no props: the play check asserts the three links. */
+export const Default: Story = {
+  play: async ({ canvas }) => {
+    const nav = canvas.getByRole("navigation", { name: "Footer" });
+    await expect(within(nav).getAllByRole("link")).toHaveLength(3);
+  },
+};

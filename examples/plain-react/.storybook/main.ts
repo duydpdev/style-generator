@@ -1,9 +1,9 @@
 import type { StorybookConfig } from "@storybook/react-vite";
 
-/** Hand-written (never `storybook add`): stories under src/, Vitest addon, no telemetry. */
+/** Hand-written (never `storybook add`): stories under src/, docs + Vitest addons, no telemetry. */
 const config: StorybookConfig = {
   stories: ["../src/**/*.stories.@(ts|tsx)"],
-  addons: ["@storybook/addon-vitest"],
+  addons: ["@storybook/addon-docs", "@storybook/addon-vitest"],
   framework: "@storybook/react-vite",
   core: { disableTelemetry: true },
 };

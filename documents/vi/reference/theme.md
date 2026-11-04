@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: abc840fa9e0c -->
+<!-- source: documents/reference/theme.md sha256: d3692d16b34b -->
 
 # Cấu hình theme
 
@@ -164,12 +164,12 @@ Quy tắc:
 - **Các key override phải tồn tại sẵn trong record base**; một key chỉ có ở override sẽ không tạo ra utility nào và bị từ chối.
 - **Override phức hợp vẫn dùng CSS tự viết tay.** Một override đơn lẻ không thể nhắm vào thuộc tính của hai trục cùng một lúc:
 
-| Trục (nguồn)                                         | Nội dung                                                                                             | Xử lý                                                                                                                                                                                                |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `theme` (`themeAxes.theme.dark`)                     | override màu sắc `--sg-*` + shadows                                                                  | Được sinh bởi thư viện — `html[data-theme="dark"]`                                                                                                                                                   |
-| `palette` (`themeAxes.palette.{forest,sunset,mono}`) | override màu sắc `--sg-*`                                                                            | Được sinh bởi thư viện — `html[data-palette="forest\|sunset\|mono"]`                                                                                                                                 |
-| hợp chất `[data-theme="dark"][data-palette="…"]`     | override chéo trục (dark × một palette cụ thể)                                                       | CSS tự viết tay: độ đặc hiệu `(0,2,0)` của nó thắng bất kỳ quy tắc `html[data-…]` đơn trục nào `(0,1,1)` bất kể thứ tự trong nguồn                                                                   |
-| `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, cùng một quy tắc con lồng `[data-part~="sg-glass-target"]` | CSS tự viết tay: các biến ngoài `--sg-*` và các selector con lồng nhau không thể biểu diễn bằng theme override (xem [`examples/design-system/README.md`](../../../examples/design-system/README.md)) |
+| Trục (nguồn)                                         | Nội dung                                                                                 | Xử lý                                                                                                                                                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `theme` (`themeAxes.theme.dark`)                     | override màu sắc `--sg-*` + shadows                                                      | Được sinh bởi thư viện — `html[data-theme="dark"]`                                                                                                                                                   |
+| `palette` (`themeAxes.palette.{forest,sunset,mono}`) | override màu sắc `--sg-*`                                                                | Được sinh bởi thư viện — `html[data-palette="forest\|sunset\|mono"]`                                                                                                                                 |
+| hợp chất `[data-theme="dark"][data-palette="…"]`     | override chéo trục (dark × một palette cụ thể)                                           | CSS tự viết tay: độ đặc hiệu `(0,2,0)` của nó thắng bất kỳ quy tắc `html[data-…]` đơn trục nào `(0,1,1)` bất kể thứ tự trong nguồn                                                                   |
+| `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, cùng một quy tắc con lồng `.x-sg-glass-target` | CSS tự viết tay: các biến ngoài `--sg-*` và các selector con lồng nhau không thể biểu diễn bằng theme override (xem [`examples/design-system/README.md`](../../../examples/design-system/README.md)) |
 
 Key đơn trục cũ đã được đổi tên; một theme vẫn dùng nó sẽ bị từ chối kèm thông báo trỏ tới `themeAxes`. Xem [hướng dẫn nâng cấp](../migration/3.x-to-4.0.md) để biết thông điệp chính xác và cách viết lại.
 

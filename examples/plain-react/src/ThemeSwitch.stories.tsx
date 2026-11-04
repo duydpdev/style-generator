@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import type { Meta, StoryObj } from "@storybook/react";
+import { expect, userEvent } from "storybook/test";
 
 import { ThemeSwitch } from "./ThemeSwitch";
 
@@ -11,13 +11,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** ThemeSwitch takes no props: the toggle sets and removes `data-theme` on `<html>`. */
 export const Toggles: Story = {
-  render: () => <ThemeSwitch />,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvas, canvasElement }) => {
     const html = canvasElement.ownerDocument.documentElement;
-    const button = within(canvasElement).getByRole("button", {
-      name: "Dark mode",
-    });
+    const button = canvas.getByRole("button", { name: "Dark mode" });
     await userEvent.click(button);
     await expect(html).toHaveAttribute("data-theme", "dark");
     await expect(button).toHaveAttribute("aria-pressed", "true");

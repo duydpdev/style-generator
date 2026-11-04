@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "generate": "node ../../dist/cli/index.mjs generate --theme src/theme/theme.json --out src/theme/theme.css",
     "storybook": "yarn generate && storybook dev -p 6006 --no-open --disable-telemetry",
+    "storybook:build": "yarn generate && storybook build --disable-telemetry",
     "test": "yarn generate && vitest run",
     "test:parity": "yarn generate && vitest run --project 'parity*'",
     "test:stories": "yarn generate && vitest run --project 'storybook*'"
@@ -23,7 +24,9 @@
   },
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",
+    "@storybook/addon-docs": "10.6.5",
     "@storybook/addon-vitest": "10.6.5",
+    "@storybook/react": "10.6.5",
     "@storybook/react-vite": "10.6.5",
     "@tailwindcss/vite": "^4.2.0",
     "@types/react": "^19.0.0",

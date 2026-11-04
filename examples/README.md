@@ -6,14 +6,14 @@ Upgrading an existing project? See [`../documents/migration/4.x-to-5.0.md`](../d
 
 ## Layout
 
-| Package                            | Kind          | What it holds                                                                                                                                                                            |
-| ---------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`design-system`](./design-system) | shared, no UI | The theme, the generator `options`, typed tokens, `cn()`, `axisAttributes()`, the headless CVA recipes of the six sample components, the shared CSS and the DX tests. Private workspace. |
-| [`react-v4`](./react-v4)           | app           | Vite + React 19 + Tailwind v4: `styleGenVite` in `vite.config.ts`, `@tailwindcss/vite`.                                                                                                  |
-| [`next-v4`](./next-v4)             | app           | Next.js 16 (App Router) + Tailwind v4: `styleGenNext` in `next.config.ts`, `@tailwindcss/postcss`. Plain example: the landing page from copy-paste components, no shared workspace.      |
-| [`nuxt-v4`](./nuxt-v4)             | app           | Nuxt 4 (Vue 3) + Tailwind v4: `styleGenVite` through `nuxt.config.ts`.                                                                                                                   |
-| [`plain-react`](./plain-react)     | app           | Vite + React 19 + Tailwind v4. Plain example with Storybook and the parity gate.                                                                                                         |
-| [`plain-nuxt`](./plain-nuxt)       | app           | Nuxt 4 (Vue 3) + Tailwind v4: `styleGenVite` through `nuxt.config.ts`. Plain example: the same landing page as single-file components.                                                   |
+| Package                            | Kind          | What it holds                                                                                                                                                                                  |
+| ---------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`design-system`](./design-system) | shared, no UI | The theme, the generator `options`, typed tokens, `cn()`, `axisAttributes()`, the headless CVA recipes of the six sample components, the shared CSS and the DX tests. Private workspace.       |
+| [`react-v4`](./react-v4)           | app           | Vite + React 19 + Tailwind v4: `styleGenVite` in `vite.config.ts`, `@tailwindcss/vite`. Storybook for the six sample components and the demo sections.                                         |
+| [`next-v4`](./next-v4)             | app           | Next.js 16 (App Router) + Tailwind v4: `styleGenNext` in `next.config.ts`, `@tailwindcss/postcss`. Plain example: the landing page from copy-paste components, Storybook, no shared workspace. |
+| [`nuxt-v4`](./nuxt-v4)             | app           | Nuxt 4 (Vue 3) + Tailwind v4: `styleGenVite` through `nuxt.config.ts`.                                                                                                                         |
+| [`plain-react`](./plain-react)     | app           | Vite + React 19 + Tailwind v4. Plain example with Storybook and the parity gate.                                                                                                               |
+| [`plain-nuxt`](./plain-nuxt)       | app           | Nuxt 4 (Vue 3) + Tailwind v4: `styleGenVite` through `nuxt.config.ts`. Plain example: the same landing page as single-file components, with a Vue Storybook.                                   |
 
 The harness apps (`react-v4`, `nuxt-v4`) share one `theme.json` (with `"$schema"` and two `themeAxes`, `theme` and `palette`), one `options` module and the CSS from `design-system` (`"design-system-example": "workspace:*"`); each keeps only its wiring (bundler config, global stylesheet) and its framework-specific code (the demo sections in `react-v4`, the theme switch in `nuxt-v4`). `react-v4` renders its six sample components from `src/ui/*.tsx` (the landing site imports the same files through `react-v4-example/ui`) and `nuxt-v4` its six single-file components from `app/ui/*.vue`, both over the `design-system` recipes. Overrides that combine two axes, and variables outside `--sg-*`, stay hand-written CSS (`palettes.css`, `style-guide.css`); the scope table is in [`design-system/README.md`](./design-system/README.md#theme-axes). Start there to see how the pieces fit.
 
@@ -46,6 +46,7 @@ Each app exposes `dev`, `build` and `typecheck` (the Nuxt apps also `prepare:nux
 yarn workspace design-system-example doctor
 yarn workspace design-system-example test      # DX test of the recipes; needs `yarn build:all`
 yarn workspace plain-react-example test        # stories as browser tests + parity gate; needs `yarn build:all`
+yarn workspace react-v4-example test:stories   # also next-v4-example / plain-nuxt-example: the app's Storybook stories as browser tests; needs `yarn build:all`
 yarn workspace react-v4-example typecheck      # also nuxt-v4-example typecheck (type tests of the sample components)
 ```
 

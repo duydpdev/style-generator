@@ -151,7 +151,7 @@ jobs:
 
       - name: No data-part attributes
         # Bespoke CSS hooks are namespaced classes (s- in site, x- in the examples).
-        run: "! git grep -n 'data-part' -- site examples src e2e-site"
+        run: "! git grep -n 'data-part' -- site examples src e2e-site documents"
 
       - name: Check externals
         run: yarn check:externals
@@ -226,8 +226,68 @@ jobs:
       - name: Install Playwright Chromium
         run: yarn playwright install --with-deps chromium
 
+      - name: Storybook build
+        run: yarn workspace plain-react-example storybook:build
+
       - name: Stories and parity gate (Vitest browser)
         run: yarn workspace plain-react-example test
 
       - name: Copy-out smoke (packed tarball + peers only)
         run: node examples/plain-react/scripts/copy-out-smoke.mjs
+
+  # The Storybooks of the example apps that have no plain-react job of their
+  # own (examples/react-v4, examples/next-v4, examples/plain-nuxt): `storybook
+  # build` (autodocs) and the stories as Vitest browser tests. Like
+  # `plain-react`: no paths filter, no draft skip, dist/ built first because
+  # the workspace scripts run `style-gen generate`. Its check names
+  # (`Storybook (<app>)`) are not required yet: the ruleset follows once the
+  # legs are green on `main`.
+  storybook:
+    name: Storybook (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: react-v4
+            workspace: react-v4-example
+          - app: next-v4
+            workspace: next-v4-example
+          - app: plain-nuxt
+            workspace: plain-nuxt-example
+            prepare: true
+    env:
+      STORYBOOK_DISABLE_TELEMETRY: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Prepare Nuxt types
+        if: matrix.prepare
+        run: yarn workspace plain-nuxt-example prepare:nuxt
+
+      - name: Install Playwright Chromium
+        run: yarn playwright install --with-deps chromium
+
+      - name: Storybook build
+        run: yarn workspace ${{ matrix.workspace }} storybook:build
+
+      - name: Stories (Vitest browser)
+        run: yarn workspace ${{ matrix.workspace }} test:stories

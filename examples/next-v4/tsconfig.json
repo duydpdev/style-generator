@@ -33,7 +33,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".storybook/main.ts",
+    ".storybook/preview.ts",
+    "vitest.config.ts"
   ],
   "exclude": ["node_modules"]
 }

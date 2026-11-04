@@ -240,8 +240,8 @@ jobs:
   # build` (autodocs) and the stories as Vitest browser tests. Like
   # `plain-react`: no paths filter, no draft skip, dist/ built first because
   # the workspace scripts run `style-gen generate`. Its check names
-  # (`Storybook (<app>)`) are not required yet: the ruleset follows once the
-  # legs are green on `main`.
+  # (`Storybook (<app>)`) are required by the `main-develop` ruleset, like
+  # `Build & Lint Check` and `Plain React (Storybook + parity)`.
   storybook:
     name: Storybook (${{ matrix.app }})
     runs-on: ubuntu-latest

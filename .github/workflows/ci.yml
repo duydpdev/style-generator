@@ -149,6 +149,10 @@ jobs:
         # apps (plain-react, next-v4, plain-nuxt) are enforced by scripts/check-plain-ui.mjs.
         run: yarn check:plain-ui
 
+      - name: No data-part attributes
+        # Bespoke CSS hooks are namespaced classes (s- in site, x- in the examples).
+        run: "! git grep -n 'data-part' -- site examples src e2e-site"
+
       - name: Check externals
         run: yarn check:externals
 

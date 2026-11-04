@@ -24,7 +24,7 @@ const RADII: { key: "sm" | "md" | "lg" | "pill"; width: number }[] = [
 ];
 
 const UtilTitle = ({ children }: { children: string }) => (
-  <Text type="text12Mono" color="muted" mb={5} data-part="caps-wide">
+  <Text type="text12Mono" color="muted" mb={5} className="x-caps-wide">
     {children}
   </Text>
 );
@@ -54,7 +54,7 @@ export const UtilitiesSection = () => {
             gap={4}
             borderT="thin"
             py={3}
-            data-part="dashed"
+            className="x-dashed"
             borderColor="line"
           >
             <Text type="text12Mono" color="muted">
@@ -62,7 +62,7 @@ export const UtilitiesSection = () => {
             </Text>
             <Box>
               <Box
-                data-part="sg-spacing-bar"
+                className="x-sg-spacing-bar"
                 width={`${String((px / 48) * 100)}%`}
               />
             </Box>
@@ -87,7 +87,7 @@ export const UtilitiesSection = () => {
                 height={80}
                 rounded={key}
                 border="thin"
-                data-part="radius-swatch"
+                className="x-radius-swatch"
               >
                 <Text type="text12Mono" color="primary">
                   {key}
@@ -110,7 +110,7 @@ export const UtilitiesSection = () => {
                 align="end"
                 justify="center"
                 pb={3}
-                data-part="sg-glass-target grow-1"
+                className="x-sg-glass-target x-grow-1"
                 borderColor="line"
               >
                 <Text type="text12Mono" color="muted">

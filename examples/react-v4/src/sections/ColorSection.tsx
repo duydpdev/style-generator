@@ -35,18 +35,18 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
               backgroundColor="surface"
               rounded="lg"
               border="thin"
-              data-part="sg-color-card sg-glass-target color-card"
+              className="x-sg-color-card x-sg-glass-target x-color-card"
               borderColor="line"
             >
               <Box height={96} backgroundColor={key}>
-                <Box data-part="sg-tone-strip">
-                  <Box as="span" backgroundColor={key} data-part="tone-55" />
-                  <Box as="span" backgroundColor={key} data-part="tone-75" />
+                <Box className="x-sg-tone-strip">
+                  <Box as="span" backgroundColor={key} className="x-tone-55" />
+                  <Box as="span" backgroundColor={key} className="x-tone-75" />
                   <Box as="span" backgroundColor={key} />
                 </Box>
               </Box>
               <Stack px={4} py={3} gap={1}>
-                <Text type="text14Regular" data-part="text-medium">
+                <Text type="text14Regular" className="x-text-medium">
                   {label}
                 </Text>
                 <Text type="text12Mono" color="muted">

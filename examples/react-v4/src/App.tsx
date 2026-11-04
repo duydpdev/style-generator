@@ -96,7 +96,7 @@ export const App = () => {
         }}
       />
 
-      <Box data-part="container" maxWidth={1240} px={8}>
+      <Box className="x-container" maxWidth={1240} px={8}>
         <HeroSection
           palette={state.palette}
           onPickPalette={(id) => {

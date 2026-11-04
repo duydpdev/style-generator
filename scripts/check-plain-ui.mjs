@@ -5,7 +5,7 @@
  * - its name is kebab-case (`theme-switch`), and its PascalCase form
  *   (`ThemeSwitch`) names the component file;
  * - `style.ts`, `types.ts` and `<Name><component>` exist, plus
- *   `<Name>.stories.tsx` when the app sets `stories`, plus `index.ts` in a
+ *   `<Name>.stories.tsx` (or `.stories.ts`) when the app sets `stories`, plus `index.ts` in a
  *   `.tsx` app (a `.vue` app has none, and an `index.ts` there is an error);
  * - its files import relatively only from the folder itself (`./…`) and
  *   from `../../theme`, and import packages only from this allow-list:
@@ -13,14 +13,17 @@
  *   and the component file add `react` + `@duydpdev/style-generator/ui-react`
  *   (`.tsx` apps) or `vue` (`.vue` apps); `index.ts` takes no package;
  *   stories take any package except `class-variance-authority`, `clsx` and
- *   `tailwind-merge`. No file imports those three directly: the kit wraps them.
+ *   `tailwind-merge`, and may also import a sibling folder (`../flex`), so a
+ *   layout story renders its children with the app's own components. No file
+ *   imports those three directly: the kit wraps them.
  * Each `IDENTICAL` rule names a file that must be byte-identical across its
  * apps. Scope `folder`: `<uiDir>/<folder>/<file>`, compared only for folders
- * present in both apps; a folder that exists in some apps of the rule only is
+ * present in both apps (`<Name>` in `file` expands to the folder's PascalCase
+ * name); a folder that exists in some apps of the rule only is
  * a warning (printed, exit code unchanged), so adding a component to one app
  * is one folder. Scope `app`: `<src dir>/<file>` (`theme.ts`,
- * `theme/theme.json`), where the src dir is the parent of `uiDir` (`src/`,
- * Nuxt `app/`); a missing file is an error.
+ * `theme/theme.json`, `sections/Hero.stories.tsx`), where the src dir is the
+ * parent of `uiDir` (`src/`, Nuxt `app/`); a missing file is an error.
  *
  * Extension points: append to `APPS`, flip `stories`, append to
  * `IDENTICAL`. Node built-ins only; paths go through node:path.
@@ -38,7 +41,7 @@ import { repoRootFromArgs } from "./doc-markdown.mjs";
  * @property {string} name - Id used by `IDENTICAL` rules
  * @property {string} uiDir - Repo-relative POSIX path holding the component folders
  * @property {".tsx" | ".vue"} component - Extension of the `<Name>` component file
- * @property {boolean} stories - Whether each folder also needs `<Name>.stories.tsx`
+ * @property {false | ".stories.tsx" | ".stories.ts"} stories - `false`, or the suffix of the `<Name><suffix>` story file each folder needs
  */
 
 /**
@@ -60,23 +63,28 @@ export const APPS = [
     name: "plain-react",
     uiDir: "examples/plain-react/src/ui",
     component: ".tsx",
-    stories: true,
+    stories: ".stories.tsx",
   },
   {
     name: "next-v4",
     uiDir: "examples/next-v4/src/ui",
     component: ".tsx",
-    stories: false,
+    stories: ".stories.tsx",
   },
   {
     name: "plain-nuxt",
     uiDir: "examples/plain-nuxt/app/ui",
     component: ".vue",
-    stories: false,
+    stories: ".stories.ts",
   },
 ];
 
-/** @type {readonly IdenticalRule[]} */
+/**
+ * The two React apps keep one story file per component and per landing
+ * section byte-identical (next-v4 runs them under `@storybook/nextjs-vite`);
+ * plain-nuxt ports them to Vue by hand, so its stories are not compared.
+ * @type {readonly IdenticalRule[]}
+ */
 export const IDENTICAL = [
   {
     scope: "folder",
@@ -84,6 +92,11 @@ export const IDENTICAL = [
     apps: ["plain-react", "next-v4", "plain-nuxt"],
   },
   { scope: "folder", file: "types.ts", apps: ["plain-react", "next-v4"] },
+  {
+    scope: "folder",
+    file: "<Name>.stories.tsx",
+    apps: ["plain-react", "next-v4"],
+  },
   {
     scope: "app",
     file: "theme.ts",
@@ -94,10 +107,27 @@ export const IDENTICAL = [
     file: "theme/theme.json",
     apps: ["plain-react", "next-v4", "plain-nuxt"],
   },
+  ...[
+    "sections/Hero.stories.tsx",
+    "sections/Features.stories.tsx",
+    "sections/Pricing.stories.tsx",
+    "sections/Cta.stories.tsx",
+    "sections/Footer.stories.tsx",
+    "sections/Section.stories.tsx",
+    "sections/SectionHead.stories.tsx",
+    "App.stories.tsx",
+    "ThemeSwitch.stories.tsx",
+  ].map((file) => ({
+    scope: /** @type {const} */ ("app"),
+    file,
+    apps: ["plain-react", "next-v4"],
+  })),
 ];
 
 const KEBAB = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const THEME_IMPORT = "../../theme";
+/** A story may render its sibling components: `../flex`, never a deeper path. */
+const SIBLING_IMPORT = /^\.\.\/[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const SPECIFIER = /\b(?:from|import)[\s(]*["']([^"']+)["']/g;
 const STYLE_PACKAGES = [
   "@duydpdev/style-generator/ui",
@@ -143,7 +173,7 @@ function packageNameOf(spec) {
  * @returns {ReadonlyArray<string> | null} Allow-list
  */
 function allowedPackages(file, component) {
-  if (file.endsWith(".stories.tsx")) return null;
+  if (/\.stories\.tsx?$/.test(file)) return null;
   if (file === "style.ts") return STYLE_PACKAGES;
   if (file === "index.ts") return [];
   return [...STYLE_PACKAGES, ...FRAMEWORK_PACKAGES[component]];
@@ -163,6 +193,7 @@ export function foreignImports(source, file = "style.ts", component = ".tsx") {
     .map((match) => match[1] ?? "")
     .filter((spec) => {
       if (spec.startsWith(".")) {
+        if (allowed === null && SIBLING_IMPORT.test(spec)) return false;
         return (
           spec !== THEME_IMPORT &&
           (!spec.startsWith("./") || spec.includes(".."))
@@ -223,7 +254,7 @@ function checkFolder(root, app, folder) {
   const name = toPascalCase(folder);
   const required = ["style.ts", "types.ts", `${name}${app.component}`];
   if (app.component === ".tsx") required.push("index.ts");
-  if (app.stories) required.push(`${name}.stories.tsx`);
+  if (app.stories !== false) required.push(`${name}${app.stories}`);
   const errors = required
     .filter((file) => !existsSync(join(root, base, file)))
     .map((file) => `${base}/${file}: missing`);
@@ -236,10 +267,15 @@ function checkFolder(root, app, folder) {
     .sort();
   for (const file of files) {
     const source = readFileSync(join(root, base, file), "utf8");
+    const isStory = allowedPackages(file, app.component) === null;
+    const relativeHint = `a component folder imports only its own files and ${THEME_IMPORT}`;
     for (const spec of foreignImports(source, file, app.component)) {
-      const hint = spec.startsWith(".")
-        ? `a component folder imports only its own files and ${THEME_IMPORT}`
-        : `allowed packages here: ${allowedHint(file, app.component)}`;
+      let hint = `allowed packages here: ${allowedHint(file, app.component)}`;
+      if (spec.startsWith(".")) {
+        hint = isStory
+          ? `${relativeHint} (and, in a story, a sibling folder: ../<folder>)`
+          : relativeHint;
+      }
       errors.push(`${base}/${file}: imports "${spec}"; ${hint}`);
     }
   }
@@ -317,9 +353,10 @@ function checkIdentical(root, found, rule) {
     if (lacking.length > 0) {
       warnings.push(oneSidedWarning(having, lacking, folder));
     }
+    const file = rule.file.replaceAll("<Name>", toPascalCase(folder));
     compareAll(
       root,
-      having.map((entry) => `${entry.app.uiDir}/${folder}/${rule.file}`),
+      having.map((entry) => `${entry.app.uiDir}/${folder}/${file}`),
       errors,
     );
   }

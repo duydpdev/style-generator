@@ -21,6 +21,10 @@ const UI_APP_FILES = [
 // style, and build their classes from the recipes.
 const UI_COMPONENT_FILES = ["examples/react-v4/src/ui/**"];
 
+// Stories take no part in the components-only rules: they render props and play checks,
+// and one file lists every variant of a component (examples/react-v4 Storybook).
+const UI_STORY_FILES = ["examples/react-v4/src/**/*.stories.tsx"];
+
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;
 const COMPONENT_SELECTOR = `JSXOpeningElement[name.name=/^(${UI_COMPONENT_NAMES.join("|")})$/]`;
 
@@ -243,7 +247,7 @@ export default pluginTs.config(
   // take className.
   {
     files: UI_APP_FILES,
-    ignores: UI_COMPONENT_FILES,
+    ignores: [...UI_COMPONENT_FILES, ...UI_STORY_FILES],
     rules: {
       "max-lines": [
         "error",
@@ -256,7 +260,7 @@ export default pluginTs.config(
 
   {
     files: ["examples/react-v4/src/**/*.{ts,tsx}"],
-    ignores: UI_COMPONENT_FILES,
+    ignores: [...UI_COMPONENT_FILES, ...UI_STORY_FILES],
     rules: {
       "no-restricted-syntax": ["error", ...uiAppSyntax("x"), GRID_COLUMNS_SYNTAX],
     },
@@ -396,6 +400,18 @@ export default pluginTs.config(
       "no-restricted-imports": ["error", PLAIN_RESTRICTED_IMPORTS],
     },
   },
+  // plain-nuxt stories import .vue files, which the type-aware project cannot
+  // resolve (every value read from them is `any`), and .storybook/ and
+  // vitest.config.ts belong to no Nuxt tsconfig project. vue-tsc
+  // (`nuxt typecheck`) type-checks the stories; the rest lints untyped.
+  {
+    files: [
+      "examples/plain-nuxt/app/**/*.stories.ts",
+      "examples/plain-nuxt/.storybook/**/*.ts",
+      "examples/plain-nuxt/vitest.config.ts",
+    ],
+    extends: [pluginTs.configs.disableTypeChecked],
+  },
   {
     files: ["examples/plain-nuxt/app/**/*.vue"],
     rules: {
@@ -439,6 +455,7 @@ export default pluginTs.config(
       "**/node_modules/*",
       "**/*.config.*",
       "**/dist/*",
+      "**/storybook-static/**",
       "*.cjs",
       ".yarn/*",
       "coverage/*",

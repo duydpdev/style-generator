@@ -9,7 +9,11 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "prepare:nuxt": "nuxt prepare",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "generate:theme": "node ../../dist/cli/index.mjs generate --theme app/theme/theme.json --out app/theme/theme.css",
+    "storybook": "yarn generate:theme && storybook dev -p 6009 --no-open --disable-telemetry",
+    "storybook:build": "yarn generate:theme && storybook build --disable-telemetry",
+    "test:stories": "yarn generate:theme && vitest run --project 'storybook*'"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",
@@ -19,10 +23,19 @@
   },
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",
+    "@storybook/addon-docs": "10.6.5",
+    "@storybook/addon-vitest": "10.6.5",
+    "@storybook/vue3-vite": "10.6.5",
     "@tailwindcss/vite": "^4.2.0",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vitest/browser": "4.1.11",
+    "@vitest/browser-playwright": "4.1.11",
     "nuxt": "~4.4.8",
+    "playwright": "1.63.0",
+    "storybook": "10.6.5",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.9.0",
+    "vitest": "4.1.11",
     "vue-tsc": "^3.3.0"
   }
 }

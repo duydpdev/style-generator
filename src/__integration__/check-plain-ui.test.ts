@@ -13,7 +13,7 @@ interface PlainApp {
   readonly name: string;
   readonly uiDir: string;
   readonly component: ".tsx" | ".vue";
-  readonly stories: boolean;
+  readonly stories: false | ".stories.tsx" | ".stories.ts";
 }
 interface IdenticalRule {
   readonly scope: "folder" | "app";
@@ -155,7 +155,7 @@ describe("integration: scripts/check-plain-ui.mjs", () => {
     component(dir, REACT, "box", "Box");
     expect(mod.checkPlainUi(dir, [REACT], []).errors).toEqual([]);
     expect(
-      mod.checkPlainUi(dir, [{ ...REACT, stories: true }], []).errors,
+      mod.checkPlainUi(dir, [{ ...REACT, stories: ".stories.tsx" }], []).errors,
     ).toEqual(["apps/react/ui/box/Box.stories.tsx: missing"]);
   });
 
@@ -365,9 +365,21 @@ describe("check-plain-ui: the repo's plain apps", () => {
     mod = (await import(pathToFileURL(script).href)) as CheckPlainUiModule;
   });
 
+  const SHARED_APP_STORIES = [
+    "sections/Hero.stories.tsx",
+    "sections/Features.stories.tsx",
+    "sections/Pricing.stories.tsx",
+    "sections/Cta.stories.tsx",
+    "sections/Footer.stories.tsx",
+    "sections/Section.stories.tsx",
+    "sections/SectionHead.stories.tsx",
+    "App.stories.tsx",
+    "ThemeSwitch.stories.tsx",
+  ];
+
   /**
    * The valid fixture: one `button` folder per app of `APPS`, plus the
-   * app-scope theme files.
+   * app-scope theme and shared story files.
    * @param {string} root - Fixture root
    */
   function validFixture(root: string) {
@@ -385,8 +397,14 @@ describe("check-plain-ui: the repo's plain apps", () => {
       if (app.component === ".tsx") {
         put(root, `${ui}/button/index.ts`, "export {};\n");
       }
-      if (app.stories)
-        put(root, `${ui}/button/Button.stories.tsx`, "export {};\n");
+      if (app.stories !== false) {
+        put(root, `${ui}/button/Button${app.stories}`, "export {};\n");
+      }
+      if (app.stories === ".stories.tsx") {
+        for (const story of SHARED_APP_STORIES) {
+          put(root, `${dirname(ui)}/${story}`, "export {};\n");
+        }
+      }
       put(root, `${dirname(ui)}/theme.ts`, "export const theme = 1;\n");
       put(root, `${dirname(ui)}/theme/theme.json`, "{}\n");
     }
@@ -456,6 +474,100 @@ describe("check-plain-ui: the repo's plain apps", () => {
     const { errors, warnings } = check();
     expect(errors).toEqual([]);
     expect(warnings.some((warning) => warning.includes("card"))).toBe(true);
+  });
+
+  it("requires <Name>.stories.tsx in next-v4 and <Name>.stories.ts in plain-nuxt", () => {
+    rmSync(join(dir, "examples/next-v4/src/ui/button/Button.stories.tsx"));
+    expect(check().errors).toContain(
+      "examples/next-v4/src/ui/button/Button.stories.tsx: missing",
+    );
+    put(
+      dir,
+      "examples/next-v4/src/ui/button/Button.stories.tsx",
+      "export {};\n",
+    );
+    rmSync(join(dir, "examples/plain-nuxt/app/ui/button/Button.stories.ts"));
+    expect(check().errors).toContain(
+      "examples/plain-nuxt/app/ui/button/Button.stories.ts: missing",
+    );
+  });
+
+  it("rejects a next-v4 component story that differs by one byte", () => {
+    put(
+      dir,
+      "examples/next-v4/src/ui/button/Button.stories.tsx",
+      "export {}; \n",
+    );
+    expect(check().errors).toEqual([
+      "examples/next-v4/src/ui/button/Button.stories.tsx: differs from examples/plain-react/src/ui/button/Button.stories.tsx",
+    ]);
+  });
+
+  it("expands <Name> per folder: a second folder is compared under its own name", () => {
+    for (const app of ["plain-react", "next-v4"]) {
+      const ui = `examples/${app}/src/ui/theme-switch`;
+      put(dir, `${ui}/style.ts`, "export const s = 1;\n");
+      put(dir, `${ui}/types.ts`, "export type T = 1;\n");
+      put(dir, `${ui}/ThemeSwitch.tsx`, "export {};\n");
+      put(dir, `${ui}/index.ts`, "export {};\n");
+      put(dir, `${ui}/ThemeSwitch.stories.tsx`, `export const a = "${app}";\n`);
+    }
+    put(
+      dir,
+      "examples/plain-nuxt/app/ui/theme-switch/style.ts",
+      "export const s = 1;\n",
+    );
+    put(
+      dir,
+      "examples/plain-nuxt/app/ui/theme-switch/types.ts",
+      "export type T = 1;\n",
+    );
+    put(
+      dir,
+      "examples/plain-nuxt/app/ui/theme-switch/ThemeSwitch.vue",
+      "<template />\n",
+    );
+    put(
+      dir,
+      "examples/plain-nuxt/app/ui/theme-switch/ThemeSwitch.stories.ts",
+      "export {};\n",
+    );
+    expect(check().errors).toEqual([
+      "examples/next-v4/src/ui/theme-switch/ThemeSwitch.stories.tsx: differs from examples/plain-react/src/ui/theme-switch/ThemeSwitch.stories.tsx",
+    ]);
+  });
+
+  it("requires the section, App and ThemeSwitch stories in next-v4 and keeps them byte-identical", () => {
+    rmSync(join(dir, "examples/next-v4/src/sections/Hero.stories.tsx"));
+    expect(check().errors).toEqual([
+      "examples/next-v4/src/sections/Hero.stories.tsx: missing",
+    ]);
+    put(dir, "examples/next-v4/src/sections/Hero.stories.tsx", "export {};\n");
+    put(dir, "examples/next-v4/src/App.stories.tsx", "export {};\n// x\n");
+    expect(check().errors).toEqual([
+      "examples/next-v4/src/App.stories.tsx: differs from examples/plain-react/src/App.stories.tsx",
+    ]);
+  });
+
+  it("lets a story import a sibling folder but not a deeper relative path", () => {
+    for (const app of ["plain-react", "next-v4"]) {
+      put(
+        dir,
+        `examples/${app}/src/ui/button/Button.stories.tsx`,
+        'import { Flex } from "../flex";\n',
+      );
+    }
+    expect(check().errors).toEqual([]);
+    for (const app of ["plain-react", "next-v4"]) {
+      put(
+        dir,
+        `examples/${app}/src/ui/button/Button.stories.tsx`,
+        'import { x } from "../../sections/Hero";\n',
+      );
+    }
+    expect(
+      mentions(check().errors, 'Button.stories.tsx: imports "../../sections'),
+    ).toBe(true);
   });
 
   it("rejects a forbidden package import", () => {

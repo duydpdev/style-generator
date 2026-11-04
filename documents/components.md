@@ -6,7 +6,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
 
 ### Where they live
 
-`examples/plain-react` (Vite + React, Storybook, parity gate), `examples/next-v4` (Next.js App Router), `examples/plain-nuxt` (Nuxt 4). All three render the same landing page from the same ten components.
+`examples/plain-react` (Vite + React, Storybook, parity gate), `examples/next-v4` (Next.js App Router, Storybook), `examples/plain-nuxt` (Nuxt 4, Storybook). All three render the same landing page from the same ten components, and each component folder carries a story (add one with every new component, in every plain app).
 
 ### One folder per component
 
@@ -17,7 +17,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
   style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
   types.ts                        # exported <Name>OwnProps/<Name>Props (React/Next: may also import "react" + "@duydpdev/style-generator/ui-react")
   <Name>.tsx | <Name>.vue         # the component
-  <Name>.stories.tsx              # plain-react only
+  <Name>.stories.tsx              # plain-react, next-v4 (byte-identical); <Name>.stories.ts in plain-nuxt
   index.ts                        # required in .tsx apps (plain-react, next-v4); absent in plain-nuxt
 <app>/src/sections/*.tsx          # landing sections + page helpers (Section, Container, SectionHead); app code, not scanned by check:plain-ui (Nuxt: app/sections/*.vue)
 ```
@@ -27,7 +27,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
 - `style.ts` is the same file in all three apps; it holds the variant tables and the headless recipe.
 - `types.ts` is the same in React and Next; the Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` renders the component markup and applies the recipe and spacing utilities.
-- `<Name>.stories.tsx` isolates the component for Storybook in `plain-react`.
+- `<Name>.stories.tsx` (`<Name>.stories.ts` in `plain-nuxt`) isolates the component for Storybook; `next-v4` keeps byte copies of the `plain-react` stories (enforced by `check:plain-ui`), `plain-nuxt` hand-written Vue ports. `ThemeSwitch` has no `plain-nuxt` story because it uses Nuxt's `useState`/`useHead`.
 - `index.ts` re-exports the component and its types in `.tsx` apps (absent in `plain-nuxt`).
 - `sections/*.tsx` contains the application landing sections and layout helpers.
 
@@ -376,13 +376,13 @@ const root = () => {
 
 - `className`/`class` and `style` are allowed on tags.
 - A pattern that has a rule or repeats becomes a component with typed props.
-- No `data-part`.
+- No `data-*` attribute as a bespoke CSS hook (ESLint and the CI `check` job ban the old part-hook attribute repo-wide); bespoke CSS hooks in the plain apps are ordinary `className`s.
 - `src/**` (Nuxt `app/**`) never imports `design-system-example` or `react-v4-example` (ESLint).
 - A ui folder imports only `./…`, `../../theme` and packages.
 
 ### Adding a plain component
 
-Add the folder in `plain-react` with a `<Name>.stories.tsx`, copy it (without the story) to `examples/next-v4/src/ui/`, copy `style.ts` to `examples/plain-nuxt/app/ui/<folder>/` and write its `types.ts` and `<Name>.vue`; then run `yarn check:plain-ui`.
+Add the folder in `plain-react` with a `<Name>.stories.tsx`, copy it with its story byte for byte to `examples/next-v4/src/ui/` (`check:plain-ui` fails on a difference), copy `style.ts` to `examples/plain-nuxt/app/ui/<folder>/` and write its `types.ts`, `<Name>.vue` and a `<Name>.stories.ts` port; then run `yarn check:plain-ui`.
 
 ### Checks
 

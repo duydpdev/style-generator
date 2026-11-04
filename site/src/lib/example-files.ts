@@ -13,8 +13,17 @@ export interface ExampleSection {
   files: ExampleFile[];
 }
 
+// Negated globs keep Storybook files out of the eager `?raw` bundle itself
+// (a post-filter would still inline them): stories and the Vitest config are
+// test tooling, not the demo app (stories are also excluded from Tailwind's
+// scan by `@source not`); `storybook-static/` is a build output.
 const v4Raw = import.meta.glob<string>(
-  "../../../examples/react-v4/**/*.{ts,tsx,js,jsx,css,json,html}",
+  [
+    "../../../examples/react-v4/**/*.{ts,tsx,js,jsx,css,json,html}",
+    "!../../../examples/react-v4/**/*.stories.{ts,tsx}",
+    "!../../../examples/react-v4/vitest.config.ts",
+    "!../../../examples/react-v4/storybook-static/**",
+  ],
   { query: "?raw", import: "default", eager: true },
 );
 

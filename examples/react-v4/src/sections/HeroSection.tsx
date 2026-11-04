@@ -11,15 +11,21 @@ interface HeroSectionProps {
 export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
   return (
     <Box as="section" pt={22} pb={14}>
-      <Box as="span" mb={7} data-part="sg-eyebrow">
+      <Box as="span" mb={7} className="x-sg-eyebrow">
         A token-driven design system
       </Box>
-      <Box as="h1" mb={7} data-part="sg-font-display sg-hero-title hero-title">
+      <Box
+        as="h1"
+        mb={7}
+        className="x-sg-font-display x-sg-hero-title x-hero-title"
+      >
         Tokens, <em>composed</em> with intention.
       </Box>
-      <Text color="muted" mb={10} data-part="hero-lede">
+      <Text color="muted" mb={10} className="x-hero-lede">
         A small, opinionated set of design primitives —{" "}
-        <b data-part="fg text-medium">colors, type, spacing, radii, shadows</b>{" "}
+        <b className="x-fg x-text-medium">
+          colors, type, spacing, radii, shadows
+        </b>{" "}
         — that compile down to Tailwind utilities and inline CSS variables. Pick
         a palette below to remix every component on this page in real time.
       </Text>
@@ -31,7 +37,7 @@ export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
               as="button"
               key={p.id}
               type="button"
-              data-part="sg-palette-pick"
+              className="x-sg-palette-pick"
               aria-pressed={active}
               onClick={() => {
                 onPickPalette(p.id);
@@ -42,7 +48,7 @@ export const HeroSection = ({ palette, onPickPalette }: HeroSectionProps) => {
                   <Box
                     as="span"
                     key={c}
-                    data-part="sg-palette-dot dot-ring"
+                    className="x-sg-palette-dot x-dot-ring"
                     // eslint-disable-next-line no-restricted-syntax -- the dot colour is palette data (a hex per palette), not a theme token
                     style={{ background: c }}
                   />

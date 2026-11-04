@@ -22,16 +22,16 @@ export const TweaksPanel = ({
   return (
     <Box
       as="aside"
-      data-part="sg-tweaks-panel"
+      className="x-sg-tweaks-panel"
       data-open={open ? "true" : "false"}
       aria-hidden={!open}
     >
       <Flex mb={4} align="start" justify="between">
         <Box>
-          <Text type="text12Mono" color="muted" data-part="caps-widest">
+          <Text type="text12Mono" color="muted" className="x-caps-widest">
             Tweaks
           </Text>
-          <Text type="text16Medium" data-part="text-semibold">
+          <Text type="text16Medium" className="x-text-semibold">
             Reshape the feel
           </Text>
         </Box>

@@ -3,7 +3,7 @@ import { Box, Flex, Grid, Stack, Text } from "../ui";
 import { SectionHead } from "./SectionHead";
 
 const ResponsiveTitle = ({ children }: { children: string }) => (
-  <Text type="text12Mono" color="muted" mb={3} data-part="caps-wide">
+  <Text type="text12Mono" color="muted" mb={3} className="x-caps-wide">
     {children}
   </Text>
 );
@@ -38,7 +38,7 @@ export const ResponsiveSpacingSection = () => {
               px={3}
               py={2}
               width="fit-content"
-              data-part="tint-primary"
+              className="x-tint-primary"
             >
               <Text type="text14Regular" color="primary">
                 Padding scales with viewport
@@ -67,7 +67,7 @@ export const ResponsiveSpacingSection = () => {
                 rounded="sm"
                 px={3}
                 py={2}
-                data-part="tint-secondary"
+                className="x-tint-secondary"
               >
                 <Text type="text14Regular" color="secondary">
                   Item {i}
@@ -91,7 +91,13 @@ export const ResponsiveSpacingSection = () => {
             borderColor="line"
           >
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Box key={i} rounded="sm" px={3} py={2} data-part="tint-success">
+              <Box
+                key={i}
+                rounded="sm"
+                px={3}
+                py={2}
+                className="x-tint-success"
+              >
                 <Text type="text14Regular" color="success">
                   Cell {i}
                 </Text>

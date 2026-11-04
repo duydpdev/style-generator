@@ -54,33 +54,38 @@ export function SpacingSection() {
         }
       />
 
-      <Grid data-part="spacing-grid" data-reveal="up" gap={6}>
+      <Grid className="s-spacing-grid" data-reveal="up" gap={6}>
         <Box>
-          <Grid data-part="stat-pair" gap={3} mb={4}>
-            <Stack data-part="stat-card bad" gap={1.5} p={4.5} rounded="lg">
-              <Text as="span" data-part="k" color="muted">
+          <Grid className="s-stat-pair" gap={3} mb={4}>
+            <Stack className="s-stat-card s-bad" gap={1.5} p={4.5} rounded="lg">
+              <Text as="span" className="s-k" color="muted">
                 Bare Tailwind
               </Text>
-              <Text as="span" data-part="v" color="danger">
+              <Text as="span" className="s-v" color="danger">
                 ~4 800
               </Text>
-              <Text as="span" data-part="m" color="muted">
+              <Text as="span" className="s-m" color="muted">
                 classes safelisted for axis × size × bp.
               </Text>
             </Stack>
-            <Stack data-part="stat-card good" gap={1.5} p={4.5} rounded="lg">
-              <Text as="span" data-part="k" color="muted">
+            <Stack
+              className="s-stat-card s-good"
+              gap={1.5}
+              p={4.5}
+              rounded="lg"
+            >
+              <Text as="span" className="s-k" color="muted">
                 style-generator
               </Text>
-              <Text as="span" data-part="v" color="success">
+              <Text as="span" className="s-v" color="success">
                 0
               </Text>
-              <Text as="span" data-part="m" color="muted">
+              <Text as="span" className="s-m" color="muted">
                 CSS custom properties + a handful of rules.
               </Text>
             </Stack>
           </Grid>
-          <Stack as="ul" data-part="spacing-bullets" gap={2.5}>
+          <Stack as="ul" className="s-spacing-bullets" gap={2.5}>
             <Box as="li" pl={5.5} position="relative">
               <b>One utility per axis.</b>
               <Text as="span" color="muted">

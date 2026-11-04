@@ -23,13 +23,13 @@ export function CodeTabs({
   onClose,
 }: Readonly<Props>) {
   return (
-    <Flex data-part="code-tabs">
+    <Flex className="s-code-tabs">
       {openTabs.map((t) => {
         const name = t.path.split("/").pop();
         return (
           <Flex
             key={t.path}
-            data-part={`code-tab${t.path === activePath ? " active" : ""}`}
+            className={`s-code-tab${t.path === activePath ? " s-active" : ""}`}
             align="center"
             gap={0.5}
             position="relative"
@@ -37,7 +37,7 @@ export function CodeTabs({
             <Box
               as="button"
               type="button"
-              data-part="code-tab-pick"
+              className="s-code-tab-pick"
               py={2.75}
               pl={4}
               onClick={() => {
@@ -49,7 +49,7 @@ export function CodeTabs({
             <Box
               as="button"
               type="button"
-              data-part="code-tab-close"
+              className="s-code-tab-close"
               ml={0.5}
               mr={3}
               px={1}

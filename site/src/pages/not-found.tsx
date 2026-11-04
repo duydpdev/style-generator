@@ -49,8 +49,8 @@ export function NotFound({ missingDoc }: Readonly<Props>) {
         onToggleTheme={toggle}
       />
       {inDocs ? (
-        <Box data-part="container" maxWidth={1440} px={{ base: 5, lg: 8 }}>
-          <Grid data-part="docs-shell" gap={14} position="relative">
+        <Box className="s-container" maxWidth={1440} px={{ base: 5, lg: 8 }}>
+          <Grid className="s-docs-shell" gap={14} position="relative">
             <DocsSidebar />
             <Box as="main" minWidth={0} maxWidth={720} pt={9} pb={30}>
               {body}
@@ -58,7 +58,7 @@ export function NotFound({ missingDoc }: Readonly<Props>) {
           </Grid>
         </Box>
       ) : (
-        <Box as="main" data-part="container" maxWidth={720} px={8} py={24}>
+        <Box as="main" className="s-container" maxWidth={720} px={8} py={24}>
           {body}
         </Box>
       )}

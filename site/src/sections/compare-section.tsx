@@ -34,20 +34,20 @@ export function CompareSection() {
         }
       />
 
-      <Box data-part="compare-wrap" data-reveal="up" rounded="lg">
-        <table data-part="compare">
+      <Box className="s-compare-wrap" data-reveal="up" rounded="lg">
+        <table className="s-compare">
           <thead>
             <tr>
               <Box as="th" px={5} py={4} width="26%">
                 Capability
               </Box>
-              <Box as="th" data-part="col-tw" px={5} py={4} width="37%">
+              <Box as="th" className="s-col-tw" px={5} py={4} width="37%">
                 Bare Tailwind
                 <Box as="small" mt={0.75}>
                   v4
                 </Box>
               </Box>
-              <Box as="th" data-part="col-us" px={5} py={4} width="37%">
+              <Box as="th" className="s-col-us" px={5} py={4} width="37%">
                 + style-generator
                 <Box as="small" mt={0.75}>
                   v{VERSION}
@@ -58,13 +58,13 @@ export function CompareSection() {
           <tbody>
             {COMPARE_ROWS.map((r) => (
               <tr key={r.label}>
-                <Box as="td" data-part="row-label" px={5} py={3.5}>
+                <Box as="td" className="s-row-label" px={5} py={3.5}>
                   {r.label}
                 </Box>
-                <Box as="td" data-part="cell-tw" px={5} py={3.5}>
+                <Box as="td" className="s-cell-tw" px={5} py={3.5}>
                   {r.tw}
                 </Box>
-                <Box as="td" data-part="cell-us" px={5} py={3.5}>
+                <Box as="td" className="s-cell-us" px={5} py={3.5}>
                   {r.us}
                 </Box>
               </tr>

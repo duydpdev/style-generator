@@ -59,7 +59,7 @@ export function DocMarkdown({ source, repoPath }: Readonly<Props>) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       table({ node: _node, ...rest }) {
         return (
-          <Box data-part="table-wrap" maxWidth="100%" mb={7} rounded="lg">
+          <Box className="s-table-wrap" maxWidth="100%" mb={7} rounded="lg">
             <table {...rest} />
           </Box>
         );
@@ -71,7 +71,8 @@ export function DocMarkdown({ source, repoPath }: Readonly<Props>) {
         const meta = ALERTS[alert.kind];
         return (
           <Grid
-            data-part={meta.part}
+            // eslint-disable-next-line no-restricted-syntax -- ALERTS (lib/doc-alerts.ts) holds s- classes
+            className={meta.part}
             role="note"
             gap={3.5}
             px={5}
@@ -81,17 +82,17 @@ export function DocMarkdown({ source, repoPath }: Readonly<Props>) {
           >
             <Box
               as="span"
-              data-part="ico"
+              className="s-ico"
               width={24}
               height={24}
               aria-hidden="true"
             >
               {meta.icon}
             </Box>
-            <Box data-part="callout-body" minWidth={0}>
+            <Box className="s-callout-body" minWidth={0}>
               <Text
                 as="div"
-                data-part="callout-title"
+                className="s-callout-title"
                 color="foreground"
                 mb={1}
               >
@@ -108,7 +109,7 @@ export function DocMarkdown({ source, repoPath }: Readonly<Props>) {
           return <pre {...rest}>{children}</pre>;
         }
         return (
-          <Box as="figure" data-part="diagram-source" minWidth={0} mb={6}>
+          <Box as="figure" className="s-diagram-source" minWidth={0} mb={6}>
             <figcaption>{t.diagramSource}</figcaption>
             <pre {...rest}>{children}</pre>
           </Box>

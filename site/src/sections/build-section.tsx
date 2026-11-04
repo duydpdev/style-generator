@@ -37,7 +37,7 @@ export function BuildSection() {
       />
 
       <Grid
-        data-part="build-grid"
+        className="s-build-grid"
         data-reveal="up"
         align="start"
         gap={{ base: 3, md: 4 }}
@@ -48,11 +48,11 @@ export function BuildSection() {
           lang="json"
           code={THEME_JSON}
         />
-        <Stack data-part="arrow-step" align="center" gap={1.5}>
-          <Box data-part="arrow-anim" width={28} height={28}>
+        <Stack className="s-arrow-step" align="center" gap={1.5}>
+          <Box className="s-arrow-anim" width={28} height={28}>
             <ArrowRight />
           </Box>
-          <Text as="span" data-part="lbl">
+          <Text as="span" className="s-lbl">
             compile
           </Text>
         </Stack>

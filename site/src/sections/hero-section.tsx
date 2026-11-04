@@ -21,7 +21,7 @@ export function HeroSection() {
       <ChapterMarker num="00" />
       <Box data-reveal="stagger">
         <Flex
-          data-part="hero-eyebrow"
+          className="s-hero-eyebrow"
           align="center"
           gap={2.5}
           px={3}
@@ -32,17 +32,17 @@ export function HeroSection() {
         >
           <Box
             as="span"
-            data-part="dot"
+            className="s-dot"
             backgroundColor="success"
             width={6}
             height={6}
           />
           Typed · Tailwind v4 · MIT
         </Flex>
-        <Text as="h1" data-part="hero-title" color="foreground" mb={7}>
+        <Text as="h1" className="s-hero-title" color="foreground" mb={7}>
           A design system from <em>one</em> JSON.
         </Text>
-        <Text as="p" data-part="hero-lede" color="muted" mb={10}>
+        <Text as="p" className="s-hero-lede" color="muted" mb={10}>
           <b>@duydpdev/style-generator</b> compiles a flat{" "}
           <code>theme.json</code> into complete Tailwind v4 CSS — variables,
           dark mode overrides, registry-generated <code>@source inline</code>{" "}
@@ -53,7 +53,7 @@ export function HeroSection() {
           <Flex
             as={Link}
             to="/docs/introduction#install"
-            data-part="install"
+            className="s-install"
             align="center"
             gap={2.5}
             py={1.75}
@@ -68,7 +68,7 @@ export function HeroSection() {
             <Text as="span">{INSTALL_CMD}</Text>
             <Text
               as="span"
-              data-part="install-go"
+              className="s-install-go"
               color="foreground"
               px={2.5}
               py={1.5}
@@ -78,7 +78,7 @@ export function HeroSection() {
           </Flex>
           <Flex
             as="a"
-            data-part="btn btn-primary btn-lg"
+            className="s-btn s-btn-primary s-btn-lg"
             align="center"
             gap={1.5}
             px={5}
@@ -91,7 +91,7 @@ export function HeroSection() {
       </Box>
 
       <Grid
-        data-part="hero-stats"
+        className="s-hero-stats"
         data-reveal="stagger"
         columns={4}
         gap={6}
@@ -100,30 +100,30 @@ export function HeroSection() {
       >
         {STATS.map((s) => (
           <Stack key={s.k} gap={1}>
-            <Text as="span" data-part="k" color="muted">
+            <Text as="span" className="s-k" color="muted">
               {s.k}
             </Text>
             <Text
               as="span"
-              data-part="v"
+              className="s-v"
               color={"accent" in s ? "primary" : undefined}
             >
               {s.v}
             </Text>
-            <Text as="span" data-part="m" color="muted">
+            <Text as="span" className="s-m" color="muted">
               {s.m}
             </Text>
           </Stack>
         ))}
       </Grid>
 
-      <Flex data-part="marquee" aria-hidden="true" gap={9} mt={12}>
-        <Flex data-part="marquee-track" gap={9}>
+      <Flex className="s-marquee" aria-hidden="true" gap={9} mt={12}>
+        <Flex className="s-marquee-track" gap={9}>
           {[...MARQUEE_TOKENS, ...MARQUEE_TOKENS].map((t, i) => (
             <Flex
               as="span"
               key={`${t}-${String(i)}`}
-              data-part="marquee-item"
+              className="s-marquee-item"
               align="center"
               gap={1.5}
             >

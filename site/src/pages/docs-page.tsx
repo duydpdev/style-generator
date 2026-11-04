@@ -93,8 +93,8 @@ export function DocsPage() {
   return (
     <>
       <Topbar activeChapter={null} activeRoute="docs" onToggleTheme={toggle} />
-      <Box data-part="container" maxWidth={1440} px={{ base: 5, lg: 8 }}>
-        <Grid data-part="docs-shell" gap={14} position="relative">
+      <Box className="s-container" maxWidth={1440} px={{ base: 5, lg: 8 }}>
+        <Grid className="s-docs-shell" gap={14} position="relative">
           <DocsSidebar activeSlug={doc.slug} />
 
           <Box
@@ -112,7 +112,7 @@ export function DocsPage() {
             <DocBreadcrumb doc={doc} />
             <DocHead doc={doc} readMin={approxReadMinutes(body)} />
 
-            <Box as="article" data-part="doc-body">
+            <Box as="article" className="s-doc-body" data-testid="doc-body">
               <DocMarkdown source={body} repoPath={doc.repoPath} />
             </Box>
 

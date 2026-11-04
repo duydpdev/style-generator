@@ -17,16 +17,16 @@ function NavCard({ doc, dir }: Readonly<CardProps>) {
     <Stack
       as={Link}
       to={docPath(doc.locale, doc.slug)}
-      data-part={dir === "next" ? "nav-card next" : "nav-card"}
+      className={dir === "next" ? "s-nav-card s-next" : "s-nav-card"}
       rounded="lg"
       px={5}
       py={4}
       gap={1}
     >
-      <Text as="span" data-part="lbl" color="muted">
+      <Text as="span" className="s-lbl" color="muted">
         {dir === "next" ? t.next : t.previous}
       </Text>
-      <Text as="span" data-part="ttl">
+      <Text as="span" className="s-ttl">
         <em>{doc.title}</em>
       </Text>
     </Stack>
@@ -41,7 +41,7 @@ interface FooterProps {
 /** Previous / next page cards. */
 export function DocFooter({ prev, next }: Readonly<FooterProps>) {
   return (
-    <Grid data-part="doc-footer" mt={16} gap={3.5}>
+    <Grid className="s-doc-footer" mt={16} gap={3.5}>
       <NavCard doc={prev} dir="prev" />
       <NavCard doc={next} dir="next" />
     </Grid>
@@ -52,7 +52,7 @@ export function DocFooter({ prev, next }: Readonly<FooterProps>) {
 export function DocEdit({ ghUrl }: Readonly<{ ghUrl: string }>) {
   const t = UI_TEXT[useLocale()];
   return (
-    <Flex data-part="doc-edit" wrap gap={4.5} mt={7}>
+    <Flex className="s-doc-edit" wrap gap={4.5} mt={7}>
       <a href={ghUrl} target="_blank" rel="noopener noreferrer">
         {t.editPage}
       </a>
@@ -69,7 +69,7 @@ export function DocEdit({ ghUrl }: Readonly<{ ghUrl: string }>) {
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
-        data-part="back-to-top"
+        className="s-back-to-top"
       >
         {t.backToTop}
       </Box>

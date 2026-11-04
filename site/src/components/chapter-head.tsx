@@ -20,7 +20,7 @@ interface Props {
  */
 export function ChapterMarker({ num }: Readonly<MarkerProps>) {
   return (
-    <Text as="div" data-part="ch-marker" color="foreground">
+    <Text as="div" className="s-ch-marker" color="foreground">
       {num}
     </Text>
   );
@@ -38,17 +38,17 @@ export function ChapterHead({ num, label, title, lede }: Readonly<Props>) {
   return (
     <>
       <ChapterMarker num={num} />
-      <Text as="div" data-part="ch-eyebrow" color="muted" mb={3.5} gap={2.5}>
+      <Text as="div" className="s-ch-eyebrow" color="muted" mb={3.5} gap={2.5}>
         <Text as="span">
           Ch. <Text as="b">{num}</Text>
         </Text>
         <Text as="span">· {label}</Text>
       </Text>
-      <Text as="h2" data-part="ch-title" color="foreground" mb={4.5}>
+      <Text as="h2" className="s-ch-title" color="foreground" mb={4.5}>
         {title}
       </Text>
       {lede !== undefined && (
-        <Text as="p" data-part="ch-lede" color="muted" mb={8}>
+        <Text as="p" className="s-ch-lede" color="muted" mb={8}>
           {lede}
         </Text>
       )}

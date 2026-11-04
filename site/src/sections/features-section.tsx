@@ -12,7 +12,7 @@ interface Feat {
 
 const FEATS: Feat[] = [
   {
-    part: "feat-wide",
+    part: "s-feat-wide",
     tag: "root",
     title: "generate()",
     body: (
@@ -24,7 +24,7 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    part: "feat-wide",
+    part: "s-feat-wide",
     tag: "root",
     title: "defineTheme()",
     body: (
@@ -35,7 +35,7 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    part: "feat-narrow",
+    part: "s-feat-narrow",
     tag: "/spacing",
     title: "resolveSpacingProps()",
     body: (
@@ -45,19 +45,19 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    part: "feat-narrow",
+    part: "s-feat-narrow",
     tag: "/cva",
     title: "createVariantMapper()",
     body: <>Token → class lookup for CVA. Kebab auto.</>,
   },
   {
-    part: "feat-narrow",
+    part: "s-feat-narrow",
     tag: "/vite",
     title: "styleGenVite()",
     body: <>Watches theme.json. HMR-friendly.</>,
   },
   {
-    part: "feat-wide",
+    part: "s-feat-wide",
     tag: "/types",
     title: "Semantic type aliases",
     body: (
@@ -68,7 +68,7 @@ const FEATS: Feat[] = [
     ),
   },
   {
-    part: "feat-wide",
+    part: "s-feat-wide",
     tag: "CLI",
     title: "style-gen — init · generate · doctor",
     body: (
@@ -107,12 +107,12 @@ export function FeaturesSection() {
         }
       />
 
-      <Grid data-part="bento" data-reveal="stagger" gap={3.5}>
+      <Grid className="s-bento" data-reveal="stagger" gap={3.5}>
         {FEATS.map((f) => (
           <Stack
             as="article"
             key={f.tag + f.title}
-            data-part={`feat ${f.part}`}
+            className={`s-feat ${f.part}`}
             gap={2}
             p={4.5}
             rounded="lg"
@@ -120,7 +120,7 @@ export function FeaturesSection() {
           >
             <Box
               as="span"
-              data-part="feat-tag"
+              className="s-feat-tag"
               px={2}
               py={0.5}
               rounded="pill"

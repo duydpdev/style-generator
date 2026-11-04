@@ -48,6 +48,51 @@ const UI_APP_SYNTAX = [
       "No style= in app code: use a component prop, a theme token or data-part CSS. A runtime value keeps style= under `// eslint-disable-next-line no-restricted-syntax -- <reason>`.",
   },
 ];
+
+// Bespoke CSS hooks are namespaced classes, not Tailwind utilities and not
+// data-part: `s-` for site/, `x-` for the examples (`sg-` is the CSS variable
+// prefix and stays out). The className rules therefore accept only `<ns>-`
+// tokens (a literal, or the pieces of a template/conditional); a computed
+// className must come from a table of `<ns>-` classes and says so with a
+// disable comment. Third-party components (NavLink, ReactMarkdown) stay
+// outside both selectors. Only site/ uses it so far; react-v4 keeps
+// UI_APP_SYNTAX until the harness migration.
+const uiAppSyntax = (ns) => {
+  const lowerTag = "JSXOpeningElement[name.name=/^[a-z]/]";
+  const classNameAttr = "JSXAttribute[name.name='className']";
+  const classMessage = `className in app code takes only \`${ns}-\` classes (bespoke CSS hooks); use component props for layout, type and colour.`;
+  const computedMessage = `A computed className must come from a table of \`${ns}-\` classes: add \`// eslint-disable-next-line no-restricted-syntax -- <table>\`.`;
+  // A string compared with ===/!== (`dir === "next"`) is a condition, not a class.
+  const literal = String.raw`Literal[value=/(^|\s)(?!${ns}-)\S/]:not(BinaryExpression[operator=/^[!=]==?$/] > Literal)`;
+  const template = String.raw`TemplateElement[value.raw=/(^|\s)(?!${ns}-)[a-z]/]`;
+  const computed = `JSXExpressionContainer > :matches(Identifier, MemberExpression, CallExpression)`;
+  return [
+    UI_APP_SYNTAX[0],
+    ...[lowerTag, COMPONENT_SELECTOR].flatMap((owner) => [
+      {
+        selector: `${owner} > ${classNameAttr} ${literal}`,
+        message: classMessage,
+      },
+      {
+        selector: `${owner} > ${classNameAttr} ${template}`,
+        message: classMessage,
+      },
+      {
+        selector: `${owner} > ${classNameAttr} > ${computed}`,
+        message: computedMessage,
+      },
+    ]),
+    {
+      selector: "JSXAttribute[name.name='style']",
+      message: `No style= in app code: use a component prop, a theme token or a \`${ns}-\` class. A runtime value keeps style= under \`// eslint-disable-next-line no-restricted-syntax -- <reason>\`.`,
+    },
+    {
+      selector: "JSXAttribute[name.name='data-part']",
+      message: `No data-part: use a \`${ns}-\` class.`,
+    },
+  ];
+};
+
 // react-v4 only: the site's grids use desktop-first CSS templates
 // (max-width media queries) that `columns` cannot express.
 const GRID_COLUMNS_SYNTAX = {
@@ -223,7 +268,7 @@ export default pluginTs.config(
         "error",
         { max: 150, skipBlankLines: false, skipComments: false },
       ],
-      "no-restricted-syntax": ["error", ...UI_APP_SYNTAX],
+      "no-restricted-syntax": ["error", ...uiAppSyntax("s")],
       "no-restricted-imports": ["error", RESTRICTED_UI_IMPORTS],
     },
   },

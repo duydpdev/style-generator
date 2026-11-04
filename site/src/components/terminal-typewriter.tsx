@@ -71,20 +71,20 @@ export function TerminalTypewriter({
   }, [shown]);
 
   return (
-    <Stack data-part="terminal" minHeight={320} rounded="lg">
-      <Flex data-part="code-head" align="center" gap={2} px={4} py={3}>
+    <Stack className="s-terminal" minHeight={320} rounded="lg">
+      <Flex className="s-code-head" align="center" gap={2} px={4} py={3}>
         <Flex as="span" gap={1.25}>
-          <Box as="span" data-part="dot" width={10} height={10} />
-          <Box as="span" data-part="dot" width={10} height={10} />
-          <Box as="span" data-part="dot" width={10} height={10} />
+          <Box as="span" className="s-dot" width={10} height={10} />
+          <Box as="span" className="s-dot" width={10} height={10} />
+          <Box as="span" className="s-dot" width={10} height={10} />
         </Flex>
-        <Text as="span" data-part="filename" ml={1.5}>
+        <Text as="span" className="s-filename" ml={1.5}>
           {filename}
         </Text>
       </Flex>
       <Box
         ref={bodyRef}
-        data-part="terminal-body"
+        className="s-terminal-body"
         data-testid="terminal-body"
         px={4.5}
         py={4}
@@ -95,7 +95,7 @@ export function TerminalTypewriter({
             <Text
               as="div"
               key={i}
-              data-part="line"
+              className="s-line"
               data-line-state={revealed ? "shown" : "pending"}
               aria-hidden={!revealed}
               // eslint-disable-next-line no-restricted-syntax -- visibility follows each line's reveal state; data-line-state is a test hook CSS must not key on

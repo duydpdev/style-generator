@@ -25,12 +25,12 @@ export function DocsMobileNav({ activeSlug, children }: Readonly<Props>) {
   return (
     <Stack
       as="nav"
-      data-part="docs-mobile-nav"
+      className="s-docs-mobile-nav"
       aria-label={t.docs}
       gap={2.5}
       mb={6}
     >
-      <Box as="details" data-part="docs-mobile-details" rounded="lg">
+      <Box as="details" className="s-docs-mobile-details" rounded="lg">
         <Flex
           as="summary"
           align="center"
@@ -41,11 +41,11 @@ export function DocsMobileNav({ activeSlug, children }: Readonly<Props>) {
           minHeight={44}
         >
           <Box as="span">{t.docs}</Box>
-          <Box as="span" data-part="cur" minWidth={0}>
+          <Box as="span" className="s-cur" minWidth={0}>
             {current?.title ?? t.allPages}
           </Box>
         </Flex>
-        <Box data-part="docs-mobile-pages" px={2.5} pb={3} maxHeight="60vh">
+        <Box className="s-docs-mobile-pages" px={2.5} pb={3} maxHeight="60vh">
           <DocsNavGroups
             activeSlug={activeSlug}
             onNavigate={(e) => {

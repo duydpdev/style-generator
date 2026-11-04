@@ -45,7 +45,7 @@ export function CodeEditor({
   );
 
   return (
-    <Stack data-part="code-pane">
+    <Stack className="s-code-pane">
       <CodeTabs
         openTabs={openTabs}
         activePath={activePath}
@@ -54,11 +54,11 @@ export function CodeEditor({
       />
 
       {active ? (
-        <Box data-part="code-body-wrap" position="relative" minHeight={0}>
+        <Box className="s-code-body-wrap" position="relative" minHeight={0}>
           <Flex minWidth="100%" width="max-content" minHeight="100%">
             <Box
               as="pre"
-              data-part="code-gutter"
+              className="s-code-gutter"
               width={56}
               py={4}
               pr={3}
@@ -68,7 +68,7 @@ export function CodeEditor({
             </Box>
             <Text
               as="pre"
-              data-part="code-source"
+              className="s-code-source"
               py={4}
               px={5.5}
               dangerouslySetInnerHTML={{ __html: html }}
@@ -76,7 +76,7 @@ export function CodeEditor({
           </Flex>
         </Box>
       ) : (
-        <Grid data-part="code-empty" columns={1} align="center" p={6}>
+        <Grid className="s-code-empty" columns={1} align="center" p={6}>
           Pick a file from the sidebar to start reading code.
         </Grid>
       )}

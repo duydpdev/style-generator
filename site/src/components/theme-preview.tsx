@@ -31,8 +31,10 @@ export function ThemePreview({
 }: Readonly<Props>) {
   return (
     <Stack
-      data-part={
-        variant === "light" ? "theme-preview light" : "theme-preview dark"
+      className={
+        variant === "light"
+          ? "s-theme-preview s-light"
+          : "s-theme-preview s-dark"
       }
       gap={3.5}
       p={5.5}
@@ -41,22 +43,22 @@ export function ThemePreview({
       position="relative"
     >
       <Flex justify="between" align="center">
-        <Box as="span" data-part="tp-tag" px={2.25} py={0.75} rounded="pill">
+        <Box as="span" className="s-tp-tag" px={2.25} py={0.75} rounded="pill">
           {tag}
         </Box>
-        <Text as="span" data-part="tp-folio">
+        <Text as="span" className="s-tp-folio">
           {folio}
         </Text>
       </Flex>
-      <Text as="h3" data-part="tp-title">
+      <Text as="h3" className="s-tp-title">
         {title}
       </Text>
-      <Stack data-part="tp-card" gap={1.75} p={3.5} rounded="md">
+      <Stack className="s-tp-card" gap={1.75} p={3.5} rounded="md">
         {swatches.map((s) => (
-          <Flex key={s.label} data-part="tp-row" align="center" gap={2.5}>
+          <Flex key={s.label} className="s-tp-row" align="center" gap={2.5}>
             <Box
               as="span"
-              data-part="sw"
+              className="s-sw"
               width={16}
               height={16}
               // eslint-disable-next-line no-restricted-syntax -- swatch colours come from the previewed theme's data, not this site's tokens
@@ -69,10 +71,10 @@ export function ThemePreview({
           </Flex>
         ))}
       </Stack>
-      <Box as="button" type="button" data-part="tp-btn" px={3.5} py={1.75}>
+      <Box as="button" type="button" className="s-tp-btn" px={3.5} py={1.75}>
         Primary button
       </Box>
-      <Box as="span" data-part="tp-marker" px={2} py={1}>
+      <Box as="span" className="s-tp-marker" px={2} py={1}>
         {marker}
       </Box>
     </Stack>

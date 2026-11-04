@@ -41,7 +41,7 @@ export type LayoutProps = ThemeSpacingProps<Tokens> & {
 };
 
 export type BoxOwnProps = LayoutProps & {
-  /** A 1px frame drawn by an overlay span instead of the element's border. */
+  /** An overlay frame drawn by a span, not the element's border, so it takes no layout space. */
   readonly innerBorder?: boolean | undefined;
   readonly className?: string | undefined;
   readonly style?: CSSProperties | undefined;

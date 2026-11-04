@@ -25,7 +25,6 @@ const root = () => {
   return {
     type: props.as === "button" ? "button" : undefined,
     ...rest,
-    "data-slot": "button",
     class: cn(
       buttonRecipe({
         variant: props.variant,
@@ -42,8 +41,8 @@ const root = () => {
 
 <template>
   <component :is="props.as" v-bind="root()">
-    <span v-if="slots.prefix" data-icon="start"><slot name="prefix" /></span>
+    <span v-if="slots.prefix"><slot name="prefix" /></span>
     <span><slot /></span>
-    <span v-if="slots.suffix" data-icon="end"><slot name="suffix" /></span>
+    <span v-if="slots.suffix"><slot name="suffix" /></span>
   </component>
 </template>

@@ -125,6 +125,18 @@ export function toPascalCase(kebab) {
 }
 
 /**
+ * `clsx/lite` → `clsx`, `@scope/name/sub` → `@scope/name`.
+ * @param {string} spec - A bare import specifier
+ * @returns {string} The package name without a subpath
+ */
+function packageNameOf(spec) {
+  const parts = spec.split("/");
+  return spec.startsWith("@")
+    ? parts.slice(0, 2).join("/")
+    : (parts[0] ?? spec);
+}
+
+/**
  * Packages one file may import; `null` means any package except `KIT_ONLY` (stories).
  * @param {string} file - File name inside the component folder
  * @param {".tsx" | ".vue"} component - The app's component extension
@@ -157,7 +169,7 @@ export function foreignImports(source, file = "style.ts", component = ".tsx") {
         );
       }
       return allowed === null
-        ? KIT_ONLY.includes(spec)
+        ? KIT_ONLY.includes(packageNameOf(spec))
         : !allowed.includes(spec);
     });
 }

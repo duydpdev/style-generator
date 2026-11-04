@@ -250,6 +250,21 @@ describe("integration: scripts/check-plain-ui.mjs", () => {
     ]);
   });
 
+  it("rejects a subpath of a kit-only package", () => {
+    component(dir, REACT, "box", "Box");
+    const box = `${REACT.uiDir}/box`;
+    put(dir, `${box}/Box.stories.tsx`, 'import clsx from "clsx/lite";\n');
+    put(
+      dir,
+      `${box}/style.ts`,
+      'import { twMerge } from "tailwind-merge/es5";\n',
+    );
+    expect(heads(mod.checkPlainUi(dir, [REACT], []).errors)).toEqual([
+      'apps/react/ui/box/Box.stories.tsx: imports "clsx/lite"',
+      'apps/react/ui/box/style.ts: imports "tailwind-merge/es5"',
+    ]);
+  });
+
   it("exits 1 on a forbidden package import", () => {
     component(
       dir,

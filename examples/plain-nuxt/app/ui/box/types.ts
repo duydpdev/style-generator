@@ -33,6 +33,6 @@ export interface BoxProps extends /* @vue-ignore */ ThemeSpacingProps<
   minHeight?: Size;
   maxWidth?: Size;
   maxHeight?: Size;
-  /** A 1px frame drawn by an overlay span instead of the element's border. */
+  /** An overlay frame drawn by a span, not the element's border, so it takes no layout space. */
   innerBorder?: boolean;
 }

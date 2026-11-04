@@ -39,6 +39,18 @@ export function viTwinOf(en) {
   throw new Error(`${en} is not a rendered doc path`);
 }
 
+/**
+ * English source of a twin: `documents/vi/README.md` → `README.md`,
+ * `documents/vi/<p>` → `documents/<p>`. Inverse of `viTwinOf`; keep in sync
+ * with `enSourceOf` in `site/src/lib/locale.ts`.
+ * @param {string} vi - POSIX repo-relative path of the twin
+ * @returns {string} POSIX repo-relative path of its English file
+ */
+export function enSourceOf(vi) {
+  const rest = vi.slice(`${VI_DIR}/`.length);
+  return rest === "README.md" ? "README.md" : `documents/${rest}`;
+}
+
 /** Line 1 of every twin: `<!-- source: <en path> sha256: <12 hex> -->`. */
 export const SOURCE_LINE = /^<!-- source: (\S+) sha256: ([0-9a-f]{12}) -->$/;
 

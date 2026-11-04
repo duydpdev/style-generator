@@ -16,7 +16,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { VI_DIR, viTwinOf } from "../../scripts/doc-markdown.mjs";
+import { enSourceOf, VI_DIR, viTwinOf } from "../../scripts/doc-markdown.mjs";
 
 const rootAt = process.argv.indexOf("--root");
 if (rootAt !== -1 && process.argv[rootAt + 1] === undefined) {
@@ -197,13 +197,16 @@ const sources = new Map(
 const anchorCache = new Map();
 
 /**
- * @param {string} file - Repo-relative markdown path in the site set
+ * @param {string} file - Repo-relative markdown path that exists on disk
+ *   (in the site set or not)
  * @returns {Set<string>} Its anchors
  */
 function anchorsOf(file) {
   let anchors = anchorCache.get(file);
   if (!anchors) {
-    anchors = collectAnchors(sources.get(file) ?? "");
+    anchors = collectAnchors(
+      sources.get(file) ?? readFileSync(resolve(repoRoot, file), "utf8"),
+    );
     anchorCache.set(file, anchors);
   }
   return anchors;
@@ -255,7 +258,11 @@ for (const [file, md] of sources) {
         broken.push(`${where} → ${target} does not exist`);
         continue;
       }
-      if (file.startsWith(`${VI_DIR}/`) && EN_DOC_FILES.includes(target)) {
+      if (
+        file.startsWith(`${VI_DIR}/`) &&
+        target !== enSourceOf(file) &&
+        EN_DOC_FILES.includes(target)
+      ) {
         broken.push(
           `${where} → ${target} is an English doc; link its Vietnamese twin ${viTwinOf(target)}`,
         );
@@ -263,7 +270,7 @@ for (const [file, md] of sources) {
       }
     }
 
-    if (anchor && sources.has(target) && !anchorsOf(target).has(anchor)) {
+    if (anchor && target.endsWith(".md") && !anchorsOf(target).has(anchor)) {
       broken.push(`${where} → no heading "#${anchor}" in ${target}`);
     }
   }

@@ -15,7 +15,8 @@
  *
  * Fail-closed: an unknown specifier fails the build, and so does any other
  * non-relative module reference the rules did not handle (default or
- * namespace import, side-effect import, multi-line import, `export … from`,
+ * namespace import, side-effect import, mixed default and named import,
+ * `export … from`,
  * `import x = require()`, `import("…")` type, `declare module "…"`). A new
  * external import must be a deliberate decision, not a silent
  * CommonJS-resolution bug. Comment lines are skipped: the built
@@ -35,7 +36,7 @@ const CJS_SAFE_IMPORTS = {
       .replace(/;$/, " assert { 'resolution-mode': 'import' };"),
 };
 
-// Rolled-up declarations carry one single-line named import per package.
+// Rolled-up declarations carry one named import per package (single- or multi-line).
 const EXTERNAL_IMPORT_RE =
   /^import (?:type )?\{[^}]*\} from '([^'./][^']*)';$/gm;
 

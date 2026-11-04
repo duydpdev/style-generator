@@ -1,4 +1,5 @@
 import { describe, it, expectTypeOf } from "vitest";
+import type { ClassValue } from "clsx";
 
 // Import via root barrel
 import type * as root from "../index";
@@ -144,6 +145,59 @@ describe("subpath exports — symbols match root barrel", () => {
       | "splitSpacing"
     >();
     expectTypeOf<Extract<keyof typeof root, keyof typeof ui>>().toBeNever();
+  });
+
+  it("ui subpath exports the nine documented types", () => {
+    interface TinyTokens extends ui.RecipeTokens {
+      readonly spacingProperties: readonly ["p", "gap-x"];
+      readonly breakpoints: readonly ["md"];
+    }
+    expectTypeOf<ui.RecipeTokens>().not.toBeNever();
+    expectTypeOf<keyof ui.RecipeTokens>().toEqualTypeOf<
+      | "colors"
+      | "typography"
+      | "shadows"
+      | "backDropBlurs"
+      | "borderRadius"
+      | "borderWidth"
+      | "spacingProperties"
+      | "breakpoints"
+    >();
+    expectTypeOf<ui.VariantTable>().not.toBeNever();
+    expectTypeOf<ui.VariantTable>().toEqualTypeOf<
+      Record<string, Record<string, ClassValue>>
+    >();
+    expectTypeOf<ui.RecipeTables>().not.toBeNever();
+    expectTypeOf<keyof ui.RecipeTables>().toEqualTypeOf<
+      "base" | "variants" | "compoundVariants" | "defaultVariants"
+    >();
+    expectTypeOf<
+      ui.RecipeTables["variants"]
+    >().toEqualTypeOf<ui.VariantTable>();
+    expectTypeOf<ui.RecipeProps>().not.toBeNever();
+    expectTypeOf<ui.RecipeProps>().toEqualTypeOf<
+      Readonly<Record<string, string | boolean | null | undefined>>
+    >();
+    expectTypeOf<ui.RecipeFn>().not.toBeNever();
+    expectTypeOf<ui.RecipeFn>().toEqualTypeOf<
+      (props?: ui.RecipeProps) => string
+    >();
+    expectTypeOf<ui.Cn>().not.toBeNever();
+    expectTypeOf<ui.Cn>().toBeFunction();
+    expectTypeOf<ui.Cn>().toEqualTypeOf<(...inputs: ClassValue[]) => string>();
+    expectTypeOf<ui.StyleRecord>().not.toBeNever();
+    expectTypeOf<ui.StyleRecord>().toEqualTypeOf<
+      Readonly<Record<string, string | number>>
+    >();
+    expectTypeOf<ui.Split>().not.toBeNever();
+    expectTypeOf<keyof ui.Split>().toEqualTypeOf<
+      "className" | "style" | "variants" | "rest"
+    >();
+    expectTypeOf<ui.Split["style"]>().toEqualTypeOf<ui.StyleRecord>();
+    expectTypeOf<ui.ThemeSpacingProps<TinyTokens>>().not.toBeNever();
+    expectTypeOf<keyof ui.ThemeSpacingProps<TinyTokens>>().toEqualTypeOf<
+      "p" | "gapX"
+    >();
   });
 
   it("ui-react subpath carries the Polymorphic type", () => {

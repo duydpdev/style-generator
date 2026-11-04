@@ -37,6 +37,8 @@ export function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/docs" element={<DocsPage />} />
           <Route path="/docs/:slug" element={<DocsPage />} />
+          <Route path="/vi/docs" element={<DocsPage />} />
+          <Route path="/vi/docs/:slug" element={<DocsPage />} />
           <Route path="/examples" element={<ExamplesPage />} />
           <Route path="/examples/:variant" element={<ExamplesPage />} />
           <Route path="*" element={<NotFound />} />

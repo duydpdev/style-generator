@@ -1,4 +1,6 @@
 import META_JSON from "./docs-meta.json";
+import type { Locale } from "./locale";
+import { docPath, enSourceOf, localeOfRepoPath } from "./locale";
 import { stripHtmlComments } from "./strip-html-comments";
 
 export type DocGroup =
@@ -18,9 +20,11 @@ export interface DocEntry {
   group: DocGroup;
   order: number;
   badge?: string;
+  /** `en` for the source file, `vi` for its twin under `documents/vi/`. */
+  locale: Locale;
 }
 
-// Keep in sync with DOC_GLOBS in `scripts/check-doc-links.mjs`.
+// Keep in sync with EN_DOC_FILES (and their vi twins) in `site/scripts/check-doc-links.mjs`.
 const raw = import.meta.glob<string>(
   [
     "../../../documents/*.md",
@@ -30,6 +34,11 @@ const raw = import.meta.glob<string>(
     "../../../README.md",
     "../../../documents/migration/4.x-to-5.0.md",
     "../../../documents/migration/3.x-to-4.0.md",
+    "../../../documents/vi/*.md",
+    "../../../documents/vi/getting-started/*.md",
+    "../../../documents/vi/reference/*.md",
+    "../../../documents/vi/migration/4.x-to-5.0.md",
+    "../../../documents/vi/migration/3.x-to-4.0.md",
   ],
   {
     query: "?raw",
@@ -44,6 +53,8 @@ interface DocMeta {
   group: DocGroup;
   order: number;
   badge?: string;
+  /** Presentation of the twin under `documents/vi/`. */
+  vi: { title: string };
 }
 
 /** Per-file presentation, keyed by `repoPath`; `site/scripts/check-doc-links.mjs` fails when a rendered file has no entry. */
@@ -57,24 +68,27 @@ const GROUP_ORDER: Record<DocGroup, number> = {
   Migration: 5,
 };
 
-export const docs: DocEntry[] = Object.entries(raw)
+const allDocs: DocEntry[] = Object.entries(raw)
   .map(([key, source]): DocEntry => {
     // `../../../documents/guide.md` → `documents/guide.md`
     const repoPath = key.replace(/^(?:\.\.\/)+/, "");
-    const meta = META[repoPath];
+    const locale = localeOfRepoPath(repoPath);
+    const metaKey = locale === "vi" ? enSourceOf(repoPath) : repoPath;
+    const meta = META[metaKey];
     if (!meta) {
       throw new Error(
-        `site/src/lib/docs-meta.json has no entry for ${repoPath}`,
+        `site/src/lib/docs-meta.json has no entry for ${metaKey}`,
       );
     }
     return {
       slug: meta.slug,
-      title: meta.title,
+      title: locale === "vi" ? meta.vi.title : meta.title,
       source: stripHtmlComments(source),
       repoPath,
       group: meta.group,
       order: meta.order,
       badge: meta.badge,
+      locale,
     };
   })
   .sort((a, b) =>
@@ -83,8 +97,18 @@ export const docs: DocEntry[] = Object.entries(raw)
       : GROUP_ORDER[a.group] - GROUP_ORDER[b.group],
   );
 
-export function getDoc(slug: string): DocEntry | undefined {
-  return docs.find((d) => d.slug === slug);
+const DOCS: Readonly<Record<Locale, DocEntry[]>> = {
+  en: allDocs.filter((d) => d.locale === "en"),
+  vi: allDocs.filter((d) => d.locale === "vi"),
+};
+
+/** The rendered docs of one locale, in navigation order. */
+export function docsOf(locale: Locale): DocEntry[] {
+  return DOCS[locale];
+}
+
+export function getDoc(slug: string, locale: Locale): DocEntry | undefined {
+  return DOCS[locale].find((d) => d.slug === slug);
 }
 
 export const REPO_BLOB_URL =
@@ -93,7 +117,7 @@ export const REPO_BLOB_URL =
 export type DocLink =
   /** In-page `#anchor` or absolute URL: render untouched. */
   | { kind: "native"; href: string }
-  /** Another doc the site renders: client-side route (`/docs/<slug>#anchor`). */
+  /** Another doc the site renders: client-side route (`/docs/<slug>#anchor`, `/vi/docs/<slug>#anchor` for a twin). */
   | { kind: "internal"; to: string }
   /** Any other repo file: its GitHub blob URL. */
   | { kind: "repo"; href: string };
@@ -112,9 +136,14 @@ export function resolveDocLink(href: string, fromRepoPath: string): DocLink {
   }
   const url = new URL(local, `https://repo.invalid/${fromRepoPath}`);
   const repoPath = url.pathname.slice(1);
-  const target = docs.find((d) => d.repoPath === decodeURIComponent(repoPath));
+  const target = allDocs.find(
+    (d) => d.repoPath === decodeURIComponent(repoPath),
+  );
   if (target)
-    return { kind: "internal", to: `/docs/${target.slug}${url.hash}` };
+    return {
+      kind: "internal",
+      to: `${docPath(target.locale, target.slug)}${url.hash}`,
+    };
   return {
     kind: "repo",
     href: `${REPO_BLOB_URL}${repoPath}${url.search}${url.hash}`,
@@ -126,9 +155,9 @@ export interface DocGroupEntry {
   docs: DocEntry[];
 }
 
-export function groupedDocs(): DocGroupEntry[] {
+export function groupedDocs(locale: Locale): DocGroupEntry[] {
   const map = new Map<DocGroup, DocEntry[]>();
-  for (const doc of docs) {
+  for (const doc of DOCS[locale]) {
     const list = map.get(doc.group);
     if (list) list.push(doc);
     else map.set(doc.group, [doc]);
@@ -139,10 +168,14 @@ export function groupedDocs(): DocGroupEntry[] {
   }));
 }
 
-export function adjacentDocs(slug: string): {
+export function adjacentDocs(
+  slug: string,
+  locale: Locale,
+): {
   prev?: DocEntry;
   next?: DocEntry;
 } {
+  const docs = DOCS[locale];
   const idx = docs.findIndex((d) => d.slug === slug);
   if (idx < 0) return {};
   return {

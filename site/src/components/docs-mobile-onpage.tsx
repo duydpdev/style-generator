@@ -1,5 +1,7 @@
 import type { MouseEvent, RefObject } from "react";
 
+import { UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import { jumpToHeading, useDocHeadings } from "../lib/use-doc-headings";
 import { Box, Flex, Stack } from "../ui";
 
@@ -11,6 +13,7 @@ interface Props {
 /** "On this page" list for <=860px, where the right rail is hidden. */
 export function DocsMobileOnPage({ contentRef, rawMarkdown }: Readonly<Props>) {
   const headings = useDocHeadings(contentRef, rawMarkdown);
+  const t = UI_TEXT[useLocale()];
   if (headings.length === 0) return null;
 
   return (
@@ -24,9 +27,9 @@ export function DocsMobileOnPage({ contentRef, rawMarkdown }: Readonly<Props>) {
         py={2.5}
         minHeight={44}
       >
-        <Box as="span">On this page</Box>
+        <Box as="span">{t.onThisPage}</Box>
         <Box as="span" data-part="cur" minWidth={0}>
-          {headings.length} sections
+          {t.sections(headings.length)}
         </Box>
       </Flex>
       <Stack

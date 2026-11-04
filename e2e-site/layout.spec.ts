@@ -14,6 +14,8 @@ const ROUTES = [
   "/docs/guide",
   "/docs/testing",
   "/docs/deploy",
+  "/vi/docs/architecture",
+  "/vi/docs/guide",
   "/examples/v4",
 ] as const;
 

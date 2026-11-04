@@ -282,6 +282,7 @@ The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) th
 - `/` — landing (editorial scroll).
 - `/docs` — redirects to `/docs/introduction` (the repo `README.md`).
 - `/docs/:slug` — renders the files listed in `site/src/lib/docs-meta.json` (the repo `README.md`, `documents/*.md`, `documents/getting-started/*.md`, `documents/reference/*.md` and the two migration guides; each entry has a unique slug, group and order) via `react-markdown`. HTML comments used by the docs scripts (`<!-- embed: … -->`, `<!-- signature: … -->`, `<!-- snippet: … -->`) are stripped before rendering (`site/src/lib/strip-html-comments.ts`).
+- `/vi/docs`, `/vi/docs/:slug` — the Vietnamese twin of the same page (`documents/vi/<path>`; the repo `README.md` → `documents/vi/README.md`) under the same slug, titled with the entry's `vi.title`. The docs chrome strings come from `UI_TEXT` in `site/src/lib/locale.ts`, the breadcrumb links each page to its twin in the other language, and `<html lang>` follows the page. `yarn check:docs-i18n` keeps every twin in step with its English file.
 - `/examples/v4` — an iframe embedding `examples/react-v4/dist`.
 
 ### Examples integration

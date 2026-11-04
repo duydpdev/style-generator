@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
-import { docs } from "../lib/docs-content";
+import { docsOf } from "../lib/docs-content";
+import { UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import { Box, Flex, Stack } from "../ui";
 
 import { DocsNavGroups } from "./docs-nav-list";
@@ -16,13 +18,15 @@ interface Props {
  * the same grouped page list as `DocsSidebar`.
  */
 export function DocsMobileNav({ activeSlug, children }: Readonly<Props>) {
-  const current = docs.find((d) => d.slug === activeSlug);
+  const locale = useLocale();
+  const t = UI_TEXT[locale];
+  const current = docsOf(locale).find((d) => d.slug === activeSlug);
 
   return (
     <Stack
       as="nav"
       data-part="docs-mobile-nav"
-      aria-label="Docs"
+      aria-label={t.docs}
       gap={2.5}
       mb={6}
     >
@@ -36,9 +40,9 @@ export function DocsMobileNav({ activeSlug, children }: Readonly<Props>) {
           py={2.5}
           minHeight={44}
         >
-          <Box as="span">Docs</Box>
+          <Box as="span">{t.docs}</Box>
           <Box as="span" data-part="cur" minWidth={0}>
-            {current?.title ?? "All pages"}
+            {current?.title ?? t.allPages}
           </Box>
         </Flex>
         <Box data-part="docs-mobile-pages" px={2.5} pb={3} maxHeight="60vh">

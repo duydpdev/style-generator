@@ -15,7 +15,56 @@ Index of all documentation for `@duydpdev/style-generator`. API, option and CLI 
 | [`getting-started/`](./getting-started/) | Getting started for React + Vite, Next.js, Nuxt + Vue; code embedded from `examples/` |
 | [`reference/`](./reference/)             | One page per subpath plus `cli`, `options` and `theme`                                |
 
-The site renders the files listed in `site/src/lib/docs-meta.json`; `site/scripts/check-doc-links.mjs` fails when a rendered file has no entry.
+The site renders the files listed in `site/src/lib/docs-meta.json` at `/docs/<slug>` and their Vietnamese twins at `/vi/docs/<slug>`; `site/scripts/check-doc-links.mjs` fails when a rendered file has no entry or no `vi.title`.
+
+## Vietnamese mirror (`vi/`)
+
+English is the source of truth. Every file listed in `site/src/lib/docs-meta.json` has a Vietnamese twin at the same path under `vi/` (the repo `README.md` → `vi/README.md`); the site renders it at `/vi/docs/<slug>` with the entry's `vi.title`. `yarn check:docs-i18n` (CI check job, after `check:docs-embed`) fails when a twin is missing, when line 1 (`<!-- source: <english path> sha256: <hash> -->`) records an older version of the English file, or when the twin's heading levels (with their inline code), doc-script markers (`embed`, `signature`, `snippet`, `> [!NOTE]`-style alerts), code blocks or signature blocks differ from the English file. Code blocks and signature blocks are copied verbatim; everything else is translated.
+
+When you change an English doc:
+
+1. Edit the English file and run `yarn docs:embed` (it also rewrites the code embedded in the twins). Signature blocks: `yarn docs:signatures` (needs `yarn build:all`) rewrites them in the English page and in its twin, and moves the twin's source hash along when the twin was in step with the English page. Never copy a signature block by hand.
+2. Update the twin's text to match: same headings and levels, the same markers and code blocks, links to the twins of rendered docs (`./guide.md`), one more `../` for any other repo file, and `#anchors` that match the translated headings.
+3. `yarn exec prettier --write <twin>`, then `yarn check:docs-i18n --write-hash <twin>` to record the new source hash. Use `--write-hash` only when the twin matches the current English file, never to silence the gate.
+4. `yarn check:docs-i18n && yarn workspace site check:links`. `--only <path>` limits the check to one twin or directory; `--untranslated` (advisory, never a gate) also lists prose lines copied from the English file.
+
+A new rendered doc needs its `docs-meta.json` entry with `vi.title` and its twin in the same change.
+
+Glossary (prose only; identifiers, commands and code stay English):
+
+| English                                           | Vietnamese                                                              |
+| ------------------------------------------------- | ----------------------------------------------------------------------- |
+| token, design token                               | token, design token                                                     |
+| utility, utility class                            | utility, class utility                                                  |
+| theme                                             | theme                                                                   |
+| theme axis (`themeAxes`)                          | trục theme                                                              |
+| variant                                           | variant                                                                 |
+| token category                                    | nhóm token                                                              |
+| alias                                             | alias                                                                   |
+| recipe                                            | recipe                                                                  |
+| component                                         | component                                                               |
+| harness                                           | harness (first use on a page: "harness (bộ ví dụ dùng để kiểm thử DX)") |
+| plain example                                     | ví dụ plain                                                             |
+| breakpoint                                        | breakpoint                                                              |
+| spacing                                           | spacing                                                                 |
+| subpath (export)                                  | subpath                                                                 |
+| peer dependency                                   | peer dependency                                                         |
+| schema                                            | schema                                                                  |
+| option(s)                                         | tùy chọn (identifiers stay `options`)                                   |
+| build, commit, branch, merge, PR, CI, release tag | kept as is                                                              |
+| release (the act)                                 | phát hành                                                               |
+| breaking change                                   | thay đổi phá vỡ tương thích (breaking change)                           |
+| migration                                         | nâng cấp                                                                |
+| getting started                                   | bắt đầu                                                                 |
+| guide                                             | hướng dẫn                                                               |
+| reference                                         | tham chiếu                                                              |
+| table of contents                                 | mục lục (heading `## Mục lục`)                                          |
+| test, testing                                     | kiểm thử (command names stay)                                           |
+| gate                                              | gate (cổng kiểm tra)                                                    |
+| deploy                                            | triển khai                                                              |
+| validate                                          | kiểm tra hợp lệ                                                         |
+| fallback                                          | giá trị dự phòng                                                        |
+| generate, generated                               | sinh, được sinh                                                         |
 
 ## Standards (not shown on the site)
 

@@ -15,6 +15,12 @@
  * that matches the built declarations. An export without TSDoc, a missing
  * page and a page that belongs to no subpath (besides cli, options, theme) fail.
  *
+ * The Vietnamese twin `documents/vi/reference/<page>.md` of a page, when it
+ * exists, carries the same blocks byte for byte: `--write` rewrites them
+ * and the check mode reports a stale twin. With `--write`, line 1 of the
+ * twin (`<!-- source: … sha256: … -->`) follows the English page's new
+ * hash, but only when it recorded the English page's previous hash.
+ *
  *   --write   rewrite the signature blocks (yarn docs:signatures)
  *   --root    repository root (default: the repo of this script)
  *
@@ -26,7 +32,12 @@ import { join } from "node:path";
 import * as prettier from "prettier";
 import * as ts from "typescript";
 
-import { repoRootFromArgs } from "./doc-markdown.mjs";
+import {
+  repoRootFromArgs,
+  SOURCE_LINE,
+  sourceHash,
+  viTwinOf,
+} from "./doc-markdown.mjs";
 
 const USAGE = "usage: check-doc-exports.mjs [--write] [--root <dir>]";
 const EXTRA_PAGES = new Set(["cli", "options", "theme"]);
@@ -327,18 +338,84 @@ function tsdocErrors(checker, subpaths) {
 }
 
 /**
- * Checks (or, with `write`, rewrites) the signature blocks of every page.
+ * Moves line 1 of a twin (`<!-- source: … sha256: … -->`) to the English
+ * page's new hash, but only when it recorded the previous hash, i.e. the
+ * twin was in step with the English page before this run. A twin that was
+ * already stale keeps its hash, so `check:docs-i18n` still asks for the
+ * translation update.
+ * @param {string} twin - Twin text
+ * @param {string} enPath - POSIX repo-relative English page
+ * @param {string} before - English page text before this run
+ * @param {string} after - English page text now
+ * @returns {string} The twin text, with line 1 updated when it applies
+ */
+function followSourceHash(twin, enPath, before, after) {
+  const [first, ...rest] = twin.split("\n");
+  const m = SOURCE_LINE.exec(first);
+  if (!m || m[1] !== enPath || m[2] !== sourceHash(before)) return twin;
+  return [
+    `<!-- source: ${enPath} sha256: ${sourceHash(after)} -->`,
+    ...rest,
+  ].join("\n");
+}
+
+/**
+ * Checks (or, with `write`, rewrites) the signature blocks of the Vietnamese
+ * twin of one reference page. Nothing happens when the twin does not exist.
+ * @param {string} root - Repository root
+ * @param {ts.TypeChecker} checker - Program checker
+ * @param {Subpath} sub - The page's subpath
+ * @param {{ before: string, after: string }} en - English page text before this run and now
+ * @param {boolean} write - Rewrite instead of reporting
+ * @returns {Promise<{ errors: string[], blocks: number }>} Problems and the twin's block count
+ */
+async function twinSignatureErrors(root, checker, sub, en, write) {
+  const enPath = `documents/reference/${sub.page}.md`;
+  const path = viTwinOf(enPath);
+  const abs = join(root, path);
+  if (!existsSync(abs)) return { errors: [], blocks: 0 };
+  const text = readFileSync(abs, "utf8");
+  const result = await expectedPage(checker, sub, text, abs);
+  if ("unclosedAt" in result) {
+    return {
+      errors: [
+        `${path}: unclosed signature block at line ${String(result.unclosedAt)}`,
+      ],
+      blocks: 0,
+    };
+  }
+  const next =
+    write && en.before !== en.after
+      ? followSourceHash(result.next, enPath, en.before, en.after)
+      : result.next;
+  if (next === text) return { errors: [], blocks: result.blocks };
+  if (!write) {
+    return {
+      errors: [
+        `${path}: signature blocks are out of date; run yarn docs:signatures`,
+      ],
+      blocks: result.blocks,
+    };
+  }
+  writeFileSync(abs, next);
+  console.log(`check-doc-exports: wrote signature blocks in ${path}`);
+  return { errors: [], blocks: result.blocks };
+}
+
+/**
+ * Checks (or, with `write`, rewrites) the signature blocks of every page and of its Vietnamese twin.
  * @param {string} root - Repository root
  * @param {ts.TypeChecker} checker - Program checker
  * @param {Subpath[]} subpaths - All subpaths
  * @param {Map<string, string>} pages - Page basename → current text
  * @param {boolean} write - Rewrite instead of reporting
- * @returns {Promise<{ errors: string[], blocks: number }>} Out-of-date pages and the block count
+ * @returns {Promise<{ errors: string[], blocks: number, twinBlocks: number }>} Out-of-date pages and the block counts (English pages, twins)
  */
 async function signatureErrors(root, checker, subpaths, pages, write) {
   /** @type {string[]} */
   const errors = [];
   let blocks = 0;
+  let twinBlocks = 0;
   for (const sub of subpaths) {
     const path = `documents/reference/${sub.page}.md`;
     const text = pages.get(sub.page);
@@ -351,19 +428,29 @@ async function signatureErrors(root, checker, subpaths, pages, write) {
       continue;
     }
     blocks += result.blocks;
-    if (result.next === text) continue;
-    if (write) {
-      writeFileSync(join(root, path), result.next);
-      // Coverage below must see the text that is on disk now.
-      pages.set(sub.page, result.next);
-      console.log(`check-doc-exports: wrote signature blocks in ${path}`);
-    } else {
-      errors.push(
-        `${path}: signature blocks are out of date; run yarn docs:signatures`,
-      );
+    if (result.next !== text) {
+      if (write) {
+        writeFileSync(join(root, path), result.next);
+        // Coverage below must see the text that is on disk now.
+        pages.set(sub.page, result.next);
+        console.log(`check-doc-exports: wrote signature blocks in ${path}`);
+      } else {
+        errors.push(
+          `${path}: signature blocks are out of date; run yarn docs:signatures`,
+        );
+      }
     }
+    const twin = await twinSignatureErrors(
+      root,
+      checker,
+      sub,
+      { before: text, after: result.next },
+      write,
+    );
+    errors.push(...twin.errors);
+    twinBlocks += twin.blocks;
   }
-  return { errors, blocks };
+  return { errors, blocks, twinBlocks };
 }
 
 /**
@@ -408,8 +495,12 @@ async function main() {
   for (const e of errors) console.error(e);
   if (errors.length > 0) return 1;
   const total = subpaths.reduce((sum, s) => sum + s.symbols.length, 0);
+  const twins =
+    signatures.twinBlocks > 0
+      ? `; ${String(signatures.twinBlocks)} in Vietnamese twins`
+      : "";
   console.log(
-    `check-doc-exports: ${String(total)} exports across ${String(subpaths.length)} subpaths have a reference heading; ${String(blocks)} signature blocks up to date`,
+    `check-doc-exports: ${String(total)} exports across ${String(subpaths.length)} subpaths have a reference heading; ${String(blocks)} signature blocks up to date${twins}`,
   );
   return 0;
 }

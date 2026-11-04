@@ -9,8 +9,15 @@ import { DocsMobileOnPage } from "../components/docs-mobile-onpage";
 import { DocsOnPage } from "../components/docs-onpage";
 import { DocsSidebar } from "../components/docs-sidebar";
 import { Topbar } from "../components/topbar";
-import { adjacentDocs, docs, getDoc, REPO_BLOB_URL } from "../lib/docs-content";
+import {
+  adjacentDocs,
+  docsOf,
+  getDoc,
+  REPO_BLOB_URL,
+} from "../lib/docs-content";
 import { approxReadMinutes, docBody } from "../lib/docs-body";
+import { docPath, TOC_TITLES, UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import { useTheme } from "../lib/use-theme";
 import { Box, Grid } from "../ui";
 
@@ -21,6 +28,15 @@ export function DocsPage() {
   const { hash } = useLocation();
   const { toggle } = useTheme();
   const contentRef = useRef<HTMLElement | null>(null);
+  const locale = useLocale();
+
+  // The document language follows the page; the rest of the site is English.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    return () => {
+      document.documentElement.lang = "en";
+    };
+  }, [locale]);
 
   // New doc → top; `#anchor` (in-page or from another doc) → that heading.
   useEffect(() => {
@@ -45,7 +61,7 @@ export function DocsPage() {
       const headings = root.querySelectorAll<HTMLHeadingElement>("h2");
       headings.forEach((h) => {
         const text = h.textContent.trim().toLowerCase();
-        if (text !== "table of contents") return;
+        if (!TOC_TITLES.includes(text)) return;
         const next = h.nextElementSibling;
         if (!next || (next.tagName !== "UL" && next.tagName !== "OL")) return;
         h.classList.add("md-toc-heading");
@@ -58,11 +74,16 @@ export function DocsPage() {
   }, [slug]);
 
   if (!slug) {
-    return <Navigate to={`/docs/${docs[0]?.slug ?? "introduction"}`} replace />;
+    return (
+      <Navigate
+        to={docPath(locale, docsOf(locale)[0]?.slug ?? "introduction")}
+        replace
+      />
+    );
   }
 
-  const doc = getDoc(slug);
-  const { prev, next } = adjacentDocs(slug);
+  const doc = getDoc(slug, locale);
+  const { prev, next } = adjacentDocs(slug, locale);
 
   if (!doc) return <NotFound missingDoc={slug} />;
 
@@ -102,7 +123,7 @@ export function DocsPage() {
           <DocsOnPage
             contentRef={contentRef}
             rawMarkdown={body}
-            quicklinks={[{ label: "Edit on GitHub", href: ghUrl }]}
+            quicklinks={[{ label: UI_TEXT[locale].editOnGitHub, href: ghUrl }]}
           />
         </Grid>
       </Box>

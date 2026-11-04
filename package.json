@@ -130,6 +130,7 @@
     "check:doc-exports": "node scripts/check-doc-exports.mjs",
     "check:doc-snippets": "node scripts/check-doc-snippets.mjs",
     "check:docs-embed": "node scripts/docs-embed.mjs --check",
+    "check:docs-i18n": "node scripts/check-docs-i18n.mjs",
     "check:externals": "node scripts/check-externals.mjs",
     "check:plain-ui": "node scripts/check-plain-ui.mjs",
     "check:publish-target": "node scripts/check-publish-target.mjs",

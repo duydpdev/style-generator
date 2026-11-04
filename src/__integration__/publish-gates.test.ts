@@ -178,6 +178,19 @@ describe("integration: publish gates reject bad builds", () => {
       expect(output).toContain('"react"');
     });
 
+    it("fails when ./recipes imports a UI peer in minified form (no space after from)", () => {
+      bundle(
+        dir,
+        "dist/recipes.js",
+        'import{extendTailwindMerge as e}from"tailwind-merge";export{e};\n',
+        ["../src/exports/recipes.ts"],
+      );
+      const { status, output } = runGate(dir, "check-externals");
+      expect(status).toBe(1);
+      expect(output).toContain("dist/recipes.js");
+      expect(output).toContain("tailwind-merge");
+    });
+
     it("accepts ./ui importing class-variance-authority, clsx and tailwind-merge", () => {
       bundle(
         dir,
@@ -338,6 +351,17 @@ describe("integration: publish gates reject bad builds", () => {
       );
 
       expect(runGate(dir, "check-browser-safe").status).toBe(0);
+    });
+
+    it("fails on a minified import with no space before the specifier", () => {
+      put(dir, "dist/cva.js", 'import{x}from"node:fs";export{x};\n');
+
+      const { status, output } = runGate(dir, "check-browser-safe");
+
+      expect(status).toBe(1);
+      expect(output).toContain(
+        "forbidden import chain: dist/cva.js -> node:fs",
+      );
     });
   });
 });

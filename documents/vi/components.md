@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 1deeb596c83b -->
+<!-- source: documents/components.md sha256: 1d1707db3317 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -248,7 +248,6 @@ export function Button<T extends ElementType = "button">({
     <Component
       type={Component === "button" ? "button" : undefined}
       {...split.rest}
-      data-slot="button"
       className={
         cn(
           buttonRecipe({ variant, color, size }),
@@ -258,9 +257,9 @@ export function Button<T extends ElementType = "button">({
       }
       style={mergeStyle(split.style, style)}
     >
-      {prefix != null && <span data-icon="start">{prefix}</span>}
+      {prefix != null && <span>{prefix}</span>}
       <span>{children}</span>
-      {suffix != null && <span data-icon="end">{suffix}</span>}
+      {suffix != null && <span>{suffix}</span>}
     </Component>
   );
 }
@@ -319,7 +318,6 @@ const root = () => {
   return {
     type: props.as === "button" ? "button" : undefined,
     ...rest,
-    "data-slot": "button",
     class: cn(
       buttonRecipe({
         variant: props.variant,
@@ -336,9 +334,9 @@ const root = () => {
 
 <template>
   <component :is="props.as" v-bind="root()">
-    <span v-if="slots.prefix" data-icon="start"><slot name="prefix" /></span>
+    <span v-if="slots.prefix"><slot name="prefix" /></span>
     <span><slot /></span>
-    <span v-if="slots.suffix" data-icon="end"><slot name="suffix" /></span>
+    <span v-if="slots.suffix"><slot name="suffix" /></span>
   </component>
 </template>
 ```
@@ -351,7 +349,7 @@ const root = () => {
    yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
    ```
 
-   Xem mục [Cài đặt](../README.md#cài-đặt) trong README để cấu hình registry cho scope `@duydpdev` và Personal Access Token của bạn; nếu không có cấu hình scope này npmjs sẽ phân phối một bản `3.0.0` không liên quan.
+   Xem mục [Cài đặt](./README.md#cài-đặt) trong README để cấu hình registry cho scope `@duydpdev` và Personal Access Token của bạn; nếu không có cấu hình scope này npmjs sẽ phân phối một bản `3.0.0` không liên quan.
 
 2. Nối dây `theme.css` cho bundler của bạn ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
 

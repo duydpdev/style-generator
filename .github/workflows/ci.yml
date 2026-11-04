@@ -145,8 +145,8 @@ jobs:
           yarn workspace plain-nuxt-example generate
 
       - name: Check plain UI folders
-        # examples/plain-react/src/ui/<folder>/ holds style.ts, types.ts, <Name>.tsx
-        # and index.ts, and imports only ./…, ../../theme and its package allow-list (scripts/check-plain-ui.mjs).
+        # The folder contract, identity rules and package allow-list of the three plain
+        # apps (plain-react, next-v4, plain-nuxt) are enforced by scripts/check-plain-ui.mjs.
         run: yarn check:plain-ui
 
       - name: Check externals

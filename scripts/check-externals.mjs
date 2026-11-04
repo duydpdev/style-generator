@@ -131,7 +131,7 @@ const UI_PEERS = new Set([...UI_RUNTIME_PEERS, "react"]);
  */
 const extractSpecifiers = (src) => {
   const patterns = [
-    /\bfrom\s+["'`]([^"'`]+)["'`]/g,
+    /\bfrom\s*["'`]([^"'`]+)["'`]/g,
     /\bimport\s*["'`]([^"'`]+)["'`]/g,
     /\bimport\s*\(\s*["'`]([^"'`]+)["'`]/g,
     /\brequire\(\s*["'`]([^"'`]+)["'`]\s*\)/g,

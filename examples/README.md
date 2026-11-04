@@ -40,11 +40,13 @@ cd examples/react-v4   # or next-v4 / nuxt-v4 / plain-react / plain-nuxt
 yarn dev
 ```
 
-Each app exposes `dev`, `build` and `typecheck` (the Nuxt apps also `prepare:nuxt`, `generate`, `preview`); preview a production build with `yarn preview` (the Vite and Nuxt apps) or `yarn start` (`next-v4`). The `style-gen` CLI scripts (`generate`, `doctor`, `schema`) and the tests live in `design-system`:
+Each app exposes `dev`, `build` and `typecheck` (the Nuxt apps also `prepare:nuxt`, `generate`, `preview`); preview a production build with `yarn preview` (the Vite and Nuxt apps) or `yarn start` (`next-v4`). The `style-gen` CLI scripts (`generate`, `doctor`, `schema`) live in `design-system`, as do its tests; the other apps have their own checks:
 
 ```bash
 yarn workspace design-system-example doctor
-yarn workspace design-system-example test      # needs `yarn build:all`
+yarn workspace design-system-example test      # DX test of the recipes; needs `yarn build:all`
+yarn workspace plain-react-example test        # stories as browser tests + parity gate; needs `yarn build:all`
+yarn workspace react-v4-example typecheck      # also nuxt-v4-example typecheck (type tests of the sample components)
 ```
 
 ## Other files in this folder

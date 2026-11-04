@@ -46,6 +46,17 @@ describe("integration: toCjsDeclaration", () => {
     });
   });
 
+  it("handles a multi-line named import like its single-line form", () => {
+    const source =
+      "import {\n  x,\n  y\n} from 'clsx';\nimport type {\n  X\n} from 'tailwind-merge';\n";
+    expect(convert(source)).toEqual({ ok: source });
+    expect(convert("import {\n  Plugin as Plugin_2\n} from 'vite';\n")).toEqual(
+      {
+        ok: "import type {\n  Plugin as Plugin_2\n} from 'vite' assert { 'resolution-mode': 'import' };\n",
+      },
+    );
+  });
+
   it("leaves relative imports alone", () => {
     const source =
       "import { a } from './a';\nexport type B = import('./b').B;\n";
@@ -71,6 +82,32 @@ describe("integration: toCjsDeclaration", () => {
     ],
     ["an import-equals require", "import x = require('clsx');\n", "clsx"],
     ["an ambient module", "declare module 'react' {}\n", "react"],
+    [
+      "a multi-line import of an unlisted package",
+      "import {\n  x,\n  y\n} from 'lodash';\n",
+      "lodash",
+    ],
+    [
+      "a multi-line type import of an unlisted package",
+      "import type {\n  X\n} from 'lodash';\n",
+      "lodash",
+    ],
+    ["a multi-line named re-export", "export {\n  a\n} from 'zod';\n", "zod"],
+    [
+      "a mixed default and named import",
+      "import x, { a } from 'clsx';\n",
+      "clsx",
+    ],
+    [
+      "a multi-line mixed default and named import",
+      "import x,\n{ a } from 'clsx';\n",
+      "clsx",
+    ],
+    [
+      "an import whose from clause is on the next line",
+      "import { a }\n  from 'zod';\n",
+      "zod",
+    ],
   ])("throws on %s", (_label, source, pkg) => {
     const result = convert(source);
     expect(result.ok).toBeUndefined();

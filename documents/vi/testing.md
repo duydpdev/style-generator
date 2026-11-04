@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: d7721b2dac53 -->
+<!-- source: documents/testing.md sha256: f91b87a50f72 -->
 
 # Hướng dẫn kiểm thử
 
@@ -183,10 +183,10 @@ yarn build:all                                          # the workspace links di
 yarn playwright install chromium                        # once per machine
 yarn workspace plain-react-example test                 # both Vitest browser projects: storybook + parity
 yarn workspace plain-react-example test:parity          # only the parity gate
-node examples/plain-react/scripts/copy-out-smoke.mjs    # a copied src/ui/button/ type-checks with the packed tarball + peers only
+node examples/plain-react/scripts/copy-out-smoke.mjs    # every src/ui folder type-checks with the packed tarball + peers only
 ```
 
-`examples/plain-react` có một Storybook (chỉ React). Mỗi story `src/ui/<name>/<Name>.stories.tsx` chạy như một test trong project Vitest `storybook` (`@storybook/addon-vitest`, Chromium), và `yarn check:plain-ui` yêu cầu một file story cho mỗi thư mục component. Project `parity` (`tests/parity/*.parity.test.{ts,tsx}`) render từng component trong sáu component dùng chung và twin harness của nó từ `react-v4-example/ui` với cùng các prop, và so sánh các token class đã sắp xếp của phần tử gốc và của mọi phần tử con có class. Mỗi file trước hết khẳng định các bảng plain và các bảng harness có cùng các variant, key tùy chọn và mục compound, rồi sinh các trường hợp từ cả hai (mỗi tùy chọn variant, mỗi mục compound) cộng với mọi thuộc tính spacing, nên một variant mới ở bên nào cũng không cần sửa test và một tùy chọn chỉ có ở một bên sẽ thất bại. Một thay đổi một class ở bên nào cũng làm nó đỏ. `theme.parity.test.ts` giữ bản sao theme plain bằng với các token của harness. Mọi script chạy `yarn generate` trước, nên `src/theme/theme.css` tồn tại trước khi Vitest hoặc Storybook khởi động. Copy-out smoke đóng gói thư viện, chép `src/theme.ts`, `src/theme/theme.json` và `src/ui/button/` vào một dự án tạm chỉ có tarball và các peer ở đúng phiên bản mà repo resolve (không có script dependency, registry công khai, môi trường theo allowlist), và chạy `tsc --noEmit`.
+`examples/plain-react` có một Storybook (chỉ React). Mỗi story `src/ui/<name>/<Name>.stories.tsx` chạy như một test trong project Vitest `storybook` (`@storybook/addon-vitest`, Chromium), và `yarn check:plain-ui` yêu cầu một file story cho mỗi thư mục component. Project `parity` (`tests/parity/*.parity.test.{ts,tsx}`) render từng component trong sáu component dùng chung và twin harness của nó từ `react-v4-example/ui` với cùng các prop, và so sánh các token class đã sắp xếp của phần tử gốc và của mọi phần tử con có class. Mỗi file trước hết khẳng định các bảng plain và các bảng harness có cùng các variant, key tùy chọn và mục compound, rồi sinh các trường hợp từ cả hai (mỗi tùy chọn variant, mỗi mục compound) cộng với mọi thuộc tính spacing, nên một variant mới ở bên nào cũng không cần sửa test và một tùy chọn chỉ có ở một bên sẽ thất bại. Một thay đổi một class ở bên nào cũng làm nó đỏ. `theme.parity.test.ts` giữ bản sao theme plain bằng với các token của harness. Mọi script chạy `yarn generate` trước, nên `src/theme/theme.css` tồn tại trước khi Vitest hoặc Storybook khởi động. Copy-out smoke đóng gói thư viện, chép `src/theme.ts`, `src/theme/theme.json` và mọi thư mục của `src/ui/` vào một dự án tạm chỉ có tarball và các peer ở đúng phiên bản mà repo resolve (không có script dependency, registry công khai, môi trường theo allowlist), và chạy `tsc --noEmit`.
 
 ---
 

@@ -338,13 +338,15 @@ function viFiles(root) {
 
 /**
  * Implements `--write-hash`: records the current source hash on line 1 of
- * each named twin.
+ * each named twin. Every target is validated before the first write, so a
+ * usage error leaves every file untouched; the twin's line endings are kept.
  * @param {string} root - Repository root
  * @param {string[]} writeHash - `--write-hash` values
  * @param {{ en: string, vi: string }[]} pairs - Every English file and its twin
  * @returns {number} 0 when every twin was written, 2 on a usage error
  */
 function recordHashes(root, writeHash, pairs) {
+  const targets = [];
   for (const vi of writeHash) {
     const pair = pairs.find((p) => p.vi === vi);
     if (!pair) {
@@ -357,15 +359,19 @@ function recordHashes(root, writeHash, pairs) {
       console.error(`check-docs-i18n: ${vi} or ${pair.en} not found`);
       return 2;
     }
-    const hash = sourceHash(readLf(root, pair.en));
-    const line = `<!-- source: ${pair.en} sha256: ${hash} -->`;
+    targets.push({ vi, en: pair.en });
+  }
+  for (const { vi, en } of targets) {
+    const hash = sourceHash(readLf(root, en));
+    const line = `<!-- source: ${en} sha256: ${hash} -->`;
     const text = readFileSync(join(root, vi), "utf8");
-    const lines = text.split("\n");
-    const next = SOURCE_LINE.test(lines[0].replace(/\r$/, ""))
-      ? [line, ...lines.slice(1)].join("\n")
-      : `${line}\n\n${text}`;
+    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const lines = text.split(/\r?\n/);
+    const next = SOURCE_LINE.test(lines[0])
+      ? [line, ...lines.slice(1)].join(eol)
+      : `${line}${eol}${eol}${text}`;
     writeFileSync(join(root, vi), next);
-    console.log(`check-docs-i18n: ${vi} records sha256 ${hash} of ${pair.en}`);
+    console.log(`check-docs-i18n: ${vi} records sha256 ${hash} of ${en}`);
   }
   return 0;
 }

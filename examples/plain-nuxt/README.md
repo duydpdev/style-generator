@@ -27,7 +27,7 @@ yarn dev
    yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
    ```
    `@duydpdev/style-generator` comes from GitHub Packages, so set up the `@duydpdev` scope registry and a personal access token first (see the [Install](../../README.md#install) section of the repository README); without the scope config npmjs serves an unrelated `3.0.0`.
-2. Wire `theme.css` for Nuxt: add `styleGenVite` to `vite.plugins` in `nuxt.config.ts` and import `@import "tailwindcss";` and `@import "./theme/theme.css";` in `app/assets/css/main.css`. See the [Nuxt tutorial](../../documents/getting-started/nuxt-vue.md).
+2. Wire `theme.css` for Nuxt: add `styleGenVite` to `vite.plugins` in `nuxt.config.ts` and import `@import "tailwindcss";` and `@import "../../theme/theme.css";` in `app/assets/css/globals.css`. See the [Nuxt tutorial](../../documents/getting-started/nuxt-vue.md).
 3. Copy `app/theme/theme.json` (or use your own theme) and `app/theme.ts`. If you pass generator options to `styleGenVite`, pass the same object to `createDesignTokens` in `theme.ts`.
 4. Copy the component folder from `app/ui/`, for example `app/ui/button/`. A folder imports only its own files, `../../theme` and the packages, so nothing else comes with it. Components are imported explicitly (for example, `import Button from "~/ui/button/Button.vue"`). See [Components](../../documents/components.md#plain-examples-copy-these).
 

@@ -26,7 +26,7 @@ yarn dev
    yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
    ```
    `@duydpdev/style-generator` comes from GitHub Packages, so set up the `@duydpdev` scope registry and a personal access token first (see the [Install](../../README.md#install) section of the repository README); without the scope config npmjs serves an unrelated `3.0.0`.
-2. Wire `theme.css` for Next.js: wrap your config in `styleGenNext` (`next.config.ts`) and import `@import "tailwindcss";` and `@import "./theme/theme.css";` in `src/app/globals.css`. See the [Next.js tutorial](../../documents/getting-started/next.md).
+2. Wire `theme.css` for Next.js: wrap your config in `styleGenNext` (`next.config.ts`) and import `@import "tailwindcss";` and `@import "../theme/theme.css";` in `src/app/globals.css`. See the [Next.js tutorial](../../documents/getting-started/next.md).
 3. Copy `src/theme/theme.json` (or use your own theme) and `src/theme.ts`. If you pass generator options to `styleGenNext`, pass the same object to `createDesignTokens` in `theme.ts`.
 4. Copy one component folder from `src/ui/`, for example `src/ui/button/`. A folder imports only its own files, `../../theme` and the packages, so nothing else comes with it. See [Components](../../documents/components.md#plain-examples-copy-these).
 

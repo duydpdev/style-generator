@@ -23,14 +23,21 @@ yarn dev          # Vite dev server on http://localhost:5173
 
 ## Scripts
 
-| Script           | What it does                       |
-| ---------------- | ---------------------------------- |
-| `yarn dev`       | Vite dev server (HMR on the theme) |
-| `yarn build`     | Production build via Vite          |
-| `yarn preview`   | Serve the production build         |
-| `yarn typecheck` | `tsc --noEmit`                     |
+| Script                 | What it does                         |
+| ---------------------- | ------------------------------------ |
+| `yarn dev`             | Vite dev server (HMR on the theme)   |
+| `yarn build`           | Production build via Vite            |
+| `yarn preview`         | Serve the production build           |
+| `yarn typecheck`       | `tsc --noEmit`                       |
+| `yarn storybook`       | Storybook at http://localhost:6007   |
+| `yarn storybook:build` | Static Storybook (autodocs)          |
+| `yarn test:stories`    | Every story as a Vitest browser test |
 
 `doctor`, `generate` and `schema` live in the design-system package (`yarn workspace design-system-example doctor`).
+
+## Storybook
+
+`src/ui/<Name>.stories.tsx` (one per sample component) and `src/sections/<Module>.stories.tsx` (one per demo section module) document the harness; they run as Vitest browser tests (`@storybook/addon-vitest`, Chromium: `yarn workspace react-v4-example test:stories`, after `yarn build:all` and `yarn playwright install chromium` once). `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS, and a story's comments and strings avoid utility words such as `blur` and `filter`. ESLint excepts `*.stories.tsx` from the component-only rules (`UI_STORY_FILES` in `eslint.config.js`).
 
 ## What it demonstrates
 

@@ -1,6 +1,6 @@
 # Next.js + Tailwind v4 example (plain)
 
-Next.js 16 (App Router, React 19) app that renders a landing page built from plain, copy-paste components. CI type-checks and builds it, making it the working reference for the [Next.js tutorial](../../documents/getting-started/next.md). The files in `src/ui`, `src/sections` and `src/App.tsx` are copies of `examples/plain-react`, and `yarn check:plain-ui` keeps `style.ts` and `types.ts` identical.
+Next.js 16 (App Router, React 19) app that renders a landing page built from plain, copy-paste components. CI type-checks and builds it, making it the working reference for the [Next.js tutorial](../../documents/getting-started/next.md). The files in `src/ui`, `src/sections` and `src/App.tsx` are copies of `examples/plain-react`, and `yarn check:plain-ui` keeps `style.ts`, `types.ts` and stories identical.
 
 ## Prerequisites
 
@@ -32,21 +32,35 @@ yarn dev
 
 ## Scripts
 
-| Script           | What it does                                                    |
-| ---------------- | --------------------------------------------------------------- |
-| `yarn dev`       | Next.js dev server (theme.css regenerated on config evaluation) |
-| `yarn build`     | Production build (Turbopack, the Next 16 default)               |
-| `yarn start`     | Serve the production build                                      |
-| `yarn typecheck` | `tsc --noEmit`                                                  |
+| Script                 | What it does                                                    |
+| ---------------------- | --------------------------------------------------------------- |
+| `yarn dev`             | Next.js dev server (theme.css regenerated on config evaluation) |
+| `yarn build`           | Production build (Turbopack, the Next 16 default)               |
+| `yarn start`           | Serve the production build                                      |
+| `yarn typecheck`       | `tsc --noEmit`                                                  |
+| `yarn storybook`       | Storybook dev server on port 6008                               |
+| `yarn storybook:build` | Build static Storybook bundle                                   |
+| `yarn test:stories`    | Run stories under Vitest browser runner                         |
+
+## Storybook and tests
+
+- `yarn workspace next-v4-example storybook`: Storybook dev server at http://localhost:6008.
+- `yarn workspace next-v4-example test:stories`: runs every story as a Vitest browser test under `@storybook/nextjs-vite`.
+
+Stories are byte copies of `examples/plain-react` (enforced by `yarn check:plain-ui`). `src/app/globals.css` has `@source not "../**/*.stories.*"` so stories add no utilities to the app's CSS.
 
 ## Layout
 
 ```text
 examples/next-v4
+├── .storybook/
+│   ├── main.ts
+│   └── preview.ts
 ├── next.config.ts
 ├── postcss.config.mjs
 ├── package.json
 ├── tsconfig.json
+├── vitest.config.ts
 └── src/
     ├── theme/
     │   ├── theme.json

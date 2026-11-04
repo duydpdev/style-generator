@@ -1,66 +1,62 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from "@storybook/react";
 
 import { Card } from "./Card";
 
 const meta = {
   title: "UI/Card",
   component: Card,
+  args: { children: "Card content" },
 } satisfies Meta<typeof Card>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const Default: Story = {
+  args: { tone: "surface", padding: "md", radius: "lg", shadow: "sm" },
+};
+
 export const Surface: Story = {
-  render: () => (
-    <Card tone="surface">
-      <strong>Surface</strong>
-      <p>The default card.</p>
-    </Card>
-  ),
+  args: { tone: "surface", children: "The default card." },
 };
-
 export const Muted: Story = {
-  render: () => (
-    <Card tone="muted">
-      <strong>Muted</strong>
-      <p>Sits on the page background.</p>
-    </Card>
-  ),
+  args: { tone: "muted", children: "Sits on the page background." },
 };
-
 export const Outline: Story = {
-  render: () => (
-    <Card tone="outline">
-      <strong>Outline</strong>
-      <p>Transparent with a muted border.</p>
-    </Card>
-  ),
+  args: { tone: "outline", children: "Transparent with a muted border." },
 };
 
-export const Paddings: Story = {
-  render: () => (
-    <div className="flex flex-wrap items-start gap-4">
-      {(["none", "sm", "md", "lg"] as const).map((padding) => (
-        <Card key={padding} padding={padding}>
-          {padding}
-        </Card>
-      ))}
-    </div>
-  ),
-};
+export const PaddingNone: Story = { args: { padding: "none" } };
+export const PaddingSmall: Story = { args: { padding: "sm" } };
+export const PaddingMedium: Story = { args: { padding: "md" } };
+export const PaddingLarge: Story = { args: { padding: "lg" } };
+
+export const RadiusSmall: Story = { args: { radius: "sm" } };
+export const RadiusMedium: Story = { args: { radius: "md" } };
+export const RadiusLarge: Story = { args: { radius: "lg" } };
+export const RadiusPill: Story = { args: { radius: "pill" } };
+
+export const ShadowNone: Story = { args: { shadow: "none" } };
+export const ShadowSmall: Story = { args: { shadow: "sm" } };
+export const ShadowMedium: Story = { args: { shadow: "md" } };
+export const ShadowLarge: Story = { args: { shadow: "lg" } };
+
+export const BorderThin: Story = { args: { border: "thin" } };
+export const BorderThick: Story = { args: { border: "thick" } };
+export const BorderNone: Story = { args: { border: "none" } };
 
 export const Flat: Story = {
-  render: () => (
-    <Card shadow="none" border="none" tone="muted">
-      No shadow, no border.
-    </Card>
-  ),
+  args: {
+    shadow: "none",
+    border: "none",
+    tone: "muted",
+    children: "No shadow, no border.",
+  },
 };
 
 export const AsArticle: Story = {
-  render: () => (
-    <Card as="article" aria-label="Article card">
-      Rendered as an article element.
-    </Card>
-  ),
+  args: {
+    as: "article",
+    "aria-label": "Article card",
+    children: "Rendered as an article element.",
+  },
 };

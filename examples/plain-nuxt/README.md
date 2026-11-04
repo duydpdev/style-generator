@@ -33,21 +33,35 @@ yarn dev
 
 In Vue components, `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */` for components that accept responsive spacing (`Box`, `Text`, `Stack`, `Flex`, `Grid`, `Button`). Components without spacing props (`Card`, `Badge`, `Input`, `Link`) have no spacing props and need no `@vue-ignore`.
 
+## Storybook and tests
+
+- `yarn workspace plain-nuxt-example storybook`: the component catalogue at http://localhost:6009.
+- `yarn workspace plain-nuxt-example test:stories`: runs the stories as Vitest browser tests via Playwright Chromium.
+
+`ThemeSwitch` is intentionally not storied because it relies on Nuxt-specific runtime APIs (`useState`, `useHead`). In `app/assets/css/globals.css`, `@source not` excludes the story files so stories never add extra utilities to the app's CSS.
+
 ## Scripts
 
-| Script              | What it does                                               |
-| ------------------- | ---------------------------------------------------------- |
-| `yarn dev`          | Nuxt dev server (theme.css regenerated via `styleGenVite`) |
-| `yarn build`        | Nuxt production build                                      |
-| `yarn generate`     | Pre-render static pages (`.output/public`)                 |
-| `yarn preview`      | Preview production build                                   |
-| `yarn prepare:nuxt` | Generate `.nuxt/` types (required before lint / typecheck) |
-| `yarn typecheck`    | `nuxt typecheck`                                           |
+| Script                 | What it does                                               |
+| ---------------------- | ---------------------------------------------------------- |
+| `yarn dev`             | Nuxt dev server (theme.css regenerated via `styleGenVite`) |
+| `yarn build`           | Nuxt production build                                      |
+| `yarn generate`        | Pre-render static pages (`.output/public`)                 |
+| `yarn preview`         | Preview production build                                   |
+| `yarn prepare:nuxt`    | Generate `.nuxt/` types (required before lint / typecheck) |
+| `yarn typecheck`       | `nuxt typecheck`                                           |
+| `yarn storybook`       | Storybook dev server (port 6009)                           |
+| `yarn storybook:build` | Build Storybook static assets                              |
+| `yarn test:stories`    | Run Storybook tests with Vitest browser                    |
 
 ## Layout
 
 ```text
 examples/plain-nuxt
+├── .storybook/
+│   ├── main.ts
+│   └── preview.ts
+├── vitest.config.ts
 ├── nuxt.config.ts
 ├── package.json
 ├── tsconfig.json
@@ -60,8 +74,11 @@ examples/plain-nuxt
 │   │   └── <folder>/
 │   │       ├── style.ts
 │   │       ├── types.ts
-│   │       └── <Name>.vue
+│   │       ├── <Name>.vue
+│   │       └── <Name>.stories.ts
 │   ├── sections/
+│   │   ├── <Name>.vue
+│   │   └── <Name>.stories.ts
 │   ├── components/
 │   │   └── ThemeSwitch.vue
 │   └── pages/

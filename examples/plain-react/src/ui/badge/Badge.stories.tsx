@@ -1,4 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from "@storybook/react";
+
+import { Flex } from "../flex";
 
 import { Badge } from "./Badge";
 import { badgeIntents } from "./style";
@@ -6,43 +8,63 @@ import { badgeIntents } from "./style";
 const meta = {
   title: "UI/Badge",
   component: Badge,
+  args: { children: "Badge", color: "primary", variant: "soft" },
 } satisfies Meta<typeof Badge>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const Default: Story = { args: { children: "Default" } };
+
+/** Every intent, `soft`. */
 export const Soft: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-2">
+  args: { variant: "soft" },
+  render: (args) => (
+    <Flex wrap gap={2}>
       {badgeIntents.map((intent) => (
-        <Badge key={intent} color={intent} variant="soft">
+        <Badge key={intent} {...args} color={intent}>
           {intent}
         </Badge>
       ))}
-    </div>
+    </Flex>
   ),
 };
 
+/** Every intent, `solid`. */
 export const Solid: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-2">
+  args: { variant: "solid" },
+  render: (args) => (
+    <Flex wrap gap={2}>
       {badgeIntents.map((intent) => (
-        <Badge key={intent} color={intent} variant="solid">
+        <Badge key={intent} {...args} color={intent}>
           {intent}
         </Badge>
       ))}
-    </div>
+    </Flex>
   ),
 };
 
+/** Every intent, `outline`. */
 export const Outline: Story = {
-  render: () => (
-    <div className="flex flex-wrap gap-2">
+  args: { variant: "outline" },
+  render: (args) => (
+    <Flex wrap gap={2}>
       {badgeIntents.map((intent) => (
-        <Badge key={intent} color={intent} variant="outline">
+        <Badge key={intent} {...args} color={intent}>
           {intent}
         </Badge>
       ))}
-    </div>
+    </Flex>
   ),
 };
+
+export const Primary: Story = {
+  args: { color: "primary", children: "primary" },
+};
+export const Secondary: Story = {
+  args: { color: "secondary", children: "secondary" },
+};
+export const Success: Story = {
+  args: { color: "success", children: "success" },
+};
+export const Danger: Story = { args: { color: "danger", children: "danger" } };

@@ -5,3 +5,6 @@
 @import "tailwindcss";
 @import "../theme/theme.css";
 /* #endregion docs:css-entry */
+
+/* Stories (Storybook) are not scanned: their prose and args never add utilities to the app's CSS. */
+@source not "../**/*.stories.*";

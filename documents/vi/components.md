@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 1d1707db3317 -->
+<!-- source: documents/components.md sha256: e9e3e78c52fa -->
 
 # Component: các ví dụ, không phải một API
 
@@ -8,7 +8,7 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 
 ### Nơi chứa các ví dụ
 
-`examples/plain-react` (Vite + React, Storybook, gate đối sánh), `examples/next-v4` (Next.js App Router), `examples/plain-nuxt` (Nuxt 4). Cả ba đều render cùng một landing page từ mười component giống nhau.
+`examples/plain-react` (Vite + React, Storybook, gate đối sánh), `examples/next-v4` (Next.js App Router, Storybook), `examples/plain-nuxt` (Nuxt 4, Storybook). Cả ba đều render cùng một landing page từ mười component giống nhau, và mỗi thư mục component có một story (hãy thêm một story với mỗi component mới, trong mọi ứng dụng plain).
 
 ### Mỗi component một thư mục
 
@@ -19,7 +19,7 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
   style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
   types.ts                        # exported <Name>OwnProps/<Name>Props (React/Next: may also import "react" + "@duydpdev/style-generator/ui-react")
   <Name>.tsx | <Name>.vue         # the component
-  <Name>.stories.tsx              # plain-react only
+  <Name>.stories.tsx              # plain-react, next-v4 (byte-identical); <Name>.stories.ts in plain-nuxt
   index.ts                        # required in .tsx apps (plain-react, next-v4); absent in plain-nuxt
 <app>/src/sections/*.tsx          # landing sections + page helpers (Section, Container, SectionHead); app code, not scanned by check:plain-ui (Nuxt: app/sections/*.vue)
 ```
@@ -29,7 +29,7 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 - `style.ts` là cùng một file trong cả ba ứng dụng; file này chứa các bảng variant và recipe headless.
 - `types.ts` giống nhau ở React và Next; `types.ts` của Vue khai báo các prop mà trình biên dịch SFC có thể đọc được và mở rộng các prop spacing bằng `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` render markup của component và áp dụng recipe cùng các utility spacing.
-- `<Name>.stories.tsx` cô lập component cho Storybook trong `plain-react`.
+- `<Name>.stories.tsx` (`<Name>.stories.ts` trong `plain-nuxt`) cô lập component cho Storybook; `next-v4` giữ các bản sao từng byte của story `plain-react` (do `check:plain-ui` thực thi), `plain-nuxt` dùng các bản port Vue viết tay. `ThemeSwitch` không có story trong `plain-nuxt` vì nó dùng `useState`/`useHead` của Nuxt.
 - `index.ts` re-export component và các kiểu của nó trong các ứng dụng `.tsx` (không có trong `plain-nuxt`).
 - `sections/*.tsx` chứa các section landing của ứng dụng và các helper bố cục.
 
@@ -378,13 +378,13 @@ const root = () => {
 
 - `className`/`class` và `style` được phép dùng trên các thẻ tag.
 - Một pattern có quy tắc riêng hoặc lặp lại sẽ trở thành một component có prop được định kiểu.
-- Không dùng `data-part`.
+- Không dùng thuộc tính `data-*` làm hook CSS riêng (ESLint và job `check` của CI cấm thuộc tính part-hook cũ toàn repo); các hook CSS riêng trong các app plain là `className` thông thường.
 - `src/**` (Nuxt `app/**`) không bao giờ import `design-system-example` hoặc `react-v4-example` (ESLint).
 - Một thư mục ui chỉ import `./…`, `../../theme` và các package.
 
 ### Thêm một component plain
 
-Thêm thư mục vào `plain-react` với một `<Name>.stories.tsx`, chép thư mục đó (không kèm story) sang `examples/next-v4/src/ui/`, chép `style.ts` sang `examples/plain-nuxt/app/ui/<folder>/` và viết `types.ts` cùng `<Name>.vue` cho nó; sau đó chạy `yarn check:plain-ui`.
+Thêm thư mục vào `plain-react` với một `<Name>.stories.tsx`, chép thư mục đó cùng story của nó từng byte sang `examples/next-v4/src/ui/` (`check:plain-ui` thất bại khi có khác biệt), chép `style.ts` sang `examples/plain-nuxt/app/ui/<folder>/` và viết `types.ts`, `<Name>.vue` cùng một bản port `<Name>.stories.ts` cho nó; sau đó chạy `yarn check:plain-ui`.
 
 ### Kiểm tra
 

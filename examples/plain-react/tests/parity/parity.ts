@@ -163,6 +163,30 @@ export const renderClasses = async (
   return output;
 };
 
+/** The `--ui-grid-cols*` custom properties of a render's root `style` attribute, sorted by name. */
+export type StyleOutput = readonly (readonly [string, string])[];
+
+/** Render `component` with `props`, read the root's `--ui-grid-cols*` inline custom properties, unmount. */
+export const renderStyle = async (
+  component: ComponentType<CaseProps>,
+  props: CaseProps,
+  children?: ReactNode,
+): Promise<StyleOutput> => {
+  const screen = await render(createElement(component, props, children));
+  const root = screen.container.firstElementChild;
+  if (!(root instanceof HTMLElement))
+    throw new Error("parity: the component rendered no element");
+  const output: [string, string][] = [];
+  for (const name of root.style) {
+    if (name.startsWith("--ui-grid-cols")) {
+      output.push([name, root.style.getPropertyValue(name).trim()]);
+    }
+  }
+  output.sort(([a], [b]) => a.localeCompare(b));
+  await screen.unmount();
+  return output;
+};
+
 /** A typed component seen through table-driven props: a wrong prop fails the comparison, not the compiler. */
 export const loose = (component: unknown): ComponentType<CaseProps> =>
   component as ComponentType<CaseProps>;

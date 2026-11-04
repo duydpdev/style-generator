@@ -17,6 +17,7 @@ import { HarnessGrid, harnessTokens } from "./harness";
 import {
   loose,
   renderClasses,
+  renderStyle,
   spacingCases,
   tableShape,
   unionCases,
@@ -47,7 +48,12 @@ const cases: ParityCase[] = [
   ),
   { name: "columns=3", props: { columns: 3 } },
   { name: "columns=track list", props: { columns: "80px 1fr 80px" } },
+  { name: "columns=1fr 2fr", props: { columns: "1fr 2fr" } },
   { name: "columns=responsive", props: { columns: responsiveColumns } },
+  {
+    name: "columns=base 1, md 2, lg 4",
+    props: { columns: { base: 1, md: 2, lg: 4 } },
+  },
   ...spacingCases(tokens),
 ];
 
@@ -62,6 +68,12 @@ describe("Grid parity (plain vs harness)", () => {
   test.each(cases)("$name", async ({ props }) => {
     const plain = await renderClasses(loose(Grid), props);
     const harness = await renderClasses(loose(HarnessGrid), props);
+    expect(plain).toEqual(harness);
+  });
+
+  test.each(cases)("$name: --ui-grid-cols style", async ({ props }) => {
+    const plain = await renderStyle(loose(Grid), props);
+    const harness = await renderStyle(loose(HarnessGrid), props);
     expect(plain).toEqual(harness);
   });
 });

@@ -17,7 +17,7 @@ export function DocsMobileOnPage({ contentRef, rawMarkdown }: Readonly<Props>) {
   if (headings.length === 0) return null;
 
   return (
-    <Box as="details" data-part="docs-mobile-details" rounded="lg">
+    <Box as="details" className="s-docs-mobile-details" rounded="lg">
       <Flex
         as="summary"
         align="center"
@@ -28,13 +28,13 @@ export function DocsMobileOnPage({ contentRef, rawMarkdown }: Readonly<Props>) {
         minHeight={44}
       >
         <Box as="span">{t.onThisPage}</Box>
-        <Box as="span" data-part="cur" minWidth={0}>
+        <Box as="span" className="s-cur" minWidth={0}>
           {t.sections(headings.length)}
         </Box>
       </Flex>
       <Stack
         as="ol"
-        data-part="docs-mobile-onpage"
+        className="s-docs-mobile-onpage"
         gap={0.25}
         px={2.5}
         pb={3}

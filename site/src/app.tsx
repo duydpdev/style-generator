@@ -23,7 +23,7 @@ export function App() {
         fallback={
           <Text
             as="div"
-            data-part="route-fallback"
+            className="s-route-fallback"
             color="muted"
             align="center"
             px={8}

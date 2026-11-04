@@ -25,27 +25,23 @@ export function DocsOnPage({
   const t = UI_TEXT[useLocale()];
 
   return (
-    <Box as="aside" data-part="toc-rail" position="relative" pt={9}>
+    <Box as="aside" className="s-toc-rail" position="relative" pt={9}>
       <Stack
-        data-part="toc-rail-sticky"
+        className="s-toc-rail-sticky"
         gap={3.5}
         pl={1.5}
         maxHeight="calc(100vh - 100px)"
       >
-        <Flex data-part="toc-rail-label" align="center" gap={2.5}>
+        <Flex className="s-toc-rail-label" align="center" gap={2.5}>
           {t.onThisPage}
         </Flex>
-        <Stack as="ol" data-part="onpage" gap={0.25} position="relative">
+        <Stack as="ol" className="s-onpage" gap={0.25} position="relative">
           {headings.map((h) => {
             const active = h.id === activeId;
             return (
               <li
                 key={h.id}
-                data-part={
-                  [h.level === 3 && "h3", active && "active"]
-                    .filter(Boolean)
-                    .join(" ") || undefined
-                }
+                className={`${h.level === 3 ? "s-h3" : ""}${active ? " s-active" : ""}`}
               >
                 <Box
                   as="button"
@@ -66,7 +62,7 @@ export function DocsOnPage({
         </Stack>
 
         <Flex
-          data-part="toc-rail-progress"
+          className="s-toc-rail-progress"
           align="center"
           justify="between"
           mt={1.5}
@@ -74,14 +70,14 @@ export function DocsOnPage({
           <Box as="span">{t.readLabel}</Box>
           <Box
             as="span"
-            data-part="toc-progress-track"
+            className="s-toc-progress-track"
             height={2}
             mx={2.5}
             backgroundColor="line"
           >
             <Box
               as="span"
-              data-part="toc-progress-fill"
+              className="s-toc-progress-fill"
               height="100%"
               backgroundColor="primary"
               // eslint-disable-next-line no-restricted-syntax -- scaleX follows the live reading progress
@@ -92,7 +88,7 @@ export function DocsOnPage({
         </Flex>
 
         {quicklinks.length > 0 ? (
-          <Stack data-part="toc-quicklinks" gap={1} pt={3.5}>
+          <Stack className="s-toc-quicklinks" gap={1} pt={3.5}>
             {quicklinks.map((q) => {
               const external = q.href.startsWith("http");
               return (
@@ -108,7 +104,7 @@ export function DocsOnPage({
                   py={1}
                 >
                   <Box as="span">{q.label}</Box>
-                  <Box as="span" data-part="arr">
+                  <Box as="span" className="s-arr">
                     {q.arr ?? "↗"}
                   </Box>
                 </Flex>

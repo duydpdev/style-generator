@@ -45,7 +45,7 @@ export function FileTree({ sections, activePath, onOpen }: Readonly<Props>) {
         return (
           <Box key={sec.section} mb={1.5}>
             <Flex
-              data-part="tree-heading"
+              className="s-tree-heading"
               align="center"
               gap={2}
               pt={2.5}
@@ -55,7 +55,7 @@ export function FileTree({ sections, activePath, onOpen }: Readonly<Props>) {
               <Box as="span">{sec.section}</Box>
               <Box
                 as="span"
-                data-part="tree-count"
+                className="s-tree-count"
                 px={1.5}
                 py={0.25}
                 rounded="pill"

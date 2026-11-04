@@ -47,7 +47,7 @@ export function ExamplesToolbar({
 }: Readonly<Props>) {
   return (
     <Flex
-      data-part="ex-toolbar"
+      className="s-ex-toolbar"
       height={52}
       align="center"
       justify="between"
@@ -58,7 +58,7 @@ export function ExamplesToolbar({
         as="button"
         ref={filesToggleRef}
         type="button"
-        data-part="icon-btn files-toggle"
+        className="s-icon-btn s-files-toggle"
         align="center"
         justify="center"
         aria-label="Files"
@@ -69,23 +69,23 @@ export function ExamplesToolbar({
       >
         <Files />
       </Flex>
-      <Flex data-part="crumbs" align="center" gap={2} minWidth={0}>
+      <Flex className="s-crumbs" align="center" gap={2} minWidth={0}>
         <Box
           as="span"
-          data-part="pulse"
+          className="s-pulse"
           width={6}
           height={6}
           backgroundColor="success"
           mr={1}
         />
         <Box as="span">examples</Box>
-        <Box as="span" data-part="sep">
+        <Box as="span" className="s-sep">
           /
         </Box>
         <b>react-{variant}</b>
         {activePath ? (
           <>
-            <Box as="span" data-part="sep">
+            <Box as="span" className="s-sep">
               /
             </Box>
             <Box as="span">{activePath.split("/").pop()}</Box>
@@ -96,7 +96,7 @@ export function ExamplesToolbar({
       <Flex align="center" gap={1.5}>
         <Flex
           as="a"
-          data-part="icon-btn"
+          className="s-icon-btn"
           align="center"
           justify="center"
           href={`${openHref}?theme=${theme}`}

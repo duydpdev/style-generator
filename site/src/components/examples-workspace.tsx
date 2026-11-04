@@ -47,9 +47,9 @@ export function ExamplesWorkspace({
 }: Readonly<Props>) {
   const preview = view === "preview";
   return (
-    <Box data-part="workspace" position="relative">
+    <Box className="s-workspace" position="relative">
       <Stack
-        data-part={`panel${preview ? " active" : ""}`}
+        className={`s-panel${preview ? " s-active" : ""}`}
         data-panel="preview"
         position="absolute"
       >
@@ -62,7 +62,7 @@ export function ExamplesWorkspace({
         />
       </Stack>
       <Stack
-        data-part={`panel${preview ? "" : " active"}`}
+        className={`s-panel${preview ? "" : " s-active"}`}
         data-panel="code"
         position="absolute"
       >

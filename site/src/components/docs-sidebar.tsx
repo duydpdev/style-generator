@@ -32,21 +32,21 @@ export function DocsSidebar({ activeSlug }: Readonly<Props>) {
   useScrollActiveIntoView(navRef, activeSlug);
 
   return (
-    <Box as="aside" data-part="docs-rail" position="relative" pt={9}>
+    <Box as="aside" className="s-docs-rail" position="relative" pt={9}>
       <Stack
-        data-part="docs-rail-sticky"
+        className="s-docs-rail-sticky"
         gap={0}
         pr={1.5}
         maxHeight="calc(100vh - 100px)"
       >
-        <Flex data-part="rail-label" align="center" gap={2.5} mb={1}>
+        <Flex className="s-rail-label" align="center" gap={2.5} mb={1}>
           {t.documentation}
         </Flex>
-        <Box data-part="docs-rail-nav" ref={navRef}>
+        <Box className="s-docs-rail-nav" ref={navRef}>
           <DocsNavGroups activeSlug={activeSlug} />
         </Box>
 
-        <Stack data-part="rail-foot" mt={7.5} pt={3.5} gap={2}>
+        <Stack className="s-rail-foot" mt={7.5} pt={3.5} gap={2}>
           <FootRow label={t.versionLabel}>
             <Box as="span">v{VERSION}</Box>
           </FootRow>

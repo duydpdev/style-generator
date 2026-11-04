@@ -35,14 +35,14 @@ export function ExamplesSidebar({
     <Stack
       as="aside"
       id="ex-sidebar"
-      data-part={`ex-sidebar${open ? " open" : ""}`}
+      className={`s-ex-sidebar${open ? " s-open" : ""}`}
     >
-      <Box data-part="version-switch" pt={4} px={4} pb={3.5}>
-        <Text as="div" data-part="version-switch-label" color="muted" mb={2}>
+      <Box className="s-version-switch" pt={4} px={4} pb={3.5}>
+        <Text as="div" className="s-version-switch-label" color="muted" mb={2}>
           Tailwind version
         </Text>
         <Grid
-          data-part="version-pills"
+          className="s-version-pills"
           role="tablist"
           flow="column"
           gap={1}
@@ -59,7 +59,7 @@ export function ExamplesSidebar({
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                data-part={`version-pill${isActive ? " active" : ""}`}
+                className={`s-version-pill${isActive ? " s-active" : ""}`}
                 align="center"
                 justify="center"
                 gap={1.5}
@@ -75,7 +75,7 @@ export function ExamplesSidebar({
                 {META[key].badge ? (
                   <Box
                     as="span"
-                    data-part="version-badge"
+                    className="s-version-badge"
                     px={1.25}
                     py={0.25}
                     rounded="pill"
@@ -90,7 +90,7 @@ export function ExamplesSidebar({
         </Grid>
       </Box>
 
-      <Box data-part="sidebar-scroll" pt={3} px={2} pb={6}>
+      <Box className="s-sidebar-scroll" pt={3} px={2} pb={6}>
         <FileTree
           sections={EXAMPLE_FILES[variant]}
           activePath={activePath}
@@ -98,7 +98,7 @@ export function ExamplesSidebar({
         />
       </Box>
 
-      <Stack data-part="sidebar-foot" py={3} px={4} gap={1.5}>
+      <Stack className="s-sidebar-foot" py={3} px={4} gap={1.5}>
         <Flex justify="between">
           <Box as="span">SOURCE</Box>
           <Box as="span">examples/react-{variant}</Box>

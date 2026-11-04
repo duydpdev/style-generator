@@ -1,4 +1,4 @@
-[data-part~="hero-eyebrow"] {
+.s-hero-eyebrow {
   display: inline-flex;
   font-family: var(--f-mono);
   font-size: 11px;
@@ -7,11 +7,11 @@
   text-transform: uppercase;
   border: 1px solid var(--c-line);
 }
-[data-part~="hero-eyebrow"] [data-part~="dot"] {
+.s-hero-eyebrow .s-dot {
   border-radius: 50%;
   box-shadow: 0 0 0 4px var(--c-success-soft);
 }
-[data-part~="hero-title"] {
+.s-hero-title {
   font-family: var(--f-display);
   font-weight: 400;
   font-size: clamp(56px, 8.4vw, 116px);
@@ -20,21 +20,21 @@
   max-width: 14ch;
   text-wrap: balance;
 }
-[data-part~="hero-title"] em {
+.s-hero-title em {
   font-style: italic;
   color: var(--c-primary);
 }
-[data-part~="hero-lede"] {
+.s-hero-lede {
   font-size: 19px;
   max-width: 56ch;
   line-height: 1.55;
 }
-[data-part~="hero-lede"] b {
+.s-hero-lede b {
   color: var(--c-fg);
   font-weight: 500;
 }
 
-[data-part~="install"] {
+.s-install {
   border: 1px solid var(--c-line-strong);
   font-family: var(--f-mono);
   font-size: 13px;
@@ -42,10 +42,10 @@
   text-decoration: none;
   box-shadow: 0 4px 12px -4px rgba(15, 21, 48, 0.08);
 }
-[data-part~="install"]:hover {
+.s-install:hover {
   border-color: var(--c-primary);
 }
-[data-part~="install"] [data-part~="install-go"] {
+.s-install .s-install-go {
   font-family: var(--f-sans);
   font-size: 11.5px;
   font-weight: 500;
@@ -54,29 +54,29 @@
   background: var(--c-bg);
 }
 
-[data-part~="hero-stats"] {
+.s-hero-stats {
   border-top: 1px solid var(--c-line);
   border-bottom: 1px solid var(--c-line);
 }
-[data-part~="hero-stats"] [data-part~="k"] {
+.s-hero-stats .s-k {
   font-family: var(--f-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-[data-part~="hero-stats"] [data-part~="v"] {
+.s-hero-stats .s-v {
   font-family: var(--f-display);
   font-style: italic;
   font-size: 32px;
   line-height: 1;
   letter-spacing: -0.02em;
 }
-[data-part~="hero-stats"] [data-part~="m"] {
+.s-hero-stats .s-m {
   font-family: var(--f-mono);
   font-size: 11px;
 }
 
-[data-part~="marquee"] {
+.s-marquee {
   font-family: var(--f-mono);
   font-size: 11px;
   color: var(--c-muted);
@@ -98,14 +98,14 @@
     transparent
   );
 }
-[data-part~="marquee-track"] {
+.s-marquee-track {
   animation: marquee 36s linear infinite;
   flex-shrink: 0;
 }
-[data-part~="marquee-item"] {
+.s-marquee-item {
   white-space: nowrap;
 }
-[data-part~="marquee-item"]::before {
+.s-marquee-item::before {
   content: "";
   width: 4px;
   height: 4px;
@@ -119,14 +119,14 @@
 }
 
 @media (max-width: 480px) {
-  [data-part~="hero-stats"] {
+  .s-hero-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  [data-part~="install"] {
+  .s-install {
     width: 100%;
     box-sizing: border-box;
   }
-  [data-part~="install"] [data-part~="install-go"] {
+  .s-install .s-install-go {
     flex: none;
     /* spacing-exception: E4 */
     margin-left: auto;

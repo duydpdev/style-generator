@@ -1,5 +1,5 @@
 /* Scroll progress */
-[data-part~="scroll-progress"] {
+.s-scroll-progress {
   top: 0;
   left: 0;
   right: 0;
@@ -12,7 +12,7 @@
 }
 
 /* Topbar */
-[data-part~="topbar"] {
+.s-topbar {
   top: 0;
   z-index: 30;
   background: color-mix(in srgb, var(--c-bg) 80%, transparent);
@@ -20,36 +20,36 @@
   /* No -webkit- twin: the build keeps only the prefixed rule, which Chromium ignores. */
   border-bottom: 1px solid var(--c-line);
 }
-[data-part~="brand"] {
+.s-brand {
   font-weight: 500;
   letter-spacing: -0.01em;
   font-size: 14px;
 }
-[data-part~="brand-mark"] {
+.s-brand-mark {
   border-radius: 8px;
   background: linear-gradient(135deg, var(--c-primary), var(--c-secondary));
   overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
-[data-part~="brand-mark"]::after {
+.s-brand-mark::after {
   content: "";
   position: absolute;
   inset: 6px;
   background: var(--c-paper);
   border-radius: 3px;
 }
-[data-part~="brand-meta"] {
+.s-brand-meta {
   line-height: 1.15;
 }
-[data-part~="brand-meta"] b {
+.s-brand-meta b {
   font-weight: 600;
 }
-[data-part~="brand-meta"] span {
+.s-brand-meta span {
   font-size: 10.5px;
   font-family: var(--f-mono);
 }
 
-[data-part~="topbar-nav"] a {
+.s-topbar-nav a {
   font-size: 13px;
   padding: 6px 11px;
   border-radius: var(--r-md);
@@ -58,15 +58,15 @@
     color 0.15s,
     background-color 0.15s;
 }
-[data-part~="topbar-nav"] a:hover {
+.s-topbar-nav a:hover {
   color: var(--c-fg);
   background: color-mix(in srgb, var(--c-fg) 5%, transparent);
 }
-[data-part~="topbar-nav"] a.active {
+.s-topbar-nav a.active {
   color: var(--c-fg);
   background: color-mix(in srgb, var(--c-fg) 6%, transparent);
 }
-[data-part~="topbar-nav"] a.active::before {
+.s-topbar-nav a.active::before {
   content: "";
   display: inline-block;
   width: 5px;
@@ -77,7 +77,7 @@
   vertical-align: 1px;
 }
 
-[data-part~="now-reading"] {
+.s-now-reading {
   font-family: var(--f-mono);
   font-size: 11px;
   color: var(--c-muted);
@@ -89,19 +89,19 @@
     opacity 0.3s,
     transform 0.3s;
 }
-[data-part~="now-reading"][data-part~="visible"] {
+.s-now-reading.s-visible {
   opacity: 1;
   transform: none;
 }
-[data-part~="now-reading"] [data-part~="now-ch"] {
+.s-now-reading .s-now-ch {
   font-weight: 600;
 }
-[data-part~="now-reading"] [data-part~="pulse"] {
+.s-now-reading .s-pulse {
   border-radius: 50%;
   box-shadow: 0 0 0 4px var(--c-success-soft);
 }
 
-[data-part~="btn"] {
+.s-btn {
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 500;
@@ -117,75 +117,75 @@
   line-height: 1;
   color: var(--c-fg);
 }
-[data-part~="btn"]:active {
+.s-btn:active {
   transform: translateY(1px);
 }
-[data-part~="btn-ghost"] {
+.s-btn-ghost {
   background: transparent;
 }
-[data-part~="btn-ghost"]:hover {
+.s-btn-ghost:hover {
   background: color-mix(in srgb, var(--c-fg) 6%, transparent);
 }
-[data-part~="btn-outline"] {
+.s-btn-outline {
   background: transparent;
   border-color: var(--c-line-strong);
 }
-[data-part~="btn-outline"]:hover {
+.s-btn-outline:hover {
   border-color: var(--c-fg);
 }
-[data-part~="btn-primary"] {
+.s-btn-primary {
   background: var(--c-fg);
   color: var(--c-paper);
 }
-[data-part~="btn-primary"]:hover {
+.s-btn-primary:hover {
   opacity: 0.92;
 }
-[data-part~="btn-lg"] {
+.s-btn-lg {
   font-size: 13.5px;
 }
 
 /* Topbar: never wrap or overflow; drop the least important items first. */
-[data-part~="brand"] {
+.s-brand {
   min-width: 0;
   white-space: nowrap;
 }
-[data-part~="brand-mark"] {
+.s-brand-mark {
   flex-shrink: 0;
 }
-[data-part~="brand-meta"] {
+.s-brand-meta {
   min-width: 0;
 }
-[data-part~="brand-meta"] b,
-[data-part~="brand-meta"] span {
+.s-brand-meta b,
+.s-brand-meta span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-[data-part~="topbar-nav"] a,
-[data-part~="now-reading"],
-[data-part~="btn"] {
+.s-topbar-nav a,
+.s-now-reading,
+.s-btn {
   white-space: nowrap;
 }
-[data-part~="topbar-menu"] {
+.s-topbar-menu {
   display: none;
 }
 
 @media (max-width: 1100px) {
-  [data-part~="now-reading"] {
+  .s-now-reading {
     display: none;
   }
 }
 
 @media (max-width: 860px) {
-  [data-part~="topbar-menu"] {
+  .s-topbar-menu {
     display: inline-flex;
   }
-  [data-part~="topbar-actions"] [data-part~="btn"] {
+  .s-topbar-actions .s-btn {
     min-height: 40px;
     justify-content: center;
   }
   /* The nav becomes a dropdown under the sticky bar, opened by the topbar-menu button. */
-  [data-part~="topbar-nav"] {
+  .s-topbar-nav {
     display: none;
     position: absolute;
     top: 100%;
@@ -197,66 +197,66 @@
     border-bottom: 1px solid var(--c-line);
     box-shadow: 0 18px 30px -20px rgba(15, 21, 48, 0.25);
   }
-  [data-part~="topbar-nav"][data-part~="open"] {
+  .s-topbar-nav.s-open {
     display: flex;
   }
-  [data-part~="topbar-nav"] a {
+  .s-topbar-nav a {
     font-size: 14px;
     padding: 12px;
   }
 }
 
 @media (max-width: 640px) {
-  [data-part~="topbar-inner"] {
+  .s-topbar-inner {
     /* spacing-exception: E2 */
     padding: 0 16px;
     /* spacing-exception: E3 */
     gap: 8px;
   }
-  [data-part~="topbar-actions"] [data-part~="btn-outline"] {
+  .s-topbar-actions .s-btn-outline {
     display: none;
   }
 }
 
 @media (max-width: 480px) {
-  [data-part~="topbar-actions"] [data-part~="btn-primary"] {
+  .s-topbar-actions .s-btn-primary {
     display: none;
   }
 }
 
 /* Shell */
-[data-part~="shell"] {
+.s-shell {
   z-index: 1;
   overflow-x: clip;
 }
-[data-part~="shell-grid"] {
+.s-shell-grid {
   grid-template-columns: var(--sidebar-w) 1fr;
 }
 
 /* Sidebar TOC */
-[data-part~="toc-sticky"] {
+.s-toc-sticky {
   top: 100px;
 }
-[data-part~="toc-label"] {
+.s-toc-label {
   font-family: var(--f-mono);
   font-size: 10px;
   color: var(--c-muted);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-[data-part~="toc-label"]::after {
+.s-toc-label::after {
   content: "";
   flex: 1;
   height: 1px;
   background: var(--c-line-strong);
 }
-[data-part~="contents"] {
+.s-contents {
   display: contents;
 }
-[data-part~="toc"] {
+.s-toc {
   list-style: none;
 }
-[data-part~="toc"]::before {
+.s-toc::before {
   content: "";
   position: absolute;
   left: 0;
@@ -265,7 +265,7 @@
   width: 1px;
   background: var(--c-line);
 }
-[data-part~="toc-item"] {
+.s-toc-item {
   grid-template-columns: 22px 1fr;
   font-size: 12.5px;
   color: var(--c-muted);
@@ -276,25 +276,25 @@
   text-align: left;
   font-family: inherit;
 }
-[data-part~="toc-item"]:hover {
+.s-toc-item:hover {
   color: var(--c-fg);
 }
-[data-part~="toc-item"] [data-part~="num"] {
+.s-toc-item .s-num {
   font-family: var(--f-mono);
   font-size: 10.5px;
 }
-[data-part~="toc-item"] [data-part~="ttl"] {
+.s-toc-item .s-ttl {
   letter-spacing: -0.005em;
   line-height: 1.35;
 }
-[data-part~="toc-item"][data-part~="active"] {
+.s-toc-item.s-active {
   color: var(--c-fg);
 }
-[data-part~="toc-item"][data-part~="active"] [data-part~="num"] {
+.s-toc-item.s-active .s-num {
   color: var(--c-primary);
   font-weight: 600;
 }
-[data-part~="toc-item"][data-part~="active"]::before {
+.s-toc-item.s-active::before {
   content: "";
   position: absolute;
   left: 0;
@@ -307,38 +307,38 @@
   transform: translateX(-2px);
 }
 
-[data-part~="toc-foot"] {
+.s-toc-foot {
   font-family: var(--f-mono);
   font-size: 10.5px;
   color: var(--c-muted);
 }
-[data-part~="toc-foot"] a {
+.s-toc-foot a {
   color: var(--c-muted);
 }
-[data-part~="toc-foot"] a:hover {
+.s-toc-foot a:hover {
   color: var(--c-fg);
 }
 
 /* Footer */
-[data-part~="footer-inner"] {
+.s-footer-inner {
   border-top: 1px dashed var(--c-line);
 }
-[data-part~="footer-inner"] p {
+.s-footer-inner p {
   color: var(--c-muted);
   font-size: 13px;
   max-width: 36ch;
 }
-[data-part~="footer-meta"] {
+.s-footer-meta {
   font-family: var(--f-mono);
   font-size: 11px;
   color: var(--c-muted);
 }
 
 @media (max-width: 1024px) {
-  [data-part~="shell-grid"] {
+  .s-shell-grid {
     grid-template-columns: 1fr;
   }
-  [data-part~="toc-aside"] {
+  .s-toc-aside {
     display: none;
   }
 }
@@ -347,7 +347,7 @@
    mx-auto w-full). In the utilities layer like those classes, so unlayered
    rules (the url-pill's margin: 0 under 860px) still win. */
 @layer utilities {
-  [data-part~="container"] {
+  .s-container {
     margin-inline: auto;
     width: 100%;
   }

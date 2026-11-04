@@ -33,12 +33,12 @@ export function LandingPage() {
       <ScrollProgress progress={progress} />
       <Topbar activeChapter={activeChapter} onToggleTheme={toggle} />
       <Box
-        data-part="shell container"
+        className="s-shell s-container"
         maxWidth={PAGE_MAX_WIDTH}
         px={8}
         position="relative"
       >
-        <Grid data-part="shell-grid" gap={{ base: 0, lg: 24 }}>
+        <Grid className="s-shell-grid" gap={{ base: 0, lg: 24 }}>
           <SidebarToc
             chapters={chapters}
             activeIndex={activeIndex}

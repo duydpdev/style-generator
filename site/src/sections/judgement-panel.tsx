@@ -8,7 +8,7 @@ export interface JudgementItem {
 }
 
 interface Props {
-  /** `data-part` modifier token: `pro` or `con`. */
+  /** Class tokens of the column modifier: `s-pro` or `s-con`. */
   part: string;
   /** Soft tint of the tag and the marks. */
   tint: "successSoft" | "dangerSoft";
@@ -37,11 +37,17 @@ export function JudgementPanel({
   icon,
 }: Readonly<Props>) {
   return (
-    <Box data-part={`judgement ${part}`} rounded="lg" p={6}>
-      <Flex data-part="judgement-head" align="center" gap={2.5} mb={4} pb={3.5}>
+    <Box className={`s-judgement ${part}`} rounded="lg" p={6}>
+      <Flex
+        className="s-judgement-head"
+        align="center"
+        gap={2.5}
+        mb={4}
+        pb={3.5}
+      >
         <Box
           as="span"
-          data-part="j-tag"
+          className="s-j-tag"
           rounded="pill"
           px={2.25}
           py={0.75}
@@ -49,16 +55,16 @@ export function JudgementPanel({
         >
           {tag}
         </Box>
-        <Text as="h3" data-part="j-head-title">
+        <Text as="h3" className="s-j-head-title">
           {heading}
         </Text>
       </Flex>
       <Stack as="ul" gap={3}>
         {items.map((it) => (
-          <Grid as="li" key={it.title} data-part="j-item" gap={2.5}>
+          <Grid as="li" key={it.title} className="s-j-item" gap={2.5}>
             <Flex
               as="span"
-              data-part="mark"
+              className="s-mark"
               align="center"
               justify="center"
               width={22}
@@ -70,7 +76,7 @@ export function JudgementPanel({
             </Flex>
             <Box>
               <b>{it.title}</b>
-              <Text as="span" data-part="meta" color="muted" mt={0.5}>
+              <Text as="span" className="s-meta" color="muted" mt={0.5}>
                 {it.meta}
               </Text>
             </Box>

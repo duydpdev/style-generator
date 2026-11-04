@@ -1,9 +1,9 @@
 import { Box } from "../ui";
 
 const TONES = {
-  warn: { part: "pill-warn", tint: "dangerSoft" },
-  good: { part: "pill-good", tint: "successSoft" },
-  info: { part: "pill-info", tint: "primarySoft" },
+  warn: { part: "s-pill-warn", tint: "dangerSoft" },
+  good: { part: "s-pill-good", tint: "successSoft" },
+  info: { part: "s-pill-info", tint: "primarySoft" },
 } as const;
 
 interface Props {
@@ -22,7 +22,7 @@ export function Pill({ tone, children }: Readonly<Props>) {
   return (
     <Box
       as="span"
-      data-part={`pill ${part}`}
+      className={`s-pill ${part}`}
       rounded="pill"
       px={1.75}
       py={0.5}

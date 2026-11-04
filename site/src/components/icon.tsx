@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
-/** `data-part` of each icon flavour: `ic` is the default 14px stroke icon. */
+/** Classes of each icon flavour: `s-ic` is the default 14px stroke icon. */
 const VARIANTS = {
-  plain: { part: "ic" },
-  lock: { part: "ic lock" },
-  folder: { part: "folder-ico" },
+  plain: { part: "s-ic" },
+  lock: { part: "s-ic s-lock" },
+  folder: { part: "s-folder-ico" },
 } as const;
 
 interface Props {
@@ -21,7 +21,8 @@ interface Props {
 export function Icon({ children, variant = "plain" }: Readonly<Props>) {
   return (
     <svg
-      data-part={VARIANTS[variant].part}
+      // eslint-disable-next-line no-restricted-syntax -- VARIANTS holds s- classes
+      className={VARIANTS[variant].part}
       viewBox="0 0 16 16"
       aria-hidden="true"
     >

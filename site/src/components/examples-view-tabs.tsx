@@ -30,7 +30,7 @@ function ViewTab({
       type="button"
       role="tab"
       aria-selected={active}
-      data-part={`view-tab${active ? " active" : ""}`}
+      className={`s-view-tab${active ? " s-active" : ""}`}
       align="center"
       gap={1.5}
       py={1.5}
@@ -44,7 +44,7 @@ function ViewTab({
       <Box as="span">{label}</Box>
       <Box
         as="span"
-        data-part="pill"
+        className="s-pill"
         px={1.25}
         py={0.25}
         mr={1.5}
@@ -75,7 +75,7 @@ export function ExamplesViewTabs({
   onView,
 }: Readonly<Props>) {
   return (
-    <Flex data-part="view-tabs" role="tablist" p={0.75} rounded="md">
+    <Flex className="s-view-tabs" role="tablist" p={0.75} rounded="md">
       <ViewTab
         name="preview"
         view={view}

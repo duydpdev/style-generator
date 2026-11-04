@@ -16,13 +16,13 @@ interface Props {
 export function FrameTitlebar({ pathLabel, meta }: Readonly<Props>) {
   return (
     <Flex
-      data-part="frame-titlebar"
+      className="s-frame-titlebar"
       height={38}
       align="center"
       gap={3}
       px={3.5}
     >
-      <Flex data-part="traffic" gap={1.5}>
+      <Flex className="s-traffic" gap={1.5}>
         {[0, 1, 2].map((i) => (
           <Box
             key={i}
@@ -34,7 +34,7 @@ export function FrameTitlebar({ pathLabel, meta }: Readonly<Props>) {
         ))}
       </Flex>
       <Flex
-        data-part="url-pill container"
+        className="s-url-pill s-container"
         align="center"
         rounded="pill"
         backgroundColor="bg"
@@ -45,14 +45,14 @@ export function FrameTitlebar({ pathLabel, meta }: Readonly<Props>) {
         px={3}
       >
         <Lock />
-        <Box as="span" data-part="url-host">
+        <Box as="span" className="s-url-host">
           localhost:5174
         </Box>
-        <Box as="span" data-part="url-path">
+        <Box as="span" className="s-url-path">
           {pathLabel}
         </Box>
       </Flex>
-      <Box data-part="frame-meta">{meta}</Box>
+      <Box className="s-frame-meta">{meta}</Box>
     </Flex>
   );
 }

@@ -53,7 +53,7 @@ export function TypesSection() {
         }
       />
 
-      <Grid data-part="split-grid" data-reveal="up" gap={6}>
+      <Grid className="s-split-grid" data-reveal="up" gap={6}>
         <Stack gap={3}>
           <KeyPoint
             badge="T1"

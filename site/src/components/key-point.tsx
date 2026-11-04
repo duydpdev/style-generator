@@ -17,10 +17,10 @@ interface Props {
  */
 export function KeyPoint({ badge, title, body }: Readonly<Props>) {
   return (
-    <Grid data-part="kp" gap={3} px={3.5} py={3} rounded="lg">
+    <Grid className="s-kp" gap={3} px={3.5} py={3} rounded="lg">
       <Flex
         as="span"
-        data-part="kp-badge"
+        className="s-kp-badge"
         align="center"
         justify="center"
         width={28}

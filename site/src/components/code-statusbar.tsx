@@ -23,20 +23,20 @@ interface Props {
 export function CodeStatusbar({ path, lang, lineCount }: Readonly<Props>) {
   return (
     <Flex
-      data-part="code-statusbar"
+      className="s-code-statusbar"
       height={28}
       align="center"
       justify="between"
       gap={3.5}
       px={3.5}
     >
-      <Flex data-part="statusbar-left" gap={3.5} minWidth={0}>
-        <Box as="span" data-part="git-branch">
+      <Flex className="s-statusbar-left" gap={3.5} minWidth={0}>
+        <Box as="span" className="s-git-branch">
           ⎇ main
         </Box>
         <Box as="span">{path ?? "—"}</Box>
       </Flex>
-      <Flex data-part="statusbar-right" gap={3.5}>
+      <Flex className="s-statusbar-right" gap={3.5}>
         <Box as="span">
           <b>UTF-8</b>
         </Box>

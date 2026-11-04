@@ -22,7 +22,7 @@ export function DocsNavGroups({ activeSlug, onNavigate }: Readonly<Props>) {
         <Stack key={g.group} gap={0.25}>
           <Text
             as="div"
-            data-part="docnav-heading"
+            className="s-docnav-heading"
             color="muted"
             pt={3}
             px={2}
@@ -40,14 +40,14 @@ export function DocsNavGroups({ activeSlug, onNavigate }: Readonly<Props>) {
                 className={`docnav-item${d.slug === activeSlug ? " active" : ""}`}
                 onClick={onNavigate}
               >
-                <Box as="span" data-part="num">
+                <Box as="span" className="s-num">
                   {num}
                 </Box>
                 <Box as="span">{d.title}</Box>
                 {d.badge ? (
                   <Box
                     as="span"
-                    data-part="doc-badge"
+                    className="s-doc-badge"
                     px={1.5}
                     py={0.25}
                     rounded="pill"

@@ -27,14 +27,14 @@ export function TopbarNav({
 }: Readonly<Props>) {
   return (
     <Flex align="center" minWidth={0}>
-      <Flex as={Link} to="/" data-part="brand" align="center" gap={3}>
+      <Flex as={Link} to="/" className="s-brand" align="center" gap={3}>
         <Box
-          data-part="brand-mark"
+          className="s-brand-mark"
           position="relative"
           width={26}
           height={26}
         />
-        <Stack data-part="brand-meta">
+        <Stack className="s-brand-meta">
           <b>@duydpdev/style-generator</b>
           <Text as="span" color="muted">
             v{VERSION} · tailwind v4
@@ -44,7 +44,7 @@ export function TopbarNav({
       <Flex
         as="nav"
         id={NAV_ID}
-        data-part={`topbar-nav${menuOpen ? " open" : ""}`}
+        className={`s-topbar-nav${menuOpen ? " s-open" : ""}`}
         aria-label="Pages"
         align="center"
         gap={0.5}

@@ -8,7 +8,7 @@ export function CtaFooter() {
   return (
     <>
       <Grid
-        data-part="cta-card"
+        className="s-cta-card"
         align="end"
         gap={8}
         mt={14}
@@ -25,10 +25,10 @@ export function CtaFooter() {
             One install, one JSON file, one pipeline. Tailwind v4. MIT licensed.
           </Box>
         </Box>
-        <Flex data-part="cta-row" wrap gap={2.5} position="relative">
+        <Flex className="s-cta-row" wrap gap={2.5} position="relative">
           <Flex
             as="a"
-            data-part="btn btn-primary btn-lg"
+            className="s-btn s-btn-primary s-btn-lg"
             align="center"
             gap={1.5}
             px={5}
@@ -41,7 +41,7 @@ export function CtaFooter() {
           </Flex>
           <Flex
             as="a"
-            data-part="btn btn-outline btn-lg"
+            className="s-btn s-btn-outline s-btn-lg"
             align="center"
             gap={1.5}
             px={5}
@@ -56,7 +56,7 @@ export function CtaFooter() {
       </Grid>
 
       <Flex
-        data-part="footer-inner"
+        className="s-footer-inner"
         justify="between"
         wrap
         align="end"
@@ -65,14 +65,14 @@ export function CtaFooter() {
         mt={16}
       >
         <Box>
-          <Flex data-part="brand" align="center" gap={3}>
+          <Flex className="s-brand" align="center" gap={3}>
             <Box
-              data-part="brand-mark"
+              className="s-brand-mark"
               position="relative"
               width={26}
               height={26}
             />
-            <Stack data-part="brand-meta">
+            <Stack className="s-brand-meta">
               <b>@duydpdev/style-generator</b>
               <Text as="span" color="muted">
                 v{VERSION} · MIT · 2026
@@ -84,7 +84,7 @@ export function CtaFooter() {
             from a single JSON file.
           </Box>
         </Box>
-        <Flex data-part="footer-meta" wrap gap={4}>
+        <Flex className="s-footer-meta" wrap gap={4}>
           <a
             href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
             target="_blank"

@@ -74,9 +74,9 @@ export function PreviewFrame({
   }, []);
 
   return (
-    <Stack data-part="preview-stage" p={{ base: 2, lg: 6 }}>
+    <Stack className="s-preview-stage" p={{ base: 2, lg: 6 }}>
       <Stack
-        data-part="preview-frame-wrap"
+        className="s-preview-frame-wrap"
         rounded="lg"
         backgroundColor="paper"
       >
@@ -88,7 +88,7 @@ export function PreviewFrame({
           as="iframe"
           key={src}
           ref={frameRef}
-          data-part="preview-iframe"
+          className="s-preview-iframe"
           data-testid="example-preview"
           width="100%"
           backgroundColor="paper"

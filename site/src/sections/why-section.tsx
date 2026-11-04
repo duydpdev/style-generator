@@ -44,7 +44,7 @@ const CONS: JudgementItem[] = [
 
 const PANELS = [
   {
-    part: "pro",
+    part: "s-pro",
     tint: "successSoft",
     tag: "Strengths",
     heading: "What it nails.",
@@ -52,7 +52,7 @@ const PANELS = [
     icon: <Check />,
   },
   {
-    part: "con",
+    part: "s-con",
     tint: "dangerSoft",
     tag: "Friction",
     heading: "Where it hurts.",
@@ -92,7 +92,7 @@ export function WhySection() {
         }
       />
 
-      <Grid data-part="judgement-grid" data-reveal="stagger" gap={6}>
+      <Grid className="s-judgement-grid" data-reveal="stagger" gap={6}>
         {PANELS.map((p) => (
           <JudgementPanel key={p.part} {...p} />
         ))}

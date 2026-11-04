@@ -1,69 +1,69 @@
-[data-part~="theme-grid"] {
+.s-theme-grid {
   grid-template-columns: 1fr 1fr;
 }
 @media (max-width: 720px) {
-  [data-part~="theme-grid"] {
+  .s-theme-grid {
     grid-template-columns: 1fr;
   }
 }
 
-[data-part~="theme-preview"] {
+.s-theme-preview {
   overflow: hidden;
 }
-[data-part~="theme-preview"][data-part~="light"] {
+.s-theme-preview.s-light {
   background: #fbf7ef;
   color: #0f1530;
   border: 1px solid #0f153022;
 }
-[data-part~="theme-preview"][data-part~="dark"] {
+.s-theme-preview.s-dark {
   background: #0b0e1d;
   color: #f2efe9;
   border: 1px solid #2a2f4d;
 }
 
-[data-part~="tp-tag"] {
+.s-tp-tag {
   font-family: var(--f-mono);
   font-size: 10.5px;
 }
-[data-part~="theme-preview"][data-part~="light"] [data-part~="tp-tag"] {
+.s-theme-preview.s-light .s-tp-tag {
   background: #2647d914;
   color: #2647d9;
 }
-[data-part~="theme-preview"][data-part~="dark"] [data-part~="tp-tag"] {
+.s-theme-preview.s-dark .s-tp-tag {
   background: #8fa6ff18;
   color: #8fa6ff;
 }
 
-[data-part~="tp-folio"] {
+.s-tp-folio {
   font-family: var(--f-mono);
   font-size: 10.5px;
   opacity: 0.55;
 }
-[data-part~="tp-title"] {
+.s-tp-title {
   font-family: var(--f-display);
   font-style: italic;
   font-size: 26px;
   line-height: 1.05;
   letter-spacing: -0.015em;
 }
-[data-part~="theme-preview"][data-part~="light"] [data-part~="tp-card"] {
+.s-theme-preview.s-light .s-tp-card {
   background: #ffffff;
   box-shadow: 0 4px 12px -4px rgba(15, 21, 48, 0.1);
 }
-[data-part~="theme-preview"][data-part~="dark"] [data-part~="tp-card"] {
+.s-theme-preview.s-dark .s-tp-card {
   background: #161a2d;
   box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4);
 }
 
-[data-part~="tp-row"] {
+.s-tp-row {
   font-size: 12px;
   font-family: var(--f-mono);
 }
-[data-part~="tp-row"] [data-part~="sw"] {
+.s-tp-row .s-sw {
   border-radius: 5px;
 }
 
-[data-part~="tp-btn"] {
+.s-tp-btn {
   align-self: flex-start;
   border-radius: 7px;
   font-size: 12.5px;
@@ -71,26 +71,26 @@
   border: 0;
   cursor: pointer;
 }
-[data-part~="theme-preview"][data-part~="light"] [data-part~="tp-btn"] {
+.s-theme-preview.s-light .s-tp-btn {
   background: #2647d9;
   color: #fbf7ef;
 }
-[data-part~="theme-preview"][data-part~="dark"] [data-part~="tp-btn"] {
+.s-theme-preview.s-dark .s-tp-btn {
   background: #8fa6ff;
   color: #0b0e1d;
 }
 
-[data-part~="tp-marker"] {
+.s-tp-marker {
   font-family: var(--f-mono);
   font-size: 10.5px;
   border-radius: 5px;
   align-self: flex-start;
 }
-[data-part~="theme-preview"][data-part~="light"] [data-part~="tp-marker"] {
+.s-theme-preview.s-light .s-tp-marker {
   background: rgba(15, 21, 48, 0.06);
   color: #6b6d7a;
 }
-[data-part~="theme-preview"][data-part~="dark"] [data-part~="tp-marker"] {
+.s-theme-preview.s-dark .s-tp-marker {
   background: rgba(255, 255, 255, 0.08);
   color: #8a8fa8;
 }

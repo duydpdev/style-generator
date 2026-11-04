@@ -12,7 +12,7 @@ interface Props {
 export function ScrollProgress({ progress }: Readonly<Props>) {
   return (
     <Box
-      data-part="scroll-progress"
+      className="s-scroll-progress"
       position="fixed"
       height={2}
       // eslint-disable-next-line no-restricted-syntax -- scaleX follows the live scroll progress

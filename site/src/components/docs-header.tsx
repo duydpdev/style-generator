@@ -13,17 +13,17 @@ export function DocBreadcrumb({ doc }: Readonly<Props>) {
   const t = UI_TEXT[doc.locale];
   const other = doc.locale === "vi" ? "en" : "vi";
   return (
-    <Flex data-part="doc-breadcrumb" align="center" gap={2} mb={6} wrap>
+    <Flex className="s-doc-breadcrumb" align="center" gap={2} mb={6} wrap>
       <Link to={docPath(doc.locale)}>{t.docs}</Link>
-      <Box as="span" data-part="sep">
+      <Box as="span" className="s-sep">
         /
       </Box>
       <Box as="span">{t.groups[doc.group]}</Box>
-      <Box as="span" data-part="sep">
+      <Box as="span" className="s-sep">
         /
       </Box>
       <b>{doc.title}</b>
-      <Box as="span" data-part="sep">
+      <Box as="span" className="s-sep">
         ·
       </Box>
       <Link
@@ -43,7 +43,7 @@ function MetaRow({
   children,
 }: Readonly<{ label: string; children: ReactNode }>) {
   return (
-    <Flex data-part="meta-row" align="center" gap={1.5}>
+    <Flex className="s-meta-row" align="center" gap={1.5}>
       <Box as="span">{label}</Box>
       {children}
     </Flex>
@@ -56,21 +56,21 @@ export function DocHead({
 }: Readonly<Props & { readMin: number }>) {
   const t = UI_TEXT[doc.locale];
   return (
-    <Grid as="header" data-part="doc-head" align="end" gap={6} pb={7} mb={9}>
+    <Grid as="header" className="s-doc-head" align="end" gap={6} pb={7} mb={9}>
       <Box>
         <Text as="h1" mb={5.5}>
           {doc.title} <em>{t.atAGlance}</em>
         </Text>
-        <Text as="p" data-part="doc-lede" color="muted">
+        <Text as="p" className="s-doc-lede" color="muted">
           <b>{doc.title}</b> {t.syncedFrom} <code>{doc.repoPath}</code>
           {t.lockstep}
         </Text>
       </Box>
-      <Stack data-part="doc-meta" gap={1.5} align="end">
-        <Flex data-part="meta-row" align="center" gap={1.5}>
+      <Stack className="s-doc-meta" gap={1.5} align="end">
+        <Flex className="s-meta-row" align="center" gap={1.5}>
           <Box
             as="span"
-            data-part="pulse"
+            className="s-pulse"
             width={6}
             height={6}
             backgroundColor="success"

@@ -1,37 +1,37 @@
-[data-part~="code-card"] {
+.s-code-card {
   background: #0b0e1d;
   color: #e6e2d7;
   overflow: hidden;
   border: 1px solid #1b1f36;
   box-shadow: 0 24px 50px -24px rgba(15, 21, 48, 0.4);
 }
-[data-part~="code-head"] {
+.s-code-head {
   border-bottom: 1px solid #1b1f36;
 }
-[data-part~="code-head"] [data-part~="dot"] {
+.s-code-head .s-dot {
   border-radius: 50%;
   background: #2a2f4d;
 }
 /* flex-grow pushes the tag to the right edge (replaces the tag's margin-left: auto). */
-[data-part~="code-head"] [data-part~="filename"] {
+.s-code-head .s-filename {
   font-family: var(--f-mono);
   font-size: 11.5px;
   color: #b9bcd0;
   flex-grow: 1;
 }
-[data-part~="code-head"] [data-part~="tag"] {
+.s-code-head .s-tag {
   font-family: var(--f-mono);
   font-size: 10px;
   color: #8fa6ff;
   background: rgba(143, 166, 255, 0.1);
 }
-[data-part~="code-body"] {
+.s-code-body {
   font-family: var(--f-mono);
   font-size: 12.5px;
   line-height: 1.75;
   overflow: auto;
 }
-[data-part~="code-body"] pre {
+.s-code-body pre {
   white-space: pre;
 }
 
@@ -57,30 +57,30 @@
 }
 
 /* Build pipeline arrow */
-[data-part~="build-grid"] {
+.s-build-grid {
   grid-template-columns: 1fr 28px 1fr;
 }
 /* 767.98px = just below the md breakpoint, where the grid's gap prop switches. */
 @media (max-width: 767.98px) {
-  [data-part~="build-grid"] {
+  .s-build-grid {
     grid-template-columns: 1fr;
   }
-  [data-part~="build-grid"] [data-part~="arrow-step"] {
+  .s-build-grid .s-arrow-step {
     transform: rotate(90deg);
     justify-self: center;
   }
 }
-[data-part~="arrow-step"] {
+.s-arrow-step {
   align-self: center;
   color: var(--c-muted);
 }
-[data-part~="arrow-step"] [data-part~="lbl"] {
+.s-arrow-step .s-lbl {
   font-family: var(--f-mono);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
-[data-part~="arrow-anim"] {
+.s-arrow-anim {
   border: 1px solid var(--c-line-strong);
   border-radius: 50%;
   display: grid;

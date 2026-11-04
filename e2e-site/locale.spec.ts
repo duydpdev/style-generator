@@ -41,13 +41,13 @@ test.describe("docs locale", () => {
   }) => {
     await pinFonts(page);
     await page.goto("/vi/docs/guide");
-    const body = page.locator('[data-part~="doc-body"]');
+    const body = page.getByTestId("doc-body");
     await expect(body.locator('a[href^="/vi/docs/"]').first()).toBeAttached();
     await expect(body.locator('a[href^="/docs/"]')).toHaveCount(0);
     const anchors = await page.evaluate(() => {
       const ids = Array.from(
         document.querySelectorAll<HTMLAnchorElement>(
-          '[data-part~="doc-body"] a[href^="#"]',
+          '[data-testid="doc-body"] a[href^="#"]',
         ),
       ).map((a) =>
         decodeURIComponent((a.getAttribute("href") ?? "#").slice(1)),

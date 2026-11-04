@@ -88,11 +88,11 @@ export function ExamplesPage() {
         onToggleTheme={toggle}
       />
 
-      <Grid data-part="ex-shell" position="relative" minHeight={0}>
+      <Grid className="s-ex-shell" position="relative" minHeight={0}>
         <Box
           as="button"
           type="button"
-          data-part={`ex-backdrop${filesOpen ? " open" : ""}`}
+          className={`s-ex-backdrop${filesOpen ? " s-open" : ""}`}
           aria-label="Close file tree"
           tabIndex={-1}
           onClick={() => {
@@ -109,7 +109,7 @@ export function ExamplesPage() {
           }}
         />
 
-        <Stack as="main" data-part="ex-main" minWidth={0}>
+        <Stack as="main" className="s-ex-main" minWidth={0}>
           <ExamplesToolbar
             variant={v}
             activePath={activePath}

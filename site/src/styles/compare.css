@@ -1,15 +1,15 @@
-[data-part~="compare-wrap"] {
+.s-compare-wrap {
   border: 1px solid var(--c-line);
   background: color-mix(in srgb, var(--c-paper) 70%, transparent);
   overflow-x: auto;
 }
-[data-part~="compare"] {
+.s-compare {
   width: 100%;
   border-collapse: collapse;
   min-width: 520px;
   font-size: 13.5px;
 }
-[data-part~="compare"] thead th {
+.s-compare thead th {
   text-align: left;
   font-family: var(--f-mono);
   font-size: 10.5px;
@@ -20,7 +20,7 @@
   border-bottom: 1px solid var(--c-line);
   vertical-align: bottom;
 }
-[data-part~="compare"] thead th[data-part~="col-tw"] {
+.s-compare thead th.s-col-tw {
   color: var(--c-fg);
   font-family: var(--f-sans);
   font-size: 13px;
@@ -28,7 +28,7 @@
   letter-spacing: -0.005em;
   font-weight: 500;
 }
-[data-part~="compare"] thead th[data-part~="col-tw"] small {
+.s-compare thead th.s-col-tw small {
   display: block;
   color: var(--c-muted);
   font-family: var(--f-mono);
@@ -37,7 +37,7 @@
   text-transform: uppercase;
   font-weight: 400;
 }
-[data-part~="compare"] thead th[data-part~="col-us"] {
+.s-compare thead th.s-col-us {
   color: var(--c-fg);
   font-family: var(--f-sans);
   font-size: 13px;
@@ -45,7 +45,7 @@
   letter-spacing: -0.005em;
   font-weight: 600;
 }
-[data-part~="compare"] thead th[data-part~="col-us"] small {
+.s-compare thead th.s-col-us small {
   display: block;
   color: var(--c-primary);
   font-family: var(--f-mono);
@@ -54,25 +54,25 @@
   text-transform: uppercase;
   font-weight: 500;
 }
-[data-part~="compare"] tbody tr + tr td {
+.s-compare tbody tr + tr td {
   border-top: 1px solid var(--c-line);
 }
-[data-part~="compare"] tbody td {
+.s-compare tbody td {
   vertical-align: top;
   line-height: 1.5;
 }
-[data-part~="compare"] tbody td[data-part~="row-label"] {
+.s-compare tbody td.s-row-label {
   font-weight: 500;
   letter-spacing: -0.005em;
 }
-[data-part~="compare"] tbody td[data-part~="cell-tw"] {
+.s-compare tbody td.s-cell-tw {
   color: var(--c-muted);
 }
-[data-part~="compare"] tbody td[data-part~="cell-us"] {
+.s-compare tbody td.s-cell-us {
   background: color-mix(in srgb, var(--c-primary) 4%, transparent);
   position: relative;
 }
-[data-part~="compare"] tbody td[data-part~="cell-us"]::before {
+.s-compare tbody td.s-cell-us::before {
   content: "";
   position: absolute;
   left: 0;
@@ -81,21 +81,21 @@
   width: 2px;
   background: var(--c-primary);
 }
-[data-part~="compare"] tbody td[data-part~="cell-us"] b {
+.s-compare tbody td.s-cell-us b {
   color: var(--c-fg);
 }
 
-[data-part~="pill"] {
+.s-pill {
   display: inline-block;
   font-family: var(--f-mono);
   font-size: 10.5px;
 }
-[data-part~="pill-warn"] {
+.s-pill-warn {
   color: var(--c-danger);
 }
-[data-part~="pill-good"] {
+.s-pill-good {
   color: var(--c-success);
 }
-[data-part~="pill-info"] {
+.s-pill-info {
   color: var(--c-primary);
 }

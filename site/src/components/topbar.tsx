@@ -77,10 +77,10 @@ export function Topbar({
   };
 
   return (
-    <Box as="header" data-part="topbar" position="sticky" ref={headerRef}>
-      <Box data-part="container" maxWidth={PAGE_MAX_WIDTH}>
+    <Box as="header" className="s-topbar" position="sticky" ref={headerRef}>
+      <Box className="s-container" maxWidth={PAGE_MAX_WIDTH}>
         <Flex
-          data-part="topbar-inner"
+          className="s-topbar-inner"
           align="center"
           justify="between"
           height={60}
@@ -94,7 +94,7 @@ export function Topbar({
           />
 
           <Flex
-            data-part={`now-reading${showReading ? " visible" : ""}`}
+            className={`s-now-reading${showReading ? " s-visible" : ""}`}
             align="center"
             gap={2.5}
             py={1.25}
@@ -103,13 +103,13 @@ export function Topbar({
           >
             <Box
               as="span"
-              data-part="pulse"
+              className="s-pulse"
               width={6}
               height={6}
               backgroundColor="success"
             />
             Reading{" "}
-            <Text as="span" data-part="now-ch" color="foreground">
+            <Text as="span" className="s-now-ch" color="foreground">
               {activeChapter
                 ? `Ch. ${activeChapter.num} — ${activeChapter.label}`
                 : "— Cover"}

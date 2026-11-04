@@ -16,18 +16,18 @@ interface Props {
  */
 export function SidebarToc({ chapters, activeIndex, onJump }: Readonly<Props>) {
   return (
-    <Box as="aside" data-part="toc-aside" position="relative">
-      <Stack data-part="toc-sticky" position="sticky" gap={5.5}>
-        <Flex data-part="toc-label" align="center" gap={2.5}>
+    <Box as="aside" className="s-toc-aside" position="relative">
+      <Stack className="s-toc-sticky" position="sticky" gap={5.5}>
+        <Flex className="s-toc-label" align="center" gap={2.5}>
           Table of contents
         </Flex>
-        <Stack as="ol" data-part="toc" position="relative" gap={0.5}>
+        <Stack as="ol" className="s-toc" position="relative" gap={0.5}>
           {chapters.map((ch, i) => (
-            <li key={ch.id} data-part="contents">
+            <li key={ch.id} className="s-contents">
               <Grid
                 as="button"
                 type="button"
-                data-part={`toc-item${i === activeIndex ? " active" : ""}`}
+                className={`s-toc-item${i === activeIndex ? " s-active" : ""}`}
                 position="relative"
                 width="100%"
                 gap={2.5}
@@ -36,17 +36,17 @@ export function SidebarToc({ chapters, activeIndex, onJump }: Readonly<Props>) {
                   onJump(ch.id);
                 }}
               >
-                <Text as="span" data-part="num" color="muted" pl={2}>
+                <Text as="span" className="s-num" color="muted" pl={2}>
                   {ch.num}
                 </Text>
-                <Box as="span" data-part="ttl">
+                <Box as="span" className="s-ttl">
                   {ch.label}
                 </Box>
               </Grid>
             </li>
           ))}
         </Stack>
-        <Stack data-part="toc-foot" mt={2} gap={2}>
+        <Stack className="s-toc-foot" mt={2} gap={2}>
           <Flex justify="between" gap={2}>
             <Text as="span">License</Text>
             <Text as="span">MIT</Text>

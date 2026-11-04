@@ -54,7 +54,7 @@ export function ThemingSection() {
         }
       />
 
-      <Grid data-part="theme-grid" data-reveal="up" gap={4}>
+      <Grid className="s-theme-grid" data-reveal="up" gap={4}>
         <ThemePreview
           variant="light"
           tag='html[data-theme="light"]'

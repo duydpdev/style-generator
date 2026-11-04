@@ -25,11 +25,11 @@ export function TopbarActions({
   onToggleMenu,
 }: Readonly<Props>) {
   return (
-    <Flex data-part="topbar-actions" align="center" gap={1.5}>
+    <Flex className="s-topbar-actions" align="center" gap={1.5}>
       <Flex
         as="button"
         type="button"
-        data-part="btn btn-ghost"
+        className="s-btn s-btn-ghost"
         align="center"
         gap={1.5}
         px={3}
@@ -43,7 +43,7 @@ export function TopbarActions({
       </Flex>
       <Flex
         as="a"
-        data-part="btn btn-outline"
+        className="s-btn s-btn-outline"
         align="center"
         gap={1.5}
         px={3}
@@ -56,7 +56,7 @@ export function TopbarActions({
       </Flex>
       <Flex
         as="a"
-        data-part="btn btn-primary"
+        className="s-btn s-btn-primary"
         align="center"
         gap={1.5}
         px={3}
@@ -70,7 +70,7 @@ export function TopbarActions({
       <Flex
         as="button"
         type="button"
-        data-part="btn btn-ghost topbar-menu"
+        className="s-btn s-btn-ghost s-topbar-menu"
         align="center"
         gap={1.5}
         px={3}

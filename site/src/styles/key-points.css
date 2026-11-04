@@ -1,14 +1,14 @@
 /* Split-grid shared by Types + Tooling + Start; key-point cards. */
-[data-part~="split-grid"] {
+.s-split-grid {
   grid-template-columns: 1fr 1.2fr;
 }
 @media (max-width: 820px) {
-  [data-part~="split-grid"] {
+  .s-split-grid {
     grid-template-columns: 1fr;
   }
 }
 
-[data-part~="kp"] {
+.s-kp {
   grid-template-columns: 28px 1fr;
   border: 1px solid var(--c-line);
   background: color-mix(in srgb, var(--c-paper) 50%, transparent);
@@ -16,26 +16,26 @@
     border-color 0.2s,
     transform 0.2s;
 }
-[data-part~="kp"]:hover {
+.s-kp:hover {
   border-color: var(--c-line-strong);
   transform: translateX(2px);
 }
-[data-part~="kp-badge"] {
+.s-kp-badge {
   border-radius: 50%;
   color: var(--c-primary);
   font-family: var(--f-mono);
   font-size: 11px;
 }
-[data-part~="kp"] h5 {
+.s-kp h5 {
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.005em;
 }
-[data-part~="kp"] h5 code {
+.s-kp h5 code {
   background: color-mix(in srgb, var(--c-fg) 8%, transparent);
   font-size: 12px;
 }
-[data-part~="kp"] p {
+.s-kp p {
   font-size: 12.5px;
   line-height: 1.45;
 }

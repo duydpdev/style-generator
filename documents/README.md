@@ -4,20 +4,20 @@ Index of all documentation for `@duydpdev/style-generator`. API, option and CLI 
 
 ## Living documents (shown on the site `/docs`)
 
-| File                                     | Contents                                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------------------------- |
-| [`architecture.md`](./architecture.md)   | 4.0.0 architecture: data flow, registry, `themeAxes`, spacing, exports, site          |
-| [`guide.md`](./guide.md)                 | Step-by-step integration guide, links to `reference/` for the tables                  |
-| [`testing.md`](./testing.md)             | The test layers, why they exist, where they run                                       |
-| [`deploy.md`](./deploy.md)               | Git flow (features branch from `main`), CI, release, GitHub Packages publishing       |
-| [`components.md`](./components.md)       | The six sample components (examples, not an API) and how to add one                   |
-| [`cookbook.md`](./cookbook.md)           | Task-oriented recipes                                                                 |
-| [`getting-started/`](./getting-started/) | Getting started for React + Vite, Next.js, Nuxt + Vue; code embedded from `examples/` |
-| [`reference/`](./reference/)             | One page per subpath plus `cli`, `options` and `theme`                                |
+| File                                     | Contents                                                                              | Tiếng Việt                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [`architecture.md`](./architecture.md)   | 4.0.0 architecture: data flow, registry, `themeAxes`, spacing, exports, site          | [`vi/architecture.md`](./vi/architecture.md)   |
+| [`guide.md`](./guide.md)                 | Step-by-step integration guide, links to `reference/` for the tables                  | [`vi/guide.md`](./vi/guide.md)                 |
+| [`testing.md`](./testing.md)             | The test layers, why they exist, where they run                                       | [`vi/testing.md`](./vi/testing.md)             |
+| [`deploy.md`](./deploy.md)               | Git flow (features branch from `main`), CI, release, GitHub Packages publishing       | [`vi/deploy.md`](./vi/deploy.md)               |
+| [`components.md`](./components.md)       | The ten sample components (examples, not an API) and how to add one                   | [`vi/components.md`](./vi/components.md)       |
+| [`cookbook.md`](./cookbook.md)           | Task-oriented recipes                                                                 | [`vi/cookbook.md`](./vi/cookbook.md)           |
+| [`getting-started/`](./getting-started/) | Getting started for React + Vite, Next.js, Nuxt + Vue; code embedded from `examples/` | [`vi/getting-started/`](./vi/getting-started/) |
+| [`reference/`](./reference/)             | One page per subpath plus `cli`, `options` and `theme`                                | [`vi/reference/`](./vi/reference/)             |
 
 The site renders the files listed in `site/src/lib/docs-meta.json` at `/docs/<slug>` and their Vietnamese twins at `/vi/docs/<slug>`; `site/scripts/check-doc-links.mjs` fails when a rendered file has no entry or no `vi.title`.
 
-## Vietnamese mirror (`vi/`)
+## Vietnamese mirror ([`vi/`](./vi/README.md))
 
 English is the source of truth. Every file listed in `site/src/lib/docs-meta.json` has a Vietnamese twin at the same path under `vi/` (the repo `README.md` → `vi/README.md`); the site renders it at `/vi/docs/<slug>` with the entry's `vi.title`. `yarn check:docs-i18n` (CI check job, after `check:docs-embed`) fails when a twin is missing, when line 1 (`<!-- source: <english path> sha256: <hash> -->`) records an older version of the English file, or when the twin's heading levels (with their inline code), doc-script markers (`embed`, `signature`, `snippet`, `> [!NOTE]`-style alerts), code blocks or signature blocks differ from the English file. Code blocks and signature blocks are copied verbatim; everything else is translated.
 

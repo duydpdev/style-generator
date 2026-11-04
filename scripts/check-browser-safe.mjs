@@ -74,7 +74,7 @@ const isForbidden = (specifier) => {
  */
 const extractSpecifiers = (src) => {
   const patterns = [
-    /\bfrom\s+["'`]([^"'`]+)["'`]/g,
+    /\bfrom\s*["'`]([^"'`]+)["'`]/g,
     /\bimport\s*["'`]([^"'`]+)["'`]/g,
     /\bimport\s*\(\s*["'`]([^"'`]+)["'`]/g,
     /\brequire\(\s*["'`]([^"'`]+)["'`]\s*\)/g,

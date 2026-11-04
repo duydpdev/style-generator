@@ -1,5 +1,7 @@
 # @duydpdev/style-generator
 
+**English** · [Tiếng Việt](https://github.com/duydpdev/style-generator/blob/main/documents/vi/README.md)
+
 TypeScript library + CLI that turns a theme JSON into a complete **design system for Tailwind CSS v4**: one generated CSS file (theme variables, dark-mode/palette overrides, typography and spacing utilities, `@source inline` class coverage), typed design tokens, and a JSON Schema for editor autocomplete.
 
 Published on **GitHub Packages** as `@duydpdev/style-generator` (installing needs a token, see [Install](#install)).

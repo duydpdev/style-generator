@@ -25,7 +25,6 @@ export function Button<T extends ElementType = "button">({
     <Component
       type={Component === "button" ? "button" : undefined}
       {...split.rest}
-      data-slot="button"
       className={
         cn(
           buttonRecipe({ variant, color, size }),
@@ -35,9 +34,9 @@ export function Button<T extends ElementType = "button">({
       }
       style={mergeStyle(split.style, style)}
     >
-      {prefix != null && <span data-icon="start">{prefix}</span>}
+      {prefix != null && <span>{prefix}</span>}
       <span>{children}</span>
-      {suffix != null && <span data-icon="end">{suffix}</span>}
+      {suffix != null && <span>{suffix}</span>}
     </Component>
   );
 }

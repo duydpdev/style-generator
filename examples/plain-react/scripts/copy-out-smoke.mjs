@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Copy-out smoke (G2): a component folder copied out of examples/plain-react
- * type-checks in a fresh project whose only dependencies are the packed
+ * Copy-out smoke (G2): the component folders copied out of examples/plain-react
+ * type-check in a fresh project whose only dependencies are the packed
  * library and its documented peers. Needs dist/ (`yarn build:all`), the
  * repo's node_modules and network access (the peers come from the npm
  * registry).
@@ -9,7 +9,7 @@
  * Packs the repo root with the repo's own Yarn release, creates a scratch
  * project in the OS temp directory (lifecycle scripts off, public npm
  * registry, the exact versions the repo itself resolves), copies
- * src/theme.ts, src/theme/theme.json and src/ui/button/ (stories
+ * src/theme.ts, src/theme/theme.json and every folder of src/ui/ (stories
  * excluded), installs with nodeLinker node-modules and runs
  * `tsc --noEmit`. The scratch directory is removed in every case; the exit
  * code is tsc's (1 for an earlier failure).
@@ -20,6 +20,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -28,9 +29,17 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const COMPONENT = "button";
 const app = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const root = resolve(app, "../..");
+/** Every folder of `src/ui`, sorted; all are copied into the one scratch project (`yarn check:plain-ui` forbids imports between folders). */
+const folders = readdirSync(join(app, "src", "ui"), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
+if (folders.length === 0) {
+  console.error("copy-out-smoke: src/ui has no component folder");
+  process.exit(1);
+}
 
 /** The only variables the Yarn and tsc children inherit: no token or registry credential reaches the install. */
 const ENV_ALLOWLIST = [
@@ -171,16 +180,18 @@ try {
       join(app, "src", "theme", "theme.json"),
       join(scratch, "src", "theme", "theme.json"),
     );
-    cpSync(
-      join(app, "src", "ui", COMPONENT),
-      join(scratch, "src", "ui", COMPONENT),
-      {
-        recursive: true,
-        filter: (source) =>
-          !source.endsWith(".stories.tsx") &&
-          !source.includes("__screenshots__"),
-      },
-    );
+    for (const folder of folders) {
+      cpSync(
+        join(app, "src", "ui", folder),
+        join(scratch, "src", "ui", folder),
+        {
+          recursive: true,
+          filter: (source) =>
+            !source.endsWith(".stories.tsx") &&
+            !source.includes("__screenshots__"),
+        },
+      );
+    }
     if (node([yarn, "install"], scratch) !== 0) {
       problem = "yarn install in the scratch project failed";
     } else {
@@ -201,7 +212,7 @@ try {
 if (problem !== undefined) fail(problem);
 if (status === 0) {
   console.log(
-    `✓ copy-out: src/ui/${COMPONENT}/ type-checks with the packed package and its peers only`,
+    `✓ copy-out: ${String(folders.length)} folders (${folders.join(" ")}) type-check with the packed package and its peers only`,
   );
 }
 process.exit(status);

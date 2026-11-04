@@ -291,6 +291,36 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
     expect(result.status).toBe(2);
     expect(result.output).toContain("usage: check-docs-i18n.mjs");
   });
+
+  it("--write-hash validates every target before writing any", () => {
+    mirrored(t.dir);
+    put(t.dir, "documents/guide.md", `${EN_GUIDE}One more English sentence.\n`);
+    const file = join(t.dir, "documents/vi/guide.md");
+    const before = readFileSync(file);
+    const result = i18n(t.dir, [
+      "--write-hash",
+      "documents/vi/guide.md",
+      "--write-hash",
+      "documents/vi/missing.md",
+    ]);
+    expect(result.status).toBe(2);
+    expect(result.output).toContain("documents/vi/missing.md");
+    expect(readFileSync(file).equals(before)).toBe(true);
+  });
+
+  it("--write-hash keeps the CRLF line endings of the twin", () => {
+    mirrored(t.dir);
+    put(t.dir, "documents/guide.md", `${EN_GUIDE}One more English sentence.\n`);
+    const file = join(t.dir, "documents/vi/guide.md");
+    writeFileSync(file, readFileSync(file, "utf8").replace(/\n/g, "\r\n"));
+    const result = i18n(t.dir, ["--write-hash", "documents/vi/guide.md"]);
+    expect(result.status).toBe(0);
+    const text = readFileSync(file, "utf8");
+    expect(text).not.toMatch(/[^\r]\n/);
+    expect(text.split("\r\n")[0]).toMatch(
+      /^<!-- source: documents\/guide\.md sha256: [0-9a-f]{12} -->$/,
+    );
+  });
 });
 
 /**
@@ -375,6 +405,38 @@ describe(
       const result = links(t.dir);
       expect(result.status).toBe(1);
       expect(result.output).toContain("is an English doc");
+    });
+
+    it("allows a twin to link its own English source", () => {
+      linkTree(t.dir, true);
+      put(
+        t.dir,
+        "documents/vi/guide.md",
+        "# Hướng dẫn\n\n## Cách dùng\n\nBản gốc: [guide](../guide.md#usage).\n",
+      );
+      const result = links(t.dir);
+      expect(result.status).toBe(0);
+      expect(result.output).toContain("(2 Vietnamese)");
+    });
+
+    it("checks anchors in a markdown target the site does not render", () => {
+      linkTree(t.dir, true);
+      put(t.dir, "documents/README.md", "# Index\n\n## Present\n");
+      put(
+        t.dir,
+        "documents/vi/guide.md",
+        "# Hướng dẫn\n\n## Cách dùng\n\nXem [chỉ mục](../README.md#present).\n",
+      );
+      expect(links(t.dir).status).toBe(0);
+      put(
+        t.dir,
+        "documents/vi/guide.md",
+        "# Hướng dẫn\n\n## Cách dùng\n\nXem [chỉ mục](../README.md#missing).\n",
+      );
+      const result = links(t.dir);
+      expect(result.status).toBe(1);
+      expect(result.output).toContain('no heading "#missing"');
+      expect(result.output).toContain("documents/README.md");
     });
 
     it("checks anchors inside the twins", () => {

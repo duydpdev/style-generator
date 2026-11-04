@@ -293,3 +293,15 @@ jobs:
 
       - name: Kit unit tests
         run: yarn vitest run src/features/ui
+
+      - name: Load dist/ui.cjs at the peer floors (CJS runtime)
+        run: |
+          # The unit tests above run the ESM sources; this requires the built CJS entry,
+          # which resolves cva, clsx and tailwind-merge at their floors.
+          node -e '
+            const ui = require("./dist/ui.cjs");
+            if (typeof ui.createCn !== "function" || typeof ui.recipeFromTables !== "function") process.exit(1);
+            const cn = ui.createCn({ typography: ["heading1"], shadows: ["card"], backDropBlurs: [], borderRadius: ["pill"], borderWidth: ["thin"] });
+            if (cn("rounded-lg", "rounded-pill") !== "rounded-pill") process.exit(1);
+            if (ui.recipeFromTables({ base: "flex", variants: {} })() !== "flex") process.exit(1);
+          '

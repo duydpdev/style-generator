@@ -87,6 +87,9 @@ Peer dependencies (`typescript`, `vite` and the four UI-kit peers are optional: 
 | `tailwind-merge`           | `^3.0.0` (optional)                     | lockfile version                  | Only for `./ui` (`createCn`); `./recipes` never imports it.                                       |
 | `@types/react`             | `^18.0.0 \|\| ^19.0.0` (optional)       | lockfile version                  | Only for the `./ui-react` types.                                                                  |
 
+> [!WARNING]
+> npm 7 and later still fail with `ERESOLVE` when your dependency tree already holds an off-range copy of an optional peer (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`), even if the app never imports `./ui` or `./ui-react`. Align that dependency with the range above, or install with `--legacy-peer-deps`.
+
 CI runs the latest release of each major in "Tested in CI"; the floor of a range (for example `vite@5.0.0`) is not tested. The `check` job covers the lockfile versions (Vite 7.3, TypeScript 5.9). The `peer-matrix` job covers Vite 5, 6 and 8 and TypeScript 6: it builds `examples/react-v4`, runs a Vite dev server that re-emits on a theme edit, and type-checks the example and `dist/*.d.ts`. A failing leg for a published major fails CI. TypeScript 7 has no CI leg: Yarn's built-in `compat/typescript` patch does not apply to `typescript@7`, so the leg could not even install (see [`documents/testing.md`](../testing.md)).
 
 `zod` is a regular dependency of the package; you do not install it yourself.

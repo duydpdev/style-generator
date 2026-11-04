@@ -246,7 +246,6 @@ export function Button<T extends ElementType = "button">({
     <Component
       type={Component === "button" ? "button" : undefined}
       {...split.rest}
-      data-slot="button"
       className={
         cn(
           buttonRecipe({ variant, color, size }),
@@ -256,9 +255,9 @@ export function Button<T extends ElementType = "button">({
       }
       style={mergeStyle(split.style, style)}
     >
-      {prefix != null && <span data-icon="start">{prefix}</span>}
+      {prefix != null && <span>{prefix}</span>}
       <span>{children}</span>
-      {suffix != null && <span data-icon="end">{suffix}</span>}
+      {suffix != null && <span>{suffix}</span>}
     </Component>
   );
 }
@@ -317,7 +316,6 @@ const root = () => {
   return {
     type: props.as === "button" ? "button" : undefined,
     ...rest,
-    "data-slot": "button",
     class: cn(
       buttonRecipe({
         variant: props.variant,
@@ -334,9 +332,9 @@ const root = () => {
 
 <template>
   <component :is="props.as" v-bind="root()">
-    <span v-if="slots.prefix" data-icon="start"><slot name="prefix" /></span>
+    <span v-if="slots.prefix"><slot name="prefix" /></span>
     <span><slot /></span>
-    <span v-if="slots.suffix" data-icon="end"><slot name="suffix" /></span>
+    <span v-if="slots.suffix"><slot name="suffix" /></span>
   </component>
 </template>
 ```

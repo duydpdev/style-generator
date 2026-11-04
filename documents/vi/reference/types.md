@@ -39,7 +39,7 @@ Configuration for a single typography variant, inferred from
 
 <!-- /signature -->
 
-Cấu trúc shape của theme được suy luận từ Zod schema; chỉ `colors` là bắt buộc.
+Cấu trúc của theme được suy luận từ Zod schema; chỉ `colors` là bắt buộc.
 
 ## `StyleGeneratorOptions`, `ExactOptions`, `CoverageRule`
 
@@ -105,7 +105,7 @@ typed `DesignTokens`.
 
 <!-- /signature -->
 
-Các tùy chọn của `generate()`, helper từ chối các key tùy chọn viết sai chính tả, và quy tắc `coverage` theo từng category.
+Các tùy chọn của `generate()`, helper từ chối các key tùy chọn viết sai chính tả, và quy tắc `coverage` theo từng nhóm token.
 
 ## Alias ngữ nghĩa: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlurVariant`, `RoundedVariant`, `BorderWidthVariant`, `FontFamilyVariant`
 
@@ -492,7 +492,7 @@ would turn it into the distinct `Uncapitalize<string>`.
 
 <!-- /signature -->
 
-Các mảng token có kiểu dưới `DesignTokens.Web`, các union key được rút ra, và các union key category.
+Các mảng token có kiểu dưới `DesignTokens.Web`, các union key được rút ra, và các union key của nhóm token.
 
 ## `DefaultBorderValue`, `DefaultRoundedValue`, `InferBorderWidthOptions`, `InferRoundedOptions`
 

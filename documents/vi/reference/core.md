@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: 365c18950813 -->
+<!-- source: documents/reference/core.md sha256: 8e89203643d9 -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -88,6 +88,9 @@ Các peer dependency (`typescript`, `vite` và bốn peer của UI-kit là tùy 
 | `clsx`                     | `^1.2.0 \|\| ^2.0.0` (tùy chọn)         | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`createCn`, kiểu `ClassValue`).                                             |
 | `tailwind-merge`           | `^3.0.0` (tùy chọn)                     | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`createCn`); `./recipes` không bao giờ import nó.                           |
 | `@types/react`             | `^18.0.0 \|\| ^19.0.0` (tùy chọn)       | phiên bản trong lockfile          | Chỉ dùng cho các kiểu của `./ui-react`.                                                          |
+
+> [!WARNING]
+> npm 7 trở lên vẫn báo lỗi `ERESOLVE` khi cây dependency của bạn đã có sẵn một bản nằm ngoài dải của một peer tùy chọn (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`), kể cả khi ứng dụng không bao giờ import `./ui` hay `./ui-react`. Hãy đưa phiên bản đó về đúng dải ở bảng trên, hoặc cài đặt với `--legacy-peer-deps`.
 
 CI chạy phiên bản phát hành mới nhất của từng bản major trong mục "Đã kiểm thử trong CI"; cận dưới của một dải (ví dụ `vite@5.0.0`) không được kiểm thử. Job `check` bao gồm các phiên bản trong lockfile (Vite 7.3, TypeScript 5.9). Job `peer-matrix` kiểm thử Vite 5, 6 và 8 cùng TypeScript 6: nó build `examples/react-v4`, chạy một Vite dev server phát sinh lại file khi theme được sửa, và kiểm tra kiểu cho ví dụ cùng `dist/*.d.ts`. Một nhánh kiểm thử thất bại đối với một bản major đã phát hành sẽ khiến CI thất bại. TypeScript 7 không có nhánh CI: bản vá `compat/typescript` tích hợp sẵn của Yarn không áp dụng cho `typescript@7`, nên nhánh này thậm chí không thể cài đặt (xem [`documents/testing.md`](../testing.md)).
 

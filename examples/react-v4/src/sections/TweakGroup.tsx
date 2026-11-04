@@ -21,7 +21,7 @@ export const TweakGroup = <T extends string>({
 }: TweakGroupProps<T>) => (
   <Box pt={4} mt={first ? 0 : 4} borderT="thin" borderColor="line">
     <Flex mb={2} align="center" justify="between">
-      <Text type="text12Mono" color="muted" data-part="caps-wide">
+      <Text type="text12Mono" color="muted" className="x-caps-wide">
         {label}
       </Text>
       <Text type="text12Mono" color="muted">
@@ -34,17 +34,17 @@ export const TweakGroup = <T extends string>({
           as="button"
           key={o.val}
           type="button"
-          data-part="sg-tweak-opt"
+          className="x-sg-tweak-opt"
           aria-pressed={active === o.val}
           onClick={() => {
             onPick(o.val);
           }}
         >
           {o.render()}
-          <Box as="span" data-part="tweak-opt-name">
+          <Box as="span" className="x-tweak-opt-name">
             {o.name}
           </Box>
-          <Box as="span" data-part="sg-font-mono tweak-opt-meta">
+          <Box as="span" className="x-sg-font-mono x-tweak-opt-meta">
             {o.meta}
           </Box>
         </Box>

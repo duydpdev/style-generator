@@ -22,8 +22,8 @@ export const Topbar = ({
   onToggleTweaks,
 }: TopbarProps) => {
   return (
-    <Box as="header" data-part="sg-topbar">
-      <Box data-part="container" maxWidth={1240} px={{ base: 4, md: 8 }}>
+    <Box as="header" className="x-sg-topbar">
+      <Box className="x-container" maxWidth={1240} px={{ base: 4, md: 8 }}>
         <Flex
           wrap
           align="center"
@@ -34,15 +34,19 @@ export const Topbar = ({
           minHeight={64}
         >
           <Flex gap={3} align="center" minWidth={0}>
-            <Box as="span" data-part="sg-brand-mark no-shrink" aria-hidden />
-            <Stack minWidth={0} data-part="topbar-brand-text">
-              <Text type="text14Regular" data-part="text-medium truncate">
+            <Box
+              as="span"
+              className="x-sg-brand-mark x-no-shrink"
+              aria-hidden
+            />
+            <Stack minWidth={0} className="x-topbar-brand-text">
+              <Text type="text14Regular" className="x-text-medium x-truncate">
                 @duydpdev/style-generator
               </Text>
               <Text
                 type="text12Mono"
                 color="muted"
-                data-part="truncate md-only"
+                className="x-truncate x-md-only"
               >
                 tokens → tailwind v4
               </Text>

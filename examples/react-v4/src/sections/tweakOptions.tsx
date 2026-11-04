@@ -15,7 +15,7 @@ export const VOICE_OPTS: Option<Voice>[] = [
     name: "Editorial",
     meta: "Instrument Serif",
     render: () => (
-      <Box as="span" data-part="voice-sample voice-editorial">
+      <Box as="span" className="x-voice-sample x-voice-editorial">
         Aa
       </Box>
     ),
@@ -25,7 +25,7 @@ export const VOICE_OPTS: Option<Voice>[] = [
     name: "Industrial",
     meta: "Space Grotesk",
     render: () => (
-      <Box as="span" data-part="voice-sample voice-industrial">
+      <Box as="span" className="x-voice-sample x-voice-industrial">
         Aa
       </Box>
     ),
@@ -35,7 +35,7 @@ export const VOICE_OPTS: Option<Voice>[] = [
     name: "Humanist",
     meta: "DM Serif + Sans",
     render: () => (
-      <Box as="span" data-part="voice-sample voice-humanist">
+      <Box as="span" className="x-voice-sample x-voice-humanist">
         Aa
       </Box>
     ),
@@ -47,19 +47,21 @@ export const GEOMETRY_OPTS: Option<Geometry>[] = [
     val: "sharp",
     name: "Sharp",
     meta: "0–4px",
-    render: () => <Box as="span" data-part="sg-tweak-shape shape-sharp" />,
+    render: () => <Box as="span" className="x-sg-tweak-shape x-shape-sharp" />,
   },
   {
     val: "soft",
     name: "Soft",
     meta: "6–16px",
-    render: () => <Box as="span" data-part="sg-tweak-shape shape-soft" />,
+    render: () => <Box as="span" className="x-sg-tweak-shape x-shape-soft" />,
   },
   {
     val: "pillowy",
     name: "Pillowy",
     meta: "12–32px",
-    render: () => <Box as="span" data-part="sg-tweak-shape shape-pillowy" />,
+    render: () => (
+      <Box as="span" className="x-sg-tweak-shape x-shape-pillowy" />
+    ),
   },
 ];
 
@@ -69,7 +71,7 @@ export const SURFACE_OPTS: Option<Surface>[] = [
     name: "Flat",
     meta: "Bordered",
     render: () => (
-      <Box as="span" data-part="sg-tweak-surf sg-tweak-surf-flat" />
+      <Box as="span" className="x-sg-tweak-surf x-sg-tweak-surf-flat" />
     ),
   },
   {
@@ -77,7 +79,7 @@ export const SURFACE_OPTS: Option<Surface>[] = [
     name: "Lifted",
     meta: "Soft shadow",
     render: () => (
-      <Box as="span" data-part="sg-tweak-surf sg-tweak-surf-lifted" />
+      <Box as="span" className="x-sg-tweak-surf x-sg-tweak-surf-lifted" />
     ),
   },
   {
@@ -85,7 +87,7 @@ export const SURFACE_OPTS: Option<Surface>[] = [
     name: "Glass",
     meta: "Blurred",
     render: () => (
-      <Box as="span" data-part="sg-tweak-surf sg-tweak-surf-glass" />
+      <Box as="span" className="x-sg-tweak-surf x-sg-tweak-surf-glass" />
     ),
   },
 ];

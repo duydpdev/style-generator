@@ -24,30 +24,11 @@ const UI_COMPONENT_FILES = ["examples/react-v4/src/ui/**"];
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;
 const COMPONENT_SELECTOR = `JSXOpeningElement[name.name=/^(${UI_COMPONENT_NAMES.join("|")})$/]`;
 
-// no-restricted-syntax entries of every UI_APP_FILES block. A later block
-// replaces the rule's options, so the react-v4 block repeats them.
-const UI_APP_SYNTAX = [
-  {
-    selector: TAG_SELECTOR,
-    message: `Render a sample component (${UI_COMPONENT_NAMES.join(", ")}) and keep the element with \`as\`.`,
-  },
-  {
-    selector:
-      "JSXOpeningElement[name.name=/^[a-z]/] > JSXAttribute[name.name='className']",
-    message:
-      "No className in app code: use component props, or data-part for bespoke CSS.",
-  },
-  {
-    selector: `${COMPONENT_SELECTOR} > JSXAttribute[name.name='className']`,
-    message:
-      "No className on ui components: use their props, or data-part for bespoke CSS.",
-  },
-  {
-    selector: "JSXAttribute[name.name='style']",
-    message:
-      "No style= in app code: use a component prop, a theme token or data-part CSS. A runtime value keeps style= under `// eslint-disable-next-line no-restricted-syntax -- <reason>`.",
-  },
-];
+// Tag ban shared by every UI_APP_FILES block (uiAppSyntax puts it first).
+const UI_TAG_SYNTAX = {
+  selector: TAG_SELECTOR,
+  message: `Render a sample component (${UI_COMPONENT_NAMES.join(", ")}) and keep the element with \`as\`.`,
+};
 
 // Bespoke CSS hooks are namespaced classes, not Tailwind utilities and not
 // data-part: `s-` for site/, `x-` for the examples (`sg-` is the CSS variable
@@ -55,8 +36,8 @@ const UI_APP_SYNTAX = [
 // tokens (a literal, or the pieces of a template/conditional); a computed
 // className must come from a table of `<ns>-` classes and says so with a
 // disable comment. Third-party components (NavLink, ReactMarkdown) stay
-// outside both selectors. Only site/ uses it so far; react-v4 keeps
-// UI_APP_SYNTAX until the harness migration.
+// outside both selectors. A later block's no-restricted-syntax replaces the
+// rule's options, so the react-v4 block repeats the whole list with `x`.
 const uiAppSyntax = (ns) => {
   const lowerTag = "JSXOpeningElement[name.name=/^[a-z]/]";
   const classNameAttr = "JSXAttribute[name.name='className']";
@@ -67,7 +48,7 @@ const uiAppSyntax = (ns) => {
   const template = String.raw`TemplateElement[value.raw=/(^|\s)(?!${ns}-)[a-z]/]`;
   const computed = `JSXExpressionContainer > :matches(Identifier, MemberExpression, CallExpression)`;
   return [
-    UI_APP_SYNTAX[0],
+    UI_TAG_SYNTAX,
     ...[lowerTag, COMPONENT_SELECTOR].flatMap((owner) => [
       {
         selector: `${owner} > ${classNameAttr} ${literal}`,
@@ -277,7 +258,7 @@ export default pluginTs.config(
     files: ["examples/react-v4/src/**/*.{ts,tsx}"],
     ignores: UI_COMPONENT_FILES,
     rules: {
-      "no-restricted-syntax": ["error", ...UI_APP_SYNTAX, GRID_COLUMNS_SYNTAX],
+      "no-restricted-syntax": ["error", ...uiAppSyntax("x"), GRID_COLUMNS_SYNTAX],
     },
   },
 
@@ -285,6 +266,13 @@ export default pluginTs.config(
     files: PLAIN_APP_FILES,
     rules: {
       "no-restricted-imports": ["error", PLAIN_RESTRICTED_IMPORTS],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXAttribute[name.name='data-part']",
+          message: "No data-part in plain apps: use className.",
+        },
+      ],
     },
   },
 
@@ -336,13 +324,19 @@ export default pluginTs.config(
         "error",
         {
           key: "class",
+          value: String.raw`/(^|\s)(?!x-)\S/`,
           element: "/^[a-z]/",
-          message: "No class in app code: use component props.",
+          message: "class in app code takes only `x-` classes: use component props.",
         },
         {
           key: "class",
+          value: String.raw`/(^|\s)(?!x-)\S/`,
           element: `/^(${UI_COMPONENT_NAMES.join("|")})$/`,
-          message: "No class on ui components: use their props.",
+          message: "class on ui components takes only `x-` classes: use their props.",
+        },
+        {
+          key: "data-part",
+          message: "No data-part: use an `x-` class.",
         },
         {
           key: "style",
@@ -365,6 +359,10 @@ export default pluginTs.config(
         {
           argument: "style",
           message: "No :style in app code: use component props or theme tokens.",
+        },
+        {
+          argument: "data-part",
+          message: "No data-part: use an `x-` class.",
         },
       ],
       "vue/no-restricted-syntax": [
@@ -396,6 +394,25 @@ export default pluginTs.config(
     files: ["examples/plain-nuxt/app/**/*.{ts,vue}"],
     rules: {
       "no-restricted-imports": ["error", PLAIN_RESTRICTED_IMPORTS],
+    },
+  },
+  {
+    files: ["examples/plain-nuxt/app/**/*.vue"],
+    rules: {
+      "vue/no-restricted-static-attribute": [
+        "error",
+        {
+          key: "data-part",
+          message: "No data-part in plain apps: use class.",
+        },
+      ],
+      "vue/no-restricted-v-bind": [
+        "error",
+        {
+          argument: "data-part",
+          message: "No data-part in plain apps: use class.",
+        },
+      ],
     },
   },
 

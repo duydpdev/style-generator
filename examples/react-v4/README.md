@@ -34,7 +34,7 @@ yarn dev          # Vite dev server on http://localhost:5173
 
 ## What it demonstrates
 
-1. **Sample components**: `src/ui/` holds one self-contained file per component (`createBox`, `createFlex`, `createStack`, `createGrid`, `createText`, `createButton`) over the design system's recipes and the published kit (`@duydpdev/style-generator/ui` and `/ui-react`), plus `layout.ts` (the harness's own `LayoutProps` type and size-key list); `src/ui.ts` binds them to this app's tokens and presets. They are examples to copy, not a published API. App code has no `className` and no `style=`: props cover tokens and spacing, and the few bespoke styles hang off `data-part` attributes (`src/parts.css` and the design system's `style-guide.css`). ESLint enforces this (`UI_APP_FILES` in `eslint.config.js`, names from `examples/ui-registry.mjs`), and every `<Grid>` passes `columns`. `yarn typecheck` also compiles `tests/ui-types.tsx`, the components' `@ts-expect-error` checks.
+1. **Sample components**: `src/ui/` holds one self-contained file per component (`createBox`, `createFlex`, `createStack`, `createGrid`, `createText`, `createButton`) over the design system's recipes and the published kit (`@duydpdev/style-generator/ui` and `/ui-react`), plus `layout.ts` (the harness's own `LayoutProps` type and size-key list); `src/ui.ts` binds them to this app's tokens and presets. They are examples to copy, not a published API. App code has no Tailwind `className` and no `style=`: props cover tokens and spacing, and the few bespoke styles hang off `x-` classes (`src/parts.css` and the design system's `style-guide.css`). ESLint enforces this (`UI_APP_FILES` in `eslint.config.js`, names from `examples/ui-registry.mjs`), and every `<Grid>` passes `columns`. `yarn typecheck` also compiles `tests/ui-types.tsx`, the components' `@ts-expect-error` checks.
 2. **Spacing props**: every component takes `p`, `mx`, `gap`, … as a number or `{ base, md, lg }`, so `<Box p={4} mx={{ base: 2, md: 4 }}>` works; the component turns them into the `.sp-*` classes and inline `--sg-sp-*` variables.
 3. **Multi-axis theming**: `App.tsx` applies `axisAttributes({ theme, palette })` to `<html>` (the state types derive from the theme's axes; the topbar button cycles light, dark and high contrast) plus the chrome-only `voice`, `geometry`, `surface`. The `dark × palette` compound overrides are hand-written CSS in the design system's `palettes.css`.
 4. **Live demo sections**: `src/sections/` is the style-guide UI. The `site` build renders it as the live demo, so it stays in this app.
@@ -54,7 +54,7 @@ examples/react-v4
     ├── index.css                 # tailwindcss + theme.css + design-system styles + @source
     ├── ui.ts                     # binds the src/ui factories to the design-system tokens and presets
     ├── ui/                       # Box, Flex, Stack, Grid, Text, Button, layout.ts (LayoutProps, LAYOUT_SIZE_KEYS), index.ts
-    ├── parts.css                 # data-part styles that no component prop covers
+    ├── parts.css                 # x- classes (bespoke styles) that no component prop covers
     ├── sections/                 # Topbar, Hero, Color, Typography, Utilities, ResponsiveSpacing, Button,
     │                             # Footer, JsonDrawer, TweaksPanel + SectionHead, palettes.ts, types.ts
     └── theme/

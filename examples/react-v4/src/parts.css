@@ -1,6 +1,6 @@
 /*
- * Bespoke styles of the demo sections, keyed by data-part (app code has
- * no className and no inline styles). A rule holds what no component prop
+ * Bespoke styles of the demo sections, keyed by `x-` classes (app code has
+ * no Tailwind className and no inline styles). A rule holds what no component prop
  * covers: theme-token utilities through @apply first, plain
  * declarations only where no token exists (each says why). Spacing is
  * always a prop. `@layer utilities` keeps the old cascade: the
@@ -8,146 +8,146 @@
  * component utilities.
  */
 @layer utilities {
-  [data-part~="caps"] {
+  .x-caps {
     @apply uppercase;
   }
-  [data-part~="caps-wide"] {
+  .x-caps-wide {
     @apply uppercase tracking-wider;
   }
-  [data-part~="caps-widest"] {
+  .x-caps-widest {
     @apply uppercase tracking-widest;
   }
-  [data-part~="text-medium"] {
+  .x-text-medium {
     @apply font-medium;
   }
-  [data-part~="text-semibold"] {
+  .x-text-semibold {
     @apply font-semibold;
   }
-  [data-part~="display-contents"] {
+  .x-display-contents {
     @apply contents;
   }
-  [data-part~="container"] {
+  .x-container {
     @apply mx-auto w-full;
   }
-  [data-part~="dashed"] {
+  .x-dashed {
     @apply border-dashed;
   }
-  [data-part~="grow-1"] {
+  .x-grow-1 {
     @apply flex-1;
   }
-  [data-part~="tint-primary"] {
+  .x-tint-primary {
     @apply bg-primary/10;
   }
-  [data-part~="tint-secondary"] {
+  .x-tint-secondary {
     @apply bg-secondary/15;
   }
-  [data-part~="tint-success"] {
+  .x-tint-success {
     @apply bg-success/15;
   }
-  [data-part~="topbar-brand-text"] {
+  .x-topbar-brand-text {
     @apply leading-tight;
   }
-  [data-part~="hero-title"] {
+  .x-hero-title {
     @apply max-w-[14ch] tracking-[-0.025em] text-[clamp(56px,8vw,104px)] leading-[0.94] text-foreground;
   }
-  [data-part~="hero-lede"] {
+  .x-hero-lede {
     @apply max-w-[56ch] text-[18px] leading-[1.55];
   }
-  [data-part~="section-head"] {
+  .x-section-head {
     @apply items-baseline;
   }
-  [data-part~="section-title"] {
+  .x-section-title {
     @apply tracking-[-0.02em] text-[40px] leading-tight text-foreground;
   }
-  [data-part~="section-desc"] {
+  .x-section-desc {
     @apply max-w-[44ch] text-[14px] text-muted;
   }
-  [data-part~="color-card"] {
+  .x-color-card {
     @apply overflow-hidden;
   }
-  [data-part~="typo-grid"] {
+  .x-typo-grid {
     @apply items-baseline;
   }
-  [data-part~="typo-display"] {
+  .x-typo-display {
     @apply text-[clamp(40px,6vw,80px)] tracking-[-0.025em] leading-none text-foreground;
   }
-  [data-part~="typo-heading"] {
+  .x-typo-heading {
     @apply text-[32px] font-bold tracking-[-0.02em] leading-tight text-foreground;
   }
-  [data-part~="typo-body"] {
+  .x-typo-body {
     @apply text-[16px] font-medium leading-relaxed text-foreground;
   }
-  [data-part~="typo-mono"] {
+  .x-typo-mono {
     @apply text-[13px] text-muted;
   }
-  [data-part~="button-matrix"] {
+  .x-button-matrix {
     @apply min-w-[520px] md:min-w-0;
   }
-  [data-part~="footer-quote"] {
+  .x-footer-quote {
     @apply max-w-[38ch] text-[28px] leading-tight text-foreground;
   }
-  [data-part~="drawer-title"] {
+  .x-drawer-title {
     @apply text-[22px] text-foreground;
   }
-  [data-part~="tweak-opt-name"] {
+  .x-tweak-opt-name {
     @apply text-[12px] font-medium;
   }
-  [data-part~="tweak-opt-meta"] {
+  .x-tweak-opt-meta {
     @apply text-[9.5px] text-muted;
   }
-  [data-part~="no-shrink"] {
+  .x-no-shrink {
     @apply shrink-0;
   }
-  [data-part~="truncate"] {
+  .x-truncate {
     @apply truncate;
   }
-  [data-part~="md-only"] {
+  .x-md-only {
     @apply hidden md:block;
   }
-  [data-part~="scroll-x"] {
+  .x-scroll-x {
     @apply overflow-x-auto;
   }
-  [data-part~="fg"] {
+  .x-fg {
     @apply text-foreground;
   }
-  [data-part~="tone-55"] {
+  .x-tone-55 {
     @apply opacity-55;
   }
-  [data-part~="tone-75"] {
+  .x-tone-75 {
     @apply opacity-75;
   }
-  [data-part~="dot-ring"] {
+  .x-dot-ring {
     @apply ring-1 ring-foreground/35;
   }
-  [data-part~="radius-swatch"] {
+  .x-radius-swatch {
     @apply border-dashed border-primary/40 bg-primary/8;
   }
   /* No token: no typography token is 22px, and line-height 1 is a one-off. */
-  [data-part~="voice-sample"] {
+  .x-voice-sample {
     font-size: 22px;
     line-height: 1;
   }
-  [data-part~="voice-editorial"] {
+  .x-voice-editorial {
     @apply font-serif italic;
   }
   /* No token: the Voice tweak's preview fonts are not theme fonts. */
-  [data-part~="voice-industrial"] {
+  .x-voice-industrial {
     font-family: "Space Grotesk", sans-serif;
     font-weight: 600;
   }
-  [data-part~="voice-humanist"] {
+  .x-voice-humanist {
     font-family: "DM Serif Display", serif;
   }
   /* No token: fixed preview radii; the geometry tweak rewrites
      --sg-radius-* itself (style-guide.css), so rounded="md" would show
      the active geometry, not this option. */
-  [data-part~="shape-sharp"] {
+  .x-shape-sharp {
     border-radius: 0;
   }
-  [data-part~="shape-soft"] {
+  .x-shape-soft {
     border-radius: 10px;
   }
-  [data-part~="shape-pillowy"] {
+  .x-shape-pillowy {
     border-radius: 20px;
   }
 }

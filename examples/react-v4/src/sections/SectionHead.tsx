@@ -10,16 +10,16 @@ interface SectionHeadProps {
 
 export const SectionHead = ({ num, title, desc }: SectionHeadProps) => {
   return (
-    <Flex wrap justify="between" mb={9} gap={6} data-part="section-head">
+    <Flex wrap justify="between" mb={9} gap={6} className="x-section-head">
       <Box>
-        <Box as="span" data-part="sg-section-num">
+        <Box as="span" className="x-sg-section-num">
           {num}
         </Box>
-        <Box as="h2" mt={2} data-part="sg-font-display section-title">
+        <Box as="h2" mt={2} className="x-sg-font-display x-section-title">
           {title}
         </Box>
       </Box>
-      <Box as="p" data-part="section-desc">
+      <Box as="p" className="x-section-desc">
         {desc}
       </Box>
     </Flex>

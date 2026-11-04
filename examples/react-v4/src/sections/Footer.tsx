@@ -5,7 +5,7 @@ export const Footer = () => {
     <Box as="footer" mt={6} borderT="thin" pt={16} pb={20} borderColor="line">
       <Flex wrap align="end" justify="between" gap={6}>
         <Box>
-          <Box as="p" mb={3} data-part="sg-font-display footer-quote">
+          <Box as="p" mb={3} className="x-sg-font-display x-footer-quote">
             "Change <code>theme.json</code> — everything downstream re-renders."
           </Box>
           <Text type="text12Mono" color="muted">

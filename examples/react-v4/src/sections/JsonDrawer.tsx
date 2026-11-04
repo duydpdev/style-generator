@@ -75,7 +75,7 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
   return (
     <Box
       as="aside"
-      data-part="sg-json-drawer sg-glass-target"
+      className="x-sg-json-drawer x-sg-glass-target"
       data-open={open ? "true" : "false"}
       aria-hidden={!open}
     >
@@ -87,7 +87,7 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
         borderB="thin"
         borderColor="line"
       >
-        <Box as="h3" data-part="sg-font-display drawer-title">
+        <Box as="h3" className="x-sg-font-display x-drawer-title">
           theme.json
         </Box>
         <Flex gap={1}>
@@ -105,7 +105,7 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
           </Button>
         </Flex>
       </Flex>
-      <Box data-part="sg-json-body">
+      <Box className="x-sg-json-body">
         <pre dangerouslySetInnerHTML={{ __html: highlight(activeJson) }} />
       </Box>
     </Box>

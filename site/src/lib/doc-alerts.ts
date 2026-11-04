@@ -4,18 +4,17 @@ import type { ReactNode } from "react";
 export type AlertKind = "NOTE" | "TIP" | "IMPORTANT" | "WARNING" | "CAUTION";
 
 export interface AlertMeta {
-  title: string;
   /** The callout's `data-part` tokens: `callout` plus its tone (`info`, `ok` or `warn`). */
   part: string;
   icon: string;
 }
 
 export const ALERTS: Record<AlertKind, AlertMeta> = {
-  NOTE: { title: "Note", part: "callout info", icon: "i" },
-  TIP: { title: "Tip", part: "callout ok", icon: "✓" },
-  IMPORTANT: { title: "Important", part: "callout info", icon: "!" },
-  WARNING: { title: "Warning", part: "callout warn", icon: "!" },
-  CAUTION: { title: "Caution", part: "callout warn", icon: "!" },
+  NOTE: { part: "callout info", icon: "i" },
+  TIP: { part: "callout ok", icon: "✓" },
+  IMPORTANT: { part: "callout info", icon: "!" },
+  WARNING: { part: "callout warn", icon: "!" },
+  CAUTION: { part: "callout warn", icon: "!" },
 };
 
 const ALERT_MARKER = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*\r?\n?/i;

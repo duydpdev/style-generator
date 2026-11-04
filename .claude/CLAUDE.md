@@ -45,7 +45,7 @@ yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (no
 yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
 yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
-yarn check:docs-embed && yarn check:doc-snippets && yarn check:doc-exports   # docs gates (after build:all; CI check job)
+yarn check:docs-embed && yarn check:docs-i18n && yarn check:doc-snippets && yarn check:doc-exports   # docs gates (after build:all; CI check job)
 yarn check:plain-ui     # examples/plain-react/src/ui/<folder>/: style.ts, types.ts, <Name>.tsx, index.ts; relative imports only ./… and ../../theme; package allow-list (CI)
 ```
 
@@ -139,6 +139,7 @@ documents/
 ├── README.md                     # index of everything below
 ├── architecture.md guide.md testing.md deploy.md components.md cookbook.md   # rendered by the site
 ├── getting-started/  reference/  # rendered by the site (site/src/lib/docs-meta.json)
+├── vi/                           # Vietnamese twin of every rendered doc (yarn check:docs-i18n)
 ├── migration/                    # upgrade guides + v4 measurement proofs
 ├── standards/                    # cross-repo standards (git-workflow-app.md)
 ├── brainstorm/YYYY-MM-DD/<topic>.md

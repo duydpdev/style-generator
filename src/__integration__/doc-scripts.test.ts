@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdirSync,
   mkdtempSync,
@@ -200,6 +201,30 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
     expect(result.output).toContain("1 checked");
     expect(result.output).toContain("1 signatures skipped");
   });
+
+  it("checks the blocks of a Vietnamese twin", () => {
+    put(t.dir, "README.md", `# T\n\n${valid}`);
+    put(
+      t.dir,
+      "documents/vi/guide.md",
+      `# T\n\n${fenced('const n: number = "x";')}`,
+    );
+    const result = run("check-doc-snippets", t.dir);
+    expect(result.status).toBe(1);
+    expect(result.output).toContain("documents/vi/guide.md:4:");
+  });
+
+  it("skips the Vietnamese twins of the migration guides", () => {
+    put(t.dir, "README.md", `# T\n\n${valid}`);
+    put(
+      t.dir,
+      "documents/vi/migration/4.x-to-5.0.md",
+      `# T\n\n${fenced('const n: number = "x";')}`,
+    );
+    const result = run("check-doc-snippets", t.dir);
+    expect(result.status).toBe(0);
+    expect(result.output).toContain("1 checked");
+  });
 });
 
 describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
@@ -309,5 +334,85 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
     const result = run("check-doc-exports", t.dir, ["--bogus"]);
     expect(result.status).toBe(2);
     expect(result.output).toContain("usage: check-doc-exports.mjs");
+  });
+
+  const EN = "documents/reference/core.md";
+  const VI = "documents/vi/reference/core.md";
+  const BLOCK = /<!-- signature: generate -->[\s\S]*?<!-- \/signature -->/;
+  const hashOf = (text: string) =>
+    createHash("sha256")
+      .update(text.replace(/\r\n/g, "\n"), "utf8")
+      .digest("hex")
+      .slice(0, 12);
+  const read = (rel: string) => readFileSync(join(t.dir, rel), "utf8");
+  const twin = (hash: string) =>
+    `<!-- source: ${EN} sha256: ${hash} -->\n\n# Lõi\n\n## \`generate\`\n\nVăn bản tiếng Việt.\n`;
+
+  it("writes the signature blocks of a Vietnamese twin and moves its source hash with the English page", () => {
+    put(t.dir, VI, twin(hashOf(read(EN))));
+    const stale = run("check-doc-exports", t.dir);
+    expect(stale.status).toBe(1);
+    expect(stale.output).toContain(
+      `${VI}: signature blocks are out of date; run yarn docs:signatures`,
+    );
+    expect(run("check-doc-exports", t.dir, ["--write"]).status).toBe(0);
+    const en = read(EN);
+    const vi = read(VI);
+    expect(BLOCK.exec(en)).not.toBeNull();
+    expect(BLOCK.exec(vi)?.[0]).toBe(BLOCK.exec(en)?.[0]);
+    expect(vi.split("\n")[0]).toBe(
+      `<!-- source: ${EN} sha256: ${hashOf(en)} -->`,
+    );
+    const fresh = run("check-doc-exports", t.dir);
+    expect(fresh.status).toBe(0);
+    expect(fresh.output).toContain("1 in Vietnamese twins");
+  });
+
+  it("a TSDoc edit changes the blocks of the English page and of its Vietnamese twin", () => {
+    put(t.dir, VI, twin(hashOf(read(EN))));
+    run("check-doc-exports", t.dir, ["--write"]);
+    const before = BLOCK.exec(read(VI))?.[0];
+    put(
+      t.dir,
+      "dist/index.d.ts",
+      '/** Generates CSS files. */\nexport declare const generate: () => void;\nexport { styleGenVite } from "./vite";\n',
+    );
+    const stale = run("check-doc-exports", t.dir);
+    expect(stale.status).toBe(1);
+    expect(stale.output).toContain(`${EN}: signature blocks are out of date`);
+    expect(stale.output).toContain(`${VI}: signature blocks are out of date`);
+    expect(run("check-doc-exports", t.dir, ["--write"]).status).toBe(0);
+    const en = read(EN);
+    const vi = read(VI);
+    expect(BLOCK.exec(en)?.[0]).toContain("Generates CSS files.");
+    expect(BLOCK.exec(vi)?.[0]).toBe(BLOCK.exec(en)?.[0]);
+    expect(BLOCK.exec(vi)?.[0]).not.toBe(before);
+    expect(vi.split("\n")[0]).toBe(
+      `<!-- source: ${EN} sha256: ${hashOf(en)} -->`,
+    );
+    expect(run("check-doc-exports", t.dir).status).toBe(0);
+  });
+
+  it("keeps the source hash of a Vietnamese twin that was already stale", () => {
+    put(t.dir, VI, twin("000000000000"));
+    expect(run("check-doc-exports", t.dir, ["--write"]).status).toBe(0);
+    const vi = read(VI);
+    expect(vi.split("\n")[0]).toBe(
+      `<!-- source: ${EN} sha256: 000000000000 -->`,
+    );
+    expect(BLOCK.exec(vi)).not.toBeNull();
+  });
+
+  it("reports an unclosed signature block in a Vietnamese twin and never rewrites it", () => {
+    const page = "# T\n\n<!-- signature: generate -->\n\nstale\n";
+    put(t.dir, VI, page);
+    for (const args of [[], ["--write"]]) {
+      const result = run("check-doc-exports", t.dir, args);
+      expect(result.status).toBe(1);
+      expect(result.output).toContain(
+        `${VI}: unclosed signature block at line 3`,
+      );
+      expect(read(VI)).toBe(page);
+    }
   });
 });

@@ -1,5 +1,7 @@
 import type { RefObject } from "react";
 
+import { UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import {
   jumpToHeading,
   useDocHeadings,
@@ -20,6 +22,7 @@ export function DocsOnPage({
 }: Readonly<Props>) {
   const headings = useDocHeadings(contentRef, rawMarkdown);
   const { activeId, progress } = useDocScroll(contentRef, headings);
+  const t = UI_TEXT[useLocale()];
 
   return (
     <Box as="aside" data-part="toc-rail" position="relative" pt={9}>
@@ -30,7 +33,7 @@ export function DocsOnPage({
         maxHeight="calc(100vh - 100px)"
       >
         <Flex data-part="toc-rail-label" align="center" gap={2.5}>
-          On this page
+          {t.onThisPage}
         </Flex>
         <Stack as="ol" data-part="onpage" gap={0.25} position="relative">
           {headings.map((h) => {
@@ -68,7 +71,7 @@ export function DocsOnPage({
           justify="between"
           mt={1.5}
         >
-          <Box as="span">READ</Box>
+          <Box as="span">{t.readLabel}</Box>
           <Box
             as="span"
             data-part="toc-progress-track"

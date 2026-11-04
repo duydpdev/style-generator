@@ -4,7 +4,11 @@
  * `src/lib/docs-content.ts`, including `documents/getting-started` and
  * `documents/reference`): every relative link must point at an existing
  * file, and a `#anchor` into a markdown file must match one of its headings
- * (GitHub slug rules). Absolute URLs are not fetched, except links into this
+ * (GitHub slug rules). The Vietnamese twins under documents/vi/ that exist
+ * are checked too, and a link from a twin to an English rendered doc fails:
+ * it must point at that doc's twin. A missing twin is check:docs-i18n's
+ * error, not this script's. --root <dir> points at another repo tree
+ * (tests). Absolute URLs are not fetched, except links into this
  * repository (`REPO_BLOB_URL`, as README.md writes them): those are checked
  * like the repo-relative links they stand for. Exits 1 on any miss.
  */
@@ -12,7 +16,16 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+import { VI_DIR, viTwinOf } from "../../scripts/doc-markdown.mjs";
+
+const rootAt = process.argv.indexOf("--root");
+if (rootAt !== -1 && process.argv[rootAt + 1] === undefined) {
+  throw new Error("--root needs a directory");
+}
+const repoRoot =
+  rootAt === -1
+    ? resolve(dirname(fileURLToPath(import.meta.url)), "../..")
+    : resolve(process.argv[rootAt + 1]);
 // Keep in sync with `REPO_BLOB_URL` in `src/lib/docs-content.ts`.
 const REPO_BLOB_URL = "https://github.com/duydpdev/style-generator/blob/main/";
 
@@ -22,7 +35,7 @@ const markdownIn = (dir) =>
     .filter((name) => name.endsWith(".md") && name !== "README.md")
     .map((name) => `${dir}/${name}`);
 
-const DOC_FILES = [
+const EN_DOC_FILES = [
   "README.md",
   "documents/migration/4.x-to-5.0.md",
   "documents/migration/3.x-to-4.0.md",
@@ -30,6 +43,11 @@ const DOC_FILES = [
   ...markdownIn("documents/getting-started"),
   ...markdownIn("documents/reference"),
 ];
+/** Vietnamese twins that exist (decision: a missing twin is reported by check:docs-i18n). */
+const VI_DOC_FILES = EN_DOC_FILES.map(viTwinOf).filter((file) =>
+  existsSync(resolve(repoRoot, file)),
+);
+const DOC_FILES = [...EN_DOC_FILES, ...VI_DOC_FILES];
 
 // `src/lib/docs-meta.json` must describe exactly the rendered files, with unique slugs and orders.
 const META_GROUPS = [
@@ -45,13 +63,13 @@ const meta = JSON.parse(
 );
 /** @type {string[]} */
 const metaErrors = [];
-for (const file of DOC_FILES) {
+for (const file of EN_DOC_FILES) {
   if (!(file in meta)) metaErrors.push(`docs-meta.json: no entry for ${file}`);
 }
 const seenSlugs = new Set();
 const seenOrders = new Set();
 for (const [key, entry] of Object.entries(meta)) {
-  if (!DOC_FILES.includes(key)) {
+  if (!EN_DOC_FILES.includes(key)) {
     metaErrors.push(`docs-meta.json: ${key} is not a rendered doc`);
   }
   if (seenSlugs.has(entry.slug)) {
@@ -65,6 +83,9 @@ for (const [key, entry] of Object.entries(meta)) {
   seenOrders.add(order);
   if (!META_GROUPS.includes(entry.group)) {
     metaErrors.push(`docs-meta.json: unknown group ${entry.group} in ${key}`);
+  }
+  if (typeof entry.vi?.title !== "string" || entry.vi.title.trim() === "") {
+    metaErrors.push(`docs-meta.json: no vi.title for ${key}`);
   }
 }
 if (metaErrors.length > 0) {
@@ -234,6 +255,12 @@ for (const [file, md] of sources) {
         broken.push(`${where} → ${target} does not exist`);
         continue;
       }
+      if (file.startsWith(`${VI_DIR}/`) && EN_DOC_FILES.includes(target)) {
+        broken.push(
+          `${where} → ${target} is an English doc; link its Vietnamese twin ${viTwinOf(target)}`,
+        );
+        continue;
+      }
     }
 
     if (anchor && sources.has(target) && !anchorsOf(target).has(anchor)) {
@@ -248,5 +275,5 @@ if (broken.length > 0) {
   process.exit(1);
 }
 console.log(
-  `check-doc-links: ${String(sources.size)} files, all relative and repository links resolve`,
+  `check-doc-links: ${String(sources.size)} files (${String(VI_DOC_FILES.length)} Vietnamese), all relative and repository links resolve`,
 );

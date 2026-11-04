@@ -2,6 +2,8 @@ import type { MouseEvent } from "react";
 import { NavLink } from "react-router-dom";
 
 import { groupedDocs } from "../lib/docs-content";
+import { docPath, UI_TEXT } from "../lib/locale";
+import { useLocale } from "../lib/use-locale";
 import { Box, Stack, Text } from "../ui";
 
 interface Props {
@@ -11,11 +13,12 @@ interface Props {
 
 /** The grouped, numbered page list shared by the left rail and the mobile switcher. */
 export function DocsNavGroups({ activeSlug, onNavigate }: Readonly<Props>) {
+  const locale = useLocale();
   let counter = 0;
 
   return (
     <>
-      {groupedDocs().map((g) => (
+      {groupedDocs(locale).map((g) => (
         <Stack key={g.group} gap={0.25}>
           <Text
             as="div"
@@ -25,7 +28,7 @@ export function DocsNavGroups({ activeSlug, onNavigate }: Readonly<Props>) {
             px={2}
             pb={1.5}
           >
-            {g.group}
+            {UI_TEXT[locale].groups[g.group]}
           </Text>
           {g.docs.map((d) => {
             counter += 1;
@@ -33,7 +36,7 @@ export function DocsNavGroups({ activeSlug, onNavigate }: Readonly<Props>) {
             return (
               <NavLink
                 key={d.slug}
-                to={`/docs/${d.slug}`}
+                to={docPath(locale, d.slug)}
                 className={`docnav-item${d.slug === activeSlug ? " active" : ""}`}
                 onClick={onNavigate}
               >

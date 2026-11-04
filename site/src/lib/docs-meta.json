@@ -3,150 +3,175 @@
     "slug": "introduction",
     "title": "Introduction",
     "group": "Start",
-    "order": 1
+    "order": 1,
+    "vi": { "title": "Giới thiệu" }
   },
   "documents/getting-started/react-vite.md": {
     "slug": "getting-started-react-vite",
     "title": "React + Vite",
     "group": "Start",
-    "order": 2
+    "order": 2,
+    "vi": { "title": "React + Vite" }
   },
   "documents/getting-started/next.md": {
     "slug": "getting-started-next",
     "title": "Next.js",
     "group": "Start",
-    "order": 3
+    "order": 3,
+    "vi": { "title": "Next.js" }
   },
   "documents/getting-started/nuxt-vue.md": {
     "slug": "getting-started-nuxt-vue",
     "title": "Nuxt + Vue",
     "group": "Start",
-    "order": 4
+    "order": 4,
+    "vi": { "title": "Nuxt + Vue" }
   },
   "documents/components.md": {
     "slug": "components",
     "title": "Components",
     "group": "Guides",
-    "order": 1
+    "order": 1,
+    "vi": { "title": "Component" }
   },
   "documents/cookbook.md": {
     "slug": "cookbook",
     "title": "Cookbook",
     "group": "Guides",
-    "order": 2
+    "order": 2,
+    "vi": { "title": "Công thức" }
   },
   "documents/guide.md": {
     "slug": "guide",
     "title": "Guide",
     "group": "Guides",
-    "order": 3
+    "order": 3,
+    "vi": { "title": "Hướng dẫn tích hợp" }
   },
   "documents/reference/core.md": {
     "slug": "reference-core",
     "title": "Core API",
     "group": "Reference",
-    "order": 1
+    "order": 1,
+    "vi": { "title": "API lõi" }
   },
   "documents/reference/theme.md": {
     "slug": "reference-theme",
     "title": "Theme config",
     "group": "Reference",
-    "order": 2
+    "order": 2,
+    "vi": { "title": "Cấu hình theme" }
   },
   "documents/reference/options.md": {
     "slug": "reference-options",
     "title": "Options",
     "group": "Reference",
-    "order": 3
+    "order": 3,
+    "vi": { "title": "Tùy chọn" }
   },
   "documents/reference/cli.md": {
     "slug": "reference-cli",
     "title": "CLI",
     "group": "Reference",
-    "order": 4
+    "order": 4,
+    "vi": { "title": "CLI" }
   },
   "documents/reference/tokens.md": {
     "slug": "reference-tokens",
     "title": "./tokens",
     "group": "Reference",
-    "order": 5
+    "order": 5,
+    "vi": { "title": "./tokens" }
   },
   "documents/reference/cva.md": {
     "slug": "reference-cva",
     "title": "./cva",
     "group": "Reference",
-    "order": 6
+    "order": 6,
+    "vi": { "title": "./cva" }
   },
   "documents/reference/spacing.md": {
     "slug": "reference-spacing",
     "title": "./spacing",
     "group": "Reference",
-    "order": 7
+    "order": 7,
+    "vi": { "title": "./spacing" }
   },
   "documents/reference/types.md": {
     "slug": "reference-types",
     "title": "./types",
     "group": "Reference",
-    "order": 8
+    "order": 8,
+    "vi": { "title": "./types" }
   },
   "documents/reference/recipes.md": {
     "slug": "reference-recipes",
     "title": "./recipes",
     "group": "Reference",
-    "order": 9
+    "order": 9,
+    "vi": { "title": "./recipes" }
   },
   "documents/reference/vite.md": {
     "slug": "reference-vite",
     "title": "./vite",
     "group": "Reference",
-    "order": 10
+    "order": 10,
+    "vi": { "title": "./vite" }
   },
   "documents/reference/next.md": {
     "slug": "reference-next",
     "title": "./next",
     "group": "Reference",
-    "order": 11
+    "order": 11,
+    "vi": { "title": "./next" }
   },
   "documents/reference/ui.md": {
     "slug": "reference-ui",
     "title": "./ui",
     "group": "Reference",
-    "order": 12
+    "order": 12,
+    "vi": { "title": "./ui" }
   },
   "documents/reference/ui-react.md": {
     "slug": "reference-ui-react",
     "title": "./ui-react",
     "group": "Reference",
-    "order": 13
+    "order": 13,
+    "vi": { "title": "./ui-react" }
   },
   "documents/migration/4.x-to-5.0.md": {
     "slug": "migration-4x-to-5",
     "title": "Migration 4.x → 5.0",
     "group": "Migration",
-    "order": 1
+    "order": 1,
+    "vi": { "title": "Nâng cấp 4.x → 5.0" }
   },
   "documents/migration/3.x-to-4.0.md": {
     "slug": "migration-3x-to-4",
     "title": "Migration 3.x → 4.0",
     "group": "Migration",
-    "order": 2
+    "order": 2,
+    "vi": { "title": "Nâng cấp 3.x → 4.0" }
   },
   "documents/architecture.md": {
     "slug": "architecture",
     "title": "Architecture",
     "group": "Overview",
-    "order": 1
+    "order": 1,
+    "vi": { "title": "Kiến trúc" }
   },
   "documents/deploy.md": {
     "slug": "deploy",
     "title": "Deploy",
     "group": "Operations",
-    "order": 1
+    "order": 1,
+    "vi": { "title": "Triển khai" }
   },
   "documents/testing.md": {
     "slug": "testing",
     "title": "Testing",
     "group": "Operations",
-    "order": 2
+    "order": 2,
+    "vi": { "title": "Kiểm thử" }
   }
 }

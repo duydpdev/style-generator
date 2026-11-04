@@ -1,8 +1,11 @@
 /**
  * Shared helpers of the docs scripts (`docs-embed.mjs`,
- * `check-doc-snippets.mjs`, `check-doc-exports.mjs`): repo root selection,
- * the list of markdown files they cover, and a fenced-code-block parser.
+ * `check-doc-snippets.mjs`, `check-doc-exports.mjs`, `check-docs-i18n.mjs`,
+ * `site/scripts/check-doc-links.mjs`): repo root selection, the list of
+ * markdown files they cover, the Vietnamese twin path, the source-hash
+ * line of a twin and a fenced-code-block parser.
  */
+import { createHash } from "node:crypto";
 import { readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +16,44 @@ const EXCLUDED_PREFIXES = [
   "documents/brainstorm/",
   // Migration guides show removed 3.x/4.x APIs on purpose.
   "documents/migration/",
+  // Their Vietnamese twins show the same removed APIs.
+  "documents/vi/migration/",
 ];
+
+/** Directory of the Vietnamese twins of the rendered docs. */
+export const VI_DIR = "documents/vi";
+
+/**
+ * Vietnamese twin of a rendered English doc: `README.md` →
+ * `documents/vi/README.md`, `documents/<p>` → `documents/vi/<p>`. Keep in
+ * sync with `enSourceOf` in `site/src/lib/locale.ts`.
+ * @param {string} en - POSIX repo-relative path of the English file
+ * @returns {string} POSIX repo-relative path of its twin
+ * @throws {Error} When `en` is neither `README.md` nor under `documents/`
+ */
+export function viTwinOf(en) {
+  if (en === "README.md") return `${VI_DIR}/README.md`;
+  if (en.startsWith("documents/")) {
+    return `${VI_DIR}/${en.slice("documents/".length)}`;
+  }
+  throw new Error(`${en} is not a rendered doc path`);
+}
+
+/** Line 1 of every twin: `<!-- source: <en path> sha256: <12 hex> -->`. */
+export const SOURCE_LINE = /^<!-- source: (\S+) sha256: ([0-9a-f]{12}) -->$/;
+
+/**
+ * Drift hash of an English doc, shared by `check-docs-i18n.mjs` and
+ * `check-doc-exports.mjs`.
+ * @param {string} text - File text (CRLF is normalised to LF here)
+ * @returns {string} First 12 hex digits of the sha256 of its UTF-8 text
+ */
+export function sourceHash(text) {
+  return createHash("sha256")
+    .update(text.replace(/\r\n/g, "\n"), "utf8")
+    .digest("hex")
+    .slice(0, 12);
+}
 
 /**
  * Repository root the script works on: the `--root <dir>` argument when

@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: a37ad3163bb7 -->
+<!-- source: documents/deploy.md sha256: ddb3db49fa27 -->
 
 # Triển khai & CI/CD
 
@@ -83,7 +83,7 @@ Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR.
 
 ### Quy ước Pull Request & merge
 
-Các ruleset bảo vệ `main`/`develop` (bắt buộc có PR, chỉ dùng merge commit, bắt buộc có các check `Build & Lint Check` và `Plain React (Storybook + parity)`); admin có thể bỏ qua vì `release.yml`/`back-merge.yml` push bằng một PAT. Người merge vẫn phải dừng lại khi một check nằm ngoài danh sách bắt buộc bị đỏ; lưới an toàn cuối cùng là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag.
+Các ruleset bảo vệ `main`/`develop` (bắt buộc có PR, chỉ dùng merge commit, và bắt buộc có năm check: `Build & Lint Check`, `Plain React (Storybook + parity)`, `Storybook (react-v4)`, `Storybook (next-v4)` và `Storybook (plain-nuxt)`); admin có thể bỏ qua vì `release.yml`/`back-merge.yml` push bằng một PAT. Người merge vẫn phải dừng lại khi một check nằm ngoài danh sách bắt buộc bị đỏ; lưới an toàn cuối cùng là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag.
 
 | PR                  | Cách merge                                                   | Ghi chú                                                                                                                                                                  |
 | ------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -196,7 +196,7 @@ Thất bại khi `git rev-list --count origin/develop..origin/main` > 0 và đ�
 | `release/*`                  | Branch tích hợp của một chu kỳ major (ví dụ `release/5.0`): các PR từ branch làm việc đi vào đây. Không bao giờ là head của một PR đã merge; nó vào `develop`/`main` qua `promote/<x>` |
 | `promote/*`, `dependabot/**` | `promote/<x>`: được tạo tại đúng SHA của một `release/*` để mở PR vào `develop`/`main` (ví dụ trước đây: `promote/4.0.0`); `dependabot/**`: các branch do Dependabot tạo               |
 
-**Quy tắc đặt tên branch** (`scripts/check-branch-name.sh`): `^(feat|fix|docs|chore|ci|build|refactor|test|perf|revert)/[a-z0-9]+(-[a-z0-9]+){0,5}$`, tức `<type>/<slug>`: `type` là một loại commit trừ `style`, `release`, `temp`, `conf`, `wip`; `slug` gồm 1–6 từ là chữ thường hoặc chữ số nối bằng `-` (ví dụ `feat/theme-axes`, `ci/branch-hygiene`). Ngoại lệ: `release/<x>`, `promote/<x>`, `dependabot/**`, `integrate/<slug>`. Quy tắc được kiểm tra ở hai nơi: hook `.husky/pre-push` trên máy cục bộ và bước `Check branch name` của `pr-title.yml` trên branch head của PR (bước đó bị bỏ qua khi head nằm trong một fork, `github.event.pull_request.head.repo.full_name != github.repository`, vì một contributor bên ngoài không thể tuân theo quy tắc đặt tên; check tiêu đề chạy cho tất cả mọi người). Các check bắt buộc của ruleset chỉ liệt kê `Build & Lint Check` và `Plain React (Storybook + parity)`, nên một check `PR Title` đỏ tự nó không chặn merge: người merge phải dừng lại vì nó.
+**Quy tắc đặt tên branch** (`scripts/check-branch-name.sh`): `^(feat|fix|docs|chore|ci|build|refactor|test|perf|revert)/[a-z0-9]+(-[a-z0-9]+){0,5}$`, tức `<type>/<slug>`: `type` là một loại commit trừ `style`, `release`, `temp`, `conf`, `wip`; `slug` gồm 1–6 từ là chữ thường hoặc chữ số nối bằng `-` (ví dụ `feat/theme-axes`, `ci/branch-hygiene`). Ngoại lệ: `release/<x>`, `promote/<x>`, `dependabot/**`, `integrate/<slug>`. Quy tắc được kiểm tra ở hai nơi: hook `.husky/pre-push` trên máy cục bộ và bước `Check branch name` của `pr-title.yml` trên branch head của PR (bước đó bị bỏ qua khi head nằm trong một fork, `github.event.pull_request.head.repo.full_name != github.repository`, vì một contributor bên ngoài không thể tuân theo quy tắc đặt tên; check tiêu đề chạy cho tất cả mọi người). Các check bắt buộc của ruleset là `Build & Lint Check`, `Plain React (Storybook + parity)`, `Storybook (react-v4)`, `Storybook (next-v4)` và `Storybook (plain-nuxt)`, nên một check `PR Title` đỏ tự nó không chặn merge: người merge phải dừng lại vì nó.
 
 ### Quy trình feature
 

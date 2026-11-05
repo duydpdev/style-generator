@@ -6,7 +6,7 @@ import { cn, tokens } from "../../theme";
 import { textRecipe } from "./style";
 import type { TextProps } from "./types";
 
-/** `Text`: typography, color, align, decoration and spacing props. */
+/** `Text`: typography, color, align, decoration, transform, italic, truncate, line clamp, wrap and spacing props. */
 export function Text<T extends ElementType = "p">({
   as,
   className,
@@ -15,6 +15,11 @@ export function Text<T extends ElementType = "p">({
   color,
   align,
   decoration,
+  transform,
+  italic,
+  truncate,
+  lineClamp,
+  wrap,
   ...props
 }: TextProps<T>): JSX.Element {
   const Component: ElementType = as ?? "p";
@@ -24,7 +29,17 @@ export function Text<T extends ElementType = "p">({
       {...split.rest}
       className={
         cn(
-          textRecipe({ type, color, align, decoration }),
+          textRecipe({
+            type,
+            color,
+            align,
+            decoration,
+            transform,
+            italic,
+            truncate,
+            lineClamp,
+            wrap,
+          }),
           split.className,
           className,
         ) || undefined

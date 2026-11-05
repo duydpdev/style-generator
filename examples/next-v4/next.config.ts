@@ -4,6 +4,7 @@ import { join } from "node:path";
 // #region docs:next-config
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
+import { options } from "./src/theme";
 
 const nextConfig: NextConfig = {};
 
@@ -11,12 +12,13 @@ const nextConfig: NextConfig = {};
 // plugin does not apply. `styleGenNext` does not import `next`, so it works
 // under both bundlers. It writes `src/theme/theme.css` when Next loads this
 // config in `phase-development-server` (`next dev`, which also watches the
-// theme JSON) or `phase-production-build` (`next build`). No generator
-// options: the defaults (breakpoints `md` and `lg`) are what `src/theme.ts`
-// types the tokens with.
+// theme JSON) or `phase-production-build` (`next build`). `options` comes from
+// `src/theme.ts`, which types the tokens with the same object; the `generate`
+// CLI reads the same steps from `style-gen.config.json`.
 export default styleGenNext({
   themePath: "src/theme/theme.json",
   outDir: "src/theme",
+  options,
 })(nextConfig);
 // #endregion docs:next-config
 

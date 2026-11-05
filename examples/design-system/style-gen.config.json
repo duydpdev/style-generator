@@ -1,5 +1,6 @@
 {
   "theme": "src/theme.json",
   "output": "src/styles/theme.css",
-  "breakpoints": ["md", "lg"]
+  "breakpoints": ["md", "lg"],
+  "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
 }

@@ -6,7 +6,10 @@ import {
   gridRecipe,
   intents,
   stackRecipe,
+  textLineClamp,
   textRecipe,
+  textTransform,
+  textWrap,
   tokens,
 } from "../src";
 import { gridColumns } from "../src/recipes/factories/grid";
@@ -74,10 +77,22 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
           color: tokens.colors,
           decoration: ["underline", "lineThrough", "none"],
           align: ["left", "center", "right"],
+          transform: textTransform,
+          italic: [true],
+          truncate: [true],
+          lineClamp: textLineClamp,
+          wrap: textWrap,
         }),
       ),
     ).toMatchSnapshot();
   });
+
+  it("textRecipe: color with an opacity step", () => {
+    const classes = textRecipe({ color: "primary/50" });
+    expect(classes).toContain("text-primary/50");
+    expect(classes).not.toContain("text-foreground");
+  });
+
   it("boxRecipe", () => {
     const widths = tokens.borderWidth;
     const radii = tokens.borderRadius;

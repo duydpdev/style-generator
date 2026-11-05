@@ -14,6 +14,7 @@ interface PlainApp {
   readonly uiDir: string;
   readonly component: ".tsx" | ".vue";
   readonly stories: false | ".stories.tsx" | ".stories.ts";
+  readonly opacities?: true;
 }
 interface IdenticalRule {
   readonly scope: "folder" | "app";
@@ -365,9 +366,15 @@ describe("check-plain-ui: the repo's plain apps", () => {
     mod = (await import(pathToFileURL(script).href)) as CheckPlainUiModule;
   });
 
+  /** `theme.ts` and `style-gen.config.json` of every opacities app declare the same steps. */
+  const THEME_TS =
+    "export const options = { coverage: { colors: { opacities: [10, 20, 50, 80] } } };\n";
+  const CONFIG =
+    '{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }\n';
+
   /**
    * The valid fixture: one `button` folder per app of `APPS`, plus the
-   * app-scope theme files.
+   * app-scope theme files and the opacity config.
    * @param {string} root - Fixture root
    */
   function validFixture(root: string) {
@@ -388,8 +395,9 @@ describe("check-plain-ui: the repo's plain apps", () => {
       if (app.stories !== false) {
         put(root, `${ui}/button/Button${app.stories}`, "export {};\n");
       }
-      put(root, `${dirname(ui)}/theme.ts`, "export const theme = 1;\n");
+      put(root, `${dirname(ui)}/theme.ts`, THEME_TS);
       put(root, `${dirname(ui)}/theme/theme.json`, "{}\n");
+      put(root, `${dirname(dirname(ui))}/style-gen.config.json`, CONFIG);
     }
   }
 
@@ -556,5 +564,50 @@ describe("check-plain-ui: the repo's plain apps", () => {
     rmSync(join(dir, "examples/plain-nuxt/app/ui/button/index.ts"));
     rmSync(join(dir, "examples/next-v4/src/ui/button/index.ts"));
     expect(mentions(check().errors, "next-v4")).toBe(true);
+  });
+
+  it("requires a style-gen.config.json in every app that declares opacities", () => {
+    rmSync(join(dir, "examples/next-v4/style-gen.config.json"));
+    expect(check().errors).toEqual([
+      "examples/next-v4/style-gen.config.json: missing",
+    ]);
+  });
+
+  it("rejects a style-gen.config.json that differs from plain-react's", () => {
+    put(
+      dir,
+      "examples/plain-nuxt/style-gen.config.json",
+      '{ "coverage": { "colors": { "opacities": [10,20,50,80] } } }\n',
+    );
+    expect(check().errors).toEqual([
+      "examples/plain-nuxt/style-gen.config.json: differs from examples/plain-react/style-gen.config.json",
+    ]);
+  });
+
+  it("rejects a theme.ts whose opacities literal differs from the config", () => {
+    put(
+      dir,
+      "examples/next-v4/src/theme.ts",
+      "export const options = { coverage: { colors: { opacities: [10, 20, 50] } } };\n",
+    );
+    expect(check().errors).toEqual([
+      "examples/next-v4/src/theme.ts: differs from examples/plain-react/src/theme.ts",
+      "examples/next-v4/src/theme.ts: opacities [10, 20, 50] differ from style-gen.config.json [10, 20, 50, 80]",
+    ]);
+  });
+
+  it("rejects a theme.ts without an opacities literal", () => {
+    for (const theme of [
+      "examples/plain-react/src/theme.ts",
+      "examples/next-v4/src/theme.ts",
+      "examples/plain-nuxt/app/theme.ts",
+    ]) {
+      put(dir, theme, "export const theme = 1;\n");
+    }
+    expect(check().errors).toEqual([
+      "examples/plain-react/src/theme.ts: no opacities literal",
+      "examples/next-v4/src/theme.ts: no opacities literal",
+      "examples/plain-nuxt/app/theme.ts: no opacities literal",
+    ]);
   });
 });

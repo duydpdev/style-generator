@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
+import { expect } from "storybook/test";
 
 import { tokens } from "../../theme";
 
 import Text from "./Text.vue";
 
+import Box from "~/ui/box/Box.vue";
 import Grid from "~/ui/grid/Grid.vue";
 
 const meta = {
@@ -81,4 +83,179 @@ export const DecorationNone: Story = { args: { decoration: "none" } };
 
 export const AlignAndDecoration: Story = {
   args: { align: "center", decoration: "underline" },
+};
+
+const LONG_TEXT =
+  "The quick brown fox jumps over the lazy dog while five boxing wizards jump quickly and a sphinx of black quartz judges my vow";
+const transforms = ["uppercase", "lowercase", "capitalize"] as const;
+const wraps = ["wrap", "nowrap", "balance", "pretty"] as const;
+
+/** `transform`: one row per value; the play check reads each computed `text-transform` (`normalCase` is `normal-case`, i.e. `none`, so it is read from the class). */
+export const Transforms: Story = {
+  render: (args) => ({
+    components: { Text, Grid },
+    setup() {
+      return { args, transforms };
+    },
+    template: `
+      <Grid :columns="1" :gap="1">
+        <Text
+          v-for="transform in transforms"
+          :key="transform"
+          v-bind="args"
+          :transform="transform"
+          :data-testid="'transform-' + transform"
+        >
+          Mixed Case Text
+        </Text>
+        <Text v-bind="args" transform="normalCase" data-testid="transform-normal">
+          Mixed Case Text
+        </Text>
+      </Grid>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    for (const transform of transforms) {
+      await expect(
+        getComputedStyle(canvas.getByTestId(`transform-${transform}`))
+          .textTransform,
+      ).toBe(transform);
+    }
+    await expect(canvas.getByTestId("transform-normal")).toHaveClass(
+      "normal-case",
+    );
+  },
+};
+
+/** `italic`: the italic row is italic, the plain row is not. */
+export const Italic: Story = {
+  render: (args) => ({
+    components: { Text, Grid },
+    setup() {
+      return { args };
+    },
+    template: `
+      <Grid :columns="1" :gap="1">
+        <Text v-bind="args" data-testid="upright">Upright</Text>
+        <Text v-bind="args" italic data-testid="italic">Italic</Text>
+      </Grid>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    await expect(
+      getComputedStyle(canvas.getByTestId("upright")).fontStyle,
+    ).toBe("normal");
+    await expect(getComputedStyle(canvas.getByTestId("italic")).fontStyle).toBe(
+      "italic",
+    );
+  },
+};
+
+/** `truncate` in a narrow box: one nowrap line cut with an ellipsis, wider than its box. */
+export const Truncate: Story = {
+  render: (args) => ({
+    components: { Text, Box },
+    setup() {
+      return { args, text: LONG_TEXT };
+    },
+    template: `
+      <Box :width="160">
+        <Text v-bind="args" truncate data-testid="truncate">{{ text }}</Text>
+      </Box>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const text = canvas.getByTestId("truncate");
+    const style = getComputedStyle(text);
+    await expect(style.whiteSpace).toBe("nowrap");
+    await expect(style.textOverflow).toBe("ellipsis");
+    await expect(style.overflow).toBe("hidden");
+    await expect(text.scrollWidth).toBeGreaterThan(text.clientWidth);
+    await expect(text).not.toHaveClass("whitespace-pre-wrap");
+  },
+};
+
+/** `lineClamp={2}` is shorter than the same text with `lineClamp="none"`. */
+export const LineClamp: Story = {
+  render: (args) => ({
+    components: { Text, Box },
+    setup() {
+      return { args, text: LONG_TEXT };
+    },
+    template: `
+      <Box :width="240">
+        <Text v-bind="args" :line-clamp="2" data-testid="clamped">{{ text }}</Text>
+        <Text v-bind="args" line-clamp="none" data-testid="unclamped">{{ text }}</Text>
+      </Box>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const clamped = canvas.getByTestId("clamped").getBoundingClientRect();
+    const unclamped = canvas.getByTestId("unclamped").getBoundingClientRect();
+    await expect(clamped.height).toBeLessThan(unclamped.height);
+  },
+};
+
+/** `wrap`: one row per value; the play check asserts the `text-*` class each value adds. */
+export const Wrap: Story = {
+  render: (args) => ({
+    components: { Text, Grid },
+    setup() {
+      return { args, wraps };
+    },
+    template: `
+      <Grid :columns="1" :gap="1">
+        <Text
+          v-for="wrap in wraps"
+          :key="wrap"
+          v-bind="args"
+          :wrap="wrap"
+          :data-testid="'wrap-' + wrap"
+        >
+          {{ wrap }}
+        </Text>
+      </Grid>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    for (const wrap of wraps) {
+      await expect(canvas.getByTestId(`wrap-${wrap}`)).toHaveClass(
+        `text-${wrap}`,
+      );
+    }
+  },
+};
+
+/** `color="primary/50"` mixes the token with transparent: its computed colour differs from `primary` and equals a probe that mixes the CSS variable directly. */
+export const ColorOpacities: Story = {
+  render: (args) => ({
+    components: { Text, Grid },
+    setup() {
+      return { args };
+    },
+    template: `
+      <Grid :columns="1" :gap="1">
+        <Text v-bind="args" color="primary" data-testid="solid">primary</Text>
+        <Text v-bind="args" color="primary/50" data-testid="half">primary/50</Text>
+      </Grid>
+    `,
+  }),
+  play: async ({ canvas, canvasElement }) => {
+    const resolve = (value: string): string => {
+      const probe = canvasElement.ownerDocument.createElement("span");
+      probe.style.color = value;
+      canvasElement.append(probe);
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    };
+    const solid = getComputedStyle(canvas.getByTestId("solid")).color;
+    const half = getComputedStyle(canvas.getByTestId("half")).color;
+    await expect(solid).toBe(resolve("var(--sg-color-primary)"));
+    await expect(half).toBe(
+      resolve("color-mix(in oklab, var(--sg-color-primary) 50%, transparent)"),
+    );
+    await expect(half).not.toBe(solid);
+    await expect(canvas.getByTestId("half")).toHaveClass("text-primary/50");
+  },
 };

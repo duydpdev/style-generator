@@ -39,6 +39,7 @@ The theme module exports `theme`, `tokens` created with `createDesignTokens()`, 
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
 import themeJson from "./theme/theme.json";
@@ -46,8 +47,13 @@ import themeJson from "./theme/theme.json";
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays; no options, like `styleGenVite` in vite.config.ts. */
-export const tokens = createDesignTokens(themeJson).DesignTokens.Web;
+/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
+export const options = {
+  coverage: { colors: { opacities: [10, 20, 50, 80] } },
+} as const satisfies StyleGeneratorOptions;
+
+/** Typed token arrays from the theme and `options`. */
+export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -434,11 +440,13 @@ Every component accepts the spacing props of the theme (`p`, `px`, `mt`, `gapX`,
 | Component | Replaces tags                                                           | Main props                                                                                                                                                |
 | --------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Box`     | `div`, `section`, `header`, `footer`, `aside`, `main`, `nav`, `article` | `backgroundColor`, `borderColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `width`/`height` (and min/max), `innerBorder`              |
-| `Text`    | `span`, `p`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`                         | `type` (a typography key), `color`, `align`, `decoration`                                                                                                 |
+| `Text`    | `span`, `p`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`                         | `type` (a typography key), `color` (a token or `token/step`), `align`, `decoration`, `transform`, `italic`, `truncate`, `lineClamp`, `wrap`               |
 | `Stack`   | none                                                                    | `align`, `justify`, `wrap`, plus the `Box` layout props; vertical by default                                                                              |
 | `Flex`    | none                                                                    | `direction`, `align`, `justify`, `wrap`, plus the `Box` layout props                                                                                      |
 | `Grid`    | none                                                                    | `columns` (a count, a CSS track list such as `"80px 1fr 80px"`, or `{ base, md, lg }` of either), `align`, `justify`, `flow`, plus the `Box` layout props |
 | `Button`  | `button`                                                                | `variant` (`fill`, `outline`, `soft`, `ghost`, `link`), `color`, `size`, `prefix`, `suffix`                                                               |
+
+The `token/step` colors of `Text` (`color="primary/50"`) are the steps in `coverage.colors.opacities`, which the example apps declare in `theme.ts` and `style-gen.config.json`. `truncate` also sets `whitespace-nowrap`, so do not combine it with `lineClamp`.
 
 The rules for app code:
 
@@ -509,18 +517,47 @@ export const textTables = (
       left: "text-left",
       right: "text-right",
     },
-    color: createVariantMapper("text", t.colors),
+    color: createVariantMapper("text", t.colors, {
+      opacities: t.opacities ?? [],
+    }),
+    transform: {
+      uppercase: "uppercase",
+      lowercase: "lowercase",
+      capitalize: "capitalize",
+      normalCase: "normal-case",
+    },
+    italic: { true: "italic" },
+    truncate: { true: "truncate whitespace-nowrap" },
+    lineClamp: {
+      1: "line-clamp-1",
+      2: "line-clamp-2",
+      3: "line-clamp-3",
+      4: "line-clamp-4",
+      5: "line-clamp-5",
+      6: "line-clamp-6",
+      none: "line-clamp-none",
+    },
+    wrap: {
+      wrap: "text-wrap",
+      nowrap: "text-nowrap",
+      balance: "text-balance",
+      pretty: "text-pretty",
+    },
   },
 });
 
-/** Text recipe for one theme: `type`, `color`, `decoration`, `align`. */
+/**
+ * Text recipe for one theme: `type`, `color` (a token or `token/step`),
+ * `decoration`, `align`, `transform`, `italic`, `truncate` (also sets
+ * `whitespace-nowrap`), `lineClamp` and `wrap`.
+ */
 export const createTextRecipe = (
   t: RecipeTokens,
   preset?: TextPreset,
 ): RecipeFn => recipeFromTables(textTables(t, preset));
 ```
 
-The preset holds the theme's values, and the bound recipe applies the factory to the design system's tokens (`textRecipe({ type, color, decoration, align })`):
+The preset holds the theme's values, and the bound recipe applies the factory to the design system's tokens (`textRecipe({ type, color, decoration, align, transform, italic, truncate, lineClamp, wrap })`):
 
 <!-- embed: examples/design-system/src/recipes/text.ts -->
 
@@ -531,12 +568,20 @@ import type {
   TextVariant,
 } from "@duydpdev/style-generator/types";
 
-import { tokens, type Theme } from "../tokens";
+import { tokens, type ColorValue, type Theme } from "../tokens";
 
 import { createTextRecipe, type TextPreset } from "./factories/text";
 
 export const textAlign = ["left", "center", "right"] as const;
 export const textDecoration = ["underline", "lineThrough", "none"] as const;
+export const textTransform = [
+  "uppercase",
+  "lowercase",
+  "capitalize",
+  "normalCase",
+] as const;
+export const textLineClamp = [1, 2, 3, 4, 5, 6, "none"] as const;
+export const textWrap = ["wrap", "nowrap", "balance", "pretty"] as const;
 
 /** Design-system text defaults; `<Text>` applies them when `type`/`color` are omitted. */
 export const textPreset = {
@@ -551,14 +596,22 @@ export const textPreset = {
 /** Props of the bound text recipe. */
 export type TextRecipeProps = Readonly<{
   type?: TextVariant<Theme> | null | undefined;
-  color?: ColorVariant<Theme> | null | undefined;
+  color?: ColorValue | null | undefined;
   decoration?: (typeof textDecoration)[number] | null | undefined;
   align?: (typeof textAlign)[number] | null | undefined;
+  transform?: (typeof textTransform)[number] | null | undefined;
+  italic?: boolean | null | undefined;
+  truncate?: boolean | null | undefined;
+  lineClamp?: (typeof textLineClamp)[number] | null | undefined;
+  wrap?: (typeof textWrap)[number] | null | undefined;
 }>;
 
 /**
- * Headless text recipe: `textRecipe({ type, color, decoration, align })`.
- * `type` is a typography utility (`text-16-medium`), `color` a `text-*` color.
+ * Headless text recipe: `textRecipe({ type, color, decoration, align,
+ * transform, italic, truncate, lineClamp, wrap })`. `type` is a typography
+ * utility (`text-16-medium`), `color` a `text-*` color or `token/step`
+ * (`primary/50`); `truncate` also sets `whitespace-nowrap` (do not combine
+ * it with `lineClamp`).
  */
 export const textRecipe: (props?: TextRecipeProps) => string = createTextRecipe(
   tokens,
@@ -570,9 +623,14 @@ export type TextVariants = VariantProps<typeof textRecipe>;
 /** Props a framework `Text` component adds on top of the element's own props. */
 export interface TextStyleProps {
   type?: TextVariant<Theme>;
-  color?: ColorVariant<Theme>;
+  color?: ColorValue;
   decoration?: (typeof textDecoration)[number];
   align?: (typeof textAlign)[number];
+  transform?: (typeof textTransform)[number];
+  italic?: boolean;
+  truncate?: boolean;
+  lineClamp?: (typeof textLineClamp)[number];
+  wrap?: (typeof textWrap)[number];
 }
 ```
 
@@ -595,16 +653,28 @@ import {
 } from "design-system-example/recipes";
 import type { CSSProperties, ElementType, JSX } from "react";
 
+import type { ColorValue } from "./layout";
+
 type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly type?: W["typography"][number] | undefined;
-  readonly color?: W["colors"][number] | undefined;
+  readonly color?: ColorValue<W> | undefined;
   readonly align?: "left" | "center" | "right" | undefined;
   readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
+  readonly transform?:
+    | "uppercase"
+    | "lowercase"
+    | "capitalize"
+    | "normalCase"
+    | undefined;
+  readonly italic?: boolean | undefined;
+  readonly truncate?: boolean | undefined;
+  readonly lineClamp?: 1 | 2 | 3 | 4 | 5 | 6 | "none" | undefined;
+  readonly wrap?: "wrap" | "nowrap" | "balance" | "pretty" | undefined;
   readonly className?: string | undefined;
   readonly style?: CSSProperties | undefined;
 };
 
-/** `Text`: typography/color/align/decoration from the text recipe, preset defaults, spacing props. */
+/** `Text`: typography, color (a token or `token/step`), align, decoration, transform, italic, truncate, line clamp, wrap from the text recipe, preset defaults, spacing props. */
 export const createText = <W extends RecipeTokens>(
   tokens: W,
   preset?: TextPreset,
@@ -620,6 +690,11 @@ export const createText = <W extends RecipeTokens>(
     color = preset?.defaultColor,
     align,
     decoration,
+    transform,
+    italic,
+    truncate,
+    lineClamp,
+    wrap,
     ...props
   }: Polymorphic<T, TextOwnProps<W>>): JSX.Element {
     const Component: ElementType = as ?? "p";
@@ -629,7 +704,17 @@ export const createText = <W extends RecipeTokens>(
         {...split.rest}
         className={
           cn(
-            text({ type, color, align, decoration }),
+            text({
+              type,
+              color,
+              align,
+              decoration,
+              transform,
+              italic,
+              truncate,
+              lineClamp,
+              wrap,
+            }),
             split.className,
             className,
           ) || undefined

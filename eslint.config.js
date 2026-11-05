@@ -18,12 +18,10 @@ const UI_APP_FILES = [
 ];
 
 // The sample components themselves render raw tags with className and
-// style, and build their classes from the recipes.
+// style, and build their classes from the recipes. Their stories
+// (src/ui/<Name>.stories.tsx, the app's only stories) share the exemption:
+// they render props and play checks, one file per component's variants.
 const UI_COMPONENT_FILES = ["examples/react-v4/src/ui/**"];
-
-// Stories take no part in the components-only rules: they render props and play checks,
-// and one file lists every variant of a component (examples/react-v4 Storybook).
-const UI_STORY_FILES = ["examples/react-v4/src/**/*.stories.tsx"];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;
 const COMPONENT_SELECTOR = `JSXOpeningElement[name.name=/^(${UI_COMPONENT_NAMES.join("|")})$/]`;
@@ -247,7 +245,7 @@ export default pluginTs.config(
   // take className.
   {
     files: UI_APP_FILES,
-    ignores: [...UI_COMPONENT_FILES, ...UI_STORY_FILES],
+    ignores: UI_COMPONENT_FILES,
     rules: {
       "max-lines": [
         "error",
@@ -260,7 +258,7 @@ export default pluginTs.config(
 
   {
     files: ["examples/react-v4/src/**/*.{ts,tsx}"],
-    ignores: [...UI_COMPONENT_FILES, ...UI_STORY_FILES],
+    ignores: UI_COMPONENT_FILES,
     rules: {
       "no-restricted-syntax": ["error", ...uiAppSyntax("x"), GRID_COLUMNS_SYNTAX],
     },
@@ -406,7 +404,7 @@ export default pluginTs.config(
   // (`nuxt typecheck`) type-checks the stories; the rest lints untyped.
   {
     files: [
-      "examples/plain-nuxt/app/**/*.stories.ts",
+      "examples/plain-nuxt/app/ui/**/*.stories.ts",
       "examples/plain-nuxt/.storybook/**/*.ts",
       "examples/plain-nuxt/vitest.config.ts",
     ],

@@ -37,7 +37,7 @@ yarn dev          # Vite dev server on http://localhost:5173
 
 ## Storybook
 
-`src/ui/<Name>.stories.tsx` (one per sample component) and `src/sections/<Module>.stories.tsx` (one per demo section module) document the harness; they run as Vitest browser tests (`@storybook/addon-vitest`, Chromium: `yarn workspace react-v4-example test:stories`, after `yarn build:all` and `yarn playwright install chromium` once). `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS, and a story's comments and strings avoid utility words such as `blur` and `filter`. ESLint excepts `*.stories.tsx` from the component-only rules (`UI_STORY_FILES` in `eslint.config.js`).
+`src/ui/<Name>.stories.tsx` (one per sample component, the only stories: `.storybook/main.ts` loads `src/ui/**`) document the harness; they run as Vitest browser tests (`@storybook/addon-vitest`, Chromium: `yarn workspace react-v4-example test:stories`, after `yarn build:all` and `yarn playwright install chromium` once). `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS, and a story's comments and strings avoid utility words such as `blur` and `filter`. ESLint exempts them from the component-only rules together with the components (`UI_COMPONENT_FILES` in `eslint.config.js`).
 
 ## What it demonstrates
 

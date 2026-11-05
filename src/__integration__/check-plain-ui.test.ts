@@ -365,21 +365,9 @@ describe("check-plain-ui: the repo's plain apps", () => {
     mod = (await import(pathToFileURL(script).href)) as CheckPlainUiModule;
   });
 
-  const SHARED_APP_STORIES = [
-    "sections/Hero.stories.tsx",
-    "sections/Features.stories.tsx",
-    "sections/Pricing.stories.tsx",
-    "sections/Cta.stories.tsx",
-    "sections/Footer.stories.tsx",
-    "sections/Section.stories.tsx",
-    "sections/SectionHead.stories.tsx",
-    "App.stories.tsx",
-    "ThemeSwitch.stories.tsx",
-  ];
-
   /**
    * The valid fixture: one `button` folder per app of `APPS`, plus the
-   * app-scope theme and shared story files.
+   * app-scope theme files.
    * @param {string} root - Fixture root
    */
   function validFixture(root: string) {
@@ -399,11 +387,6 @@ describe("check-plain-ui: the repo's plain apps", () => {
       }
       if (app.stories !== false) {
         put(root, `${ui}/button/Button${app.stories}`, "export {};\n");
-      }
-      if (app.stories === ".stories.tsx") {
-        for (const story of SHARED_APP_STORIES) {
-          put(root, `${dirname(ui)}/${story}`, "export {};\n");
-        }
       }
       put(root, `${dirname(ui)}/theme.ts`, "export const theme = 1;\n");
       put(root, `${dirname(ui)}/theme/theme.json`, "{}\n");
@@ -505,47 +488,35 @@ describe("check-plain-ui: the repo's plain apps", () => {
 
   it("expands <Name> per folder: a second folder is compared under its own name", () => {
     for (const app of ["plain-react", "next-v4"]) {
-      const ui = `examples/${app}/src/ui/theme-switch`;
+      const ui = `examples/${app}/src/ui/icon-button`;
       put(dir, `${ui}/style.ts`, "export const s = 1;\n");
       put(dir, `${ui}/types.ts`, "export type T = 1;\n");
-      put(dir, `${ui}/ThemeSwitch.tsx`, "export {};\n");
+      put(dir, `${ui}/IconButton.tsx`, "export {};\n");
       put(dir, `${ui}/index.ts`, "export {};\n");
-      put(dir, `${ui}/ThemeSwitch.stories.tsx`, `export const a = "${app}";\n`);
+      put(dir, `${ui}/IconButton.stories.tsx`, `export const a = "${app}";\n`);
     }
     put(
       dir,
-      "examples/plain-nuxt/app/ui/theme-switch/style.ts",
+      "examples/plain-nuxt/app/ui/icon-button/style.ts",
       "export const s = 1;\n",
     );
     put(
       dir,
-      "examples/plain-nuxt/app/ui/theme-switch/types.ts",
+      "examples/plain-nuxt/app/ui/icon-button/types.ts",
       "export type T = 1;\n",
     );
     put(
       dir,
-      "examples/plain-nuxt/app/ui/theme-switch/ThemeSwitch.vue",
+      "examples/plain-nuxt/app/ui/icon-button/IconButton.vue",
       "<template />\n",
     );
     put(
       dir,
-      "examples/plain-nuxt/app/ui/theme-switch/ThemeSwitch.stories.ts",
+      "examples/plain-nuxt/app/ui/icon-button/IconButton.stories.ts",
       "export {};\n",
     );
     expect(check().errors).toEqual([
-      "examples/next-v4/src/ui/theme-switch/ThemeSwitch.stories.tsx: differs from examples/plain-react/src/ui/theme-switch/ThemeSwitch.stories.tsx",
-    ]);
-  });
-
-  it("requires the section, App and ThemeSwitch stories in next-v4 and keeps them byte-identical", () => {
-    rmSync(join(dir, "examples/next-v4/src/sections/Hero.stories.tsx"));
-    expect(check().errors).toEqual([
-      "examples/next-v4/src/sections/Hero.stories.tsx: missing",
-    ]);
-    put(dir, "examples/next-v4/src/sections/Hero.stories.tsx", "export {};\n");
-    put(dir, "examples/next-v4/src/App.stories.tsx", "export {};\n// x\n");
-    expect(check().errors).toEqual([
-      "examples/next-v4/src/App.stories.tsx: differs from examples/plain-react/src/App.stories.tsx",
+      "examples/next-v4/src/ui/icon-button/IconButton.stories.tsx: differs from examples/plain-react/src/ui/icon-button/IconButton.stories.tsx",
     ]);
   });
 

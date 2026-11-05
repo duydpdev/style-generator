@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: e9e3e78c52fa -->
+<!-- source: documents/components.md sha256: c3eedf8dce12 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -29,7 +29,7 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 - `style.ts` là cùng một file trong cả ba ứng dụng; file này chứa các bảng variant và recipe headless.
 - `types.ts` giống nhau ở React và Next; `types.ts` của Vue khai báo các prop mà trình biên dịch SFC có thể đọc được và mở rộng các prop spacing bằng `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` render markup của component và áp dụng recipe cùng các utility spacing.
-- `<Name>.stories.tsx` (`<Name>.stories.ts` trong `plain-nuxt`) cô lập component cho Storybook; `next-v4` giữ các bản sao từng byte của story `plain-react` (do `check:plain-ui` thực thi), `plain-nuxt` dùng các bản port Vue viết tay. `ThemeSwitch` không có story trong `plain-nuxt` vì nó dùng `useState`/`useHead` của Nuxt.
+- `<Name>.stories.tsx` (`<Name>.stories.ts` trong `plain-nuxt`) cô lập component cho Storybook; `next-v4` giữ các bản sao từng byte của story `plain-react` (do `check:plain-ui` thực thi), `plain-nuxt` dùng các bản port Vue viết tay. Chỉ các thư mục component có story: mỗi `.storybook/main.ts` chỉ nạp `ui/**`, nên các section, `App` và `ThemeSwitch` không có story.
 - `index.ts` re-export component và các kiểu của nó trong các ứng dụng `.tsx` (không có trong `plain-nuxt`).
 - `sections/*.tsx` chứa các section landing của ứng dụng và các helper bố cục.
 

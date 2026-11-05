@@ -77,3 +77,16 @@ describe("Grid parity (plain vs harness)", () => {
     expect(plain).toEqual(harness);
   });
 });
+
+describe("Grid numbers (D1)", () => {
+  test("rows 3 reaches the recipe", async () => {
+    const props = { columns: 2, rows: 3 } as const;
+    const plain = await renderClasses(loose(Grid), props);
+    const harness = await renderClasses(loose(HarnessGrid), props);
+    expect(plain.root).toContain("grid-rows-3");
+    expect(plain).toEqual(harness);
+    const plainStyle = await renderStyle(loose(Grid), props);
+    const harnessStyle = await renderStyle(loose(HarnessGrid), props);
+    expect(plainStyle).toEqual(harnessStyle);
+  });
+});

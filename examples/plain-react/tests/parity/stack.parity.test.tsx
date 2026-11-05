@@ -24,7 +24,7 @@ import {
   type ParityCase,
 } from "./parity";
 
-const harnessStack = harnessStackTables();
+const harnessStack = harnessStackTables(harnessTokens);
 const harnessLayout = harnessBoxTables(harnessTokens);
 const layoutKeys: readonly string[] = LAYOUT_VARIANT_KEYS;
 const harnessLayoutKeys: readonly string[] = BOX_VARIANT_KEYS;

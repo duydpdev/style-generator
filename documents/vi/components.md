@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 5dfde72986f0 -->
+<!-- source: documents/components.md sha256: 7b8b9902742e -->
 
 # Component: các ví dụ, không phải một API
 
@@ -439,20 +439,22 @@ Trong Vue không có bước bind: mỗi SFC tự import các recipe đã bind c
 
 Mọi component đều chấp nhận các prop spacing của theme (`p`, `px`, `mt`, `gapX`, …). Bảng dưới đây liệt kê các prop khác của từng component; các thuộc tính riêng của phần tử được render cũng được truyền qua.
 
-| Component | Thay thế các thẻ                                                        | Các prop chính                                                                                                                                                                    |
-| --------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Box`     | `div`, `section`, `header`, `footer`, `aside`, `main`, `nav`, `article` | `backgroundColor`, `borderColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `width`/`height` (và min/max), `innerBorder`                                       |
-| `Text`    | `span`, `p`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`                         | `type` (một key typography), `color` (một token hoặc `token/step`), `align`, `decoration`, `transform`, `italic`, `truncate`, `lineClamp`, `wrap`                                 |
-| `Stack`   | không có                                                                | `align`, `justify`, `wrap`, cùng các prop bố cục của `Box`; mặc định theo chiều dọc                                                                                               |
-| `Flex`    | không có                                                                | `direction`, `align`, `justify`, `wrap`, cùng các prop bố cục của `Box`                                                                                                           |
-| `Grid`    | không có                                                                | `columns` (số lượng, một track list CSS như `"80px 1fr 80px"`, hoặc record `{ base, md, lg }` cho một trong hai kiểu), `align`, `justify`, `flow`, cùng các prop bố cục của `Box` |
-| `Button`  | `button`                                                                | `variant` (`fill`, `outline`, `soft`, `ghost`, `link`), `color`, `size`, `prefix`, `suffix`                                                                                       |
+| Component | Thay thế các thẻ                                                        | Các prop chính                                                                                                                                                                                                                                                                                                                             |
+| --------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Box`     | `div`, `section`, `header`, `footer`, `aside`, `main`, `nav`, `article` | `backgroundColor`, `borderColor`, `ringColor`, `outlineColor` (một token hoặc `token/step`), `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `display`, `overflow`, `zIndex`, `opacity`, `cursor`, `pointerEvents`, `select`, `transition`, `aspect`, `objectFit`, `visibility`, `width`/`height` (và min/max), `innerBorder` |
+| `Text`    | `span`, `p`, `h1`, `h2`, `h3`, `h4`, `h5`, `h6`                         | `type` (một key typography), `color` (một token hoặc `token/step`), `align`, `decoration`, `transform`, `italic`, `truncate`, `lineClamp`, `wrap`                                                                                                                                                                                          |
+| `Stack`   | không có                                                                | `align`, `justify`, `wrap`, `divideColor`, cùng các prop bố cục của `Box`; mặc định theo chiều dọc                                                                                                                                                                                                                                         |
+| `Flex`    | không có                                                                | `direction`, `align`, `justify`, `wrap`, `divideColor`, `grow`, `shrink`, `basis`, cùng các prop bố cục của `Box`                                                                                                                                                                                                                          |
+| `Grid`    | không có                                                                | `columns` (số lượng, một track list CSS như `"80px 1fr 80px"`, hoặc record `{ base, md, lg }` cho một trong hai kiểu), `align`, `justify`, `flow`, `rows` (`1`-`6` hoặc `"none"`; với `as="textarea"` đây là prop của grid, không phải thuộc tính HTML), cùng các prop bố cục của `Box`                                                    |
+| `Button`  | `button`                                                                | `variant` (`fill`, `outline`, `soft`, `ghost`, `link`), `color`, `size`, `prefix`, `suffix`                                                                                                                                                                                                                                                |
+
+Mỗi prop bố cục tĩnh nhận hậu tố class của Tailwind viết theo camelCase (`display="inlineFlex"` → `inline-flex`, `cursor="notAllowed"` → `cursor-not-allowed`); `zIndex` (`0`-`50` theo bước 10, `"auto"`) và `opacity` (`0`-`100` theo bước 10) nhận số; các bước màu là `coverage.colors.opacities`; `Input` thuần cũng nhận `placeholderColor` (mặc định `muted`).
 
 Các màu `token/step` của `Text` (`color="primary/50"`) là các bước trong `coverage.colors.opacities`, mà các ứng dụng ví dụ khai báo trong `theme.ts` và `style-gen.config.json`. `truncate` cũng đặt `whitespace-nowrap`, nên đừng kết hợp nó với `lineClamp`.
 
 Các quy tắc cho mã nguồn ứng dụng:
 
-- Các variant boolean được viết gọn: `<Flex wrap>`, không viết `wrap={true}`.
+- Các variant boolean được viết gọn: `<Flex wrap>`, không viết `wrap={true}`. `false` chỉ được viết khi nó chọn một class: `<Flex shrink={false}>` render ra `shrink-0`.
 - Các prop spacing là các số trên thang đo spacing hoặc các object `{ base, md, lg }`: `<Box p={4} />`, `<Stack gap={{ base: 2, md: 4 }} />`.
 - Mã nguồn ứng dụng không truyền `className` và không truyền `style`; thay vào đó, hãy dùng một variant hoặc một prop token để thể hiện style. Một giá trị mà không prop nào thể hiện được (một transform hoặc chiều rộng được tính toán) giữ `style` của nó đằng sau dòng `// eslint-disable-next-line no-restricted-syntax -- <reason>`.
 - Mã nguồn ứng dụng không import recipe; recipe chỉ được dùng bên trong các file component `ui/`.

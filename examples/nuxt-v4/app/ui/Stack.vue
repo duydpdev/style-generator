@@ -6,10 +6,13 @@ import type { FlexProps } from "./Flex.vue";
  * Stack: a Flex whose direction defaults to `column`, for a vertical single
  * column. Spacing attributes (`gap`, `p`, …) fall through to Flex.
  */
-const props = withDefaults(defineProps<FlexProps>(), {
-  as: "div",
-  direction: "column",
-});
+const props = withDefaults(
+  defineProps<Omit<FlexProps, "grow" | "shrink" | "basis">>(),
+  {
+    as: "div",
+    direction: "column",
+  },
+);
 defineSlots<{ default?: () => unknown }>();
 </script>
 

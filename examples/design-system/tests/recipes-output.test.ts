@@ -13,6 +13,22 @@ import {
   tokens,
 } from "../src";
 import { gridColumns } from "../src/recipes/factories/grid";
+import { createFlexRecipe } from "../src/recipes/factories/stack";
+
+const colorValues = [
+  ...tokens.colors,
+  ...tokens.colors.flatMap((c) =>
+    tokens.opacities.map((s) => `${c}/${String(s)}`),
+  ),
+];
+
+/** `primary/<step>` with the literal step type kept, so it type-checks as a colour value. */
+function primaryStep<S extends (typeof tokens.opacities)[number]>(
+  step: S,
+): `primary/${S}`;
+function primaryStep(step: number): string {
+  return `primary/${String(step)}`;
+}
 
 type Recipe = (props?: Record<string, unknown>) => string;
 type Axes = Readonly<Record<string, readonly unknown[]>>;
@@ -64,6 +80,7 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
           align: ["start", "center", "end", "stretch"],
           justify: ["start", "center", "end", "between"],
           wrap: [true],
+          divideColor: colorValues,
         }),
       ),
     ).toMatchSnapshot();
@@ -100,8 +117,8 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
       run(
         boxRecipe,
         singles({
-          backgroundColor: tokens.colors,
-          borderColor: tokens.colors,
+          backgroundColor: colorValues,
+          borderColor: colorValues,
           border: widths,
           borderX: widths,
           borderY: widths,
@@ -117,6 +134,44 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
           shadow: tokens.shadows,
           backdropBlur: tokens.backDropBlurs,
           position: ["absolute", "relative", "fixed", "sticky"],
+          display: [
+            "block",
+            "inlineBlock",
+            "inline",
+            "flex",
+            "inlineFlex",
+            "grid",
+            "contents",
+            "hidden",
+          ],
+          overflow: ["auto", "hidden", "clip", "visible", "scroll"],
+          zIndex: [0, 10, 20, 30, 40, 50, "auto"],
+          opacity: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+          cursor: [
+            "auto",
+            "default",
+            "pointer",
+            "notAllowed",
+            "grab",
+            "grabbing",
+            "text",
+            "move",
+          ],
+          pointerEvents: ["none", "auto"],
+          select: ["none", "text", "all", "auto"],
+          transition: [
+            "none",
+            "all",
+            "colors",
+            "opacity",
+            "shadow",
+            "transform",
+          ],
+          aspect: ["auto", "square", "video"],
+          objectFit: ["contain", "cover", "fill", "none", "scaleDown"],
+          visibility: ["visible", "invisible", "collapse"],
+          ringColor: colorValues,
+          outlineColor: colorValues,
           innerBorder: [true],
         }),
       ),
@@ -128,6 +183,8 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
     expect(gridRecipe({ align: "center", flow: "dense" })).toBe(
       "grid items-center grid-flow-dense",
     );
+    expect(gridRecipe({ rows: 3 })).toBe("grid grid-rows-3");
+    expect(gridRecipe({ rows: "none" })).toBe("grid grid-rows-none");
     expect(gridColumns({ base: 1, md: 3 })).toEqual({
       className: "grid-cols-(--ui-grid-cols) md:grid-cols-(--ui-grid-cols-md)",
       style: {
@@ -139,6 +196,27 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
     expect(() => gridColumns({ tablet: 2 })).toThrow(
       'unknown breakpoint "tablet"',
     );
+  });
+
+  it("flexRecipe (exact)", () => {
+    const flexRecipe = createFlexRecipe(tokens);
+    expect(flexRecipe()).toBe("flex flex-row");
+    expect(flexRecipe({ grow: true, shrink: false, basis: "1/2" })).toBe(
+      "flex flex-row grow shrink-0 basis-1/2",
+    );
+    expect(flexRecipe({ basis: 0 })).toBe("flex flex-row basis-0");
+  });
+
+  it("boxRecipe: numbers and zero reach the table (D1)", () => {
+    expect(boxRecipe({ zIndex: 0, opacity: 0 })).toBe("relative z-0 opacity-0");
+    expect(boxRecipe({ zIndex: 10, opacity: 100 })).toBe(
+      "relative z-10 opacity-100",
+    );
+    for (const step of tokens.opacities) {
+      expect(boxRecipe({ backgroundColor: primaryStep(step) })).toBe(
+        `relative bg-primary/${String(step)}`,
+      );
+    }
   });
 
   it("gridColumns takes CSS track strings", () => {

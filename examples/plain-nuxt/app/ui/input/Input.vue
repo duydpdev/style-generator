@@ -20,7 +20,13 @@ const root = () => {
       props.invalid === true
         ? true
         : (ariaInvalid as InputHTMLAttributes["aria-invalid"]),
-    class: cn(inputRecipe({ size: props.size }), klass as ClassValue),
+    class: cn(
+      inputRecipe({
+        size: props.size,
+        placeholderColor: props.placeholderColor,
+      }),
+      klass as ClassValue,
+    ),
   };
 };
 </script>

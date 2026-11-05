@@ -26,6 +26,19 @@ export const LAYOUT_VARIANT_KEYS = [
   "shadow",
   "backdropBlur",
   "position",
+  "display",
+  "overflow",
+  "zIndex",
+  "opacity",
+  "cursor",
+  "pointerEvents",
+  "select",
+  "transition",
+  "aspect",
+  "objectFit",
+  "visibility",
+  "ringColor",
+  "outlineColor",
 ] as const;
 
 /** Layout props that become inline `style` (`width`, `min-height`, …); `splitLayout` routes them. */
@@ -42,8 +55,12 @@ export const LAYOUT_SIZE_KEYS = [
 export const layoutTables = {
   base: "",
   variants: {
-    backgroundColor: createVariantMapper("bg", tokens.colors),
-    borderColor: createVariantMapper("border", tokens.colors),
+    backgroundColor: createVariantMapper("bg", tokens.colors, {
+      opacities: tokens.opacities,
+    }),
+    borderColor: createVariantMapper("border", tokens.colors, {
+      opacities: tokens.opacities,
+    }),
     border: createVariantMapper("border", tokens.borderWidth),
     borderX: createVariantMapper("border-x", tokens.borderWidth),
     borderY: createVariantMapper("border-y", tokens.borderWidth),
@@ -64,6 +81,96 @@ export const layoutTables = {
       fixed: "fixed",
       sticky: "sticky",
     },
+    display: {
+      block: "block",
+      inlineBlock: "inline-block",
+      inline: "inline",
+      flex: "flex",
+      inlineFlex: "inline-flex",
+      grid: "grid",
+      contents: "contents",
+      hidden: "hidden",
+    },
+    overflow: {
+      auto: "overflow-auto",
+      hidden: "overflow-hidden",
+      clip: "overflow-clip",
+      visible: "overflow-visible",
+      scroll: "overflow-scroll",
+    },
+    zIndex: {
+      0: "z-0",
+      10: "z-10",
+      20: "z-20",
+      30: "z-30",
+      40: "z-40",
+      50: "z-50",
+      auto: "z-auto",
+    },
+    opacity: {
+      0: "opacity-0",
+      10: "opacity-10",
+      20: "opacity-20",
+      30: "opacity-30",
+      40: "opacity-40",
+      50: "opacity-50",
+      60: "opacity-60",
+      70: "opacity-70",
+      80: "opacity-80",
+      90: "opacity-90",
+      100: "opacity-100",
+    },
+    cursor: {
+      auto: "cursor-auto",
+      default: "cursor-default",
+      pointer: "cursor-pointer",
+      notAllowed: "cursor-not-allowed",
+      grab: "cursor-grab",
+      grabbing: "cursor-grabbing",
+      text: "cursor-text",
+      move: "cursor-move",
+    },
+    pointerEvents: {
+      none: "pointer-events-none",
+      auto: "pointer-events-auto",
+    },
+    select: {
+      none: "select-none",
+      text: "select-text",
+      all: "select-all",
+      auto: "select-auto",
+    },
+    transition: {
+      none: "transition-none",
+      all: "transition-all",
+      colors: "transition-colors",
+      opacity: "transition-opacity",
+      shadow: "transition-shadow",
+      transform: "transition-transform",
+    },
+    aspect: {
+      auto: "aspect-auto",
+      square: "aspect-square",
+      video: "aspect-video",
+    },
+    objectFit: {
+      contain: "object-contain",
+      cover: "object-cover",
+      fill: "object-fill",
+      none: "object-none",
+      scaleDown: "object-scale-down",
+    },
+    visibility: {
+      visible: "visible",
+      invisible: "invisible",
+      collapse: "collapse",
+    },
+    ringColor: createVariantMapper("ring", tokens.colors, {
+      opacities: tokens.opacities,
+    }),
+    outlineColor: createVariantMapper("outline", tokens.colors, {
+      opacities: tokens.opacities,
+    }),
   },
 } satisfies RecipeTables;
 
@@ -148,6 +255,15 @@ export const gridTables = {
       column: "grid-flow-col",
       dense: "grid-flow-dense",
     },
+    rows: {
+      1: "grid-rows-1",
+      2: "grid-rows-2",
+      3: "grid-rows-3",
+      4: "grid-rows-4",
+      5: "grid-rows-5",
+      6: "grid-rows-6",
+      none: "grid-rows-none",
+    },
   },
 } satisfies RecipeTables;
 
@@ -158,5 +274,5 @@ if (missing.length > 0) {
   );
 }
 
-/** Grid recipe (`align`, `justify`, `flow`); columns come from `gridColumns`. */
+/** Grid recipe (`align`, `justify`, `flow`, `rows`); columns come from `gridColumns`. */
 export const gridRecipe: RecipeFn = recipeFromTables(gridTables);

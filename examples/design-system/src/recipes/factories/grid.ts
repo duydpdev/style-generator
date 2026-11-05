@@ -64,6 +64,9 @@ export const gridColumns = (value: GridColumnsValue): GridColumns => {
   return { className: classes.join(" "), style };
 };
 
+/** `rows` values: a row count (`grid-rows-N`) or `none`. */
+export type GridRows = 1 | 2 | 3 | 4 | 5 | 6 | "none";
+
 export const gridTables = (): RecipeTables => ({
   base: "grid",
   variants: {
@@ -84,6 +87,15 @@ export const gridTables = (): RecipeTables => ({
       column: "grid-flow-col",
       dense: "grid-flow-dense",
     },
+    rows: {
+      1: "grid-rows-1",
+      2: "grid-rows-2",
+      3: "grid-rows-3",
+      4: "grid-rows-4",
+      5: "grid-rows-5",
+      6: "grid-rows-6",
+      none: "grid-rows-none",
+    } satisfies Record<GridRows, string>,
   },
 });
 

@@ -13,6 +13,7 @@ import {
   gridColumns,
   type FlexAlign,
   type FlexJustify,
+  type GridRows,
 } from "design-system-example/recipes";
 import type { CSSProperties, ElementType, JSX } from "react";
 
@@ -26,6 +27,8 @@ type GridOwnProps<W extends RecipeTokens> = LayoutProps<W> & {
   readonly align?: FlexAlign | undefined;
   readonly justify?: FlexJustify | undefined;
   readonly flow?: "row" | "column" | "dense" | undefined;
+  /** Row count (`grid-rows-N`); on `as="textarea"` it is this prop, not the HTML `rows` attribute. */
+  readonly rows?: GridRows | undefined;
   readonly className?: string | undefined;
   readonly style?: CSSProperties | undefined;
 };
@@ -44,6 +47,7 @@ export const createGrid = <W extends RecipeTokens>(tokens: W) => {
     align,
     justify,
     flow,
+    rows,
     ...props
   }: Polymorphic<T, GridOwnProps<W>>): JSX.Element {
     const Component: ElementType = as ?? "div";
@@ -60,7 +64,7 @@ export const createGrid = <W extends RecipeTokens>(tokens: W) => {
         {...split.rest}
         className={
           cn(
-            grid({ align, justify, flow }),
+            grid({ align, justify, flow, rows }),
             cols?.className,
             split.className,
             className,

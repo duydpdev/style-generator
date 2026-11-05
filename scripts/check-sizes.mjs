@@ -76,6 +76,7 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 14050 -> 15430; next (98%) and cli (96%) keep theirs. tokens 1686, recipes
 // 2076 are unchanged.
 // 2026-11-03 (./ui, ./ui-react): measured ui 3414 B, ui-react 58 B transitive; budgets = measured + ~10 %, rounded up to 10 B. index, tokens, cva, spacing unchanged.
+// 2026-11-05 (5.4: four more color prefixes, typed opacity steps, divider-width color-key check, doctor color-prefix warnings): measured next 14632 B, cli 24955 B transitive; budgets raised (user-approved) to measured + ~10 %, rounded up to 10 B: next 14450 -> 16100, cli 24750 -> 27460. index 12796, vite 14476, tokens 1753 (+67), cva 737 (+13), ui 3432 stay within their budgets.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -88,8 +89,8 @@ const budgets = {
   ui: 3_760,
   "ui-react": 70,
   vite: 15_430,
-  next: 14_450,
-  cli: 24_750,
+  next: 16_100,
+  cli: 27_460,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.

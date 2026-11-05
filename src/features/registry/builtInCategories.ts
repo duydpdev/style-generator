@@ -8,7 +8,7 @@ import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
 import { categoryTokenMeta } from "./categoryTokenMeta";
 
 /**
- * `colors` — flat camelCase palette. Feeds `bg-*`/`text-*`/`border-*`
+ * `colors` — flat camelCase palette. Feeds `bg-*`/`text-*`/`border-*`/`ring-*`/`outline-*`/`divide-*`/`placeholder-*`
  * utilities through Tailwind v4's `--color-*` `@theme` namespace.
  */
 export const colorsCategory = {
@@ -16,7 +16,15 @@ export const colorsCategory = {
   tokenKeyName: "colorKey",
   cssVarPrefix: "sg-color",
   themeNamespace: "--color-",
-  classPrefixes: ["bg", "text", "border"],
+  classPrefixes: [
+    "bg",
+    "text",
+    "border",
+    "ring",
+    "outline",
+    "divide",
+    "placeholder",
+  ],
   opacityModifier: true,
   /**
    * Sibling state tokens: a flat key `t` + Pascal-cased state (e.g.

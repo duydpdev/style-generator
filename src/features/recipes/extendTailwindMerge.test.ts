@@ -59,6 +59,14 @@ describe("createTailwindMergeExtension — real twMerge", () => {
     ["bg-primary/10 bg-blue-500/20", "bg-blue-500/20"],
     ["bg-primary/10 bg-primary", "bg-primary"],
     ["border-thin border-primary/20", "border-thin border-primary/20"],
+    // new color prefixes: width and color stay apart, color/opacity merge
+    ["ring-2 ring-primary", "ring-2 ring-primary"],
+    ["divide-x divide-primary", "divide-x divide-primary"],
+    ["divide-x-thin divide-primary", "divide-x-thin divide-primary"],
+    ["outline-2 outline-primary", "outline-2 outline-primary"],
+    ["bg-primary bg-primary/50", "bg-primary/50"],
+    ["ring-primary ring-primary/50", "ring-primary/50"],
+    ["placeholder-blue-500 placeholder-primary", "placeholder-primary"],
   ])("%s → %s", (input, expected) => {
     expect(twMerge(input)).toBe(expected);
   });
@@ -151,6 +159,14 @@ describe("createTailwindMergeExtension — shape", () => {
     expect(classGroups.shadow).toEqual([{ shadow: ["card"] }]);
     expect(classGroups["border-w-x"]).toEqual([{ "border-x": ["thin"] }]);
     expect(Object.keys(classGroups)).not.toContain("color");
+    for (const group of [
+      "ring-color",
+      "outline-color",
+      "divide-color",
+      "placeholder-color",
+    ]) {
+      expect(Object.keys(classGroups)).not.toContain(group);
+    }
     expect(Object.keys(classGroups)).not.toContain("font-family");
   });
 

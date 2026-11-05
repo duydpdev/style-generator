@@ -39,14 +39,15 @@ export type SpacingPropertyMap = Readonly<Record<string, readonly string[]>>;
  * `coverage` only changes the `@source inline(...)` lines (class-name
  * coverage for classes Tailwind cannot see in source files): it trims
  * them, and `coverage.colors.opacities` adds one opacity-modifier line. It
- * never changes the `@theme inline` mapping, the `@utility` blocks or the
- * typed `DesignTokens`.
+ * never changes the `@theme inline` mapping or the `@utility` blocks; of the
+ * typed `DesignTokens` only `opacities` (from `coverage.colors.opacities`)
+ * depends on it.
  * @template P Class prefixes the category accepts
  */
 export interface CoverageRule<P extends string = RegistryPrefix> {
   /**
    * Keep only these class prefixes of the category (e.g. `["bg"]` for
-   * `colors`, which feeds `bg`, `text` and `border`). Non-empty (the type
+   * `colors`, which feeds `bg`, `text`, `border`, `ring`, `outline`, `divide` and `placeholder`). Non-empty (the type
    * is a non-empty tuple); each entry must be one of the category's own
    * prefixes, and `typography` has none (its class is the bare key).
    * Applies to the category's state lines too.
@@ -177,7 +178,8 @@ export interface StyleGeneratorOptions {
    * keeps only the listed `prefixes` and/or the alias holders
    * (`keys: "aliased"`). `colors` also takes `opacities` (e.g. `[10, 20]`):
    * one extra line covering `<prefix>-<key>/<n>` for the kept prefixes and
-   * keys (`bg-primary/10`), never crossed with the state lines. Typed
+   * keys (`bg-primary/10`), never crossed with the state lines.
+   * The same steps become `DesignTokens.Web.opacities`; the other typed
    * tokens and the `@theme`/`@utility` CSS are unaffected.
    *
    * Validated by `generate()`: keys must be built-in category names, every

@@ -14,6 +14,7 @@ describe("resolveTokenOptions", () => {
       breakpoints: [...DEFAULT_BREAKPOINTS],
       screens: defaultScreens,
       spacing: { enabled: true, properties: DEFAULT_SPACING_PROPERTIES },
+      opacities: [],
     });
   });
 
@@ -26,6 +27,22 @@ describe("resolveTokenOptions", () => {
     expect(resolved.breakpoints).toEqual(["lg", "md"]);
     expect(resolved.screens).toEqual({ ...defaultScreens, md: "800px" });
     expect(resolved.spacing.enabled).toBe(false);
+  });
+
+  it("resolves coverage.colors.opacities ascending, else []", () => {
+    const options = {
+      coverage: { colors: { opacities: [50, 10] as [number, ...number[]] } },
+    };
+    const snapshot = structuredClone(options);
+    expect(resolveTokenOptions(options).opacities).toEqual([10, 50]);
+    expect(options).toEqual(snapshot);
+    expect(
+      resolveTokenOptions({ coverage: { colors: true } }).opacities,
+    ).toEqual([]);
+    expect(
+      resolveTokenOptions({ coverage: { colors: { prefixes: ["bg"] } } })
+        .opacities,
+    ).toEqual([]);
   });
 });
 

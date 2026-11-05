@@ -25,7 +25,7 @@ const DECLARATION_FILE = /\.d\.[mc]?ts$/;
 /**
  * Executes the `tokens` CLI command: writes the theme's design-token keys
  * (`DesignTokens.Web`: one array of camelCased keys per category, plus the
- * breakpoints, screens and spacing properties) as a `theme.tokens.ts`
+ * breakpoints, screens, spacing properties and opacity steps) as a `theme.tokens.ts`
  * module, so a client bundle can import the key lists without shipping the
  * `./tokens` runtime and the theme JSON.
  *

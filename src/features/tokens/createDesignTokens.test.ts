@@ -191,4 +191,17 @@ describe("createDesignTokens", () => {
       "3xl": "1920px",
     });
   });
+
+  it("opacities lists coverage.colors.opacities ascending, [] without it", () => {
+    const colors = { primary: "#000" };
+    expect(createDesignTokens({ colors }).DesignTokens.Web.opacities).toEqual(
+      [],
+    );
+    expect(
+      createDesignTokens(
+        { colors },
+        { coverage: { colors: { opacities: [50, 10] } } },
+      ).DesignTokens.Web.opacities,
+    ).toEqual([10, 50]);
+  });
 });

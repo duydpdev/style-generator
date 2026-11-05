@@ -49,9 +49,28 @@ type StateVariantMap<
       : `${MappedVariant<K, P>}${JoinStates<K, P, S, T>}`;
 };
 
+/**
+ * Result of the `{ opacities }` overloads: every token keeps its
+ * `StateVariantMap` class, and each token × step adds a `token/step` key
+ * mapped to `class/step`. State classes are never crossed with a step.
+ */
+type OpacityVariantMap<
+  T extends string,
+  P extends string,
+  S extends readonly string[],
+  N extends number,
+> = {
+  readonly [K in T | `${T}/${N}`]: K extends T
+    ? StateVariantMap<T, P, S>[K]
+    : K extends `${infer B extends T}/${infer Step}`
+      ? `${MappedVariant<B, P>}/${Step}`
+      : never;
+};
+
 /** Runtime shape of the optional third argument (the overloads narrow it). */
 interface VariantMapperRuntimeOptions {
   readonly states?: readonly string[];
+  readonly opacities?: readonly number[];
   readonly allowUnregisteredPrefix?: true;
 }
 
@@ -71,9 +90,15 @@ interface VariantMapperRuntimeOptions {
  * literal tuple (`as const`, `COLOR_STATES`) and `string` when it is typed
  * `readonly string[]`. `{ allowUnregisteredPrefix: true }` accepts any
  * prefix string instead of only registry prefixes.
+ *
+ * `{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
+ * and step mapped to `class/step` (`primary/10` -> `bg-primary/10`); combined
+ * with `{ states }`, the state classes stay on the base key only
+ * (`primary/10` never carries `hover:`). Not combinable with
+ * `allowUnregisteredPrefix`.
  * @template {string} T
  * @template {RegistryPrefix | ""} P
- * @param {P} prefix - A utility prefix the registry emits `@source inline` for (`bg`, `text`, `border`, `rounded-t`, …); `""` yields the bare kebab-case token (typography). An unregistered prefix (`ring`) is a type error — it would map to classes no `@source inline` line covers; pass `{ allowUnregisteredPrefix: true }` to opt out.
+ * @param {P} prefix - A utility prefix the registry emits `@source inline` for (`bg`, `text`, `border`, `ring`, `rounded-t`, …); `""` yields the bare kebab-case token (typography). An unregistered prefix (`fill`) is a type error — it would map to classes no `@source inline` line covers; pass `{ allowUnregisteredPrefix: true }` to opt out.
  * @param {readonly T[]} tokens - An array of token keys (e.g. ['primary', 'secondary'])
  * @returns {VariantMap<T, P>} An object mapping each token to its full class name
  * @example
@@ -96,6 +121,10 @@ interface VariantMapperRuntimeOptions {
  * //   primaryActive: "bg-primary-active",
  * //   danger: "bg-danger",
  * // }
+ * @example
+ * // Opacity steps (`tokens.opacities`): one `token/step` key per token and step
+ * const bg = createVariantMapper("bg", ["primary"] as const, { opacities: [10] });
+ * // Result: { primary: "bg-primary", "primary/10": "bg-primary/10" }
  */
 export function createVariantMapper<
   const T extends string,
@@ -113,6 +142,26 @@ export function createVariantMapper<
   tokens: readonly T[],
   opts: { readonly allowUnregisteredPrefix: true },
 ): VariantMap<T, P>;
+export function createVariantMapper<
+  const T extends string,
+  const P extends RegistryPrefix | "",
+  const N extends number,
+  const S extends readonly string[] = readonly [],
+>(
+  prefix: P,
+  tokens: readonly T[],
+  opts: { readonly opacities: readonly N[]; readonly states?: S },
+): OpacityVariantMap<T, P, S, N>;
+export function createVariantMapper<
+  const T extends string,
+  const P extends RegistryPrefix | "",
+  const N extends number,
+  const S extends readonly string[] = readonly [],
+>(
+  prefixes: readonly P[],
+  tokens: readonly T[],
+  opts: { readonly opacities: readonly N[]; readonly states?: S },
+): { readonly [Px in P]: OpacityVariantMap<T, Px, S, N> };
 export function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
@@ -145,27 +194,26 @@ export function createVariantMapper<
   };
 
   const states = opts?.states;
+  const opacities = opts?.opacities ?? [];
+  const tokenSet = new Set<string>(tokens);
 
   const buildForPrefix = (prefix: P): Record<string, string> => {
-    if (!states) {
-      return Object.fromEntries(
-        tokens.map((token) => [token, mapClass(prefix, token)]),
-      );
-    }
-
-    const tokenSet = new Set<string>(tokens);
-    return Object.fromEntries(
-      tokens.map((token) => {
-        const parts = [mapClass(prefix, token)];
-        for (const state of states) {
-          const siblingKey = `${token}${toPascalCase(state)}`;
-          if (tokenSet.has(siblingKey)) {
-            parts.push(`${toKebabCase(state)}:${mapClass(prefix, siblingKey)}`);
-          }
+    const map: Record<string, string> = {};
+    for (const token of tokens) {
+      const base = mapClass(prefix, token);
+      let cls = base;
+      for (const state of states ?? []) {
+        const siblingKey = `${token}${toPascalCase(state)}`;
+        if (tokenSet.has(siblingKey)) {
+          cls += ` ${toKebabCase(state)}:${mapClass(prefix, siblingKey)}`;
         }
-        return [token, parts.join(" ")];
-      }),
-    );
+      }
+      map[token] = cls;
+      for (const step of opacities) {
+        map[`${token}/${String(step)}`] = `${base}/${String(step)}`;
+      }
+    }
+    return map;
   };
 
   if (typeof prefixOrPrefixes === "string") {

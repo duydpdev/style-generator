@@ -176,6 +176,13 @@ describe("generate() coverage validation", () => {
         },
       }),
     ).toEqual([]);
+    expect(
+      issuesOf({
+        coverage: {
+          colors: { prefixes: ["ring", "outline", "divide", "placeholder"] },
+        },
+      }),
+    ).toEqual([]);
   });
 
   it("accepts `opacities` on colors, alone or with prefixes and keys", () => {
@@ -191,9 +198,22 @@ describe("generate() coverage validation", () => {
     ).toEqual([]);
   });
 
+  it("tokens.Web.opacities and the @source inline opacity line come from the same steps", () => {
+    const { css, tokens } = generate(theme, {
+      coverage: { colors: { opacities: [50, 10] } },
+    });
+    expect(tokens.Web.opacities).toEqual([10, 50]);
+    expect(css).toContain("/{10,50}");
+  });
+
   it("`coverage: false` drops a category's @source inline lines from the generated CSS", () => {
     const css = generate(theme, { coverage: { colors: false } }).css;
-    expect(css).not.toContain("{bg,text,border}-{primary}");
+    expect(generate(theme).css).toContain(
+      "{bg,text,border,ring,outline,divide,placeholder}-{primary}",
+    );
+    expect(css).not.toContain(
+      "{bg,text,border,ring,outline,divide,placeholder}-{primary}",
+    );
     expect(generate(theme, { coverage: { colors: true } }).css).toBe(
       generate(theme).css,
     );
@@ -210,7 +230,7 @@ describe("generate() coverage validation", () => {
       return "";
     };
     expect(text({ coverage: { colors: { prefixes: ["bgg"] } } })).toMatch(
-      /^coverage\.colors\.prefixes\.0 → Unknown class prefix "bgg" for "colors"; expected one of: bg, text, border$/m,
+      /^coverage\.colors\.prefixes\.0 → Unknown class prefix "bgg" for "colors"; expected one of: bg, text, border, ring, outline, divide, placeholder$/m,
     );
     expect(text({ coverage: { colors: "off" } })).toMatch(
       /^coverage\.colors → Expected a boolean or \{ prefixes/m,

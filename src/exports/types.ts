@@ -27,6 +27,7 @@ export type {
   InferRoundedOptions,
   InferSpacingKeys,
   KebabCase,
+  OpacitySteps,
   ScreenKeys,
   SpacingKeys,
 } from "../core/inference";

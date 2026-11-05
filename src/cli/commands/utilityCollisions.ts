@@ -104,6 +104,44 @@ const TAILWIND_STATIC_UTILITY_SET: ReadonlySet<string> = new Set(
 );
 
 /**
+ * Tailwind static utilities a `colors` key can shadow through the `ring`,
+ * `outline` and `divide` color prefixes (`colors.solid` → `outline-solid`).
+ * `outline-none`/`divide-none` are left out: `colors.none` is reported by
+ * the `none` check. Proven against the real compiler in
+ * `src/__integration__/utility-collisions.test.ts`.
+ */
+export const TAILWIND_COLOR_STATIC_CLASSES = [
+  "ring-inset",
+  "outline-hidden",
+  "outline-solid",
+  "outline-dashed",
+  "outline-dotted",
+  "outline-double",
+  "divide-solid",
+  "divide-dashed",
+  "divide-dotted",
+  "divide-double",
+  "divide-x-reverse",
+  "divide-y-reverse",
+] as const;
+
+/** Tailwind width/offset roots of the color prefixes that take a bare integer (`ring-3`, `outline-offset-2`). */
+export const TAILWIND_COLOR_NUMERIC_ROOTS = [
+  "ring",
+  "outline",
+  "ring-offset",
+  "outline-offset",
+] as const;
+
+const COLOR_STATIC_SET: ReadonlySet<string> = new Set(
+  TAILWIND_COLOR_STATIC_CLASSES,
+);
+const COLOR_NUMERIC_RE = new RegExp(
+  `^(${TAILWIND_COLOR_NUMERIC_ROOTS.join("|")})-\\d+$`,
+);
+const COLOR_STATIC_PREFIXES = ["ring", "outline", "divide"] as const;
+
+/**
  * Whether a typography `@utility` name is also a Tailwind utility class.
  * @param {string} utilityName - Kebab-cased typography key
  * @returns {boolean} `true` when Tailwind ships a utility with that class
@@ -114,6 +152,31 @@ const isTailwindUtilityName = (utilityName: string): boolean =>
   TAILWIND_STATIC_UTILITY_SET.has(utilityName);
 
 const TAILWIND_COLOR_KEYWORD_RE = /^(transparent|current|inherit)$/;
+
+/**
+ * Warnings for one `colors` key: Tailwind's color keywords, then the
+ * `ring`/`outline`/`divide` statics or integer widths its class shadows.
+ * @param {string} key - Raw (camelCase) `colors` key
+ * @returns {string[]} `colors.<key> → …` lines, keyword line first
+ */
+const colorKeyCollisions = (key: string): string[] => {
+  const warnings: string[] = [];
+  if (TAILWIND_COLOR_KEYWORD_RE.test(key)) {
+    warnings.push(
+      `colors.${key} → collides with Tailwind's built-in "${key}" color`,
+    );
+  }
+  const kebab = toKebabCase(key);
+  for (const prefix of COLOR_STATIC_PREFIXES) {
+    const cls = `${prefix}-${kebab}`;
+    if (COLOR_STATIC_SET.has(cls) || COLOR_NUMERIC_RE.test(cls)) {
+      warnings.push(
+        `colors.${key} → class "${cls}" collides with Tailwind's built-in "${cls}" utility`,
+      );
+    }
+  }
+  return warnings;
+};
 
 /** Categories whose `none` key shadows Tailwind's `<prefix>-none` utility. */
 const NONE_COLLIDING_CATEGORIES = [
@@ -134,7 +197,10 @@ const NONE_COLLIDING_CATEGORIES = [
  * - `typography` keys kebab-casing to a Tailwind utility class: `text-xs`…
  *   `text-9xl`, text-align/wrap/overflow, a numeric functional utility
  *   (`h1` → `h-1`) or a static one (`italic`, `truncate`);
- * - `colors` keys `transparent` / `current` / `inherit`.
+ * - `colors` keys `transparent` / `current` / `inherit`;
+ * - `colors` keys whose `ring-`/`outline-`/`divide-` class is a Tailwind
+ *   static (`ring-inset`, `outline-solid`, `divide-x-reverse`) or an integer
+ *   width/offset (`ring-3`, `outline-offset-2`);
  *
  * `themeAxes` overrides are not inspected separately: the schema requires
  * every override key to exist in the base theme, so a colliding key is always
@@ -156,11 +222,7 @@ export const findUtilityCollisions = (theme: ThemeConfig): string[] => {
   }
 
   for (const key of Object.keys(theme.colors)) {
-    if (TAILWIND_COLOR_KEYWORD_RE.test(key)) {
-      warnings.push(
-        `colors.${key} → collides with Tailwind's built-in "${key}" color`,
-      );
-    }
+    warnings.push(...colorKeyCollisions(key));
   }
 
   for (const key of Object.keys(theme.borderWidth ?? {})) {

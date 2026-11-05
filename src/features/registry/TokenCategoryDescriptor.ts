@@ -45,7 +45,7 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   themeNamespace?: string;
   /**
    * Utility class prefixes this category's tokens participate in, e.g.
-   * `["bg", "text", "border"]` for colors. Every entry is non-empty except
+   * `["bg", "text", "border", "ring", "outline", "divide", "placeholder"]` for colors. Every entry is non-empty except
    * for a `bareClassName` category, whose single entry is `""`.
    */
   classPrefixes?: readonly string[];

@@ -109,6 +109,21 @@ describe("tokensCommand", () => {
     ).toEqual(["sm", "xl"]);
   });
 
+  it("honours coverage.colors.opacities from style-gen.config.json", () => {
+    write("styles/theme.json", theme);
+    write("style-gen.config.json", {
+      theme: "styles/theme.json",
+      coverage: { colors: { opacities: [50, 10] } },
+    });
+
+    expect(tokensCommand({}, tmp)).toBe(0);
+
+    expect(
+      (readTokens("styles/theme.tokens.ts") as { opacities: number[] })
+        .opacities,
+    ).toEqual([10, 50]);
+  });
+
   it("writes to --out, creating parent directories", () => {
     write("styles/theme.json", theme);
 

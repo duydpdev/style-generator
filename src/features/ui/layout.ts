@@ -19,7 +19,9 @@ export type ThemeSpacingProps<W extends RecipeTokens> = SpacingProps<
 export interface Split {
   readonly className: string;
   readonly style: StyleRecord;
-  readonly variants: Readonly<Record<string, string | boolean | undefined>>;
+  readonly variants: Readonly<
+    Record<string, string | number | boolean | undefined>
+  >;
   readonly rest: Readonly<Record<string, unknown>>;
 }
 
@@ -60,8 +62,8 @@ export const splitSpacing = (props: object, keys: readonly string[]): Split => {
 
 /**
  * Layout props → box-recipe classes, size style and spacing; the rest
- * passes through. A key in `variantKeys` is a recipe variant (a
- * non-string value becomes `undefined`); a key in `sizeKeys` is an
+ * passes through. A key in `variantKeys` is a recipe variant (a string or a
+ * finite number is passed on; anything else becomes `undefined`); a key in `sizeKeys` is an
  * inline size: a string is kept, a finite number `n` becomes `"<n>px"`
  * (`0` becomes `"0"`), anything else is dropped. `extra` variants win
  * over props.
@@ -81,13 +83,17 @@ export const splitLayout = (
   sizeKeys: readonly string[],
   extra: Readonly<Record<string, string | boolean>> = {},
 ): Split => {
-  const variants: Record<string, string | boolean | undefined> = {};
+  const variants: Record<string, string | number | boolean | undefined> = {};
   const size: Record<string, string> = {};
   const remaining: Record<string, unknown> = {};
   const entries: [string, unknown][] = Object.entries(props);
   for (const [key, value] of entries) {
     if (variantKeys.includes(key)) {
-      variants[key] = typeof value === "string" ? value : undefined;
+      variants[key] =
+        typeof value === "string" ||
+        (typeof value === "number" && Number.isFinite(value))
+          ? value
+          : undefined;
     } else if (sizeKeys.includes(key)) {
       const css = cssSize(value);
       if (css !== undefined) size[key] = css;

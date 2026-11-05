@@ -28,6 +28,34 @@ export declare function createVariantMapper<
 export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
+  const N extends number,
+  const S extends readonly string[] = readonly [],
+>(
+  prefix: P,
+  tokens: readonly T[],
+  opts: {
+    readonly opacities: readonly N[];
+    readonly states?: S;
+  },
+): OpacityVariantMap<T, P, S, N>;
+export declare function createVariantMapper<
+  const T extends string,
+  const P extends RegistryPrefix | "",
+  const N extends number,
+  const S extends readonly string[] = readonly [],
+>(
+  prefixes: readonly P[],
+  tokens: readonly T[],
+  opts: {
+    readonly opacities: readonly N[];
+    readonly states?: S;
+  },
+): {
+  readonly [Px in P]: OpacityVariantMap<T, Px, S, N>;
+};
+export declare function createVariantMapper<
+  const T extends string,
+  const P extends RegistryPrefix | "",
   const S extends readonly string[],
 >(
   prefix: P,
@@ -66,6 +94,12 @@ single classes. The result is a literal chained string when `states` is a
 literal tuple (`as const`, `COLOR_STATES`) and `string` when it is typed
 `readonly string[]`. `{ allowUnregisteredPrefix: true }` accepts any
 prefix string instead of only registry prefixes.
+
+`{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
+and step mapped to `class/step` (`primary/10` -> `bg-primary/10`); combined
+with `{ states }`, the state classes stay on the base key only
+(`primary/10` never carries `hover:`). Not combinable with
+`allowUnregisteredPrefix`.
 
 <!-- /signature -->
 
@@ -116,7 +150,25 @@ const bgStates = createVariantMapper("bg", tokens, { states: COLOR_STATES });
 
 Always pass `COLOR_STATES` rather than hard-coding the array — it is the same list the generated `@source inline` state lines come from.
 
-**Prefix constraint.** `prefix` is typed `RegistryPrefix | ""` (the prefixes the registry emits `@source inline` for; `""` is typography), so `createVariantMapper("ring", …)` and a prefix held in a `string` variable are type errors: they would map to classes no `@source inline` line keeps. To opt out for a single prefix, pass `{ allowUnregisteredPrefix: true }` as the third argument and list the classes in `extraSources`. The opt-out does not combine with `{ states }` or with an array of prefixes.
+**Prefix constraint.** `prefix` is typed `RegistryPrefix | ""` (the prefixes the registry emits `@source inline` for; `""` is typography), so `createVariantMapper("fill", …)` and a prefix held in a `string` variable are type errors: they would map to classes no `@source inline` line keeps. To opt out for a single prefix, pass `{ allowUnregisteredPrefix: true }` as the third argument and list the classes in `extraSources`. The opt-out does not combine with `{ states }`, with `{ opacities }` or with an array of prefixes.
+
+**Opacity steps.** `{ opacities }` adds one `token/step` key per token and step (`primary/10` → `bg-primary/10`). Feed it `DesignTokens.Web.opacities`, which lists `options.coverage.colors.opacities`, so the keys you can type are exactly the classes the `@source inline` opacity line keeps. With `{ states }` the state classes stay on the base key (`primary/10` never carries `hover:`); with an array of prefixes every prefix map gets the keys. Without the option `opacities` is `[]` and the map has no extra key.
+
+```ts
+import { createVariantMapper } from "@duydpdev/style-generator/cva";
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+
+const theme = { colors: { primary: "#2563eb", muted: "#6b7280" } } as const;
+const options = { coverage: { colors: { opacities: [10, 50] } } } as const;
+
+const web = createDesignTokens(theme, options).DesignTokens.Web;
+const bg = createVariantMapper("bg", web.colors, {
+  opacities: web.opacities,
+});
+const half: "bg-primary/50" = bg["primary/50"];
+```
+
+Pass the same `options` object to the bundler plugin or `style-gen.config.json` so the `@source inline` opacity line and `web.opacities` agree.
 
 ## `COLOR_STATES`
 

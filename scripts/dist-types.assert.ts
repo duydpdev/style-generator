@@ -120,6 +120,7 @@ export type DistTypeChecks = [
   Assert<Eq<typeof web.colors, readonly ("primary" | "blue500")[]>>,
   Assert<Eq<typeof web.borderRadius, readonly ("pill" | "2xl")[]>>,
   Assert<Eq<typeof web.aliasedColors, readonly never[]>>,
+  Assert<Eq<typeof web.opacities, readonly never[]>>,
   Assert<Eq<typeof aliased.aliasedColors, readonly ("primary" | "accent")[]>>,
   // An explicit type argument leaves `O` at its default, so it widens.
   Assert<Eq<typeof explicit.breakpoints, readonly string[]>>,

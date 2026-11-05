@@ -162,6 +162,7 @@ describe("subpath exports — symbols match root barrel", () => {
       | "borderWidth"
       | "spacingProperties"
       | "breakpoints"
+      | "opacities"
     >();
     expectTypeOf<ui.VariantTable>().not.toBeNever();
     expectTypeOf<ui.VariantTable>().toEqualTypeOf<
@@ -176,7 +177,7 @@ describe("subpath exports — symbols match root barrel", () => {
     >().toEqualTypeOf<ui.VariantTable>();
     expectTypeOf<ui.RecipeProps>().not.toBeNever();
     expectTypeOf<ui.RecipeProps>().toEqualTypeOf<
-      Readonly<Record<string, string | boolean | null | undefined>>
+      Readonly<Record<string, string | number | boolean | null | undefined>>
     >();
     expectTypeOf<ui.RecipeFn>().not.toBeNever();
     expectTypeOf<ui.RecipeFn>().toEqualTypeOf<
@@ -228,6 +229,11 @@ describe("subpath exports — symbols match root barrel", () => {
     >();
     expectTypeOf<types.CamelCase<"a-b">>().toEqualTypeOf<"aB">();
     expectTypeOf<types.KebabCase<"aB">>().toEqualTypeOf<"a-b">();
+    expectTypeOf<
+      types.OpacitySteps<{ coverage: { colors: { opacities: [10] } } }>
+    >().toEqualTypeOf<
+      root.OpacitySteps<{ coverage: { colors: { opacities: [10] } } }>
+    >();
     expectTypeOf<types.ThemeAxisName<AxesTheme>>().toEqualTypeOf<
       root.ThemeAxisName<AxesTheme>
     >();

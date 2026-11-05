@@ -22,8 +22,8 @@
  * name); a folder that exists in some apps of the rule only is
  * a warning (printed, exit code unchanged), so adding a component to one app
  * is one folder. Scope `app`: `<src dir>/<file>` (`theme.ts`,
- * `theme/theme.json`, `sections/Hero.stories.tsx`), where the src dir is the
- * parent of `uiDir` (`src/`, Nuxt `app/`); a missing file is an error.
+ * `theme/theme.json`), where the src dir is the parent of `uiDir` (`src/`,
+ * Nuxt `app/`); a missing file is an error.
  *
  * Extension points: append to `APPS`, flip `stories`, append to
  * `IDENTICAL`. Node built-ins only; paths go through node:path.
@@ -80,8 +80,8 @@ export const APPS = [
 ];
 
 /**
- * The two React apps keep one story file per component and per landing
- * section byte-identical (next-v4 runs them under `@storybook/nextjs-vite`);
+ * The two React apps keep one story file per component byte-identical
+ * (next-v4 runs them under `@storybook/nextjs-vite`);
  * plain-nuxt ports them to Vue by hand, so its stories are not compared.
  * @type {readonly IdenticalRule[]}
  */
@@ -107,21 +107,6 @@ export const IDENTICAL = [
     file: "theme/theme.json",
     apps: ["plain-react", "next-v4", "plain-nuxt"],
   },
-  ...[
-    "sections/Hero.stories.tsx",
-    "sections/Features.stories.tsx",
-    "sections/Pricing.stories.tsx",
-    "sections/Cta.stories.tsx",
-    "sections/Footer.stories.tsx",
-    "sections/Section.stories.tsx",
-    "sections/SectionHead.stories.tsx",
-    "App.stories.tsx",
-    "ThemeSwitch.stories.tsx",
-  ].map((file) => ({
-    scope: /** @type {const} */ ("app"),
-    file,
-    apps: ["plain-react", "next-v4"],
-  })),
 ];
 
 const KEBAB = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;

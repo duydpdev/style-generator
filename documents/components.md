@@ -27,7 +27,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
 - `style.ts` is the same file in all three apps; it holds the variant tables and the headless recipe.
 - `types.ts` is the same in React and Next; the Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` renders the component markup and applies the recipe and spacing utilities.
-- `<Name>.stories.tsx` (`<Name>.stories.ts` in `plain-nuxt`) isolates the component for Storybook; `next-v4` keeps byte copies of the `plain-react` stories (enforced by `check:plain-ui`), `plain-nuxt` hand-written Vue ports. `ThemeSwitch` has no `plain-nuxt` story because it uses Nuxt's `useState`/`useHead`.
+- `<Name>.stories.tsx` (`<Name>.stories.ts` in `plain-nuxt`) isolates the component for Storybook; `next-v4` keeps byte copies of the `plain-react` stories (enforced by `check:plain-ui`), `plain-nuxt` hand-written Vue ports. Only component folders have stories: each `.storybook/main.ts` loads `ui/**` only, so sections, `App` and `ThemeSwitch` have none.
 - `index.ts` re-exports the component and its types in `.tsx` apps (absent in `plain-nuxt`).
 - `sections/*.tsx` contains the application landing sections and layout helpers.
 

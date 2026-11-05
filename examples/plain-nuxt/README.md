@@ -38,7 +38,7 @@ In Vue components, `types.ts` declares the props the SFC compiler can read and e
 - `yarn workspace plain-nuxt-example storybook`: the component catalogue at http://localhost:6009.
 - `yarn workspace plain-nuxt-example test:stories`: runs the stories as Vitest browser tests via Playwright Chromium.
 
-`ThemeSwitch` is intentionally not storied because it relies on Nuxt-specific runtime APIs (`useState`, `useHead`). In `app/assets/css/globals.css`, `@source not` excludes the story files so stories never add extra utilities to the app's CSS.
+Only the `app/ui/` components have stories (`.storybook/main.ts` loads `app/ui/**`); sections and `ThemeSwitch` have none. In `app/assets/css/globals.css`, `@source not` excludes the story files so stories never add extra utilities to the app's CSS.
 
 ## Scripts
 
@@ -77,8 +77,7 @@ examples/plain-nuxt
 │   │       ├── <Name>.vue
 │   │       └── <Name>.stories.ts
 │   ├── sections/
-│   │   ├── <Name>.vue
-│   │   └── <Name>.stories.ts
+│   │   └── <Name>.vue
 │   ├── components/
 │   │   └── ThemeSwitch.vue
 │   └── pages/

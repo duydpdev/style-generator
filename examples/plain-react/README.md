@@ -42,7 +42,7 @@ To use a folder in your own app: `yarn add @duydpdev/style-generator@^5.3.0 clas
 
 ## Landing page
 
-`src/App.tsx` is a landing page built from the ten components: a header with `ThemeSwitch`, then `src/sections/` `Hero`, `Features`, `Pricing`, `Cta` and `Footer`. The copy lives in `src/sections/content.ts`. `Section`, `Container` and `SectionHead` are app helpers for patterns the page repeats; one-off layout is `className` on the element. `src/ThemeSwitch.tsx` sets `data-theme="dark"` on `<html>` through `themeAxisAttributes` from `@duydpdev/style-generator/recipes`. Every section has a story under `Sections/`, and the whole page is `Pages/Landing`.
+`src/App.tsx` is a landing page built from the ten components: a header with `ThemeSwitch`, then `src/sections/` `Hero`, `Features`, `Pricing`, `Cta` and `Footer`. The copy lives in `src/sections/content.ts`. `Section`, `Container` and `SectionHead` are app helpers for patterns the page repeats; one-off layout is `className` on the element. `src/ThemeSwitch.tsx` sets `data-theme="dark"` on `<html>` through `themeAxisAttributes` from `@duydpdev/style-generator/recipes`. Sections, `App` and `ThemeSwitch` have no story: Storybook loads `src/ui/**` only.
 
 ## Add a component
 
@@ -50,7 +50,7 @@ Create `src/ui/<kebab-name>/` with `style.ts` (tables + recipe via `recipeFromTa
 
 ## Storybook, tests and the parity gate
 
-- `yarn workspace plain-react-example storybook`: the catalogue at http://localhost:6006 (each `src/ui/<name>/<Name>.stories.tsx`, plus the section, `App` and `ThemeSwitch` stories). Stories render through the app's own components, never raw Tailwind classes, and `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS.
+- `yarn workspace plain-react-example storybook`: the catalogue at http://localhost:6006 (each `src/ui/<name>/<Name>.stories.tsx`). Stories render through the app's own components, never raw Tailwind classes, and `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS.
 - `yarn workspace plain-react-example test`: every story runs as a Vitest browser test, and the parity gate (`tests/parity/`) checks that Box, Text, Stack, Flex, Grid and Button render the same classes as the harness components in `examples/react-v4`. Needs `yarn build:all` and `yarn playwright install chromium` once.
 - `node examples/plain-react/scripts/copy-out-smoke.mjs`: proves that every folder of `src/ui/` plus `src/theme.ts` and `src/theme/theme.json` compile in a fresh project with only `@duydpdev/style-generator`, `class-variance-authority`, `clsx`, `tailwind-merge` and React.
 

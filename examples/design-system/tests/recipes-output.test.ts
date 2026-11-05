@@ -207,7 +207,7 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
     expect(flexRecipe({ basis: 0 })).toBe("flex flex-row basis-0");
   });
 
-  it("boxRecipe: numbers and zero reach the table (D1)", () => {
+  it("boxRecipe: numeric zIndex/opacity (zero too) and every background step map to table classes", () => {
     expect(boxRecipe({ zIndex: 0, opacity: 0 })).toBe("relative z-0 opacity-0");
     expect(boxRecipe({ zIndex: 10, opacity: 100 })).toBe(
       "relative z-10 opacity-100",

@@ -366,8 +366,9 @@ describe("check-plain-ui: the repo's plain apps", () => {
     mod = (await import(pathToFileURL(script).href)) as CheckPlainUiModule;
   });
 
-  /** `theme.ts` and `style-gen.config.json` of every opacities app declare the same steps. */
-  const THEME_TS =
+  /** `options.ts` and `style-gen.config.json` of every opacities app declare the same steps. */
+  const THEME_TS = "export const theme = 1;\n";
+  const OPTIONS_TS =
     "export const options = { coverage: { colors: { opacities: [10, 20, 50, 80] } } };\n";
   const CONFIG =
     '{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }\n';
@@ -396,6 +397,7 @@ describe("check-plain-ui: the repo's plain apps", () => {
         put(root, `${ui}/button/Button${app.stories}`, "export {};\n");
       }
       put(root, `${dirname(ui)}/theme.ts`, THEME_TS);
+      put(root, `${dirname(ui)}/options.ts`, OPTIONS_TS);
       put(root, `${dirname(ui)}/theme/theme.json`, "{}\n");
       put(root, `${dirname(dirname(ui))}/style-gen.config.json`, CONFIG);
     }
@@ -448,6 +450,22 @@ describe("check-plain-ui: the repo's plain apps", () => {
   it("rejects a theme.ts that differs in plain-nuxt", () => {
     put(dir, "examples/plain-nuxt/app/theme.ts", "export const theme = 2;\n");
     expect(mentions(check().errors, "plain-nuxt")).toBe(true);
+  });
+
+  it("rejects an options.ts that differs in plain-nuxt", () => {
+    put(
+      dir,
+      "examples/plain-nuxt/app/options.ts",
+      "export const options = 2;\n",
+    );
+    expect(mentions(check().errors, "plain-nuxt")).toBe(true);
+  });
+
+  it("rejects a missing options.ts", () => {
+    rmSync(join(dir, "examples/next-v4/src/options.ts"));
+    expect(check().errors).toEqual([
+      "examples/next-v4/src/options.ts: missing",
+    ]);
   });
 
   it("rejects a theme.json that differs in next-v4", () => {
@@ -584,30 +602,30 @@ describe("check-plain-ui: the repo's plain apps", () => {
     ]);
   });
 
-  it("rejects a theme.ts whose opacities literal differs from the config", () => {
+  it("rejects an options.ts whose opacities literal differs from the config", () => {
     put(
       dir,
-      "examples/next-v4/src/theme.ts",
+      "examples/next-v4/src/options.ts",
       "export const options = { coverage: { colors: { opacities: [10, 20, 50] } } };\n",
     );
     expect(check().errors).toEqual([
-      "examples/next-v4/src/theme.ts: differs from examples/plain-react/src/theme.ts",
-      "examples/next-v4/src/theme.ts: opacities [10, 20, 50] differ from style-gen.config.json [10, 20, 50, 80]",
+      "examples/next-v4/src/options.ts: differs from examples/plain-react/src/options.ts",
+      "examples/next-v4/src/options.ts: opacities [10, 20, 50] differ from style-gen.config.json [10, 20, 50, 80]",
     ]);
   });
 
-  it("rejects a theme.ts without an opacities literal", () => {
-    for (const theme of [
-      "examples/plain-react/src/theme.ts",
-      "examples/next-v4/src/theme.ts",
-      "examples/plain-nuxt/app/theme.ts",
+  it("rejects an options.ts without an opacities literal", () => {
+    for (const options of [
+      "examples/plain-react/src/options.ts",
+      "examples/next-v4/src/options.ts",
+      "examples/plain-nuxt/app/options.ts",
     ]) {
-      put(dir, theme, "export const theme = 1;\n");
+      put(dir, options, "export const options = {};\n");
     }
     expect(check().errors).toEqual([
-      "examples/plain-react/src/theme.ts: no opacities literal",
-      "examples/next-v4/src/theme.ts: no opacities literal",
-      "examples/plain-nuxt/app/theme.ts: no opacities literal",
+      "examples/plain-react/src/options.ts: no opacities literal",
+      "examples/next-v4/src/options.ts: no opacities literal",
+      "examples/plain-nuxt/app/options.ts: no opacities literal",
     ]);
   });
 });

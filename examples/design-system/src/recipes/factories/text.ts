@@ -52,7 +52,7 @@ export const textTables = (
     },
     wrap: {
       wrap: "text-wrap",
-      nowrap: "text-nowrap",
+      nowrap: "text-nowrap whitespace-nowrap",
       balance: "text-balance",
       pretty: "text-pretty",
     },

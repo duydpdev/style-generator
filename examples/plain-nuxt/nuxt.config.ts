@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./app/theme";
+import { options } from "./app/options";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -15,7 +15,8 @@ export default defineNuxtConfig({
 
   // Nuxt runs on Vite, so styleGenVite works as in plain-react. Nuxt 4 sets
   // the Vite `root` to `app/`, so the paths are absolute. `options` comes
-  // from `app/theme.ts`, which types the tokens with the same object; the
+  // from `app/options.ts`, which imports no JSON (a theme edit must not
+  // restart the server) and types the tokens with the same object; the
   // `generate:theme` CLI reads the same steps from `style-gen.config.json`.
   vite: {
     plugins: [

@@ -77,7 +77,7 @@ yarn style-gen doctor
 
 ### `style-gen tokens`
 
-Write the theme's design-token **keys** (`DesignTokens.Web`: one array of camelCased keys per category, plus `breakpoints`, `screens` and `spacingProperties`) as a TypeScript module, so a client bundle can import the key lists without shipping the `./tokens` runtime or the theme JSON (about 2.4 kB gzip together, versus roughly 0.6 kB for the generated keys).
+Write the theme's design-token **keys** (`DesignTokens.Web`: one array of camelCased keys per category, plus `opacities` (the `coverage.colors.opacities` steps, ascending; `[]` without the option), `breakpoints`, `screens` and `spacingProperties`) as a TypeScript module, so a client bundle can import the key lists without shipping the `./tokens` runtime or the theme JSON (about 2.4 kB gzip together, versus roughly 0.6 kB for the generated keys).
 
 ```bash
 yarn style-gen tokens                                  # → styles/theme.tokens.ts (next to the theme)

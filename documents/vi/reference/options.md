@@ -1,4 +1,4 @@
-<!-- source: documents/reference/options.md sha256: f060bd489941 -->
+<!-- source: documents/reference/options.md sha256: c4f368238765 -->
 
 # Tùy chọn
 
@@ -25,7 +25,7 @@ Các tên class được tạo lúc runtime (template literal như `` `bg-${vari
 
 ### `coverage`: cắt tỉa các dòng `@source inline` theo từng nhóm token
 
-Theo mặc định, mỗi nhóm token nhận một dòng `@source inline` bao phủ toàn bộ key của nó (và mọi tiền tố `bg-`/`text-`/`border-` cho colors). Đó là giá trị mặc định an toàn, nhưng một bảng màu lớn sẽ khiến dòng này rất dài. `coverage` cắt tỉa nó theo từng nhóm token (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
+Theo mặc định, mỗi nhóm token nhận một dòng `@source inline` bao phủ toàn bộ key của nó (và mọi tiền tố `bg-`/`text-`/`border-`/`ring-`/`outline-`/`divide-`/`placeholder-` cho colors). Đó là giá trị mặc định an toàn, nhưng một bảng màu lớn sẽ khiến dòng này rất dài. `coverage` cắt tỉa nó theo từng nhóm token (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
 
 | `coverage.<category>`        | Tác dụng                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

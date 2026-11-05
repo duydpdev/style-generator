@@ -23,11 +23,11 @@ yarn dev
 
 1. Install the package and the libraries a copied folder uses:
    ```bash
-   yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
    ```
    `@duydpdev/style-generator` comes from GitHub Packages, so set up the `@duydpdev` scope registry and a personal access token first (see the [Install](../../README.md#install) section of the repository README); without the scope config npmjs serves an unrelated `3.0.0`.
 2. Wire `theme.css` for Next.js: wrap your config in `styleGenNext` (`next.config.ts`) and import `@import "tailwindcss";` and `@import "../theme/theme.css";` in `src/app/globals.css`. See the [Next.js tutorial](../../documents/getting-started/next.md).
-3. Copy `src/theme/theme.json` (or use your own theme), `src/theme.ts` and `style-gen.config.json`. `theme.ts` holds the literal `options` (here `coverage.colors.opacities`), which `next.config.ts` passes to `styleGenNext` and `theme.ts` passes as the second argument of `createDesignTokens`; `style-gen.config.json` repeats the same steps for the `generate` CLI.
+3. Copy `src/theme/theme.json` (or use your own theme), `src/theme.ts`, `src/options.ts` and `style-gen.config.json`. `options.ts` holds the literal `options` (here `coverage.colors.opacities`) and imports no JSON, so `next.config.ts` can import it without reloading the config on every theme edit; `next.config.ts` passes it to `styleGenNext` and `theme.ts` passes it as the second argument of `createDesignTokens`. `style-gen.config.json` repeats the same steps for the `generate` CLI (`yarn check:plain-ui` keeps them equal).
 4. Copy one component folder from `src/ui/`, for example `src/ui/button/`. A folder imports only its own files, `../../theme` and the packages, so nothing else comes with it. See [Components](../../documents/components.md#plain-examples-copy-these).
 
 ## Scripts
@@ -62,6 +62,7 @@ examples/next-v4
 ├── tsconfig.json
 ├── vitest.config.ts
 └── src/
+    ├── options.ts
     ├── theme/
     │   ├── theme.json
     │   └── theme.css (generated, gitignored)

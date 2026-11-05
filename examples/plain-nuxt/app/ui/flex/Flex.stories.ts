@@ -136,10 +136,14 @@ export const ItemValues: Story = {
       await expect(basis.endsWith("%")).toBe(true);
       await expect(Math.abs(parseFloat(basis) - expected)).toBeLessThan(0.01);
     }
-    // `grow`/`shrink` absent: Vue must not cast the missing boolean to `false`.
-    const none = getComputedStyle(canvas.getByLabelText("item=none"));
+    // `grow`/`shrink` absent: Vue must not cast the missing boolean to `false`,
+    // which would add `grow-0` / `shrink-0` (same computed value, wrong classes).
+    const noneEl = canvas.getByLabelText("item=none");
+    const none = getComputedStyle(noneEl);
     await expect(none.flexGrow).toBe("0");
     await expect(none.flexShrink).toBe("1");
+    await expect(noneEl).not.toHaveClass("grow-0");
+    await expect(noneEl).not.toHaveClass("shrink-0");
   },
 };
 

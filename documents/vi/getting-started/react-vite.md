@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: fdd68e581ad4 -->
+<!-- source: documents/getting-started/react-vite.md sha256: 05dfe7313a9e -->
 
 # Bắt đầu: React + Vite
 
@@ -9,31 +9,26 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Vi
 Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`. Xem [Cài đặt](../README.md#cài-đặt) để biết cách cấu hình registry cho scope `@duydpdev` và GitHub Personal Access Token.
 
 ```bash
-yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Tự quản lý theme
 
-File theme JSON là [`src/theme/theme.json`](../../../examples/plain-react/src/theme/theme.json) (không được nhúng ở đây). `src/theme.ts` biến nó thành token có kiểu và helper `cn`:
+File theme JSON là [`src/theme/theme.json`](../../../examples/plain-react/src/theme/theme.json) (không được nhúng ở đây). `src/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `src/options.ts`. Module đó không import JSON, nên `vite.config.ts` import nó mà không làm dev server khởi động lại ở mỗi lần sửa theme:
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
+import { options } from "./options";
 import themeJson from "./theme/theme.json";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
-export const options = {
-  coverage: { colors: { opacities: [10, 20, 50, 80] } },
-} as const satisfies StyleGeneratorOptions;
-
-/** Typed token arrays from the theme and `options`. */
+/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
 export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
@@ -42,7 +37,7 @@ export const cn = createCn(tokens);
 
 ## Sinh theme.css bằng plugin Vite
 
-`styleGenVite` ghi `src/theme/theme.css` khi dev server hoặc một lần build khởi động và mỗi khi file theme thay đổi. Plugin nhận cùng literal `options` mà `src/theme.ts` truyền cho `createDesignTokens`; `style-gen.config.json` lặp lại nó cho CLI `generate` (`check:plain-ui` giữ hai bản bằng nhau):
+`styleGenVite` ghi `src/theme/theme.css` khi dev server hoặc một lần build khởi động và mỗi khi file theme thay đổi. Plugin nhận cùng literal `options` mà `src/options.ts` export và `src/theme.ts` truyền cho `createDesignTokens`; `style-gen.config.json` lặp lại nó cho CLI `generate` (`check:plain-ui` giữ hai bản bằng nhau):
 
 <!-- embed: examples/plain-react/vite.config.ts#vite-config -->
 
@@ -51,9 +46,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./src/theme";
+import { options } from "./src/options";
 
-// One literal `options` (src/theme.ts) feeds the plugin and the typed tokens;
+// One literal `options` (src/options.ts, no JSON import, so a theme edit does
+// not restart the dev server) feeds the plugin and the typed tokens;
 // style-gen.config.json holds the same steps for the `generate` CLI.
 export default defineConfig({
   plugins: [

@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 9c5cb3cdcd39 -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 1948d9df16f6 -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -9,31 +9,26 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Nu
 Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`. Xem [Cài đặt](../README.md#cài-đặt) để biết cách cấu hình registry cho scope `@duydpdev` và GitHub Personal Access Token.
 
 ```bash
-yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Tự quản lý theme
 
-File theme JSON là [`app/theme/theme.json`](../../../examples/plain-nuxt/app/theme/theme.json) (không được nhúng ở đây). `app/theme.ts` biến nó thành token có kiểu và helper `cn`:
+File theme JSON là [`app/theme/theme.json`](../../../examples/plain-nuxt/app/theme/theme.json) (không được nhúng ở đây). `app/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `app/options.ts`. Module đó không import JSON, nên `nuxt.config.ts` import nó mà không làm server khởi động lại ở mỗi lần sửa theme:
 
 <!-- embed: examples/plain-nuxt/app/theme.ts -->
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
+import { options } from "./options";
 import themeJson from "./theme/theme.json";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
-export const options = {
-  coverage: { colors: { opacities: [10, 20, 50, 80] } },
-} as const satisfies StyleGeneratorOptions;
-
-/** Typed token arrays from the theme and `options`. */
+/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
 export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
@@ -42,7 +37,7 @@ export const cn = createCn(tokens);
 
 ## Sinh theme.css bằng plugin Vite
 
-Nuxt chạy trên Vite, nên `styleGenVite` nằm dưới `vite.plugins`. Nuxt 4 đặt root của Vite là `app/`, vì vậy các đường dẫn là đường dẫn tuyệt đối. Plugin nhận cùng literal `options` mà `app/theme.ts` truyền cho `createDesignTokens`; `style-gen.config.json` lặp lại nó cho CLI `generate`:
+Nuxt chạy trên Vite, nên `styleGenVite` nằm dưới `vite.plugins`. Nuxt 4 đặt root của Vite là `app/`, vì vậy các đường dẫn là đường dẫn tuyệt đối. Plugin nhận cùng literal `options` mà `app/options.ts` export và `app/theme.ts` truyền cho `createDesignTokens`; `style-gen.config.json` lặp lại nó cho CLI `generate` (`check:plain-ui` giữ hai bản bằng nhau):
 
 <!-- embed: examples/plain-nuxt/nuxt.config.ts#nuxt-config -->
 
@@ -51,7 +46,7 @@ import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./app/theme";
+import { options } from "./app/options";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -63,7 +58,8 @@ export default defineNuxtConfig({
 
   // Nuxt runs on Vite, so styleGenVite works as in plain-react. Nuxt 4 sets
   // the Vite `root` to `app/`, so the paths are absolute. `options` comes
-  // from `app/theme.ts`, which types the tokens with the same object; the
+  // from `app/options.ts`, which imports no JSON (a theme edit must not
+  // restart the server) and types the tokens with the same object; the
   // `generate:theme` CLI reads the same steps from `style-gen.config.json`.
   vite: {
     plugins: [

@@ -7,31 +7,26 @@ This tutorial wires `@duydpdev/style-generator` into a Nuxt 4 app and builds a l
 Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`. See [Install](../../README.md#install) for configuring the `@duydpdev` scope registry and the GitHub Personal Access Token.
 
 ```bash
-yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Own the theme
 
-The theme JSON is [`app/theme/theme.json`](../../examples/plain-nuxt/app/theme/theme.json) (not embedded here). `app/theme.ts` turns it into typed tokens and the `cn` helper:
+The theme JSON is [`app/theme/theme.json`](../../examples/plain-nuxt/app/theme/theme.json) (not embedded here). `app/theme.ts` turns it into typed tokens and the `cn` helper, using the `options` literal of `app/options.ts`. That module imports no JSON, so `nuxt.config.ts` can import it without restarting the server on every theme edit:
 
 <!-- embed: examples/plain-nuxt/app/theme.ts -->
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
+import { options } from "./options";
 import themeJson from "./theme/theme.json";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
-export const options = {
-  coverage: { colors: { opacities: [10, 20, 50, 80] } },
-} as const satisfies StyleGeneratorOptions;
-
-/** Typed token arrays from the theme and `options`. */
+/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
 export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
@@ -40,7 +35,7 @@ export const cn = createCn(tokens);
 
 ## Generate theme.css with the Vite plugin
 
-Nuxt runs on Vite, so `styleGenVite` goes under `vite.plugins`. Nuxt 4 sets the Vite root to `app/`, so the paths are absolute. The plugin takes the same `options` literal that `app/theme.ts` passes to `createDesignTokens`; `style-gen.config.json` repeats it for the `generate` CLI:
+Nuxt runs on Vite, so `styleGenVite` goes under `vite.plugins`. Nuxt 4 sets the Vite root to `app/`, so the paths are absolute. The plugin takes the same `options` literal that `app/options.ts` exports and `app/theme.ts` passes to `createDesignTokens`; `style-gen.config.json` repeats it for the `generate` CLI (`check:plain-ui` keeps the two equal):
 
 <!-- embed: examples/plain-nuxt/nuxt.config.ts#nuxt-config -->
 
@@ -49,7 +44,7 @@ import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./app/theme";
+import { options } from "./app/options";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -61,7 +56,8 @@ export default defineNuxtConfig({
 
   // Nuxt runs on Vite, so styleGenVite works as in plain-react. Nuxt 4 sets
   // the Vite `root` to `app/`, so the paths are absolute. `options` comes
-  // from `app/theme.ts`, which types the tokens with the same object; the
+  // from `app/options.ts`, which imports no JSON (a theme edit must not
+  // restart the server) and types the tokens with the same object; the
   // `generate:theme` CLI reads the same steps from `style-gen.config.json`.
   vite: {
     plugins: [

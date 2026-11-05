@@ -1,13 +1,10 @@
 <script lang="ts">
-import {
-  cn,
-  splitSpacingProps,
-  stackRecipe,
-  tokens,
-} from "design-system-example";
+import { cn, splitSpacingProps, tokens } from "design-system-example";
 import {
   BOX_VARIANT_KEYS,
   createBoxRecipe,
+  createFlexRecipe,
+  type FlexBasis,
 } from "design-system-example/recipes";
 import { useAttrs } from "vue";
 import type {
@@ -19,6 +16,7 @@ import type {
 // Module scope (this block runs once, `<script setup>` once per instance):
 // layout style classes without the Box preset, so no `relative`.
 const layoutRecipe = createBoxRecipe(tokens);
+const flexRecipe = createFlexRecipe(tokens);
 const SIZE_KEYS = [
   "width",
   "height",
@@ -44,12 +42,19 @@ export interface FlexProps extends /* @vue-ignore */ BoxSpacingProps, Layout {
   align?: NonNullable<StackRecipeProps["align"]>;
   justify?: NonNullable<StackRecipeProps["justify"]>;
   wrap?: boolean;
+  divideColor?: NonNullable<StackRecipeProps["divideColor"]>;
+  /** Item props: `grow`/`shrink` toggle `grow`/`grow-0` and `shrink`/`shrink-0`; `basis` is `basis-*`. */
+  grow?: boolean;
+  shrink?: boolean;
+  basis?: FlexBasis;
 }
 
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<FlexProps>(), {
   as: "div",
   direction: "row",
+  grow: undefined,
+  shrink: undefined,
 });
 defineSlots<{ default?: () => unknown }>();
 const attrs = useAttrs();
@@ -70,11 +75,15 @@ const root = () => {
   return {
     ...rest,
     class: cn(
-      stackRecipe({
+      flexRecipe({
         direction: props.direction,
         align: props.align,
         justify: props.justify,
         wrap: props.wrap,
+        divideColor: props.divideColor,
+        grow: props.grow,
+        shrink: props.shrink,
+        basis: props.basis,
       }),
       layoutRecipe(
         Object.fromEntries(BOX_VARIANT_KEYS.map((key) => [key, props[key]])),

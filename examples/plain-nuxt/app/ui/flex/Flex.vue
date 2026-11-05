@@ -18,14 +18,27 @@ defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<FlexProps>(), {
   as: "div",
   wrap: undefined,
+  grow: undefined,
+  shrink: undefined,
 });
 const attrs = useAttrs();
 
 // Own props are taken out first: `{ ...attrs, ...own }` must not hand
 // `direction`, `align`, ... to `rest`, or they would render as DOM attributes.
 const root = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars -- `as` is the tag, never an attribute
-  const { as: _as, direction, align, justify, wrap, ...own } = props;
+  const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars -- `as` is the tag, never an attribute
+    as: _as,
+    direction,
+    align,
+    justify,
+    wrap,
+    divideColor,
+    grow,
+    shrink,
+    basis,
+    ...own
+  } = props;
   const split = splitLayout(
     { ...attrs, ...own },
     layoutRecipe,
@@ -37,7 +50,16 @@ const root = () => {
   return {
     ...rest,
     class: cn(
-      flexRecipe({ direction, align, justify, wrap }),
+      flexRecipe({
+        direction,
+        align,
+        justify,
+        wrap,
+        divideColor,
+        grow,
+        shrink,
+        basis,
+      }),
       split.className,
       klass as ClassValue,
     ),

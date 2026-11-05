@@ -21,6 +21,7 @@ export function Grid<T extends ElementType = "div">({
   align,
   justify,
   flow,
+  rows,
   ...props
 }: GridProps<T>): JSX.Element {
   const Component: ElementType = as ?? "div";
@@ -37,7 +38,7 @@ export function Grid<T extends ElementType = "div">({
       {...split.rest}
       className={
         cn(
-          gridRecipe({ align, justify, flow }),
+          gridRecipe({ align, justify, flow, rows }),
           cols?.className,
           split.className,
           className,

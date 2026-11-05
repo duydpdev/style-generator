@@ -11,7 +11,7 @@ import {
 } from "./style";
 import type { FlexProps } from "./types";
 
-/** Flex: a row of two or more items. */
+/** Flex: a row of two or more items; also an item's `grow`, `shrink` and `basis`. */
 export function Flex<T extends ElementType = "div">({
   as,
   className,
@@ -20,6 +20,10 @@ export function Flex<T extends ElementType = "div">({
   align,
   justify,
   wrap,
+  divideColor,
+  grow,
+  shrink,
+  basis,
   ...props
 }: FlexProps<T>): JSX.Element {
   const Component: ElementType = as ?? "div";
@@ -35,7 +39,16 @@ export function Flex<T extends ElementType = "div">({
       {...split.rest}
       className={
         cn(
-          flexRecipe({ direction, align, justify, wrap }),
+          flexRecipe({
+            direction,
+            align,
+            justify,
+            wrap,
+            divideColor,
+            grow,
+            shrink,
+            basis,
+          }),
           split.className,
           className,
         ) || undefined

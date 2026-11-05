@@ -53,6 +53,8 @@ export interface GridProps extends /* @vue-ignore */ BoxSpacingProps, Layout {
   align?: NonNullable<GridRecipeProps["align"]>;
   justify?: NonNullable<GridRecipeProps["justify"]>;
   flow?: NonNullable<GridRecipeProps["flow"]>;
+  /** Row count (`grid-rows-N`); on `as="textarea"` it is this prop, not the HTML `rows` attribute. */
+  rows?: NonNullable<GridRecipeProps["rows"]>;
 }
 
 defineOptions({ inheritAttrs: false });
@@ -85,6 +87,7 @@ const root = () => {
         align: props.align,
         justify: props.justify,
         flow: props.flow,
+        rows: props.rows,
       }),
       layoutRecipe(
         Object.fromEntries(BOX_VARIANT_KEYS.map((key) => [key, props[key]])),

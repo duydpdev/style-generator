@@ -17,6 +17,7 @@ import type {
   InferBorderWidthOptions,
   InferRoundedOptions,
   ScreenKeys,
+  OpacitySteps,
   SpacingKeys,
 } from "./inference";
 import type { Breakpoint, StyleGeneratorOptions } from "./Options";
@@ -253,6 +254,10 @@ describe("DesignTokensWeb", () => {
     >();
   });
 
+  it("opacities is empty without the option", () => {
+    expectTypeOf<Web["opacities"]>().toEqualTypeOf<readonly never[]>();
+  });
+
   it("the O parameter drives breakpoints, spacingProperties and screens", () => {
     interface Opts {
       readonly breakpoints: readonly ["sm", "xl"];
@@ -291,6 +296,31 @@ describe("BreakpointKeys / SpacingKeys / ScreenKeys", () => {
     expectTypeOf<
       BreakpointKeys<{ readonly enableResponsive: false }>
     >().toEqualTypeOf<DefaultBreakpointKeys>();
+  });
+
+  it("OpacitySteps: literal list, optional field, absent, no opacities", () => {
+    expectTypeOf<
+      OpacitySteps<{
+        readonly coverage: {
+          readonly colors: { readonly opacities: readonly [10, 50] };
+        };
+      }>
+    >().toEqualTypeOf<10 | 50>();
+    expectTypeOf<OpacitySteps<Record<never, never>>>().toBeNever();
+    expectTypeOf<OpacitySteps<StyleGeneratorOptions>>().toEqualTypeOf<number>();
+    expectTypeOf<
+      OpacitySteps<{ readonly coverage: { readonly colors: true } }>
+    >().toBeNever();
+    expectTypeOf<
+      OpacitySteps<{
+        readonly coverage: {
+          readonly colors: { readonly prefixes: readonly ["bg"] };
+        };
+      }>
+    >().toBeNever();
+    expectTypeOf<
+      OpacitySteps<{ readonly coverage: { readonly shadows: false } }>
+    >().toBeNever();
   });
 
   it("SpacingKeys: declared properties, optional properties, absent", () => {

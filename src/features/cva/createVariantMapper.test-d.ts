@@ -6,6 +6,7 @@ import {
   roundedProperties,
 } from "../../shared/safelistProperties";
 import type { RegistryPrefix } from "../registry/builtInCategories";
+import { createDesignTokens } from "../tokens/createDesignTokens";
 
 import { createVariantMapper } from "./createVariantMapper";
 
@@ -169,28 +170,124 @@ describe("createVariantMapper return type", () => {
     });
 
     it("rejects an unregistered prefix", () => {
-      expectTypeOf<"ring">().not.toExtend<RegistryPrefix | "">();
-      // @ts-expect-error "ring" is not a prefix any registry category feeds
-      createVariantMapper("ring", tokens, { states: ["hover"] });
+      expectTypeOf<"fill">().not.toExtend<RegistryPrefix | "">();
+      // @ts-expect-error "fill" is not a prefix any registry category feeds
+      createVariantMapper("fill", tokens, { states: ["hover"] });
+    });
+  });
+
+  describe("{ opacities }", () => {
+    it("adds a literal token/step key per token and step", () => {
+      const map = createVariantMapper("bg", colors, { opacities: [10, 50] });
+
+      expectTypeOf(map["primary/10"]).toEqualTypeOf<"bg-primary/10">();
+      expectTypeOf(map["blue500/50"]).toEqualTypeOf<"bg-blue-500/50">();
+      expectTypeOf(map.primary).toEqualTypeOf<"bg-primary">();
+      expectTypeOf<keyof typeof map>().toEqualTypeOf<
+        | "primary"
+        | "primaryForeground"
+        | "blue500"
+        | "primary/10"
+        | "primaryForeground/10"
+        | "blue500/10"
+        | "primary/50"
+        | "primaryForeground/50"
+        | "blue500/50"
+      >();
+    });
+
+    it("keeps state classes on the base key", () => {
+      const map = createVariantMapper(
+        "bg",
+        ["primary", "primaryHover"] as const,
+        { states: COLOR_STATES, opacities: [10] },
+      );
+
+      expectTypeOf(
+        map.primary,
+      ).toEqualTypeOf<"bg-primary hover:bg-primary-hover">();
+      expectTypeOf(map["primary/10"]).toEqualTypeOf<"bg-primary/10">();
+    });
+
+    it("feeds from the typed tokens: keys follow options.coverage.colors.opacities", () => {
+      const web = createDesignTokens(
+        { colors: { primary: "#000" } },
+        { coverage: { colors: { opacities: [10, 50] } } },
+      ).DesignTokens.Web;
+      const m = createVariantMapper("bg", web.colors, {
+        opacities: web.opacities,
+      });
+      expectTypeOf<keyof typeof m>().toEqualTypeOf<
+        "primary" | "primary/10" | "primary/50"
+      >();
+      expectTypeOf(m["primary/10"]).toEqualTypeOf<"bg-primary/10">();
+
+      const bare = createDesignTokens({ colors: { primary: "#000" } })
+        .DesignTokens.Web;
+      const mb = createVariantMapper("bg", bare.colors, {
+        opacities: bare.opacities,
+      });
+      expectTypeOf<keyof typeof mb>().toEqualTypeOf<"primary">();
+      expectTypeOf(mb.primary).toEqualTypeOf<"bg-primary">();
+    });
+
+    it("widened steps give a template-literal key", () => {
+      const map = createVariantMapper("bg", ["primary"] as const, {
+        opacities: [] as readonly number[],
+      });
+
+      // Index-signature key: the TYPE is exact; element ACCESS adds `undefined` under noUncheckedIndexedAccess.
+      expectTypeOf<
+        (typeof map)["primary/7"]
+      >().toEqualTypeOf<`bg-primary/${number}`>();
+      expectTypeOf(map["primary/7"]).toEqualTypeOf<
+        `bg-primary/${number}` | undefined
+      >();
+    });
+
+    it("supports the prefixes-array overload", () => {
+      const map = createVariantMapper(["bg", "text"] as const, colors, {
+        opacities: [10],
+      });
+
+      expectTypeOf(map.text["primary/10"]).toEqualTypeOf<"text-primary/10">();
+    });
+
+    it("does not combine with allowUnregisteredPrefix", () => {
+      expectTypeOf<"fill">().not.toExtend<RegistryPrefix | "">();
+      // @ts-expect-error opacities does not combine with allowUnregisteredPrefix
+      createVariantMapper("fill", colors, {
+        allowUnregisteredPrefix: true,
+        opacities: [10],
+      });
     });
   });
 
   describe("prefix constraint", () => {
     it("rejects an unregistered prefix (single and multi)", () => {
-      expectTypeOf<"ring">().not.toExtend<RegistryPrefix | "">();
-      // @ts-expect-error "ring" is not a registered class prefix
-      createVariantMapper("ring", colors);
-      // @ts-expect-error "ring" is not a registered class prefix
-      createVariantMapper(["bg", "ring"] as const, colors);
+      expectTypeOf<"fill">().not.toExtend<RegistryPrefix | "">();
+      // @ts-expect-error "fill" is not a registered class prefix
+      createVariantMapper("fill", colors);
+      // @ts-expect-error "fill" is not a registered class prefix
+      createVariantMapper(["bg", "fill"] as const, colors);
     });
 
     it("allowUnregisteredPrefix opts out and keeps the literal class", () => {
-      const map = createVariantMapper("ring", colors, {
+      const map = createVariantMapper("fill", colors, {
         allowUnregisteredPrefix: true,
       });
 
-      expectTypeOf(map.primary).toEqualTypeOf<"ring-primary">();
-      expectTypeOf(map.blue500).toEqualTypeOf<"ring-blue-500">();
+      expectTypeOf(map.primary).toEqualTypeOf<"fill-primary">();
+      expectTypeOf(map.blue500).toEqualTypeOf<"fill-blue-500">();
+    });
+
+    it("registers the four new color prefixes", () => {
+      expectTypeOf<
+        "ring" | "outline" | "divide" | "placeholder"
+      >().toExtend<RegistryPrefix>();
+      expectTypeOf(
+        createVariantMapper("ring", colors).primary,
+      ).toEqualTypeOf<"ring-primary">();
     });
   });
 });

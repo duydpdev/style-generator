@@ -8,6 +8,7 @@ const box = recipeFromTables({
   variants: {
     rounded: { pill: "rounded-pill" },
     position: { relative: "relative", absolute: "absolute" },
+    zIndex: { "0": "z-0", "10": "z-10" },
   },
 });
 const VARIANT_KEYS = ["rounded", "position"] as const;
@@ -119,6 +120,27 @@ describe("splitLayout", () => {
     expect(split.rest).toEqual({});
     expect(split.className).toBe("box");
   });
+
+  it.each<[number, string]>([
+    [10, "box z-10"],
+    [0, "box z-0"],
+  ])(
+    "passes a finite number variant value through (%s)",
+    (value, className) => {
+      const split = splitLayout({ zIndex: value }, box, [], ["zIndex"], []);
+      expect(split.variants.zIndex).toBe(value);
+      expect(split.className).toBe(className);
+    },
+  );
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY])(
+    "drops a non-finite number variant value (%s)",
+    (value) => {
+      const split = splitLayout({ zIndex: value }, box, [], ["zIndex"], []);
+      expect(split.variants.zIndex).toBeUndefined();
+      expect(split.className).toBe("box");
+    },
+  );
 });
 
 describe("mergeStyle", () => {

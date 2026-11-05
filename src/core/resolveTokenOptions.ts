@@ -18,6 +18,8 @@ export interface ResolvedTokenOptions {
   /** The px `defaultScreens` overridden/extended by `options.screens`. */
   screens: Readonly<Record<string, string>>;
   spacing: { enabled: boolean; properties: SpacingPropertyMap };
+  /** `options.coverage.colors.opacities` sorted ascending, else `[]`. */
+  opacities: readonly number[];
 }
 
 /**
@@ -35,15 +37,22 @@ export const mergeScreens = <V>(
  * Resolve the defaults of the options the typed tokens read. Pure; expects
  * options that already passed `StyleGeneratorOptionsSchema`.
  * @param {StyleGeneratorOptions} [options] - Raw generator options
- * @returns {ResolvedTokenOptions} Breakpoints, screens and spacing with defaults applied
+ * @returns {ResolvedTokenOptions} Breakpoints, screens, spacing and opacity steps with defaults applied
  */
 export const resolveTokenOptions = (
   options: StyleGeneratorOptions = {},
-): ResolvedTokenOptions => ({
-  breakpoints: options.breakpoints ?? DEFAULT_BREAKPOINTS,
-  screens: mergeScreens(options.screens),
-  spacing: {
-    enabled: options.spacing?.enabled !== false,
-    properties: options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES,
-  },
-});
+): ResolvedTokenOptions => {
+  const colors = options.coverage?.colors;
+  return {
+    breakpoints: options.breakpoints ?? DEFAULT_BREAKPOINTS,
+    screens: mergeScreens(options.screens),
+    spacing: {
+      enabled: options.spacing?.enabled !== false,
+      properties: options.spacing?.properties ?? DEFAULT_SPACING_PROPERTIES,
+    },
+    opacities:
+      typeof colors === "object" && colors.opacities
+        ? [...colors.opacities].sort((a, b) => a - b)
+        : [],
+  };
+};

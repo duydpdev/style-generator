@@ -95,4 +95,55 @@ describe("createVariantMapper", () => {
       expect(map.bg.primaryHover).toBe("bg-primary-hover");
     });
   });
+
+  describe("{ opacities }", () => {
+    it("adds a token/step key per token and step", () => {
+      const map = createVariantMapper("bg", ["primary", "danger"] as const, {
+        opacities: [10, 50],
+      });
+      expect(map).toEqual({
+        primary: "bg-primary",
+        danger: "bg-danger",
+        "primary/10": "bg-primary/10",
+        "primary/50": "bg-primary/50",
+        "danger/10": "bg-danger/10",
+        "danger/50": "bg-danger/50",
+      });
+    });
+
+    it("keeps state classes on the base key only", () => {
+      const map = createVariantMapper(
+        "bg",
+        ["primary", "primaryHover"] as const,
+        { states: ["hover"], opacities: [10] },
+      );
+      expect(map).toEqual({
+        primary: "bg-primary hover:bg-primary-hover",
+        primaryHover: "bg-primary-hover",
+        "primary/10": "bg-primary/10",
+        "primaryHover/10": "bg-primary-hover/10",
+      });
+      expect(
+        Object.values(map).filter((v) => v.includes(":") && v.includes("/")),
+      ).toEqual([]);
+    });
+
+    it("an empty steps list equals the plain mapper", () => {
+      const tokens = ["primary", "blue500"] as const;
+      expect(createVariantMapper("bg", tokens, { opacities: [] })).toEqual(
+        createVariantMapper("bg", tokens),
+      );
+    });
+
+    it("supports the prefixes-array overload", () => {
+      expect(
+        createVariantMapper(["bg", "text"] as const, ["primary"] as const, {
+          opacities: [50],
+        }),
+      ).toEqual({
+        bg: { primary: "bg-primary", "primary/50": "bg-primary/50" },
+        text: { primary: "text-primary", "primary/50": "text-primary/50" },
+      });
+    });
+  });
 });

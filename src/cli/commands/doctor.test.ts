@@ -316,6 +316,11 @@ describe("doctorCommand", () => {
           transparent: "transparent",
           current: "currentColor",
           inherit: "inherit",
+          inset: "#000",
+          solid: "#000",
+          "3": "#000",
+          offset2: "#000",
+          xReverse: "#000",
         },
         shadows: { none: "none" },
         backDropBlurs: { none: "0" },
@@ -344,6 +349,11 @@ describe("doctorCommand", () => {
         "colors.transparent",
         "colors.current",
         "colors.inherit",
+        "colors.inset",
+        "colors.solid",
+        "colors.3",
+        "colors.offset2",
+        "colors.xReverse",
         "borderWidth.0",
         "borderWidth.2",
         "typography.textXs",
@@ -359,6 +369,8 @@ describe("doctorCommand", () => {
       expect(out).not.toContain("colors.primary");
       // Override `none` is reported once via the base record, not duplicated.
       expect(out.match(/colors\.none →/g)).toHaveLength(1);
+      expect(out.match(/colors\.solid →/g)).toHaveLength(2);
+      expect(out.match(/colors\.3 →/g)).toHaveLength(2);
     });
 
     it("prints no collision warning for a clean theme", () => {

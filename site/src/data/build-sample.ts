@@ -72,5 +72,5 @@ html[data-theme="dark"] {
 
 ${ELISION}
 
-@source inline("{bg,text,border}-{primary,background,foreground}");
+@source inline("{bg,text,border,ring,outline,divide,placeholder}-{primary,background,foreground}");
 @source inline("{body}");`;

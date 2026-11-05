@@ -8,6 +8,7 @@ import {
 } from "./aliasGraph";
 import {
   checkBorderWidthColorCollision,
+  checkDivideColorCollision,
   checkFontFamilyWeightNames,
   checkTypographyClassCollisions,
   reportKebabCollisions,
@@ -300,7 +301,8 @@ const rejectLegacyThemesKey = (raw: unknown, ctx: z.RefinementCtx): unknown => {
  * produces a value consumers should trust.
  *
  * Cross-field validation (kebab-key uniqueness, `$key` alias grammar/cycle
- * detection, `borderWidth` vs `colors` key collisions, `fontFamily` vs
+ * detection, `borderWidth` vs `colors` key collisions, color keys that
+ * collide with the `divide-x`/`divide-y` widths, `fontFamily` vs
  * Tailwind font-weight name collisions, per-axis-variant override
  * validation) runs in the trailing `.superRefine()`, after every
  * individual field has already passed its own `TokenKey`/`TokenValue`
@@ -314,6 +316,7 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
 }).superRefine((theme, ctx) => {
   validateBaseCategories(ctx, theme);
   checkBorderWidthColorCollision(ctx, theme.colors, theme.borderWidth);
+  checkDivideColorCollision(ctx, theme.colors, theme.borderWidth);
   checkFontFamilyWeightNames(ctx, theme.fontFamily);
   checkTypographyClassCollisions(ctx, theme);
 

@@ -17,6 +17,8 @@ export interface RecipeTokens {
   readonly borderWidth: readonly string[];
   readonly spacingProperties: readonly string[];
   readonly breakpoints: readonly string[];
+  /** `DesignTokens.Web.opacities`; optional so token objects built before 5.4 still fit. */
+  readonly opacities?: readonly number[];
 }
 
 /** Variant name → option → classes (the `variants` of a cva config). */
@@ -34,9 +36,9 @@ export interface RecipeTables {
     | undefined;
 }
 
-/** Recipe call props: variant name → option (`true`/`false` for boolean variants). */
+/** Recipe call props: variant name → option (`true`/`false` for boolean variants, a number for a numeric option such as `zIndex: 10`). */
 export type RecipeProps = Readonly<
-  Record<string, string | boolean | null | undefined>
+  Record<string, string | number | boolean | null | undefined>
 >;
 
 /** A recipe built from tables: props in, one class string out; components type the exact props. */

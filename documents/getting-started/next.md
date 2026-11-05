@@ -7,31 +7,26 @@ This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopa
 Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`. See [Install](../../README.md#install) for configuring the `@duydpdev` scope registry and the GitHub Personal Access Token.
 
 ```bash
-yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Own the theme
 
-The theme JSON is [`src/theme/theme.json`](../../examples/next-v4/src/theme/theme.json) (not embedded here). `src/theme.ts` turns it into typed tokens and the `cn` helper:
+The theme JSON is [`src/theme/theme.json`](../../examples/next-v4/src/theme/theme.json) (not embedded here). `src/theme.ts` turns it into typed tokens and the `cn` helper, using the `options` literal of `src/options.ts`. That module imports no JSON, so `next.config.ts` can import it without reloading the config on every theme edit:
 
 <!-- embed: examples/next-v4/src/theme.ts -->
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
+import { options } from "./options";
 import themeJson from "./theme/theme.json";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
-export const options = {
-  coverage: { colors: { opacities: [10, 20, 50, 80] } },
-} as const satisfies StyleGeneratorOptions;
-
-/** Typed token arrays from the theme and `options`. */
+/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
 export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
@@ -47,7 +42,7 @@ export const cn = createCn(tokens);
 ```ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
-import { options } from "./src/theme";
+import { options } from "./src/options";
 
 const nextConfig: NextConfig = {};
 
@@ -56,8 +51,9 @@ const nextConfig: NextConfig = {};
 // under both bundlers. It writes `src/theme/theme.css` when Next loads this
 // config in `phase-development-server` (`next dev`, which also watches the
 // theme JSON) or `phase-production-build` (`next build`). `options` comes from
-// `src/theme.ts`, which types the tokens with the same object; the `generate`
-// CLI reads the same steps from `style-gen.config.json`.
+// `src/options.ts`, which imports no JSON (a theme edit must not reload this
+// config) and types the tokens with the same object; the `generate` CLI reads
+// the same steps from `style-gen.config.json`.
 export default styleGenNext({
   themePath: "src/theme/theme.json",
   outDir: "src/theme",

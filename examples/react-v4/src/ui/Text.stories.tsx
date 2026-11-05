@@ -164,21 +164,25 @@ export const LineClamp: Story = {
   },
 };
 
-/** `wrap`: one row per value; the play check asserts the `text-*` class each value adds. */
+/** `wrap`: one row per value in a narrow box; the play check asserts the `text-*` class and the computed `textWrapMode` (only `nowrap` keeps long text on one line). */
 export const Wrap: Story = {
   render: (args) => (
     <Grid columns={1} gap={1}>
       {wraps.map((wrap) => (
-        <Text key={wrap} {...args} wrap={wrap} data-testid={`wrap-${wrap}`}>
-          {wrap}
-        </Text>
+        <Box key={wrap} width={160}>
+          <Text {...args} wrap={wrap} data-testid={`wrap-${wrap}`}>
+            {LONG_TEXT}
+          </Text>
+        </Box>
       ))}
     </Grid>
   ),
   play: async ({ canvas }) => {
     for (const wrap of wraps) {
-      await expect(canvas.getByTestId(`wrap-${wrap}`)).toHaveClass(
-        `text-${wrap}`,
+      const text = canvas.getByTestId(`wrap-${wrap}`);
+      await expect(text).toHaveClass(`text-${wrap}`);
+      await expect(getComputedStyle(text).textWrapMode).toBe(
+        wrap === "nowrap" ? "nowrap" : "wrap",
       );
     }
   },

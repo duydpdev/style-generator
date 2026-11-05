@@ -563,7 +563,7 @@ exports[`bound recipe output (frozen before the factory refactor) > textRecipe 1
   "{"lineClamp":6} => wrap-anywhere whitespace-pre-wrap line-clamp-6",
   "{"lineClamp":"none"} => wrap-anywhere whitespace-pre-wrap line-clamp-none",
   "{"wrap":"wrap"} => wrap-anywhere whitespace-pre-wrap text-wrap",
-  "{"wrap":"nowrap"} => wrap-anywhere whitespace-pre-wrap text-nowrap",
+  "{"wrap":"nowrap"} => wrap-anywhere whitespace-pre-wrap text-nowrap whitespace-nowrap",
   "{"wrap":"balance"} => wrap-anywhere whitespace-pre-wrap text-balance",
   "{"wrap":"pretty"} => wrap-anywhere whitespace-pre-wrap text-pretty",
 ]

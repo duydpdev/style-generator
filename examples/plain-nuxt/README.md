@@ -24,11 +24,11 @@ yarn dev
 
 1. Install the package and the libraries a copied folder uses:
    ```bash
-   yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
    ```
    `@duydpdev/style-generator` comes from GitHub Packages, so set up the `@duydpdev` scope registry and a personal access token first (see the [Install](../../README.md#install) section of the repository README); without the scope config npmjs serves an unrelated `3.0.0`.
 2. Wire `theme.css` for Nuxt: add `styleGenVite` to `vite.plugins` in `nuxt.config.ts` and import `@import "tailwindcss";` and `@import "../../theme/theme.css";` in `app/assets/css/globals.css`. See the [Nuxt tutorial](../../documents/getting-started/nuxt-vue.md).
-3. Copy `app/theme/theme.json` (or use your own theme), `app/theme.ts` and `style-gen.config.json`. `theme.ts` holds the literal `options` (here `coverage.colors.opacities`), which `nuxt.config.ts` passes to `styleGenVite` and `theme.ts` passes as the second argument of `createDesignTokens`; `style-gen.config.json` repeats the same steps for the `generate` CLI.
+3. Copy `app/theme/theme.json` (or use your own theme), `app/theme.ts`, `app/options.ts` and `style-gen.config.json`. `options.ts` holds the literal `options` (here `coverage.colors.opacities`) and imports no JSON, so `nuxt.config.ts` can import it without restarting the server on every theme edit; `nuxt.config.ts` passes it to `styleGenVite` and `theme.ts` passes it as the second argument of `createDesignTokens`. `style-gen.config.json` repeats the same steps for the `generate` CLI (`yarn check:plain-ui` keeps them equal).
 4. Copy the component folder from `app/ui/`, for example `app/ui/button/`. A folder imports only its own files, `../../theme` and the packages, so nothing else comes with it. Components are imported explicitly (for example, `import Button from "~/ui/button/Button.vue"`). See [Components](../../documents/components.md#plain-examples-copy-these).
 
 In Vue components, `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */` for components that accept responsive spacing (`Box`, `Text`, `Stack`, `Flex`, `Grid`, `Button`). Components without spacing props (`Card`, `Badge`, `Input`, `Link`) have no spacing props and need no `@vue-ignore`.
@@ -66,6 +66,7 @@ examples/plain-nuxt
 ├── package.json
 ├── tsconfig.json
 ├── app/
+│   ├── options.ts
 │   ├── theme/
 │   │   ├── theme.json
 │   │   └── theme.css (generated, gitignored)

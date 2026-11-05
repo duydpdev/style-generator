@@ -7,6 +7,18 @@
     "./ui": "./src/ui/index.ts",
     "./package.json": "./package.json"
   },
+  "style-gen": {
+    "coverage": {
+      "colors": {
+        "opacities": [
+          10,
+          20,
+          50,
+          80
+        ]
+      }
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

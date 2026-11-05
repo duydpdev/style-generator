@@ -30,11 +30,40 @@ export const textTables = (
       left: "text-left",
       right: "text-right",
     },
-    color: createVariantMapper("text", t.colors),
+    color: createVariantMapper("text", t.colors, {
+      opacities: t.opacities ?? [],
+    }),
+    transform: {
+      uppercase: "uppercase",
+      lowercase: "lowercase",
+      capitalize: "capitalize",
+      normalCase: "normal-case",
+    },
+    italic: { true: "italic" },
+    truncate: { true: "truncate whitespace-nowrap" },
+    lineClamp: {
+      1: "line-clamp-1",
+      2: "line-clamp-2",
+      3: "line-clamp-3",
+      4: "line-clamp-4",
+      5: "line-clamp-5",
+      6: "line-clamp-6",
+      none: "line-clamp-none",
+    },
+    wrap: {
+      wrap: "text-wrap",
+      nowrap: "text-nowrap",
+      balance: "text-balance",
+      pretty: "text-pretty",
+    },
   },
 });
 
-/** Text recipe for one theme: `type`, `color`, `decoration`, `align`. */
+/**
+ * Text recipe for one theme: `type`, `color` (a token or `token/step`),
+ * `decoration`, `align`, `transform`, `italic`, `truncate` (also sets
+ * `whitespace-nowrap`), `lineClamp` and `wrap`.
+ */
 export const createTextRecipe = (
   t: RecipeTokens,
   preset?: TextPreset,

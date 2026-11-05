@@ -1,4 +1,4 @@
-export { theme, tokens, type Theme } from "./tokens";
+export { theme, tokens, type ColorValue, type Theme } from "./tokens";
 export { options } from "./style-gen.options";
 export { cn } from "./cn";
 export { axisAttributes } from "./axes";
@@ -25,8 +25,11 @@ export { gridRecipe, type GridRecipeProps } from "./recipes/grid";
 export {
   textAlign,
   textDecoration,
+  textLineClamp,
   textPreset,
   textRecipe,
+  textTransform,
+  textWrap,
   type TextRecipeProps,
   type TextStyleProps,
   type TextVariants,

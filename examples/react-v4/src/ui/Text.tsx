@@ -12,16 +12,28 @@ import {
 } from "design-system-example/recipes";
 import type { CSSProperties, ElementType, JSX } from "react";
 
+import type { ColorValue } from "./layout";
+
 type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly type?: W["typography"][number] | undefined;
-  readonly color?: W["colors"][number] | undefined;
+  readonly color?: ColorValue<W> | undefined;
   readonly align?: "left" | "center" | "right" | undefined;
   readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
+  readonly transform?:
+    | "uppercase"
+    | "lowercase"
+    | "capitalize"
+    | "normalCase"
+    | undefined;
+  readonly italic?: boolean | undefined;
+  readonly truncate?: boolean | undefined;
+  readonly lineClamp?: 1 | 2 | 3 | 4 | 5 | 6 | "none" | undefined;
+  readonly wrap?: "wrap" | "nowrap" | "balance" | "pretty" | undefined;
   readonly className?: string | undefined;
   readonly style?: CSSProperties | undefined;
 };
 
-/** `Text`: typography/color/align/decoration from the text recipe, preset defaults, spacing props. */
+/** `Text`: typography, color (a token or `token/step`), align, decoration, transform, italic, truncate, line clamp, wrap from the text recipe, preset defaults, spacing props. */
 export const createText = <W extends RecipeTokens>(
   tokens: W,
   preset?: TextPreset,
@@ -37,6 +49,11 @@ export const createText = <W extends RecipeTokens>(
     color = preset?.defaultColor,
     align,
     decoration,
+    transform,
+    italic,
+    truncate,
+    lineClamp,
+    wrap,
     ...props
   }: Polymorphic<T, TextOwnProps<W>>): JSX.Element {
     const Component: ElementType = as ?? "p";
@@ -46,7 +63,17 @@ export const createText = <W extends RecipeTokens>(
         {...split.rest}
         className={
           cn(
-            text({ type, color, align, decoration }),
+            text({
+              type,
+              color,
+              align,
+              decoration,
+              transform,
+              italic,
+              truncate,
+              lineClamp,
+              wrap,
+            }),
             split.className,
             className,
           ) || undefined

@@ -6,6 +6,11 @@ import type {
 /** Inline size: a number is px (as React does), a string is any CSS length. */
 type Size = number | string;
 
+/** A color token, or `token/step` with a step from `coverage.colors.opacities` (`tokens.opacities`). */
+export type ColorValue<W extends RecipeTokens> =
+  | W["colors"][number]
+  | `${W["colors"][number]}/${NonNullable<W["opacities"]>[number]}`;
+
 /** Layout props of Box, Flex, Stack and Grid: box-recipe variants, sizes, spacing. */
 export type LayoutProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly backgroundColor?: W["colors"][number] | undefined;

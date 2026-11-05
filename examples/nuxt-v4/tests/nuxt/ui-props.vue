@@ -38,12 +38,26 @@ const onClick = (event: MouseEvent) => event.detail;
       <Grid :columns="{ base: 1, md: 3 }" :gap="3"><Text>b</Text></Grid>
       <Grid columns="80px 1fr"><Text>c</Text></Grid>
       <Grid :columns="{ base: 1, md: '220px 1fr' }"><Text>d</Text></Grid>
+      <Text
+        transform="uppercase"
+        italic
+        truncate
+        :lineClamp="3"
+        wrap="balance"
+        color="primary/50"
+      >
+        x
+      </Text>
       <!-- @vue-expect-error p takes a number or a { base, md, lg } object -->
       <Box :p="'4'" />
       <!-- @vue-expect-error xl is not a configured breakpoint -->
       <Box :p="{ xl: 4 }" />
       <!-- @vue-expect-error unknown color token -->
       <Text color="nope">x</Text>
+      <!-- @vue-expect-error unknown transform -->
+      <Text transform="bold">x</Text>
+      <!-- @vue-expect-error step not declared -->
+      <Text color="primary/55">x</Text>
       <!-- @vue-expect-error unknown button variant -->
       <Button variant="huge">x</Button>
       <!-- @vue-expect-error columns breakpoint must be configured -->

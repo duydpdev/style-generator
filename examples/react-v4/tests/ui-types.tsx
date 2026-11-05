@@ -47,6 +47,18 @@ void (<Text type="text16Medium" color="muted" mb={2} />);
 void (<Text type="h1" />);
 // @ts-expect-error spacing takes numbers only
 void (<Text mb="2" />);
+void (
+  <Text transform="uppercase" italic truncate lineClamp={3} wrap="balance" />
+);
+void (<Text color="primary/50" />);
+// @ts-expect-error not a transform
+void (<Text transform="bold" />);
+// @ts-expect-error lineClamp stops at 6
+void (<Text lineClamp={7} />);
+// @ts-expect-error not a wrap mode
+void (<Text wrap="wrap2" />);
+// @ts-expect-error 55 is not a declared opacity step
+void (<Text color="primary/55" />);
 void (<Text as="h1" id="title" />);
 
 // Flex / Stack: the as prop, breakpoints and spacing values.

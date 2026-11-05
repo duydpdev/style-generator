@@ -18,6 +18,7 @@ The theme JSON is [`src/theme/theme.json`](../../examples/plain-react/src/theme/
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
 import themeJson from "./theme/theme.json";
@@ -25,8 +26,13 @@ import themeJson from "./theme/theme.json";
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays; no options, like `styleGenVite` in vite.config.ts. */
-export const tokens = createDesignTokens(themeJson).DesignTokens.Web;
+/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
+export const options = {
+  coverage: { colors: { opacities: [10, 20, 50, 80] } },
+} as const satisfies StyleGeneratorOptions;
+
+/** Typed token arrays from the theme and `options`. */
+export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -34,7 +40,7 @@ export const cn = createCn(tokens);
 
 ## Generate theme.css with the Vite plugin
 
-`styleGenVite` writes `src/theme/theme.css` when the dev server or a build starts and whenever the theme file changes; no generator options are needed:
+`styleGenVite` writes `src/theme/theme.css` when the dev server or a build starts and whenever the theme file changes. It takes the same `options` literal that `src/theme.ts` passes to `createDesignTokens`; `style-gen.config.json` repeats it for the `generate` CLI (`check:plain-ui` keeps the two equal):
 
 <!-- embed: examples/plain-react/vite.config.ts#vite-config -->
 
@@ -43,14 +49,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
+import { options } from "./src/theme";
 
-// No generator options: src/theme.ts calls createDesignTokens without
-// options too, so both use the library defaults (breakpoints md, lg).
-// When you add options, pass the same object to both.
+// One literal `options` (src/theme.ts) feeds the plugin and the typed tokens;
+// style-gen.config.json holds the same steps for the `generate` CLI.
 export default defineConfig({
   plugins: [
     react(),
-    styleGenVite({ themePath: "src/theme/theme.json", outDir: "src/theme" }),
+    styleGenVite({
+      themePath: "src/theme/theme.json",
+      outDir: "src/theme",
+      options,
+    }),
     tailwindcss(),
   ],
 });

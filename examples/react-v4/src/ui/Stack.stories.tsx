@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { tokens } from "design-system-example";
+import { expect } from "storybook/test";
 
 import { Box, Stack } from "../ui";
 
@@ -52,4 +54,57 @@ export const Wrapped: Story = {
 /** Gap per breakpoint: `gap={{ base: 1, md: 3, lg: 6 }}`. */
 export const ResponsiveGap: Story = {
   args: { gap: { base: 1, md: 3, lg: 6 } },
+};
+
+/** The computed `background-color` of a probe that reads the `primary` token directly. */
+const tokenColor = (host: HTMLElement): string => {
+  const probe = host.ownerDocument.createElement("span");
+  probe.style.backgroundColor = "var(--sg-color-primary)";
+  host.append(probe);
+  const value = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return value;
+};
+/** The alpha tail of a computed colour for a `/step` modifier. */
+const alpha = (step: number): string => `/ ${String(step / 100)})`;
+
+/** `primary/<step>` with the literal step type kept, so it type-checks as a colour value. */
+function primaryStep<S extends (typeof tokens.opacities)[number]>(
+  step: S,
+): `primary/${S}`;
+function primaryStep(step: number): string {
+  return `primary/${String(step)}`;
+}
+
+const FIRST_STEP = tokens.opacities.at(0);
+if (FIRST_STEP === undefined) throw new Error("no opacity step");
+
+/** `divideColor`: the plain token and `token/step`, read from the first child's separator colour. */
+export const DivideColors: Story = {
+  render: () => (
+    <Stack gap={2}>
+      <Stack divideColor="primary" aria-label="divide=primary">
+        {items}
+      </Stack>
+      <Stack
+        divideColor={primaryStep(FIRST_STEP)}
+        aria-label={`divide=primary/${String(FIRST_STEP)}`}
+      >
+        {items}
+      </Stack>
+    </Stack>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const plain = canvas.getByLabelText("divide=primary").firstElementChild;
+    const step = canvas.getByLabelText(
+      `divide=primary/${String(FIRST_STEP)}`,
+    ).firstElementChild;
+    if (plain === null || step === null) throw new Error("no divided child");
+    await expect(getComputedStyle(plain).borderBottomColor).toBe(
+      tokenColor(canvasElement),
+    );
+    await expect(
+      getComputedStyle(step).borderBottomColor.endsWith(alpha(FIRST_STEP)),
+    ).toBe(true);
+  },
 };

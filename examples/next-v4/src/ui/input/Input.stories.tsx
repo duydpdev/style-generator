@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { expect, userEvent } from "storybook/test";
 
+import { tokens } from "../../theme";
+import { Stack } from "../stack";
+
 import { Input } from "./Input";
 
 const meta = {
@@ -60,5 +63,66 @@ export const Invalid: Story = {
     await expect(
       canvas.getByRole("textbox", { name: "Email" }),
     ).toHaveAttribute("aria-invalid", "true");
+  },
+};
+
+/** `primary/<step>` with the literal step type kept, so it type-checks as a colour value. */
+function primaryStep<S extends (typeof tokens.opacities)[number]>(
+  step: S,
+): `primary/${S}`;
+function primaryStep(step: number): string {
+  return `primary/${String(step)}`;
+}
+
+/** The computed `background-color` of a probe that reads a colour token directly. */
+const tokenColor = (host: HTMLElement, key: string): string => {
+  const probe = host.ownerDocument.createElement("span");
+  probe.style.backgroundColor = `var(--sg-color-${key})`;
+  host.append(probe);
+  const value = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return value;
+};
+/** The alpha tail of a computed colour for a `/step` modifier. */
+const alpha = (step: number): string => `/ ${String(step / 100)})`;
+
+const FIRST_STEP = tokens.opacities.at(0);
+if (FIRST_STEP === undefined) throw new Error("no opacity step");
+
+/** `placeholderColor`: no prop (default `muted`), a token and `token/step`, read from `::placeholder`. */
+export const PlaceholderColors: Story = {
+  render: () => (
+    <Stack gap={2}>
+      <Input aria-label="placeholder=default" placeholder="default" />
+      <Input
+        aria-label="placeholder=primary"
+        placeholder="primary"
+        placeholderColor="primary"
+      />
+      <Input
+        aria-label={`placeholder=primary/${String(FIRST_STEP)}`}
+        placeholder="primary step"
+        placeholderColor={primaryStep(FIRST_STEP)}
+      />
+    </Stack>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const fallback = canvas.getByLabelText("placeholder=default");
+    const primary = canvas.getByLabelText("placeholder=primary");
+    const step = canvas.getByLabelText(
+      `placeholder=primary/${String(FIRST_STEP)}`,
+    );
+    await expect(getComputedStyle(fallback, "::placeholder").color).toBe(
+      tokenColor(canvasElement, "muted"),
+    );
+    await expect(getComputedStyle(primary, "::placeholder").color).toBe(
+      tokenColor(canvasElement, "primary"),
+    );
+    await expect(
+      getComputedStyle(step, "::placeholder").color.endsWith(alpha(FIRST_STEP)),
+    ).toBe(true);
+    // tailwind-merge dropped the default `muted` class in favour of the prop.
+    await expect(primary).toHaveClass("placeholder-primary");
+    await expect(primary).not.toHaveClass("placeholder-muted");
   },
 };

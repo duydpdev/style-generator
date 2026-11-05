@@ -53,13 +53,13 @@ export const Button = ({ variant, color, size, className, ...props }) => (
 );
 ```
 
-| Recipe         | Variants                                                                                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `buttonRecipe` | `variant` (fill, outline, soft, ghost, link) × `color` (`Intent`) × `size`                                                                  |
-| `stackRecipe`  | `direction`, `align`, `justify`, `wrap` (gap = a spacing prop)                                                                              |
-| `gridRecipe`   | `align`, `justify`, `flow` (columns = `gridColumns` from `design-system-example/recipes`: a count, a CSS track list or a breakpoint record) |
-| `textRecipe`   | `type` (typography), `color` (a token or `token/step`), `decoration`, `align`, `transform`, `italic`, `truncate`, `lineClamp`, `wrap`       |
-| `boxRecipe`    | `backgroundColor`, `borderColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `innerBorder`                                |
+| Recipe         | Variants                                                                                                                                                                                                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `buttonRecipe` | `variant` (fill, outline, soft, ghost, link) × `color` (`Intent`) × `size`                                                                                                                                                                                                    |
+| `stackRecipe`  | `direction`, `align`, `justify`, `wrap`, `divideColor` (gap = a spacing prop). Flex adds `grow`, `shrink`, `basis` through `createFlexRecipe` (`design-system-example/recipes`)                                                                                               |
+| `gridRecipe`   | `align`, `justify`, `flow`, `rows` (columns = `gridColumns` from `design-system-example/recipes`: a count, a CSS track list or a breakpoint record)                                                                                                                           |
+| `textRecipe`   | `type` (typography), `color` (a token or `token/step`), `decoration`, `align`, `transform`, `italic`, `truncate`, `lineClamp`, `wrap`                                                                                                                                         |
+| `boxRecipe`    | `backgroundColor`, `borderColor`, `ringColor`, `outlineColor`, `border*`, `rounded*`, `shadow`, `backdropBlur`, `position`, `display`, `overflow`, `zIndex`, `opacity`, `cursor`, `pointerEvents`, `select`, `transition`, `aspect`, `objectFit`, `visibility`, `innerBorder` |
 
 Spacing is not a variant. Split the responsive spacing props off with the library helper and merge the result:
 

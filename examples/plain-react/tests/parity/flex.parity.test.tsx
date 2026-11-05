@@ -1,7 +1,7 @@
 import {
   BOX_VARIANT_KEYS,
   boxTables as harnessBoxTables,
-  stackTables as harnessStackTables,
+  flexTables as harnessFlexTables,
 } from "design-system-example/recipes";
 import { describe, expect, test } from "vitest";
 
@@ -24,8 +24,8 @@ import {
   type ParityCase,
 } from "./parity";
 
-// The harness Flex also reads `stackTables()`.
-const harnessFlex = harnessStackTables();
+// The harness Flex reads `flexTables`, the item props included.
+const harnessFlex = harnessFlexTables(harnessTokens);
 const harnessLayout = harnessBoxTables(harnessTokens);
 const layoutKeys: readonly string[] = LAYOUT_VARIANT_KEYS;
 const harnessLayoutKeys: readonly string[] = BOX_VARIANT_KEYS;
@@ -55,6 +55,16 @@ describe("Flex parity (plain vs harness)", () => {
   test.each(cases)("$name", async ({ props }) => {
     const plain = await renderClasses(loose(Flex), props);
     const harness = await renderClasses(loose(HarnessFlex), props);
+    expect(plain).toEqual(harness);
+  });
+});
+
+describe("Flex numbers (D1)", () => {
+  test("basis 0 reaches the recipe", async () => {
+    const props = { basis: 0 } as const;
+    const plain = await renderClasses(loose(Flex), props);
+    const harness = await renderClasses(loose(HarnessFlex), props);
+    expect(plain.root).toContain("basis-0");
     expect(plain).toEqual(harness);
   });
 });

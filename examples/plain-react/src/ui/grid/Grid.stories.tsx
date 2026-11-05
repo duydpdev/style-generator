@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { expect } from "storybook/test";
 
 import { Box } from "../box";
 
@@ -49,3 +50,40 @@ export const JustifyBetween: Story = {
 export const FlowRow: Story = { args: { flow: "row" } };
 export const FlowColumn: Story = { args: { flow: "column" } };
 export const FlowDense: Story = { args: { flow: "dense" } };
+
+const ROWS = [1, 2, 3, 4, 5, 6, "none"] as const;
+
+/** `rows`: one labelled Grid per value; the computed track list has `n` tracks. The "none" tile has no items: CSSOM resolves `grid-template-rows` to the used track list (implicit rows included), so `none` is only observable on an empty grid. */
+export const RowValues: Story = {
+  render: () => (
+    <Grid gap={2} columns={4}>
+      {ROWS.map((value) => (
+        <Grid
+          key={String(value)}
+          columns={2}
+          rows={value}
+          height={120}
+          aria-label={`rows=${String(value)}`}
+        >
+          {value === "none" ? null : (
+            <>
+              <Box {...ITEM}>A</Box>
+              <Box {...ITEM}>B</Box>
+            </>
+          )}
+        </Grid>
+      ))}
+    </Grid>
+  ),
+  play: async ({ canvas }) => {
+    for (const value of ROWS) {
+      const el = canvas.getByLabelText(`rows=${String(value)}`);
+      const rows = getComputedStyle(el).gridTemplateRows;
+      if (value === "none") {
+        await expect(rows).toBe("none");
+      } else {
+        await expect(rows.trim().split(/\s+/).length).toBe(value);
+      }
+    }
+  },
+};

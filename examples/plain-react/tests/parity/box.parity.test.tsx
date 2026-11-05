@@ -53,3 +53,19 @@ describe("Box parity (plain vs harness)", () => {
     expect(plain).toEqual(harness);
   });
 });
+
+describe("Box numbers (D1)", () => {
+  test.each([
+    { key: "zIndex", value: 0 },
+    { key: "zIndex", value: 10 },
+    { key: "opacity", value: 0 },
+    { key: "opacity", value: 100 },
+  ] as const)("$key=$value", async ({ key, value }) => {
+    const props = { [key]: value };
+    const expected = `${key === "zIndex" ? "z" : "opacity"}-${String(value)}`;
+    const plain = await renderClasses(loose(Box), props);
+    const harness = await renderClasses(loose(HarnessBox), props);
+    expect(plain.root).toContain(expected);
+    expect(plain).toEqual(harness);
+  });
+});

@@ -17,7 +17,7 @@ export const inputTables = {
     createVariantMapper("border", tokens.colors).muted,
     createVariantMapper("border", tokens.borderWidth).thin,
     createVariantMapper("rounded", tokens.borderRadius).md,
-    "placeholder:text-muted focus-visible:border-primary",
+    "focus-visible:border-primary",
     // The invalid look follows the attribute, so it is also the accessible state.
     "aria-invalid:border-danger aria-invalid:focus-visible:border-danger",
     "disabled:cursor-not-allowed disabled:opacity-50",
@@ -28,9 +28,12 @@ export const inputTables = {
       md: ["h-9 px-3", type.text14Regular],
       lg: ["h-11 px-4", type.text16Medium],
     },
+    placeholderColor: createVariantMapper("placeholder", tokens.colors, {
+      opacities: tokens.opacities,
+    }),
   },
-  defaultVariants: { size: "md" },
+  defaultVariants: { size: "md", placeholderColor: "muted" },
 } satisfies RecipeTables;
 
-/** `inputRecipe({ size })` → class string. */
+/** `inputRecipe({ size, placeholderColor })` → class string. */
 export const inputRecipe: RecipeFn = recipeFromTables(inputTables);

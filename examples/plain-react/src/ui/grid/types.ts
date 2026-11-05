@@ -7,6 +7,11 @@ import type { tokens } from "../../theme";
 
 type Tokens = typeof tokens;
 
+/** A color token, or `token/step` with a step from `coverage.colors.opacities`. */
+type ColorValue =
+  | Tokens["colors"][number]
+  | `${Tokens["colors"][number]}/${Tokens["opacities"][number]}`;
+
 /** Inline size: a number is px (as React does), a string is any CSS length. */
 type Size = number | string;
 
@@ -16,8 +21,8 @@ type Size = number | string;
  * that `style.ts` passes to `splitLayout`.
  */
 export type LayoutProps = ThemeSpacingProps<Tokens> & {
-  readonly backgroundColor?: Tokens["colors"][number] | undefined;
-  readonly borderColor?: Tokens["colors"][number] | undefined;
+  readonly backgroundColor?: ColorValue | undefined;
+  readonly borderColor?: ColorValue | undefined;
   readonly border?: Tokens["borderWidth"][number] | undefined;
   readonly borderX?: Tokens["borderWidth"][number] | undefined;
   readonly borderY?: Tokens["borderWidth"][number] | undefined;
@@ -33,6 +38,68 @@ export type LayoutProps = ThemeSpacingProps<Tokens> & {
   readonly shadow?: Tokens["shadows"][number] | undefined;
   readonly backdropBlur?: Tokens["backDropBlurs"][number] | undefined;
   readonly position?: "absolute" | "relative" | "fixed" | "sticky" | undefined;
+  readonly display?:
+    | "block"
+    | "inlineBlock"
+    | "inline"
+    | "flex"
+    | "inlineFlex"
+    | "grid"
+    | "contents"
+    | "hidden"
+    | undefined;
+  readonly overflow?:
+    | "auto"
+    | "hidden"
+    | "clip"
+    | "visible"
+    | "scroll"
+    | undefined;
+  readonly zIndex?: 0 | 10 | 20 | 30 | 40 | 50 | "auto" | undefined;
+  readonly opacity?:
+    | 0
+    | 10
+    | 20
+    | 30
+    | 40
+    | 50
+    | 60
+    | 70
+    | 80
+    | 90
+    | 100
+    | undefined;
+  readonly cursor?:
+    | "auto"
+    | "default"
+    | "pointer"
+    | "notAllowed"
+    | "grab"
+    | "grabbing"
+    | "text"
+    | "move"
+    | undefined;
+  readonly pointerEvents?: "none" | "auto" | undefined;
+  readonly select?: "none" | "text" | "all" | "auto" | undefined;
+  readonly transition?:
+    | "none"
+    | "all"
+    | "colors"
+    | "opacity"
+    | "shadow"
+    | "transform"
+    | undefined;
+  readonly aspect?: "auto" | "square" | "video" | undefined;
+  readonly objectFit?:
+    | "contain"
+    | "cover"
+    | "fill"
+    | "none"
+    | "scaleDown"
+    | undefined;
+  readonly visibility?: "visible" | "invisible" | "collapse" | undefined;
+  readonly ringColor?: ColorValue | undefined;
+  readonly outlineColor?: ColorValue | undefined;
   readonly width?: Size | undefined;
   readonly height?: Size | undefined;
   readonly minWidth?: Size | undefined;
@@ -47,6 +114,8 @@ export type GridOwnProps = LayoutProps & {
   readonly align?: "start" | "center" | "end" | "stretch" | undefined;
   readonly justify?: "start" | "center" | "end" | "between" | undefined;
   readonly flow?: "row" | "column" | "dense" | undefined;
+  /** Row count (`grid-rows-N`); on `as="textarea"` it is this prop, not the HTML `rows` attribute. */
+  readonly rows?: 1 | 2 | 3 | 4 | 5 | 6 | "none" | undefined;
   readonly className?: string | undefined;
   readonly style?: CSSProperties | undefined;
 };

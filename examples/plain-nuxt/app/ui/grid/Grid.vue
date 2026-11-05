@@ -23,7 +23,7 @@ const attrs = useAttrs();
 // `columns`, `align`, ... to `rest`, or they would render as DOM attributes.
 const root = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars -- `as` is the tag, never an attribute
-  const { as: _as, columns, align, justify, flow, ...own } = props;
+  const { as: _as, columns, align, justify, flow, rows, ...own } = props;
   const split = splitLayout(
     { ...attrs, ...own },
     layoutRecipe,
@@ -36,7 +36,7 @@ const root = () => {
   return {
     ...rest,
     class: cn(
-      gridRecipe({ align, justify, flow }),
+      gridRecipe({ align, justify, flow, rows }),
       cols?.className,
       split.className,
       klass as ClassValue,

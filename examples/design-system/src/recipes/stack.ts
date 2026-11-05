@@ -1,5 +1,7 @@
 import type { VariantProps } from "class-variance-authority";
 
+import { tokens, type ColorValue } from "../tokens";
+
 import {
   createStackRecipe,
   type FlexAlign,
@@ -12,14 +14,15 @@ export type StackRecipeProps = Readonly<{
   align?: FlexAlign | null | undefined;
   justify?: FlexJustify | null | undefined;
   wrap?: boolean | null | undefined;
+  divideColor?: ColorValue | null | undefined;
 }>;
 
 /**
- * Headless flex-stack recipe: `stackRecipe({ direction, align, justify, wrap })`.
+ * Headless flex-stack recipe: `stackRecipe({ direction, align, justify, wrap, divideColor })`.
  * The gap is not a variant: pass the responsive `gap` / `gapX` / `gapY` spacing
  * props through `splitSpacingProps`.
  */
 export const stackRecipe: (props?: StackRecipeProps) => string =
-  createStackRecipe();
+  createStackRecipe(tokens);
 
 export type StackVariants = VariantProps<typeof stackRecipe>;

@@ -20,6 +20,7 @@ export function Stack<T extends ElementType = "div">({
   align,
   justify,
   wrap,
+  divideColor,
   ...props
 }: StackProps<T>): JSX.Element {
   const Component: ElementType = as ?? "div";
@@ -35,7 +36,7 @@ export function Stack<T extends ElementType = "div">({
       {...split.rest}
       className={
         cn(
-          stackRecipe({ direction, align, justify, wrap }),
+          stackRecipe({ direction, align, justify, wrap, divideColor }),
           split.className,
           className,
         ) || undefined

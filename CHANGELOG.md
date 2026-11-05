@@ -1,3 +1,11 @@
+# [5.4.0](https://github.com/duydpdev/style-generator/compare/v5.3.0...v5.4.0) (2026-11-05)
+
+### Features
+
+- typed color opacity and ring, outline, divide, placeholder color prefixes ([bcf7ce1](https://github.com/duydpdev/style-generator/commit/bcf7ce11aeabebd3791777a1fa795f4b32cc2751))
+
+  coverage.colors.opacities is now also DesignTokens.Web.opacities (OpacitySteps<O>: literal with literal options, [] / never without), and createVariantMapper(prefix, colors, { opacities }) adds token/step keys (primary/10 -> bg-primary/10; state classes stay on the base key; prefix arrays supported). The colors category covers ring, outline, divide and placeholder by default (trim with coverage.colors.prefixes; [bg, text, border] restores the 5.3 lines). The schema rejects color keys whose divide-<key> class is a Tailwind divider width (x, y, x-<n>, x-<borderWidth key>); doctor warns for color keys that hit ring/outline/divide statics and integer widths. ./ui: splitLayout and RecipeProps pass finite numbers; RecipeTokens gains optional opacities. Docs, vi twins, migration/5.3-to-5.4.md and CLAUDE.md updated. Minor release.
+
 # [5.3.0](https://github.com/duydpdev/style-generator/compare/v5.2.0...v5.3.0) (2026-11-03)
 
 ### Features

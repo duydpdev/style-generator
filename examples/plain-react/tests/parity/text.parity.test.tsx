@@ -22,6 +22,19 @@ const harnessTables = harnessTextTables(harnessTokens, textPreset);
 const cases: ParityCase[] = [
   { name: "defaults", props: {} },
   ...unionCases(variantCases(textTables), variantCases(harnessTables)),
+  // The generated cases pass table keys as strings ("1"); this one passes the
+  // real prop types: a number, booleans and a `key/step` color through React.
+  {
+    name: "all new props",
+    props: {
+      transform: "uppercase",
+      italic: true,
+      truncate: true,
+      lineClamp: 3,
+      wrap: "balance",
+      color: "primary/50",
+    },
+  },
   ...spacingCases(tokens),
 ];
 

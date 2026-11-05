@@ -18,6 +18,7 @@ The theme JSON is [`app/theme/theme.json`](../../examples/plain-nuxt/app/theme/t
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
 import themeJson from "./theme/theme.json";
@@ -25,8 +26,13 @@ import themeJson from "./theme/theme.json";
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays; no options, like `styleGenVite` in vite.config.ts. */
-export const tokens = createDesignTokens(themeJson).DesignTokens.Web;
+/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
+export const options = {
+  coverage: { colors: { opacities: [10, 20, 50, 80] } },
+} as const satisfies StyleGeneratorOptions;
+
+/** Typed token arrays from the theme and `options`. */
+export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -34,11 +40,18 @@ export const cn = createCn(tokens);
 
 ## Generate theme.css with the Vite plugin
 
-Nuxt runs on Vite, so `styleGenVite` goes under `vite.plugins`. Nuxt 4 sets the Vite root to `app/`, so the paths are absolute; no generator options are needed:
+Nuxt runs on Vite, so `styleGenVite` goes under `vite.plugins`. Nuxt 4 sets the Vite root to `app/`, so the paths are absolute. The plugin takes the same `options` literal that `app/theme.ts` passes to `createDesignTokens`; `style-gen.config.json` repeats it for the `generate` CLI:
 
 <!-- embed: examples/plain-nuxt/nuxt.config.ts#nuxt-config -->
 
 ```ts
+import { fileURLToPath } from "node:url";
+import { defineNuxtConfig } from "nuxt/config";
+import tailwindcss from "@tailwindcss/vite";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+import { options } from "./app/theme";
+
+// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-01-01",
   devtools: { enabled: false },
@@ -47,9 +60,9 @@ export default defineNuxtConfig({
   css: ["~/assets/css/globals.css"],
 
   // Nuxt runs on Vite, so styleGenVite works as in plain-react. Nuxt 4 sets
-  // the Vite `root` to `app/`, so the paths are absolute. No generator
-  // options: the defaults (breakpoints `md` and `lg`) are what
-  // `app/theme.ts` types the tokens with.
+  // the Vite `root` to `app/`, so the paths are absolute. `options` comes
+  // from `app/theme.ts`, which types the tokens with the same object; the
+  // `generate:theme` CLI reads the same steps from `style-gen.config.json`.
   vite: {
     plugins: [
       styleGenVite({
@@ -57,6 +70,7 @@ export default defineNuxtConfig({
           new URL("./app/theme/theme.json", import.meta.url),
         ),
         outDir: fileURLToPath(new URL("./app/theme", import.meta.url)),
+        options,
       }),
       tailwindcss(),
     ],

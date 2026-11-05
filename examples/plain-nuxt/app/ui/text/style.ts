@@ -15,7 +15,12 @@ import { tokens, type theme } from "../../theme";
 const defaultType = "text16Medium" satisfies TextVariant<typeof theme>;
 const defaultColor = "foreground" satisfies ColorVariant<typeof theme>;
 
-/** Text as data: `type` is a typography utility (`text-16-medium`), `color` a `text-*` color. */
+/**
+ * Text as data: `type` is a typography utility (`text-16-medium`), `color` a
+ * `text-*` color or `token/step` (`primary/50`); `transform`, `italic`,
+ * `truncate` (also `whitespace-nowrap`), `lineClamp` and `wrap` map to the
+ * matching utilities.
+ */
 export const textTables = {
   base: "wrap-anywhere whitespace-pre-wrap",
   variants: {
@@ -30,7 +35,32 @@ export const textTables = {
       left: "text-left",
       right: "text-right",
     },
-    color: createVariantMapper("text", tokens.colors),
+    color: createVariantMapper("text", tokens.colors, {
+      opacities: tokens.opacities,
+    }),
+    transform: {
+      uppercase: "uppercase",
+      lowercase: "lowercase",
+      capitalize: "capitalize",
+      normalCase: "normal-case",
+    },
+    italic: { true: "italic" },
+    truncate: { true: "truncate whitespace-nowrap" },
+    lineClamp: {
+      1: "line-clamp-1",
+      2: "line-clamp-2",
+      3: "line-clamp-3",
+      4: "line-clamp-4",
+      5: "line-clamp-5",
+      6: "line-clamp-6",
+      none: "line-clamp-none",
+    },
+    wrap: {
+      wrap: "text-wrap",
+      nowrap: "text-nowrap",
+      balance: "text-balance",
+      pretty: "text-pretty",
+    },
   },
   defaultVariants: { type: defaultType, color: defaultColor },
 } satisfies RecipeTables;

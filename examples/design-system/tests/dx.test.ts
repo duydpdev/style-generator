@@ -114,6 +114,19 @@ describe("design-system configuration", () => {
     expect(mirror).toEqual(options);
   });
 
+  it("keeps the opacity steps equal in options, design-system config and react-v4 package.json", () => {
+    const config = JSON.parse(
+      readFileSync(resolve(root, "style-gen.config.json"), "utf8"),
+    ) as { coverage: { colors: { opacities: number[] } } };
+    const pkg = JSON.parse(
+      readFileSync(resolve(root, "../react-v4/package.json"), "utf8"),
+    ) as { "style-gen": { coverage: { colors: { opacities: number[] } } } };
+    const steps = [...options.coverage.colors.opacities];
+
+    expect(config.coverage.colors.opacities).toEqual(steps);
+    expect(pkg["style-gen"].coverage.colors.opacities).toEqual(steps);
+  });
+
   it("theme.json and the shared options pass generate() validation", () => {
     const { css } = generate(theme, options);
     expect(css).toContain('html[data-theme="dark"]');

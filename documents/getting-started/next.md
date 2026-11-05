@@ -18,6 +18,7 @@ The theme JSON is [`src/theme/theme.json`](../../examples/next-v4/src/theme/them
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
 import themeJson from "./theme/theme.json";
@@ -25,8 +26,13 @@ import themeJson from "./theme/theme.json";
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays; no options, like `styleGenVite` in vite.config.ts. */
-export const tokens = createDesignTokens(themeJson).DesignTokens.Web;
+/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
+export const options = {
+  coverage: { colors: { opacities: [10, 20, 50, 80] } },
+} as const satisfies StyleGeneratorOptions;
+
+/** Typed token arrays from the theme and `options`. */
+export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -41,6 +47,7 @@ export const cn = createCn(tokens);
 ```ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
+import { options } from "./src/theme";
 
 const nextConfig: NextConfig = {};
 
@@ -48,12 +55,13 @@ const nextConfig: NextConfig = {};
 // plugin does not apply. `styleGenNext` does not import `next`, so it works
 // under both bundlers. It writes `src/theme/theme.css` when Next loads this
 // config in `phase-development-server` (`next dev`, which also watches the
-// theme JSON) or `phase-production-build` (`next build`). No generator
-// options: the defaults (breakpoints `md` and `lg`) are what `src/theme.ts`
-// types the tokens with.
+// theme JSON) or `phase-production-build` (`next build`). `options` comes from
+// `src/theme.ts`, which types the tokens with the same object; the `generate`
+// CLI reads the same steps from `style-gen.config.json`.
 export default styleGenNext({
   themePath: "src/theme/theme.json",
   outDir: "src/theme",
+  options,
 })(nextConfig);
 ```
 

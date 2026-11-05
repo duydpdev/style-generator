@@ -15,8 +15,8 @@ yarn workspace plain-react-example dev
 ## Copy a component into your app
 
 1. Install the package and the libraries a copied folder uses: `yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge`, plus `react` and `@types/react`. `@duydpdev/style-generator` is served by GitHub Packages, so set up the `@duydpdev` scope and a token first (the [Install](../../README.md#install) section of the repository README); without the scope config npmjs serves an unrelated `3.0.0`.
-2. Copy `src/theme/theme.json` (or use your own theme) and `src/theme.ts`. If you pass generator options to `styleGenVite`, pass the same object as the second argument of `createDesignTokens` in `theme.ts`.
-3. Wire the generator: `styleGenVite({ themePath: "src/theme/theme.json", outDir: "src/theme" })` in `vite.config.ts`, and `@import "tailwindcss";` + `@import "./theme/theme.css";` in your CSS entry.
+2. Copy `src/theme/theme.json` (or use your own theme), `src/theme.ts` and `style-gen.config.json`. `theme.ts` holds the literal `options` (here `coverage.colors.opacities`), which `vite.config.ts` passes to `styleGenVite` and `theme.ts` passes as the second argument of `createDesignTokens`; `style-gen.config.json` repeats the same steps for the `generate` CLI (`yarn check:plain-ui` keeps them equal).
+3. Wire the generator: `styleGenVite({ themePath: "src/theme/theme.json", outDir: "src/theme", options })` in `vite.config.ts` (`options` imported from `src/theme.ts`), and `@import "tailwindcss";` + `@import "./theme/theme.css";` in your CSS entry.
 4. Copy one folder, for example `src/ui/button/`. A folder imports only its own files, `../../theme` and the packages, so nothing else comes with it.
 
 ## Components
@@ -25,18 +25,18 @@ Every folder is self-contained: it imports only the package, `react`, `../../the
 
 To use a folder in your own app: `yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge`, then copy the folder plus `src/theme.ts` and `src/theme/theme.json`. The package comes from GitHub Packages, so set up the scope registry and token first ([root README, Install](../../README.md#install)); without that config npmjs serves an unrelated `3.0.0`.
 
-| Folder           | Component | Parity gate | Notes                                                                                                                                   |
-| ---------------- | --------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/ui/box/`    | `Box`     | yes         | Token, size and spacing props; `innerBorder` draws an overlay frame (a `<span>`, not the element's border, so it takes no layout space) |
-| `src/ui/text/`   | `Text`    | yes         | `type`, `color`, `align`, `decoration`; defaults `text16Medium` and `foreground`                                                        |
-| `src/ui/stack/`  | `Stack`   | yes         | One column of items                                                                                                                     |
-| `src/ui/flex/`   | `Flex`    | yes         | A row of two or more items                                                                                                              |
-| `src/ui/grid/`   | `Grid`    | yes         | `columns`: a count or a CSS track list, per breakpoint                                                                                  |
-| `src/ui/button/` | `Button`  | yes         | `variant` × `color` (intent) × `size`, optional `prefix`/`suffix`                                                                       |
-| `src/ui/card/`   | `Card`    | no          | tone, padding, radius, shadow, border                                                                                                   |
-| `src/ui/badge/`  | `Badge`   | no          | color × variant (`soft`, `solid`, `outline`)                                                                                            |
-| `src/ui/input/`  | `Input`   | no          | native `<input>`; `size`, `invalid` (sets `aria-invalid`)                                                                               |
-| `src/ui/link/`   | `Link`    | no          | tone, underline; `as` for a router link or a button                                                                                     |
+| Folder           | Component | Parity gate | Notes                                                                                                                                                              |
+| ---------------- | --------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/ui/box/`    | `Box`     | yes         | Token, size and spacing props; `innerBorder` draws an overlay frame (a `<span>`, not the element's border, so it takes no layout space)                            |
+| `src/ui/text/`   | `Text`    | yes         | `type`, `color` (a token or `token/step`), `align`, `decoration`, `transform`, `italic`, `truncate`, `lineClamp`, `wrap`; defaults `text16Medium` and `foreground` |
+| `src/ui/stack/`  | `Stack`   | yes         | One column of items                                                                                                                                                |
+| `src/ui/flex/`   | `Flex`    | yes         | A row of two or more items                                                                                                                                         |
+| `src/ui/grid/`   | `Grid`    | yes         | `columns`: a count or a CSS track list, per breakpoint                                                                                                             |
+| `src/ui/button/` | `Button`  | yes         | `variant` × `color` (intent) × `size`, optional `prefix`/`suffix`                                                                                                  |
+| `src/ui/card/`   | `Card`    | no          | tone, padding, radius, shadow, border                                                                                                                              |
+| `src/ui/badge/`  | `Badge`   | no          | color × variant (`soft`, `solid`, `outline`)                                                                                                                       |
+| `src/ui/input/`  | `Input`   | no          | native `<input>`; `size`, `invalid` (sets `aria-invalid`)                                                                                                          |
+| `src/ui/link/`   | `Link`    | no          | tone, underline; `as` for a router link or a button                                                                                                                |
 
 "Parity gate: yes" means `tests/parity/<folder>.parity.test.tsx` checks that the component renders the same classes as the harness component in `examples/react-v4`. `Card`, `Badge`, `Input` and `Link` exist only in the plain examples, so their stories are their only check.
 

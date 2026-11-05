@@ -2,6 +2,7 @@ import type {
   BreakpointKeys,
   CategoryTokenKey,
   DesignTokensResult,
+  OpacitySteps,
   SpacingKeys,
 } from "../../core/inference";
 import type { ExactOptions, StyleGeneratorOptions } from "../../core/Options";
@@ -75,12 +76,12 @@ const aliasedColorKeys = (theme: ColorSource): string[] =>
  * keys and defaults to the `@source inline` keys of its descriptor.
  *
  * `O` is the type of the caller's raw options: it only shapes the return type
- * (`breakpoints`, `spacingProperties`, `screens`); every runtime value comes
+ * (`breakpoints`, `spacingProperties`, `screens`, `opacities`); every runtime value comes
  * from `options`.
  * @template TTheme
  * @template O
  * @param {ThemeConfig} config - Theme configuration
- * @param {ResolvedTokenOptions} options - Resolved token options (`breakpoints`, `screens`, `spacing`)
+ * @param {ResolvedTokenOptions} options - Resolved token options (`breakpoints`, `screens`, `spacing`, `opacities`)
  * @returns {DesignTokensResult<ThemeConfig, O>} Design tokens object inferred from theme and options
  */
 export const buildDesignTokens = <
@@ -133,6 +134,7 @@ export const buildDesignTokens = <
         TTheme,
         O
       >["DesignTokens"]["Web"]["aliasedColors"],
+      opacities: [...options.opacities] as OpacitySteps<O>[],
     },
   },
 });

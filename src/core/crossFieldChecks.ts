@@ -93,6 +93,40 @@ export const checkBorderWidthColorCollision = (
 };
 
 /**
+ * Reject a `theme.colors` key whose `divide-<kebab-key>` color class is
+ * also one of Tailwind's divider-width utilities: `x`/`y` (`divide-x`),
+ * `x-<n>`/`y-<n>` for any integer `n` (`divide-x-2`) and `x-<k>`/`y-<k>`
+ * for a `borderWidth` key `k` (`divide-x-thin`). Tailwind would emit the
+ * width and the color for that one class.
+ * @param {z.RefinementCtx} ctx - Zod refinement context
+ * @param {Record<string, string> | undefined} colors - Base `colors` record
+ * @param {Record<string, string> | undefined} borderWidth - Base `borderWidth` record
+ * @returns {void}
+ */
+export const checkDivideColorCollision = (
+  ctx: z.RefinementCtx,
+  colors: Record<string, string> | undefined,
+  borderWidth: Record<string, string> | undefined,
+): void => {
+  if (!colors) return;
+  const widths = new Set(Object.keys(borderWidth ?? {}).map(toKebabCase));
+  for (const key of Object.keys(colors)) {
+    const kebab = toKebabCase(key);
+    const match = /^[xy](?:-(.+))?$/.exec(kebab);
+    if (!match) continue;
+    const rest = match[1];
+    if (rest !== undefined && !/^\d+$/.test(rest) && !widths.has(rest)) {
+      continue;
+    }
+    ctx.addIssue({
+      code: "custom",
+      path: ["colors", key],
+      message: `colors key "${key}" collides with Tailwind's divider utility "divide-${kebab}" (borderWidth divide-x/y scale) — rename it.`,
+    });
+  }
+};
+
+/**
  * `--font-weight-*` and `--font-size-*` live in the `--font-` theme
  * namespace Tailwind reads for font families, but it ignores them as
  * families and instead reads them as the weight/size scale — a

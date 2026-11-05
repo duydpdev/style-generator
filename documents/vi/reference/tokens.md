@@ -1,4 +1,4 @@
-<!-- source: documents/reference/tokens.md sha256: f7c2f0bdfc7f -->
+<!-- source: documents/reference/tokens.md sha256: 0b02a5e87fd1 -->
 
 # Design token (./tokens)
 
@@ -56,6 +56,7 @@ const { DesignTokens } = createDesignTokens(theme, {
 | `spacingProperties` | Danh sách prop spacing — các key của `options.spacing.properties`, hoặc các giá trị mặc định                                                         |
 | `breakpoints`       | Các breakpoint đang hoạt động — mặc định là `["md", "lg"]`                                                                                           |
 | `screens`           | Map breakpoint → độ rộng: các screen mặc định cộng thêm các key của `options.screens`                                                                |
+| `opacities`         | `options.coverage.colors.opacities`, theo thứ tự tăng dần (`[]` nếu không có); literal khi options là literal                                        |
 | `aliasedColors`     | Các key `colors` có giá trị là alias `"$<key>"` trong bản ghi gốc hoặc bất kỳ override `themeAxes` nào (những gì `coverage.keys: "aliased"` giữ lại) |
 
 Mỗi mảng được đặt tên theo trường `ThemeConfig` tương ứng (`DesignTokens.Web.colors` chứa các key của `theme.colors`); `spacingProperties`, `breakpoints` và `screens` đến từ options. Mọi mảng đều là `readonly`, và options được suy luận kiểu dưới dạng literal (`generate`, `createDesignTokens` và `defineOptions` nhận `const O`): `createDesignTokens(theme, { breakpoints: ["md", "xl"] }).DesignTokens.Web.breakpoints` có kiểu `readonly ("md" | "xl")[]`. Options được chú thích kiểu là `StyleGeneratorOptions` sẽ nới rộng kiểu thành `readonly string[]`, và việc truyền tham số kiểu tường minh chỉ cho theme cũng làm như vậy (`createDesignTokens<typeof theme>(theme, { breakpoints: ["xl"] })`): hãy bỏ tham số kiểu để giữ lại các kiểu literal. Khi không có `options`, các giá trị mặc định sẽ được áp dụng (`readonly ("md" | "lg")[]`). `aliasedColors` được tính toán tại runtime từ bản ghi gốc và mọi override; kiểu của nó giữ lại từng key có giá trị là một literal `$…` hoặc một `string` thuần túy. Các kiểu tương ứng là `DesignTokensWeb<TTheme, O>` và `DesignTokensResult<TTheme, O>`.

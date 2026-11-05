@@ -1,4 +1,4 @@
-<!-- source: documents/cookbook.md sha256: f455334df6ac -->
+<!-- source: documents/cookbook.md sha256: 5aaef4be893e -->
 
 # Công thức
 
@@ -66,4 +66,4 @@ Các tên class được dựng lúc runtime (một template literal như `` `bg
 
 ## Thu gọn các dòng `@source inline` được sinh ra
 
-`coverage` sẽ bỏ qua các dòng `@source inline` của một nhóm token hoặc chỉ giữ lại một số tiền tố hay các key có alias, và `coverage.colors.opacities` thêm các class dạng `bg-primary/10`; xem [`coverage`](./reference/options.md#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token).
+`coverage` sẽ bỏ qua các dòng `@source inline` của một nhóm token hoặc chỉ giữ lại một số tiền tố hay các key có alias, và `coverage.colors.opacities` thêm các class dạng `bg-primary/10`; xem [`coverage`](./reference/options.md#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token). `DesignTokens.Web.opacities` mang đúng các mức đó; truyền nó vào `createVariantMapper(prefix, colors, { opacities })` để có các key dạng `primary/10` (xem [`createVariantMapper`](./reference/cva.md)).

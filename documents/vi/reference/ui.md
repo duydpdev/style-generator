@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: 9baf4832b192 -->
+<!-- source: documents/reference/ui.md sha256: 6807bc44d5cf -->
 
 # UI kit (./ui)
 
@@ -103,11 +103,11 @@ Variant name → option → classes (the `variants` of a cva config).
 
 ```ts
 export declare type RecipeProps = Readonly<
-  Record<string, string | boolean | null | undefined>
+  Record<string, string | number | boolean | null | undefined>
 >;
 ```
 
-Recipe call props: variant name → option (`true`/`false` for boolean variants).
+Recipe call props: variant name → option (`true`/`false` for boolean variants, a number for a numeric option such as `zIndex: 10`).
 
 <!-- /signature -->
 
@@ -137,6 +137,7 @@ export declare interface RecipeTokens {
   readonly borderWidth: readonly string[];
   readonly spacingProperties: readonly string[];
   readonly breakpoints: readonly string[];
+  readonly opacities?: readonly number[];
 }
 ```
 
@@ -236,8 +237,8 @@ export declare const splitLayout: (
 ```
 
 Layout props → box-recipe classes, size style and spacing; the rest
-passes through. A key in `variantKeys` is a recipe variant (a
-non-string value becomes `undefined`); a key in `sizeKeys` is an
+passes through. A key in `variantKeys` is a recipe variant (a string or a
+finite number is passed on; anything else becomes `undefined`); a key in `sizeKeys` is an
 inline size: a string is kept, a finite number `n` becomes `"<n>px"`
 (`0` becomes `"0"`), anything else is dropped. `extra` variants win
 over props.
@@ -250,7 +251,9 @@ over props.
 export declare interface Split {
   readonly className: string;
   readonly style: StyleRecord;
-  readonly variants: Readonly<Record<string, string | boolean | undefined>>;
+  readonly variants: Readonly<
+    Record<string, string | number | boolean | undefined>
+  >;
   readonly rest: Readonly<Record<string, unknown>>;
 }
 ```

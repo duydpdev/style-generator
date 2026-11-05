@@ -67,10 +67,10 @@ describe("generateSourceInline", () => {
     const lines = css.trim().split("\n");
 
     expect(lines).toContain(
-      '@source inline("hover:{bg,text,border}-{primary-hover}");',
+      '@source inline("hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}");',
     );
     expect(lines).toContain(
-      '@source inline("active:{bg,text,border}-{primary-active}");',
+      '@source inline("active:{bg,text,border,ring,outline,divide,placeholder}-{primary-active}");',
     );
   });
 
@@ -81,7 +81,7 @@ describe("generateSourceInline", () => {
     const css = generateSourceInline(theme, { spacing: { enabled: false } });
 
     expect(css).toMatch(
-      /@source inline\("hover:\{bg,text,border\}-\{primary-hover\}"\);/,
+      /@source inline\("hover:\{bg,text,border,ring,outline,divide,placeholder\}-\{primary-hover\}"\);/,
     );
     expect(css).not.toMatch(/active:/);
   });
@@ -93,7 +93,7 @@ describe("generateSourceInline", () => {
     const css = generateSourceInline(theme, { spacing: { enabled: false } });
 
     expect(css).toContain(
-      '@source inline("hover:{bg,text,border}-{primary-hover}");',
+      '@source inline("hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}");',
     );
   });
 
@@ -138,7 +138,11 @@ describe("generateSourceInline coverage", () => {
 
   it("`false` drops the category's lines, state lines included", () => {
     const lines = linesOf({ coverage: { colors: false } });
-    expect(lines.some((l) => l.includes("{bg,text,border}"))).toBe(false);
+    expect(
+      lines.some((l) =>
+        l.includes("{bg,text,border,ring,outline,divide,placeholder}"),
+      ),
+    ).toBe(false);
     expect(lines.some((l) => l.startsWith('@source inline("hover:'))).toBe(
       false,
     );
@@ -170,10 +174,10 @@ describe("generateSourceInline coverage", () => {
     // `brand` and `brandHover` hold `$` aliases; `primary`/`primaryHover`
     // are only their targets (consumed through `var(--sg-*)`), so no class.
     expect(lines).toContain(
-      '@source inline("{bg,text,border}-{brand,brand-hover}");',
+      '@source inline("{bg,text,border,ring,outline,divide,placeholder}-{brand,brand-hover}");',
     );
     expect(lines).toContain(
-      '@source inline("hover:{bg,text,border}-{brand-hover}");',
+      '@source inline("hover:{bg,text,border,ring,outline,divide,placeholder}-{brand-hover}");',
     );
     expect(lines).toContain('@source inline("{shadow}-{lifted}");');
     expect(lines.some((l) => l.includes("primary"))).toBe(false);
@@ -187,15 +191,19 @@ describe("generateSourceInline coverage", () => {
       } as ThemeConfig,
       { ...base, coverage: { colors: { keys: "aliased" } } },
     );
-    expect(lines).toContain('@source inline("{bg,text,border}-{primary}");');
+    expect(lines).toContain(
+      '@source inline("{bg,text,border,ring,outline,divide,placeholder}-{primary}");',
+    );
   });
 
   it('`keys: "aliased"` along an alias chain keeps every holder, not the end of the chain', () => {
     const lines = generateSourceInline(
-      { colors: { x: "$y", y: "$z", z: "#fff" } },
+      { colors: { a: "$b", b: "$c", c: "#fff" } },
       { ...base, coverage: { colors: { keys: "aliased" } } },
     );
-    expect(lines).toContain('@source inline("{bg,text,border}-{x,y}");');
+    expect(lines).toContain(
+      '@source inline("{bg,text,border,ring,outline,divide,placeholder}-{a,b}");',
+    );
   });
 
   it('`keys: "aliased"` emits a state line only when both the token and its sibling hold aliases', () => {
@@ -214,7 +222,7 @@ describe("generateSourceInline coverage", () => {
       options,
     );
     expect(both).toContain(
-      '@source inline("hover:{bg,text,border}-{primary-hover}");',
+      '@source inline("hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}");',
     );
 
     const onlySibling = generateSourceInline(
@@ -224,7 +232,7 @@ describe("generateSourceInline coverage", () => {
       options,
     );
     expect(onlySibling).toContain(
-      '@source inline("{bg,text,border}-{primary-hover}");',
+      '@source inline("{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}");',
     );
     expect(onlySibling).not.toContain("hover:");
   });
@@ -234,7 +242,9 @@ describe("generateSourceInline coverage", () => {
       { colors: { primary: "#fff", secondary: "#000" } },
       { ...base, coverage: { colors: { keys: "aliased" } } },
     );
-    expect(lines).not.toContain("{bg,text,border}");
+    expect(lines).not.toContain(
+      "{bg,text,border,ring,outline,divide,placeholder}",
+    );
   });
 
   it('`keys: "aliased"` emits nothing for a category with no declared keys (defaults are never aliased)', () => {
@@ -255,7 +265,9 @@ describe("generateSourceInline coverage", () => {
         coverage: { colors: { keys: "aliased" }, shadows: { keys: "aliased" } },
       },
     );
-    expect(lines).not.toContain("{bg,text,border}");
+    expect(lines).not.toContain(
+      "{bg,text,border,ring,outline,divide,placeholder}",
+    );
     expect(lines).toContain('@source inline("{shadow}-{lifted}");');
   });
 
@@ -270,9 +282,9 @@ describe("generateSourceInline coverage", () => {
   it("`opacities` adds one ascending `/{…}` line right after the category line", () => {
     const lines = linesOf({ coverage: { colors: { opacities: [20, 10] } } });
     expect(lines.slice(0, 3)).toEqual([
-      '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}");',
-      '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}/{10,20}");',
-      '@source inline("hover:{bg,text,border}-{primary-hover,brand-hover}");',
+      '@source inline("{bg,text,border,ring,outline,divide,placeholder}-{primary,primary-hover,brand,brand-hover}");',
+      '@source inline("{bg,text,border,ring,outline,divide,placeholder}-{primary,primary-hover,brand,brand-hover}/{10,20}");',
+      '@source inline("hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover,brand-hover}");',
     ]);
   });
 
@@ -284,7 +296,7 @@ describe("generateSourceInline coverage", () => {
     });
     expect(
       withOpacities.replace(
-        '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}/{10}");\n',
+        '@source inline("{bg,text,border,ring,outline,divide,placeholder}-{primary,primary-hover,brand,brand-hover}/{10}");\n',
         "",
       ),
     ).toBe(absent);
@@ -299,6 +311,34 @@ describe("generateSourceInline coverage", () => {
     expect(lines).toContain('@source inline("{bg}-{brand,brand-hover}/{10}");');
     expect(lines).toContain('@source inline("hover:{bg}-{brand-hover}");');
     expect(lines.filter((l) => l.includes("/{"))).toHaveLength(1);
+  });
+
+  it("prefixes [bg, text, border] reproduces the 5.3 colors lines", () => {
+    const lines = linesOf({
+      coverage: { colors: { prefixes: ["bg", "text", "border"] } },
+    });
+    expect(lines).toContain(
+      '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}");',
+    );
+    expect(lines).toContain(
+      '@source inline("hover:{bg,text,border}-{primary-hover,brand-hover}");',
+    );
+    const colorLines = lines.filter((l) => l.includes("primary"));
+    expect(colorLines.length).toBeGreaterThan(0);
+    expect(
+      colorLines.some((l) => /ring|outline|divide|placeholder/.test(l)),
+    ).toBe(false);
+  });
+
+  it("the opacity line follows the trimmed new prefixes", () => {
+    const lines = linesOf({
+      coverage: {
+        colors: { prefixes: ["placeholder", "ring"], opacities: [50] },
+      },
+    });
+    expect(lines).toContain(
+      '@source inline("{ring,placeholder}-{primary,primary-hover,brand,brand-hover}/{50}");',
+    );
   });
 
   it('`opacities` emits nothing when no key survives `keys: "aliased"`', () => {

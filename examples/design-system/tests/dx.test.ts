@@ -120,6 +120,8 @@ describe("design-system configuration", () => {
     // `highContrast` is kebab-cased in the attribute value.
     expect(css).toContain('html[data-theme="high-contrast"]');
     expect(css).toContain('html[data-palette="forest"]');
-    expect(css).toContain("hover:{bg,text,border}-{primary-hover}");
+    expect(css).toContain(
+      "hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}",
+    );
   });
 });

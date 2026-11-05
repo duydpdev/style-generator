@@ -6,6 +6,7 @@ import { generate } from "../core/generate";
 import { ThemeSchema } from "../core/themeSchema";
 import {
   builtInCategories,
+  colorsCategory,
   type BuiltInCategory,
   type RegistryPrefix,
 } from "../features/registry/builtInCategories";
@@ -283,6 +284,36 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
         const bodies = ruleBodiesBySelector.get(selector) ?? [];
         expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
       });
+    },
+  );
+});
+
+describe("integration: createVariantMapper { opacities } classes exist in compiled Tailwind CSS", () => {
+  let selectors: Set<string>;
+
+  beforeAll(async () => {
+    const { css } = generate(fixtureTheme, {
+      ...fixtureOptions,
+      coverage: { colors: { opacities: [10, 50] } },
+    });
+    const root = postcss.parse(await compileFixtureCss(css, []));
+    selectors = new Set<string>();
+    root.walkRules((rule) => {
+      for (const selector of rule.selectors) selectors.add(selector.trim());
+    });
+  });
+
+  it.each(colorsCategory.classPrefixes)(
+    "%s: every token/step class the mapper builds has a compiled selector",
+    (prefix) => {
+      const keys = Object.keys(fixtureTheme.colors).map(toCamelCase);
+      const map = createVariantMapper(prefix, keys, { opacities: [10, 50] });
+      const stepped = Object.entries(map).filter(([key]) => key.includes("/"));
+
+      expect(stepped).toHaveLength(keys.length * 2);
+      for (const [, value] of stepped) {
+        expect(selectors.has(`.${escapeClassName(value)}`)).toBe(true);
+      }
     },
   );
 });

@@ -159,6 +159,47 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     expect(compiled).not.toContain(".bg-primary\\/10");
   });
 
+  it("builds ring/outline/divide/placeholder color classes via @source inline (build([]))", async () => {
+    const withMuted = {
+      ...theme,
+      colors: { ...theme.colors, muted: "#6B7280" },
+    };
+    const { css: themeCss } = generate(withMuted, {
+      coverage: { colors: { opacities: [50] } },
+    });
+    const compiled = await compileFixtureCss(themeCss, []);
+
+    expect(compiled).toContain(".ring-primary\\/50");
+    const ring = declsOf(compiled, ".ring-primary\\/50").get("--tw-ring-color");
+    expect(ring).toContain("var(--sg-color-primary)");
+    expect(ring).toContain("50%");
+    expect(
+      declsOf(compiled, ".outline-primary").get("outline-color"),
+    ).toContain("var(--sg-color-primary)");
+    expect(declsOf(compiled, ".divide-primary").get("border-color")).toContain(
+      "var(--sg-color-primary)",
+    );
+    expect(declsOf(compiled, ".placeholder-muted").get("color")).toContain(
+      "var(--sg-color-muted)",
+    );
+  });
+
+  it("negative control: coverage.colors.prefixes [bg] builds no ring/outline/divide/placeholder class", async () => {
+    const { css: themeCss } = generate(theme, {
+      coverage: { colors: { prefixes: ["bg"] } },
+    });
+    const compiled = await compileFixtureCss(themeCss, []);
+
+    for (const cls of [
+      ".ring-primary",
+      ".outline-primary",
+      ".divide-primary",
+      ".placeholder-primary",
+    ]) {
+      expect(compiled).not.toContain(cls);
+    }
+  });
+
   // Tripwire: `--border-width-*` is an undocumented Tailwind theme namespace
   // (see `borderWidthCategory`). If a Tailwind release stops resolving
   // border widths from it, this fails instead of the classes silently

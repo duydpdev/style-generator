@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  TAILWIND_COLOR_NUMERIC_ROOTS,
+  TAILWIND_COLOR_STATIC_CLASSES,
   TAILWIND_NUMERIC_UTILITY_ROOTS,
   TAILWIND_STATIC_UTILITY_NAMES,
   findUtilityCollisions,
@@ -54,5 +56,46 @@ describe("doctor typography collision lists match the real Tailwind compiler", (
         typography: { heading1: typo, body: typo, caption: typo, title2: typo },
       }),
     ).toEqual([]);
+  });
+});
+
+describe("the divide-x/y color-key rejection matches the real Tailwind compiler", () => {
+  it.each(["divide-x", "divide-y", "divide-x-7", "divide-y-3"])(
+    "Tailwind owns %s",
+    async (className) => {
+      expect(await tailwindOwns(className)).toBe(true);
+    },
+  );
+});
+
+describe("doctor color-prefix collision lists match the real Tailwind compiler", () => {
+  it.each([...TAILWIND_COLOR_STATIC_CLASSES])(
+    "Tailwind owns %s",
+    async (className) => {
+      expect(await tailwindOwns(className)).toBe(true);
+    },
+  );
+
+  it.each(TAILWIND_COLOR_NUMERIC_ROOTS.map((root) => `${root}-3`))(
+    "Tailwind owns %s",
+    async (className) => {
+      expect(await tailwindOwns(className)).toBe(true);
+    },
+  );
+
+  it("does not own divide-hidden, outline-auto, placeholder-shown, placeholder-none", async () => {
+    for (const className of [
+      "divide-hidden",
+      "outline-auto",
+      "placeholder-shown",
+      "placeholder-none",
+    ]) {
+      expect(await tailwindOwns(className)).toBe(false);
+    }
+    expect(
+      findUtilityCollisions({ colors: { primary: "#000", hidden: "#000" } }),
+    ).toEqual([
+      'colors.hidden → class "outline-hidden" collides with Tailwind\'s built-in "outline-hidden" utility',
+    ]);
   });
 });

@@ -147,6 +147,29 @@ export type BreakpointKeys<O> = O extends {
     ? string
     : DefaultBreakpointKeys;
 
+/** The opacity steps of one `coverage.colors` entry: literal when the entry carries a literal `opacities` list, `number` when it only declares the field optionally, `never` otherwise. */
+type OpacityStepsOf<C> = C extends {
+  readonly opacities: readonly (infer N extends number)[];
+}
+  ? N
+  : C extends object
+    ? "opacities" extends keyof C
+      ? number
+      : never
+    : never;
+
+/**
+ * The opacity steps `options.coverage.colors.opacities` names. Literal when
+ * `O` carries a literal list (`defineOptions`/`generate` infer `const O`);
+ * `number` for an annotated `StyleGeneratorOptions`; `never` when the
+ * option is absent, so `${T}/${OpacitySteps<O>}` adds no key.
+ */
+export type OpacitySteps<O> = O extends { readonly coverage?: infer V }
+  ? V extends { readonly colors?: infer C }
+    ? OpacityStepsOf<NonNullable<C>>
+    : never
+  : never;
+
 /**
  * The spacing keys `options.spacing.properties` names; `string` when `O`
  * only declares them optionally, the default `SpacingKey` union when absent.
@@ -242,6 +265,8 @@ export interface DesignTokensWeb<
    * holds exactly those; the type keeps every key that may be one.
    */
   readonly aliasedColors: readonly AliasedColorKey<TTheme>[];
+  /** `options.coverage.colors.opacities`, ascending; `[]` without the option. Feed it to `createVariantMapper(prefix, colors, { opacities })`. */
+  readonly opacities: readonly OpacitySteps<O>[];
 }
 
 /** Return type of `createDesignTokens(theme, options)`: the typed token arrays under `DesignTokens.Web`. `generate()` returns the same `DesignTokens` object as `tokens`. */

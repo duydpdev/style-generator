@@ -240,7 +240,7 @@ const buildStateLines = (
  * built-in category (colors, typography, shadows, backdrop blurs, border
  * radius, font family, border width) — see `buildCategoryLine` — one
  * further line per category `states` entry that has at least one sibling
- * pair (`hover:{bg,text,border}-{primary-hover}`, see `buildStateLines`) —
+ * (`hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}`, see `buildStateLines`) —
  * every `sp-*` utility the spacing pipeline can produce, plus any
  * caller-supplied `options.extraSources` entries (see
  * `StyleGeneratorOptions.extraSources`).

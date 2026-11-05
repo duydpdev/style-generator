@@ -285,6 +285,22 @@ describe("a top-level option typo is a type error", () => {
     expectTypeOf(generate(theme, literal).tokens.Web.breakpoints).toEqualTypeOf<
       readonly "md"[]
     >();
+
+    const withSteps = {
+      coverage: { colors: { opacities: [10, 50] } },
+    } as const satisfies StyleGeneratorOptions;
+    expectTypeOf(generate(theme, withSteps).tokens.Web.opacities).toEqualTypeOf<
+      readonly (10 | 50)[]
+    >();
+    expectTypeOf(
+      createDesignTokens(theme, withSteps).DesignTokens.Web.opacities,
+    ).toEqualTypeOf<readonly (10 | 50)[]>();
+    expectTypeOf(generate(theme).tokens.Web.opacities).toEqualTypeOf<
+      readonly never[]
+    >();
+    expectTypeOf(generate(theme, annotated).tokens.Web.opacities).toEqualTypeOf<
+      readonly number[]
+    >();
   });
 });
 

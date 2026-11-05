@@ -420,6 +420,62 @@ describe("ThemeSchema — invalid themes", () => {
     expect(result.error?.issues[0]?.message).toMatch(/border-thin-line/);
   });
 
+  it("rejects a typography key equal to a new color-prefix class (ringPrimary next to colors.primary)", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { primary: "#fff" },
+      typography: {
+        ringPrimary: { fontSize: "12px", lineHeight: "16px", fontWeight: 400 },
+      },
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual([
+      "typography",
+      "ringPrimary",
+    ]);
+    expect(result.error?.issues[0]?.message).toContain("ring-primary");
+  });
+
+  it.each(["x", "y", "x2", "x-2", "y10"])(
+    "rejects the divider-width color key %s at colors.<key>",
+    (key) => {
+      const result = ThemeSchema.safeParse({ colors: { [key]: "#fff" } });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.path).toEqual(["colors", key]);
+    },
+  );
+
+  it("rejects x-<k> only when <k> is a borderWidth key", () => {
+    const rejected = ThemeSchema.safeParse({
+      colors: { xThin: "#fff" },
+      borderWidth: { thin: "1px" },
+    });
+    expect(rejected.success).toBe(false);
+    expect(rejected.error?.issues[0]?.path).toEqual(["colors", "xThin"]);
+    expect(
+      ThemeSchema.safeParse({
+        colors: { xThin: "#fff" },
+        borderWidth: { hairline: "1px" },
+      }).success,
+    ).toBe(true);
+  });
+
+  it.each(["xl", "yellow", "xReverse", "x2l", "box"])(
+    "accepts the color key %s",
+    (key) => {
+      expect(ThemeSchema.safeParse({ colors: { [key]: "#fff" } }).success).toBe(
+        true,
+      );
+    },
+  );
+
+  it("formats the divider collision as one path → message line", () => {
+    const result = ThemeSchema.safeParse({ colors: { x: "#fff" } });
+    if (result.success) throw new Error("expected failure");
+    expect(formatZodError(result.error)).toMatch(
+      /^colors\.x → colors key "x" collides with Tailwind's divider utility "divide-x" \(borderWidth divide-x\/y scale\) — rename it\.$/m,
+    );
+  });
+
   it("rejects a fontFamily key that collides with a Tailwind font-weight utility", () => {
     const result = ThemeSchema.safeParse({
       colors: { primary: "#fff" },

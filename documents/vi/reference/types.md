@@ -1,4 +1,4 @@
-<!-- source: documents/reference/types.md sha256: 21d382de3f21 -->
+<!-- source: documents/reference/types.md sha256: eed1aea265c8 -->
 
 # Kiểu (./types)
 
@@ -100,8 +100,9 @@ How much of one token category's `@source inline` coverage to emit.
 `coverage` only changes the `@source inline(...)` lines (class-name
 coverage for classes Tailwind cannot see in source files): it trims
 them, and `coverage.colors.opacities` adds one opacity-modifier line. It
-never changes the `@theme inline` mapping, the `@utility` blocks or the
-typed `DesignTokens`.
+never changes the `@theme inline` mapping or the `@utility` blocks; of the
+typed `DesignTokens` only `opacities` (from `coverage.colors.opacities`)
+depends on it.
 
 <!-- /signature -->
 
@@ -340,6 +341,29 @@ type AppBreakpoints = "mobile" | "tablet" | "laptop" | "desktop";
 export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 ```
 
+## Bước độ mờ: `OpacitySteps`
+
+<!-- signature: OpacitySteps -->
+
+```ts
+export declare type OpacitySteps<O> = O extends {
+  readonly coverage?: infer V;
+}
+  ? V extends {
+      readonly colors?: infer C;
+    }
+    ? OpacityStepsOf<NonNullable<C>>
+    : never
+  : never;
+```
+
+The opacity steps `options.coverage.colors.opacities` names. Literal when
+`O` carries a literal list (`defineOptions`/`generate` infer `const O`);
+`number` for an annotated `StyleGeneratorOptions`; `never` when the
+option is absent, so `${T}/${OpacitySteps<O>}` adds no key.
+
+<!-- /signature -->
+
 ## `SpacingKey`, `SpacingKeys`, `SpacingPropertyMap`, `InferSpacingKeys`
 
 <!-- signature: SpacingKey -->
@@ -433,6 +457,7 @@ export declare interface DesignTokensWeb<
   readonly breakpoints: readonly BreakpointKeys<O>[];
   readonly screens: Readonly<Record<Breakpoint | ScreenKeys<O>, string>>;
   readonly aliasedColors: readonly AliasedColorKey<TTheme>[];
+  readonly opacities: readonly OpacitySteps<O>[];
 }
 ```
 

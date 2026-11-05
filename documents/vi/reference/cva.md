@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cva.md sha256: 397211518288 -->
+<!-- source: documents/reference/cva.md sha256: 5643b029138b -->
 
 # Helper CVA (./cva)
 
@@ -27,6 +27,34 @@ export declare function createVariantMapper<
     readonly allowUnregisteredPrefix: true;
   },
 ): VariantMap<T, P>;
+export declare function createVariantMapper<
+  const T extends string,
+  const P extends RegistryPrefix | "",
+  const N extends number,
+  const S extends readonly string[] = readonly [],
+>(
+  prefix: P,
+  tokens: readonly T[],
+  opts: {
+    readonly opacities: readonly N[];
+    readonly states?: S;
+  },
+): OpacityVariantMap<T, P, S, N>;
+export declare function createVariantMapper<
+  const T extends string,
+  const P extends RegistryPrefix | "",
+  const N extends number,
+  const S extends readonly string[] = readonly [],
+>(
+  prefixes: readonly P[],
+  tokens: readonly T[],
+  opts: {
+    readonly opacities: readonly N[];
+    readonly states?: S;
+  },
+): {
+  readonly [Px in P]: OpacityVariantMap<T, Px, S, N>;
+};
 export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
@@ -68,6 +96,12 @@ single classes. The result is a literal chained string when `states` is a
 literal tuple (`as const`, `COLOR_STATES`) and `string` when it is typed
 `readonly string[]`. `{ allowUnregisteredPrefix: true }` accepts any
 prefix string instead of only registry prefixes.
+
+`{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
+and step mapped to `class/step` (`primary/10` -> `bg-primary/10`); combined
+with `{ states }`, the state classes stay on the base key only
+(`primary/10` never carries `hover:`). Not combinable with
+`allowUnregisteredPrefix`.
 
 <!-- /signature -->
 
@@ -118,7 +152,25 @@ const bgStates = createVariantMapper("bg", tokens, { states: COLOR_STATES });
 
 Hãy luôn truyền `COLOR_STATES` thay vì tự viết cứng mảng — đó chính là danh sách dùng để sinh ra các dòng trạng thái `@source inline`.
 
-**Ràng buộc prefix.** `prefix` có kiểu `RegistryPrefix | ""` (các prefix mà registry sinh ra `@source inline`; `""` là typography), do đó `createVariantMapper("ring", …)` và một prefix lưu trong biến kiểu `string` đều là lỗi kiểu: chúng sẽ map sang các class mà không có dòng `@source inline` nào giữ lại. Để bỏ qua ràng buộc này cho một prefix đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và liệt kê các class đó trong `extraSources`. Tùy chọn bỏ qua này không kết hợp được với `{ states }` hoặc với một mảng các prefix.
+**Ràng buộc prefix.** `prefix` có kiểu `RegistryPrefix | ""` (các prefix mà registry sinh ra `@source inline`; `""` là typography), do đó `createVariantMapper("fill", …)` và một prefix lưu trong biến kiểu `string` đều là lỗi kiểu: chúng sẽ map sang các class mà không có dòng `@source inline` nào giữ lại. Để bỏ qua ràng buộc này cho một prefix đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và liệt kê các class đó trong `extraSources`. Tùy chọn bỏ qua này không kết hợp được với `{ states }`, với `{ opacities }` hoặc với một mảng các prefix.
+
+**Bước độ mờ.** `{ opacities }` thêm một key `token/step` cho mỗi token và mỗi bước (`primary/10` → `bg-primary/10`). Hãy truyền vào đó `DesignTokens.Web.opacities`, danh sách chính là `options.coverage.colors.opacities`, để các key bạn có thể gõ đúng bằng các class mà dòng độ mờ `@source inline` giữ lại. Với `{ states }`, các class trạng thái chỉ nằm trên key gốc (`primary/10` không bao giờ mang `hover:`); với một mảng các prefix, mỗi map prefix đều nhận các key này. Khi không có tùy chọn, `opacities` là `[]` và map không có key phụ nào.
+
+```ts
+import { createVariantMapper } from "@duydpdev/style-generator/cva";
+import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+
+const theme = { colors: { primary: "#2563eb", muted: "#6b7280" } } as const;
+const options = { coverage: { colors: { opacities: [10, 50] } } } as const;
+
+const web = createDesignTokens(theme, options).DesignTokens.Web;
+const bg = createVariantMapper("bg", web.colors, {
+  opacities: web.opacities,
+});
+const half: "bg-primary/50" = bg["primary/50"];
+```
+
+Hãy truyền cùng một object `options` cho plugin bundler hoặc `style-gen.config.json` để dòng độ mờ `@source inline` và `web.opacities` khớp nhau.
 
 ## `COLOR_STATES`
 

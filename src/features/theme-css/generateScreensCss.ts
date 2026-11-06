@@ -1,5 +1,6 @@
 import { resolveOptions } from "../../core/resolveOptions";
 import type { ResolvedOptions } from "../../core/resolveOptions";
+import { cssBlock } from "../../shared/cssBlock";
 
 /**
  * Generate a `@theme { --breakpoint-<key>: <value>; ... }` block overriding
@@ -25,5 +26,5 @@ export const generateScreensCss = (
     ([key, value]) => `  --breakpoint-${key}: ${value};`,
   );
 
-  return `@theme {\n${lines.join("\n")}\n}\n`;
+  return cssBlock("@theme", lines.join("\n")) + "\n";
 };

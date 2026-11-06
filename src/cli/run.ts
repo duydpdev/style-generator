@@ -1,5 +1,7 @@
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 
+import { errorMessage } from "../node/errorMessage";
+
 import { BUDGET_USAGE, budgetCommand } from "./commands/budget";
 import { doctorCommand } from "./commands/doctor";
 import { generateCommand } from "./commands/generate";
@@ -352,7 +354,7 @@ async function dispatch(args: string[], cwd: string): Promise<number> {
       allowPositionals: command.allowPositionals,
     });
   } catch (error) {
-    logger.error(error instanceof Error ? error.message : String(error));
+    logger.error(errorMessage(error));
     logger.log(`\n${command.usage}\n`);
     return command.usageExitCode ?? 1;
   }

@@ -1,8 +1,5 @@
 import { COLOR_STATES } from "../../shared/colorStates";
-import {
-  BORDER_PREFIXES,
-  ROUNDED_PREFIXES,
-} from "../../shared/safelistProperties";
+import { BORDER_PREFIXES, ROUNDED_PREFIXES } from "../../shared/classPrefixes";
 
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
 import { categoryTokenMeta } from "./categoryTokenMeta";

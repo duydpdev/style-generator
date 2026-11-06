@@ -1,15 +1,11 @@
 import { spawnSync } from "node:child_process";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { writeTmpFile } from "./__fixtures__/tmpProject";
 
 const repoRoot = join(__dirname, "..", "..");
 const FENCE = "```";
@@ -20,11 +16,6 @@ const FENCE = "```";
  * @param {string} rel - Root-relative file path
  * @param {string} content - File contents
  */
-function put(root: string, rel: string, content: string) {
-  mkdirSync(dirname(join(root, rel)), { recursive: true });
-  writeFileSync(join(root, rel), content);
-}
-
 /**
  * Run a docs script in place against a fixture tree.
  * @param {string} script - Repo-relative script path
@@ -118,7 +109,7 @@ const VI_GUIDE = [
  * @param {string} dir - Fixture root
  */
 function mirrored(dir: string) {
-  put(
+  writeTmpFile(
     dir,
     "site/src/lib/docs-meta.json",
     JSON.stringify({
@@ -138,14 +129,14 @@ function mirrored(dir: string) {
       },
     }),
   );
-  put(
+  writeTmpFile(
     dir,
     "README.md",
     "# Intro\n\nHello world from the package readme file.\n",
   );
-  put(dir, "documents/guide.md", EN_GUIDE);
-  put(dir, "documents/vi/README.md", "# Giới thiệu\n\nXin chào.\n");
-  put(dir, "documents/vi/guide.md", VI_GUIDE);
+  writeTmpFile(dir, "documents/guide.md", EN_GUIDE);
+  writeTmpFile(dir, "documents/vi/README.md", "# Giới thiệu\n\nXin chào.\n");
+  writeTmpFile(dir, "documents/vi/guide.md", VI_GUIDE);
   const written = i18n(dir, [
     "--write-hash",
     "documents/vi/README.md",
@@ -189,7 +180,11 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
 
   it("fails when the English file changed after the translation", () => {
     mirrored(t.dir);
-    put(t.dir, "documents/guide.md", `${EN_GUIDE}One more English sentence.\n`);
+    writeTmpFile(
+      t.dir,
+      "documents/guide.md",
+      `${EN_GUIDE}One more English sentence.\n`,
+    );
     const stale = i18n(t.dir);
     expect(stale.status).toBe(1);
     expect(stale.output).toContain("changed since it was translated");
@@ -197,7 +192,7 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
 
   it("hashes CRLF and LF checkouts alike", () => {
     mirrored(t.dir);
-    put(t.dir, "documents/guide.md", EN_GUIDE.replace(/\n/g, "\r\n"));
+    writeTmpFile(t.dir, "documents/guide.md", EN_GUIDE.replace(/\n/g, "\r\n"));
     expect(i18n(t.dir).status).toBe(0);
   });
 
@@ -257,7 +252,7 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
 
   it("fails on a Vietnamese file without an English source", () => {
     mirrored(t.dir);
-    put(t.dir, "documents/vi/extra.md", "# Thêm\n");
+    writeTmpFile(t.dir, "documents/vi/extra.md", "# Thêm\n");
     const result = i18n(t.dir);
     expect(result.status).toBe(1);
     expect(result.output).toContain("documents/vi/extra.md: no English source");
@@ -265,7 +260,11 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
 
   it("--only limits the check and rejects a path that selects nothing", () => {
     mirrored(t.dir);
-    put(t.dir, "documents/guide.md", `${EN_GUIDE}One more English sentence.\n`);
+    writeTmpFile(
+      t.dir,
+      "documents/guide.md",
+      `${EN_GUIDE}One more English sentence.\n`,
+    );
     expect(i18n(t.dir, ["--only", "documents/vi/README.md"]).status).toBe(0);
     expect(i18n(t.dir, ["--only", "documents/vi/nope"]).status).toBe(2);
   });
@@ -294,7 +293,11 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
 
   it("--write-hash validates every target before writing any", () => {
     mirrored(t.dir);
-    put(t.dir, "documents/guide.md", `${EN_GUIDE}One more English sentence.\n`);
+    writeTmpFile(
+      t.dir,
+      "documents/guide.md",
+      `${EN_GUIDE}One more English sentence.\n`,
+    );
     const file = join(t.dir, "documents/vi/guide.md");
     const before = readFileSync(file);
     const result = i18n(t.dir, [
@@ -310,7 +313,11 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
 
   it("--write-hash keeps the CRLF line endings of the twin", () => {
     mirrored(t.dir);
-    put(t.dir, "documents/guide.md", `${EN_GUIDE}One more English sentence.\n`);
+    writeTmpFile(
+      t.dir,
+      "documents/guide.md",
+      `${EN_GUIDE}One more English sentence.\n`,
+    );
     const file = join(t.dir, "documents/vi/guide.md");
     writeFileSync(file, readFileSync(file, "utf8").replace(/\n/g, "\r\n"));
     const result = i18n(t.dir, ["--write-hash", "documents/vi/guide.md"]);
@@ -337,7 +344,7 @@ function linkTree(dir: string, withVi: boolean) {
     order,
     vi: { title: `vi ${slug}` },
   });
-  put(
+  writeTmpFile(
     dir,
     "site/src/lib/docs-meta.json",
     JSON.stringify({
@@ -349,27 +356,27 @@ function linkTree(dir: string, withVi: boolean) {
       "documents/reference/core.md": entry("core", "Reference", 1),
     }),
   );
-  put(
+  writeTmpFile(
     dir,
     "README.md",
     "# Intro\n\n## Install\n\nSee [guide](documents/guide.md#usage).\n",
   );
-  put(
+  writeTmpFile(
     dir,
     "documents/guide.md",
     "# Guide\n\n## Usage\n\nBack to [intro](../README.md#install).\n",
   );
-  put(dir, "documents/getting-started/a.md", "# A\n");
-  put(dir, "documents/reference/core.md", "# Core\n");
-  put(dir, "documents/migration/4.x-to-5.0.md", "# M5\n");
-  put(dir, "documents/migration/3.x-to-4.0.md", "# M4\n");
+  writeTmpFile(dir, "documents/getting-started/a.md", "# A\n");
+  writeTmpFile(dir, "documents/reference/core.md", "# Core\n");
+  writeTmpFile(dir, "documents/migration/4.x-to-5.0.md", "# M5\n");
+  writeTmpFile(dir, "documents/migration/3.x-to-4.0.md", "# M4\n");
   if (!withVi) return;
-  put(
+  writeTmpFile(
     dir,
     "documents/vi/README.md",
     "# Giới thiệu\n\n## Cài đặt\n\nXem [hướng dẫn](guide.md#cách-dùng).\n",
   );
-  put(
+  writeTmpFile(
     dir,
     "documents/vi/guide.md",
     "# Hướng dẫn\n\n## Cách dùng\n\nVề [giới thiệu](./README.md#cài-đặt).\n",
@@ -397,7 +404,7 @@ describe(
 
     it("rejects a link from a twin to an English doc", () => {
       linkTree(t.dir, true);
-      put(
+      writeTmpFile(
         t.dir,
         "documents/vi/guide.md",
         "# Hướng dẫn\n\n## Cách dùng\n\nVề [giới thiệu](../../README.md#install).\n",
@@ -409,7 +416,7 @@ describe(
 
     it("allows a twin to link its own English source", () => {
       linkTree(t.dir, true);
-      put(
+      writeTmpFile(
         t.dir,
         "documents/vi/guide.md",
         "# Hướng dẫn\n\n## Cách dùng\n\nBản gốc: [guide](../guide.md#usage).\n",
@@ -421,14 +428,14 @@ describe(
 
     it("checks anchors in a markdown target the site does not render", () => {
       linkTree(t.dir, true);
-      put(t.dir, "documents/README.md", "# Index\n\n## Present\n");
-      put(
+      writeTmpFile(t.dir, "documents/README.md", "# Index\n\n## Present\n");
+      writeTmpFile(
         t.dir,
         "documents/vi/guide.md",
         "# Hướng dẫn\n\n## Cách dùng\n\nXem [chỉ mục](../README.md#present).\n",
       );
       expect(links(t.dir).status).toBe(0);
-      put(
+      writeTmpFile(
         t.dir,
         "documents/vi/guide.md",
         "# Hướng dẫn\n\n## Cách dùng\n\nXem [chỉ mục](../README.md#missing).\n",
@@ -441,7 +448,7 @@ describe(
 
     it("checks anchors inside the twins", () => {
       linkTree(t.dir, true);
-      put(
+      writeTmpFile(
         t.dir,
         "documents/vi/guide.md",
         "# Hướng dẫn\n\n## Cách dùng\n\nVề [giới thiệu](./README.md#install).\n",

@@ -3,6 +3,7 @@ import type {
   ResolvedBreakpoint,
   ResolvedOptions,
 } from "../../core/resolveOptions";
+import { cssBlock } from "../../shared/cssBlock";
 
 /**
  * Build the ascending `var(--sg-sp-<key>-<bp>, ...)` fallback chain for a
@@ -57,10 +58,13 @@ const buildUtilityBlock = (
     const lines = cssProps
       .map((cssProp) => `    ${cssProp}: ${chain};`)
       .join("\n");
-    return `  @media (width >= ${bp.value}) {\n${lines}\n  }`;
+    return cssBlock(`@media (width >= ${bp.value})`, lines, "  ");
   });
 
-  return `@utility sp-${key} {\n${[baseSection, ...mediaSections].join("\n\n")}\n}`;
+  return cssBlock(
+    `@utility sp-${key}`,
+    [baseSection, ...mediaSections].join("\n\n"),
+  );
 };
 
 /**
@@ -83,8 +87,8 @@ const buildPropertyBlocks = (
     `--sg-sp-${key}`,
     ...sortedBreakpoints.map((bp) => `--sg-sp-${key}-${bp.key}`),
   ];
-  return names.map(
-    (name) => `@property ${name} {\n  syntax: "*";\n  inherits: false;\n}`,
+  return names.map((name) =>
+    cssBlock(`@property ${name}`, '  syntax: "*";\n  inherits: false;'),
   );
 };
 

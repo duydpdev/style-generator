@@ -99,7 +99,7 @@ export default defineConfig({
             return "axisAttributeName";
           }
           if (
-            /[/\\]src[/\\](exports[/\\]tokens|core[/\\](Options|resolveTokenOptions)|features[/\\]registry[/\\]categoryTokenMeta|shared[/\\]safelistProperties)\.ts$/.test(
+            /[/\\]src[/\\](exports[/\\]tokens|core[/\\](Options|resolveTokenOptions)|features[/\\]registry[/\\]categoryTokenMeta|shared[/\\]classPrefixes)\.ts$/.test(
               id,
             )
           ) {

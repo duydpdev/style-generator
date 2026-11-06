@@ -1,8 +1,10 @@
 import type { StyleGeneratorOptions } from "../../core/Options";
+import { forEachAxisVariant } from "../../core/forEachAxisVariant";
 import { prepareGenerate } from "../../core/prepareGenerate";
 import type { ResolvedOptions } from "../../core/resolveOptions";
 import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
 import { axisAttributeName } from "../../shared/axisAttributeName";
+import { cssBlock } from "../../shared/cssBlock";
 import { toKebabCase } from "../../shared/helpers";
 import { cssVarCategories } from "../registry/builtInCategories";
 import { flattenByCategory } from "../registry/flattenByCategory";
@@ -39,7 +41,7 @@ const formatCssBlock = (
   const lines = Object.entries(vars)
     .map(([k, v]) => `  ${k}: ${v};`)
     .join("\n");
-  return `${selector} {\n${lines}\n}`;
+  return cssBlock(selector, lines);
 };
 
 /**
@@ -131,18 +133,12 @@ export const buildThemeCss = (
   // 2. Axis override blocks, in declaration order (axis, then variant)
   const { attribute, scope } = options.axes;
   const anchor = scope === "root" ? "html" : "";
-  if (config.themeAxes) {
-    for (const [axisName, variants] of Object.entries(config.themeAxes)) {
-      for (const [variantName, override] of Object.entries<ThemeOverride>(
-        variants,
-      )) {
-        const overrideVars = buildIntermediateVars(override);
-        const selector = `${anchor}[${axisAttributeName(axisName, attribute)}="${toKebabCase(variantName)}"]`;
-        const overrideBlock = formatCssBlock(selector, overrideVars);
-        if (overrideBlock) blocks.push(overrideBlock);
-      }
-    }
-  }
+  forEachAxisVariant(config.themeAxes, (axisName, variantName, override) => {
+    const overrideVars = buildIntermediateVars(override);
+    const selector = `${anchor}[${axisAttributeName(axisName, attribute)}="${toKebabCase(variantName)}"]`;
+    const overrideBlock = formatCssBlock(selector, overrideVars);
+    if (overrideBlock) blocks.push(overrideBlock);
+  });
 
   // 3. @theme inline: the Tailwind default resets first (they wipe the
   // namespace, so anything declared after them survives), then the mapping
@@ -156,7 +152,7 @@ export const buildThemeCss = (
     ),
   ];
   if (lines.length > 0) {
-    blocks.push(`@theme inline {\n${lines.join("\n")}\n}`);
+    blocks.push(cssBlock("@theme inline", lines.join("\n")));
   }
 
   return blocks.join("\n\n") + "\n";

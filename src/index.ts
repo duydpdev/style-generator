@@ -1,10 +1,12 @@
 // Core types & helpers
 export * from "./core";
-export * from "./core/factories.index";
+export { createDesignTokens } from "./features/tokens/createDesignTokens";
+export { generateThemeCss } from "./features/theme-css/generateThemeCss";
+export * from "./core/generate";
 
 // Feature modules — public API only
 export * from "./features/spacing/spacingHelpers";
-export * from "./features/cva";
+export * from "./features/cva/createVariantMapper";
 
 // Shared — only public-facing exports
 export {
@@ -14,7 +16,4 @@ export {
 } from "./shared/defaultOption";
 export { COLOR_STATES } from "./shared/colorStates";
 export { toKebabCase } from "./shared/helpers";
-export {
-  roundedProperties,
-  borderProperties,
-} from "./shared/safelistProperties";
+export { roundedProperties, borderProperties } from "./shared/classPrefixes";

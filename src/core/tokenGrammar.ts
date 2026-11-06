@@ -127,7 +127,15 @@ export const TokenValue = z
  * `var(--<cssVarPrefix>-<kebab-target>)` instead of being emitted literally
  * — see `flattenByCategory.ts`.
  */
-export const ALIAS_VALUE_RE = new RegExp(`^\\$(${TOKEN_KEY_SOURCE})$`);
+const ALIAS_VALUE_RE = new RegExp(`^\\$(${TOKEN_KEY_SOURCE})$`);
+
+/**
+ * The key an alias value points at.
+ * @param {string} value - A category value, e.g. `"$blue500"`
+ * @returns {string | undefined} `"blue500"`, or `undefined` when `value` is not a well-formed alias
+ */
+export const parseAlias = (value: string): string | undefined =>
+  ALIAS_VALUE_RE.exec(value)?.[1];
 
 /**
  * `TokenValue`, further restricted to reject a leading `$` — the alias

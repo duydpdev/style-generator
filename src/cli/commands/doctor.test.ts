@@ -12,6 +12,7 @@ import {
   type MockInstance,
 } from "vitest";
 
+import { writeTmpFile } from "../../__integration__/__fixtures__/tmpProject";
 import { logger } from "../logger";
 
 import { doctorCommand } from "./doctor";
@@ -21,12 +22,7 @@ const writeProject = (
   files: Record<string, string | object>,
 ): void => {
   for (const [rel, content] of Object.entries(files)) {
-    const abs = path.join(tmp, rel);
-    fs.mkdirSync(path.dirname(abs), { recursive: true });
-    fs.writeFileSync(
-      abs,
-      typeof content === "string" ? content : JSON.stringify(content),
-    );
+    writeTmpFile(tmp, rel, content);
   }
 };
 

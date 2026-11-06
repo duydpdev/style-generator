@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { errorMessage } from "../../node/errorMessage";
 import {
   readConfigFile,
   resolveConfig,
@@ -114,7 +115,7 @@ export async function generateCommand(
   try {
     target = toEmitTarget(cwd, config);
   } catch (error) {
-    logger.error(error instanceof Error ? error.message : String(error));
+    logger.error(errorMessage(error));
     return 1;
   }
 

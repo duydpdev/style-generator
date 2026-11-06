@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { prepareGenerate } from "../../core/prepareGenerate";
 import { ThemeSchema, formatZodError } from "../../core/themeSchema";
+import { errorMessage } from "../../node/errorMessage";
 import {
   readConfigFile,
   resolveConfig,
@@ -42,7 +43,7 @@ function resolveInsideRoot(
     return resolveProjectPath(cwd, input, label);
   } catch (error) {
     logger.log(`  ${heading}(${padStr(input)}) ❌ Escapes project root`);
-    logger.log(`    ${error instanceof Error ? error.message : String(error)}`);
+    logger.log(`    ${errorMessage(error)}`);
     return undefined;
   }
 }

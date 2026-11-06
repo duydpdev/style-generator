@@ -1,10 +1,11 @@
+import { forEachAxisVariant } from "../../core/forEachAxisVariant";
 import { resolveOptions } from "../../core/resolveOptions";
 import type {
   ResolvedCoverageRule,
   ResolvedOptions,
 } from "../../core/resolveOptions";
 import type { ThemeConfig } from "../../core/themeSchema";
-import { ALIAS_VALUE_RE } from "../../core/tokenGrammar";
+import { parseAlias } from "../../core/tokenGrammar";
 import { toCamelCase, toKebabCase, toPascalCase } from "../../shared/helpers";
 
 import {
@@ -46,15 +47,13 @@ const aliasedKeys = (
   const holders = new Set<string>();
   if (!isCssVarCategory(descriptor)) return holders;
 
-  const records = [
-    theme[descriptor.key],
-    ...Object.values(theme.themeAxes ?? {}).flatMap((variants) =>
-      Object.values(variants).map((override) => override[descriptor.key]),
-    ),
-  ];
+  const records = [theme[descriptor.key]];
+  forEachAxisVariant(theme.themeAxes, (_axis, _variant, override) => {
+    records.push(override[descriptor.key]);
+  });
   for (const record of records) {
     for (const [key, value] of Object.entries(record ?? {})) {
-      if (ALIAS_VALUE_RE.test(value)) holders.add(toKebabCase(key));
+      if (parseAlias(value) !== undefined) holders.add(toKebabCase(key));
     }
   }
   return holders;

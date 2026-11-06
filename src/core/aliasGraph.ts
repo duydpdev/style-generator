@@ -1,6 +1,6 @@
 import type { z } from "zod";
 
-import { ALIAS_VALUE_RE } from "./tokenGrammar";
+import { parseAlias } from "./tokenGrammar";
 
 /**
  * Report a `ZodIssue` for every alias value in `ownEntries` that either
@@ -26,7 +26,7 @@ const checkAliasGrammarAndTargets = (
   for (const [key, value] of Object.entries(ownEntries)) {
     if (!value.startsWith("$")) continue;
 
-    const target = ALIAS_VALUE_RE.exec(value)?.[1];
+    const target = parseAlias(value);
     if (target === undefined) {
       ctx.addIssue({
         code: "custom",
@@ -70,9 +70,7 @@ const findAliasCycle = (
     }
 
     const value = merged[key];
-    const target = !value?.startsWith("$")
-      ? undefined
-      : ALIAS_VALUE_RE.exec(value)?.[1];
+    const target = value === undefined ? undefined : parseAlias(value);
 
     if (target === undefined || !keys.has(target)) {
       done.add(key);

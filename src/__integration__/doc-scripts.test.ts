@@ -1,16 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { writeTmpFile } from "./__fixtures__/tmpProject";
 
 const repoRoot = join(__dirname, "..", "..");
 
@@ -22,11 +18,6 @@ type Script = "docs-embed" | "check-doc-snippets" | "check-doc-exports";
  * @param {string} rel - Root-relative file path
  * @param {string} content - File contents
  */
-function put(root: string, rel: string, content: string) {
-  mkdirSync(dirname(join(root, rel)), { recursive: true });
-  writeFileSync(join(root, rel), content);
-}
-
 /**
  * Run a docs script in place (it needs the repo's `node_modules`) against a fixture tree.
  * @param {Script} script - Script name without extension
@@ -64,12 +55,12 @@ describe("integration: docs-embed", { timeout: 60_000 }, () => {
     `# T\n\n<!-- embed: ${target} -->\n\n\`\`\`ts\nold\n\`\`\`\n`;
 
   it("flags a stale block, rewrites it, then passes", () => {
-    put(
+    writeTmpFile(
       t.dir,
       "examples/a.ts",
       "x\n  // #region docs:one\n  const a = 1;\n  // #endregion docs:one\n",
     );
-    put(t.dir, "README.md", marked("examples/a.ts#one"));
+    writeTmpFile(t.dir, "README.md", marked("examples/a.ts#one"));
     const stale = run("docs-embed", t.dir, ["--check"]);
     expect(stale.status).toBe(1);
     expect(stale.output).toContain("README.md: embedded code is out of date");
@@ -81,19 +72,19 @@ describe("integration: docs-embed", { timeout: 60_000 }, () => {
   });
 
   it("fails on a region that does not exist", () => {
-    put(
+    writeTmpFile(
       t.dir,
       "examples/a.ts",
       "// #region docs:one\nconst a = 1;\n// #endregion docs:one\n",
     );
-    put(t.dir, "README.md", marked("examples/a.ts#two"));
+    writeTmpFile(t.dir, "README.md", marked("examples/a.ts#two"));
     const result = run("docs-embed", t.dir, ["--check"]);
     expect(result.status).toBe(1);
     expect(result.output).toContain("region two not found in examples/a.ts");
   });
 
   it("fails on a missing file", () => {
-    put(t.dir, "README.md", marked("examples/missing.ts"));
+    writeTmpFile(t.dir, "README.md", marked("examples/missing.ts"));
     const result = run("docs-embed", t.dir, ["--check"]);
     expect(result.status).toBe(1);
     expect(result.output).toContain("not found");
@@ -106,8 +97,8 @@ describe("integration: docs-embed", { timeout: 60_000 }, () => {
     ["examples/a.txt", "not allowed"],
     ["packages/a.ts", "embed path packages/a.ts not allowed"],
   ])("rejects the embed path %s", (target, message) => {
-    put(t.dir, "examples/a.txt", "text\n");
-    put(t.dir, "README.md", marked(target));
+    writeTmpFile(t.dir, "examples/a.txt", "text\n");
+    writeTmpFile(t.dir, "README.md", marked(target));
     const result = run("docs-embed", t.dir, ["--check"]);
     expect(result.status).toBe(1);
     expect(result.output).toContain(message);
@@ -128,7 +119,7 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
   );
 
   beforeEach(() => {
-    put(
+    writeTmpFile(
       t.dir,
       "dist/index.d.ts",
       "export declare function generate(theme: { colors: Record<string, string> }): { css: string };\n",
@@ -137,21 +128,21 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
 
   it("exits 2 when dist is missing", () => {
     rmSync(join(t.dir, "dist"), { recursive: true, force: true });
-    put(t.dir, "README.md", valid);
+    writeTmpFile(t.dir, "README.md", valid);
     const result = run("check-doc-snippets", t.dir);
     expect(result.status).toBe(2);
     expect(result.output).toContain("run yarn build:all first");
   });
 
   it("accepts a valid block", () => {
-    put(t.dir, "README.md", `# T\n\n${valid}`);
+    writeTmpFile(t.dir, "README.md", `# T\n\n${valid}`);
     const result = run("check-doc-snippets", t.dir);
     expect(result.status).toBe(0);
     expect(result.output).toContain("1 checked");
   });
 
   it("reports a type error at its markdown line", () => {
-    put(
+    writeTmpFile(
       t.dir,
       "README.md",
       `# T\n\n${fenced("const ok = 1;", 'const n: number = "x";')}`,
@@ -162,14 +153,18 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
   });
 
   it("requires a reason for no-check", () => {
-    put(t.dir, "README.md", `# T\n\n<!-- snippet: no-check -->\n\n${valid}`);
+    writeTmpFile(
+      t.dir,
+      "README.md",
+      `# T\n\n<!-- snippet: no-check -->\n\n${valid}`,
+    );
     const result = run("check-doc-snippets", t.dir);
     expect(result.status).toBe(1);
     expect(result.output).toContain("no-check needs a reason");
   });
 
   it("fails when more than 10% of the blocks opt out", () => {
-    put(
+    writeTmpFile(
       t.dir,
       "README.md",
       `# T\n\n${valid}\n<!-- snippet: no-check partial -->\n\n${fenced("declare const x: Missing;")}`,
@@ -180,7 +175,7 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
   });
 
   it("does not check embedded blocks", () => {
-    put(
+    writeTmpFile(
       t.dir,
       "README.md",
       `# T\n\n<!-- embed: examples/a.ts -->\n\n${fenced("const n: number = 'x';")}`,
@@ -191,7 +186,7 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
   });
 
   it("skips signature blocks without counting them as snippets", () => {
-    put(
+    writeTmpFile(
       t.dir,
       "README.md",
       `# T\n\n<!-- signature: generate -->\n\n${fenced("export declare function generate(): Missing;")}\n${valid}`,
@@ -203,8 +198,8 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
   });
 
   it("checks the blocks of a Vietnamese twin", () => {
-    put(t.dir, "README.md", `# T\n\n${valid}`);
-    put(
+    writeTmpFile(t.dir, "README.md", `# T\n\n${valid}`);
+    writeTmpFile(
       t.dir,
       "documents/vi/guide.md",
       `# T\n\n${fenced('const n: number = "x";')}`,
@@ -215,8 +210,8 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
   });
 
   it("skips the Vietnamese twins of the migration guides", () => {
-    put(t.dir, "README.md", `# T\n\n${valid}`);
-    put(
+    writeTmpFile(t.dir, "README.md", `# T\n\n${valid}`);
+    writeTmpFile(
       t.dir,
       "documents/vi/migration/4.x-to-5.0.md",
       `# T\n\n${fenced('const n: number = "x";')}`,
@@ -232,7 +227,7 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
   const vitePage = "# Vite\n\n## `styleGenVite`\n";
 
   beforeEach(() => {
-    put(
+    writeTmpFile(
       t.dir,
       "package.json",
       JSON.stringify({
@@ -243,18 +238,22 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
         },
       }),
     );
-    put(
+    writeTmpFile(
       t.dir,
       "dist/index.d.ts",
       '/** Generates CSS. */\nexport declare const generate: () => void;\nexport { styleGenVite } from "./vite";\n',
     );
-    put(
+    writeTmpFile(
       t.dir,
       "dist/vite.d.ts",
       "/** Vite plugin. */\nexport declare const styleGenVite: () => void;\n",
     );
-    put(t.dir, "documents/reference/core.md", "# Core\n\n## `generate`\n");
-    put(t.dir, "documents/reference/vite.md", vitePage);
+    writeTmpFile(
+      t.dir,
+      "documents/reference/core.md",
+      "# Core\n\n## `generate`\n",
+    );
+    writeTmpFile(t.dir, "documents/reference/vite.md", vitePage);
   });
 
   it("asks for signature blocks, writes them, then passes", () => {
@@ -293,7 +292,7 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
     const page =
       "# Core\n\n<!-- signature: generate -->\n\nstale\n\n## `generate`\n\nprose\n\n## Notes\n\nprose\n";
     const file = join(t.dir, "documents/reference/core.md");
-    put(t.dir, "documents/reference/core.md", page);
+    writeTmpFile(t.dir, "documents/reference/core.md", page);
     for (const args of [[], ["--write"]]) {
       const result = run("check-doc-exports", t.dir, args);
       expect(result.status).toBe(1);
@@ -306,7 +305,7 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
   });
 
   it("fails on an export without TSDoc", () => {
-    put(
+    writeTmpFile(
       t.dir,
       "dist/vite.d.ts",
       "export declare const styleGenVite: () => void;\n",
@@ -317,14 +316,14 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
   });
 
   it("fails on an export without a heading", () => {
-    put(t.dir, "documents/reference/core.md", "# Core\n");
+    writeTmpFile(t.dir, "documents/reference/core.md", "# Core\n");
     const result = run("check-doc-exports", t.dir);
     expect(result.status).toBe(1);
     expect(result.output).toContain("no heading for `generate`");
   });
 
   it("fails on a page that belongs to no subpath", () => {
-    put(t.dir, "documents/reference/extra.md", "# Extra\n");
+    writeTmpFile(t.dir, "documents/reference/extra.md", "# Extra\n");
     const result = run("check-doc-exports", t.dir);
     expect(result.status).toBe(1);
     expect(result.output).toContain("not a subpath page");
@@ -349,7 +348,7 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
     `<!-- source: ${EN} sha256: ${hash} -->\n\n# Lõi\n\n## \`generate\`\n\nVăn bản tiếng Việt.\n`;
 
   it("writes the signature blocks of a Vietnamese twin and moves its source hash with the English page", () => {
-    put(t.dir, VI, twin(hashOf(read(EN))));
+    writeTmpFile(t.dir, VI, twin(hashOf(read(EN))));
     const stale = run("check-doc-exports", t.dir);
     expect(stale.status).toBe(1);
     expect(stale.output).toContain(
@@ -369,10 +368,10 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
   });
 
   it("a TSDoc edit changes the blocks of the English page and of its Vietnamese twin", () => {
-    put(t.dir, VI, twin(hashOf(read(EN))));
+    writeTmpFile(t.dir, VI, twin(hashOf(read(EN))));
     run("check-doc-exports", t.dir, ["--write"]);
     const before = BLOCK.exec(read(VI))?.[0];
-    put(
+    writeTmpFile(
       t.dir,
       "dist/index.d.ts",
       '/** Generates CSS files. */\nexport declare const generate: () => void;\nexport { styleGenVite } from "./vite";\n',
@@ -394,7 +393,7 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
   });
 
   it("keeps the source hash of a Vietnamese twin that was already stale", () => {
-    put(t.dir, VI, twin("000000000000"));
+    writeTmpFile(t.dir, VI, twin("000000000000"));
     expect(run("check-doc-exports", t.dir, ["--write"]).status).toBe(0);
     const vi = read(VI);
     expect(vi.split("\n")[0]).toBe(
@@ -405,7 +404,7 @@ describe("integration: check-doc-exports", { timeout: 60_000 }, () => {
 
   it("reports an unclosed signature block in a Vietnamese twin and never rewrites it", () => {
     const page = "# T\n\n<!-- signature: generate -->\n\nstale\n";
-    put(t.dir, VI, page);
+    writeTmpFile(t.dir, VI, page);
     for (const args of [[], ["--write"]]) {
       const result = run("check-doc-exports", t.dir, args);
       expect(result.status).toBe(1);

@@ -1,6 +1,7 @@
 import { resolveOptions } from "../../core/resolveOptions";
 import type { ResolvedOptions } from "../../core/resolveOptions";
 import type { TypographyConfig } from "../../core/themeSchema";
+import { cssBlock } from "../../shared/cssBlock";
 import { UTILITY_NAME_RE, toKebabCase } from "../../shared/helpers";
 
 /**
@@ -80,7 +81,9 @@ export const generateTypographyCss = (
     const varLines = Object.entries(varDeclarations).map(
       ([k, v]) => `    ${k}: ${v};`,
     );
-    blocks.push(`@layer base {\n  :root {\n${varLines.join("\n")}\n  }\n}`);
+    blocks.push(
+      cssBlock("@layer base", cssBlock(":root", varLines.join("\n"), "  ")),
+    );
 
     for (const [name, styles] of Object.entries(typography)) {
       const utilityName = toKebabCase(name);
@@ -90,7 +93,7 @@ export const generateTypographyCss = (
         const cssProp = toKebabCase(prop);
         return `  ${cssProp}: var(--typography-${utilityName}-${cssProp});`;
       });
-      blocks.push(`@utility ${utilityName} {\n${lines.join("\n")}\n}`);
+      blocks.push(cssBlock(`@utility ${utilityName}`, lines.join("\n")));
     }
   } else {
     // Default mode: literal declaration values.
@@ -101,7 +104,7 @@ export const generateTypographyCss = (
       const lines = definedEntries(styles).map(
         ([prop, value]) => `  ${toKebabCase(prop)}: ${String(value)};`,
       );
-      blocks.push(`@utility ${utilityName} {\n${lines.join("\n")}\n}`);
+      blocks.push(cssBlock(`@utility ${utilityName}`, lines.join("\n")));
     }
   }
 

@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { gzipSync } from "node:zlib";
 
+import { errorMessage } from "../../node/errorMessage";
 import { logger } from "../logger";
 
 export interface BudgetArgs {
@@ -28,10 +29,9 @@ function collectCss(target: string, cwd: string): string[] {
   try {
     isDirectory = statSync(abs).isDirectory();
   } catch (error) {
-    throw new Error(
-      `Cannot read ${target}: ${error instanceof Error ? error.message : String(error)}`,
-      { cause: error },
-    );
+    throw new Error(`Cannot read ${target}: ${errorMessage(error)}`, {
+      cause: error,
+    });
   }
   if (!isDirectory) return [abs];
   return readdirSync(abs, { withFileTypes: true })
@@ -77,7 +77,7 @@ export function budgetCommand(
   try {
     files = collectCss(target, cwd);
   } catch (error) {
-    logger.error(error instanceof Error ? error.message : String(error));
+    logger.error(errorMessage(error));
     return 2;
   }
   if (files.length === 0) {

@@ -13,6 +13,10 @@ import type { SpacingPropertyMap, StyleGeneratorOptions } from "./Options";
  * `ResolvedOptions` extends it.
  */
 export interface ResolvedTokenOptions {
+  // Option declared in 4 places: here, Options.ts (public type),
+  // optionsSchema.ts (zod shape) and resolveOptions.ts (the rest of the
+  // resolved options). Pinned by optionsSchema.test-d.ts. The two resolve
+  // files stay separate to keep `./tokens` small.
   /** `options.breakpoints`, else `DEFAULT_BREAKPOINTS`. */
   breakpoints: readonly string[];
   /** The px `defaultScreens` overridden/extended by `options.screens`. */

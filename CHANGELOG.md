@@ -1,3 +1,26 @@
+# [5.4.2](https://github.com/duydpdev/style-generator/compare/v5.4.1...v5.4.2) (2026-11-06)
+
+### Bug Fixes
+
+- reject __proto__ keys in theme records ([4011bf7](https://github.com/duydpdev/style-generator/commit/4011bf7a3e23431de1a00f12b321313064dab3d0))
+
+  A theme key named `__proto__` is now rejected at its exact path, in every
+  position that holds a token name: colors, shadows, backDropBlurs,
+  borderRadius, fontFamily, borderWidth, typography, and the axis, variant and
+  override keys of themeAxes.
+
+  Before, Zod's z.record skipped that key before the key schema ran, so the
+  token was dropped from the generated CSS and tokens without any error, while
+  a key such as `a_b` was rejected. Only a parsed JSON document can carry the
+  key as an own property; a TypeScript object literal `{ __proto__: x }` sets
+  the prototype and was never affected.
+
+  Migrate: rename or remove the `__proto__` key. A theme without it is
+  unaffected; generated CSS, tokens and schema are byte-identical.
+
+  While the key is present, the error is the only one reported: fix it, then
+  re-run to see the remaining issues (same behavior as the removed `themes` key).
+
 # [5.4.1](https://github.com/duydpdev/style-generator/compare/v5.4.0...v5.4.1) (2026-11-06)
 
 ### Refactor

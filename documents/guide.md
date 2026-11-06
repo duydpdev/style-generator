@@ -254,7 +254,7 @@ Do not run the CLI through `npx`: the name `style-gen` is not held by anyone on 
 
 `budget <file.css|dir> --max-gzip <bytes>` sums the gzip size of every `.css` file (recursively if given a directory) and prints `OK: …` or `OVER BUDGET: …`. Exit code `0` within budget, `1` over budget, `2` for a syntax error / unreadable input / no CSS. This command replaces the `check-css-budget.mjs` script that consumers used to copy.
 
-`init` prints the wiring for the stack it detects (`nuxt.config.*`, `next.config.*`, `vite.config.*`): the no-argument `styleGenVite()`/`styleGenNext()` snippet of Options 1 and 2 (absolute paths for Nuxt), or `style-gen generate` when there is no bundler config; it never edits the bundler config. `doctor` checks a generator script only when the config has `plugin` (written by `init` before 5.2.0). `doctor` also checks the theme × options pair (`❌ Invalid theme/options`), treats an `output`/`plugin` that escapes the root as an error, and prints an `$alias` suggestion when an override in `themeAxes` repeats the literal value of another key in the base.
+`init` prints the wiring for the stack it detects (`nuxt.config.*`, `next.config.*`, `vite.config.*`): the no-argument `styleGenVite()`/`styleGenNext()` snippet of Options 1 and 2 (absolute paths for Nuxt), or `style-gen generate` when there is no bundler config; it never edits the bundler config. `doctor` checks the theme × options pair (`❌ Invalid theme/options`), treats an `output` that escapes the root as an error, and prints an `$alias` suggestion when an override in `themeAxes` repeats the literal value of another key in the base.
 
 ### Option 4: Custom script
 
@@ -264,8 +264,8 @@ import {
   generate,
   defineTheme,
   defineOptions,
-  Breakpoint,
 } from "@duydpdev/style-generator";
+import { Breakpoint } from "@duydpdev/style-generator/tokens";
 import themeJson from "./theme.json";
 
 const theme = defineTheme(themeJson); // type-checked AND validated at runtime

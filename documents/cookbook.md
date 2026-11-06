@@ -29,8 +29,8 @@ import {
   generate,
   defineTheme,
   defineOptions,
-  Breakpoint,
 } from "@duydpdev/style-generator";
+import { Breakpoint } from "@duydpdev/style-generator/tokens";
 import themeJson from "./theme.json";
 
 const theme = defineTheme(themeJson); // type-checks AND validates at runtime

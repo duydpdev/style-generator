@@ -349,6 +349,7 @@ function linkTree(dir: string, withVi: boolean) {
     "site/src/lib/docs-meta.json",
     JSON.stringify({
       "README.md": entry("introduction", "Start", 1),
+      "documents/migration/5.x-to-6.0.md": entry("m6", "Migration", 0),
       "documents/migration/4.x-to-5.0.md": entry("m5", "Migration", 1),
       "documents/migration/3.x-to-4.0.md": entry("m4", "Migration", 2),
       "documents/guide.md": entry("guide", "Guides", 1),
@@ -368,6 +369,7 @@ function linkTree(dir: string, withVi: boolean) {
   );
   writeTmpFile(dir, "documents/getting-started/a.md", "# A\n");
   writeTmpFile(dir, "documents/reference/core.md", "# Core\n");
+  writeTmpFile(dir, "documents/migration/5.x-to-6.0.md", "# M6\n");
   writeTmpFile(dir, "documents/migration/4.x-to-5.0.md", "# M5\n");
   writeTmpFile(dir, "documents/migration/3.x-to-4.0.md", "# M4\n");
   if (!withVi) return;

@@ -1,4 +1,4 @@
-<!-- source: documents/cookbook.md sha256: 5aaef4be893e -->
+<!-- source: documents/cookbook.md sha256: 7748b3ef3b68 -->
 
 # Công thức
 
@@ -31,8 +31,8 @@ import {
   generate,
   defineTheme,
   defineOptions,
-  Breakpoint,
 } from "@duydpdev/style-generator";
+import { Breakpoint } from "@duydpdev/style-generator/tokens";
 import themeJson from "./theme.json";
 
 const theme = defineTheme(themeJson); // type-checks AND validates at runtime

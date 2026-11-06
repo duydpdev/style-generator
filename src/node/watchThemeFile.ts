@@ -2,6 +2,7 @@ import path from "node:path";
 
 import { watch as chokidarWatch } from "chokidar";
 
+import { errorMessage } from "./errorMessage";
 import { emitThemeCss } from "./themeEmitter";
 import type { EmitResult, EmitTarget } from "./themeEmitter";
 
@@ -49,9 +50,6 @@ export interface ThemeWatchHandle {
   /** Cancel a pending emit and stop watching. */
   close: () => Promise<void>;
 }
-
-const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 /**
  * Re-run {@link emitThemeCss} whenever the theme file (or the config file)

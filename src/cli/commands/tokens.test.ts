@@ -12,6 +12,7 @@ import {
   type MockInstance,
 } from "vitest";
 
+import { writeTmpFile } from "../../__integration__/__fixtures__/tmpProject";
 import { createDesignTokens } from "../../features/tokens/createDesignTokens";
 import { logger } from "../logger";
 
@@ -36,11 +37,7 @@ describe("tokensCommand", () => {
 
   const file = (rel: string): string => path.join(tmp, rel);
   const write = (rel: string, content: string | object): void => {
-    fs.mkdirSync(path.dirname(file(rel)), { recursive: true });
-    fs.writeFileSync(
-      file(rel),
-      typeof content === "string" ? content : JSON.stringify(content),
-    );
+    writeTmpFile(tmp, rel, content);
   };
 
   beforeEach(() => {

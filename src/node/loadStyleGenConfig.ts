@@ -10,6 +10,8 @@ import {
 } from "../core/optionsSchema";
 import { formatZodError } from "../core/themeSchema";
 
+import { isPlainObject } from "./isPlainObject";
+
 /**
  * Config-only keys, layered on the strict `generate()` options shape so
  * `style-gen.config.json` gets the same unknown-key, flag and screen checks
@@ -100,9 +102,6 @@ export interface ConfigFile {
    */
   issues?: string;
 }
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
  * Validate a file config object against the strict config schema.

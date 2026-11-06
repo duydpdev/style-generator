@@ -1,5 +1,5 @@
 import type { CamelCase, KebabCase } from "../../core/inference";
-import { toKebabCase, toPascalCase } from "../../shared";
+import { toKebabCase, toPascalCase } from "../../shared/helpers";
 import type { RegistryPrefix } from "../registry/builtInCategories";
 
 type MappedVariant<T extends string, P extends string> = P extends ""

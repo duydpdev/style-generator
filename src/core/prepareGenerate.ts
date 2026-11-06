@@ -1,10 +1,9 @@
-import { assertThemeOptions } from "./crossFieldChecks";
 import type { StyleGeneratorOptions } from "./Options";
 import { StyleGeneratorOptionsSchema } from "./optionsSchema";
-import { parseTheme } from "./parseTheme";
 import { resolveOptions } from "./resolveOptions";
 import type { ResolvedOptions } from "./resolveOptions";
-import type { ThemeConfig } from "./themeSchema";
+import { parseTheme, type ThemeConfig } from "./themeSchema";
+import { assertThemeOptions } from "./themeOptionsChecks";
 
 /** The validation steps {@link prepareGenerate} runs, in order. */
 export type PrepareStage = "options" | "theme" | "cross";

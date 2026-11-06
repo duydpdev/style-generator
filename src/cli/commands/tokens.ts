@@ -2,10 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { buildDesignTokens } from "../../features/tokens/createDesignTokens";
+import { errorMessage } from "../../node/errorMessage";
 import { toGeneratorOptions } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { readAndPrepareTheme } from "../../node/themeEmitter";
-import { writeFileAtomic } from "../../shared/writeFileAtomic";
+import { writeFileAtomic } from "../../node/writeFileAtomic";
 import { loadCliConfig } from "../loadCliConfig";
 import { logger } from "../logger";
 
@@ -64,9 +65,7 @@ export function tokensCommand(
     );
   } catch (error) {
     const hint = args.out === undefined ? "\n💡 Pass --out" : "";
-    logger.error(
-      `${error instanceof Error ? error.message : String(error)}${hint}`,
-    );
+    logger.error(`${errorMessage(error)}${hint}`);
     return 1;
   }
   if (!TS_FILE.test(outFile) || DECLARATION_FILE.test(outFile)) {
@@ -108,9 +107,7 @@ export function tokensCommand(
     fs.mkdirSync(path.dirname(outFile), { recursive: true });
     writeFileAtomic(outFile, source);
   } catch (error) {
-    logger.error(
-      `Cannot write ${outFile}: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    logger.error(`Cannot write ${outFile}: ${errorMessage(error)}`);
     return 1;
   }
   logger.success(`Tokens written to ${path.relative(cwd, outFile)}`);

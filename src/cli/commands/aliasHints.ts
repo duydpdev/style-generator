@@ -1,4 +1,5 @@
-import type { ThemeConfig } from "../../core/themeSchema";
+import { forEachAxisVariant } from "../../core/forEachAxisVariant";
+import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
 import { cssVarCategories } from "../../features/registry/builtInCategories";
 
 /**
@@ -55,12 +56,10 @@ const aliasTarget = (
  */
 export function findAliasHints(theme: ThemeConfig): string[] {
   const hints: string[] = [];
-  const overrides = Object.entries(theme.themeAxes ?? {}).flatMap(
-    ([axis, variants]) =>
-      Object.entries(variants).map(
-        ([variant, override]) => [`${axis}.${variant}`, override] as const,
-      ),
-  );
+  const overrides: (readonly [string, ThemeOverride])[] = [];
+  forEachAxisVariant(theme.themeAxes, (axis, variant, override) => {
+    overrides.push([`${axis}.${variant}`, override]);
+  });
   const redefinedBy = (category: (typeof cssVarCategories)[number]["key"]) =>
     new Set(overrides.flatMap(([, o]) => Object.keys(o[category] ?? {})));
   for (const [where, override] of overrides) {

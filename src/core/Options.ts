@@ -102,6 +102,9 @@ type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
 
 /** Options of `generate()` and `createDesignTokens()`; `defineOptions`, `style-gen.config.json` and the Vite/Next plugins take the same shape. Unknown keys are rejected. */
 export interface StyleGeneratorOptions {
+  // Option declared in 4 places: here, optionsSchema.ts (zod shape),
+  // resolveTokenOptions.ts and resolveOptions.ts (resolved defaults). The
+  // types are pinned to each other by optionsSchema.test-d.ts.
   /**
    * Breakpoint keys to use for responsive class generation: a `Breakpoint`
    * value (`"sm"` … `"2xl"`) or a custom key declared in `screens`.

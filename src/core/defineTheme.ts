@@ -1,6 +1,5 @@
 import type { ExactOptions, StyleGeneratorOptions } from "./Options";
-import { parseTheme } from "./parseTheme";
-import type { ThemeConfig } from "./themeSchema";
+import { parseTheme, type ThemeConfig } from "./themeSchema";
 
 /**
  * Runtime-validated theme config helper — the only place `defineTheme` is

@@ -5,7 +5,7 @@
  * `@tailwindcss/*` or any other runtime `dependency` of the package (the
  * bundler leaves those as bare imports: `chokidar`, `@clack/prompts`, ...) —
  * even through a shared chunk (`helpers-*`,
- * `defaultOption-*`, `safelistProperties-*`, ...).
+ * `defaultOption-*`, `classPrefixes-*`, ...).
  *
  * Unlike `check-externals.mjs` (which only logs external refs in the root
  * `.`/`./vite` bundles and never inspects shared chunks), this script walks

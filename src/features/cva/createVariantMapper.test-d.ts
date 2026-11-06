@@ -4,7 +4,7 @@ import { COLOR_STATES } from "../../shared/colorStates";
 import {
   borderProperties,
   roundedProperties,
-} from "../../shared/safelistProperties";
+} from "../../shared/classPrefixes";
 import type { RegistryPrefix } from "../registry/builtInCategories";
 import { createDesignTokens } from "../tokens/createDesignTokens";
 

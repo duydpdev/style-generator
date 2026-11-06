@@ -4,6 +4,7 @@ import path from "node:path";
 import { z } from "zod";
 
 import { ThemeSchema } from "../../core/themeSchema";
+import { errorMessage } from "../../node/errorMessage";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { loadCliConfig } from "../loadCliConfig";
 import { logger } from "../logger";
@@ -51,9 +52,7 @@ export function schemaCommand(
     }
   } catch (error) {
     const hint = args.out ? "" : "\n💡 Pass --out to choose where to write it";
-    logger.error(
-      `${error instanceof Error ? error.message : String(error)}${hint}`,
-    );
+    logger.error(`${errorMessage(error)}${hint}`);
     return 1;
   }
   const jsonSchema = z.toJSONSchema(ThemeSchema);

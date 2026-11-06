@@ -1,3 +1,9 @@
+# [6.0.0](https://github.com/duydpdev/style-generator/compare/v5.4.2...v6.0.0) (2026-11-06)
+
+### Release
+
+- root barrel = generator only, drop plugin config key ([b62a9a2](https://github.com/duydpdev/style-generator/commit/b62a9a269874c61faa1e35d783cd984d41545ada))
+
 # [5.4.2](https://github.com/duydpdev/style-generator/compare/v5.4.1...v5.4.2) (2026-11-06)
 
 ### Bug Fixes

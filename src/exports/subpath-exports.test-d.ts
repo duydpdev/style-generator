@@ -6,6 +6,13 @@ import type * as root from "../index";
 // Import via subpath barrels (v4 new paths — resolved via `src/exports/*`
 // which is how consumers will see them after exports map resolves).
 import type { ThemeConfig } from "../core/themeSchema";
+import type { createVariantMapper } from "../features/cva/createVariantMapper";
+import type { createDesignTokens } from "../features/tokens/createDesignTokens";
+import type {
+  resolveSpacing,
+  resolveSpacingProps,
+} from "../features/spacing/spacingHelpers";
+import type { DEFAULT_SPACING_PROPERTIES } from "../shared/defaultOption";
 import type { createTailwindMergeExtension } from "../features/recipes/extendTailwindMerge";
 import type {
   SpacingProps,
@@ -32,10 +39,10 @@ interface AxesTheme extends ThemeConfig {
   };
 }
 
-describe("subpath exports — symbols match root barrel", () => {
+describe("subpath exports — symbols match their implementations", () => {
   it("tokens subpath", () => {
     expectTypeOf(tokens.createDesignTokens).toEqualTypeOf<
-      typeof root.createDesignTokens
+      typeof createDesignTokens
     >();
   });
 
@@ -46,44 +53,43 @@ describe("subpath exports — symbols match root barrel", () => {
 
   it("cva subpath", () => {
     expectTypeOf(cva.createVariantMapper).toEqualTypeOf<
-      typeof root.createVariantMapper
+      typeof createVariantMapper
     >();
   });
 
-  it("COLOR_STATES is one shared const across root, tokens and cva", () => {
+  it("COLOR_STATES is one shared const across tokens and cva", () => {
     expectTypeOf(tokens.COLOR_STATES).toEqualTypeOf<
       readonly ["hover", "active"]
     >();
     expectTypeOf(cva.COLOR_STATES).toEqualTypeOf<typeof tokens.COLOR_STATES>();
-    expectTypeOf(cva.COLOR_STATES).toEqualTypeOf<typeof root.COLOR_STATES>();
   });
 
-  it("toKebabCase is one shared function across root and cva", () => {
-    expectTypeOf(cva.toKebabCase).toEqualTypeOf<typeof root.toKebabCase>();
+  it("toKebabCase is a cva export", () => {
     expectTypeOf(cva.toKebabCase).toEqualTypeOf<(str: string) => string>();
   });
 
   it("root runtime exports are exactly the documented list", () => {
     expectTypeOf<keyof typeof root>().toEqualTypeOf<
-      | "Breakpoint"
-      | "COLOR_STATES"
-      | "DEFAULT_BORDER_VALUES"
-      | "DEFAULT_ROUNDED_VALUES"
-      | "DEFAULT_SPACING_PROPERTIES"
-      | "createDesignTokens"
-      | "createVariantMapper"
-      | "defaultScreens"
       | "defineOptions"
       | "defineTheme"
       | "formatZodError"
       | "generate"
       | "generateThemeCss"
-      | "borderProperties"
-      | "resolveSpacing"
-      | "resolveSpacingProps"
-      | "roundedProperties"
-      | "toKebabCase"
     >();
+  });
+
+  it("symbols moved off the root in 6.0 are gone from it", () => {
+    // @ts-expect-error removed from the root in 6.0: import from `/tokens`
+    type Breakpoint = root.Breakpoint;
+    // @ts-expect-error removed from the root in 6.0: import from `/tokens`
+    type DefaultScreens = typeof root.defaultScreens;
+    // @ts-expect-error removed from the root in 6.0: import from `/cva`
+    type CreateVariantMapper = typeof root.createVariantMapper;
+    // @ts-expect-error removed from the root in 6.0: import from `/spacing`
+    type ResolveSpacing = typeof root.resolveSpacing;
+    expectTypeOf<
+      [Breakpoint, DefaultScreens, CreateVariantMapper, ResolveSpacing]
+    >().not.toBeAny();
   });
 
   it("tokens subpath runtime exports are exactly the documented list", () => {
@@ -255,14 +261,12 @@ describe("subpath exports — symbols match root barrel", () => {
   });
 
   it("spacing subpath", () => {
-    expectTypeOf(spacing.resolveSpacing).toEqualTypeOf<
-      typeof root.resolveSpacing
-    >();
+    expectTypeOf(spacing.resolveSpacing).toEqualTypeOf<typeof resolveSpacing>();
     expectTypeOf(spacing.resolveSpacingProps).toEqualTypeOf<
-      typeof root.resolveSpacingProps
+      typeof resolveSpacingProps
     >();
     expectTypeOf(spacing.DEFAULT_SPACING_PROPERTIES).toEqualTypeOf<
-      typeof root.DEFAULT_SPACING_PROPERTIES
+      typeof DEFAULT_SPACING_PROPERTIES
     >();
   });
 });

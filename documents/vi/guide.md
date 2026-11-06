@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: c76a2a33a7e1 -->
+<!-- source: documents/guide.md sha256: 09965ce5ce84 -->
 
 # Hướng dẫn sử dụng
 
@@ -256,7 +256,7 @@ Các flag của `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. C�
 
 `budget <file.css|dir> --max-gzip <bytes>` cộng kích thước gzip của mọi file `.css` (đệ quy nếu truyền một thư mục) và in `OK: …` hoặc `OVER BUDGET: …`. Mã thoát `0` khi trong ngân sách, `1` khi vượt ngân sách, `2` cho lỗi cú pháp / đầu vào không đọc được / không có CSS. Lệnh này thay thế script `check-css-budget.mjs` mà các bên dùng trước đây phải tự chép.
 
-`init` in ra cách nối dây cho stack mà nó phát hiện (`nuxt.config.*`, `next.config.*`, `vite.config.*`): đoạn mã `styleGenVite()`/`styleGenNext()` không đối số của Cách 1 và 2 (đường dẫn tuyệt đối cho Nuxt), hoặc `style-gen generate` khi không có config bundler; nó không bao giờ sửa config bundler. `doctor` chỉ kiểm tra một script generator khi config có `plugin` (do `init` ghi trước 5.2.0). `doctor` cũng kiểm tra cặp theme × tùy chọn (`❌ Invalid theme/options`), coi một `output`/`plugin` thoát ra ngoài root là lỗi, và in gợi ý `$alias` khi một override trong `themeAxes` lặp lại giá trị literal của một key khác trong base.
+`init` in ra cách nối dây cho stack mà nó phát hiện (`nuxt.config.*`, `next.config.*`, `vite.config.*`): đoạn mã `styleGenVite()`/`styleGenNext()` không đối số của Cách 1 và 2 (đường dẫn tuyệt đối cho Nuxt), hoặc `style-gen generate` khi không có config bundler; nó không bao giờ sửa config bundler. `doctor` kiểm tra cặp theme × tùy chọn (`❌ Invalid theme/options`), coi một `output` thoát ra ngoài root là lỗi, và in gợi ý `$alias` khi một override trong `themeAxes` lặp lại giá trị literal của một key khác trong base.
 
 ### Cách 4: script tùy chỉnh
 
@@ -266,8 +266,8 @@ import {
   generate,
   defineTheme,
   defineOptions,
-  Breakpoint,
 } from "@duydpdev/style-generator";
+import { Breakpoint } from "@duydpdev/style-generator/tokens";
 import themeJson from "./theme.json";
 
 const theme = defineTheme(themeJson); // type-checked AND validated at runtime

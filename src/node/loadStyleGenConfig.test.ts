@@ -49,23 +49,21 @@ describe("loadStyleGenConfig", () => {
     expect(loaded.source).toBeUndefined();
   });
 
-  it("still loads a config written by init before 5.2.0 (plugin key)", () => {
-    const legacy = {
-      theme: "styles/theme.json",
-      plugin: "plugins/theme-plugin.ts",
-      output: "styles/theme.css",
-    };
+  it("rejects the `plugin` key removed in 6.0 and merges nothing from the file", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
-      JSON.stringify(legacy),
+      JSON.stringify({
+        theme: "mine.json",
+        plugin: "plugins/theme-plugin.ts",
+        output: "styles/theme.css",
+      }),
     );
 
     const loaded = loadStyleGenConfig(tmp);
 
-    expect(loaded.issues).toBeUndefined();
-    expect(loaded.error).toBeUndefined();
-    expect(loaded.config).toEqual(legacy);
-    expect(toGeneratorOptions(loaded.config)).toEqual({});
+    expect(loaded.issues).toMatch(/^plugin → /m);
+    expect(loaded.source).toBe("style-gen.config.json");
+    expect(loaded.config.theme).toBe("styles/theme.json");
   });
 
   it("passes schema issues through and merges nothing from the bad file", () => {
@@ -141,11 +139,10 @@ describe("resolveConfig", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  it("returns defaults when no file config exists, with no generator script", () => {
+  it("returns defaults when no file config exists", () => {
     const config = resolveConfig({});
     expect(config.theme).toBe("styles/theme.json");
     expect(config.output).toBe("styles/theme.css");
-    expect(config.plugin).toBeUndefined();
   });
 
   it("merges style-gen.config.json when present", () => {
@@ -157,7 +154,6 @@ describe("resolveConfig", () => {
     const config = resolveConfig({});
     expect(config.theme).toBe("custom/theme.json");
     expect(config.output).toBe("custom/out.txt");
-    expect(config.plugin).toBeUndefined();
   });
 
   it("falls back to package.json style-gen key", () => {
@@ -392,7 +388,6 @@ describe("readConfigFile schema validation (X-04)", () => {
     const cfg = {
       theme: "a/theme.json",
       output: "a/theme.css",
-      plugin: "p.ts",
       breakpoints: ["md"],
       screens: { md: "800px" },
       enableResponsive: false,

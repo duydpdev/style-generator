@@ -166,6 +166,10 @@ const AttributeName = z
  * rejected, behavioural flags must be booleans, and every option that
  * reaches `generate().css` follows the theme's injection-safe grammar.
  * `src/node/loadStyleGenConfig.ts` extends it for `style-gen.config.json`.
+ *
+ * Option declared in 4 places: here, Options.ts (public type),
+ * resolveTokenOptions.ts and resolveOptions.ts (resolved defaults). The
+ * types are pinned to each other by optionsSchema.test-d.ts.
  */
 export const StyleGeneratorOptionsShape = z.strictObject({
   breakpoints: z.array(OptionKey).optional(),

@@ -29,6 +29,10 @@ export interface ResolvedCoverageRule {
  * `options.x ?? DEFAULT_X`.
  */
 export interface ResolvedOptions extends ResolvedTokenOptions {
+  // Option declared in 4 places: here, Options.ts (public type),
+  // optionsSchema.ts (zod shape) and resolveTokenOptions.ts (the options the
+  // typed tokens read). Pinned by optionsSchema.test-d.ts. The two resolve
+  // files stay separate to keep `./tokens` small.
   /**
    * `breakpoints` that have a screen width, ascending by width — the order of
    * the spacing `@media` fallback chain. Empty when `enableResponsive` is

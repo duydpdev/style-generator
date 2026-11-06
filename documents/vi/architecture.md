@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 5fbefcb63cb0 -->
+<!-- source: documents/architecture.md sha256: 21c7933d5f80 -->
 
 # Kiến trúc
 
@@ -61,7 +61,7 @@ flowchart TD
 
 ```text
 src/
-├── core/                       # generate(), ThemeSchema (+ tokenGrammar, aliasGraph, crossFieldChecks), options schema (internal, optionsSchema.ts), resolveOptions, Options, defineTheme, type inference
+├── core/                       # generate(), ThemeSchema (+ tokenGrammar, aliasGraph, themeCollisionChecks), options schema (internal, optionsSchema.ts), resolveOptions, Options, defineTheme, type inference
 ├── features/
 │   ├── registry/               # builtInCategories, flattenByCategory, generateSourceInline
 │   ├── theme-css/              # :root / html[data-axis] / @theme inline (incl. --border-width-*), screens
@@ -73,8 +73,8 @@ src/
 │   ├── ui/                     # ./ui + ./ui-react: recipeFromTables, createCn, splitLayout, mergeStyle, Polymorphic
 │   ├── vite/                   # styleGenVite
 │   └── next/                   # styleGenNext
-├── shared/                     # helpers (kebab/camel), defaults, COLOR_STATES, writeFileAtomic
-├── node/                       # shared Node-only runner: loadStyleGenConfig, resolveProjectPath, themeEmitter, watchThemeFile, resolvePluginTarget
+├── shared/                     # helpers (kebab/camel), defaults, COLOR_STATES, class prefixes, cssBlock
+├── node/                       # shared Node-only runner: loadStyleGenConfig, resolveProjectPath, themeEmitter, watchThemeFile, resolvePluginTarget, writeFileAtomic, errorMessage, isPlainObject
 ├── cli/                        # commands: init, generate, doctor, schema, tokens, budget
 ├── exports/                    # one file per public subpath
 ├── __integration__/            # tests that compile CSS through the real Tailwind engine
@@ -102,7 +102,7 @@ const { css, tokens, schema } = generate(theme, options);
 // schema → z.toJSONSchema(ThemeSchema)
 ```
 
-`generate()` kiểm tra hợp lệ `options` trước (`StyleGeneratorOptionsSchema.parse` → `resolveOptions`), sau đó luôn kiểm tra hợp lệ lại `theme` với `ThemeSchema` (kể cả khi caller đã gọi `defineTheme()`); `assertThemeOptions` (`src/core/crossFieldChecks.ts`) kiểm tra cặp theme × options: với mọi `axes.scope`, một `axes.attribute` trỏ tới một trục không tồn tại, hoặc hai trục có cùng tên attribute, đều bị từ chối; `axes.scope: "element"` bổ sung `checkElementScopeAliases`; `resetTailwindDefaults: ["colors"|"radius"|"shadow"]` yêu cầu theme có `colors` tương ứng (không rỗng; `ThemeSchema` vẫn chấp nhận `colors: {}`), `borderRadius` hoặc `shadows`. Sau đó nó ghép các khối theo thứ tự này: breakpoint `@theme` → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` (các dòng `--color-*: initial;`… của `resetTailwindDefaults` đứng đầu trong khối này) → `@utility` của typography → `@utility` của spacing → `@source inline`. Phần kiểm tra hợp lệ nằm trong `prepareGenerate(theme, options)` (`src/core/prepareGenerate.ts`, trả về `{ parsed, resolved }`) và phần ghép **CSS** nằm trong `generateFromParsed(parsed, resolved)`; `generate()` gọi lần lượt hai hàm này rồi tự dựng `tokens` (`buildDesignTokens`) và `schema`. Node runner (`src/node/themeEmitter.ts`) gọi chúng từng bước để gắn nhãn cho lỗi (giai đoạn `read` → `parse` → `options` → `theme` → `cross` (chỉ lỗi theme × options) → `generate` (một lỗi bất ngờ khi dựng CSS: `Failed to generate CSS: …`) → `write`; `config` và `watch` thuộc về watcher).
+`generate()` kiểm tra hợp lệ `options` trước (`StyleGeneratorOptionsSchema.parse` → `resolveOptions`), sau đó luôn kiểm tra hợp lệ lại `theme` với `ThemeSchema` (kể cả khi caller đã gọi `defineTheme()`); `assertThemeOptions` (`src/core/themeOptionsChecks.ts`) kiểm tra cặp theme × options: với mọi `axes.scope`, một `axes.attribute` trỏ tới một trục không tồn tại, hoặc hai trục có cùng tên attribute, đều bị từ chối; `axes.scope: "element"` bổ sung `checkElementScopeAliases`; `resetTailwindDefaults: ["colors"|"radius"|"shadow"]` yêu cầu theme có `colors` tương ứng (không rỗng; `ThemeSchema` vẫn chấp nhận `colors: {}`), `borderRadius` hoặc `shadows`. Sau đó nó ghép các khối theo thứ tự này: breakpoint `@theme` → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` (các dòng `--color-*: initial;`… của `resetTailwindDefaults` đứng đầu trong khối này) → `@utility` của typography → `@utility` của spacing → `@source inline`. Phần kiểm tra hợp lệ nằm trong `prepareGenerate(theme, options)` (`src/core/prepareGenerate.ts`, trả về `{ parsed, resolved }`) và phần ghép **CSS** nằm trong `generateFromParsed(parsed, resolved)`; `generate()` gọi lần lượt hai hàm này rồi tự dựng `tokens` (`buildDesignTokens`) và `schema`. Node runner (`src/node/themeEmitter.ts`) gọi chúng từng bước để gắn nhãn cho lỗi (giai đoạn `read` → `parse` → `options` → `theme` → `cross` (chỉ lỗi theme × options) → `generate` (một lỗi bất ngờ khi dựng CSS: `Failed to generate CSS: …`) → `write`; `config` và `watch` thuộc về watcher).
 
 ### `createDesignTokens`
 
@@ -123,7 +123,7 @@ const { DesignTokens } = createDesignTokens(theme, options);
 // DesignTokens.Web.aliasedColors → color keys whose value is an "$alias" (base record or themeAxes override)
 ```
 
-**Suy luận kiểu:** các generic `const T extends ThemeConfig` và `const O extends StyleGeneratorOptions`, kết hợp với `KebabCase` và `CamelCase`, giữ nguyên kiểu literal thay vì nới rộng thành `string`. Mọi mảng đều là `readonly`; `breakpoints`, `spacingProperties` và `screens` lấy các literal của chúng từ `options` (`BreakpointKeys<O>`, `SpacingKeys<O>`, `ScreenKeys<O>`). Một nhóm tùy chọn mà kiểu theme khai báo là optional (một theme được định kiểu là `ThemeConfig`) cho ra `string`, vì lúc runtime nó có thể là một key đã khai báo hoặc một giá trị mặc định. `ThemeSchema.parse(theme) as T` chỉ xuất hiện trong `src/core/parseTheme.ts`, được `defineTheme` và `generate` dùng chung.
+**Suy luận kiểu:** các generic `const T extends ThemeConfig` và `const O extends StyleGeneratorOptions`, kết hợp với `KebabCase` và `CamelCase`, giữ nguyên kiểu literal thay vì nới rộng thành `string`. Mọi mảng đều là `readonly`; `breakpoints`, `spacingProperties` và `screens` lấy các literal của chúng từ `options` (`BreakpointKeys<O>`, `SpacingKeys<O>`, `ScreenKeys<O>`). Một nhóm tùy chọn mà kiểu theme khai báo là optional (một theme được định kiểu là `ThemeConfig`) cho ra `string`, vì lúc runtime nó có thể là một key đã khai báo hoặc một giá trị mặc định. `ThemeSchema.parse(theme) as T` chỉ xuất hiện trong `src/core/themeSchema.ts` (`parseTheme`), được `defineTheme` và `generate` dùng chung.
 
 ### Plugin Vite (chỉ emit)
 

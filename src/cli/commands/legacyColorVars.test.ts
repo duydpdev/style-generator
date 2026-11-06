@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { writeTmpFile } from "../../__integration__/__fixtures__/tmpProject";
 import type { ThemeConfig } from "../../core/themeSchema";
 
 import { findLegacyColorVarRefs } from "./legacyColorVars";
@@ -16,9 +17,7 @@ describe("findLegacyColorVarRefs", () => {
   let tmp: string;
 
   const write = (rel: string, content: string): void => {
-    const abs = path.join(tmp, rel);
-    fs.mkdirSync(path.dirname(abs), { recursive: true });
-    fs.writeFileSync(abs, content);
+    writeTmpFile(tmp, rel, content);
   };
   const scan = (t: ThemeConfig = theme, output = "styles/theme.css") =>
     findLegacyColorVarRefs(tmp, t, { output });

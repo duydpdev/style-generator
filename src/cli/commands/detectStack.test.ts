@@ -4,6 +4,8 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { writeTmpFile } from "../../__integration__/__fixtures__/tmpProject";
+
 import { detectStack } from "./detectStack";
 
 describe("detectStack", () => {
@@ -19,8 +21,7 @@ describe("detectStack", () => {
 
   const touch = (...files: string[]): void => {
     for (const file of files) {
-      fs.mkdirSync(path.dirname(path.join(tmp, file)), { recursive: true });
-      fs.writeFileSync(path.join(tmp, file), "");
+      writeTmpFile(tmp, file, "");
     }
   };
 

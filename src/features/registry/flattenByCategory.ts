@@ -1,4 +1,4 @@
-import { ALIAS_VALUE_RE } from "../../core/tokenGrammar";
+import { parseAlias } from "../../core/tokenGrammar";
 import { toKebabCase } from "../../shared/helpers";
 
 import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
@@ -9,7 +9,7 @@ import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
  * One registry-driven `--${prefix}-${kebabKey}` computation shared by every
  * category.
  *
- * A value matching `$<TokenKey>` (see `ALIAS_VALUE_RE`) is resolved to
+ * A value matching `$<TokenKey>` (see `parseAlias`) is resolved to
  * `var(--<cssVarPrefix>-<kebab-target>)` instead of being emitted
  * literally — `ThemeSchema`'s alias refinement has already proven the
  * reference exists (within the same category) and is acyclic, so this
@@ -29,7 +29,7 @@ export const flattenByCategory = (
 
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(data)) {
-    const aliasTarget = ALIAS_VALUE_RE.exec(value)?.[1];
+    const aliasTarget = parseAlias(value);
     const resolvedValue =
       aliasTarget === undefined
         ? value

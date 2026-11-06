@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { EventEmitter } from "node:events";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { watch } from "chokidar";
@@ -26,6 +26,8 @@ vi.mock("chokidar", () => ({
     }),
   ),
 }));
+
+import { writeTmpFile } from "../../__integration__/__fixtures__/tmpProject";
 
 import { styleGenNext, __resetForTests } from "./styleGenNext";
 
@@ -76,12 +78,9 @@ describe("styleGenNext", () => {
 
   const writeTheme = (
     relPath = "theme.json",
-    theme: unknown = sampleTheme,
+    theme: object = sampleTheme,
   ): string => {
-    const abs = join(tmp, relPath);
-    mkdirSync(dirname(abs), { recursive: true });
-    writeFileSync(abs, JSON.stringify(theme), "utf8");
-    return abs;
+    return writeTmpFile(tmp, relPath, theme);
   };
 
   it("emits from a themePath outside the project (monorepo-shared theme)", () => {

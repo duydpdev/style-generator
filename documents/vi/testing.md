@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: d2f220a54758 -->
+<!-- source: documents/testing.md sha256: d2d51a40eaa2 -->
 
 # Hướng dẫn kiểm thử
 
@@ -39,14 +39,14 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # a single 
 
 Test nằm cạnh mã (`*.test.ts`). Các nhóm chính:
 
-- `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên là số nguyên, key không round-trip, xung đột `borderWidth`/`colors`, `fontWeight` 1–1000, key typography che khuất `sp-*`/`font-*`), `defineTheme`, kiểm tra hợp lệ tùy chọn (`extraSources`, `screens`, `breakpoints`, `spacing.properties` dạng mảng), các thử nghiệm injection (kể cả `generateThemeCss`).
+- `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên là số nguyên, key không round-trip, xung đột `borderWidth`/`colors`, `fontWeight` 1–1000, key typography che khuất `sp-*`/`font-*`), `defineTheme`, `parseAlias`, `forEachAxisVariant`, kiểm tra hợp lệ tùy chọn (`extraSources`, `screens`, `breakpoints`, `spacing.properties` dạng mảng), các thử nghiệm injection (kể cả `generateThemeCss`).
 - `src/features/registry/*` — descriptor, `flattenByCategory`, `generateSourceInline` (kể cả các dòng trạng thái).
 - `src/features/{theme-css,typography,spacing}/*` — từng khối CSS được sinh ra.
 - `src/features/{tokens,cva}/*` — `createDesignTokens`, `createVariantMapper` (`{ states }`).
 - `src/features/{vite,next}/*` — các plugin (emit trong `buildStart`, `addWatchFile`, watcher, bộ bảo vệ đường dẫn, plugin không đối số đọc `style-gen.config.json`).
-- `src/node/*` — Node runner dùng chung: `loadStyleGenConfig` (các test được chuyển từ `config.test.ts` cũ), `resolveProjectPath` (không viết lại dấu `/` đứng đầu; theme nằm ngoài thư mục gốc, `outDir` nằm trong thư mục gốc), `themeEmitter` (nhãn theo từng giai đoạn, chỉ ghi khi nội dung thay đổi), `watchThemeFile` (đọc lại config; một config không hợp lệ giữ lại config hợp lệ gần nhất), `resolvePluginTarget`.
+- `src/node/*` — Node runner dùng chung: `loadStyleGenConfig` (các test được chuyển từ `config.test.ts` cũ), `resolveProjectPath` (không viết lại dấu `/` đứng đầu; theme nằm ngoài thư mục gốc, `outDir` nằm trong thư mục gốc), `themeEmitter` (nhãn theo từng giai đoạn, chỉ ghi khi nội dung thay đổi), `watchThemeFile` (đọc lại config; một config không hợp lệ giữ lại config hợp lệ gần nhất), `resolvePluginTarget`, `writeFileAtomic`, `errorMessage`, `isPlainObject`.
 - `src/cli/*` — `run.test.ts` gọi trực tiếp `runCli(args, cwd)` (registry, `--help` theo từng lệnh, flag lạ → mã 1, flag không hợp lệ của `budget` → mã 2) vì các lệnh trả về một mã thoát thay vì gọi `process.exit`; `index.test.ts` chỉ kiểm tra `process.exitCode`; `init`, `generate` (kể cả `--watch` với chokidar thật và một test sửa config trong khi đang theo dõi, V5-06), `schema`, `tokens` (module được sinh ra được import lại và so sánh với `createDesignTokens`), `budget` (đo gzip trên các file/thư mục tạm, ba mã thoát, hai dòng `OK:`/`OVER BUDGET:`), `doctor` (cảnh báo xung đột utility, `aliasHints`, lỗi theme × options, một config không hợp lệ dừng sớm; `legacyColorVars` quét các biến `--sg-<color>` kiểu 4.x trong một thư mục tạm).
-- `src/shared/*` — `helpers` (kebab/camel), `writeFileAtomic`.
+- `src/shared/*` — `helpers` (kebab/camel), `axisAttributeName`, `cssBlock`.
 
 Coverage dùng provider v8 với `include: ["src/**/*.ts"]`, nên một file mà không test nào import (ví dụ `src/cli/index.ts`) vẫn hiện ở mức 0 % thay vì bị bỏ qua. Các file test (`*.test.ts`, `*.test-d.ts`), `*.d.ts` và `src/__integration__/**` bị loại trừ. Hiện chưa có ngưỡng bắt buộc. Baseline đo ngày 2026-10-06: statements 91.35 %, branches 83.2 %, functions 92.48 %, lines 91.58 %; `src/cli/index.ts` 0 %.
 
@@ -161,7 +161,7 @@ yarn lint                                     # registry rules: banned tags, no 
 
 Sáu component mẫu (`examples/react-v4/src/ui/`, `examples/nuxt-v4/app/ui/`) là mã ví dụ, không phải một API, và không có test runner. Các bước kiểm tra của chúng diễn ra lúc biên dịch: `examples/react-v4/tests/ui-types.tsx` chứa các dòng `@ts-expect-error` mà mỗi dòng phải được tiêu thụ bởi một lỗi kiểu thật (sai token, sai breakpoint, sai prop `as`), và `examples/nuxt-v4/tests/nuxt/ui-props.vue` làm điều tương tự với `@vue-expect-error` dưới `nuxt typecheck`. CI chạy cả hai bước kiểm tra kiểu trong cùng một bước `yarn workspaces foreach … run typecheck`, `yarn lint` trong bước riêng của nó, và render các ứng dụng qua `yarn workspace site build` (build `react-v4`) và bản build `nuxt-v4`. Các component được mô tả trong [`components.md`](./components.md).
 
-Các ứng dụng plain có các bước kiểm tra riêng: `yarn check:plain-ui` (cấu trúc thư mục, các import, `style.ts` giống hệt nhau ở `plain-react`, `next-v4` và `plain-nuxt`, `types.ts` giống hệt nhau ở `plain-react` và `next-v4`; các file `<Name>.stories.tsx` giống hệt nhau ở `plain-react` và `next-v4`, còn `plain-nuxt` yêu cầu một `<Name>.stories.ts` cho mỗi thư mục; test trong `src/__integration__/check-plain-ui.test.ts`), `yarn workspace plain-nuxt-example typecheck` (kèm test kiểu `tests/nuxt/ui-props.vue`) và các bản build của `next-v4` và `plain-nuxt`. Lint cũng cần `yarn workspace plain-nuxt-example prepare:nuxt`.
+Các ứng dụng plain có các bước kiểm tra riêng: `yarn check:plain-ui` (cấu trúc thư mục, các import, `style.ts` giống hệt nhau ở `plain-react`, `next-v4` và `plain-nuxt`, `types.ts` giống hệt nhau ở `plain-react` và `next-v4`; các file `<Name>.stories.tsx` giống hệt nhau ở `plain-react` và `next-v4`, còn `plain-nuxt` yêu cầu một `<Name>.stories.ts` cho mỗi thư mục; test trong `src/__integration__/check-plain-ui.test.ts` và `check-plain-ui.repo.test.ts`), `yarn workspace plain-nuxt-example typecheck` (kèm test kiểu `tests/nuxt/ui-props.vue`) và các bản build của `next-v4` và `plain-nuxt`. Lint cũng cần `yarn workspace plain-nuxt-example prepare:nuxt`.
 
 ### 9. Docs (embed, snippet, export)
 

@@ -13,6 +13,8 @@ import { dirname, join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { writeTmpFile } from "./__fixtures__/tmpProject";
+
 const repoRoot = join(__dirname, "..", "..");
 const repoPkg = JSON.parse(
   readFileSync(join(repoRoot, "package.json"), "utf8"),
@@ -35,11 +37,6 @@ const exportNames = Object.keys(repoPkg.exports)
  * @param {string} rel - Root-relative file path
  * @param {string} content - File contents
  */
-function put(root: string, rel: string, content: string) {
-  mkdirSync(dirname(join(root, rel)), { recursive: true });
-  writeFileSync(join(root, rel), content);
-}
-
 /**
  * Write a bundle file plus a sourcemap listing `sources`.
  * @param {string} root - Fixture root
@@ -48,8 +45,8 @@ function put(root: string, rel: string, content: string) {
  * @param {string[]} sources - Sourcemap `sources`
  */
 function bundle(root: string, rel: string, code: string, sources: string[]) {
-  put(root, rel, code);
-  put(root, `${rel}.map`, JSON.stringify({ version: 3, sources }));
+  writeTmpFile(root, rel, code);
+  writeTmpFile(root, `${rel}.map`, JSON.stringify({ version: 3, sources }));
 }
 
 /**
@@ -59,7 +56,7 @@ function bundle(root: string, rel: string, code: string, sources: string[]) {
  * @param {string} root - Fixture root
  */
 function writeCleanBuild(root: string) {
-  put(
+  writeTmpFile(
     root,
     "package.json",
     JSON.stringify({
@@ -229,7 +226,7 @@ describe("integration: publish gates reject bad builds", () => {
     });
 
     it("fails when a bundle ships without a sourcemap", () => {
-      put(dir, "dist/helpers-xyz.js", "export const h = 1;\n");
+      writeTmpFile(dir, "dist/helpers-xyz.js", "export const h = 1;\n");
 
       const { status, output } = runGate(dir, "check-externals");
 
@@ -255,7 +252,7 @@ describe("integration: publish gates reject bad builds", () => {
       };
       pkg.exports["./extra"] = { import: "./dist/extra.js" };
       writeFileSync(pkgPath, JSON.stringify(pkg));
-      put(dir, "dist/extra.js", "export const extra = 1;\n");
+      writeTmpFile(dir, "dist/extra.js", "export const extra = 1;\n");
 
       const { status, output } = runGate(dir, "check-sizes");
 
@@ -264,8 +261,12 @@ describe("integration: publish gates reject bad builds", () => {
     });
 
     it("fails when a chunk imported by an entry pushes it over budget", () => {
-      put(dir, "dist/tokens.js", 'export * from "./shared-big.js";\n');
-      put(dir, "dist/shared-big.js", `export const s = "${noise(8_000)}";\n`);
+      writeTmpFile(dir, "dist/tokens.js", 'export * from "./shared-big.js";\n');
+      writeTmpFile(
+        dir,
+        "dist/shared-big.js",
+        `export const s = "${noise(8_000)}";\n`,
+      );
 
       const { status, output } = runGate(dir, "check-sizes");
 
@@ -276,7 +277,11 @@ describe("integration: publish gates reject bad builds", () => {
     });
 
     it("fails when the CLI bundle exceeds its budget", () => {
-      put(dir, "dist/cli/index.mjs", `const s = "${noise(200_000)}";\n`);
+      writeTmpFile(
+        dir,
+        "dist/cli/index.mjs",
+        `const s = "${noise(200_000)}";\n`,
+      );
 
       const { status, output } = runGate(dir, "check-sizes");
 
@@ -296,8 +301,12 @@ describe("integration: publish gates reject bad builds", () => {
 
   describe("check-browser-safe", () => {
     it("fails when a browser-safe entry reaches Zod through a shared chunk", () => {
-      put(dir, "dist/tokens.js", 'import { h } from "./helpers-q.js";\n');
-      put(dir, "dist/helpers-q.js", 'import { z } from "zod";\n');
+      writeTmpFile(
+        dir,
+        "dist/tokens.js",
+        'import { h } from "./helpers-q.js";\n',
+      );
+      writeTmpFile(dir, "dist/helpers-q.js", 'import { z } from "zod";\n');
 
       const { status, output } = runGate(dir, "check-browser-safe");
 
@@ -308,7 +317,7 @@ describe("integration: publish gates reject bad builds", () => {
     });
 
     it("fails when a CJS browser-safe entry requires a Node builtin", () => {
-      put(dir, "dist/cva.cjs", 'const fs = require("node:fs");\n');
+      writeTmpFile(dir, "dist/cva.cjs", 'const fs = require("node:fs");\n');
 
       const { status, output } = runGate(dir, "check-browser-safe");
 
@@ -319,7 +328,7 @@ describe("integration: publish gates reject bad builds", () => {
     });
 
     it("fails when a browser-safe entry imports @tailwindcss/*", () => {
-      put(dir, "dist/spacing.js", 'import "@tailwindcss/node";\n');
+      writeTmpFile(dir, "dist/spacing.js", 'import "@tailwindcss/node";\n');
 
       const { status, output } = runGate(dir, "check-browser-safe");
 
@@ -332,8 +341,12 @@ describe("integration: publish gates reject bad builds", () => {
       ["chokidar/handler.js", 'import "chokidar/handler.js";\n'],
       ["@clack/prompts", 'import * as p from "@clack/prompts";\n'],
     ])("fails when a shared chunk reaches %s", (specifier, chunk) => {
-      put(dir, "dist/tokens.js", 'import { h } from "./helpers-q.js";\n');
-      put(dir, "dist/helpers-q.js", chunk);
+      writeTmpFile(
+        dir,
+        "dist/tokens.js",
+        'import { h } from "./helpers-q.js";\n',
+      );
+      writeTmpFile(dir, "dist/helpers-q.js", chunk);
 
       const { status, output } = runGate(dir, "check-browser-safe");
 
@@ -344,7 +357,7 @@ describe("integration: publish gates reject bad builds", () => {
     });
 
     it("does not forbid a bare import whose name merely starts with a dependency's name", () => {
-      put(
+      writeTmpFile(
         dir,
         "dist/cva.js",
         'import "chokidar-fake";\nimport "@clack/other";\n',
@@ -354,7 +367,7 @@ describe("integration: publish gates reject bad builds", () => {
     });
 
     it("fails on a minified import with no space before the specifier", () => {
-      put(dir, "dist/cva.js", 'import{x}from"node:fs";export{x};\n');
+      writeTmpFile(dir, "dist/cva.js", 'import{x}from"node:fs";export{x};\n');
 
       const { status, output } = runGate(dir, "check-browser-safe");
 

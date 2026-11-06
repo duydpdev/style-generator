@@ -3,6 +3,7 @@ import path from "node:path";
 
 import * as p from "@clack/prompts";
 
+import { isPlainObject } from "../../node/isPlainObject";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { logger } from "../logger";
 import {
@@ -71,9 +72,6 @@ function writeFile(filePath: string, content: string): void {
   ensureDir(filePath);
   fs.writeFileSync(filePath, content, "utf8");
 }
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
  * Read an existing `style-gen.config.json` so `init` can merge into it.
@@ -164,6 +162,16 @@ function toRepoPath(cwd: string, abs: string): string {
   return path.relative(cwd, abs).split(path.sep).join("/");
 }
 
+/**
+ * Whether `dir` exists under the project root.
+ * @param {string} cwd - The project root
+ * @param {string} dir - Project-relative path
+ * @returns {boolean} `true` when the path exists
+ */
+function projectHas(cwd: string, dir: string): boolean {
+  return fs.existsSync(path.resolve(cwd, dir));
+}
+
 /** Display names for the next-steps message. */
 const STACK_NAMES: Record<BundlerStack, string> = {
   vite: "Vite",
@@ -180,11 +188,12 @@ const STACK_NAMES: Record<BundlerStack, string> = {
  * @returns {string} Project-relative theme path
  */
 function defaultThemeLoc(detected: DetectedStack, cwd: string): string {
-  const has = (dir: string): boolean => fs.existsSync(path.resolve(cwd, dir));
   if (detected.stack === "nuxt") {
-    return has("app") ? "app/assets/css/theme.json" : "assets/css/theme.json";
+    return projectHas(cwd, "app")
+      ? "app/assets/css/theme.json"
+      : "assets/css/theme.json";
   }
-  return has("src") ? "src/styles/theme.json" : "styles/theme.json";
+  return projectHas(cwd, "src") ? "src/styles/theme.json" : "styles/theme.json";
 }
 
 /**
@@ -195,12 +204,17 @@ function defaultThemeLoc(detected: DetectedStack, cwd: string): string {
  * @returns {string} Project-relative POSIX path
  */
 function cssEntryFile(stack: BundlerStack, cwd: string): string {
-  const has = (dir: string): boolean => fs.existsSync(path.resolve(cwd, dir));
-  if (stack === "vite") return has("src") ? "src/index.css" : "index.css";
-  if (stack === "next") {
-    return has("src/app") ? "src/app/globals.css" : "app/globals.css";
+  if (stack === "vite") {
+    return projectHas(cwd, "src") ? "src/index.css" : "index.css";
   }
-  return has("app") ? "app/assets/css/main.css" : "assets/css/main.css";
+  if (stack === "next") {
+    return projectHas(cwd, "src/app")
+      ? "src/app/globals.css"
+      : "app/globals.css";
+  }
+  return projectHas(cwd, "app")
+    ? "app/assets/css/main.css"
+    : "assets/css/main.css";
 }
 
 /**

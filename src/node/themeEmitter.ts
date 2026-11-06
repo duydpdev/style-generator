@@ -10,7 +10,9 @@ import type { PrepareStage } from "../core/prepareGenerate";
 import type { ResolvedOptions } from "../core/resolveOptions";
 import { formatZodError } from "../core/themeSchema";
 import type { ThemeConfig } from "../core/themeSchema";
-import { writeFileAtomic } from "../shared/writeFileAtomic";
+
+import { errorMessage } from "./errorMessage";
+import { writeFileAtomic } from "./writeFileAtomic";
 
 /**
  * Where an emit failed. `read` → `parse` → `options` → `theme` → `cross`
@@ -54,9 +56,6 @@ export type EmitResult =
 
 /** The failure branch of {@link EmitResult}. */
 type EmitFailure = Extract<EmitResult, { ok: false }>;
-
-const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 const fail = (
   stage: EmitStage,

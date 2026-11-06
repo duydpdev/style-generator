@@ -12,7 +12,8 @@ import {
   checkFontFamilyWeightNames,
   checkTypographyClassCollisions,
   reportKebabCollisions,
-} from "./crossFieldChecks";
+} from "./themeCollisionChecks";
+import { forEachAxisVariant } from "./forEachAxisVariant";
 import { TokenKey, TokenValue, TypographyValue } from "./tokenGrammar";
 
 /**
@@ -306,7 +307,7 @@ const rejectLegacyThemesKey = (raw: unknown, ctx: z.RefinementCtx): unknown => {
  * Tailwind font-weight name collisions, per-axis-variant override
  * validation) runs in the trailing `.superRefine()`, after every
  * individual field has already passed its own `TokenKey`/`TokenValue`
- * grammar check. The checks themselves live in `crossFieldChecks.ts` and
+ * grammar check. The checks themselves live in `themeCollisionChecks.ts` and
  * `aliasGraph.ts`.
  */
 const ThemeSchemaShape = ThemeCssVarShape.extend({
@@ -321,34 +322,25 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
   checkTypographyClassCollisions(ctx, theme);
 
   if (!theme.themeAxes) return;
-  for (const [axisName, variants] of Object.entries(theme.themeAxes)) {
-    for (const [variantName, override] of Object.entries(variants)) {
-      validateThemeOverride(
-        ctx,
-        theme,
-        ["themeAxes", axisName, variantName],
-        override,
-      );
-    }
-  }
+  forEachAxisVariant(theme.themeAxes, (axisName, variantName, override) => {
+    validateThemeOverride(
+      ctx,
+      theme,
+      ["themeAxes", axisName, variantName],
+      override,
+    );
+  });
 
   for (const category of ALIAS_CATEGORIES) {
-    validateCrossAxisAliasCycles(
-      ctx,
-      theme[category],
-      Object.fromEntries(
-        Object.entries(theme.themeAxes).map(([axisName, variants]) => [
-          axisName,
-          Object.fromEntries(
-            Object.entries(variants).map(([variantName, override]) => [
-              variantName,
-              override[category],
-            ]),
-          ),
-        ]),
-      ),
-      category,
-    );
+    const projected: Record<
+      string,
+      Record<string, Record<string, string> | undefined>
+    > = {};
+    forEachAxisVariant(theme.themeAxes, (axisName, variantName, override) => {
+      const variants = (projected[axisName] ??= {});
+      variants[variantName] = override[category];
+    });
+    validateCrossAxisAliasCycles(ctx, theme[category], projected, category);
   }
 });
 
@@ -363,6 +355,23 @@ export const ThemeSchema = z.preprocess(
   rejectLegacyThemesKey,
   ThemeSchemaShape,
 );
+
+/**
+ * Validate `config` against `ThemeSchema` and hand it back typed as the
+ * caller's own `T`. The one place the `ThemeSchema.parse(x) as T` cast lives.
+ *
+ * `ThemeSchema.parse` returns the widened `ThemeConfig`, not `T`; the cast
+ * keeps the caller's literal key/value types for downstream inference
+ * (`DesignTokensWeb<T, O>`). Safe: a successful parse is structurally
+ * identical to `config` (the schema has no coercion or defaults), so the cast
+ * cannot hide a shape mismatch. Throws a `ZodError` (with a precise `path`)
+ * for unknown keys or CSS-injection-unsafe values.
+ * @template T
+ * @param {T} config - Theme config object
+ * @returns {T} The validated theme, structurally identical to `config`
+ */
+export const parseTheme = <T extends ThemeConfig>(config: T): T =>
+  ThemeSchema.parse(config) as T;
 
 /**
  * Configuration for the theme, inferred from {@link ThemeSchema}.

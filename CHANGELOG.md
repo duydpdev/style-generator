@@ -1,3 +1,9 @@
+# [5.4.1](https://github.com/duydpdev/style-generator/compare/v5.4.0...v5.4.1) (2026-11-06)
+
+### Refactor
+
+- dedupe src idioms, split crossFieldChecks, trim barrels ([f538c81](https://github.com/duydpdev/style-generator/commit/f538c8111b3388b35c79ebc979d2ac093062ea50))
+
 # [5.4.0](https://github.com/duydpdev/style-generator/compare/v5.3.0...v5.4.0) (2026-11-05)
 
 ### Features

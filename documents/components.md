@@ -12,6 +12,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
 
 ```text
 <app>/src/theme/theme.json        # the app's own theme (Nuxt: app/theme/theme.json)
+<app>/src/options.ts              # export { options }: generator options, imports no JSON  (Nuxt: app/options.ts)
 <app>/src/theme.ts                # export { theme, tokens, cn }  (Nuxt: app/theme.ts)
 <app>/src/ui/<kebab-name>/        # one folder per component (Nuxt: app/ui/<kebab-name>/)
   style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
@@ -23,6 +24,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
 ```
 
 - `theme.json` is the reduced theme token configuration.
+- `options.ts` holds the literal `options` (here `coverage.colors.opacities`). It imports no JSON, so the bundler config (`vite.config.ts`, `next.config.ts`, `nuxt.config.ts`) can import it without restarting the dev server on every theme edit; `theme.ts` passes it to `createDesignTokens` and `style-gen.config.json` repeats it for the CLI (`check:plain-ui` keeps both equal).
 - `theme.ts` exports `theme`, `tokens`, and `cn` for the application.
 - `style.ts` is the same file in all three apps; it holds the variant tables and the headless recipe.
 - `types.ts` is the same in React and Next; the Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`.
@@ -33,26 +35,21 @@ There are two sets. The plain examples are what you copy: one folder per compone
 
 ### The theme module
 
-The theme module exports `theme`, `tokens` created with `createDesignTokens()`, and the `cn` helper.
+The theme module exports `theme`, `tokens` created with `createDesignTokens(theme, options)` (`options` comes from `options.ts`), and the `cn` helper.
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 import { createCn } from "@duydpdev/style-generator/ui";
 
+import { options } from "./options";
 import themeJson from "./theme/theme.json";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Kept equal to style-gen.config.json (the CLI reads that file); check:plain-ui compares them. */
-export const options = {
-  coverage: { colors: { opacities: [10, 20, 50, 80] } },
-} as const satisfies StyleGeneratorOptions;
-
-/** Typed token arrays from the theme and `options`. */
+/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
 export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
@@ -350,14 +347,14 @@ const root = () => {
 1. Install the required dependencies:
 
    ```bash
-   yarn add @duydpdev/style-generator@^5.3.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
    ```
 
    See the README [Install](../README.md#install) section to configure the `@duydpdev` scope registry and your Personal Access Token; without the scope config npmjs serves an unrelated `3.0.0`.
 
 2. Wire `theme.css` for your bundler ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
 
-3. Copy `theme.ts` and your theme JSON, once.
+3. Copy `theme.ts`, `options.ts` and your theme JSON, once.
 
 4. Copy the folder. Nothing else is needed: a folder imports only its own files, `../../theme` and packages.
 
@@ -448,7 +445,7 @@ Every component accepts the spacing props of the theme (`p`, `px`, `mt`, `gapX`,
 
 Each static layout prop takes the Tailwind class suffix in camelCase (`display="inlineFlex"` → `inline-flex`, `cursor="notAllowed"` → `cursor-not-allowed`); `zIndex` (`0`-`50` in steps of 10, `"auto"`) and `opacity` (`0`-`100` in steps of 10) take numbers; the colour steps are `coverage.colors.opacities`; the plain `Input` also takes `placeholderColor` (default `muted`).
 
-The `token/step` colors of `Text` (`color="primary/50"`) are the steps in `coverage.colors.opacities`, which the example apps declare in `theme.ts` and `style-gen.config.json`. `truncate` also sets `whitespace-nowrap`, so do not combine it with `lineClamp`.
+The `token/step` colors of `Text` (`color="primary/50"`) are the steps in `coverage.colors.opacities`, which the example apps declare in `options.ts` and `style-gen.config.json`. `truncate` also sets `whitespace-nowrap`, so do not combine it with `lineClamp`.
 
 The rules for app code:
 
@@ -541,7 +538,7 @@ export const textTables = (
     },
     wrap: {
       wrap: "text-wrap",
-      nowrap: "text-nowrap",
+      nowrap: "text-nowrap whitespace-nowrap",
       balance: "text-balance",
       pretty: "text-pretty",
     },

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: a688147973e9 -->
+<!-- source: documents/reference/cli.md sha256: c519759137d3 -->
 
 # CLI
 
@@ -79,7 +79,7 @@ yarn style-gen doctor
 
 ### `style-gen tokens`
 
-Ghi các **key** design token của theme (`DesignTokens.Web`: một mảng các camelCase key cho mỗi nhóm token, cộng thêm `breakpoints`, `screens` và `spacingProperties`) dưới dạng một module TypeScript, nhờ đó client bundle có thể import danh sách key mà không cần kèm theo runtime `./tokens` hay file theme JSON (khoảng 2.4 kB gzip khi đi chung, so với khoảng 0.6 kB cho các key được sinh ra).
+Ghi các **key** design token của theme (`DesignTokens.Web`: một mảng các camelCase key cho mỗi nhóm token, cộng thêm `opacities` (các bước của `coverage.colors.opacities`, tăng dần; `[]` khi không có tùy chọn), `breakpoints`, `screens` và `spacingProperties`) dưới dạng một module TypeScript, nhờ đó client bundle có thể import danh sách key mà không cần kèm theo runtime `./tokens` hay file theme JSON (khoảng 2.4 kB gzip khi đi chung, so với khoảng 0.6 kB cho các key được sinh ra).
 
 ```bash
 yarn style-gen tokens                                  # → styles/theme.tokens.ts (next to the theme)

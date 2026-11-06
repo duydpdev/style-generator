@@ -12,7 +12,6 @@ import {
   generate,
   defineOptions,
   defineTheme,
-  borderProperties,
 } from "@duydpdev/style-generator";
 import {
   COLOR_STATES,
@@ -27,6 +26,7 @@ import {
   type TailwindMergeExtension,
 } from "@duydpdev/style-generator/recipes";
 import {
+  borderProperties,
   createDesignTokens,
   type Breakpoint,
 } from "@duydpdev/style-generator/tokens";

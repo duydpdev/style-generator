@@ -125,30 +125,39 @@ interface MergeBase {
   configPath: string;
   /** Where `content` came from; `undefined` when `init` starts empty. */
   source?: "style-gen.config.json" | "package.json";
-  /** Keys `init` merges `theme`/`output` into (an existing `plugin` key is kept). */
+  /** Keys `init` merges `theme`/`output` into: every existing key except `plugin`. */
   content: Record<string, unknown>;
+  /** Whether an existing `plugin` key (rejected since 6.0) was dropped from `content`. */
+  droppedPlugin: boolean;
 }
 
 /**
  * The config `init` merges into: an existing `style-gen.config.json`, else
  * `package.json["style-gen"]`, else nothing. Read before anything is
- * written, so an unreadable config aborts with no file created.
+ * written, so an unreadable config aborts with no file created. A `plugin`
+ * key is dropped: the schema rejects it since 6.0, and the merged file must
+ * load.
  * @param {string} cwd The project root.
- * @returns {MergeBase} The config path and the keys to keep.
+ * @returns {MergeBase} The config path, the keys to keep and whether `plugin` was dropped.
  */
 function loadMergeBase(cwd: string): MergeBase {
   const configPath = path.resolve(cwd, "style-gen.config.json");
-  if (fs.existsSync(configPath)) {
-    return {
-      configPath,
-      source: "style-gen.config.json",
-      content: readExistingConfig(configPath),
-    };
-  }
-  const pkgSection = readPackageJsonSection(cwd);
-  return pkgSection
-    ? { configPath, source: "package.json", content: pkgSection }
-    : { configPath, content: {} };
+  const source = fs.existsSync(configPath)
+    ? ("style-gen.config.json" as const)
+    : undefined;
+  const existing = source
+    ? readExistingConfig(configPath)
+    : readPackageJsonSection(cwd);
+  if (!existing) return { configPath, content: {}, droppedPlugin: false };
+  const droppedPlugin = Object.hasOwn(existing, "plugin");
+  const content = { ...existing };
+  delete content.plugin;
+  return {
+    configPath,
+    source: source ?? "package.json",
+    content,
+    droppedPlugin,
+  };
 }
 
 /**
@@ -399,6 +408,11 @@ async function scaffold(args: InitArgs, cwd: string): Promise<number> {
   if (mergeBase.source === "package.json") {
     logger.info(
       'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
+    );
+  }
+  if (mergeBase.droppedPlugin) {
+    logger.info(
+      "Removed the `plugin` key from style-gen.config.json: 6.0 no longer accepts it.",
     );
   }
 

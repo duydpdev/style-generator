@@ -147,7 +147,10 @@ describe("initCommand", () => {
       );
     });
 
-    it("merges theme/output into an existing style-gen.config.json while keeping its other keys, plugin included", async () => {
+    it("drops a `plugin` key while keeping the other keys of an existing style-gen.config.json", async () => {
+      const infoSpy = vi
+        .spyOn(logger, "info")
+        .mockImplementation(() => undefined);
       fs.writeFileSync(
         path.join(tmp, "style-gen.config.json"),
         JSON.stringify({
@@ -167,8 +170,34 @@ describe("initCommand", () => {
         output: "a/theme.css",
         breakpoints: ["xl"],
         extraSources: ["bg-x"],
-        plugin: "old/theme-plugin.ts",
       });
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Removed the `plugin` key"),
+      );
+    });
+
+    it("merges theme/output into an existing style-gen.config.json without a removal line when it has no `plugin`", async () => {
+      const infoSpy = vi
+        .spyOn(logger, "info")
+        .mockImplementation(() => undefined);
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({ breakpoints: ["xl"] }),
+      );
+
+      await initCommand({ theme: "a/theme.json", dark: false }, tmp);
+
+      const cfg: unknown = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      );
+      expect(cfg).toEqual({
+        theme: "a/theme.json",
+        output: "a/theme.css",
+        breakpoints: ["xl"],
+      });
+      expect(infoSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining("`plugin` key"),
+      );
     });
 
     it("returns 1 and leaves the file untouched if theme.schema.json already exists", async () => {
@@ -184,6 +213,9 @@ describe("initCommand", () => {
     });
 
     it("starts from package.json's style-gen section when there is no style-gen.config.json", async () => {
+      const infoSpy = vi
+        .spyOn(logger, "info")
+        .mockImplementation(() => undefined);
       fs.writeFileSync(
         path.join(tmp, "package.json"),
         JSON.stringify({
@@ -202,6 +234,39 @@ describe("initCommand", () => {
         output: "a/theme.css",
         breakpoints: ["xl"],
       });
+      expect(infoSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining("`plugin` key"),
+      );
+    });
+
+    it('drops a `plugin` key from package.json["style-gen"] while keeping its other keys', async () => {
+      const infoSpy = vi
+        .spyOn(logger, "info")
+        .mockImplementation(() => undefined);
+      fs.writeFileSync(
+        path.join(tmp, "package.json"),
+        JSON.stringify({
+          name: "app",
+          "style-gen": {
+            extraSources: ["bg-x"],
+            plugin: "old/theme-plugin.ts",
+          },
+        }),
+      );
+
+      await initCommand({ theme: "a/theme.json", dark: false }, tmp);
+
+      const cfg: unknown = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      );
+      expect(cfg).toEqual({
+        theme: "a/theme.json",
+        output: "a/theme.css",
+        extraSources: ["bg-x"],
+      });
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Removed the `plugin` key"),
+      );
     });
 
     it.each([

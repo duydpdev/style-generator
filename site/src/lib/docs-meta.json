@@ -139,6 +139,13 @@
     "order": 13,
     "vi": { "title": "./ui-react" }
   },
+  "documents/migration/5.x-to-6.0.md": {
+    "slug": "migration-5x-to-6",
+    "title": "Migration 5.x → 6.0",
+    "group": "Migration",
+    "order": 0,
+    "vi": { "title": "Nâng cấp 5.x → 6.0" }
+  },
   "documents/migration/4.x-to-5.0.md": {
     "slug": "migration-4x-to-5",
     "title": "Migration 4.x → 5.0",

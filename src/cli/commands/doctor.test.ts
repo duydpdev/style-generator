@@ -49,18 +49,16 @@ describe("doctorCommand", () => {
 
   const lines = (): string => logSpy.mock.calls.map((c) => c[0]).join("\n");
 
-  it("valid theme + configured generator script + output → success path", () => {
+  it("valid theme + output → success path", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
-        plugin: "plugins/theme-plugin.ts",
         output: "styles/theme.css",
       },
       "styles/theme.json": {
         colors: { primary: "#3B82F6" },
         typography: { h1: typo },
       },
-      "plugins/theme-plugin.ts": "// stub",
       "styles/theme.css": "text-primary",
     });
 
@@ -70,7 +68,7 @@ describe("doctorCommand", () => {
     expect(out).toMatch(/Everything looks good/);
   });
 
-  it("passes a CLI-only/plugin setup: no generator script configured, none checked", () => {
+  it("prints no Script line: there is no generator script to check", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
@@ -98,7 +96,7 @@ describe("doctorCommand", () => {
     expect(lines()).toMatch(/yarn style-gen generate/);
   });
 
-  it("configured generator script that does not exist → 1", () => {
+  it("a config that still has `plugin` stops with a config error and prints no Script line", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
@@ -109,9 +107,9 @@ describe("doctorCommand", () => {
     });
 
     expect(doctorCommand(tmp)).toBe(1);
-    expect(lines()).toMatch(
-      /Script {2}\(plugins\/theme-plugin\.ts\s*\) ❌ Not found/,
-    );
+
+    expect(lines()).toMatch(/^ *plugin → /m);
+    expect(lines()).not.toContain("Script");
   });
 
   it("v1 nested colors (object values) → schema error naming the offending path, 1", () => {
@@ -265,29 +263,17 @@ describe("doctorCommand", () => {
       expect(lines()).toMatch(/Not found/);
     });
 
-    it.each([
-      ["output", { output: "../out/theme.css" }, "Output"],
-      [
-        "plugin",
-        { plugin: "../out/plugin.ts", output: "styles/theme.css" },
-        "Script",
-      ],
-    ])(
-      "an escaping %s → ❌ with the escape message, 1",
-      (label, config, heading) => {
-        writeProject(tmp, {
-          "style-gen.config.json": config,
-          "styles/theme.json": { colors: { primary: "#3B82F6" } },
-        });
+    it("an escaping output → ❌ with the escape message, 1", () => {
+      writeProject(tmp, {
+        "style-gen.config.json": { output: "../out/theme.css" },
+        "styles/theme.json": { colors: { primary: "#3B82F6" } },
+      });
 
-        expect(doctorCommand(tmp)).toBe(1);
+      expect(doctorCommand(tmp)).toBe(1);
 
-        expect(lines()).toMatch(
-          new RegExp(`${heading} +\\(.*\\) ❌ Escapes project root`),
-        );
-        expect(lines()).toContain(`${label} escapes project root: ../out/`);
-      },
-    );
+      expect(lines()).toMatch(/Output +\(.*\) ❌ Escapes project root/);
+      expect(lines()).toContain("output escapes project root: ../out/");
+    });
   });
 
   describe("Tailwind utility collision warnings", () => {
@@ -295,11 +281,9 @@ describe("doctorCommand", () => {
       writeProject(tmp, {
         "style-gen.config.json": {
           theme: "styles/theme.json",
-          plugin: "plugins/theme-plugin.ts",
           output: "styles/theme.css",
         },
         "styles/theme.json": theme,
-        "plugins/theme-plugin.ts": "// stub",
         "styles/theme.css": "x",
       });
     };
@@ -431,11 +415,9 @@ describe("doctorCommand", () => {
       writeProject(tmp, {
         "style-gen.config.json": {
           theme: "styles/theme.json",
-          plugin: "plugins/theme-plugin.ts",
           output: "styles/theme.css",
         },
         "styles/theme.json": { colors: { primary: "#3B82F6" } },
-        "plugins/theme-plugin.ts": "// stub",
       });
     };
 

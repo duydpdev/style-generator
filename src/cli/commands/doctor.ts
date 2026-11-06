@@ -25,24 +25,17 @@ const padStr = (str: string) => {
 };
 
 /**
- * Resolve a project path for a check line, or report that it escapes the
+ * Resolve the configured output path, or report that it escapes the
  * project root (an error: `generate` would refuse to write there).
  * @param {string} cwd - Project root
  * @param {string} input - Path as configured
- * @param {"output" | "plugin"} label - Which option the path belongs to
- * @param {string} heading - The padded line prefix (`Output`, `Script`)
  * @returns {string | undefined} The absolute path, or `undefined` after printing the error
  */
-function resolveInsideRoot(
-  cwd: string,
-  input: string,
-  label: "output" | "plugin",
-  heading: string,
-): string | undefined {
+function resolveInsideRoot(cwd: string, input: string): string | undefined {
   try {
-    return resolveProjectPath(cwd, input, label);
+    return resolveProjectPath(cwd, input, "output");
   } catch (error) {
-    logger.log(`  ${heading}(${padStr(input)}) ❌ Escapes project root`);
+    logger.log(`  Output  (${padStr(input)}) ❌ Escapes project root`);
     logger.log(`    ${errorMessage(error)}`);
     return undefined;
   }
@@ -134,24 +127,6 @@ function checkConfig(configFile: ConfigFile): boolean {
 }
 
 /**
- * Report the generator script, only when one is configured (`plugin`).
- * @param {string} cwd - Project root
- * @param {string | undefined} plugin - The configured script path
- * @returns {boolean} True on an error
- */
-function checkScript(cwd: string, plugin: string | undefined): boolean {
-  if (plugin === undefined) return false;
-  const pluginPath = resolveInsideRoot(cwd, plugin, "plugin", "Script  ");
-  if (pluginPath === undefined) return true;
-  if (fs.existsSync(pluginPath)) {
-    logger.log(`  Script  (${padStr(plugin)}) ✅ Found`);
-    return false;
-  }
-  logger.log(`  Script  (${padStr(plugin)}) ❌ Not found`);
-  return true;
-}
-
-/**
  * Report the generated CSS file.
  * @param {string} cwd - Project root
  * @param {string} output - The configured output path
@@ -161,7 +136,7 @@ function checkOutput(
   cwd: string,
   output: string,
 ): "error" | "missing" | "generated" {
-  const outPath = resolveInsideRoot(cwd, output, "output", "Output  ");
+  const outPath = resolveInsideRoot(cwd, output);
   if (outPath === undefined) return "error";
   if (fs.existsSync(outPath)) {
     logger.log(`  Output  (${padStr(output)}) ✅ Generated`);
@@ -174,8 +149,6 @@ function checkOutput(
 /**
  * Executes the `doctor` CLI command.
  * Checks the setup status and validates the configuration and theme schema.
- * The generator script is checked only when `plugin` is configured: a
- * `styleGenVite`/`styleGenNext` or CLI-only setup has none.
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
  * @returns {number} 1 when any check failed, else 0
  */
@@ -193,12 +166,11 @@ export function doctorCommand(cwd: string = process.cwd()): number {
   const config = resolveConfig({}, configFile);
   // No short-circuit: every check reports, whatever the others found.
   const themeFailed = checkTheme(cwd, config);
-  const scriptFailed = checkScript(cwd, config.plugin);
   const output = checkOutput(cwd, config.output);
 
   logger.log("");
 
-  if (themeFailed || scriptFailed || output === "error") {
+  if (themeFailed || output === "error") {
     logger.log(FIX_HINT);
     return 1;
   }

@@ -295,6 +295,65 @@ const rejectLegacyThemesKey = (raw: unknown, ctx: z.RefinementCtx): unknown => {
 };
 
 /**
+ * Deepest nesting level whose object can hold a token name:
+ * root (0) → `themeAxes` (1) → axis (2) → variant (3) → category (4).
+ * Bounds the walk, so a cyclic object handed to `defineTheme` cannot
+ * overflow the stack before the schema runs.
+ */
+const MAX_KEY_SCAN_DEPTH = 4;
+
+/**
+ * Report every own `__proto__` key of the RAW input at its exact path.
+ *
+ * Zod's `z.record` skips an input key `__proto__` before the key schema
+ * runs (a prototype-pollution guard), so a `__proto__` colour, axis,
+ * variant or override key would be dropped with no error, while `a_b` is
+ * rejected. Only a parsed JSON document can carry it as an own key: the
+ * literal `{ __proto__: x }` sets the prototype instead and has no key to
+ * lose. Detecting it needs the raw input, so this runs in the same
+ * `z.preprocess` step as {@link rejectLegacyThemesKey} and shares its side
+ * effect: the issue suppresses every other one until the key is removed.
+ * @param {unknown} node - Raw value at `path`
+ * @param {(string | number)[]} path - Path of `node` from the theme root
+ * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
+ * @param {number} [depth] - Nesting level of `node`; the walk stops past {@link MAX_KEY_SCAN_DEPTH}
+ * @returns {void}
+ */
+const rejectProtoKeys = (
+  node: unknown,
+  path: (string | number)[],
+  ctx: z.RefinementCtx,
+  depth = 0,
+): void => {
+  if (node === null || typeof node !== "object" || depth > MAX_KEY_SCAN_DEPTH) {
+    return;
+  }
+  if (Object.hasOwn(node, "__proto__")) {
+    ctx.addIssue({
+      code: "custom",
+      path: [...path, "__proto__"],
+      message: '"__proto__" is not a valid token name',
+    });
+  }
+  for (const [key, child] of Object.entries(node)) {
+    rejectProtoKeys(child, [...path, key], ctx, depth + 1);
+  }
+};
+
+/**
+ * The `z.preprocess` step of {@link ThemeSchema}: every check that needs the
+ * RAW input, before Zod's own parsing drops or rewrites it.
+ * @param {unknown} raw - Raw (pre-Zod) input
+ * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
+ * @returns {unknown} `raw`, unchanged
+ */
+const checkRawTheme = (raw: unknown, ctx: z.RefinementCtx): unknown => {
+  rejectLegacyThemesKey(raw, ctx);
+  rejectProtoKeys(raw, [], ctx);
+  return raw;
+};
+
+/**
  * Theme configuration — the single source of truth for both JSON and
  * TypeScript theme authoring. `z.strictObject` at every level rejects
  * unknown/typo'd keys (e.g. `colours`, or a stray metadata field) instead
@@ -345,16 +404,14 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
 });
 
 /**
- * Wraps {@link ThemeSchemaShape} in `z.preprocess` ({@link rejectLegacyThemesKey})
- * so a theme still using the removed `themes` key gets a rename hint
- * instead of a generic unrecognized-key error — see that function's doc
- * for why the rename issue also suppresses every other issue on the same
- * input while `themes` is present.
+ * Wraps {@link ThemeSchemaShape} in `z.preprocess` ({@link checkRawTheme}):
+ * a theme still using the removed `themes` key gets a rename hint instead of
+ * a generic unrecognized-key error, and a `__proto__` key gets an error
+ * instead of vanishing — see {@link rejectLegacyThemesKey} and
+ * {@link rejectProtoKeys} for why either issue also suppresses every other
+ * issue on the same input while it is present.
  */
-export const ThemeSchema = z.preprocess(
-  rejectLegacyThemesKey,
-  ThemeSchemaShape,
-);
+export const ThemeSchema = z.preprocess(checkRawTheme, ThemeSchemaShape);
 
 /**
  * Validate `config` against `ThemeSchema` and hand it back typed as the

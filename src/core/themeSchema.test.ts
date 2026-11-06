@@ -193,6 +193,82 @@ describe("ThemeSchema — invalid themes", () => {
     });
   });
 
+  describe("`__proto__` token keys", () => {
+    // Zod's `z.record` skips an input key `__proto__` before the key schema
+    // runs, so without a raw scan the token would vanish with no error. An
+    // object literal `{ __proto__: x }` sets the prototype instead of an own
+    // key: only a parsed JSON document can carry it, hence `JSON.parse`.
+    const parse = (json: string): unknown => {
+      const value: unknown = JSON.parse(json);
+      return value;
+    };
+
+    it.each([
+      [
+        "a color",
+        "colors.__proto__",
+        '{"colors":{"primary":"#fff","__proto__":"#000"}}',
+      ],
+      [
+        "a shadow",
+        "shadows.__proto__",
+        '{"colors":{"primary":"#fff"},"shadows":{"__proto__":"0 1px #000"}}',
+      ],
+      [
+        "a typography key",
+        "typography.__proto__",
+        '{"colors":{"primary":"#fff"},"typography":{"__proto__":{"fontSize":"1px"}}}',
+      ],
+      [
+        "a themeAxes axis name",
+        "themeAxes.__proto__",
+        '{"colors":{"primary":"#fff"},"themeAxes":{"__proto__":{"dark":{"colors":{"primary":"#000"}}}}}',
+      ],
+      [
+        "a themeAxes variant name",
+        "themeAxes.theme.__proto__",
+        '{"colors":{"primary":"#fff"},"themeAxes":{"theme":{"__proto__":{"colors":{"primary":"#000"}}}}}',
+      ],
+      [
+        "an override key",
+        "themeAxes.theme.dark.colors.__proto__",
+        '{"colors":{"primary":"#fff"},"themeAxes":{"theme":{"dark":{"colors":{"__proto__":"#000"}}}}}',
+      ],
+      [
+        "the theme root",
+        "__proto__",
+        '{"colors":{"primary":"#fff"},"__proto__":{}}',
+      ],
+    ])("rejects it in %s at its own path", (_label, path, json) => {
+      const result = ThemeSchema.safeParse(parse(json));
+      if (result.success) throw new Error("expected failure");
+      const issues = result.error.issues.filter(
+        (issue) => issue.path.join(".") === path,
+      );
+      expect(issues).toHaveLength(1);
+      expect(issues[0]?.message).toBe('"__proto__" is not a valid token name');
+      expect(result.error.issues).toHaveLength(1);
+    });
+
+    it("does not touch Object.prototype while rejecting", () => {
+      const result = ThemeSchema.safeParse(
+        parse('{"colors":{"primary":"#fff","__proto__":{"polluted":"x"}}}'),
+      );
+      expect(result.success).toBe(false);
+      expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    });
+
+    it.each(["constructor", "prototype", "toString"])(
+      "still accepts %j as an ordinary token key",
+      (key) => {
+        expect(
+          ThemeSchema.safeParse({ colors: { primary: "#fff", [key]: "#000" } })
+            .success,
+        ).toBe(true);
+      },
+    );
+  });
+
   describe("leading-uppercase keys (review M3, D2)", () => {
     it.each([
       ["CTA", "cta"],

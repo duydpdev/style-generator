@@ -141,6 +141,26 @@ describe("integration: check-doc-snippets", { timeout: 60_000 }, () => {
     expect(result.output).toContain("1 checked");
   });
 
+  it("resolves `next` to a stub and still rejects other uninstalled modules", () => {
+    writeTmpFile(
+      t.dir,
+      "README.md",
+      `# T\n\n${fenced('import type { NextConfig } from "next";', "export const c: NextConfig = {};")}`,
+    );
+    const stubbed = run("check-doc-snippets", t.dir);
+    expect(stubbed.status).toBe(0);
+    expect(stubbed.output).toContain("1 checked");
+
+    writeTmpFile(
+      t.dir,
+      "README.md",
+      `# T\n\n${fenced('import type { Other } from "not-installed";', "export type O = Other;")}`,
+    );
+    const missing = run("check-doc-snippets", t.dir);
+    expect(missing.status).toBe(1);
+    expect(missing.output).toContain("TS2307");
+  });
+
   it("reports a type error at its markdown line", () => {
     writeTmpFile(
       t.dir,

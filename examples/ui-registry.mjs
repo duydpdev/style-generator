@@ -1,7 +1,7 @@
 /**
- * The sample components the example apps render (react-v4 and nuxt-v4)
+ * The sample components the example apps render (react-v4)
  * and the lowercase tags app code must not use instead. eslint.config.js
- * builds its JSX and Vue selectors from these lists.
+ * builds its JSX selectors from these lists.
  */
 export const UI_COMPONENTS = Object.freeze([
   {

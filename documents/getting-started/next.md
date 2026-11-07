@@ -1,6 +1,6 @@
 # Getting started: Next.js
 
-This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopack) and builds a landing page from copy-paste components. Every code block below is copied from [`examples/next-v4`](../../examples/next-v4/README.md), which is built and type-checked in CI.
+This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopack) and builds a landing page from copy-paste components. The theme, `Button` style, `Button` component and theme switch are embedded from [`examples/plain-react`](../../examples/plain-react/README.md), whose copies are identical; the Next.js specific file (the config) is shown as a standalone snippet, and there is no runnable Next.js example folder.
 
 ## Install
 
@@ -12,9 +12,9 @@ yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind
 
 ## Own the theme
 
-The theme JSON is [`src/theme/theme.json`](../../examples/next-v4/src/theme/theme.json) (not embedded here). `src/theme.ts` turns it into typed tokens and the `cn` helper, using the `options` literal of `src/options.ts`. That module imports no JSON, so `next.config.ts` can import it without reloading the config on every theme edit:
+The theme JSON is `src/theme/theme.json` (not shown here). `src/theme.ts` turns it into typed tokens and the `cn` helper, using the `options` literal of `src/options.ts`. That module imports no JSON, so `next.config.ts` can import it without reloading the config on every theme edit:
 
-<!-- embed: examples/next-v4/src/theme.ts -->
+<!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
@@ -37,7 +37,7 @@ export const cn = createCn(tokens);
 
 `styleGenNext` writes `src/theme/theme.css` when `next dev` or `next build` loads the config; a theme inside the app needs no `transpilePackages`.
 
-<!-- embed: examples/next-v4/next.config.ts#next-config -->
+<!-- snippet: no-check imports ./src/options, the tutorial's own options module, which is not a checker fixture -->
 
 ```ts
 import type { NextConfig } from "next";
@@ -65,8 +65,6 @@ export default styleGenNext({
 
 Import the generated file next to Tailwind. No `@source` line is needed: Tailwind scans `src/`, and `theme.css` lists every token utility in `@source inline(...)`.
 
-<!-- embed: examples/next-v4/src/app/globals.css#css-entry -->
-
 ```css
 @import "tailwindcss";
 @import "../theme/theme.css";
@@ -76,7 +74,7 @@ Import the generated file next to Tailwind. No `@source` line is needed: Tailwin
 
 Components use one folder per component. `style.ts` holds the style tables, and `Button.tsx` has no `'use client'` because it uses no hook, allowing it to render in server components:
 
-<!-- embed: examples/next-v4/src/ui/button/style.ts -->
+<!-- embed: examples/plain-react/src/ui/button/style.ts -->
 
 ```ts
 import {
@@ -208,7 +206,7 @@ export const buttonTables = {
 export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
 ```
 
-<!-- embed: examples/next-v4/src/ui/button/Button.tsx -->
+<!-- embed: examples/plain-react/src/ui/button/Button.tsx -->
 
 ```tsx
 import { mergeStyle, splitSpacing } from "@duydpdev/style-generator/ui";
@@ -257,26 +255,15 @@ export function Button<T extends ElementType = "button">({
 
 ## Compose the page
 
-<!-- embed: examples/next-v4/src/app/page.tsx -->
-
-```tsx
-import { App } from "../App";
-
-/** The landing page. A server component: only `ThemeSwitch` is a client component. */
-export default function Page() {
-  return <App />;
-}
-```
+`src/app/page.tsx` is a server component that returns `<App />` from `src/App.tsx` (the same file as [`examples/plain-react/src/App.tsx`](../../examples/plain-react/src/App.tsx)); only `ThemeSwitch` is a client component.
 
 ## Switch to dark
 
-`themeAxisAttributes` from `@duydpdev/style-generator/recipes` manages the `data-*` attributes on `<html>`. A client component applies the attributes after hydration:
+`themeAxisAttributes` from `@duydpdev/style-generator/recipes` manages the `data-*` attributes on `<html>`. A client component applies the attributes after hydration. In Next.js the file starts with `"use client";`; the rest is `examples/plain-react/src/ThemeSwitch.tsx` unchanged:
 
-<!-- embed: examples/next-v4/src/ThemeSwitch.tsx -->
+<!-- embed: examples/plain-react/src/ThemeSwitch.tsx -->
 
 ```tsx
-"use client";
-
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";

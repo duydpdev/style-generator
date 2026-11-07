@@ -1,8 +1,8 @@
-<!-- source: documents/getting-started/next.md sha256: 262845ac02ab -->
+<!-- source: documents/getting-started/next.md sha256: 9fe516aeb825 -->
 
 # Bắt đầu: Next.js
 
-Hướng dẫn này nối `@duydpdev/style-generator` vào Next.js (webpack hoặc Turbopack) và dựng một landing page từ các component chép dùng được. Mọi khối mã bên dưới đều được chép từ [`examples/next-v4`](../../../examples/next-v4/README.md), thư mục này được build và kiểm tra kiểu trong CI.
+Hướng dẫn này nối `@duydpdev/style-generator` vào Next.js (webpack hoặc Turbopack) và dựng một landing page từ các component chép dùng được. Theme, style của `Button`, component `Button` và theme switch được nhúng từ [`examples/plain-react`](../../../examples/plain-react/README.md), nơi các bản sao giống hệt nhau; file riêng của Next.js (config) được hiển thị dưới dạng một đoạn mã độc lập, và không có thư mục ví dụ Next.js chạy được.
 
 ## Cài đặt
 
@@ -14,9 +14,9 @@ yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind
 
 ## Tự quản lý theme
 
-File theme JSON là [`src/theme/theme.json`](../../../examples/next-v4/src/theme/theme.json) (không được nhúng ở đây). `src/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `src/options.ts`. Module đó không import JSON, nên `next.config.ts` import nó mà không nạp lại config ở mỗi lần sửa theme:
+File theme JSON là `src/theme/theme.json` (không được hiển thị ở đây). `src/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `src/options.ts`. Module đó không import JSON, nên `next.config.ts` import nó mà không nạp lại config ở mỗi lần sửa theme:
 
-<!-- embed: examples/next-v4/src/theme.ts -->
+<!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
@@ -39,7 +39,7 @@ export const cn = createCn(tokens);
 
 `styleGenNext` ghi `src/theme/theme.css` khi `next dev` hoặc `next build` nạp config; một theme nằm trong ứng dụng thì không cần `transpilePackages`.
 
-<!-- embed: examples/next-v4/next.config.ts#next-config -->
+<!-- snippet: no-check imports ./src/options, the tutorial's own options module, which is not a checker fixture -->
 
 ```ts
 import type { NextConfig } from "next";
@@ -67,8 +67,6 @@ export default styleGenNext({
 
 Import file đã sinh cạnh Tailwind. Không cần dòng `@source`: Tailwind quét `src/`, và `theme.css` liệt kê mọi utility của token trong `@source inline(...)`.
 
-<!-- embed: examples/next-v4/src/app/globals.css#css-entry -->
-
 ```css
 @import "tailwindcss";
 @import "../theme/theme.css";
@@ -78,7 +76,7 @@ Import file đã sinh cạnh Tailwind. Không cần dòng `@source`: Tailwind qu
 
 Mỗi component có một thư mục riêng. `style.ts` chứa các bảng style, còn `Button.tsx` không có `'use client'` vì không dùng hook, nên có thể render trong server component:
 
-<!-- embed: examples/next-v4/src/ui/button/style.ts -->
+<!-- embed: examples/plain-react/src/ui/button/style.ts -->
 
 ```ts
 import {
@@ -210,7 +208,7 @@ export const buttonTables = {
 export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
 ```
 
-<!-- embed: examples/next-v4/src/ui/button/Button.tsx -->
+<!-- embed: examples/plain-react/src/ui/button/Button.tsx -->
 
 ```tsx
 import { mergeStyle, splitSpacing } from "@duydpdev/style-generator/ui";
@@ -259,26 +257,15 @@ export function Button<T extends ElementType = "button">({
 
 ## Ghép trang
 
-<!-- embed: examples/next-v4/src/app/page.tsx -->
-
-```tsx
-import { App } from "../App";
-
-/** The landing page. A server component: only `ThemeSwitch` is a client component. */
-export default function Page() {
-  return <App />;
-}
-```
+`src/app/page.tsx` là một server component trả về `<App />` từ `src/App.tsx` (cùng file với [`examples/plain-react/src/App.tsx`](../../../examples/plain-react/src/App.tsx)); chỉ `ThemeSwitch` là client component.
 
 ## Chuyển sang dark
 
-`themeAxisAttributes` từ `@duydpdev/style-generator/recipes` quản lý các attribute `data-*` trên `<html>`. Một client component áp các attribute sau khi hydrate:
+`themeAxisAttributes` từ `@duydpdev/style-generator/recipes` quản lý các attribute `data-*` trên `<html>`. Một client component áp các attribute sau khi hydrate. Trong Next.js file bắt đầu bằng `"use client";`; phần còn lại là `examples/plain-react/src/ThemeSwitch.tsx` giữ nguyên:
 
-<!-- embed: examples/next-v4/src/ThemeSwitch.tsx -->
+<!-- embed: examples/plain-react/src/ThemeSwitch.tsx -->
 
 ```tsx
-"use client";
-
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";

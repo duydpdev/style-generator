@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 08a64bb045a0 -->
+<!-- source: documents/components.md sha256: dc922d7882d4 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -8,7 +8,7 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 
 ### Nơi chứa các ví dụ
 
-`examples/plain-react` (Vite + React, Storybook, gate đối sánh), `examples/next-v4` (Next.js App Router, Storybook), `examples/plain-nuxt` (Nuxt 4, Storybook). Cả ba đều render cùng một landing page từ mười component giống nhau, và mỗi thư mục component có một story (hãy thêm một story với mỗi component mới, trong mọi ứng dụng plain).
+`examples/plain-react` (Vite + React, Storybook, gate đối sánh) và `examples/plain-nuxt` (Nuxt 4, Storybook). Cả hai đều render cùng một landing page từ mười component giống nhau, và mỗi thư mục component có một story (hãy thêm một story với mỗi component mới, trong cả hai ứng dụng plain).
 
 ### Mỗi component một thư mục
 
@@ -18,20 +18,20 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 <app>/src/theme.ts                # export { theme, tokens, cn }  (Nuxt: app/theme.ts)
 <app>/src/ui/<kebab-name>/        # one folder per component (Nuxt: app/ui/<kebab-name>/)
   style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
-  types.ts                        # exported <Name>OwnProps/<Name>Props (React/Next: may also import "react" + "@duydpdev/style-generator/ui-react")
+  types.ts                        # exported <Name>OwnProps/<Name>Props (React: may also import "react" + "@duydpdev/style-generator/ui-react")
   <Name>.tsx | <Name>.vue         # the component
-  <Name>.stories.tsx              # plain-react, next-v4 (byte-identical); <Name>.stories.ts in plain-nuxt
-  index.ts                        # required in .tsx apps (plain-react, next-v4); absent in plain-nuxt
+  <Name>.stories.tsx              # plain-react; <Name>.stories.ts in plain-nuxt
+  index.ts                        # required in plain-react; absent in plain-nuxt
 <app>/src/sections/*.tsx          # landing sections + page helpers (Section, Container, SectionHead); app code, not scanned by check:plain-ui (Nuxt: app/sections/*.vue)
 ```
 
 - `theme.json` là cấu hình design token thu gọn của theme.
 - `options.ts` giữ literal `options` (ở đây là `coverage.colors.opacities`). File này không import JSON, nên config của bundler (`vite.config.ts`, `next.config.ts`, `nuxt.config.ts`) import nó mà không làm dev server khởi động lại ở mỗi lần sửa theme; `theme.ts` truyền nó cho `createDesignTokens` và `style-gen.config.json` lặp lại nó cho CLI (`check:plain-ui` giữ hai bản bằng nhau).
 - `theme.ts` export `theme`, `tokens`, và `cn` cho ứng dụng.
-- `style.ts` là cùng một file trong cả ba ứng dụng; file này chứa các bảng variant và recipe headless.
-- `types.ts` giống nhau ở React và Next; `types.ts` của Vue khai báo các prop mà trình biên dịch SFC có thể đọc được và mở rộng các prop spacing bằng `/* @vue-ignore */`.
+- `style.ts` là cùng một file trong cả hai ứng dụng; file này chứa các bảng variant và recipe headless.
+- `types.ts` phụ thuộc framework (không được so sánh); `types.ts` của Vue khai báo các prop mà trình biên dịch SFC có thể đọc được và mở rộng các prop spacing bằng `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` render markup của component và áp dụng recipe cùng các utility spacing.
-- `<Name>.stories.tsx` (`<Name>.stories.ts` trong `plain-nuxt`) cô lập component cho Storybook; `next-v4` giữ các bản sao từng byte của story `plain-react` (do `check:plain-ui` thực thi), `plain-nuxt` dùng các bản port Vue viết tay. Chỉ các thư mục component có story: mỗi `.storybook/main.ts` chỉ nạp `ui/**`, nên các section, `App` và `ThemeSwitch` không có story.
+- `<Name>.stories.tsx` (`<Name>.stories.ts` trong `plain-nuxt`) cô lập component cho Storybook; `plain-nuxt` dùng các bản port Vue viết tay của story `plain-react`. Chỉ các thư mục component có story: mỗi `.storybook/main.ts` chỉ nạp `ui/**`, nên các section, `App` và `ThemeSwitch` không có story.
 - `index.ts` re-export component và các kiểu của nó trong các ứng dụng `.tsx` (không có trong `plain-nuxt`).
 - `sections/*.tsx` chứa các section landing của ứng dụng và các helper bố cục.
 
@@ -387,7 +387,7 @@ const root = () => {
 
 ### Thêm một component plain
 
-Thêm thư mục vào `plain-react` với một `<Name>.stories.tsx`, chép thư mục đó cùng story của nó từng byte sang `examples/next-v4/src/ui/` (`check:plain-ui` thất bại khi có khác biệt), chép `style.ts` sang `examples/plain-nuxt/app/ui/<folder>/` và viết `types.ts`, `<Name>.vue` cùng một bản port `<Name>.stories.ts` cho nó; sau đó chạy `yarn check:plain-ui`.
+Thêm thư mục vào `plain-react` với một `<Name>.stories.tsx`, chép `style.ts` sang `examples/plain-nuxt/app/ui/<folder>/` và viết `types.ts`, `<Name>.vue` cùng một bản port `<Name>.stories.ts` cho nó; sau đó chạy `yarn check:plain-ui`.
 
 ### Kiểm tra
 
@@ -432,7 +432,7 @@ export const Stack = createStack(tokens);
 export const Text = createText(tokens, textPreset);
 ```
 
-Trong Vue không có bước bind: mỗi SFC tự import các recipe đã bind của `design-system-example`, và một page sẽ import trực tiếp file mà nó render (`import Button from "~/ui/Button.vue"`).
+Trong Vue (`plain-nuxt`) không có bước bind: mỗi SFC tự import `cn` và `tokens` từ `theme.ts` của ứng dụng và recipe từ `style.ts` của chính nó, và một page sẽ import trực tiếp file mà nó render (`import Button from "~/ui/button/Button.vue"`).
 
 Mọi component đều chấp nhận các prop spacing của theme (`p`, `px`, `mt`, `gapX`, …). Bảng dưới đây liệt kê các prop khác của từng component; các thuộc tính riêng của phần tử được render cũng được truyền qua.
 
@@ -462,7 +462,7 @@ ESLint thực thi hai quy tắc cuối và cấm các thẻ trong bảng trên t
 
 - **`Stack`** là luồng một cột theo chiều dọc: một section trên trang, một form, thân của một card. Giãn cách các phần tử con bằng `gap`, không dùng margin trên từng phần tử con.
 - **`Flex`** là một hàng, hoặc một tập hợp xuống dòng gồm hai phần tử con trở lên. Đừng bao giờ bọc một phần tử con đơn lẻ trong `Flex` chỉ để căn chỉnh hoặc tạo khoảng cách: hãy đặt các prop đó lên chính phần tử con hoặc trên `Stack` cha. Một ngoại lệ: một `Flex` có flex item thứ hai là một pseudo-element CSS (một đường kẻ `::before`/`::after` cạnh một nhãn) được tính là có hai flex item mặc dù markup chỉ hiển thị một phần tử con; các nhãn trong `docs-onpage.tsx`, `docs-sidebar.tsx` và `sidebar-toc.tsx` của trang site hoạt động theo cách này. ESLint không thể báo cáo quy tắc này (khoảng trắng giữa các thẻ JSX được tính là một phần tử con), vì vậy việc review sẽ kiểm tra nó.
-- **`Grid`** luôn có `columns`: một số lượng (`columns={3}`), một track list CSS (`columns="220px 1fr"`), hoặc một record `{ base, md, lg }` cho một trong hai kiểu (`columns={{ base: 1, md: "220px 1fr" }}`). Một `Grid` không có `columns` thực chất là một `Stack` một cột đội lốt. ESLint báo lỗi `<Grid>` không có `columns` trong `examples/react-v4/src` và trong các template của nuxt-v4; trang landing site được miễn trừ, vì các lưới của nó sử dụng CSS template ưu tiên desktop dưới các khối `@media (max-width: …)` mà prop `columns` ưu tiên mobile không thể biểu đạt.
+- **`Grid`** luôn có `columns`: một số lượng (`columns={3}`), một track list CSS (`columns="220px 1fr"`), hoặc một record `{ base, md, lg }` cho một trong hai kiểu (`columns={{ base: 1, md: "220px 1fr" }}`). Một `Grid` không có `columns` thực chất là một `Stack` một cột đội lốt. ESLint báo lỗi `<Grid>` không có `columns` trong `examples/react-v4/src`; trang landing site được miễn trừ, vì các lưới của nó sử dụng CSS template ưu tiên desktop dưới các khối `@media (max-width: …)` mà prop `columns` ưu tiên mobile không thể biểu đạt.
 
 ### `as` đa hình (polymorphic)
 
@@ -473,13 +473,12 @@ Các component bố cục và `Text` chấp nhận `as` để chọn phần tử
 `Text` là ví dụ hoàn chỉnh. Một component mới sẽ tác động đến những vị trí sau; hãy bỏ qua những mục không áp dụng:
 
 1. **Recipe factory** trong `examples/design-system/src/recipes/factories/<name>.ts`, được export từ `factories/index.ts` (subpath `design-system-example/recipes`).
-2. **Recipe đã bind và preset** trong `examples/design-system/src/recipes/<name>.ts`, được export từ `src/index.ts`. SFC của Vue sử dụng recipe đã bind; ứng dụng React bind factory với preset.
+2. **Recipe đã bind và preset** trong `examples/design-system/src/recipes/<name>.ts`, được export từ `src/index.ts`. Ứng dụng React bind factory với preset.
 3. **File component React** `examples/react-v4/src/ui/<Name>.tsx`: các kiểu prop riêng trên `Polymorphic` từ `@duydpdev/style-generator/ui-react`. File này phân tách các prop bằng bộ kit trong `@duydpdev/style-generator/ui`: `splitLayout` (với `BOX_VARIANT_KEYS` và `LAYOUT_SIZE_KEYS` của `src/ui/layout.ts`) cho component bố cục, `splitSpacing` cho bất kỳ component nào khác.
 4. **Export** từ `examples/react-v4/src/ui/index.ts`.
 5. **Bind** trong `examples/react-v4/src/ui.ts`, và trong `site/src/ui.ts` khi trang site render component đó.
-6. **Vue SFC** `examples/nuxt-v4/app/ui/<Name>.vue`.
-7. **Khai báo trong registry** `{ name: "<Name>", tags: [...] }` trong `examples/ui-registry.mjs`, kèm theo danh sách các thẻ chữ thường mà nó thay thế (danh sách rỗng nếu không thay thế thẻ nào); ESLint xây dựng các quy tắc cho React và Vue từ file này.
-8. **Kiểm tra kiểu**: một vài dòng trong `examples/react-v4/tests/ui-types.tsx` và `examples/nuxt-v4/tests/nuxt/ui-props.vue`, bao gồm một dòng `@ts-expect-error` / `@vue-expect-error` cho một token sai.
+6. **Khai báo trong registry** `{ name: "<Name>", tags: [...] }` trong `examples/ui-registry.mjs`, kèm theo danh sách các thẻ chữ thường mà nó thay thế (danh sách rỗng nếu không thay thế thẻ nào); ESLint xây dựng các quy tắc cho React từ file này.
+7. **Kiểm tra kiểu**: một vài dòng trong `examples/react-v4/tests/ui-types.tsx`, bao gồm một dòng `@ts-expect-error` cho một token sai.
 
 Factory không biết giá trị theme nào:
 
@@ -727,51 +726,47 @@ export const createText = <W extends RecipeTokens>(
 };
 ```
 
-SFC của Vue import recipe đã bind từ `design-system-example` và khai báo các prop của mình bằng `defineProps`:
+SFC của Vue trong `plain-nuxt` import `cn` và `tokens` từ `theme.ts` của ứng dụng và recipe từ `style.ts`, và khai báo các prop của mình bằng `defineProps`:
 
-<!-- embed: examples/nuxt-v4/app/ui/Text.vue -->
+<!-- embed: examples/plain-nuxt/app/ui/text/Text.vue -->
 
 ```vue
 <script setup lang="ts">
-import {
-  cn,
-  splitSpacingProps,
-  textPreset,
-  textRecipe,
-  tokens,
-} from "design-system-example";
-import type { BoxSpacingProps, TextStyleProps } from "design-system-example";
+import { splitSpacing } from "@duydpdev/style-generator/ui";
 import { useAttrs } from "vue";
 
-/**
- * Text: typography, color, alignment and decoration from the theme. `type`
- * and `color` default to the design-system text preset. Spacing props work
- * as in Box (declared with `@vue-ignore`, read from the attributes).
- */
-export interface TextProps
-  extends /* @vue-ignore */ BoxSpacingProps, TextStyleProps {
-  as?: string;
-}
+import { cn, tokens } from "../../theme";
+
+import { textRecipe } from "./style";
+import type { TextProps } from "./types";
+
+type ClassValue = Parameters<typeof cn>[number];
 
 defineOptions({ inheritAttrs: false });
-const props = withDefaults(defineProps<TextProps>(), {
-  as: "p",
-  type: textPreset.defaultType,
-  color: textPreset.defaultColor,
-});
-defineSlots<{ default?: () => unknown }>();
+const props = withDefaults(defineProps<TextProps>(), { as: "p" });
 const attrs = useAttrs();
 
-// Root attributes: the caller's other attributes, then class and style.
 const root = () => {
-  const { spacing, rest } = splitSpacingProps(
-    attrs as BoxSpacingProps & Record<string, unknown>,
-    tokens.spacingProperties,
-  );
+  const split = splitSpacing(attrs, tokens.spacingProperties);
+  const { class: klass, style, ...rest } = split.rest;
   return {
     ...rest,
-    class: cn(textRecipe(props), spacing.className),
-    ...(spacing.className === "" ? {} : { style: spacing.style }),
+    class: cn(
+      textRecipe({
+        type: props.type,
+        color: props.color,
+        align: props.align,
+        decoration: props.decoration,
+        transform: props.transform,
+        italic: props.italic,
+        truncate: props.truncate,
+        lineClamp: props.lineClamp,
+        wrap: props.wrap,
+      }),
+      split.className,
+      klass as ClassValue,
+    ),
+    style: [split.style, style],
   };
 };
 </script>
@@ -786,9 +781,8 @@ const root = () => {
 Các ví dụ không có test runner. Các bước kiểm tra của chúng diễn ra lúc biên dịch và lúc lint, và tất cả đều đọc thư mục `dist/` đã được build của thư viện, vì vậy hãy chạy `yarn build:all` trước:
 
 - `yarn workspace react-v4-example typecheck` biên dịch `src/ui/*.tsx` và `tests/ui-types.tsx`, trong đó mỗi dòng `@ts-expect-error` bắt buộc phải ứng với một lỗi kiểu thực sự.
-- `yarn workspace nuxt-v4-example typecheck` (`nuxt typecheck`) biên dịch `app/ui/*.vue` và `tests/nuxt/ui-props.vue` theo cách tương tự, với `@vue-expect-error`.
 - `yarn lint` áp dụng các quy tắc của registry (các thẻ bị cấm, không dùng `className`/`style`, `Grid` phải có `columns`).
-- `yarn workspace site build` (lệnh này cũng build `react-v4`) và `yarn workspace nuxt-v4-example build` chứng minh các ứng dụng render thành công.
+- `yarn workspace site build` (lệnh này cũng build `react-v4`) chứng minh ứng dụng render thành công.
 
 ## Recipe không dùng component
 

@@ -6,7 +6,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
 
 ### Where they live
 
-`examples/plain-react` (Vite + React, Storybook, parity gate), `examples/next-v4` (Next.js App Router, Storybook), `examples/plain-nuxt` (Nuxt 4, Storybook). All three render the same landing page from the same ten components, and each component folder carries a story (add one with every new component, in every plain app).
+`examples/plain-react` (Vite + React, Storybook, parity gate) and `examples/plain-nuxt` (Nuxt 4, Storybook). Both render the same landing page from the same ten components, and each component folder carries a story (add one with every new component, in both plain apps).
 
 ### One folder per component
 
@@ -16,21 +16,21 @@ There are two sets. The plain examples are what you copy: one folder per compone
 <app>/src/theme.ts                # export { theme, tokens, cn }  (Nuxt: app/theme.ts)
 <app>/src/ui/<kebab-name>/        # one folder per component (Nuxt: app/ui/<kebab-name>/)
   style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
-  types.ts                        # exported <Name>OwnProps/<Name>Props (React/Next: may also import "react" + "@duydpdev/style-generator/ui-react")
+  types.ts                        # exported <Name>OwnProps/<Name>Props (React: may also import "react" + "@duydpdev/style-generator/ui-react")
   <Name>.tsx | <Name>.vue         # the component
-  <Name>.stories.tsx              # plain-react, next-v4 (byte-identical); <Name>.stories.ts in plain-nuxt
-  index.ts                        # required in .tsx apps (plain-react, next-v4); absent in plain-nuxt
+  <Name>.stories.tsx              # plain-react; <Name>.stories.ts in plain-nuxt
+  index.ts                        # required in plain-react; absent in plain-nuxt
 <app>/src/sections/*.tsx          # landing sections + page helpers (Section, Container, SectionHead); app code, not scanned by check:plain-ui (Nuxt: app/sections/*.vue)
 ```
 
 - `theme.json` is the reduced theme token configuration.
 - `options.ts` holds the literal `options` (here `coverage.colors.opacities`). It imports no JSON, so the bundler config (`vite.config.ts`, `next.config.ts`, `nuxt.config.ts`) can import it without restarting the dev server on every theme edit; `theme.ts` passes it to `createDesignTokens` and `style-gen.config.json` repeats it for the CLI (`check:plain-ui` keeps both equal).
 - `theme.ts` exports `theme`, `tokens`, and `cn` for the application.
-- `style.ts` is the same file in all three apps; it holds the variant tables and the headless recipe.
-- `types.ts` is the same in React and Next; the Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`.
+- `style.ts` is the same file in both apps; it holds the variant tables and the headless recipe.
+- `types.ts` is framework-specific (not compared); the Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` renders the component markup and applies the recipe and spacing utilities.
-- `<Name>.stories.tsx` (`<Name>.stories.ts` in `plain-nuxt`) isolates the component for Storybook; `next-v4` keeps byte copies of the `plain-react` stories (enforced by `check:plain-ui`), `plain-nuxt` hand-written Vue ports. Only component folders have stories: each `.storybook/main.ts` loads `ui/**` only, so sections, `App` and `ThemeSwitch` have none.
-- `index.ts` re-exports the component and its types in `.tsx` apps (absent in `plain-nuxt`).
+- `<Name>.stories.tsx` (`<Name>.stories.ts` in `plain-nuxt`) isolates the component for Storybook; `plain-nuxt` has hand-written Vue ports of the `plain-react` stories. Only component folders have stories: each `.storybook/main.ts` loads `ui/**` only, so sections, `App` and `ThemeSwitch` have none.
+- `index.ts` re-exports the component and its types in `plain-react` (absent in `plain-nuxt`).
 - `sections/*.tsx` contains the application landing sections and layout helpers.
 
 ### The theme module
@@ -385,7 +385,7 @@ const root = () => {
 
 ### Adding a plain component
 
-Add the folder in `plain-react` with a `<Name>.stories.tsx`, copy it with its story byte for byte to `examples/next-v4/src/ui/` (`check:plain-ui` fails on a difference), copy `style.ts` to `examples/plain-nuxt/app/ui/<folder>/` and write its `types.ts`, `<Name>.vue` and a `<Name>.stories.ts` port; then run `yarn check:plain-ui`.
+Add the folder in `plain-react` with a `<Name>.stories.tsx`, copy `style.ts` to `examples/plain-nuxt/app/ui/<folder>/` and write its `types.ts`, `<Name>.vue` and a `<Name>.stories.ts` port; then run `yarn check:plain-ui`.
 
 ### Checks
 
@@ -430,7 +430,7 @@ export const Stack = createStack(tokens);
 export const Text = createText(tokens, textPreset);
 ```
 
-In Vue there is no binding step: each SFC imports the bound recipes of `design-system-example` itself, and a page imports the file it renders explicitly (`import Button from "~/ui/Button.vue"`).
+In Vue (`plain-nuxt`) there is no binding step: each SFC imports `cn` and `tokens` from the app's `theme.ts` and its recipe from its own `style.ts`, and a page imports the file it renders explicitly (`import Button from "~/ui/button/Button.vue"`).
 
 Every component accepts the spacing props of the theme (`p`, `px`, `mt`, `gapX`, …). The table lists the other props of each component; the rendered element's own attributes pass through as well.
 
@@ -460,7 +460,7 @@ ESLint enforces the last two rules and bans the tags of the table above in app f
 
 - **`Stack`** is the vertical, single-column flow: a page section, a form, a card body. Space its children with `gap`, not with a margin on each child.
 - **`Flex`** is a row, or a wrapping set of two or more children. Never wrap a single child in `Flex` to align or space it: put those props on the child itself or on the parent `Stack`. One exception: a `Flex` whose second flex item is a CSS pseudo-element (a `::before`/`::after` rule line next to a label) has two flex items even though its markup shows one child; the site's `docs-onpage.tsx`, `docs-sidebar.tsx` and `sidebar-toc.tsx` labels work this way. ESLint cannot report this rule (whitespace text between JSX tags counts as a child), so review checks it.
-- **`Grid`** always has `columns`: a count (`columns={3}`), a CSS track list (`columns="220px 1fr"`), or a `{ base, md, lg }` record of either (`columns={{ base: 1, md: "220px 1fr" }}`). A `Grid` without `columns` is a single-column `Stack` in disguise. ESLint reports `<Grid>` without `columns` in `examples/react-v4/src` and in the nuxt-v4 templates; the landing site is exempt, because its grids use desktop-first CSS templates under `@media (max-width: …)` that the mobile-first `columns` prop cannot express.
+- **`Grid`** always has `columns`: a count (`columns={3}`), a CSS track list (`columns="220px 1fr"`), or a `{ base, md, lg }` record of either (`columns={{ base: 1, md: "220px 1fr" }}`). A `Grid` without `columns` is a single-column `Stack` in disguise. ESLint reports `<Grid>` without `columns` in `examples/react-v4/src`; the landing site is exempt, because its grids use desktop-first CSS templates under `@media (max-width: …)` that the mobile-first `columns` prop cannot express.
 
 ### Polymorphic `as`
 
@@ -471,13 +471,12 @@ The layout components and `Text` accept `as` to pick the root element, and the o
 `Text` is the worked example. A new component touches these places; skip the ones that do not apply:
 
 1. **Recipe factory** in `examples/design-system/src/recipes/factories/<name>.ts`, exported from `factories/index.ts` (the `design-system-example/recipes` subpath).
-2. **Bound recipe and preset** in `examples/design-system/src/recipes/<name>.ts`, exported from `src/index.ts`. The Vue SFC uses the bound recipe; the React app binds the factory with the preset.
+2. **Bound recipe and preset** in `examples/design-system/src/recipes/<name>.ts`, exported from `src/index.ts`. The React app binds the factory with the preset.
 3. **React component file** `examples/react-v4/src/ui/<Name>.tsx`: its own prop types over `Polymorphic` from `@duydpdev/style-generator/ui-react`. It splits its props with the kit in `@duydpdev/style-generator/ui`: `splitLayout` (with `BOX_VARIANT_KEYS` and the `LAYOUT_SIZE_KEYS` of `src/ui/layout.ts`) for a layout component, `splitSpacing` for any other.
 4. **Export** from `examples/react-v4/src/ui/index.ts`.
 5. **Binding** in `examples/react-v4/src/ui.ts`, and in `site/src/ui.ts` when the site renders it.
-6. **Vue SFC** `examples/nuxt-v4/app/ui/<Name>.vue`.
-7. **Registry entry** `{ name: "<Name>", tags: [...] }` in `examples/ui-registry.mjs`, with the lowercase tags it replaces (an empty list when none); ESLint builds the React and Vue rules from it.
-8. **Type checks**: a few lines in `examples/react-v4/tests/ui-types.tsx` and `examples/nuxt-v4/tests/nuxt/ui-props.vue`, including one `@ts-expect-error` / `@vue-expect-error` for a wrong token.
+6. **Registry entry** `{ name: "<Name>", tags: [...] }` in `examples/ui-registry.mjs`, with the lowercase tags it replaces (an empty list when none); ESLint builds the React rules from it.
+7. **Type checks**: a few lines in `examples/react-v4/tests/ui-types.tsx`, including one `@ts-expect-error` for a wrong token.
 
 The factory knows no theme values:
 
@@ -725,51 +724,47 @@ export const createText = <W extends RecipeTokens>(
 };
 ```
 
-The Vue SFC imports the bound recipe from `design-system-example` and declares its props with `defineProps`:
+The Vue SFC in `plain-nuxt` imports `cn` and `tokens` from the app's `theme.ts` and its recipe from `style.ts`, and declares its props with `defineProps`:
 
-<!-- embed: examples/nuxt-v4/app/ui/Text.vue -->
+<!-- embed: examples/plain-nuxt/app/ui/text/Text.vue -->
 
 ```vue
 <script setup lang="ts">
-import {
-  cn,
-  splitSpacingProps,
-  textPreset,
-  textRecipe,
-  tokens,
-} from "design-system-example";
-import type { BoxSpacingProps, TextStyleProps } from "design-system-example";
+import { splitSpacing } from "@duydpdev/style-generator/ui";
 import { useAttrs } from "vue";
 
-/**
- * Text: typography, color, alignment and decoration from the theme. `type`
- * and `color` default to the design-system text preset. Spacing props work
- * as in Box (declared with `@vue-ignore`, read from the attributes).
- */
-export interface TextProps
-  extends /* @vue-ignore */ BoxSpacingProps, TextStyleProps {
-  as?: string;
-}
+import { cn, tokens } from "../../theme";
+
+import { textRecipe } from "./style";
+import type { TextProps } from "./types";
+
+type ClassValue = Parameters<typeof cn>[number];
 
 defineOptions({ inheritAttrs: false });
-const props = withDefaults(defineProps<TextProps>(), {
-  as: "p",
-  type: textPreset.defaultType,
-  color: textPreset.defaultColor,
-});
-defineSlots<{ default?: () => unknown }>();
+const props = withDefaults(defineProps<TextProps>(), { as: "p" });
 const attrs = useAttrs();
 
-// Root attributes: the caller's other attributes, then class and style.
 const root = () => {
-  const { spacing, rest } = splitSpacingProps(
-    attrs as BoxSpacingProps & Record<string, unknown>,
-    tokens.spacingProperties,
-  );
+  const split = splitSpacing(attrs, tokens.spacingProperties);
+  const { class: klass, style, ...rest } = split.rest;
   return {
     ...rest,
-    class: cn(textRecipe(props), spacing.className),
-    ...(spacing.className === "" ? {} : { style: spacing.style }),
+    class: cn(
+      textRecipe({
+        type: props.type,
+        color: props.color,
+        align: props.align,
+        decoration: props.decoration,
+        transform: props.transform,
+        italic: props.italic,
+        truncate: props.truncate,
+        lineClamp: props.lineClamp,
+        wrap: props.wrap,
+      }),
+      split.className,
+      klass as ClassValue,
+    ),
+    style: [split.style, style],
   };
 };
 </script>
@@ -784,9 +779,8 @@ const root = () => {
 The examples have no test runner. Their checks are compile-time and lint-time, and all of them read the library's built `dist/`, so run `yarn build:all` first:
 
 - `yarn workspace react-v4-example typecheck` compiles `src/ui/*.tsx` and `tests/ui-types.tsx`, whose `@ts-expect-error` lines must each be consumed by a real type error.
-- `yarn workspace nuxt-v4-example typecheck` (`nuxt typecheck`) compiles `app/ui/*.vue` and `tests/nuxt/ui-props.vue` the same way, with `@vue-expect-error`.
 - `yarn lint` applies the registry rules (banned tags, no `className`/`style`, `Grid` needs `columns`).
-- `yarn workspace site build` (which builds `react-v4`) and `yarn workspace nuxt-v4-example build` prove the apps render.
+- `yarn workspace site build` (which builds `react-v4`) proves the app renders.
 
 ## Recipes without components
 

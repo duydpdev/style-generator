@@ -2,7 +2,7 @@
 // every task below sees exactly the staged snapshot. String tasks get the
 // staged file paths appended; never call a `yarn` script that already
 // targets `.` here. Script files also get `prettier --write` because ESLint
-// ignores some paths (`*.cjs`, `examples/nuxt-v4/**`, …) that CI's
+// ignores some paths (`*.cjs`, …) that CI's
 // `prettier:check` still covers.
 //
 // Function tasks choose their own arguments: `tsc` type-checks the whole

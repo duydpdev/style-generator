@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: 09965ce5ce84 -->
+<!-- source: documents/guide.md sha256: c858dee31ae6 -->
 
 # Hướng dẫn sử dụng
 
@@ -209,7 +209,7 @@ export default defineNuxtConfig({
 });
 ```
 
-Các ví dụ hoàn chỉnh: `examples/react-v4` (Vite + React) và `examples/nuxt-v4` (Nuxt 4) dùng chung theme và các tùy chọn từ `examples/design-system`; xem [`examples/design-system/README.md`](../../examples/design-system/README.md). Các ứng dụng plain `examples/plain-react`, `examples/next-v4` (Next 16) và `examples/plain-nuxt` mỗi ứng dụng sở hữu theme riêng; xem [Component](./components.md#ví-dụ-plain-chép-dùng).
+Ví dụ hoàn chỉnh: `examples/react-v4` (Vite + React) dùng theme và các tùy chọn từ `examples/design-system`; xem [`examples/design-system/README.md`](../../examples/design-system/README.md). Các ứng dụng plain `examples/plain-react` và `examples/plain-nuxt` mỗi ứng dụng sở hữu theme riêng; xem [Component](./components.md#ví-dụ-plain-chép-dùng).
 
 **Không đối số:** `styleGenVite()` đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) tại root của Vite — `theme`, `output` (file CSS cần ghi) và mọi tùy chọn của `generate()` — nhờ đó CLI và bundler dùng chung một nguồn cấu hình duy nhất. Một config bị hỏng hoặc không qua được schema sẽ ném `[style-gen-vite] Invalid config (<file>):` kèm từng dòng lỗi, và không bao giờ âm thầm quay về giá trị mặc định. Khi truyền đối số, file config không được đọc. File config chỉ được đọc **một lần**, khi bundler nạp config của nó (xem ở trên).
 
@@ -230,7 +230,7 @@ export default styleGenNext({
 })(nextConfig);
 ```
 
-Chạy được với cả webpack lẫn Turbopack, và không import `next`, nên không thêm peer dependency nào. Nó chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả về config mà không đọc theme. `nextConfig` có thể là một object hoặc một hàm `(phase, { defaultConfig }) => config` (được gọi với các đối số của chính Next). `styleGenNext()` không đối số đọc `style-gen.config.json` từ `process.cwd()` giống như Vite, và cũng chỉ **một lần** khi Next nạp config (sau khi sửa file config, hãy khởi động lại `next dev`). Watcher của `next dev` không chết khi theme tạm thời không hợp lệ (lỗi được ghi log và `theme.css` cũ được giữ lại) và được thay thế khi config nạp lại với theme/output khác. `themePath` có thể là đường dẫn tuyệt đối hoặc nằm ngoài dự án, trong khi `outDir` phải nằm trong dự án; một dấu `/` ở đầu không còn bị viết lại thành đường dẫn tương đối. Hạn chế: bước kiểm tra đường dẫn không `realpath` các symlink. Khi theme và các tùy chọn nằm trong một workspace package (như `examples/design-system`), hãy thêm package đó vào `transpilePackages` của Next; `examples/next-v4` giữ theme trong `src/theme/` và không cần làm vậy.
+Chạy được với cả webpack lẫn Turbopack, và không import `next`, nên không thêm peer dependency nào. Nó chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server` (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả về config mà không đọc theme. `nextConfig` có thể là một object hoặc một hàm `(phase, { defaultConfig }) => config` (được gọi với các đối số của chính Next). `styleGenNext()` không đối số đọc `style-gen.config.json` từ `process.cwd()` giống như Vite, và cũng chỉ **một lần** khi Next nạp config (sau khi sửa file config, hãy khởi động lại `next dev`). Watcher của `next dev` không chết khi theme tạm thời không hợp lệ (lỗi được ghi log và `theme.css` cũ được giữ lại) và được thay thế khi config nạp lại với theme/output khác. `themePath` có thể là đường dẫn tuyệt đối hoặc nằm ngoài dự án, trong khi `outDir` phải nằm trong dự án; một dấu `/` ở đầu không còn bị viết lại thành đường dẫn tương đối. Hạn chế: bước kiểm tra đường dẫn không `realpath` các symlink. Khi theme và các tùy chọn nằm trong một workspace package (như `examples/design-system`), hãy thêm package đó vào `transpilePackages` của Next.
 
 ### Cách 3: CLI
 
@@ -500,7 +500,7 @@ const Box = ({
 
 ## Xây dựng component
 
-Phần này đi từ theme đến component, theo thứ tự các file trong `examples/design-system` (một workspace package dùng chung cho các ứng dụng harness (bộ ví dụ dùng để kiểm thử DX) `react-v4` và `nuxt-v4`; chi tiết trong [`examples/design-system/README.md`](../../examples/design-system/README.md)). Mỗi bước chỉ import từ các subpath an toàn trên trình duyệt (`./tokens`, `./cva`, `./recipes`, `./types`), không bao giờ kéo Zod hay Node vào client bundle.
+Phần này đi từ theme đến component, theo thứ tự các file trong `examples/design-system` (một workspace package được ứng dụng harness (bộ ví dụ dùng để kiểm thử DX) `react-v4` sử dụng; chi tiết trong [`examples/design-system/README.md`](../../examples/design-system/README.md)). Mỗi bước chỉ import từ các subpath an toàn trên trình duyệt (`./tokens`, `./cva`, `./recipes`, `./types`), không bao giờ kéo Zod hay Node vào client bundle.
 
 ```text
 src/theme.json         → theme (source of truth)

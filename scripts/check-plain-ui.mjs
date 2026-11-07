@@ -74,13 +74,6 @@ export const APPS = [
     opacities: true,
   },
   {
-    name: "next-v4",
-    uiDir: "examples/next-v4/src/ui",
-    component: ".tsx",
-    stories: ".stories.tsx",
-    opacities: true,
-  },
-  {
     name: "plain-nuxt",
     uiDir: "examples/plain-nuxt/app/ui",
     component: ".vue",
@@ -90,37 +83,31 @@ export const APPS = [
 ];
 
 /**
- * The two React apps keep one story file per component byte-identical
- * (next-v4 runs them under `@storybook/nextjs-vite`);
- * plain-nuxt ports them to Vue by hand, so its stories are not compared.
+ * `style.ts`, `theme.ts`, `options.ts` and `theme/theme.json` are byte-identical in
+ * both apps; the component, `types.ts` and the stories are framework-specific
+ * (plain-nuxt writes Vue types and `.stories.ts`), so they are not compared.
  * @type {readonly IdenticalRule[]}
  */
 export const IDENTICAL = [
   {
     scope: "folder",
     file: "style.ts",
-    apps: ["plain-react", "next-v4", "plain-nuxt"],
-  },
-  { scope: "folder", file: "types.ts", apps: ["plain-react", "next-v4"] },
-  {
-    scope: "folder",
-    file: "<Name>.stories.tsx",
-    apps: ["plain-react", "next-v4"],
+    apps: ["plain-react", "plain-nuxt"],
   },
   {
     scope: "app",
     file: "theme.ts",
-    apps: ["plain-react", "next-v4", "plain-nuxt"],
+    apps: ["plain-react", "plain-nuxt"],
   },
   {
     scope: "app",
     file: "options.ts",
-    apps: ["plain-react", "next-v4", "plain-nuxt"],
+    apps: ["plain-react", "plain-nuxt"],
   },
   {
     scope: "app",
     file: "theme/theme.json",
-    apps: ["plain-react", "next-v4", "plain-nuxt"],
+    apps: ["plain-react", "plain-nuxt"],
   },
 ];
 

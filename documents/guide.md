@@ -207,7 +207,7 @@ export default defineNuxtConfig({
 });
 ```
 
-Complete examples: `examples/react-v4` (Vite + React) and `examples/nuxt-v4` (Nuxt 4) share the theme and options from `examples/design-system`; see [`examples/design-system/README.md`](../examples/design-system/README.md). The plain apps `examples/plain-react`, `examples/next-v4` (Next 16) and `examples/plain-nuxt` each own their theme; see [Components](./components.md#plain-examples-copy-these).
+Complete example: `examples/react-v4` (Vite + React) shares the theme and options from `examples/design-system`; see [`examples/design-system/README.md`](../examples/design-system/README.md). The plain apps `examples/plain-react` and `examples/plain-nuxt` each own their theme; see [Components](./components.md#plain-examples-copy-these).
 
 **No arguments:** `styleGenVite()` reads `style-gen.config.json` (or `package.json["style-gen"]`) at the Vite root — `theme`, `output` (the CSS file to write) and every `generate()` option — so the CLI and the bundler share a single source of configuration. A broken config or one that fails the schema throws `[style-gen-vite] Invalid config (<file>):` followed by each error line, and never silently falls back to defaults. When arguments are passed the config file is not read. The config file is read **once**, when the bundler loads its config (see above).
 
@@ -228,7 +228,7 @@ export default styleGenNext({
 })(nextConfig);
 ```
 
-Works with both webpack and Turbopack, and does not import `next`, so it adds no peer dependency. It writes `theme.css` only when Next loads the config in `phase-development-server` (`next dev`, with a watcher) or `phase-production-build` (`next build`); other phases (`next start`, export, …) return the config without reading the theme. `nextConfig` can be an object or a function `(phase, { defaultConfig }) => config` (called with Next's own arguments). The no-argument `styleGenNext()` reads `style-gen.config.json` from `process.cwd()` like Vite does, and also only **once** when Next loads the config (after editing the config file, restart `next dev`). The `next dev` watcher does not die when the theme is temporarily invalid (the error is logged and the old `theme.css` is kept) and is replaced when the config reloads with a different theme/output. `themePath` may be absolute or outside the project, while `outDir` must be inside the project; a leading `/` is no longer rewritten into a relative path. Limitation: the path guard does not `realpath` symlinks. When the theme and options live in a workspace package (like `examples/design-system`), add that package to Next's `transpilePackages`; `examples/next-v4` keeps its theme in `src/theme/` and needs none.
+Works with both webpack and Turbopack, and does not import `next`, so it adds no peer dependency. It writes `theme.css` only when Next loads the config in `phase-development-server` (`next dev`, with a watcher) or `phase-production-build` (`next build`); other phases (`next start`, export, …) return the config without reading the theme. `nextConfig` can be an object or a function `(phase, { defaultConfig }) => config` (called with Next's own arguments). The no-argument `styleGenNext()` reads `style-gen.config.json` from `process.cwd()` like Vite does, and also only **once** when Next loads the config (after editing the config file, restart `next dev`). The `next dev` watcher does not die when the theme is temporarily invalid (the error is logged and the old `theme.css` is kept) and is replaced when the config reloads with a different theme/output. `themePath` may be absolute or outside the project, while `outDir` must be inside the project; a leading `/` is no longer rewritten into a relative path. Limitation: the path guard does not `realpath` symlinks. When the theme and options live in a workspace package (like `examples/design-system`), add that package to Next's `transpilePackages`.
 
 ### Option 3: CLI
 
@@ -498,7 +498,7 @@ const Box = ({
 
 ## Build components
 
-This section goes from theme to component, following the order of the files in `examples/design-system` (a workspace package shared by the harness apps `react-v4` and `nuxt-v4`; details in [`examples/design-system/README.md`](../examples/design-system/README.md)). Each step imports only from browser-safe subpaths (`./tokens`, `./cva`, `./recipes`, `./types`), never pulling Zod or Node into the client bundle.
+This section goes from theme to component, following the order of the files in `examples/design-system` (a workspace package used by the harness app `react-v4`; details in [`examples/design-system/README.md`](../examples/design-system/README.md)). Each step imports only from browser-safe subpaths (`./tokens`, `./cva`, `./recipes`, `./types`), never pulling Zod or Node into the client bundle.
 
 ```text
 src/theme.json         → theme (source of truth)

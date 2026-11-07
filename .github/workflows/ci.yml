@@ -63,14 +63,10 @@ jobs:
       - name: Build
         run: yarn build:all
 
-      - name: Prepare nuxt-v4 types
-        # ESLint lints examples/nuxt-v4/app/**, whose tsconfig references
+      - name: Prepare plain-nuxt types
+        # ESLint lints examples/plain-nuxt/app/**, whose tsconfig references
         # .nuxt/tsconfig.*.json. `nuxt prepare` writes them and needs dist/
         # (nuxt.config.ts imports the built library), so it runs after Build.
-        run: yarn workspace nuxt-v4-example prepare:nuxt
-
-      - name: Prepare plain-nuxt types
-        # Same as above for examples/plain-nuxt/app/**.
         run: yarn workspace plain-nuxt-example prepare:nuxt
 
       - name: Lint
@@ -138,15 +134,13 @@ jobs:
       - name: Build examples
         # react-v4 is already built by the site build above.
         run: |
-          yarn workspace next-v4-example build
-          yarn workspace nuxt-v4-example build
           yarn workspace plain-react-example build
           yarn workspace plain-nuxt-example build
           yarn workspace plain-nuxt-example generate
 
       - name: Check plain UI folders
-        # The folder contract, identity rules and package allow-list of the three plain
-        # apps (plain-react, next-v4, plain-nuxt) are enforced by scripts/check-plain-ui.mjs.
+        # The folder contract, identity rules and package allow-list of the two plain
+        # apps (plain-react, plain-nuxt) are enforced by scripts/check-plain-ui.mjs.
         run: yarn check:plain-ui
 
       - name: No data-part attributes
@@ -268,7 +262,7 @@ jobs:
         run: yarn test:e2e
 
   # The Storybooks of the example apps that have no plain-react job of their
-  # own (examples/react-v4, examples/next-v4, examples/plain-nuxt): `storybook
+  # own (examples/react-v4, examples/plain-nuxt): `storybook
   # build` (autodocs) and the stories as Vitest browser tests. Like
   # `plain-react`: no paths filter, no draft skip, dist/ built first because
   # the workspace scripts run `style-gen generate`. Its check names
@@ -284,8 +278,6 @@ jobs:
         include:
           - app: react-v4
             workspace: react-v4-example
-          - app: next-v4
-            workspace: next-v4-example
           - app: plain-nuxt
             workspace: plain-nuxt-example
             prepare: true

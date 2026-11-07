@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: 771e1a0ea30b -->
+<!-- source: documents/reference/recipes.md sha256: a7f06f003352 -->
 
 # Recipe (./recipes)
 
@@ -40,7 +40,7 @@ export const Root = () => (
 );
 ```
 
-Một phiên bản đầy đủ, đã được kiểm thử (`cn`, `axisAttributes`, các headless recipe của sáu component mẫu, CSS dùng chung) nằm trong [`examples/design-system`](../../../examples/design-system/README.md). [Component](../components.md) chỉ ra cách các component mẫu của `examples/react-v4` và `examples/nuxt-v4` bọc các recipe này; [`guide.md`](../guide.md#xây-dựng-component) hướng dẫn từng bước qua quy trình đó. [`createCn`](./ui.md#createcn-cn) trong `./ui` bọc extension này cùng với `clsx`.
+Một phiên bản đầy đủ, đã được kiểm thử (`cn`, `axisAttributes`, các headless recipe của sáu component mẫu, CSS dùng chung) nằm trong [`examples/design-system`](../../../examples/design-system/README.md). [Component](../components.md) chỉ ra cách các component mẫu của `examples/react-v4` bọc các recipe này; [`guide.md`](../guide.md#xây-dựng-component) hướng dẫn từng bước qua quy trình đó. [`createCn`](./ui.md#createcn-cn) trong `./ui` bọc extension này cùng với `clsx`.
 
 ## `createTailwindMergeExtension`, `TailwindMergeExtension`, `TailwindMergeTokens`
 

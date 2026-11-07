@@ -1,6 +1,6 @@
 # design-system-example
 
-The shared design system behind the `react-v4` and `nuxt-v4` harness examples: one theme, one options object, typed tokens, a `cn()` helper, the headless recipes of the six sample components and the shared CSS. The apps keep only their wiring, their demo code and the six sample components in their own `ui/` folder; everything else lives here, so the same `theme.json` drives React and Nuxt.
+The shared design system behind the `react-v4` harness example: one theme, one options object, typed tokens, a `cn()` helper, the headless recipes of the six sample components and the shared CSS. The app keeps only its wiring, its demo code and the six sample components in its own `ui/` folder; everything else lives here.
 
 This is a private Yarn workspace of the repo root (`"design-system-example": "workspace:*"` in the apps). It depends on the library through `"@duydpdev/style-generator": "link:../.."`, so the library must be built first.
 
@@ -12,7 +12,7 @@ yarn install
 yarn build:all   # lib (dist/) + CLI (dist/cli/index.mjs, used by `generate`, `doctor`, `schema` and the DX test)
 ```
 
-**Node >= 22.18 is required to run the examples.** The apps' bundler configs (`vite.config.ts`, `nuxt.config.ts`) import `design-system-example/style-gen.options`, a `.ts` file inside a workspace package, and Node loads it through its built-in type stripping. There are no `postinstall` / `prepare` hooks in any example.
+**Node >= 22.18 is required to run the examples.** The app's bundler config (`vite.config.ts`) imports `design-system-example/style-gen.options`, a `.ts` file inside a workspace package, and Node loads it through its built-in type stripping. There are no `postinstall` / `prepare` hooks in any example.
 
 ## What is in here
 

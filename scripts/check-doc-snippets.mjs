@@ -9,6 +9,9 @@
  *   <!-- snippet: no-check <why> --> opted out; a reason is required and at
  *                                  most 10% of all blocks may opt out
  *
+ * `next` resolves to a stub that declares only `NextConfig`: `styleGenNext`
+ * never imports `next`, and the docs name nothing else from it.
+ *
  * Needs `yarn build:all` first. `--root <dir>` points at another repo tree.
  */
 import {
@@ -42,6 +45,15 @@ function noCheckReason(marker) {
   return marker.slice(NO_CHECK_OPEN.length, -3).trim();
 }
 const FIXTURES = ["theme.json", "style-gen.options.ts", "tokens.ts"];
+
+/**
+ * Modules the docs name but the repo does not install: the stub declares only
+ * the type names the snippets use. Written to `<work dir>/stubs/<name>.d.ts`.
+ * @type {Readonly<Record<string, string>>}
+ */
+const MODULE_STUBS = {
+  next: "export interface NextConfig {\n  [key: string]: unknown;\n}\n",
+};
 const MAX_OPT_OUT_PERCENT = 10;
 
 /**
@@ -89,11 +101,12 @@ function collectBlocks(root, dir, md, counts, written, errors) {
 /**
  * Compiler diagnostics for the written snippet files, mapped back to markdown lines.
  * @param {string} root - Repository root
+ * @param {string} dir - Work dir that holds the module stubs
  * @param {string} scriptRepo - Repo that holds this script and its node_modules
  * @param {Map<string, { md: string, fenceLine: number }>} written - Snippet file → origin
  * @returns {string[]} One printable line per diagnostic
  */
-function compile(root, scriptRepo, written) {
+function compile(root, dir, scriptRepo, written) {
   /** @type {ts.CompilerOptions} */
   const options = {
     target: ts.ScriptTarget.ES2022,
@@ -111,6 +124,12 @@ function compile(root, scriptRepo, written) {
     paths: {
       "@duydpdev/style-generator": [join(root, "dist/index.d.ts")],
       "@duydpdev/style-generator/*": [join(root, "dist/*.d.ts")],
+      ...Object.fromEntries(
+        Object.keys(MODULE_STUBS).map((name) => [
+          name,
+          [join(dir, "stubs", `${name}.d.ts`)],
+        ]),
+      ),
     },
   };
   const program = ts.createProgram([...written.keys()], options);
@@ -153,6 +172,10 @@ function main() {
     const from = join(root, "examples/design-system/src", name);
     if (existsSync(from)) copyFileSync(from, join(dir, name));
   }
+  mkdirSync(join(dir, "stubs"));
+  for (const [name, source] of Object.entries(MODULE_STUBS)) {
+    writeFileSync(join(dir, "stubs", `${name}.d.ts`), source);
+  }
 
   /** @type {Counts} */
   const counts = { checked: 0, embedded: 0, optedOut: 0, signatures: 0 };
@@ -162,7 +185,7 @@ function main() {
   const errors = [];
   for (const md of docMarkdownFiles(root))
     collectBlocks(root, dir, md, counts, written, errors);
-  if (written.size > 0) errors.push(...compile(root, scriptRepo, written));
+  if (written.size > 0) errors.push(...compile(root, dir, scriptRepo, written));
 
   const total = counts.checked + counts.embedded + counts.optedOut;
   const overBudget = counts.optedOut * MAX_OPT_OUT_PERCENT > total;

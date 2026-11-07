@@ -86,7 +86,7 @@ const GRID_COLUMNS_SYNTAX = {
 };
 
 // Recipes, cn and the spacing helpers are for component authors; app code
-// uses the components' props. Shared by the react-v4 and nuxt-v4 example rules.
+// uses the components' props. Shared by the react-v4 example rules.
 const RESTRICTED_UI_IMPORTS = {
   patterns: [
     {
@@ -109,7 +109,6 @@ const RESTRICTED_UI_IMPORTS = {
 // harness packages are not, so a copied folder needs only the package.
 const PLAIN_APP_FILES = [
   "examples/plain-react/src/**/*.{ts,tsx}",
-  "examples/next-v4/src/**/*.{ts,tsx}",
 ];
 
 const PLAIN_RESTRICTED_IMPORTS = {
@@ -278,15 +277,13 @@ export default pluginTs.config(
     },
   },
 
-  // nuxt-v4 and plain-nuxt SFCs: vue-eslint-parser hands <script lang="ts"> to the TS parser.
+  // plain-nuxt SFCs: vue-eslint-parser hands <script lang="ts"> to the TS parser.
   // Type-aware rules stay off for .vue (the project service cannot open SFCs);
   // vue-tsc (`nuxt typecheck`) type-checks them, tests/nuxt/** included.
   // Auto-imports (useHead, useState) are declared in .nuxt/ types, so
   // no-undef is off, as typescript-eslint recommends for TS sources.
   {
     files: [
-      "examples/nuxt-v4/app/**/*.vue",
-      "examples/nuxt-v4/tests/**/*.vue",
       "examples/plain-nuxt/app/**/*.vue",
       "examples/plain-nuxt/tests/**/*.vue",
     ],
@@ -305,88 +302,6 @@ export default pluginTs.config(
       // Spacing props reach the components as attributes, which keep the
       // template's spelling: `:gap-x` would match no prop, `:gapX` does.
       "vue/attribute-hyphenation": ["error", "never"],
-    },
-  },
-  // nuxt-v4 app templates render the app/ui components named in
-  // examples/ui-registry.mjs: no layout/text tags, no class or style, no
-  // Grid without columns. app/ui itself renders the tags.
-  {
-    files: ["examples/nuxt-v4/app/**/*.vue"],
-    ignores: ["examples/nuxt-v4/app/ui/**"],
-    rules: {
-      "vue/no-restricted-html-elements": [
-        "error",
-        {
-          element: BANNED_TAGS,
-          message:
-            'App code renders the app/ui components (import Box from "~/ui/Box.vue"), not raw layout/text tags.',
-        },
-      ],
-      "vue/no-restricted-static-attribute": [
-        "error",
-        {
-          key: "class",
-          value: String.raw`/(^|\s)(?!x-)\S/`,
-          element: "/^[a-z]/",
-          message: "class in app code takes only `x-` classes: use component props.",
-        },
-        {
-          key: "class",
-          value: String.raw`/(^|\s)(?!x-)\S/`,
-          element: `/^(${UI_COMPONENT_NAMES.join("|")})$/`,
-          message: "class on ui components takes only `x-` classes: use their props.",
-        },
-        {
-          key: "data-part",
-          message: "No data-part: use an `x-` class.",
-        },
-        {
-          key: "style",
-          message: "No style in app code: use component props or theme tokens.",
-        },
-      ],
-      "vue/no-restricted-v-bind": [
-        "error",
-        "/^v-/",
-        {
-          argument: "class",
-          element: "/^[a-z]/",
-          message: "No :class in app code: use component props.",
-        },
-        {
-          argument: "class",
-          element: `/^(${UI_COMPONENT_NAMES.join("|")})$/`,
-          message: "No :class on ui components: use their props.",
-        },
-        {
-          argument: "style",
-          message: "No :style in app code: use component props or theme tokens.",
-        },
-        {
-          argument: "data-part",
-          message: "No data-part: use an `x-` class.",
-        },
-      ],
-      "vue/no-restricted-syntax": [
-        "error",
-        {
-          selector:
-            "VElement[rawName='Grid'] > VStartTag:not(:has(VAttribute[key.name='columns'])):not(:has(VAttribute[key.argument.name='columns']))",
-          message: "Grid needs columns; use Stack for a single column.",
-        },
-      ],
-    },
-  },
-  // nuxt-v4 app code (TS + SFC scripts): no recipes, cn, splitSpacingProps,
-  // createVariantMapper; app/ui is where they belong. The .ts files are
-  // type-aware; their tsconfig references .nuxt/tsconfig.*.json, so run
-  // `yarn workspace nuxt-v4-example prepare:nuxt` (after `yarn build:all`)
-  // before linting.
-  {
-    files: ["examples/nuxt-v4/app/**/*.{ts,vue}"],
-    ignores: ["examples/nuxt-v4/app/ui/**"],
-    rules: {
-      "no-restricted-imports": ["error", RESTRICTED_UI_IMPORTS],
     },
   },
   // plain-nuxt app code: copy-paste components, never the harness. The .ts

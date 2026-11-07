@@ -1,21 +1,24 @@
 # ─────────────────────────────────────────────────────
-# CI Matrix — e2e, Tailwind floor, Node floor, peer matrix
+# CI Matrix — heavy tier: Tailwind floor, Node floor, peer matrix, UI-kit floors
 #
-# Split from ci.yml so a workflow-level `paths-ignore` skips the whole run
-# when a PR only changes documents/** (it replaced the old `changes` job,
-# which cost a billed runner minute on every PR just to decide). ci.yml's
-# `check` job still runs on docs-only PRs: the site renders documents/*.md.
-# Every job skips draft PRs; `ready_for_review` runs them when the PR leaves
-# draft.
+# Runs nightly on the default branch, on manual dispatch and on PRs into
+# main / release/** (not on PRs into develop). The per-PR tier (check,
+# plain-react, e2e, storybook, pr-title) lives in ci.yml. A workflow-level
+# `paths-ignore` skips the PR run when a PR only changes documents/**.
+# On PRs, every job skips draft PRs; `ready_for_review` runs them when the
+# PR leaves draft. `schedule` and `workflow_dispatch` runs have no draft.
 # ─────────────────────────────────────────────────────
 name: CI Matrix
 
 on:
   pull_request:
-    branches: [main, develop, "release/**"]
+    branches: [main, "release/**"]
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
       - "documents/**"
+  schedule:
+    - cron: "43 5 * * *"
+  workflow_dispatch:
 
 # Own group: cancelling a stale matrix run never cancels ci.yml's `check`.
 concurrency:
@@ -26,37 +29,6 @@ permissions:
   contents: read
 
 jobs:
-  e2e:
-    name: E2E (Playwright)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: github.event.pull_request.draft == false
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: "yarn"
-          cache-dependency-path: "yarn.lock"
-
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Build
-        run: yarn build:all
-
-      - name: Install Playwright browsers
-        run: yarn playwright install --with-deps chromium webkit
-
-      - name: Run e2e tests
-        run: yarn test:e2e
-
   # The published peer range is `tailwindcss ^4.1.0`, but the lockfile pins
   # 4.3.0, so the floor is otherwise never exercised. This leg re-resolves the
   # Tailwind packages to the latest 4.1.x via `resolutions` (edited in this
@@ -66,7 +38,7 @@ jobs:
     name: Tailwind peer floor (4.1.x)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     steps:
       - name: Checkout
@@ -114,7 +86,7 @@ jobs:
     name: Node engines floor (20.19.0)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     steps:
       - name: Checkout
@@ -150,7 +122,7 @@ jobs:
     name: Peer matrix (${{ matrix.peer }} ${{ matrix.major }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     strategy:
       fail-fast: false
       matrix:
@@ -231,7 +203,7 @@ jobs:
     name: UI-kit peer floors (cva 0.7.0, clsx 1.2.0, tailwind-merge 3.0.0, @types/react 18.0.0)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     env:
       FLOORS: '{"class-variance-authority":"0.7.0","clsx":"1.2.0","tailwind-merge":"3.0.0","@types/react":"18.0.0"}'
       HARNESS_PINS: '{"class-variance-authority/clsx":"2.0.0","@types/scheduler":"0.16.8"}'

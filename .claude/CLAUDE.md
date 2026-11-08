@@ -45,6 +45,7 @@ yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn pret
 yarn tsc --noEmit   # Type check
 yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
+yarn check:next-build   # after build:all, needs network: packed tarball + next@16.4.5 in a scratch project, init + `next build` (Turbopack) through styleGenNext (CI node-floor)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions

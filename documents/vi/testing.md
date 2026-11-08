@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: af7d4eda0a52 -->
+<!-- source: documents/testing.md sha256: 90ea7d399acc -->
 
 # Hướng dẫn kiểm thử
 
@@ -72,6 +72,39 @@ chạy cho các PR không phải draft có đổi `site/**`, `examples/**`, `e2e
 `visual-update` được thêm vào và ghi lại các baseline. Xem [lớp 7](#7-kiểm-thử-hồi-quy-giao-diện-site-playwright-chromium).
 
 ---
+
+## Bảng gate
+
+Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:all`, `lint`, `prettier:check`, `tsc`, `test`, `test:types`, `typecheck:scripts`, `typecheck:dist`,
+`check:externals`, `check:sizes`, `check:browser-safe`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); chuỗi gate của tài liệu nằm trong bảng.
+
+| Lệnh                              | Chặn cái gì                                                                                       | Chạy ở (workflow: bước)                                        | Cần sau khi đổi                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------- |
+| `yarn lint`                       | lỗi và cảnh báo ESLint (không cho phép cảnh báo nào), directive disable thừa                      | `check`: Lint                                                  | mọi thay đổi                                    |
+| `yarn prettier:check`             | file chưa được định dạng                                                                          | `check`: Prettier check                                        | mọi thay đổi                                    |
+| `yarn tsc --noEmit`               | lỗi kiểu trong `src/**`, test và config                                                           | `check`: Type Check                                            | mọi thay đổi                                    |
+| `yarn test`                       | test đơn vị và tích hợp thất bại                                                                  | `check`: Test (`test:coverage`, có ngưỡng)                     | mọi thay đổi                                    |
+| `yarn test:types`                 | test kiểu `*.test-d.ts` thất bại                                                                  | `check`: Type tests                                            | kiểu trong `src/**`                             |
+| `yarn test:e2e`                   | spacing, CSS được sinh, `@source inline` và `themeAxes` trong một trình duyệt thật                | `e2e`: Run e2e tests                                           | `src/**`, CSS được sinh                         |
+| `yarn test:visual`                | pixel của site đã build thay đổi (sau `yarn site:build`)                                          | `visual.yml`: Compare with the committed baselines             | `site`, `documents/**`                          |
+| `yarn typecheck:scripts`          | lỗi kiểu trong `scripts/*.mjs` và `site/scripts/*.mjs`                                            | `check`: Script syntax and type check                          | `scripts/*.mjs`                                 |
+| `yarn typecheck:dist`             | `dist/*.d.ts` (ESM) và `dist/*.d.cts` (CJS) không qua được kiểm tra kiểu khi bật library checking | `check`; `peer-matrix`; `ui-peer-floor`                        | `src/**`, config build                          |
+| `yarn check:externals`            | một module bên thứ ba bị inline vào `dist`, hoặc một UI peer bị chạm tới ngoài `./ui`             | `check`: Check externals; `deploy.yml`                         | `src/**`, config build                          |
+| `yarn check:sizes`                | một subpath hoặc CLI vượt ngân sách gzip                                                          | `check`: Check size budgets                                    | `src/**`, config build                          |
+| `yarn check:browser-safe`         | một subpath trình duyệt chạm tới Zod, một builtin của Node hoặc một runtime dependency            | `check`: Check browser-safe subpaths; `deploy.yml`             | `src/**`, config build                          |
+| `yarn check:publish-target`       | registry publish khác GitHub Packages                                                             | `deploy.yml`: Verify publish target; `prepublish`              | `package.json`, `.yarnrc.yml`                   |
+| `yarn check:smoke`                | thiếu file `dist`, một subpath không nạp được bằng `import` hoặc `require`, CLI hỏng              | `check`: Smoke-run built artifacts; `node-floor`; `deploy.yml` | `src/**`, config build                          |
+| `yarn check:types-pack`           | một subpath có kiểu không resolve được cho người dùng ESM và CJS (attw, node16)                   | `check`: Check types resolve for ESM and CJS; `deploy.yml`     | `src/**`, `package.json#exports`                |
+| `node scripts/vite-dev-smoke.mjs` | một dev server `styleGenVite` không ghi hoặc không emit lại `theme.css`                           | `check`: Vite dev-server smoke; `peer-matrix` (các nhánh vite) | `src/features/vite/**`                          |
+| `yarn site:build`                 | build site hoặc harness thất bại (site render `documents/*.md`)                                   | `check`: Build site; `visual.yml`                              | `site`, `documents/**`, `examples/**`           |
+| `yarn workspace site check:links` | link tương đối và `#anchor` hỏng trong các doc được render và bản twin của chúng                  | `check`: Check doc links                                       | `documents/**`, `README.md`                     |
+| `yarn check:docs-embed`           | một block code nhúng khác vùng nguồn của nó                                                       | `check`: Check embedded doc code                               | `documents/**`, `examples/**`                   |
+| `yarn check:docs-i18n`            | một bản twin tiếng Việt bị thiếu, cũ hoặc khác cấu trúc                                           | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                     |
+| `yarn check:doc-snippets`         | một block `ts`/`tsx` trong doc không qua được kiểm tra kiểu, hoặc số block opt-out vượt 10%       | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                     |
+| `yarn check:doc-exports`          | một export công khai thiếu heading tham chiếu, signature block hoặc TSDoc                         | `check`: Check reference coverage of exports                   | export trong `src/**`, `documents/reference/**` |
+| `yarn check:plain-ui`             | một thư mục component plain vi phạm quy tắc layout hoặc import                                    | `check`: Check plain UI folders                                | `examples/plain-*`                              |
+
+Mọi script `check:*` đều chạy trong CI hoặc trong `yarn verify`: không có gate nào phụ thuộc vào việc con người nhớ chạy.
 
 ## Các lớp kiểm thử
 

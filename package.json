@@ -162,7 +162,8 @@
     "site:build": "yarn build:all && yarn workspace site build",
     "site:preview": "yarn workspace site preview",
     "typecheck:dist": "tsc -p tsconfig.dts-check.json && tsc -p tsconfig.dts-check.cjs.json",
-    "typecheck:scripts": "tsc -p tsconfig.scripts.json"
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json",
+    "verify": "yarn build:all && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types && yarn typecheck:scripts && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

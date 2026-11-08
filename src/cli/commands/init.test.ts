@@ -155,7 +155,7 @@ describe("initCommand", () => {
         path.join(tmp, "style-gen.config.json"),
         JSON.stringify({
           breakpoints: ["xl"],
-          extraSources: ["bg-x"],
+          typography: { cssVarDriven: true },
           plugin: "old/theme-plugin.ts",
         }),
       );
@@ -169,7 +169,7 @@ describe("initCommand", () => {
         theme: "a/theme.json",
         output: "a/theme.css",
         breakpoints: ["xl"],
-        extraSources: ["bg-x"],
+        typography: { cssVarDriven: true },
       });
       expect(infoSpy).toHaveBeenCalledWith(
         expect.stringContaining("Removed the `plugin` key"),
@@ -248,7 +248,7 @@ describe("initCommand", () => {
         JSON.stringify({
           name: "app",
           "style-gen": {
-            extraSources: ["bg-x"],
+            typography: { cssVarDriven: true },
             plugin: "old/theme-plugin.ts",
           },
         }),
@@ -262,7 +262,7 @@ describe("initCommand", () => {
       expect(cfg).toEqual({
         theme: "a/theme.json",
         output: "a/theme.css",
-        extraSources: ["bg-x"],
+        typography: { cssVarDriven: true },
       });
       expect(infoSpy).toHaveBeenCalledWith(
         expect.stringContaining("Removed the `plugin` key"),

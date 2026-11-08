@@ -47,27 +47,6 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
     }>();
   });
 
-  it("axes is { attribute?: map, scope?: 'root' | 'element' } on both sides", () => {
-    expectTypeOf<
-      keyof NonNullable<StyleGeneratorOptions["axes"]>
-    >().toEqualTypeOf<keyof NonNullable<In["axes"]>>();
-    expectTypeOf<
-      NonNullable<StyleGeneratorOptions["axes"]>["scope"]
-    >().toEqualTypeOf<"root" | "element" | undefined>();
-    expectTypeOf<NonNullable<In["axes"]>["scope"]>().toEqualTypeOf<
-      "root" | "element" | undefined
-    >();
-    expectTypeOf<{
-      attribute: { theme: "data-mode" };
-      scope: "element";
-    }>().toExtend<NonNullable<StyleGeneratorOptions["axes"]>>();
-    // A function is not a valid `attribute`: the option must be expressible
-    // in `style-gen.config.json`.
-    expectTypeOf<{
-      attribute: (axis: string) => string;
-    }>().not.toExtend<NonNullable<StyleGeneratorOptions["axes"]>>();
-  });
-
   it("resetTailwindDefaults is a list of the literal namespaces on both sides", () => {
     expectTypeOf<
       NonNullable<StyleGeneratorOptions["resetTailwindDefaults"]>[number]

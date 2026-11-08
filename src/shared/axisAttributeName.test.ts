@@ -7,13 +7,8 @@ describe("axisAttributeName", () => {
     expect(axisAttributeName("theme")).toBe("data-theme");
     expect(axisAttributeName("highContrast")).toBe("data-high-contrast");
   });
-  it("prefers the mapped attribute, per axis", () => {
-    const attribute = { theme: "data-mode" };
-    expect(axisAttributeName("theme", attribute)).toBe("data-mode");
-    expect(axisAttributeName("palette", attribute)).toBe("data-palette");
-  });
-  it("ignores inherited Object.prototype keys of the map", () => {
-    expect(axisAttributeName("constructor", {})).toBe("data-constructor");
-    expect(axisAttributeName("toString", {})).toBe("data-to-string");
+  it("is safe for Object.prototype key names", () => {
+    expect(axisAttributeName("constructor")).toBe("data-constructor");
+    expect(axisAttributeName("toString")).toBe("data-to-string");
   });
 });

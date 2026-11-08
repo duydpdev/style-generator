@@ -87,12 +87,10 @@ const RESET_LINES = [
  * 1. `:root` block with `--sg-*` intermediate CSS variables
  * 2. `html[data-<axis-kebab>="<variant-kebab>"]` blocks for each `themeAxes`
  *    axis/variant, in config declaration order (both axes and variants) —
- *    the selector is pinned to `html` by default because a `$`-alias
+ *    the selector is pinned to `html` because a `$`-alias
  *    `var()` resolves to the value computed at the element that DECLARES the
  *    custom property, so an override on a non-root element wouldn't affect
  *    an alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules).
- *    `options.axes` renames the attribute per axis and, with
- *    `scope: "element"`, drops the `html` anchor (guarded by an alias check)
  * 3. `\@theme inline` block: the `resetTailwindDefaults` lines
  *    (`--color-*: initial;`, …) first, then the mapping of `--sg-*` → Tailwind v4 namespaces
  *
@@ -100,7 +98,7 @@ const RESET_LINES = [
  * invalid or injection-unsafe option or theme throws a `ZodError` instead of
  * reaching the CSS.
  * @param {ThemeConfig} config - Theme configuration
- * @param {StyleGeneratorOptions} [options] - Generator options; only `axes` and `resetTailwindDefaults` affect this output
+ * @param {StyleGeneratorOptions} [options] - Generator options; only `resetTailwindDefaults` affects this output
  * @returns {string} CSS string
  */
 export const generateThemeCss = (
@@ -116,12 +114,12 @@ export const generateThemeCss = (
  * already parsed the theme and the options. Not exported from any public
  * barrel.
  * @param {ThemeConfig} config - Theme already parsed by `ThemeSchema`
- * @param {Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">} options - Resolved options (`axes`: attribute map and scope; `resetTailwindDefaults`: namespaces to clear)
+ * @param {Pick<ResolvedOptions, "resetTailwindDefaults">} options - Resolved options (`resetTailwindDefaults`: namespaces to clear)
  * @returns {string} CSS string
  */
 export const buildThemeCss = (
   config: ThemeConfig,
-  options: Pick<ResolvedOptions, "axes" | "resetTailwindDefaults">,
+  options: Pick<ResolvedOptions, "resetTailwindDefaults">,
 ): string => {
   const blocks: string[] = [];
 
@@ -131,11 +129,9 @@ export const buildThemeCss = (
   if (rootBlock) blocks.push(rootBlock);
 
   // 2. Axis override blocks, in declaration order (axis, then variant)
-  const { attribute, scope } = options.axes;
-  const anchor = scope === "root" ? "html" : "";
   forEachAxisVariant(config.themeAxes, (axisName, variantName, override) => {
     const overrideVars = buildIntermediateVars(override);
-    const selector = `${anchor}[${axisAttributeName(axisName, attribute)}="${toKebabCase(variantName)}"]`;
+    const selector = `html[${axisAttributeName(axisName)}="${toKebabCase(variantName)}"]`;
     const overrideBlock = formatCssBlock(selector, overrideVars);
     if (overrideBlock) blocks.push(overrideBlock);
   });

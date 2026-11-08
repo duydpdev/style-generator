@@ -21,23 +21,17 @@ import { toKebabCase } from "../../shared/helpers";
  * `removeAttribute(...)` for an axis it omits.
  * @template T - ThemeConfig type (typically `typeof themeJson`)
  * @param {ThemeAxesState<T>} state - Active variant per axis (raw names)
- * @param {object} [options] - Optional settings
- * @param {Readonly<Record<string, string>>} [options.attribute] - Axis name → attribute name; the same object as `options.axes.attribute` of `generate()`
  * @returns {Readonly<Record<string, string>>} Attribute name → kebab-cased variant
  */
 export const themeAxisAttributes = <T extends ThemeConfig>(
   state: ThemeAxesState<T>,
-  options?: {
-    readonly attribute?: Readonly<Record<string, string>> | undefined;
-  },
 ): Readonly<Record<string, string>> => {
   const attributes: Record<string, string> = {};
   for (const [axis, variant] of Object.entries(
     state as Record<string, string | undefined>,
   )) {
     if (variant === undefined || variant === "base") continue;
-    attributes[axisAttributeName(axis, options?.attribute)] =
-      toKebabCase(variant);
+    attributes[axisAttributeName(axis)] = toKebabCase(variant);
   }
   return attributes;
 };

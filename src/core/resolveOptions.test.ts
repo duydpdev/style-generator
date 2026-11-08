@@ -19,9 +19,7 @@ describe("resolveOptions", () => {
       enabled: true,
       properties: DEFAULT_SPACING_PROPERTIES,
     });
-    expect(resolved.extraSources).toEqual([]);
     expect(resolved.coverage).toEqual({});
-    expect(resolved.axes).toEqual({ attribute: {}, scope: "root" });
     expect(resolved.resetTailwindDefaults).toEqual([]);
     expect(resolved.sortedBreakpoints.map((bp) => bp.key)).toEqual([
       "md",
@@ -36,14 +34,10 @@ describe("resolveOptions", () => {
     expect(options).toEqual(snapshot);
   });
 
-  it("resolves axes.attribute and axes.scope independently", () => {
-    expect(
-      resolveOptions({ axes: { attribute: { theme: "data-mode" } } }).axes,
-    ).toEqual({ attribute: { theme: "data-mode" }, scope: "root" });
-    expect(resolveOptions({ axes: { scope: "element" } }).axes).toEqual({
-      attribute: {},
-      scope: "element",
-    });
+  it("carries no extraSources or axes keys", () => {
+    const resolved = resolveOptions();
+    expect("extraSources" in resolved).toBe(false);
+    expect("axes" in resolved).toBe(false);
   });
 
   it("resolves resetTailwindDefaults to [] by default and keeps a given list", () => {

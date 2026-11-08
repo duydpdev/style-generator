@@ -55,13 +55,8 @@ export declare interface StyleGeneratorOptions {
     enabled?: boolean;
     properties?: SpacingPropertyMap;
   };
-  extraSources?: readonly string[];
   coverage?: {
     [K in CategoryKey]?: boolean | CategoryCoverageRule<K>;
-  };
-  axes?: {
-    attribute?: Readonly<Record<string, string>>;
-    scope?: "root" | "element";
   };
   resetTailwindDefaults?: readonly ("colors" | "radius" | "shadow")[];
 }

@@ -107,8 +107,7 @@ const { css, tokens, schema } = generate(theme, options);
 ```
 
 `generate()` validates `options` first (`StyleGeneratorOptionsSchema.parse` → `resolveOptions`), then always re-validates `theme` against `ThemeSchema` (even if the caller already
-called `defineTheme()`); `assertThemeOptions` (`src/core/themeOptionsChecks.ts`) checks the theme × options pair: for every `axes.scope`,
-an `axes.attribute` that points to a nonexistent axis, or two axes with the same attribute name, is rejected; `axes.scope: "element"` adds `checkElementScopeAliases`;
+called `defineTheme()`); `assertThemeOptions` (`src/core/themeOptionsChecks.ts`) checks the theme × options pair:
 `resetTailwindDefaults: ["colors"|"radius"|"shadow"]` requires the theme to have a matching `colors` (non-empty; `ThemeSchema` still accepts `colors: {}`),
 `borderRadius` or `shadows`. It then assembles the blocks in this order: `@theme` breakpoints → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` (the
 `--color-*: initial;`… lines of `resetTailwindDefaults` come first in this block) → typography `@utility` → spacing `@utility` → `@source inline`.
@@ -259,7 +258,7 @@ the app declares `tailwind-merge` 3.x itself — the extension uses v3 group ids
   any value.
 - `splitSpacingProps(props, keys, unit)` + `SpacingProps<BKeys, K>` → `{ spacing: { className, style }, rest }`;
   it calls `resolveSpacing` once per key (so import `./spacing` through the shared chunk) and removes every spacing key from `rest`, even when the value is `undefined`.
-- `themeAxisAttributes(state, { attribute })` → the DOM attributes of the active axes, using the same `axisAttributeName` formula as the selectors that `generate()` emits;
+- `themeAxisAttributes(state)` → the DOM attributes of the active axes, using the same `axisAttributeName` formula as the selectors that `generate()` emits;
   an axis that is `"base"`/`undefined` emits no attribute.
 
 ### UI kit (`./ui`, `./ui-react`)
@@ -306,7 +305,7 @@ imports, do not raise the budget. Vite 8 / Rolldown marks `manualChunks` as depr
 
 **Why `@source inline` instead of a safelist:** Tailwind v4 does not scan classes built at runtime. `generateSourceInline` emits one `@source inline("…")` line per category (and
 per state that has a sibling, for example `hover:bg-primary-hover`), so the classes always exist even if no source references them;
-classes built at runtime are declared through `options.extraSources`. Trade-off: every color always has `bg-/text-/border-/ring-/outline-/divide-/placeholder-*`,
+classes built at runtime are declared by the app with a plain Tailwind `@source inline(...)` directive in its own CSS. Trade-off: every color always has `bg-/text-/border-/ring-/outline-/divide-/placeholder-*`,
 so the CSS is slightly larger — `options.coverage` narrows these lines per category (`false`, `prefixes`, `keys: "aliased"`),
 and `coverage.colors.opacities` opts into one extra `/<n>` opacity-modifier line (see [`coverage`](./reference/options.md#coverage-trim-the-source-inline-lines-per-category)).
 
@@ -336,7 +335,7 @@ flowchart LR
 
 Design decisions:
 
-- **The selector is pinned to `html`:** an alias `var()` is resolved at the element that _declares_ the custom property (`:root`), so an override on a child element never reaches the alias's value.
+- **The selector is pinned to `html` and the attribute is `data-<axis-kebab>`:** an alias `var()` is resolved at the element that _declares_ the custom property (`:root`), so an override on a child element never reaches the alias's value. Neither is configurable; a scoped theme or a custom attribute name is hand-written CSS in the app.
 - **Precedence = declaration order:** two axes overriding the same token have equal specificity; the axis declared later wins.
   That is why axis/variant names that are integers are rejected (JS enumerates numeric-like keys first, breaking the order).
 - **An override must have a key in the base:** a key present only in an override does not map into `@theme inline`/`@utility` and so creates no utility; it is rejected at parse time.

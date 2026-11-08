@@ -43,47 +43,19 @@ describe("themeAxisAttributes", () => {
     ).toEqual({ "data-color-palette": "deep-2xl" });
   });
 
-  it("renames attributes through the axis → attribute map, falling back per axis", () => {
-    expect(
-      themeAxisAttributes<typeof theme>(
-        { theme: "dark", colorPalette: "forestGreen" },
-        { attribute: { theme: "data-mode" } },
-      ),
-    ).toEqual({ "data-mode": "dark", "data-color-palette": "forest-green" });
-  });
-
-  it("an empty options object or attribute map behaves like no options", () => {
-    const state = { theme: "dark" } as const;
-    expect(themeAxisAttributes<typeof theme>(state, {})).toEqual({
-      "data-theme": "dark",
-    });
-    expect(themeAxisAttributes<typeof theme>(state, { attribute: {} })).toEqual(
-      {
-        "data-theme": "dark",
-      },
-    );
-  });
-
-  it("mirrors the selectors generate() emits, for both the default and a renamed attribute", () => {
+  it("mirrors the html[data-<axis>] selectors generate() emits", () => {
     const state = { theme: "dark", colorPalette: "forestGreen" } as const;
     const selectors = (css: string) => css.match(/html\[[^\]]+\]/g) ?? [];
 
     const { css } = generate(theme);
     const attrs = themeAxisAttributes<typeof theme>(state);
+    expect(attrs).toEqual({
+      "data-theme": "dark",
+      "data-color-palette": "forest-green",
+    });
     for (const [name, value] of Object.entries(attrs)) {
       expect(selectors(css)).toContain(`html[${name}="${value}"]`);
     }
-
-    const attribute = { theme: "data-mode", colorPalette: "data-tone" };
-    const { css: renamed } = generate(theme, { axes: { attribute } });
-    const renamedAttrs = themeAxisAttributes<typeof theme>(state, {
-      attribute,
-    });
-    expect(new Set(Object.keys(renamedAttrs))).toEqual(
-      new Set(["data-mode", "data-tone"]),
-    );
-    for (const [name, value] of Object.entries(renamedAttrs)) {
-      expect(selectors(renamed)).toContain(`html[${name}="${value}"]`);
-    }
+    expect(selectors(css)).toContain('html[data-theme="dark"]');
   });
 });

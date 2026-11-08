@@ -41,21 +41,11 @@ export interface ResolvedOptions extends ResolvedTokenOptions {
   sortedBreakpoints: readonly ResolvedBreakpoint[];
   enableResponsive: boolean;
   typographyCssVarDriven: boolean;
-  extraSources: readonly string[];
   /**
    * Only the categories `options.coverage` mentions, by category key; a
    * category that is absent here uses the default (everything).
    */
   coverage: Readonly<Record<string, ResolvedCoverageRule>>;
-  /**
-   * How `themeAxes` variants are switched on: the axis → attribute-name map
-   * (`{}`: every axis uses `data-<axis-kebab>`) and where the selector
-   * applies.
-   */
-  axes: {
-    readonly attribute: Readonly<Record<string, string>>;
-    readonly scope: "root" | "element";
-  };
   /**
    * The Tailwind default namespaces to clear (`[]`: none). Order and
    * duplicates are kept as written; the CSS generator emits each name once.
@@ -114,12 +104,7 @@ export const resolveOptions = (
       : [],
     enableResponsive,
     typographyCssVarDriven: options.typography?.cssVarDriven === true,
-    extraSources: options.extraSources ?? [],
     coverage: resolveCoverage(options.coverage),
-    axes: {
-      attribute: options.axes?.attribute ?? {},
-      scope: options.axes?.scope ?? "root",
-    },
     resetTailwindDefaults: options.resetTailwindDefaults ?? [],
   };
 };

@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: 625eb44fc9e7 -->
+<!-- source: documents/guide.md sha256: a693182a5744 -->
 
 # Hướng dẫn sử dụng
 
@@ -339,14 +339,13 @@ export { tokens };
 
 ### Class được tạo lúc runtime
 
-Mọi color luôn có `bg-*`/`text-*`/`border-*` nhờ các dòng `@source inline` mà registry sinh ra. Những class bạn ghép bằng template literal thì Tailwind không quét được — hãy khai
-báo chúng bằng `extraSources`:
+Mọi color luôn có `bg-*`/`text-*`/`border-*` nhờ các dòng `@source inline` mà registry sinh ra. Những class bạn ghép bằng template literal thì Tailwind không quét được — hãy để chúng xuất
+hiện nguyên văn trong mã nguồn, hoặc tự khai báo chúng trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind, đặt cạnh dòng import file được sinh ra:
 
-```typescript
-import { generate } from "@duydpdev/style-generator";
-import theme from "./theme.json";
-
-generate(theme, { extraSources: ["hover:bg-{primary,secondary}"] });
+```css
+@import "tailwindcss";
+@import "./theme.css";
+@source inline("hover:bg-{primary,secondary}");
 ```
 
 ### Thu hẹp `@source inline` theo từng nhóm token (`coverage`)
@@ -366,7 +365,7 @@ Một bảng màu lớn làm dòng đó rất dài; `coverage` thu hẹp nó the
 `prefixes`, `keys` và `opacities` có thể kết hợp với nhau; các danh sách `prefixes` và `opacities` phải không rỗng.
 Với `keys: "aliased"`, nếu nhóm token không có key giữ alias nào (hoặc không khai báo key nào) thì không có gì được phát ra: giá trị mặc định không phải là alias.
 `coverage` chỉ thay đổi `@source inline`: `@theme inline`, `@utility` và `DesignTokens` có kiểu vẫn giữ nguyên (ngoại trừ `DesignTokens.Web.opacities`,
-liệt kê các mức `opacities`), nên một class vẫn còn dùng nhưng không còn được bao phủ thì phải xuất hiện nguyên văn trong mã nguồn hoặc được khai báo qua `extraSources`.
+liệt kê các mức `opacities`), nên một class vẫn còn dùng nhưng không còn được bao phủ thì phải xuất hiện nguyên văn trong mã nguồn hoặc được khai báo bằng một `@source inline(...)` trong CSS của app.
 
 ```typescript
 import { generate } from "@duydpdev/style-generator";
@@ -459,57 +458,23 @@ Kích hoạt trên phần tử `<html>`:
 
 Các quy tắc cần nhớ:
 
-- **Selector được ghim vào `html`** (mặc định, `axes.scope: "root"`). Một thuộc tính đặt trên phần tử bao bọc khác sẽ không có tác dụng:
+- **Selector luôn được ghim vào `html`**: `html[data-<axis-kebab>="<variant-kebab>"]`. Một thuộc tính đặt trên phần tử bao bọc khác sẽ không có tác dụng:
   một alias `var()` được tính tại phần tử _khai báo_ biến (`:root`), nên một override trên phần tử con không bao giờ chạm tới giá trị alias.
-  Với một theme cục bộ, hãy đặt `axes.scope: "element"` (xem [Đổi thuộc tính và scope](#đổi-thuộc-tính-và-scope-axes)).
+  Với một theme cục bộ trên phần tử không phải gốc hoặc một tên thuộc tính tùy chỉnh, hãy tự viết CSS override trong CSS của app (`[data-mode="dark"] { --sg-color-primary: …; }`); thư viện không sinh ra nó.
 - **Giá trị thuộc tính là dạng kebab của key**: variant `highContrast` → `data-palette="high-contrast"`; trục `colorScheme` → `data-color-scheme`.
 - **Độ ưu tiên = thứ tự khai báo**: hai trục override cùng một token có độ đặc hiệu bằng nhau, và trục được khai báo **sau** sẽ thắng.
 - **Tên trục/variant không được là số nguyên** (`100`, `2024`): JS liệt kê các key dạng số trước và làm hỏng thứ tự. Hãy dùng `contrast100`.
 - **Một key override phải tồn tại trong base** — một key chỉ tồn tại trong override sẽ không sinh ra utility nào và bị từ chối lúc parse.
 - **Các override kết hợp giữa nhiều trục** (`[data-theme="dark"][data-palette="forest"]`) và các biến nằm ngoài `--sg-*` vẫn là CSS viết tay;
   xem bảng phạm vi trong [`examples/design-system/README.md`](../../examples/design-system/README.md).
+- **Một variant tên `base` là tên dành riêng:** `"base"` nghĩa là "không override" (`ThemeAxesState`, `themeAxisAttributes`), nên `ThemeSchema` từ chối `themeAxes.<axis>.base`.
+  Hãy chọn tên khác (`default`, `standard`). Một trục tên `base` vẫn hợp lệ.
 
 `--sg-*` là một lớp biến trung gian giúp tránh tham chiếu vòng khi chuyển theme. Trong mã ứng dụng, hãy ưu tiên các class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`.
 Các biến mà thư viện phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là đầu ra công khai:
 alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; đổi tên một biến là thay đổi phá vỡ tương thích (breaking change).
 Phiên bản 5.0 đã đổi tên các biến màu từ `--sg-<color>` sang `--sg-color-<key>`; `style-gen doctor` cảnh báo kèm `file:line` cho mọi `var(--sg-<colorKey>)` hoặc khai báo
 `--sg-<colorKey>:` còn sót lại (xem [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)).
-
-### Đổi thuộc tính và scope (`axes`)
-
-Theo mặc định, selector là `html[data-<axis-kebab>="<variant-kebab>"]`. `options.axes` đổi tên thuộc tính theo từng trục và cho phép bạn bỏ ghim `html`:
-
-```typescript
-import { generate } from "@duydpdev/style-generator";
-import theme from "./theme.json";
-
-generate(theme, {
-  axes: {
-    attribute: { theme: "data-mode" }, // axis → attribute name; axes not listed keep data-<axis-kebab>
-    scope: "element", // "root" (default) | "element"
-  },
-});
-```
-
-```css
-[data-mode="dark"] { … }            /* scope: "element" — no html */
-html[data-palette="forest"] { … }   /* scope: "root" — default */
-```
-
-- **`attribute` là một map**, không phải một hàm: `style-gen.config.json` có thể biểu diễn nó. Tên phải khớp `[a-z][a-z0-9-]*` (chữ thường như `data-<axis-kebab>` mặc định;
-  nó được nhúng vào selector). `themeAxisAttributes(state, { attribute })` từ `./recipes` đọc đúng map này để DOM và CSS không bao giờ lệch nhau.
-- **`scope: "root"`** giữ selector được ghim vào `html` như trong quy tắc ở trên. **`scope: "element"`** bỏ `html`, nên thuộc tính có thể đặt trên bất kỳ phần tử nào (một theme cục bộ cho một vùng).
-- **Quy tắc alias khi `scope: "element"`.** Một alias `"$<key>"` vẫn được tính tại phần tử _khai báo_ nó (`:root`), nên nó giữ giá trị base bên trong phần tử mang thuộc tính.
-  Vì vậy `generate()` ném `ZodError` khi một variant override một key `T` mà một mục khác `H` trỏ alias tới (trực tiếp hoặc qua một chuỗi alias, ở bất kỳ nhóm token nào),
-  trừ khi variant đó tự khai báo lại `H` (bằng giá trị literal hoặc `"$<key>"`). Alias của `H` được tra trong theme base **và** trong mọi variant khác của mọi trục (ví dụ `dark`
-  viết `primary: "$brand"` trong khi `light` override `brand` mà không khai báo lại `primary`). Lỗi được định vị tại key bị override
-  (`themeAxes.<axis>.<variant>.<category>.<key>`); với một chuỗi alias, mỗi mắt xích cũ được báo thành một lỗi riêng tại cùng path.
-  Cách sửa: khai báo lại mục giữ alias trong variant, hoặc dùng `scope: "root"`.
-- **Việc kiểm tra thuộc tính chạy với mọi `scope`:** một key trong `attribute` phải là tên của một trục trong `themeAxes` (lỗi tại `axes.attribute.<axis>`),
-  và hai trục không được phân giải về cùng một tên thuộc tính (ví dụ `attribute: { theme: "data-palette" }` khi đã có trục `palette`; lỗi tại `axes.attribute.<axis>`).
-- **Một variant tên `base` là tên dành riêng:** `"base"` nghĩa là "không override" (`ThemeAxesState`, `themeAxisAttributes`), nên `ThemeSchema` từ chối `themeAxes.<axis>.base`.
-  Hãy chọn tên khác (`default`, `standard`). Một trục tên `base` vẫn hợp lệ.
-- `generateThemeCss(theme, options)` nhận cùng `options` ở tham số thứ hai.
 
 ---
 
@@ -704,7 +669,7 @@ Hãy truyền các key camelCase như những key mà `DesignTokens.Web.colors` 
 
 `prefix` có kiểu `RegistryPrefix | ""` (các tiền tố mà registry phát ra `@source inline` cho chúng; `""` dành cho typography),
 nên `createVariantMapper("fill", …)` hoặc một tiền tố nằm trong biến kiểu `string` là lỗi kiểu: chúng ánh xạ ra các class mà không dòng `@source inline` nào giữ lại.
-Để bỏ qua kiểm tra cho một tiền tố đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và khai báo các class trong `extraSources`.
+Để bỏ qua kiểm tra cho một tiền tố đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và tự khai báo các class trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind.
 Không thể kết hợp điều này với `{ states }` hoặc một mảng tiền tố.
 
 Một recipe headless ghép các mapper bằng `cva`; component framework (React, Vue) chỉ bọc nó lại. Điểm neo DX là `satisfies` trên danh sách intent:
@@ -760,9 +725,8 @@ export const cn = createCn(tokens);
 
 ### 6. Bật các trục theme trên DOM: `themeAxisAttributes`
 
-`themeAxisAttributes<Theme>(state, attributes?)` trả về các thuộc tính `data-*` của những trục đang hoạt động, được định kiểu từ `theme.json`;
-`"base"` hoặc một trục bị bỏ qua không phát ra gì. Theo mặc định thuộc tính là `data-<axis>`; khi `options.axes.attribute` đổi tên thuộc tính,
-hãy truyền cùng map đó làm đối số thứ hai để DOM và các selector CSS không lệch nhau:
+`themeAxisAttributes<Theme>(state)` trả về các thuộc tính `data-*` của những trục đang hoạt động, được định kiểu từ `theme.json`;
+`"base"` hoặc một trục bị bỏ qua không phát ra gì. Thuộc tính luôn là `data-<axis-kebab>`, đúng như các selector mà `generate()` phát ra:
 
 ```typescript
 // src/axes.ts
@@ -779,7 +743,6 @@ axisAttributes({ theme: "highContrast", palette: "forest" });
 ```
 
 Hãy spread kết quả lên `<html>` (React: `<html {...axisAttributes(state)}>`; Nuxt: `useHead({ htmlAttrs: axisAttributes(state) })`).
-Nếu `options.axes.attribute` đổi tên thuộc tính, hãy truyền cùng map đó làm tham số thứ hai (`{ attribute }`).
 
 ### 7. Prop spacing: `splitSpacingProps`
 

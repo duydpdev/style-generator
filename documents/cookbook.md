@@ -60,7 +60,7 @@ try {
 
 ## Classes built at runtime
 
-Class names built at runtime (a template literal such as `` `bg-${variant}` ``) are invisible to Tailwind's static scan; list them with `extraSources`, e.g. `extraSources: ["hover:bg-{primary,secondary}"]`. See [`extraSources`](./reference/options.md).
+Class names built at runtime (a template literal such as `` `bg-${variant}` ``) are invisible to Tailwind's static scan; declare them in your own CSS, next to the generated import, with a plain Tailwind `@source inline("hover:bg-{primary,secondary}");` directive. See [Classes built at runtime](./reference/options.md#classes-built-at-runtime).
 
 ## Trim the generated `@source inline` lines
 

@@ -31,8 +31,7 @@ export const Box = (props: BoxProps) => {
   return <div {...rest} className={spacing.className} style={spacing.style} />;
 };
 
-// 3. DOM attributes of the active theme axes (pass `{ attribute }` as the second
-//    argument when `options.axes.attribute` renames them)
+// 3. DOM attributes of the active theme axes
 export const Root = () => (
   <html {...themeAxisAttributes<typeof theme>({ theme: "dark" })} />
 );
@@ -199,9 +198,6 @@ explicit literal keys give the narrowest result.
 ```ts
 export declare const themeAxisAttributes: <T extends ThemeConfig>(
   state: ThemeAxesState<T>,
-  options?: {
-    readonly attribute?: Readonly<Record<string, string>> | undefined;
-  },
 ) => Readonly<Record<string, string>>;
 ```
 
@@ -225,4 +221,4 @@ that disappears between renders; an imperative caller must
 
 <!-- /signature -->
 
-- `themeAxisAttributes` emits no attribute for an axis that is `"base"` or `undefined`. React removes a prop that disappears between renders; an imperative caller must `removeAttribute` for an omitted axis.
+- `themeAxisAttributes` emits no attribute for an axis that is `"base"` or `undefined`. React removes a prop that disappears between renders; an imperative caller must `removeAttribute` for an omitted axis. The attribute name is always `data-<axis-kebab>`.

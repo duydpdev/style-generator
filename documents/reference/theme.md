@@ -155,7 +155,7 @@ html[data-palette="high-contrast"] { --sg-color-primary: #000000; }
 
 Rules:
 
-- **Selectors are pinned to `html`.** A `data-*` attribute on a wrapper element has no effect. The reason is aliases: a `var()` alias resolves at the element that _declares_ the custom property (`:root`), so an override on any other element never reaches an alias's value.
+- **Selectors are pinned to `html`, and the attribute is always `data-<axis-kebab>`.** A `data-*` attribute on a wrapper element has no effect. The reason is aliases: a `var()` alias resolves at the element that _declares_ the custom property (`:root`), so an override on any other element never reaches an alias's value. A theme scoped to one element or a custom attribute name is hand-written CSS in your app.
 - **Attribute values are the kebab form of the key**: variant `highContrast` → `data-palette="high-contrast"`; axis `colorScheme` → `data-color-scheme`.
 - **Precedence is declaration order.** The selectors have equal specificity, so when two axes override the same token the axis declared **later** in the JSON wins.
 - **Axis and variant names cannot be canonical integers** (`100`, `2024`): JavaScript enumerates integer-like keys first, which would silently break declaration order. Use `contrast100` instead.

@@ -150,20 +150,18 @@ describe("generateCommand", () => {
         });
 
         await start({});
-        expect(read("styles/theme.css")).not.toContain("hover:bg-primary");
+        expect(read("styles/theme.css")).not.toContain("--color-*: initial;");
 
         await until(
           () => {
             write("style-gen.config.json", {
               theme: "styles/theme.json",
               output: "styles/theme.css",
-              extraSources: ["hover:bg-primary"],
+              resetTailwindDefaults: ["colors"],
             });
           },
           () => {
-            expect(read("styles/theme.css")).toContain(
-              '@source inline("hover:bg-primary");',
-            );
+            expect(read("styles/theme.css")).toContain("--color-*: initial;");
           },
         );
       },
@@ -177,14 +175,12 @@ describe("generateCommand", () => {
         const validConfig = {
           theme: "styles/theme.json",
           output: "styles/theme.css",
-          extraSources: ["hover:bg-primary"],
+          resetTailwindDefaults: ["colors"],
         };
         write("style-gen.config.json", validConfig);
 
         expect(await start({})).toBe(0);
-        expect(read("styles/theme.css")).toContain(
-          '@source inline("hover:bg-primary");',
-        );
+        expect(read("styles/theme.css")).toContain("--color-*: initial;");
 
         // Malformed JSON, then a schema violation: both are reported with
         // their source and neither touches the output.
@@ -207,23 +203,21 @@ describe("generateCommand", () => {
           () => {
             write("style-gen.config.json", {
               ...validConfig,
-              extraSources: ["bad;entry"],
+              resetTailwindDefaults: ["fonts"],
             });
           },
           () => {
             expect(errorSpy.mock.calls.map((c) => c[0])).toContainEqual(
               expect.stringMatching(
-                /^Invalid config \(style-gen\.config\.json\):\nextraSources\.0 → /,
+                /^Invalid config \(style-gen\.config\.json\):\nresetTailwindDefaults\.0 → /,
               ),
             );
           },
         );
-        expect(read("styles/theme.css")).toContain(
-          '@source inline("hover:bg-primary");',
-        );
+        expect(read("styles/theme.css")).toContain("--color-*: initial;");
 
         // The process is still watching: a theme edit regenerates with the
-        // LAST VALID config (still carrying extraSources), not the defaults.
+        // LAST VALID config (still carrying resetTailwindDefaults), not the defaults.
         await until(
           () => {
             write("styles/theme.json", {
@@ -235,25 +229,21 @@ describe("generateCommand", () => {
             expect(read("styles/theme.css")).toMatch(/#FF0000/);
           },
         );
-        expect(read("styles/theme.css")).toContain(
-          '@source inline("hover:bg-primary");',
-        );
+        expect(read("styles/theme.css")).toContain("--color-*: initial;");
 
         // Fixing the config applies it.
         await until(
           () => {
             write("style-gen.config.json", {
               ...validConfig,
-              extraSources: ["hover:bg-background"],
+              resetTailwindDefaults: ["colors", "shadow"],
             });
           },
           () => {
-            expect(read("styles/theme.css")).toContain(
-              '@source inline("hover:bg-background");',
-            );
+            expect(read("styles/theme.css")).toContain("--shadow-*: initial;");
           },
         );
-        expect(read("styles/theme.css")).not.toContain("hover:bg-primary");
+        expect(read("styles/theme.css")).toContain("--color-*: initial;");
       },
     );
 

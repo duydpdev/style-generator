@@ -240,9 +240,7 @@ const buildStateLines = (
  * radius, font family, border width) — see `buildCategoryLine` — one
  * further line per category `states` entry that has at least one sibling
  * (`hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}`, see `buildStateLines`) —
- * every `sp-*` utility the spacing pipeline can produce, plus any
- * caller-supplied `options.extraSources` entries (see
- * `StyleGeneratorOptions.extraSources`).
+ * every `sp-*` utility the spacing pipeline can produce.
  *
  * `options.coverage` trims the per-category lines: `false` drops a
  * category's lines (state lines included), `prefixes` keeps only the listed
@@ -257,10 +255,6 @@ const buildStateLines = (
  * single category exceeding a reasonable brace-expansion size never
  * threatens the others; the `sp-*` line keeps DEV.2.5's brace-expansion
  * form rather than one directive per key.
- *
- * `extraSources` entries are assumed already validated (`generate()` runs
- * that validation before calling this) and are emitted verbatim, one
- * `@source inline("<entry>")` line each, after every other line.
  * @param {ThemeConfig} theme - Theme configuration
  * @param {ResolvedOptions} [options] - Resolved generator options
  * @returns {string} One `@source inline(...)` directive per line, empty when there is nothing to emit
@@ -305,10 +299,6 @@ export const generateSourceInline = (
     if (spacingKeys.length > 0) {
       lines.push(`@source inline("sp-{${spacingKeys.join(",")}}");`);
     }
-  }
-
-  for (const entry of options.extraSources) {
-    lines.push(`@source inline("${entry}");`);
   }
 
   return lines.length > 0 ? `${lines.join("\n")}\n` : "";

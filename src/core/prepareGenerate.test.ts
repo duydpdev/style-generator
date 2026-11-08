@@ -29,7 +29,7 @@ describe("prepareGenerate", () => {
     const { stages, error } = stagesOf((onStage) => {
       const { parsed, resolved } = prepareGenerate(theme, {}, onStage);
       expect(parsed).toEqual(theme);
-      expect(resolved.axes.scope).toBe("root");
+      expect(resolved.resetTailwindDefaults).toEqual([]);
     });
     expect(error).toBeUndefined();
     expect(stages).toEqual(["options", "theme", "cross"]);
@@ -39,7 +39,7 @@ describe("prepareGenerate", () => {
     const { stages, error } = stagesOf((onStage) => {
       prepareGenerate(
         { colors: { primary: "{" } },
-        { extraSources: ["a;b"] },
+        { breakpoints: ["nope"] },
         onStage,
       );
     });
@@ -58,15 +58,15 @@ describe("prepareGenerate", () => {
   it("reaches the cross stage for a theme × options conflict, as one ZodError with every issue", () => {
     const { stages, error } = stagesOf((onStage) => {
       prepareGenerate(
-        theme,
-        { axes: { scope: "element" }, resetTailwindDefaults: ["shadow"] },
+        { colors: { primary: "#fff" } },
+        { resetTailwindDefaults: ["shadow", "radius"] },
         onStage,
       );
     });
     expect(stages).toEqual(["options", "theme", "cross"]);
     expect(error).toBeInstanceOf(z.ZodError);
     expect((error as z.ZodError).issues.map((i) => i.path.join("."))).toEqual([
-      "themeAxes.theme.dark.colors.brand",
+      "resetTailwindDefaults.1",
       "resetTailwindDefaults.0",
     ]);
   });

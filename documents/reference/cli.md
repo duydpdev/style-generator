@@ -25,6 +25,68 @@ It then looks for a bundler config in the project root, in this order, and print
 
 `*` is `.ts`, `.mts`, `.cts`, `.js`, `.mjs` or `.cjs`; only files directly in the project root count (symlinks are followed). A framework config wins over `vite.config.*` because Next.js and Nuxt apps often keep one for Vitest. `styleGenVite()` and `styleGenNext()` without arguments read `style-gen.config.json` from the Vite root and from `process.cwd()`, so the theme, the output and every option stay in that file. Nuxt 4 sets Vite's root to `app/`, and `styleGenVite` writes only inside the root, so the Nuxt snippet passes absolute paths and the Nuxt theme defaults to `app/assets/css/theme.json`; with an `app/` directory, a `--theme` outside it prints a warning (exit code 0) because the dev server would reject that `outDir`. With explicit paths the plugin does not read `style-gen.config.json`: put generator options in the snippet's `options: {}`; `style-gen.config.json` then serves only the CLI (`generate`, `doctor`, `tokens`). Every printed or stored path is relative to the project root with `/` separators (an absolute `--theme` inside the root is stored relative), and paths inside printed string literals are JSON-escaped. The snippets use ES module syntax; a CommonJS config (`.cjs`, or `.js` without `"type": "module"`) loads the same functions with `require()`. A JavaScript `next.config.*` gets a JSDoc `@type` comment instead of `import type`.
 
+These are the snippets `init` prints for Next.js and Nuxt (the Vite one is in the [README](../../README.md#quickstart)).
+
+#### Next.js
+
+The theme goes to `styles/theme.json` (`src/styles/theme.json` with a `src/` directory). Tailwind runs through `@tailwindcss/postcss` (`postcss.config.mjs`), as in `create-next-app --tailwind`. Wrap your config; `styleGenNext()` reads `style-gen.config.json` and works with webpack and Turbopack:
+
+```ts
+// next.config.ts
+import type { NextConfig } from "next";
+import { styleGenNext } from "@duydpdev/style-generator/next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+// No arguments: reads style-gen.config.json (theme, output, options).
+export default styleGenNext()(nextConfig);
+```
+
+`app/globals.css`, imported by `app/layout.tsx`:
+
+```css
+@import "tailwindcss";
+@import "../styles/theme.css";
+```
+
+#### Nuxt
+
+Nuxt 4 sets Vite's root to `app/`, so the theme goes to `app/assets/css/theme.json` and the plugin gets absolute paths. With explicit paths it does not read `style-gen.config.json` (that file then serves only the CLI): put generator options in `options`.
+
+```ts
+// nuxt.config.ts
+import { fileURLToPath } from "node:url";
+import { defineNuxtConfig } from "nuxt/config";
+import tailwindcss from "@tailwindcss/vite";
+import { styleGenVite } from "@duydpdev/style-generator/vite";
+
+export default defineNuxtConfig({
+  css: ["~/assets/css/main.css"],
+  vite: {
+    plugins: [
+      // Absolute paths: Nuxt 4 sets Vite's root to app/.
+      styleGenVite({
+        themePath: fileURLToPath(
+          new URL("./app/assets/css/theme.json", import.meta.url),
+        ),
+        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
+        options: {}, // style-gen.config.json is NOT read when paths are passed; put generate() options here
+      }),
+      tailwindcss(),
+    ],
+  },
+});
+```
+
+Create `app/assets/css/main.css` (`init` does not create it; `css` in `nuxt.config.ts` loads it):
+
+```css
+@import "tailwindcss";
+@import "./theme.css";
+```
+
 ```bash
 yarn style-gen init            # Interactive mode
 yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template

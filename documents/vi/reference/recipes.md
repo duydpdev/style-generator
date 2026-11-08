@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: efc88fc5200f -->
+<!-- source: documents/reference/recipes.md sha256: e1812d014d25 -->
 
 # Recipe (./recipes)
 
@@ -205,7 +205,7 @@ export declare const themeAxisAttributes: <T extends ThemeConfig>(
 
 The DOM attributes that activate a theme's axis variants, mirroring the
 `html[data-<axis>="<variant>"]` selectors `generate()` emits. Spread the
-result on the element the selectors target (`<html>` by default):
+result on `<html>`, the element the selectors target:
 
 ```tsx
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";

@@ -62,7 +62,7 @@ try {
 
 ## Các class được dựng lúc runtime
 
-Các tên class được dựng lúc runtime (một template literal như `` `bg-${variant}` ``) sẽ vô hình trước lượt quét tĩnh của Tailwind; hãy để chúng xuất hiện nguyên văn trong mã nguồn, hoặc tự khai báo chúng trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind, đặt cạnh dòng import file được sinh ra, ví dụ `@source inline("hover:bg-{primary,secondary}");`.
+Các tên class được dựng lúc runtime (một template literal như `` `bg-${variant}` ``) sẽ vô hình trước lượt quét tĩnh của Tailwind; hãy để chúng xuất hiện nguyên văn trong mã nguồn, hoặc tự khai báo chúng trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind, đặt cạnh dòng import file được sinh ra, ví dụ `@source inline("hover:bg-{primary,secondary}");`. Xem [Class được tạo lúc runtime](./reference/options.md#class-được-tạo-lúc-runtime).
 
 ## Thu gọn các dòng `@source inline` được sinh ra
 

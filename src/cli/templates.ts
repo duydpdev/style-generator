@@ -103,7 +103,7 @@ const NO_ARGUMENT_NOTE =
  * (no arguments). Nuxt 4 sets Vite's root to `app/`, so the Nuxt snippet
  * passes absolute paths. The text is Prettier-formatted for the default
  * paths: the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt)
- * show these blocks, mirrored by hand.
+ * show these blocks byte for byte (`templates.test.ts`).
  * @param {Extract<DetectedStack, { configFile: string }>} detected - The detected stack and its config file
  * @param {WiringPaths} paths - Where `init` put the theme and the CSS
  * @returns {string} The snippet, first line `// <config file>`

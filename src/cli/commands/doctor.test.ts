@@ -191,19 +191,6 @@ describe("doctorCommand", () => {
   });
 
   describe("theme × options", () => {
-    it("resetTailwindDefaults shadow without shadows → ❌ Invalid theme/options, 1", () => {
-      writeProject(tmp, {
-        "style-gen.config.json": { resetTailwindDefaults: ["shadow"] },
-        "styles/theme.json": { colors: { primary: "#3B82F6" } },
-      });
-
-      expect(doctorCommand(tmp)).toBe(1);
-
-      expect(lines()).toMatch(/Theme .*❌ Invalid theme\/options/);
-      expect(lines()).toMatch(/resetTailwindDefaults\.0 → /);
-      expect(lines()).not.toContain("Valid JSON, schema OK");
-    });
-
     it("resetTailwindDefaults radius without borderRadius → ❌ Invalid theme/options, 1", () => {
       writeProject(tmp, {
         "style-gen.config.json": { resetTailwindDefaults: ["radius"] },
@@ -212,8 +199,9 @@ describe("doctorCommand", () => {
 
       expect(doctorCommand(tmp)).toBe(1);
 
-      expect(lines()).toMatch(/Invalid theme\/options/);
+      expect(lines()).toMatch(/Theme .*❌ Invalid theme\/options/);
       expect(lines()).toMatch(/resetTailwindDefaults\.0 → /);
+      expect(lines()).not.toContain("Valid JSON, schema OK");
     });
 
     it("the same option passes when the theme provides the replacement", () => {

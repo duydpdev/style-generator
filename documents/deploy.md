@@ -266,7 +266,12 @@ The site is still built on every PR: the `check` job of `ci.yml` runs `yarn work
 
 ### Why `link:` instead of `workspace:*`
 
-The root package is the `@duydpdev/style-generator` library itself. With `nodeLinker: node-modules`, Yarn hoists a `workspace:*` dependency pointing back at the root up to the root `node_modules`, treats it as a self-reference and drops it. The result is that after a clean `yarn install`, there is no `node_modules/@duydpdev/style-generator` anywhere (`nmSelfReferences` does not apply to this case). `link:..` (site) and `link:../..` (examples) create symlinks in each workspace's `node_modules`. Do not alias the package in Vite: the example must go through the package's real `exports`. This rule only applies to the root library: `design-system-example` is a separate workspace, so the three apps reference it with `workspace:*`.
+The root package is the `@duydpdev/style-generator` library itself.
+With `nodeLinker: node-modules`, Yarn hoists a `workspace:*` dependency pointing back at the root up to the root `node_modules`, treats it as a self-reference and drops it.
+The result is that after a clean `yarn install`, there is no `node_modules/@duydpdev/style-generator` anywhere (`nmSelfReferences` does not apply to this case).
+`link:..` (site) and `link:../..` (examples) create symlinks in each workspace's `node_modules`.
+Do not alias the package in Vite: the example must go through the package's real `exports`.
+This rule only applies to the root library: `design-system-example` is a separate workspace, so the two apps that use it (`harness` and `plain-react`) reference it with `workspace:*`.
 
 ### Script aliases (root)
 

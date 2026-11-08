@@ -111,8 +111,6 @@ Import `./theme.css` next to `@import "tailwindcss";` in a CSS file of `styles/`
 
 Colors are a **flat object**; only `colors` is required:
 
-Colors are a **flat object**; only `colors` is required:
-
 ```json
 {
   "$schema": "./theme.schema.json",

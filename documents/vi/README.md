@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 2152f4ae6f93 -->
+<!-- source: README.md sha256: 57f4672ee80a -->
 
 # @duydpdev/style-generator
 
@@ -110,8 +110,6 @@ yarn style-gen generate --watch    # regenerate on save
 Import `./theme.css` cạnh `@import "tailwindcss";` trong một file CSS của `styles/`.
 
 ### Theme
-
-Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
 
 Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
 

@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 8cd7f7f5fd1b -->
+<!-- source: documents/deploy.md sha256: ff41c070ae47 -->
 
 # Triển khai & CI/CD
 
@@ -268,7 +268,12 @@ Site vẫn được build trong mọi PR: job `check` của `ci.yml` chạy `yar
 
 ### Vì sao dùng `link:` thay vì `workspace:*`
 
-Package gốc chính là thư viện `@duydpdev/style-generator`. Với `nodeLinker: node-modules`, Yarn hoist một dependency `workspace:*` trỏ ngược về gốc lên `node_modules` gốc, coi nó là một self-reference và bỏ nó đi. Kết quả là sau một lần `yarn install` sạch, không có `node_modules/@duydpdev/style-generator` ở đâu cả (`nmSelfReferences` không áp dụng cho trường hợp này). `link:..` (site) và `link:../..` (các ví dụ) tạo symlink trong `node_modules` của từng workspace. Đừng đặt alias cho package trong Vite: ví dụ phải đi qua `exports` thật của package. Quy tắc này chỉ áp dụng cho thư viện gốc: `design-system-example` là một workspace riêng, nên ba ứng dụng tham chiếu nó bằng `workspace:*`.
+Package gốc chính là thư viện `@duydpdev/style-generator`.
+Với `nodeLinker: node-modules`, Yarn hoist một dependency `workspace:*` trỏ ngược về gốc lên `node_modules` gốc, coi nó là một self-reference và bỏ nó đi.
+Kết quả là sau một lần `yarn install` sạch, không có `node_modules/@duydpdev/style-generator` ở đâu cả (`nmSelfReferences` không áp dụng cho trường hợp này).
+`link:..` (site) và `link:../..` (các ví dụ) tạo symlink trong `node_modules` của từng workspace.
+Đừng đặt alias cho package trong Vite: ví dụ phải đi qua `exports` thật của package.
+Quy tắc này chỉ áp dụng cho thư viện gốc: `design-system-example` là một workspace riêng, nên hai ứng dụng dùng nó (`harness` và `plain-react`) tham chiếu nó bằng `workspace:*`.
 
 ### Các alias script (root)
 

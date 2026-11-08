@@ -216,7 +216,7 @@ export const boxTables = (
       opacities: t.opacities ?? [],
     }),
     innerBorder: { true: "!border-none" },
-    // The inner-border element a Box renders (was a literal in react-v4's Box.tsx:94).
+    // The inner-border element a Box renders (was a literal in the harness's Box.tsx:94).
     overlay: { true: "pointer-events-none absolute inset-0" },
   },
 });

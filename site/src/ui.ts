@@ -4,11 +4,11 @@ import {
   createGrid,
   createStack,
   createText,
-} from "react-v4-example/ui";
+} from "harness-example/ui";
 
 import { tokens } from "./ui-tokens";
 
-/** The site's components: react-v4's sample factories bound to the site theme (no recipe presets). */
+/** The site's components: the harness's sample factories bound to the site theme (no recipe presets). */
 export const Box = createBox(tokens);
 export const Flex = createFlex(tokens);
 export const Grid = createGrid(tokens);

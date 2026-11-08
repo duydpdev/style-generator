@@ -1037,6 +1037,12 @@ __metadata:
   languageName: node
   linkType: soft
 
+"@duydpdev/style-generator@link:../..::locator=harness-example%40workspace%3Aexamples%2Fharness":
+  version: 0.0.0-use.local
+  resolution: "@duydpdev/style-generator@link:../..::locator=harness-example%40workspace%3Aexamples%2Fharness"
+  languageName: node
+  linkType: soft
+
 "@duydpdev/style-generator@link:../..::locator=plain-nuxt-example%40workspace%3Aexamples%2Fplain-nuxt":
   version: 0.0.0-use.local
   resolution: "@duydpdev/style-generator@link:../..::locator=plain-nuxt-example%40workspace%3Aexamples%2Fplain-nuxt"
@@ -1046,12 +1052,6 @@ __metadata:
 "@duydpdev/style-generator@link:../..::locator=plain-react-example%40workspace%3Aexamples%2Fplain-react":
   version: 0.0.0-use.local
   resolution: "@duydpdev/style-generator@link:../..::locator=plain-react-example%40workspace%3Aexamples%2Fplain-react"
-  languageName: node
-  linkType: soft
-
-"@duydpdev/style-generator@link:../..::locator=react-v4-example%40workspace%3Aexamples%2Freact-v4":
-  version: 0.0.0-use.local
-  resolution: "@duydpdev/style-generator@link:../..::locator=react-v4-example%40workspace%3Aexamples%2Freact-v4"
   languageName: node
   linkType: soft
 
@@ -9551,6 +9551,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"harness-example@workspace:*, harness-example@workspace:examples/harness":
+  version: 0.0.0-use.local
+  resolution: "harness-example@workspace:examples/harness"
+  dependencies:
+    "@duydpdev/style-generator": "link:../.."
+    "@tailwindcss/vite": "npm:^4.2.0"
+    "@types/react": "npm:^19.0.0"
+    "@types/react-dom": "npm:^19.0.0"
+    "@vitejs/plugin-react": "npm:^5.0.0"
+    class-variance-authority: "npm:^0.7.0"
+    clsx: "npm:^2.1.1"
+    design-system-example: "workspace:*"
+    react: "npm:^19.0.0"
+    react-dom: "npm:^19.0.0"
+    tailwind-merge: "npm:^3.0.0"
+    tailwindcss: "npm:^4.2.0"
+    typescript: "npm:^5.9.0"
+    vite: "npm:^7.3.5"
+  languageName: unknown
+  linkType: soft
+
 "has-flag@npm:^3.0.0":
   version: 3.0.0
   resolution: "has-flag@npm:3.0.0"
@@ -13900,10 +13921,10 @@ __metadata:
     class-variance-authority: "npm:^0.7.0"
     clsx: "npm:^2.1.1"
     design-system-example: "workspace:*"
+    harness-example: "workspace:*"
     playwright: "npm:1.63.0"
     react: "npm:^19.0.0"
     react-dom: "npm:^19.0.0"
-    react-v4-example: "workspace:*"
     storybook: "npm:10.6.5"
     tailwind-merge: "npm:^3.0.0"
     tailwindcss: "npm:^4.2.0"
@@ -14799,36 +14820,6 @@ __metadata:
   checksum: 10c0/3daff5404c7de1429447e735f1ee7e070d4f11632f589cec70c5171f2357be9cada2162f780bc9061eb153646109ad6e80c2d10a6b27256593f28a66945f4c76
   languageName: node
   linkType: hard
-
-"react-v4-example@workspace:*, react-v4-example@workspace:examples/react-v4":
-  version: 0.0.0-use.local
-  resolution: "react-v4-example@workspace:examples/react-v4"
-  dependencies:
-    "@duydpdev/style-generator": "link:../.."
-    "@storybook/addon-docs": "npm:10.6.5"
-    "@storybook/addon-vitest": "npm:10.6.5"
-    "@storybook/react": "npm:10.6.5"
-    "@storybook/react-vite": "npm:10.6.5"
-    "@tailwindcss/vite": "npm:^4.2.0"
-    "@types/react": "npm:^19.0.0"
-    "@types/react-dom": "npm:^19.0.0"
-    "@vitejs/plugin-react": "npm:^5.0.0"
-    "@vitest/browser": "npm:4.1.11"
-    "@vitest/browser-playwright": "npm:4.1.11"
-    class-variance-authority: "npm:^0.7.0"
-    clsx: "npm:^2.1.1"
-    design-system-example: "workspace:*"
-    playwright: "npm:1.63.0"
-    react: "npm:^19.0.0"
-    react-dom: "npm:^19.0.0"
-    storybook: "npm:10.6.5"
-    tailwind-merge: "npm:^3.0.0"
-    tailwindcss: "npm:^4.2.0"
-    typescript: "npm:^5.9.0"
-    vite: "npm:^7.3.5"
-    vitest: "npm:4.1.11"
-  languageName: unknown
-  linkType: soft
 
 "react@npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0":
   version: 19.3.1
@@ -15871,12 +15862,12 @@ __metadata:
     "@types/react": "npm:^19.0.0"
     "@types/react-dom": "npm:^19.0.0"
     "@vitejs/plugin-react": "npm:^5.0.0"
+    harness-example: "workspace:*"
     highlight.js: "npm:^11.10.0"
     react: "npm:^19.0.0"
     react-dom: "npm:^19.0.0"
     react-markdown: "npm:^9.0.1"
     react-router-dom: "npm:^7.1.1"
-    react-v4-example: "workspace:*"
     rehype-highlight: "npm:^7.0.1"
     rehype-slug: "npm:^6.0.0"
     remark-gfm: "npm:^4.0.0"

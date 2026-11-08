@@ -1,6 +1,6 @@
 # design-system-example
 
-The shared design system behind the `react-v4` harness example: one theme, one options object, typed tokens, a `cn()` helper, the headless recipes of the six sample components and the shared CSS. The app keeps only its wiring, its demo code and the six sample components in its own `ui/` folder; everything else lives here.
+The shared design system behind the `harness` example: one theme, one options object, typed tokens, a `cn()` helper, the headless recipes of the six sample components and the shared CSS. The app keeps only its wiring, its demo code and the six sample components in its own `ui/` folder; everything else lives here.
 
 This is a private Yarn workspace of the repo root (`"design-system-example": "workspace:*"` in the apps). It depends on the library through `"@duydpdev/style-generator": "link:../.."`, so the library must be built first.
 
@@ -42,7 +42,7 @@ Nothing under `src/` imports the library root (`@duydpdev/style-generator`): tha
 Each recipe is a headless `cva` configuration, built with `createVariantMapper` and `COLOR_STATES` from `@duydpdev/style-generator/cva`. A framework component only adds markup:
 
 ```tsx
-// react-v4: a thin wrapper
+// harness: a thin wrapper
 import { buttonRecipe, cn } from "design-system-example";
 
 export const Button = ({ variant, color, size, className, ...props }) => (

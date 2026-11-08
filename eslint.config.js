@@ -11,17 +11,15 @@ import vueParser from "vue-eslint-parser";
 import { BANNED_TAGS, UI_COMPONENT_NAMES } from "./examples/ui-registry.mjs";
 
 // App code that renders only the sample components of
-// examples/react-v4/src/ui (site/ imports them as react-v4-example/ui).
+// examples/harness/src/ui (site/ imports them as harness-example/ui).
 const UI_APP_FILES = [
-  "examples/react-v4/src/**/*.{ts,tsx}",
+  "examples/harness/src/**/*.{ts,tsx}",
   "site/src/**/*.tsx",
 ];
 
 // The sample components themselves render raw tags with className and
-// style, and build their classes from the recipes. Their stories
-// (src/ui/<Name>.stories.tsx, the app's only stories) share the exemption:
-// they render props and play checks, one file per component's variants.
-const UI_COMPONENT_FILES = ["examples/react-v4/src/ui/**"];
+// style, and build their classes from the recipes.
+const UI_COMPONENT_FILES = ["examples/harness/src/ui/**"];
 
 const TAG_SELECTOR = `JSXOpeningElement[name.name=/^(${BANNED_TAGS.join("|")})$/]`;
 const COMPONENT_SELECTOR = `JSXOpeningElement[name.name=/^(${UI_COMPONENT_NAMES.join("|")})$/]`;
@@ -39,7 +37,7 @@ const UI_TAG_SYNTAX = {
 // className must come from a table of `<ns>-` classes and says so with a
 // disable comment. Third-party components (NavLink, ReactMarkdown) stay
 // outside both selectors. A later block's no-restricted-syntax replaces the
-// rule's options, so the react-v4 block repeats the whole list with `x`.
+// rule's options, so the harness block repeats the whole list with `x`.
 const uiAppSyntax = (ns) => {
   const lowerTag = "JSXOpeningElement[name.name=/^[a-z]/]";
   const classNameAttr = "JSXAttribute[name.name='className']";
@@ -76,7 +74,7 @@ const uiAppSyntax = (ns) => {
   ];
 };
 
-// react-v4 only: the site's grids use desktop-first CSS templates
+// harness only: the site's grids use desktop-first CSS templates
 // (max-width media queries) that `columns` cannot express.
 const GRID_COLUMNS_SYNTAX = {
   selector:
@@ -86,7 +84,7 @@ const GRID_COLUMNS_SYNTAX = {
 };
 
 // Recipes, cn and the spacing helpers are for component authors; app code
-// uses the components' props. Shared by the react-v4 example rules.
+// uses the components' props. Shared by the harness example rules.
 const RESTRICTED_UI_IMPORTS = {
   patterns: [
     {
@@ -117,11 +115,11 @@ const PLAIN_RESTRICTED_IMPORTS = {
       group: [
         "design-system-example",
         "design-system-example/*",
-        "react-v4-example",
-        "react-v4-example/*",
+        "harness-example",
+        "harness-example/*",
       ],
       message:
-        "Plain examples import only the package, their own files and src/theme.ts; the harness (design-system-example, react-v4-example) stays out.",
+        "Plain examples import only the package, their own files and src/theme.ts; the harness (design-system-example, harness-example) stays out.",
     },
   ],
 };
@@ -217,7 +215,7 @@ export default pluginTs.config(
   // positive lines must compile), and JSX is evaluated only for its type, hence `void (<X />)`.
   {
     files: [
-      "examples/react-v4/tests/**/*.tsx",
+      "examples/harness/tests/**/*.tsx",
     ],
     rules: {
       "sonarjs/void-use": "off",
@@ -256,7 +254,7 @@ export default pluginTs.config(
   },
 
   {
-    files: ["examples/react-v4/src/**/*.{ts,tsx}"],
+    files: ["examples/harness/src/**/*.{ts,tsx}"],
     ignores: UI_COMPONENT_FILES,
     rules: {
       "no-restricted-syntax": ["error", ...uiAppSyntax("x"), GRID_COLUMNS_SYNTAX],

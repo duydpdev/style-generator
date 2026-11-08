@@ -89,7 +89,7 @@ jobs:
           yarn typecheck:scripts
 
       - name: Build site
-        # site/ and examples/react-v4 dogfood the library through `link:` deps,
+        # site/ and examples/harness dogfood the library through `link:` deps,
         # and the site renders documents/*.md, so this runs for docs-only PRs too.
         # It is the only check that builds them; nothing deploys the site.
         run: yarn workspace site build
@@ -132,7 +132,7 @@ jobs:
         run: yarn workspace design-system-example test
 
       - name: Build examples
-        # react-v4 is already built by the site build above.
+        # harness is already built by the site build above.
         run: |
           yarn workspace plain-react-example build
           yarn workspace plain-nuxt-example build
@@ -185,7 +185,7 @@ jobs:
 
   # examples/plain-react: the stories run as Vitest browser tests (project
   # `storybook`), the plain-vs-harness class parity gate (project `parity`)
-  # compares the six shared components with react-v4-example/ui, and a copied
+  # compares the six shared components with harness-example/ui, and a copied
   # src/ui/button/ type-checks against the packed tarball and its peers only.
   # The workspace scripts run `style-gen generate` first, so dist/ must be
   # built. A job of its own (not a step of `check`) with no paths filter and
@@ -260,58 +260,3 @@ jobs:
 
       - name: Run e2e tests
         run: yarn test:e2e
-
-  # The Storybooks of the example apps that have no plain-react job of their
-  # own (examples/react-v4, examples/plain-nuxt): `storybook
-  # build` (autodocs) and the stories as Vitest browser tests. Like
-  # `plain-react`: no paths filter, no draft skip, dist/ built first because
-  # the workspace scripts run `style-gen generate`. Its check names
-  # (`Storybook (<app>)`) are required by the `main-develop` ruleset, like
-  # `Build & Lint Check` and `Plain React (Storybook + parity)`.
-  storybook:
-    name: Storybook (${{ matrix.app }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - app: react-v4
-            workspace: react-v4-example
-          - app: plain-nuxt
-            workspace: plain-nuxt-example
-            prepare: true
-    env:
-      STORYBOOK_DISABLE_TELEMETRY: "true"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: "yarn"
-          cache-dependency-path: "yarn.lock"
-
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Build
-        run: yarn build:all
-
-      - name: Prepare Nuxt types
-        if: matrix.prepare
-        run: yarn workspace plain-nuxt-example prepare:nuxt
-
-      - name: Install Playwright Chromium
-        run: yarn playwright install --with-deps chromium
-
-      - name: Storybook build
-        run: yarn workspace ${{ matrix.workspace }} storybook:build
-
-      - name: Stories (Vitest browser)
-        run: yarn workspace ${{ matrix.workspace }} test:stories

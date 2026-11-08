@@ -1,7 +1,7 @@
 /**
  * Dev-server smoke for `styleGenVite` on whatever Vite major is installed
  * (CI `peer-matrix` legs). `vite build` never runs `configureServer`, so this
- * starts a real dev server on `examples/react-v4`, expects the plugin to write
+ * starts a real dev server on `examples/harness`, expects the plugin to write
  * `theme.css` in `buildStart` (Vite runs it from `listen()`, not from
  * `createServer()`), edits a colour in the theme JSON and expects it to
  * rewrite `theme.css` and send a full-reload. A second scenario checks that
@@ -19,9 +19,9 @@ import { fileURLToPath } from "node:url";
 import { createLogger, createServer, version } from "vite";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const exampleDir = join(root, "examples/react-v4");
+const exampleDir = join(root, "examples/harness");
 // The theme lives in the shared design-system package; the app's plugin reads
-// it through `themePath` and emits `theme.css` into the react-v4 example.
+// it through `themePath` and emits `theme.css` into the harness example.
 const themeJson = join(root, "examples/design-system/src/theme.json");
 const themeCss = join(exampleDir, "src/theme/theme.css");
 const MARKER = "#0a1b2c";

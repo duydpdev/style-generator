@@ -101,7 +101,7 @@ export function ExamplesSidebar({
       <Stack className="s-sidebar-foot" py={3} px={4} gap={1.5}>
         <Flex justify="between">
           <Box as="span">SOURCE</Box>
-          <Box as="span">examples/react-{variant}</Box>
+          <Box as="span">examples/harness</Box>
         </Flex>
         <Flex justify="between">
           <Box as="span">SHARED</Box>
@@ -114,7 +114,7 @@ export function ExamplesSidebar({
         <Flex justify="between">
           <Box as="span">OPEN</Box>
           <a
-            href={`${FOOT_LINK}/examples/react-${variant}`}
+            href={`${FOOT_LINK}/examples/harness`}
             target="_blank"
             rel="noopener noreferrer"
           >

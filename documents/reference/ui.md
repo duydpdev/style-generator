@@ -53,7 +53,7 @@ export const element = {
 };
 ```
 
-The harness components in [`examples/react-v4/src/ui/`](../../examples/react-v4/src/ui/Box.tsx) and the recipe factories in [`examples/design-system`](../../examples/design-system/README.md) are built on this kit; [Components](../components.md) walks through one.
+The harness components in [`examples/harness/src/ui/`](../../examples/harness/src/ui/Box.tsx) and the recipe factories in [`examples/design-system`](../../examples/design-system/README.md) are built on this kit; [Components](../components.md) walks through one.
 
 ## `recipeFromTables`, `RecipeTables`, `VariantTable`, `RecipeProps`, `RecipeFn`
 

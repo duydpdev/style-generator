@@ -132,6 +132,7 @@
     "check:docs-embed": "node scripts/docs-embed.mjs --check",
     "check:docs-i18n": "node scripts/check-docs-i18n.mjs",
     "check:externals": "node scripts/check-externals.mjs",
+    "check:next-build": "node scripts/next-build-smoke.mjs",
     "check:plain-ui": "node scripts/check-plain-ui.mjs",
     "check:publish-target": "node scripts/check-publish-target.mjs",
     "check:sizes": "node scripts/check-sizes.mjs",

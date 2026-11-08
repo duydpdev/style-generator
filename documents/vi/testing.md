@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 6555f71795dd -->
+<!-- source: documents/testing.md sha256: 76a849b2b737 -->
 
 # Hướng dẫn kiểm thử
 
@@ -45,7 +45,8 @@ Các bước kiểm tra có hai lớp:
      bỏ qua PR draft và chạy lại khi `ready_for_review`): `build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`;
    - job `tailwind-floor`: ghim các package Tailwind về `~4.1.0` (chỉ trong bản checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`,
      để peer `tailwindcss ^4.1.0` thực sự được kiểm tra — lockfile hiện resolve tới 4.3.x, nên nếu không có job này thì cận dưới sẽ không bao giờ được chạm tới.
-   - job `node-floor`: build và chạy `check:smoke` trên Node `20.19.0`, mức sàn của `engines.node` (các job khác chạy Node 22);
+   - job `node-floor`: build và chạy `check:smoke` cùng `check:next-build` (một lần `next build` thật qua `styleGenNext`, `scripts/next-build-smoke.mjs`) trên Node `20.19.0`,
+     mức sàn của `engines.node` (các job khác chạy Node 22);
    - job `peer-matrix` (4 nhánh): build thư viện bằng toolchain đã commit, rồi ép **một** peer về phiên bản mới nhất của **một** major qua `resolutions` (`vite` 5/6/8,
      `typescript` 6), khẳng định phiên bản được resolve là `N.x`, rồi build `examples/harness`, (nhánh `vite`) smoke test dev server, kiểm tra kiểu ví dụ và `yarn typecheck:dist`,
      (nhánh `typescript`) `yarn test:types`. Mọi nhánh đều phải xanh (đỏ nghĩa là CI đỏ); không còn nhánh `experimental` nào nữa:
@@ -94,6 +95,7 @@ Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:al
 | `yarn check:browser-safe`                                                       | một subpath trình duyệt chạm tới Zod, một builtin của Node hoặc một runtime dependency                            | `check`: Check browser-safe subpaths; `deploy.yml`             | `src/**`, config build                                                        |
 | `yarn check:publish-target`                                                     | registry publish khác GitHub Packages                                                                             | `deploy.yml`: Verify publish target; `prepublish`              | `package.json`, `.yarnrc.yml`                                                 |
 | `yarn check:smoke`                                                              | thiếu file `dist`, một subpath không nạp được bằng `import` hoặc `require`, CLI hỏng                              | `check`: Smoke-run built artifacts; `node-floor`; `deploy.yml` | `src/**`, config build                                                        |
+| `yarn check:next-build`                                                         | `styleGenNext` hỏng trong một lần `next build` thật (nạp config qua `require`, chọn phase, CSS được sinh)         | `node-floor`: Next build smoke                                 | `src/features/next/**`, `src/node/**`, config build                           |
 | `yarn check:types-pack`                                                         | một subpath có kiểu không resolve được cho người dùng ESM và CJS (attw, node16)                                   | `check`: Check types resolve for ESM and CJS; `deploy.yml`     | `src/**`, `package.json#exports`                                              |
 | `node scripts/vite-dev-smoke.mjs`                                               | một dev server `styleGenVite` không ghi hoặc không emit lại `theme.css`                                           | `check`: Vite dev-server smoke; `peer-matrix` (các nhánh vite) | `src/features/vite/**`                                                        |
 | `yarn site:build`                                                               | build site hoặc harness thất bại (site render `documents/*.md`)                                                   | `check`: Build site; `visual.yml`                              | `site`, `documents/**`, `examples/**`                                         |

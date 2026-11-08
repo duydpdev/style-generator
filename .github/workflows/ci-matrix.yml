@@ -83,11 +83,12 @@ jobs:
   # `engines.node` is `^20.19.0 || >=22.12.0`, while every other job runs
   # Node 22. This leg loads the built package on the floor release: every
   # subpath via import + require (the CJS entries `require` ESM-only
-  # chokidar 5, unflagged only from 20.19) and the CLI, `init` included.
+  # chokidar 5, unflagged only from 20.19), the CLI, `init` included, and a
+  # real `next build` through `styleGenNext` (scripts/next-build-smoke.mjs).
   node-floor:
     name: Node engines floor (20.19.0)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
 
     steps:
@@ -109,6 +110,11 @@ jobs:
 
       - name: Smoke-run built artifacts
         run: yarn check:smoke
+
+      # next.config.ts is transpiled to CommonJS, so `./next` loads through
+      # `require` (dist/next.cjs, require(esm) of chokidar): the floor host.
+      - name: Next build smoke (./next, next@16.4.5)
+        run: yarn check:next-build
 
   # The `vite` and `typescript` peer ranges (CI-05). Each leg re-resolves ONE
   # peer to the latest release of one major via `resolutions` (this runner's

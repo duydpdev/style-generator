@@ -1,3 +1,23 @@
+# [7.0.0](https://github.com/duydpdev/style-generator/compare/v6.0.0...v7.0.0) (2026-11-08)
+
+### Release
+
+- remove axes.scope, axes.attribute and extraSources ([931a229](https://github.com/duydpdev/style-generator/commit/931a229de20a6bab797a519df4599569e50a9843))
+
+### Bug Fixes
+
+- address the 7.0 review findings ([7869c60](https://github.com/duydpdev/style-generator/commit/7869c60a002da5cde44282e01a357bd7db971b01))
+
+  style-gen init drops extraSources/axes (7.0) like plugin (6.0) and prints the
+  former extraSources entries as @source inline lines; README/cli.md snippets
+  pinned to getBundlerSnippet by a test; vacuous examples-dedup test removed;
+  ci-matrix concurrency per event; docs en/vi corrections.
+
+
+### BREAKING CHANGES
+
+- the generator options extraSources, axes.scope and axes.attribute are removed. Theme axis selectors are always html[data-<axis-kebab>="<variant-kebab>"]; themeAxisAttributes(state) takes one argument. Passing a removed key throws a ZodError (unrecognized_keys). See documents/migration/6.x-to-7.0.md.
+
 # [6.0.0](https://github.com/duydpdev/style-generator/compare/v5.4.2...v6.0.0) (2026-11-06)
 
 ### Release

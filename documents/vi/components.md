@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: dc922d7882d4 -->
+<!-- source: documents/components.md sha256: 8d6491048960 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -382,7 +382,7 @@ const root = () => {
 - `className`/`class` và `style` được phép dùng trên các thẻ tag.
 - Một pattern có quy tắc riêng hoặc lặp lại sẽ trở thành một component có prop được định kiểu.
 - Không dùng thuộc tính `data-*` làm hook CSS riêng (ESLint và job `check` của CI cấm thuộc tính part-hook cũ toàn repo); các hook CSS riêng trong các app plain là `className` thông thường.
-- `src/**` (Nuxt `app/**`) không bao giờ import `design-system-example` hoặc `react-v4-example` (ESLint).
+- `src/**` (Nuxt `app/**`) không bao giờ import `design-system-example` hoặc `harness-example` (ESLint).
 - Một thư mục ui chỉ import `./…`, `../../theme` và các package.
 
 ### Thêm một component plain
@@ -406,7 +406,7 @@ Cho đến commit `2045cce`, Dialog, Select, List, ListItem, Card, Badge, Code, 
 
 Trong React, mỗi file trong `src/ui/` export một factory (`createBox`, `createText`, …) nhận các token của ứng dụng và preset (nếu component đó có preset). `src/ui.ts` bind chúng một lần, và mã nguồn ứng dụng sẽ import các component từ đó:
 
-<!-- embed: examples/react-v4/src/ui.ts -->
+<!-- embed: examples/harness/src/ui.ts -->
 
 ```ts
 import {
@@ -462,11 +462,11 @@ ESLint thực thi hai quy tắc cuối và cấm các thẻ trong bảng trên t
 
 - **`Stack`** là luồng một cột theo chiều dọc: một section trên trang, một form, thân của một card. Giãn cách các phần tử con bằng `gap`, không dùng margin trên từng phần tử con.
 - **`Flex`** là một hàng, hoặc một tập hợp xuống dòng gồm hai phần tử con trở lên. Đừng bao giờ bọc một phần tử con đơn lẻ trong `Flex` chỉ để căn chỉnh hoặc tạo khoảng cách: hãy đặt các prop đó lên chính phần tử con hoặc trên `Stack` cha. Một ngoại lệ: một `Flex` có flex item thứ hai là một pseudo-element CSS (một đường kẻ `::before`/`::after` cạnh một nhãn) được tính là có hai flex item mặc dù markup chỉ hiển thị một phần tử con; các nhãn trong `docs-onpage.tsx`, `docs-sidebar.tsx` và `sidebar-toc.tsx` của trang site hoạt động theo cách này. ESLint không thể báo cáo quy tắc này (khoảng trắng giữa các thẻ JSX được tính là một phần tử con), vì vậy việc review sẽ kiểm tra nó.
-- **`Grid`** luôn có `columns`: một số lượng (`columns={3}`), một track list CSS (`columns="220px 1fr"`), hoặc một record `{ base, md, lg }` cho một trong hai kiểu (`columns={{ base: 1, md: "220px 1fr" }}`). Một `Grid` không có `columns` thực chất là một `Stack` một cột đội lốt. ESLint báo lỗi `<Grid>` không có `columns` trong `examples/react-v4/src`; trang landing site được miễn trừ, vì các lưới của nó sử dụng CSS template ưu tiên desktop dưới các khối `@media (max-width: …)` mà prop `columns` ưu tiên mobile không thể biểu đạt.
+- **`Grid`** luôn có `columns`: một số lượng (`columns={3}`), một track list CSS (`columns="220px 1fr"`), hoặc một record `{ base, md, lg }` cho một trong hai kiểu (`columns={{ base: 1, md: "220px 1fr" }}`). Một `Grid` không có `columns` thực chất là một `Stack` một cột đội lốt. ESLint báo lỗi `<Grid>` không có `columns` trong `examples/harness/src`; trang landing site được miễn trừ, vì các lưới của nó sử dụng CSS template ưu tiên desktop dưới các khối `@media (max-width: …)` mà prop `columns` ưu tiên mobile không thể biểu đạt.
 
 ### `as` đa hình (polymorphic)
 
-Các component bố cục và `Text` chấp nhận `as` để chọn phần tử gốc, và các prop khác sau đó sẽ được định kiểu cho phần tử đó: `<Text as="h1" type="display56Serif">` chấp nhận các thuộc tính của `<h1>`, và `<Box as="section">` chấp nhận các thuộc tính của `<section>`. Mỗi file React định kiểu cho các prop của mình bằng `Polymorphic` từ `@duydpdev/style-generator/ui-react`; xem [`examples/react-v4/src/ui/Box.tsx`](../../examples/react-v4/src/ui/Box.tsx).
+Các component bố cục và `Text` chấp nhận `as` để chọn phần tử gốc, và các prop khác sau đó sẽ được định kiểu cho phần tử đó: `<Text as="h1" type="display56Serif">` chấp nhận các thuộc tính của `<h1>`, và `<Box as="section">` chấp nhận các thuộc tính của `<section>`. Mỗi file React định kiểu cho các prop của mình bằng `Polymorphic` từ `@duydpdev/style-generator/ui-react`; xem [`examples/harness/src/ui/Box.tsx`](../../examples/harness/src/ui/Box.tsx).
 
 ### Thêm một component
 
@@ -474,11 +474,11 @@ Các component bố cục và `Text` chấp nhận `as` để chọn phần tử
 
 1. **Recipe factory** trong `examples/design-system/src/recipes/factories/<name>.ts`, được export từ `factories/index.ts` (subpath `design-system-example/recipes`).
 2. **Recipe đã bind và preset** trong `examples/design-system/src/recipes/<name>.ts`, được export từ `src/index.ts`. Ứng dụng React bind factory với preset.
-3. **File component React** `examples/react-v4/src/ui/<Name>.tsx`: các kiểu prop riêng trên `Polymorphic` từ `@duydpdev/style-generator/ui-react`. File này phân tách các prop bằng bộ kit trong `@duydpdev/style-generator/ui`: `splitLayout` (với `BOX_VARIANT_KEYS` và `LAYOUT_SIZE_KEYS` của `src/ui/layout.ts`) cho component bố cục, `splitSpacing` cho bất kỳ component nào khác.
-4. **Export** từ `examples/react-v4/src/ui/index.ts`.
-5. **Bind** trong `examples/react-v4/src/ui.ts`, và trong `site/src/ui.ts` khi trang site render component đó.
+3. **File component React** `examples/harness/src/ui/<Name>.tsx`: các kiểu prop riêng trên `Polymorphic` từ `@duydpdev/style-generator/ui-react`. File này phân tách các prop bằng bộ kit trong `@duydpdev/style-generator/ui`: `splitLayout` (với `BOX_VARIANT_KEYS` và `LAYOUT_SIZE_KEYS` của `src/ui/layout.ts`) cho component bố cục, `splitSpacing` cho bất kỳ component nào khác.
+4. **Export** từ `examples/harness/src/ui/index.ts`.
+5. **Bind** trong `examples/harness/src/ui.ts`, và trong `site/src/ui.ts` khi trang site render component đó.
 6. **Khai báo trong registry** `{ name: "<Name>", tags: [...] }` trong `examples/ui-registry.mjs`, kèm theo danh sách các thẻ chữ thường mà nó thay thế (danh sách rỗng nếu không thay thế thẻ nào); ESLint xây dựng các quy tắc cho React từ file này.
-7. **Kiểm tra kiểu**: một vài dòng trong `examples/react-v4/tests/ui-types.tsx`, bao gồm một dòng `@ts-expect-error` cho một token sai.
+7. **Kiểm tra kiểu**: một vài dòng trong `examples/harness/tests/ui-types.tsx`, bao gồm một dòng `@ts-expect-error` cho một token sai.
 
 Factory không biết giá trị theme nào:
 
@@ -636,7 +636,7 @@ export interface TextStyleProps {
 
 File React export một factory nhận các token của ứng dụng và preset, để trang site có thể bind cùng một file đó với theme riêng của mình:
 
-<!-- embed: examples/react-v4/src/ui/Text.tsx -->
+<!-- embed: examples/harness/src/ui/Text.tsx -->
 
 ```tsx
 import {
@@ -780,9 +780,9 @@ const root = () => {
 
 Các ví dụ không có test runner. Các bước kiểm tra của chúng diễn ra lúc biên dịch và lúc lint, và tất cả đều đọc thư mục `dist/` đã được build của thư viện, vì vậy hãy chạy `yarn build:all` trước:
 
-- `yarn workspace react-v4-example typecheck` biên dịch `src/ui/*.tsx` và `tests/ui-types.tsx`, trong đó mỗi dòng `@ts-expect-error` bắt buộc phải ứng với một lỗi kiểu thực sự.
+- `yarn workspace harness-example typecheck` biên dịch `src/ui/*.tsx` và `tests/ui-types.tsx`, trong đó mỗi dòng `@ts-expect-error` bắt buộc phải ứng với một lỗi kiểu thực sự.
 - `yarn lint` áp dụng các quy tắc của registry (các thẻ bị cấm, không dùng `className`/`style`, `Grid` phải có `columns`).
-- `yarn workspace site build` (lệnh này cũng build `react-v4`) chứng minh ứng dụng render thành công.
+- `yarn workspace site build` (lệnh này cũng build `harness`) chứng minh ứng dụng render thành công.
 
 ## Recipe không dùng component
 

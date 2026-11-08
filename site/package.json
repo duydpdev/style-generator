@@ -13,12 +13,12 @@
     "lint": "yarn run --top-level prettier --check ."
   },
   "dependencies": {
+    "harness-example": "workspace:*",
     "highlight.js": "^11.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^7.1.1",
-    "react-v4-example": "workspace:*",
     "rehype-highlight": "^7.0.1",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.0"

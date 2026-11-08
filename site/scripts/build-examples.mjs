@@ -15,8 +15,8 @@ const EXAMPLE_BASE = "./";
 const EXAMPLES = [
   {
     name: "v4",
-    workspace: "react-v4-example",
-    sourceDist: resolve(repoRoot, "examples/react-v4/dist"),
+    workspace: "harness-example",
+    sourceDist: resolve(repoRoot, "examples/harness/dist"),
   },
 ];
 

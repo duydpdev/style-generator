@@ -71,7 +71,7 @@ export default defineConfig({
 });
 ```
 
-Nuxt runs on Vite: register the same plugin in `nuxt.config.ts` under `vite.plugins`. Nuxt 4 sets the Vite `root` to `app/`, so a relative `themePath` would resolve from there; pass absolute paths (`fileURLToPath(new URL("./theme.json", import.meta.url))`). The harness example (`examples/react-v4`) takes its theme and `options` module from [`examples/design-system`](../../examples/design-system/README.md); [`examples/plain-nuxt`](../../examples/plain-nuxt/README.md) keeps its theme in `app/theme/theme.json` and passes no options. Add `theme.css` to `.gitignore` if the theme JSON is your source of truth.
+Nuxt runs on Vite: register the same plugin in `nuxt.config.ts` under `vite.plugins`. Nuxt 4 sets the Vite `root` to `app/`, so a relative `themePath` would resolve from there; pass absolute paths (`fileURLToPath(new URL("./theme.json", import.meta.url))`). The harness example (`examples/harness`) takes its theme and `options` module from [`examples/design-system`](../../examples/design-system/README.md); [`examples/plain-nuxt`](../../examples/plain-nuxt/README.md) keeps its theme in `app/theme/theme.json` and passes no options. Add `theme.css` to `.gitignore` if the theme JSON is your source of truth.
 
 **Dev-server notes.** On Vite 5, `buildStart` of a dev server runs on `server.listen()` (or in `middlewareMode`), so a `createServer()` that never calls `listen()` does not write `theme.css`; from Vite 6 the plugin sets `perEnvironmentStartEndDuringDev` and `buildStart` also runs for `createServer()` + `ssrLoadModule`. The plugin reads `style-gen.config.json` **once**, when Vite loads its config: restart the dev server after editing it (only the theme file is watched).
 

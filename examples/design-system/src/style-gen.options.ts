@@ -11,7 +11,7 @@ import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
  * tuple is what narrows `BreakpointKeys<typeof options>` to `"md" | "lg"`;
  * the literal `opacities` tuple types `tokens.opacities` and so the `key/step`
  * color props. `style-gen.config.json` mirrors it for the CLI-only flow; a
- * test pins the two (and the react-v4 `package.json#style-gen` copy).
+ * test pins the two (and the harness `package.json#style-gen` copy).
  */
 // #region docs:options
 export const options = {

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: 6807bc44d5cf -->
+<!-- source: documents/reference/ui.md sha256: f02eabd8231f -->
 
 # UI kit (./ui)
 
@@ -55,7 +55,7 @@ export const element = {
 };
 ```
 
-Các component harness trong [`examples/react-v4/src/ui/`](../../../examples/react-v4/src/ui/Box.tsx) và các factory recipe trong [`examples/design-system`](../../../examples/design-system/README.md) đều được dựng trên bộ kit này; [Component](../components.md) hướng dẫn chi tiết qua một component mẫu.
+Các component harness trong [`examples/harness/src/ui/`](../../../examples/harness/src/ui/Box.tsx) và các factory recipe trong [`examples/design-system`](../../../examples/design-system/README.md) đều được dựng trên bộ kit này; [Component](../components.md) hướng dẫn chi tiết qua một component mẫu.
 
 ## `recipeFromTables`, `RecipeTables`, `VariantTable`, `RecipeProps`, `RecipeFn`
 

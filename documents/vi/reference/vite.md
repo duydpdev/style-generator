@@ -1,4 +1,4 @@
-<!-- source: documents/reference/vite.md sha256: 780f9623467c -->
+<!-- source: documents/reference/vite.md sha256: 1b789d5b763f -->
 
 # Vite và Nuxt (./vite)
 
@@ -73,7 +73,7 @@ export default defineConfig({
 });
 ```
 
-Nuxt chạy trên Vite: hãy đăng ký cùng plugin này trong `nuxt.config.ts` dưới mục `vite.plugins`. Nuxt 4 đặt `root` của Vite thành `app/`, vì vậy một `themePath` tương đối sẽ được giải quyết (resolve) từ đó; hãy truyền các đường dẫn tuyệt đối (`fileURLToPath(new URL("./theme.json", import.meta.url))`). Ví dụ harness (`examples/react-v4`) lấy theme và module `options` từ [`examples/design-system`](../../../examples/design-system/README.md); [`examples/plain-nuxt`](../../../examples/plain-nuxt/README.md) giữ theme của mình trong `app/theme/theme.json` và không truyền options. Hãy thêm `theme.css` vào `.gitignore` nếu file theme JSON là nguồn chân lý duy nhất (source of truth) của bạn.
+Nuxt chạy trên Vite: hãy đăng ký cùng plugin này trong `nuxt.config.ts` dưới mục `vite.plugins`. Nuxt 4 đặt `root` của Vite thành `app/`, vì vậy một `themePath` tương đối sẽ được giải quyết (resolve) từ đó; hãy truyền các đường dẫn tuyệt đối (`fileURLToPath(new URL("./theme.json", import.meta.url))`). Ví dụ harness (`examples/harness`) lấy theme và module `options` từ [`examples/design-system`](../../../examples/design-system/README.md); [`examples/plain-nuxt`](../../../examples/plain-nuxt/README.md) giữ theme của mình trong `app/theme/theme.json` và không truyền options. Hãy thêm `theme.css` vào `.gitignore` nếu file theme JSON là nguồn chân lý duy nhất (source of truth) của bạn.
 
 **Lưu ý về dev-server.** Trên Vite 5, `buildStart` của một dev server chạy khi gọi `server.listen()` (hoặc trong `middlewareMode`), vì vậy một `createServer()` không bao giờ gọi `listen()` sẽ không ghi ra `theme.css`; từ Vite 6 trở đi plugin thiết lập `perEnvironmentStartEndDuringDev` và `buildStart` cũng chạy cho cả `createServer()` + `ssrLoadModule`. Plugin đọc `style-gen.config.json` **một lần duy nhất** khi Vite nạp config: hãy khởi động lại dev server sau khi chỉnh sửa file này (chỉ có file theme mới được watch theo dõi thay đổi).
 

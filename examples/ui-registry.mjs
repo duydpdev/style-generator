@@ -1,5 +1,5 @@
 /**
- * The sample components the example apps render (react-v4)
+ * The sample components the example apps render (harness)
  * and the lowercase tags app code must not use instead. eslint.config.js
  * builds its JSX selectors from these lists.
  */

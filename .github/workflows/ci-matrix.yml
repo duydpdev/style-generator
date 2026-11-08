@@ -3,7 +3,7 @@
 #
 # Runs nightly on the default branch, on manual dispatch and on PRs into
 # main / release/** (not on PRs into develop). The per-PR tier (check,
-# plain-react, e2e, storybook, pr-title) lives in ci.yml. A workflow-level
+# plain-react, e2e, pr-title) lives in ci.yml. A workflow-level
 # `paths-ignore` skips the PR run when a PR only changes documents/**.
 # On PRs, every job skips draft PRs; `ready_for_review` runs them when the
 # PR leaves draft. `schedule` and `workflow_dispatch` runs have no draft.
@@ -112,7 +112,7 @@ jobs:
   # peer to the latest release of one major via `resolutions` (this runner's
   # checkout only), after the library is built with the committed toolchain,
   # so a red leg names exactly one major. The leg then runs what a consumer on
-  # that major runs: the react-v4 example built through `styleGenVite`, a dev
+  # that major runs: the harness example built through `styleGenVite`, a dev
   # server re-emitting on a theme edit, the example and `dist/*.d.ts`
   # type-checked and, for TypeScript, the type tests. Every leg is a
   # published major and must pass (TypeScript 7 has no leg: Yarn 4.10's
@@ -161,21 +161,21 @@ jobs:
           yarn why "$PEER"
           # A red leg must mean "this major fails", never "the old copy ran":
           # the version seen from the root and from the example must be N.x.
-          for ws in . examples/react-v4; do
+          for ws in . examples/harness; do
             got=$(cd "$ws" && node -p "require('$PEER/package.json').version")
             echo "$ws: $PEER $got"
             case "$got" in "$MAJOR".*) ;; *) echo "::error::$ws resolved $PEER $got, expected $MAJOR.x"; exit 1 ;; esac
           done
 
-      - name: Build the react-v4 example (styleGenVite)
-        run: yarn workspace react-v4-example build
+      - name: Build the harness example (styleGenVite)
+        run: yarn workspace harness-example build
 
       - name: Vite dev-server smoke (styleGenVite configureServer)
         if: matrix.peer == 'vite'
         run: node scripts/vite-dev-smoke.mjs
 
-      - name: Type-check the react-v4 example against dist
-        run: yarn workspace react-v4-example typecheck
+      - name: Type-check the harness example against dist
+        run: yarn workspace harness-example typecheck
 
       - name: Type-check dist/*.d.ts (ESM, Bundler) and dist/*.d.cts (CJS, node16) with library checking on
         # The example sets skipLibCheck, so it never checks the package's own

@@ -11,9 +11,9 @@ import {
   createGrid,
   createStack,
   createText,
-} from "react-v4-example/ui";
+} from "harness-example/ui";
 
-/** The harness tokens and components, bound exactly as examples/react-v4/src/ui.ts binds them. */
+/** The harness tokens and components, bound exactly as examples/harness/src/ui.ts binds them. */
 export const harnessTokens = tokens;
 export const HarnessBox = createBox(tokens, boxPreset);
 export const HarnessButton = createButton(tokens, buttonPreset);

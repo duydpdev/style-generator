@@ -38,7 +38,7 @@ To use a folder in your own app: `yarn add @duydpdev/style-generator@^5.4.0 clas
 | `src/ui/input/`  | `Input`   | no          | native `<input>`; `size`, `invalid` (sets `aria-invalid`), `placeholderColor` (default `muted`)                                                                                                                                                                                                                                                                                        |
 | `src/ui/link/`   | `Link`    | no          | tone, underline; `as` for a router link or a button                                                                                                                                                                                                                                                                                                                                    |
 
-"Parity gate: yes" means `tests/parity/<folder>.parity.test.tsx` checks that the component renders the same classes as the harness component in `examples/react-v4`. `Card`, `Badge`, `Input` and `Link` exist only in the plain examples, so their stories are their only check.
+"Parity gate: yes" means `tests/parity/<folder>.parity.test.tsx` checks that the component renders the same classes as the harness component in `examples/harness`. `Card`, `Badge`, `Input` and `Link` exist only in the plain examples, so their stories are their only check.
 
 ## Landing page
 
@@ -51,7 +51,7 @@ Create `src/ui/<kebab-name>/` with `style.ts` (tables + recipe via `recipeFromTa
 ## Storybook, tests and the parity gate
 
 - `yarn workspace plain-react-example storybook`: the catalogue at http://localhost:6006 (each `src/ui/<name>/<Name>.stories.tsx`). Stories render through the app's own components, never raw Tailwind classes, and `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS.
-- `yarn workspace plain-react-example test`: every story runs as a Vitest browser test, and the parity gate (`tests/parity/`) checks that Box, Text, Stack, Flex, Grid and Button render the same classes as the harness components in `examples/react-v4`. Needs `yarn build:all` and `yarn playwright install chromium` once.
+- `yarn workspace plain-react-example test`: every story runs as a Vitest browser test, and the parity gate (`tests/parity/`) checks that Box, Text, Stack, Flex, Grid and Button render the same classes as the harness components in `examples/harness`. Needs `yarn build:all` and `yarn playwright install chromium` once.
 - `node examples/plain-react/scripts/copy-out-smoke.mjs`: proves that every folder of `src/ui/` plus `src/theme.ts`, `src/options.ts` and `src/theme/theme.json` compile in a fresh project with only `@duydpdev/style-generator`, `class-variance-authority`, `clsx`, `tailwind-merge` and React.
 
 Adding a component: create its folder with a story. Only the six shared components have a parity test, because only they have a harness twin.

@@ -7,12 +7,12 @@ import type { Page } from "@playwright/test";
 const FONT_DIR = resolve("e2e-site/fixtures/fonts");
 const FONT_HOST = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//;
 
-/** Stylesheet URL → fixture file: site/index.html and examples/react-v4/index.html (the /examples iframe). */
+/** Stylesheet URL → fixture file: site/index.html and examples/harness/index.html (the /examples iframe). */
 const FONT_CSS: Readonly<Record<string, string>> = {
   "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap":
     "site.css",
   "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap":
-    "react-v4.css",
+    "harness.css",
 };
 
 /**

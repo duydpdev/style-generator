@@ -114,12 +114,12 @@ describe("design-system configuration", () => {
     expect(mirror).toEqual(options);
   });
 
-  it("keeps the opacity steps equal in options, design-system config and react-v4 package.json", () => {
+  it("keeps the opacity steps equal in options, design-system config and harness package.json", () => {
     const config = JSON.parse(
       readFileSync(resolve(root, "style-gen.config.json"), "utf8"),
     ) as { coverage: { colors: { opacities: number[] } } };
     const pkg = JSON.parse(
-      readFileSync(resolve(root, "../react-v4/package.json"), "utf8"),
+      readFileSync(resolve(root, "../harness/package.json"), "utf8"),
     ) as { "style-gen": { coverage: { colors: { opacities: number[] } } } };
     const steps = [...options.coverage.colors.opacities];
 

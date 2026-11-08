@@ -2,18 +2,25 @@
 
 Index of all documentation for `@duydpdev/style-generator`. API, option and CLI reference lives in [`reference/`](./reference/core.md); the repo's [`README.md`](../README.md) only keeps the introduction, installation and quickstart. Conventions for agents live in [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
 
-## Living documents (shown on the site `/docs`)
+## Start here (shown on the site `/docs`)
 
 | File                                     | Contents                                                                              | Tiếng Việt                                     |
 | ---------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| [`architecture.md`](./architecture.md)   | 4.0.0 architecture: data flow, registry, `themeAxes`, spacing, exports, site          | [`vi/architecture.md`](./vi/architecture.md)   |
-| [`guide.md`](./guide.md)                 | Step-by-step integration guide, links to `reference/` for the tables                  | [`vi/guide.md`](./vi/guide.md)                 |
-| [`testing.md`](./testing.md)             | The test layers, why they exist, where they run                                       | [`vi/testing.md`](./vi/testing.md)             |
-| [`deploy.md`](./deploy.md)               | Git flow (features branch from `main`), CI, release, GitHub Packages publishing       | [`vi/deploy.md`](./vi/deploy.md)               |
-| [`components.md`](./components.md)       | The ten sample components (examples, not an API) and how to add one                   | [`vi/components.md`](./vi/components.md)       |
-| [`cookbook.md`](./cookbook.md)           | Task-oriented recipes                                                                 | [`vi/cookbook.md`](./vi/cookbook.md)           |
 | [`getting-started/`](./getting-started/) | Getting started for React + Vite, Next.js, Nuxt + Vue; code embedded from `examples/` | [`vi/getting-started/`](./vi/getting-started/) |
+| [`guide.md`](./guide.md)                 | Step-by-step integration guide, links to `reference/` for the tables                  | [`vi/guide.md`](./vi/guide.md)                 |
+| [`cookbook.md`](./cookbook.md)           | Task-oriented recipes                                                                 | [`vi/cookbook.md`](./vi/cookbook.md)           |
 | [`reference/`](./reference/)             | One page per subpath plus `cli`, `options` and `theme`                                | [`vi/reference/`](./vi/reference/)             |
+
+## Advanced (shown on the site `/docs`)
+
+| File                                   | Contents                                                                        | Tiếng Việt                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- |
+| [`components.md`](./components.md)     | The six sample components (examples, not an API) and how to add one             | [`vi/components.md`](./vi/components.md)     |
+| [`architecture.md`](./architecture.md) | Architecture: data flow, registry, `themeAxes`, spacing, exports, site          | [`vi/architecture.md`](./vi/architecture.md) |
+| [`testing.md`](./testing.md)           | The test layers, why they exist, where they run                                 | [`vi/testing.md`](./vi/testing.md)           |
+| [`deploy.md`](./deploy.md)             | Git flow (features branch from `main`), CI, release, GitHub Packages publishing | [`vi/deploy.md`](./vi/deploy.md)             |
+
+Migration guides, the Vietnamese mirror rules and the repo standards follow below.
 
 The site renders the files listed in `site/src/lib/docs-meta.json` at `/docs/<slug>` and their Vietnamese twins at `/vi/docs/<slug>`; `site/scripts/check-doc-links.mjs` fails when a rendered file has no entry or no `vi.title`.
 

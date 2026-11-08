@@ -43,7 +43,7 @@ yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directiv
 yarn lint:fix
 yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn prettier:fix writes
 yarn tsc --noEmit   # Type check
-yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (also run by prepublish + CI)
+yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
@@ -221,9 +221,10 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `generate --watch` watches the theme AND the config file and keeps the last valid config when an edit is invalid.
   `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
-  mirrored by hand in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); no gate compares them);
-  it never edits a bundler config and has scaffolded no generator script since 5.2.0, and the `plugin` config key it once wrote is rejected since 6.0.0 (`init` drops it while
-  merging; `doctor` has no `Script` check). `budget` is the in-repo replacement for the removed `scripts/check-css-budget.mjs` (its `OK: …`/`OVER BUDGET: …` lines are a contract
+  shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
+  it never edits a bundler config and has scaffolded no generator script since 5.2.0; `init` drops the config keys a major removed while merging
+  (`plugin` since 6.0.0, `extraSources`/`axes` since 7.0.0, the `extraSources` entries printed as `@source inline(...)` lines;
+  `doctor` has no `Script` check). `budget` is the in-repo replacement for the removed `scripts/check-css-budget.mjs` (its `OK: …`/`OVER BUDGET: …` lines are a contract
   consumers grep).
 
 ## Testing
@@ -243,11 +244,12 @@ and each app's CSS has `@source not` for `*.stories.*`). The `plain-react` job o
 runs on drafts and documentation-only PRs. Layers and CI legs (including `tailwind-floor`, `node-floor`,
 `peer-matrix` (decides the `vite`/`typescript` peer ranges) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
 these 7 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
-it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR): `documents/testing.md`.
+it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
+`check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
 
 ## Publishing guards
 
-- `yarn check:publish-target` (`prepublish` + CI) locks the registry to `npm.pkg.github.com`; CI also runs `yarn npm publish --dry-run` and asserts that host.
+- `yarn check:publish-target` (`prepublish` + `deploy.yml`) locks the registry to `npm.pkg.github.com`; `deploy.yml` also runs `yarn npm publish --dry-run` and asserts that host.
   Yarn Berry runs `prepublish`, not `prepublishOnly`, on `yarn npm publish`.
 - `yarn check:externals` fails if any `dist/**/*.map` lists a peer/dependency under `node_modules/` (or a JS file ships without a map) or any entry but `./ui` reaches a UI peer;
   `yarn check:sizes` enforces gzip budgets incl. the `cli` bundle (`scripts/check-sizes.mjs`); `yarn check:browser-safe` keeps browser subpaths free of Node/Zod.

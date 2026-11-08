@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: ea5b39a0cf8d -->
+<!-- source: documents/architecture.md sha256: ed6b8b9f97be -->
 
 # Kiến trúc
 
@@ -309,7 +309,8 @@ Vite 8 / Rolldown đánh dấu `manualChunks` là deprecated để chuyển sang
 
 **Vì sao dùng `@source inline` thay vì safelist:** Tailwind v4 không quét các class được dựng lúc runtime.
 `generateSourceInline` emit một dòng `@source inline("…")` cho mỗi nhóm token (và cho mỗi trạng thái có sibling, ví dụ `hover:bg-primary-hover`),
-nên các class luôn tồn tại dù không có nguồn nào tham chiếu tới chúng; các class dựng lúc runtime mà registry không bao phủ được app tự khai báo bằng một directive `@source inline(...)` thuần của Tailwind trong CSS của app.
+nên các class luôn tồn tại dù không có nguồn nào tham chiếu tới chúng;
+các class dựng lúc runtime mà registry không bao phủ được app tự khai báo bằng một directive `@source inline(...)` thuần của Tailwind trong CSS của app.
 Đánh đổi: mỗi màu luôn có `bg-/text-/border-/ring-/outline-/divide-/placeholder-*`, nên CSS lớn hơn một chút — `options.coverage` thu hẹp các dòng này theo từng nhóm token
 (`false`, `prefixes`, `keys: "aliased"`), và `coverage.colors.opacities` chủ động thêm một dòng modifier độ mờ `/<n>` (xem
 [`coverage`](./reference/options.md#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token)).
@@ -408,7 +409,7 @@ và ở 5.0.0 trong [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
   site được miễn quy tắc này vì các grid của nó dùng template CSS ưu tiên desktop. Các file trong `UI_APP_FILES` nằm dưới giới hạn `max-lines` (150 dòng):
   hãy tách một component dài hơn.
 - **Hook CSS:** các hook CSS riêng là class có tiền tố: class `s-` trong `site/src/styles` (`.s-doc-body` cho markdown/highlight, pseudo-element, keyframes,
-  phần chrome không có prop) và class `x-` trong các ví dụ harness; `data-reveal="up|stagger"` + `data-reveal-state="pending|done"` (do `site/src/lib/use-reveal.ts` đặt) cho hiệu
+  phần chrome không có prop) và class `x-` trong ví dụ harness; `data-reveal="up|stagger"` + `data-reveal-state="pending|done"` (do `site/src/lib/use-reveal.ts` đặt) cho hiệu
   ứng reveal; `data-ch` trên mỗi chương. Spacing (`margin*`, `padding*`, `gap`) luôn là một prop của component và không bao giờ nằm trong một rule hook.
 - **Ngoại lệ spacing:** các khai báo spacing duy nhất được phép trong một rule `.s-*` nằm bên trong một khối `@media (max-width: …)` có độ rộng mà không prop responsive nào diễn
   đạt được (các prop chỉ chuyển ở `md` và `lg`), mỗi khai báo được đánh dấu `/* spacing-exception: <Id> */` trong CSS: E1 (`terminal.css`, padding của `cta-card` ở 720px),
@@ -456,7 +457,7 @@ không phải `defineOptions`, vì hàm đó chỉ có trong `.` và sẽ kéo Z
 
 Mỗi ứng dụng emit `theme.css` vào file gitignore của riêng nó và `@import` CSS dùng chung qua `design-system-example/styles/*`;
 `harness` thêm các dòng `@source` quay về `design-system/src` (tương đối so với file CSS), trong khi các component `ui/` của nó nằm bên trong ứng dụng và được quét theo mặc định;
-các ứng dụng plain không cần dòng nào, vì mọi class literal đều nằm bên trong ứng dụng. Chạy các ứng dụng harness yêu cầu Node >= 22.18 (các config bundler của chúng import các
+các ứng dụng plain không cần dòng nào, vì mọi class literal đều nằm bên trong ứng dụng. Chạy ứng dụng harness yêu cầu Node >= 22.18 (config bundler của nó import các
 module `.ts` qua tính năng type stripping của Node). Chỉ `harness` được nhúng trong landing site; các ứng dụng plain là ứng dụng độc lập.
 Xem [`examples/README.md`](../../examples/README.md).
 

@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 8d6491048960 -->
+<!-- source: documents/components.md sha256: 4cc6d249f1a9 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -349,7 +349,7 @@ const root = () => {
 1. Cài đặt các dependency cần thiết:
 
    ```bash
-   yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
    ```
 
    Xem mục [Cài đặt](./README.md#cài-đặt) trong README để cấu hình registry cho scope `@duydpdev` và Personal Access Token của bạn; nếu không có cấu hình scope này npmjs sẽ phân phối một bản `3.0.0` không liên quan.

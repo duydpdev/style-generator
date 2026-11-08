@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { z } from "zod";
 
 import { ThemeSchema } from "../../core/themeSchema";
+import { StyleGenConfigSchema } from "../../node/loadStyleGenConfig";
 import { logger } from "../logger";
 
 import { initCommand } from "./init";
@@ -174,6 +175,45 @@ describe("initCommand", () => {
       expect(infoSpy).toHaveBeenCalledWith(
         expect.stringContaining("Removed the `plugin` key"),
       );
+    });
+
+    it("drops the keys removed in 7.0 so the merged config loads, and prints extraSources as @source inline lines", async () => {
+      const infoSpy = vi
+        .spyOn(logger, "info")
+        .mockImplementation(() => undefined);
+      const logSpy = vi
+        .spyOn(logger, "log")
+        .mockImplementation(() => undefined);
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({
+          breakpoints: ["xl"],
+          extraSources: ["hover:bg-{primary,secondary}", "md:flex"],
+          axes: { scope: "element" },
+        }),
+      );
+
+      await initCommand({ theme: "a/theme.json", dark: false }, tmp);
+
+      const cfg: unknown = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      );
+      expect(cfg).toEqual({
+        theme: "a/theme.json",
+        output: "a/theme.css",
+        breakpoints: ["xl"],
+      });
+      expect(StyleGenConfigSchema.safeParse(cfg).success).toBe(true);
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Removed the `extraSources` key"),
+      );
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Removed the `axes` key"),
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        '   @source inline("hover:bg-{primary,secondary}");',
+      );
+      expect(logSpy).toHaveBeenCalledWith('   @source inline("md:flex");');
     });
 
     it("merges theme/output into an existing style-gen.config.json without a removal line when it has no `plugin`", async () => {

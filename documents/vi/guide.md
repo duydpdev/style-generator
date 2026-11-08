@@ -460,7 +460,8 @@ Các quy tắc cần nhớ:
 
 - **Selector luôn được ghim vào `html`**: `html[data-<axis-kebab>="<variant-kebab>"]`. Một thuộc tính đặt trên phần tử bao bọc khác sẽ không có tác dụng:
   một alias `var()` được tính tại phần tử _khai báo_ biến (`:root`), nên một override trên phần tử con không bao giờ chạm tới giá trị alias.
-  Với một theme cục bộ trên phần tử không phải gốc hoặc một tên thuộc tính tùy chỉnh, hãy tự viết CSS override trong CSS của app (`[data-mode="dark"] { --sg-color-primary: …; }`); thư viện không sinh ra nó.
+  Với một theme cục bộ trên phần tử không phải gốc hoặc một tên thuộc tính tùy chỉnh,
+  hãy tự viết CSS override trong CSS của app (`[data-mode="dark"] { --sg-color-primary: …; }`); thư viện không sinh ra nó.
 - **Giá trị thuộc tính là dạng kebab của key**: variant `highContrast` → `data-palette="high-contrast"`; trục `colorScheme` → `data-color-scheme`.
 - **Độ ưu tiên = thứ tự khai báo**: hai trục override cùng một token có độ đặc hiệu bằng nhau, và trục được khai báo **sau** sẽ thắng.
 - **Tên trục/variant không được là số nguyên** (`100`, `2024`): JS liệt kê các key dạng số trước và làm hỏng thứ tự. Hãy dùng `contrast100`.
@@ -669,7 +670,8 @@ Hãy truyền các key camelCase như những key mà `DesignTokens.Web.colors` 
 
 `prefix` có kiểu `RegistryPrefix | ""` (các tiền tố mà registry phát ra `@source inline` cho chúng; `""` dành cho typography),
 nên `createVariantMapper("fill", …)` hoặc một tiền tố nằm trong biến kiểu `string` là lỗi kiểu: chúng ánh xạ ra các class mà không dòng `@source inline` nào giữ lại.
-Để bỏ qua kiểm tra cho một tiền tố đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và tự khai báo các class trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind.
+Để bỏ qua kiểm tra cho một tiền tố đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba
+và tự khai báo các class trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind.
 Không thể kết hợp điều này với `{ states }` hoặc một mảng tiền tố.
 
 Một recipe headless ghép các mapper bằng `cva`; component framework (React, Vue) chỉ bọc nó lại. Điểm neo DX là `satisfies` trên danh sách intent:

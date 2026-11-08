@@ -12,7 +12,11 @@ The `style-gen` command-line tool: `init`, `generate`, `schema`, `doctor`, `toke
 
 Scaffold the theme JSON, its JSON Schema and `style-gen.config.json`, then print how to wire them into your stack. `init` never edits a bundler config.
 
-The wizard asks for the theme file location and whether to include a dark-mode template. Non-interactive: `yarn style-gen init --dark`. It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`) and `style-gen.config.json` (merging `theme` and `output` into an existing one and keeping its other keys and dropping a `plugin` key, which 6.0 no longer accepts). If the theme or its schema already exists, it asks before overwriting (non-interactive: exits with code 1).
+The wizard asks for the theme file location and whether to include a dark-mode template. Non-interactive: `yarn style-gen init --dark`.
+It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`) and `style-gen.config.json`
+(merging `theme` and `output` into an existing one and keeping its other keys, but dropping a `plugin` key, which 6.0 no longer accepts, and the `extraSources` and `axes` keys, which 7.0 no longer accepts).
+For each dropped key it prints ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` or `7.0`), and for `extraSources` it also prints one `@source inline("<entry>");` line per entry to paste into the app's CSS.
+If the theme or its schema already exists, it asks before overwriting (non-interactive: exits with code 1).
 
 It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the two CSS `@import` lines:
 
@@ -24,6 +28,18 @@ It then looks for a bundler config in the project root, in this order, and print
 | none              | `yarn style-gen generate` (`--watch` while you edit the theme)                                                                 | a CSS file next to the generated `theme.css`                     |
 
 `*` is `.ts`, `.mts`, `.cts`, `.js`, `.mjs` or `.cjs`; only files directly in the project root count (symlinks are followed). A framework config wins over `vite.config.*` because Next.js and Nuxt apps often keep one for Vitest. `styleGenVite()` and `styleGenNext()` without arguments read `style-gen.config.json` from the Vite root and from `process.cwd()`, so the theme, the output and every option stay in that file. Nuxt 4 sets Vite's root to `app/`, and `styleGenVite` writes only inside the root, so the Nuxt snippet passes absolute paths and the Nuxt theme defaults to `app/assets/css/theme.json`; with an `app/` directory, a `--theme` outside it prints a warning (exit code 0) because the dev server would reject that `outDir`. With explicit paths the plugin does not read `style-gen.config.json`: put generator options in the snippet's `options: {}`; `style-gen.config.json` then serves only the CLI (`generate`, `doctor`, `tokens`). Every printed or stored path is relative to the project root with `/` separators (an absolute `--theme` inside the root is stored relative), and paths inside printed string literals are JSON-escaped. The snippets use ES module syntax; a CommonJS config (`.cjs`, or `.js` without `"type": "module"`) loads the same functions with `require()`. A JavaScript `next.config.*` gets a JSDoc `@type` comment instead of `import type`.
+
+```bash
+yarn style-gen init            # Interactive mode
+yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
+```
+
+| Flag      | Type      | Default             | Description                         |
+| :-------- | :-------- | :------------------ | :---------------------------------- |
+| `--theme` | `string`  | `styles/theme.json` | Path to the theme file              |
+| `--dark`  | `boolean` | `false`             | Include the dark-mode axis template |
+
+The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The CSS is written next to the theme (`theme.css`).
 
 These are the snippets `init` prints for Next.js and Nuxt (the Vite one is in the [README](../../README.md#quickstart)).
 
@@ -86,18 +102,6 @@ Create `app/assets/css/main.css` (`init` does not create it; `css` in `nuxt.conf
 @import "tailwindcss";
 @import "./theme.css";
 ```
-
-```bash
-yarn style-gen init            # Interactive mode
-yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
-```
-
-| Flag      | Type      | Default             | Description                         |
-| :-------- | :-------- | :------------------ | :---------------------------------- |
-| `--theme` | `string`  | `styles/theme.json` | Path to the theme file              |
-| `--dark`  | `boolean` | `false`             | Include the dark-mode axis template |
-
-The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The CSS is written next to the theme (`theme.css`).
 
 ### `style-gen generate`
 
@@ -184,7 +188,12 @@ Print the installed CLI version.
 }
 ```
 
-`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` and `resetTailwindDefaults` are forwarded to `generate()`. Any other key — a typo such as `breakpoint`, a legacy 3.x key such as `responsiveModules`, or a key removed in 7.0 (`extraSources`, `axes`) — is rejected; only `$schema`, `theme` and `output` are accepted besides the forwarded keys. `plugin`, which `init` wrote before 5.2.0 to name the generator script it scaffolded, has been rejected since 6.0.0 (delete it, or run `style-gen init`, which drops it). `styleGenVite()` and `styleGenNext()` called **without an argument** read this same file (see [Vite](./vite.md) / [Next](./next.md)). The CLI resolves configuration in this order, per key:
+`breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` and `resetTailwindDefaults` are forwarded to `generate()`.
+Any other key — a typo such as `breakpoint`, a legacy 3.x key such as `responsiveModules`, or a key removed in 7.0 (`extraSources`, `axes`; see the [migration guide](../migration/6.x-to-7.0.md)) — is rejected;
+only `$schema`, `theme` and `output` are accepted besides the forwarded keys.
+`plugin`, which `init` wrote before 5.2.0 to name the generator script it scaffolded, has been rejected since 6.0.0 (delete it, or run `style-gen init`, which drops it);
+`extraSources` and `axes` have been rejected since 7.0.0, and `style-gen init` drops them too (it prints each `extraSources` entry as an `@source inline("<entry>");` line to paste into the app's CSS).
+`styleGenVite()` and `styleGenNext()` called **without an argument** read this same file (see [Vite](./vite.md) / [Next](./next.md)). The CLI resolves configuration in this order, per key:
 
 1. command flags
 2. `style-gen.config.json`

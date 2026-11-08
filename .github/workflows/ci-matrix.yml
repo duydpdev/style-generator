@@ -21,8 +21,10 @@ on:
   workflow_dispatch:
 
 # Own group: cancelling a stale matrix run never cancels ci.yml's `check`.
+# The event name keeps the nightly `schedule` and a manual `workflow_dispatch`
+# on `main` (same ref) from cancelling each other.
 concurrency:
-  group: ci-matrix-${{ github.ref }}
+  group: ci-matrix-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

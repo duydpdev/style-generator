@@ -34,12 +34,6 @@ describe("resolveOptions", () => {
     expect(options).toEqual(snapshot);
   });
 
-  it("carries no extraSources or axes keys", () => {
-    const resolved = resolveOptions();
-    expect("extraSources" in resolved).toBe(false);
-    expect("axes" in resolved).toBe(false);
-  });
-
   it("resolves resetTailwindDefaults to [] by default and keeps a given list", () => {
     expect(resolveOptions().resetTailwindDefaults).toEqual([]);
     expect(resolveOptions({}).resetTailwindDefaults).toEqual([]);

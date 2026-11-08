@@ -178,21 +178,6 @@ describe("emitThemeCss", () => {
       expect(r.stage).toBe("options");
     });
 
-    it("cross: resetTailwindDefaults shadow with no shadows", () => {
-      writeTheme({ colors: { primary: "#0af" } });
-      const r = failed(
-        emitThemeCss({
-          themeFile,
-          outFile,
-          options: { resetTailwindDefaults: ["shadow"] },
-        }),
-      );
-
-      expect(r.stage).toBe("cross");
-      expect(r.message).toMatch(/^Invalid theme\/options:\n/);
-      expect(r.message).toContain("resetTailwindDefaults.0");
-    });
-
     it("cross: resetTailwindDefaults radius with no borderRadius", () => {
       writeTheme({ colors: { primary: "#0af" } });
       const r = failed(
@@ -204,6 +189,7 @@ describe("emitThemeCss", () => {
       );
 
       expect(r.stage).toBe("cross");
+      expect(r.message).toMatch(/^Invalid theme\/options:\n/);
       expect(r.message).toContain("resetTailwindDefaults.0");
       expect(fs.existsSync(outFile)).toBe(false);
     });

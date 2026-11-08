@@ -229,7 +229,7 @@ jobs:
       - name: Copy-out smoke (packed tarball + peers only)
         run: node examples/plain-react/scripts/copy-out-smoke.mjs
 
-  # Moved from ci-matrix.yml: it runs on every PR (that workflow skips documents/** PRs, which would leave a required check pending).
+  # In ci.yml (not ci-matrix.yml) so it runs on every PR: ci-matrix.yml skips documents/** PRs, which would leave this required check pending.
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest

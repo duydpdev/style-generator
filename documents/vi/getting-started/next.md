@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/next.md sha256: 9fe516aeb825 -->
+<!-- source: documents/getting-started/next.md sha256: 46190e5e3407 -->
 
 # Bắt đầu: Next.js
 
@@ -9,7 +9,7 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào Next.js (webpack ho�
 Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`. Xem [Cài đặt](../README.md#cài-đặt) để biết cách cấu hình registry cho scope `@duydpdev` và GitHub Personal Access Token.
 
 ```bash
-yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Tự quản lý theme

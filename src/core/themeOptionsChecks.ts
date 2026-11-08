@@ -4,17 +4,14 @@ import type { ResolvedOptions } from "./resolveOptions";
 import type { ThemeConfig } from "./themeSchema";
 
 /** The one issue shape the theme × options checks report. */
-export interface OptionsIssue {
+interface OptionsIssue {
   code: "custom";
   path: (string | number)[];
   message: string;
 }
 
-/**
- * Where the checks report to: a `z.RefinementCtx` satisfies it, and so does
- * the plain collector `assertThemeOptions` uses.
- */
-export interface OptionsIssueCtx {
+/** Where the checks report to: the plain collector `assertThemeOptions` uses. */
+interface OptionsIssueCtx {
   addIssue: (issue: OptionsIssue) => void;
 }
 

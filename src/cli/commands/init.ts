@@ -125,20 +125,32 @@ interface MergeBase {
   configPath: string;
   /** Where `content` came from; `undefined` when `init` starts empty. */
   source?: "style-gen.config.json" | "package.json";
-  /** Keys `init` merges `theme`/`output` into: every existing key except `plugin`. */
+  /** Keys `init` merges `theme`/`output` into: every existing key except the {@link REMOVED_CONFIG_KEYS}. */
   content: Record<string, unknown>;
-  /** Whether an existing `plugin` key (rejected since 6.0) was dropped from `content`. */
-  droppedPlugin: boolean;
+  /** The removed keys found in the existing config and dropped from `content`, in {@link REMOVED_CONFIG_KEYS} order. */
+  dropped: readonly (typeof REMOVED_CONFIG_KEYS)[number][];
+  /** The string entries of a dropped `extraSources`, to print as `@source inline(...)` lines. */
+  droppedSources: readonly string[];
 }
+
+/**
+ * Config keys the schema used to accept and now rejects, with the major that
+ * removed them. `init` drops them while merging: the merged file must load.
+ */
+const REMOVED_CONFIG_KEYS = [
+  { key: "plugin", since: "6.0" },
+  { key: "extraSources", since: "7.0" },
+  { key: "axes", since: "7.0" },
+] as const;
 
 /**
  * The config `init` merges into: an existing `style-gen.config.json`, else
  * `package.json["style-gen"]`, else nothing. Read before anything is
- * written, so an unreadable config aborts with no file created. A `plugin`
- * key is dropped: the schema rejects it since 6.0, and the merged file must
- * load.
+ * written, so an unreadable config aborts with no file created. The
+ * {@link REMOVED_CONFIG_KEYS} are dropped: the schema rejects them, and the
+ * merged file must load.
  * @param {string} cwd The project root.
- * @returns {MergeBase} The config path, the keys to keep and whether `plugin` was dropped.
+ * @returns {MergeBase} The config path, the keys to keep and the removed keys that were dropped.
  */
 function loadMergeBase(cwd: string): MergeBase {
   const configPath = path.resolve(cwd, "style-gen.config.json");
@@ -148,15 +160,26 @@ function loadMergeBase(cwd: string): MergeBase {
   const existing = source
     ? readExistingConfig(configPath)
     : readPackageJsonSection(cwd);
-  if (!existing) return { configPath, content: {}, droppedPlugin: false };
-  const droppedPlugin = Object.hasOwn(existing, "plugin");
-  const content = { ...existing };
-  delete content.plugin;
+  if (!existing) {
+    return { configPath, content: {}, dropped: [], droppedSources: [] };
+  }
+  const dropped = REMOVED_CONFIG_KEYS.filter(({ key }) =>
+    Object.hasOwn(existing, key),
+  );
+  const content = Object.fromEntries(
+    Object.entries(existing).filter(
+      ([key]) => !dropped.some((removed) => removed.key === key),
+    ),
+  );
+  const sources = existing.extraSources;
   return {
     configPath,
     source: source ?? "package.json",
     content,
-    droppedPlugin,
+    dropped,
+    droppedSources: Array.isArray(sources)
+      ? sources.filter((entry): entry is string => typeof entry === "string")
+      : [],
   };
 }
 
@@ -338,6 +361,26 @@ async function confirmOverwrite(
   return "kept";
 }
 
+/**
+ * Tell the user which removed keys `init` dropped from the merged config,
+ * and print the former `extraSources` entries as CSS to paste instead.
+ * @param {MergeBase} mergeBase The merge base `loadMergeBase` returned.
+ */
+function logDroppedKeys({ dropped, droppedSources }: MergeBase): void {
+  for (const { key, since } of dropped) {
+    logger.info(
+      `Removed the \`${key}\` key from style-gen.config.json: ${since} no longer accepts it.`,
+    );
+  }
+  if (droppedSources.length === 0) return;
+  logger.info(
+    "   Declare those runtime classes in your CSS next to the generated import instead:",
+  );
+  for (const entry of droppedSources) {
+    logger.log(`   @source inline(${JSON.stringify(entry)});`);
+  }
+}
+
 /* ------------------ Command ------------------ */
 
 /**
@@ -410,11 +453,7 @@ async function scaffold(args: InitArgs, cwd: string): Promise<number> {
       'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
     );
   }
-  if (mergeBase.droppedPlugin) {
-    logger.info(
-      "Removed the `plugin` key from style-gen.config.json: 6.0 no longer accepts it.",
-    );
-  }
+  logDroppedKeys(mergeBase);
 
   /* ---------- Next steps ---------- */
 

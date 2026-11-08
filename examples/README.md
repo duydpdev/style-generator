@@ -21,7 +21,7 @@ The harness app (`harness`) shares one `theme.json` (with `"$schema"` and two `t
 
 ## Prerequisites
 
-**Node >= 22.18 for the harness apps.** Their bundler configs import `design-system-example/style-gen.options`, a `.ts` file inside a workspace package, and Node loads it through its built-in type stripping. (The library itself runs on Node `^20.19.0 || >=22.12.0`; the floor above is for the examples only.) No example has a `postinstall` or `prepare` hook.
+**Node >= 22.18 for the harness app.** Its bundler config imports `design-system-example/style-gen.options`, a `.ts` file inside a workspace package, and Node loads it through its built-in type stripping. (The library itself runs on Node `^20.19.0 || >=22.12.0`; the floor above is for the examples only.) No example has a `postinstall` or `prepare` hook.
 
 Build the local library and the CLI first (the examples consume the built `dist/` through the `link:../..` dependency). The examples are workspaces of the repo root, so the root install also installs them:
 

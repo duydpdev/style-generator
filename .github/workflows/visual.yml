@@ -50,7 +50,7 @@ jobs:
 
       - name: Build library and site
         # site:build = build:all + site build, which also builds the
-        # react-v4 example embedded at /examples/v4.
+        # harness example embedded at /examples/v4.
         run: yarn site:build
 
       # No browser cache on purpose (documents/deploy.md, PR #73).

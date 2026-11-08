@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: c858dee31ae6 -->
+<!-- source: documents/guide.md sha256: f35edb7dc8f9 -->
 
 # Hướng dẫn sử dụng
 
@@ -209,7 +209,7 @@ export default defineNuxtConfig({
 });
 ```
 
-Ví dụ hoàn chỉnh: `examples/react-v4` (Vite + React) dùng theme và các tùy chọn từ `examples/design-system`; xem [`examples/design-system/README.md`](../../examples/design-system/README.md). Các ứng dụng plain `examples/plain-react` và `examples/plain-nuxt` mỗi ứng dụng sở hữu theme riêng; xem [Component](./components.md#ví-dụ-plain-chép-dùng).
+Ví dụ hoàn chỉnh: `examples/harness` (Vite + React) dùng theme và các tùy chọn từ `examples/design-system`; xem [`examples/design-system/README.md`](../../examples/design-system/README.md). Các ứng dụng plain `examples/plain-react` và `examples/plain-nuxt` mỗi ứng dụng sở hữu theme riêng; xem [Component](./components.md#ví-dụ-plain-chép-dùng).
 
 **Không đối số:** `styleGenVite()` đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) tại root của Vite — `theme`, `output` (file CSS cần ghi) và mọi tùy chọn của `generate()` — nhờ đó CLI và bundler dùng chung một nguồn cấu hình duy nhất. Một config bị hỏng hoặc không qua được schema sẽ ném `[style-gen-vite] Invalid config (<file>):` kèm từng dòng lỗi, và không bao giờ âm thầm quay về giá trị mặc định. Khi truyền đối số, file config không được đọc. File config chỉ được đọc **một lần**, khi bundler nạp config của nó (xem ở trên).
 
@@ -500,7 +500,7 @@ const Box = ({
 
 ## Xây dựng component
 
-Phần này đi từ theme đến component, theo thứ tự các file trong `examples/design-system` (một workspace package được ứng dụng harness (bộ ví dụ dùng để kiểm thử DX) `react-v4` sử dụng; chi tiết trong [`examples/design-system/README.md`](../../examples/design-system/README.md)). Mỗi bước chỉ import từ các subpath an toàn trên trình duyệt (`./tokens`, `./cva`, `./recipes`, `./types`), không bao giờ kéo Zod hay Node vào client bundle.
+Phần này đi từ theme đến component, theo thứ tự các file trong `examples/design-system` (một workspace package được ứng dụng harness (bộ ví dụ dùng để kiểm thử DX) `harness` sử dụng; chi tiết trong [`examples/design-system/README.md`](../../examples/design-system/README.md)). Mỗi bước chỉ import từ các subpath an toàn trên trình duyệt (`./tokens`, `./cva`, `./recipes`, `./types`), không bao giờ kéo Zod hay Node vào client bundle.
 
 ```text
 src/theme.json         → theme (source of truth)

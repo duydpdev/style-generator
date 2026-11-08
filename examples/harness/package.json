@@ -1,5 +1,5 @@
 {
-  "name": "react-v4-example",
+  "name": "harness-example",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -24,10 +24,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "generate": "node ../../dist/cli/index.mjs generate --theme ../design-system/src/theme.json --out src/theme/theme.css",
-    "storybook": "yarn generate && storybook dev -p 6007 --no-open --disable-telemetry",
-    "storybook:build": "yarn generate && storybook build --disable-telemetry",
-    "test:stories": "yarn generate && vitest run --project 'storybook*'"
+    "generate": "node ../../dist/cli/index.mjs generate --theme ../design-system/src/theme.json --out src/theme/theme.css"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",
@@ -39,21 +36,12 @@
   },
   "devDependencies": {
     "@duydpdev/style-generator": "link:../..",
-    "@storybook/addon-docs": "10.6.5",
-    "@storybook/addon-vitest": "10.6.5",
-    "@storybook/react": "10.6.5",
-    "@storybook/react-vite": "10.6.5",
     "@tailwindcss/vite": "^4.2.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "@vitest/browser": "4.1.11",
-    "@vitest/browser-playwright": "4.1.11",
-    "playwright": "1.63.0",
-    "storybook": "10.6.5",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.9.0",
-    "vite": "^7.3.5",
-    "vitest": "4.1.11"
+    "vite": "^7.3.5"
   }
 }

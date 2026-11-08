@@ -380,7 +380,7 @@ const root = () => {
 - `className`/`class` and `style` are allowed on tags.
 - A pattern that has a rule or repeats becomes a component with typed props.
 - No `data-*` attribute as a bespoke CSS hook (ESLint and the CI `check` job ban the old part-hook attribute repo-wide); bespoke CSS hooks in the plain apps are ordinary `className`s.
-- `src/**` (Nuxt `app/**`) never imports `design-system-example` or `react-v4-example` (ESLint).
+- `src/**` (Nuxt `app/**`) never imports `design-system-example` or `harness-example` (ESLint).
 - A ui folder imports only `./…`, `../../theme` and packages.
 
 ### Adding a plain component
@@ -404,7 +404,7 @@ Until commit `2045cce`, Dialog, Select, List, ListItem, Card, Badge, Code, Conta
 
 In React, each file in `src/ui/` exports a factory (`createBox`, `createText`, …) that takes the app's tokens and, where the component has one, a preset. `src/ui.ts` binds them once, and app code imports the components from there:
 
-<!-- embed: examples/react-v4/src/ui.ts -->
+<!-- embed: examples/harness/src/ui.ts -->
 
 ```ts
 import {
@@ -460,11 +460,11 @@ ESLint enforces the last two rules and bans the tags of the table above in app f
 
 - **`Stack`** is the vertical, single-column flow: a page section, a form, a card body. Space its children with `gap`, not with a margin on each child.
 - **`Flex`** is a row, or a wrapping set of two or more children. Never wrap a single child in `Flex` to align or space it: put those props on the child itself or on the parent `Stack`. One exception: a `Flex` whose second flex item is a CSS pseudo-element (a `::before`/`::after` rule line next to a label) has two flex items even though its markup shows one child; the site's `docs-onpage.tsx`, `docs-sidebar.tsx` and `sidebar-toc.tsx` labels work this way. ESLint cannot report this rule (whitespace text between JSX tags counts as a child), so review checks it.
-- **`Grid`** always has `columns`: a count (`columns={3}`), a CSS track list (`columns="220px 1fr"`), or a `{ base, md, lg }` record of either (`columns={{ base: 1, md: "220px 1fr" }}`). A `Grid` without `columns` is a single-column `Stack` in disguise. ESLint reports `<Grid>` without `columns` in `examples/react-v4/src`; the landing site is exempt, because its grids use desktop-first CSS templates under `@media (max-width: …)` that the mobile-first `columns` prop cannot express.
+- **`Grid`** always has `columns`: a count (`columns={3}`), a CSS track list (`columns="220px 1fr"`), or a `{ base, md, lg }` record of either (`columns={{ base: 1, md: "220px 1fr" }}`). A `Grid` without `columns` is a single-column `Stack` in disguise. ESLint reports `<Grid>` without `columns` in `examples/harness/src`; the landing site is exempt, because its grids use desktop-first CSS templates under `@media (max-width: …)` that the mobile-first `columns` prop cannot express.
 
 ### Polymorphic `as`
 
-The layout components and `Text` accept `as` to pick the root element, and the other props are then typed for that element: `<Text as="h1" type="display56Serif">` accepts the `<h1>` attributes, and `<Box as="section">` the `<section>` ones. Each React file types its props with `Polymorphic` from `@duydpdev/style-generator/ui-react`; see [`examples/react-v4/src/ui/Box.tsx`](../examples/react-v4/src/ui/Box.tsx).
+The layout components and `Text` accept `as` to pick the root element, and the other props are then typed for that element: `<Text as="h1" type="display56Serif">` accepts the `<h1>` attributes, and `<Box as="section">` the `<section>` ones. Each React file types its props with `Polymorphic` from `@duydpdev/style-generator/ui-react`; see [`examples/harness/src/ui/Box.tsx`](../examples/harness/src/ui/Box.tsx).
 
 ### Adding a component
 
@@ -472,11 +472,11 @@ The layout components and `Text` accept `as` to pick the root element, and the o
 
 1. **Recipe factory** in `examples/design-system/src/recipes/factories/<name>.ts`, exported from `factories/index.ts` (the `design-system-example/recipes` subpath).
 2. **Bound recipe and preset** in `examples/design-system/src/recipes/<name>.ts`, exported from `src/index.ts`. The React app binds the factory with the preset.
-3. **React component file** `examples/react-v4/src/ui/<Name>.tsx`: its own prop types over `Polymorphic` from `@duydpdev/style-generator/ui-react`. It splits its props with the kit in `@duydpdev/style-generator/ui`: `splitLayout` (with `BOX_VARIANT_KEYS` and the `LAYOUT_SIZE_KEYS` of `src/ui/layout.ts`) for a layout component, `splitSpacing` for any other.
-4. **Export** from `examples/react-v4/src/ui/index.ts`.
-5. **Binding** in `examples/react-v4/src/ui.ts`, and in `site/src/ui.ts` when the site renders it.
+3. **React component file** `examples/harness/src/ui/<Name>.tsx`: its own prop types over `Polymorphic` from `@duydpdev/style-generator/ui-react`. It splits its props with the kit in `@duydpdev/style-generator/ui`: `splitLayout` (with `BOX_VARIANT_KEYS` and the `LAYOUT_SIZE_KEYS` of `src/ui/layout.ts`) for a layout component, `splitSpacing` for any other.
+4. **Export** from `examples/harness/src/ui/index.ts`.
+5. **Binding** in `examples/harness/src/ui.ts`, and in `site/src/ui.ts` when the site renders it.
 6. **Registry entry** `{ name: "<Name>", tags: [...] }` in `examples/ui-registry.mjs`, with the lowercase tags it replaces (an empty list when none); ESLint builds the React rules from it.
-7. **Type checks**: a few lines in `examples/react-v4/tests/ui-types.tsx`, including one `@ts-expect-error` for a wrong token.
+7. **Type checks**: a few lines in `examples/harness/tests/ui-types.tsx`, including one `@ts-expect-error` for a wrong token.
 
 The factory knows no theme values:
 
@@ -634,7 +634,7 @@ export interface TextStyleProps {
 
 The React file exports a factory that takes the app's tokens and the preset, so the site can bind the same file to its own theme:
 
-<!-- embed: examples/react-v4/src/ui/Text.tsx -->
+<!-- embed: examples/harness/src/ui/Text.tsx -->
 
 ```tsx
 import {
@@ -778,9 +778,9 @@ const root = () => {
 
 The examples have no test runner. Their checks are compile-time and lint-time, and all of them read the library's built `dist/`, so run `yarn build:all` first:
 
-- `yarn workspace react-v4-example typecheck` compiles `src/ui/*.tsx` and `tests/ui-types.tsx`, whose `@ts-expect-error` lines must each be consumed by a real type error.
+- `yarn workspace harness-example typecheck` compiles `src/ui/*.tsx` and `tests/ui-types.tsx`, whose `@ts-expect-error` lines must each be consumed by a real type error.
 - `yarn lint` applies the registry rules (banned tags, no `className`/`style`, `Grid` needs `columns`).
-- `yarn workspace site build` (which builds `react-v4`) proves the app renders.
+- `yarn workspace site build` (which builds `harness`) proves the app renders.
 
 ## Recipes without components
 

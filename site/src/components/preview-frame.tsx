@@ -15,7 +15,7 @@ interface Props {
 }
 
 /**
- * Same-origin contract with `examples/react-v4/src/App.tsx`: the shell sends the
+ * Same-origin contract with `examples/harness/src/App.tsx`: the shell sends the
  * site theme, the example reports the theme it renders (its own Light / Dark /
  * High contrast button can differ from the site's).
  */

@@ -1,6 +1,6 @@
-# React + Tailwind v4 example
+# Harness (React + Tailwind v4)
 
-Demo app showing `@duydpdev/style-generator` with **Tailwind CSS v4**, Vite and React 19. It is a thin consumer of the shared [`design-system`](../design-system/README.md) package: the theme, options, tokens, `cn()`, the headless recipes and the shared CSS all live there. This app holds the wiring, its demo sections and the six sample components in `src/ui/` (`Box`, `Flex`, `Stack`, `Grid`, `Text`, `Button`), which the `site` workspace imports as `react-v4-example/ui`.
+The design-system harness: the live demo behind the site route `/examples/v4` (the `site` build embeds its `dist` in an iframe and its source in the code explorer) and the parity oracle that `plain-react` compares its components against. A Vite + React 19 app on **Tailwind CSS v4**. It is a thin consumer of the shared [`design-system`](../design-system/README.md) package: the theme, options, tokens, `cn()`, the headless recipes and the shared CSS all live there. This app holds the wiring, its demo sections and the six sample components in `src/ui/` (`Box`, `Flex`, `Stack`, `Grid`, `Text`, `Button`), which the `site` workspace and the `plain-react` parity tests import as `harness-example/ui`.
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ yarn build:all   # lib (dist/); the example imports the built subpaths
 ## Run the example
 
 ```bash
-cd examples/react-v4
+cd examples/harness
 yarn dev          # Vite dev server on http://localhost:5173
 ```
 
@@ -23,21 +23,14 @@ yarn dev          # Vite dev server on http://localhost:5173
 
 ## Scripts
 
-| Script                 | What it does                         |
-| ---------------------- | ------------------------------------ |
-| `yarn dev`             | Vite dev server (HMR on the theme)   |
-| `yarn build`           | Production build via Vite            |
-| `yarn preview`         | Serve the production build           |
-| `yarn typecheck`       | `tsc --noEmit`                       |
-| `yarn storybook`       | Storybook at http://localhost:6007   |
-| `yarn storybook:build` | Static Storybook (autodocs)          |
-| `yarn test:stories`    | Every story as a Vitest browser test |
+| Script           | What it does                       |
+| ---------------- | ---------------------------------- |
+| `yarn dev`       | Vite dev server (HMR on the theme) |
+| `yarn build`     | Production build via Vite          |
+| `yarn preview`   | Serve the production build         |
+| `yarn typecheck` | `tsc --noEmit`                     |
 
 `doctor`, `generate` and `schema` live in the design-system package (`yarn workspace design-system-example doctor`).
-
-## Storybook
-
-`src/ui/<Name>.stories.tsx` (one per sample component, the only stories: `.storybook/main.ts` loads `src/ui/**`) document the harness; they run as Vitest browser tests (`@storybook/addon-vitest`, Chromium: `yarn workspace react-v4-example test:stories`, after `yarn build:all` and `yarn playwright install chromium` once). `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS, and a story's comments and strings avoid utility words such as `blur` and `filter`. ESLint exempts them from the component-only rules together with the components (`UI_COMPONENT_FILES` in `eslint.config.js`).
 
 ## What it demonstrates
 
@@ -49,7 +42,7 @@ yarn dev          # Vite dev server on http://localhost:5173
 ## Layout
 
 ```text
-examples/react-v4
+examples/harness
 ├── index.html
 ├── package.json
 ├── tsconfig.json

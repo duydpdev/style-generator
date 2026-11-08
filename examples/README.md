@@ -9,11 +9,11 @@ Upgrading an existing project? See [`../documents/migration/4.x-to-5.0.md`](../d
 | Package                            | Kind          | What it holds                                                                                                                                                                            |
 | ---------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`design-system`](./design-system) | shared, no UI | The theme, the generator `options`, typed tokens, `cn()`, `axisAttributes()`, the headless CVA recipes of the six sample components, the shared CSS and the DX tests. Private workspace. |
-| [`react-v4`](./react-v4)           | app           | Vite + React 19 + Tailwind v4: `styleGenVite` in `vite.config.ts`, `@tailwindcss/vite`. Storybook for the six sample components.                                                         |
+| [`harness`](./harness)             | app           | Vite + React 19 + Tailwind v4: `styleGenVite` in `vite.config.ts`, `@tailwindcss/vite`. The live demo of the site and the parity oracle of `plain-react`; no Storybook.                  |
 | [`plain-react`](./plain-react)     | app           | Vite + React 19 + Tailwind v4. Plain example with Storybook and the parity gate.                                                                                                         |
 | [`plain-nuxt`](./plain-nuxt)       | app           | Nuxt 4 (Vue 3) + Tailwind v4: `styleGenVite` through `nuxt.config.ts`. Plain example: the same landing page as single-file components, with a Vue Storybook.                             |
 
-The harness app (`react-v4`) shares one `theme.json` (with `"$schema"` and two `themeAxes`, `theme` and `palette`), one `options` module and the CSS from `design-system` (`"design-system-example": "workspace:*"`); it keeps only its wiring (bundler config, global stylesheet) and its demo sections. `react-v4` renders its six sample components from `src/ui/*.tsx` (the landing site imports the same files through `react-v4-example/ui`) over the `design-system` recipes. Overrides that combine two axes, and variables outside `--sg-*`, stay hand-written CSS (`palettes.css`, `style-guide.css`); the scope table is in [`design-system/README.md`](./design-system/README.md#theme-axes). Start there to see how the pieces fit.
+The harness app (`harness`) shares one `theme.json` (with `"$schema"` and two `themeAxes`, `theme` and `palette`), one `options` module and the CSS from `design-system` (`"design-system-example": "workspace:*"`); it keeps only its wiring (bundler config, global stylesheet) and its demo sections. `harness` renders its six sample components from `src/ui/*.tsx` (the landing site imports the same files through `harness-example/ui`) over the `design-system` recipes. Overrides that combine two axes, and variables outside `--sg-*`, stay hand-written CSS (`palettes.css`, `style-guide.css`); the scope table is in [`design-system/README.md`](./design-system/README.md#theme-axes). Start there to see how the pieces fit.
 
 ## Plain examples (copy these)
 
@@ -34,7 +34,7 @@ yarn build:all
 ## Run an example
 
 ```bash
-cd examples/react-v4   # or plain-react / plain-nuxt
+cd examples/harness   # or plain-react / plain-nuxt
 yarn dev
 ```
 
@@ -44,8 +44,8 @@ Each app exposes `dev`, `build` and `typecheck` (`plain-nuxt` also `prepare:nuxt
 yarn workspace design-system-example doctor
 yarn workspace design-system-example test      # DX test of the recipes; needs `yarn build:all`
 yarn workspace plain-react-example test        # stories as browser tests + parity gate; needs `yarn build:all`
-yarn workspace react-v4-example test:stories   # also plain-nuxt-example: the app's Storybook stories as browser tests; needs `yarn build:all`
-yarn workspace react-v4-example typecheck      # type tests of the sample components
+yarn workspace plain-nuxt-example test:stories # the app's Storybook stories as browser tests; needs `yarn build:all` and `prepare:nuxt` (local only: CI does not run it)
+yarn workspace harness-example typecheck       # type tests of the sample components
 ```
 
 ## Other files in this folder

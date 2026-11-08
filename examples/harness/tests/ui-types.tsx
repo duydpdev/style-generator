@@ -1,6 +1,6 @@
 /*
  * Compile-time checks of the sample components, run by
- * `yarn workspace react-v4-example typecheck`: an unused
+ * `yarn workspace harness-example typecheck`: an unused
  * `@ts-expect-error` or a failing positive line fails the typecheck.
  */
 import {

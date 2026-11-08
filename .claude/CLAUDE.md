@@ -38,6 +38,7 @@ node examples/plain-react/scripts/copy-out-smoke.mjs   # after build:all: a copi
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single file
 
 # Quality
+yarn verify         # base gate + src gate in one command (documents/testing.md → Gate table)
 yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directives
 yarn lint:fix
 yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn prettier:fix writes

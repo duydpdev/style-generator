@@ -8,6 +8,8 @@ A task is done only when this chain exits 0 at the repo root (`yarn build:all` c
 yarn build:all && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types
 ```
 
+`yarn verify` runs this chain plus the `src/**` row.
+
 Add the rows that match the change:
 
 | When the change touches                                                         | Also run                                                                                                                                                                                                                                                      |

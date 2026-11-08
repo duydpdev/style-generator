@@ -71,6 +71,39 @@ runs for non-draft PRs that change `site/**`, `examples/**`, `e2e-site/**`, `src
 
 ---
 
+## Gate table
+
+Every gate once. `yarn verify` = base gate + `src/**` gate (`build:all`, `lint`, `prettier:check`, `tsc`, `test`, `test:types`, `typecheck:scripts`, `typecheck:dist`,
+`check:externals`, `check:sizes`, `check:browser-safe`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); the docs chain stays in the table.
+
+| Command                           | What it blocks                                                                               | Runs in (workflow: step)                                       | Needed after changing                      |
+| --------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------ |
+| `yarn lint`                       | ESLint errors and warnings (zero allowed), unused disable directives                         | `check`: Lint                                                  | any change                                 |
+| `yarn prettier:check`             | unformatted files                                                                            | `check`: Prettier check                                        | any change                                 |
+| `yarn tsc --noEmit`               | type errors in `src/**`, tests and configs                                                   | `check`: Type Check                                            | any change                                 |
+| `yarn test`                       | unit and integration test failures                                                           | `check`: Test (`test:coverage`, with thresholds)               | any change                                 |
+| `yarn test:types`                 | `*.test-d.ts` type-test failures                                                             | `check`: Type tests                                            | `src/**` types                             |
+| `yarn test:e2e`                   | spacing, generated CSS, `@source inline` and `themeAxes` in a real browser                   | `e2e`: Run e2e tests                                           | `src/**`, generated CSS                    |
+| `yarn test:visual`                | pixel changes of the built site (after `yarn site:build`)                                    | `visual.yml`: Compare with the committed baselines             | `site`, `documents/**`                     |
+| `yarn typecheck:scripts`          | type errors in `scripts/*.mjs` and `site/scripts/*.mjs`                                      | `check`: Script syntax and type check                          | `scripts/*.mjs`                            |
+| `yarn typecheck:dist`             | `dist/*.d.ts` (ESM) and `dist/*.d.cts` (CJS) that do not type-check with library checking on | `check`; `peer-matrix`; `ui-peer-floor`                        | `src/**`, build config                     |
+| `yarn check:externals`            | a third-party module inlined in `dist`, or a UI peer reached outside `./ui`                  | `check`: Check externals; `deploy.yml`                         | `src/**`, build config                     |
+| `yarn check:sizes`                | a subpath or the CLI over its gzip budget                                                    | `check`: Check size budgets                                    | `src/**`, build config                     |
+| `yarn check:browser-safe`         | a browser subpath that reaches Zod, a Node builtin or a runtime dependency                   | `check`: Check browser-safe subpaths; `deploy.yml`             | `src/**`, build config                     |
+| `yarn check:publish-target`       | a publish registry other than GitHub Packages                                                | `deploy.yml`: Verify publish target; `prepublish`              | `package.json`, `.yarnrc.yml`              |
+| `yarn check:smoke`                | a missing `dist` file, a subpath that does not load by `import` or `require`, a broken CLI   | `check`: Smoke-run built artifacts; `node-floor`; `deploy.yml` | `src/**`, build config                     |
+| `yarn check:types-pack`           | a subpath whose types do not resolve for ESM and CJS consumers (attw, node16)                | `check`: Check types resolve for ESM and CJS; `deploy.yml`     | `src/**`, `package.json#exports`           |
+| `node scripts/vite-dev-smoke.mjs` | a `styleGenVite` dev server that does not write or re-emit `theme.css`                       | `check`: Vite dev-server smoke; `peer-matrix` (vite legs)      | `src/features/vite/**`                     |
+| `yarn site:build`                 | a site or harness build failure (the site renders `documents/*.md`)                          | `check`: Build site; `visual.yml`                              | `site`, `documents/**`, `examples/**`      |
+| `yarn workspace site check:links` | broken relative links and `#anchors` in the rendered docs and their twins                    | `check`: Check doc links                                       | `documents/**`, `README.md`                |
+| `yarn check:docs-embed`           | an embedded code block that differs from its source region                                   | `check`: Check embedded doc code                               | `documents/**`, `examples/**`              |
+| `yarn check:docs-i18n`            | a Vietnamese twin that is missing, stale or structurally different                           | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                |
+| `yarn check:doc-snippets`         | a `ts`/`tsx` doc block that does not type-check, or opt-outs above 10%                       | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                |
+| `yarn check:doc-exports`          | a public export without a reference heading, signature block or TSDoc                        | `check`: Check reference coverage of exports                   | `src/**` exports, `documents/reference/**` |
+| `yarn check:plain-ui`             | a plain-example component folder that breaks the layout or import rules                      | `check`: Check plain UI folders                                | `examples/plain-*`                         |
+
+Every `check:*` script runs in CI or in `yarn verify`: no gate depends on a human remembering it.
+
 ## Test layers
 
 ### 1. Unit tests (Vitest)

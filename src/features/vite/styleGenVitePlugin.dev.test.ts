@@ -73,19 +73,15 @@ describe("styleGenVite plugin", () => {
       expect(existsSync(join(tmp, "o.css"))).toBe(true);
     });
 
-    it("passes axes from the config file to generate() (V5 go/no-go)", () => {
-      writeTheme("styles/theme.json", {
-        ...minimalTheme,
-        themeAxes: { theme: { dark: { colors: { primary: "#000000" } } } },
-      });
-      writeConfig({ axes: { attribute: { theme: "data-mode" } } });
+    it("passes options from the config file to generate()", () => {
+      writeTheme("styles/theme.json", minimalTheme);
+      writeConfig({ resetTailwindDefaults: ["colors"] });
       const plugin = styleGenVite();
 
       start(plugin, serveConfig());
 
       const css = readFileSync(join(tmp, "styles/theme.css"), "utf8");
-      expect(css).toContain('html[data-mode="dark"]');
-      expect(css).not.toContain('html[data-theme="dark"]');
+      expect(css).toContain("--color-*: initial;");
     });
 
     it("throws a labelled error for a config that violates the schema (no silent defaults)", () => {

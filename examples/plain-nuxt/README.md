@@ -24,7 +24,7 @@ yarn dev
 
 1. Install the package and the libraries a copied folder uses:
    ```bash
-   yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
    ```
    `@duydpdev/style-generator` comes from GitHub Packages, so set up the `@duydpdev` scope registry and a personal access token first (see the [Install](../../README.md#install) section of the repository README); without the scope config npmjs serves an unrelated `3.0.0`.
 2. Wire `theme.css` for Nuxt: add `styleGenVite` to `vite.plugins` in `nuxt.config.ts` and import `@import "tailwindcss";` and `@import "../../theme/theme.css";` in `app/assets/css/globals.css`. See the [Nuxt tutorial](../../documents/getting-started/nuxt-vue.md).

@@ -107,8 +107,7 @@ const { css, tokens, schema } = generate(theme, options);
 ```
 
 `generate()` validates `options` first (`StyleGeneratorOptionsSchema.parse` → `resolveOptions`), then always re-validates `theme` against `ThemeSchema` (even if the caller already
-called `defineTheme()`); `assertThemeOptions` (`src/core/themeOptionsChecks.ts`) checks the theme × options pair: for every `axes.scope`,
-an `axes.attribute` that points to a nonexistent axis, or two axes with the same attribute name, is rejected; `axes.scope: "element"` adds `checkElementScopeAliases`;
+called `defineTheme()`); `assertThemeOptions` (`src/core/themeOptionsChecks.ts`) checks the theme × options pair:
 `resetTailwindDefaults: ["colors"|"radius"|"shadow"]` requires the theme to have a matching `colors` (non-empty; `ThemeSchema` still accepts `colors: {}`),
 `borderRadius` or `shadows`. It then assembles the blocks in this order: `@theme` breakpoints → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` (the
 `--color-*: initial;`… lines of `resetTailwindDefaults` come first in this block) → typography `@utility` → spacing `@utility` → `@source inline`.
@@ -259,7 +258,7 @@ the app declares `tailwind-merge` 3.x itself — the extension uses v3 group ids
   any value.
 - `splitSpacingProps(props, keys, unit)` + `SpacingProps<BKeys, K>` → `{ spacing: { className, style }, rest }`;
   it calls `resolveSpacing` once per key (so import `./spacing` through the shared chunk) and removes every spacing key from `rest`, even when the value is `undefined`.
-- `themeAxisAttributes(state, { attribute })` → the DOM attributes of the active axes, using the same `axisAttributeName` formula as the selectors that `generate()` emits;
+- `themeAxisAttributes(state)` → the DOM attributes of the active axes, using the same `axisAttributeName` formula as the selectors that `generate()` emits;
   an axis that is `"base"`/`undefined` emits no attribute.
 
 ### UI kit (`./ui`, `./ui-react`)
@@ -306,7 +305,8 @@ imports, do not raise the budget. Vite 8 / Rolldown marks `manualChunks` as depr
 
 **Why `@source inline` instead of a safelist:** Tailwind v4 does not scan classes built at runtime. `generateSourceInline` emits one `@source inline("…")` line per category (and
 per state that has a sibling, for example `hover:bg-primary-hover`), so the classes always exist even if no source references them;
-classes built at runtime are declared through `options.extraSources`. Trade-off: every color always has `bg-/text-/border-/ring-/outline-/divide-/placeholder-*`,
+classes built at runtime are declared by the app with a plain Tailwind `@source inline(...)` directive in its own CSS.
+Trade-off: every color always has `bg-/text-/border-/ring-/outline-/divide-/placeholder-*`,
 so the CSS is slightly larger — `options.coverage` narrows these lines per category (`false`, `prefixes`, `keys: "aliased"`),
 and `coverage.colors.opacities` opts into one extra `/<n>` opacity-modifier line (see [`coverage`](./reference/options.md#coverage-trim-the-source-inline-lines-per-category)).
 
@@ -336,7 +336,9 @@ flowchart LR
 
 Design decisions:
 
-- **The selector is pinned to `html`:** an alias `var()` is resolved at the element that _declares_ the custom property (`:root`), so an override on a child element never reaches the alias's value.
+- **The selector is pinned to `html` and the attribute is `data-<axis-kebab>`:** an alias `var()` is resolved at the element that _declares_ the custom property (`:root`),
+  so an override on a child element never reaches the alias's value.
+  Neither is configurable; a scoped theme or a custom attribute name is hand-written CSS in the app.
 - **Precedence = declaration order:** two axes overriding the same token have equal specificity; the axis declared later wins.
   That is why axis/variant names that are integers are rejected (JS enumerates numeric-like keys first, breaking the order).
 - **An override must have a key in the base:** a key present only in an override does not map into `@theme inline`/`@utility` and so creates no utility; it is rejected at parse time.
@@ -403,7 +405,7 @@ The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) th
   which also reports a `<Grid>` without `columns` there; the site is exempt from that rule because its grids use desktop-first CSS templates.
   Files in `UI_APP_FILES` stay under the `max-lines` limit (150 lines): split a longer component.
 - **CSS hooks:** bespoke CSS hooks are namespaced classes: `s-` classes in `site/src/styles` (`.s-doc-body` for markdown/highlight, pseudo-elements, keyframes,
-  chrome that has no prop) and `x-` classes in the harness examples; `data-reveal="up|stagger"` + `data-reveal-state="pending|done"` (set by `site/src/lib/use-reveal.ts`) for the
+  chrome that has no prop) and `x-` classes in the harness example; `data-reveal="up|stagger"` + `data-reveal-state="pending|done"` (set by `site/src/lib/use-reveal.ts`) for the
   reveal effect; `data-ch` on each chapter. Spacing (`margin*`, `padding*`, `gap`) is always a component prop and never sits in a hook rule.
 - **Spacing exceptions:** the only spacing declarations allowed under a `.s-*` rule are inside an `@media (max-width: …)` block whose width no responsive prop can express (the
   props switch only at `md` and `lg`), each marked `/* spacing-exception: <Id> */` in the CSS: E1 (`terminal.css`, `cta-card` padding at 720px), E2/E3 (`layout.css`,
@@ -450,7 +452,7 @@ not `defineOptions`, because that exists only in `.` and would pull Zod into the
 
 Each app emits `theme.css` into its own gitignored file and `@import`s the shared CSS through `design-system-example/styles/*`;
 `harness` adds `@source` lines back to `design-system/src` (relative to the CSS file), while its `ui/` components sit inside the app and are scanned by default;
-the plain apps need none, because every class literal lives inside the app. Running the harness apps requires Node >= 22.18 (their bundler configs import `.ts` modules through
+the plain apps need none, because every class literal lives inside the app. Running the harness app requires Node >= 22.18 (its bundler config imports `.ts` modules through
 Node's type stripping). Only `harness` is embedded in the landing site; the plain apps are standalone. See [`examples/README.md`](../examples/README.md).
 
 ### Deploy pipelines

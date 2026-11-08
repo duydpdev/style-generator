@@ -268,7 +268,7 @@ describe("generateThemeCss", () => {
     expect(css).toBe("\n");
   });
 
-  describe("options.axes", () => {
+  describe("axis selector", () => {
     const config: ThemeConfig = {
       colors: { brand: "#00f", primary: "$brand", surface: "#fff" },
       themeAxes: {
@@ -277,50 +277,11 @@ describe("generateThemeCss", () => {
       },
     };
 
-    it("pins the selector to html and data-<axis-kebab> by default", () => {
+    it("pins the selector to html and data-<axis-kebab>", () => {
       const css = generateThemeCss(config);
       expect(css).toContain('html[data-theme="dark"] {');
       expect(css).toContain('html[data-high-contrast="on"] {');
       expect(generateThemeCss(config, {})).toBe(css);
-    });
-
-    it("renames the attribute of the listed axes only", () => {
-      const css = generateThemeCss(config, {
-        axes: { attribute: { highContrast: "data-contrast" } },
-      });
-      expect(css).toContain('html[data-contrast="on"] {');
-      expect(css).toContain('html[data-theme="dark"] {');
-      expect(css).not.toContain("data-high-contrast");
-    });
-
-    it('drops the html anchor with scope "element"', () => {
-      const css = generateThemeCss(config, {
-        axes: { scope: "element", attribute: { theme: "data-mode" } },
-      });
-      expect(css).toContain('\n[data-mode="dark"] {');
-      expect(css).toContain('\n[data-high-contrast="on"] {');
-      expect(css).not.toContain("html[");
-    });
-
-    it("runs the options parse: an unsafe attribute name throws", () => {
-      expect(() =>
-        generateThemeCss(config, {
-          axes: { attribute: { theme: 'x"] { color: red } [y' } },
-        }),
-      ).toThrow(z.ZodError);
-    });
-
-    it('runs the element-scope alias check, which does not apply to scope "root"', () => {
-      const stale: ThemeConfig = {
-        ...config,
-        themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
-      };
-      expect(() =>
-        generateThemeCss(stale, { axes: { scope: "element" } }),
-      ).toThrow(z.ZodError);
-      expect(() =>
-        generateThemeCss(stale, { axes: { scope: "root" } }),
-      ).not.toThrow();
     });
   });
 

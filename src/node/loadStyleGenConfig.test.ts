@@ -96,11 +96,11 @@ describe("loadStyleGenConfig", () => {
     expect(loaded.source).toBe("package.json");
   });
 
-  it("forwards `axes` and `resetTailwindDefaults` to the generate() options", () => {
+  it("forwards `resetTailwindDefaults` and `coverage` to the generate() options", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
       JSON.stringify({
-        axes: { attribute: { theme: "data-mode" } },
+        coverage: { colors: false },
         resetTailwindDefaults: ["colors"],
       }),
     );
@@ -108,7 +108,7 @@ describe("loadStyleGenConfig", () => {
     const options = toGeneratorOptions(loadStyleGenConfig(tmp).config);
 
     expect(options).toEqual({
-      axes: { attribute: { theme: "data-mode" } },
+      coverage: { colors: false },
       resetTailwindDefaults: ["colors"],
     });
   });
@@ -241,18 +241,16 @@ describe("resolveConfig", () => {
     expect(config.breakpoints).toEqual(["sm", "md"]);
   });
 
-  it("passes through extraSources/spacing/typography from style-gen.config.json", () => {
+  it("passes through spacing/typography from style-gen.config.json", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
       JSON.stringify({
-        extraSources: ["hover:bg-primary"],
         spacing: { enabled: false },
         typography: { cssVarDriven: true },
       }),
     );
 
     const config = resolveConfig({});
-    expect(config.extraSources).toEqual(["hover:bg-primary"]);
     expect(config.spacing).toEqual({ enabled: false });
     expect(config.typography).toEqual({ cssVarDriven: true });
   });
@@ -270,14 +268,18 @@ describe("resolveConfig", () => {
     });
   });
 
-  it("CLI-flag-style extraSources/spacing/typography override file config", () => {
+  it("CLI-flag-style spacing/typography override file config", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({ extraSources: ["file-only"] }),
+      JSON.stringify({
+        spacing: { enabled: false },
+        typography: { cssVarDriven: false },
+      }),
     );
 
-    const config = resolveConfig({ extraSources: ["flag-wins"] });
-    expect(config.extraSources).toEqual(["flag-wins"]);
+    const config = resolveConfig({ spacing: { enabled: true } });
+    expect(config.spacing).toEqual({ enabled: true });
+    expect(config.typography).toEqual({ cssVarDriven: false });
   });
 
   it("accepts `coverage` from style-gen.config.json and forwards it to generate() options", () => {
@@ -309,20 +311,19 @@ describe("resolveConfig", () => {
     });
   });
 
-  it("accepts `axes` from style-gen.config.json and forwards it to generate() options", () => {
+  it("rejects the removed `axes` and `extraSources` keys as unrecognized", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
       JSON.stringify({
-        axes: { attribute: { theme: "data-mode" }, scope: "element" },
+        axes: { attribute: { theme: "data-mode" } },
+        extraSources: ["bg-x"],
       }),
     );
 
     const file = readConfigFile(tmp);
-    expect(file.issues).toBeUndefined();
-    expect(toGeneratorOptions(resolveConfig({}, file)).axes).toEqual({
-      attribute: { theme: "data-mode" },
-      scope: "element",
-    });
+    expect(file.issues).toMatch(/Unrecognized key/);
+    expect(file.issues).toContain("axes");
+    expect(file.config).toEqual({});
   });
 });
 
@@ -393,7 +394,6 @@ describe("readConfigFile schema validation (X-04)", () => {
       enableResponsive: false,
       spacing: { enabled: true },
       typography: { cssVarDriven: true },
-      extraSources: ["bg-x"],
       resetTailwindDefaults: ["colors"],
     };
     writeConfig(cfg);

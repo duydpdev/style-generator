@@ -83,6 +83,7 @@ Glossary (prose only; identifiers, commands and code stay English):
 
 | File                                                                                       | Contents                                                                  |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| [`migration/6.x-to-7.0.md`](./migration/6.x-to-7.0.md)                                     | Breaking changes 6.x → 7.0.0: no `extraSources`, no `axes` option         |
 | [`migration/5.x-to-6.0.md`](./migration/5.x-to-6.0.md)                                     | Breaking changes 5.x → 6.0.0: generator-only root, no `plugin` config key |
 | [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)                                     | Breaking changes 4.x → 5.0.0, grep recipes and the generated CSS diff     |
 | [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md)                                     | Breaking changes 3.x → 4.0.0 and the rollback runbook                     |

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: 593f9aaaa676 -->
+<!-- source: documents/reference/theme.md sha256: 86388448b381 -->
 
 # Cấu hình theme
 
@@ -157,7 +157,7 @@ html[data-palette="high-contrast"] { --sg-color-primary: #000000; }
 
 Quy tắc:
 
-- **Selector được gắn chặt với `html`.** Một thuộc tính `data-*` trên phần tử bao ngoài không có tác dụng. Lý do là vì alias: một alias `var()` phân giải tại phần tử _khai báo_ custom property (`:root`), do đó override trên bất kỳ phần tử nào khác sẽ không bao giờ chạm tới giá trị của alias.
+- **Selector được gắn chặt với `html`, và thuộc tính luôn là `data-<axis-kebab>`.** Một thuộc tính `data-*` trên phần tử bao ngoài không có tác dụng. Lý do là vì alias: một alias `var()` phân giải tại phần tử _khai báo_ custom property (`:root`), do đó override trên bất kỳ phần tử nào khác sẽ không bao giờ chạm tới giá trị của alias. Theme giới hạn trong một phần tử hoặc tên thuộc tính tùy chỉnh là CSS tự viết trong app của bạn.
 - **Giá trị thuộc tính là dạng kebab của key**: variant `highContrast` → `data-palette="high-contrast"`; trục `colorScheme` → `data-color-scheme`.
 - **Độ ưu tiên theo thứ tự khai báo.** Các selector có độ đặc hiệu ngang nhau, vì vậy khi hai trục cùng override một token thì trục được khai báo **sau** trong JSON sẽ thắng.
 - **Tên trục và tên variant không được là số nguyên chuẩn** (`100`, `2024`): JavaScript liệt kê các key giống số trước, điều này sẽ âm thầm phá vỡ thứ tự khai báo. Thay vào đó hãy dùng `contrast100`.

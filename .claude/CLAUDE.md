@@ -43,7 +43,7 @@ yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directiv
 yarn lint:fix
 yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn prettier:fix writes
 yarn tsc --noEmit   # Type check
-yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (also run by prepublish + CI)
+yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
@@ -132,7 +132,7 @@ Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/chec
 Source layout: `documents/architecture.md`; public exports per subpath and CLI: `documents/reference/`.
 Internal helpers (`toCamelCase`, `toPascalCase`) are not exported from any barrel; `toKebabCase` is public (from `./cva`) because it is the function the registry and
 `createVariantMapper` share. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`; from 4.x: `documents/migration/4.x-to-5.0.md`; from 5.x:
-`documents/migration/5.x-to-6.0.md`.
+`documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`.
 
 Sample components (examples, not an API; nothing is published): `Box`, `Text`, `Stack`, `Flex`, `Grid`, `Button` live in the harness app over the `examples/design-system` recipes.
 React: `examples/harness/src/ui/*.tsx`, each a self-contained factory file `create<Name>(tokens, preset?)` with its own prop types and `Polymorphic` type (all six import
@@ -158,15 +158,11 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   and `typography.*.fontWeight` is a number in 1–1000.
 - A `__proto__` key is rejected at its exact path wherever it appears in a theme (`rejectProtoKeys`, the raw-input `z.preprocess` step of `ThemeSchema`, `src/core/themeSchema.ts`):
   Zod's `z.record` skips that key before the key schema runs, so without the scan the token would be dropped silently. Only a parsed JSON document can carry it as an own key.
-  The options records (`screens`, `spacing.properties`, `axes.attribute`) are not scanned: they hold no token names.
+  The options records (`screens`, `spacing.properties`) are not scanned: they hold no token names.
 - `themeAxes: Record<axisName, Record<variantName, ThemeOverride>>` — independent axes (e.g. `theme.dark` and `palette.forest` at once),
-  each activated via `html[data-<axis-kebab>="<variant-kebab>"]`. Selectors are pinned to `html` because a `$`-alias `var()` resolves where the custom property is declared
-  (`:root`). With `options.axes.scope: "element"` the `html` anchor is dropped (`[data-<axis>="<variant>"]`) and `generate()` rejects a variant that overrides an alias target
-  without re-declaring each holder (holders are looked up in the base theme and in every other variant of every axis;
-  `ZodError` at `themeAxes.<axis>.<variant>.<category>.<overriddenKey>`, `checkElementScopeAliases` in `src/core/elementScopeAliases.ts`).
-  `options.axes.attribute` (axis → attribute name map, names match `[a-z][a-z0-9-]*`, resolved once in `resolveOptions`) renames the attribute via `axisAttributeName`
-  (`src/shared/axisAttributeName.ts`, also used by `themeAxisAttributes`); for every scope `checkAxesAttribute` (`src/core/themeOptionsChecks.ts`) rejects an attribute key that
-  names no `themeAxes` axis and two axes that resolve to the same attribute name (both at `axes.attribute.<axis>`).
+  each activated via `html[data-<axis-kebab>="<variant-kebab>"]` (`axisAttributeName`, `src/shared/axisAttributeName.ts`, shared with `themeAxisAttributes`).
+  The selector is always pinned to `html` and the attribute name is not configurable, because a `$`-alias `var()` resolves where the custom property is declared (`:root`);
+  a scoped theme on another element or a custom attribute name is hand-written CSS in the app.
   Blocks emit after `:root` in declaration order, so for a token overridden by two axes the axis declared **last** wins.
 - An override key must already exist in the matching base category — override-only keys are rejected (they would produce no utility).
 - Axis and variant names must NOT be canonical integers (`/^(0|[1-9]\d*)$/`) — JS enumerates integer-like keys first, which would silently invert "last declared wins". `007`/`2xl` are fine.
@@ -194,7 +190,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
 - `generate()` validates options with a strict schema (`src/core/optionsSchema.ts`, internal): unknown keys rejected (also in `spacing`/`typography`); flags are booleans;
   `screens` values are one px/rem/em length and the map merged with `defaultScreens` uses one unit; `breakpoints` must name a screen.
   `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`).
-  `extraSources`: non-empty, ≤512 chars, no `"'\;@<>`/line break.
+  The 7.0 removals (`extraSources`, `axes`) are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
 - `options.coverage` (`Partial<Record<CategoryKey, boolean | { prefixes?, keys?: "aliased" | "all", opacities? }>>`) only changes the registry's `@source inline` lines:
   `false` drops a category's lines (state lines included), `prefixes` must be a **non-empty** list of real `classPrefixes` of that category (typography has none),
   `keys: "aliased"` keeps the alias **holders** — declared keys whose value is a `$alias` in the base record or any `themeAxes` override of the same category;
@@ -225,9 +221,10 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `generate --watch` watches the theme AND the config file and keeps the last valid config when an edit is invalid.
   `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
-  mirrored by hand in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); no gate compares them);
-  it never edits a bundler config and has scaffolded no generator script since 5.2.0, and the `plugin` config key it once wrote is rejected since 6.0.0 (`init` drops it while
-  merging; `doctor` has no `Script` check). `budget` is the in-repo replacement for the removed `scripts/check-css-budget.mjs` (its `OK: …`/`OVER BUDGET: …` lines are a contract
+  shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
+  it never edits a bundler config and has scaffolded no generator script since 5.2.0; `init` drops the config keys a major removed while merging
+  (`plugin` since 6.0.0, `extraSources`/`axes` since 7.0.0, the `extraSources` entries printed as `@source inline(...)` lines;
+  `doctor` has no `Script` check). `budget` is the in-repo replacement for the removed `scripts/check-css-budget.mjs` (its `OK: …`/`OVER BUDGET: …` lines are a contract
   consumers grep).
 
 ## Testing
@@ -247,11 +244,12 @@ and each app's CSS has `@source not` for `*.stories.*`). The `plain-react` job o
 runs on drafts and documentation-only PRs. Layers and CI legs (including `tailwind-floor`, `node-floor`,
 `peer-matrix` (decides the `vite`/`typescript` peer ranges) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
 these 7 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
-it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR): `documents/testing.md`.
+it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
+`check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
 
 ## Publishing guards
 
-- `yarn check:publish-target` (`prepublish` + CI) locks the registry to `npm.pkg.github.com`; CI also runs `yarn npm publish --dry-run` and asserts that host.
+- `yarn check:publish-target` (`prepublish` + `deploy.yml`) locks the registry to `npm.pkg.github.com`; `deploy.yml` also runs `yarn npm publish --dry-run` and asserts that host.
   Yarn Berry runs `prepublish`, not `prepublishOnly`, on `yarn npm publish`.
 - `yarn check:externals` fails if any `dist/**/*.map` lists a peer/dependency under `node_modules/` (or a JS file ships without a map) or any entry but `./ui` reaches a UI peer;
   `yarn check:sizes` enforces gzip budgets incl. the `cli` bundle (`scripts/check-sizes.mjs`); `yarn check:browser-safe` keeps browser subpaths free of Node/Zod.

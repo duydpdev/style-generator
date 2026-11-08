@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: 0b2c65e04023 -->
+<!-- source: documents/reference/recipes.md sha256: e1812d014d25 -->
 
 # Recipe (./recipes)
 
@@ -33,8 +33,7 @@ export const Box = (props: BoxProps) => {
   return <div {...rest} className={spacing.className} style={spacing.style} />;
 };
 
-// 3. DOM attributes of the active theme axes (pass `{ attribute }` as the second
-//    argument when `options.axes.attribute` renames them)
+// 3. DOM attributes of the active theme axes
 export const Root = () => (
   <html {...themeAxisAttributes<typeof theme>({ theme: "dark" })} />
 );
@@ -201,15 +200,12 @@ explicit literal keys give the narrowest result.
 ```ts
 export declare const themeAxisAttributes: <T extends ThemeConfig>(
   state: ThemeAxesState<T>,
-  options?: {
-    readonly attribute?: Readonly<Record<string, string>> | undefined;
-  },
 ) => Readonly<Record<string, string>>;
 ```
 
 The DOM attributes that activate a theme's axis variants, mirroring the
 `html[data-<axis>="<variant>"]` selectors `generate()` emits. Spread the
-result on the element the selectors target (`<html>` by default):
+result on `<html>`, the element the selectors target:
 
 ```tsx
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";

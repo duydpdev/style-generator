@@ -347,7 +347,7 @@ const root = () => {
 1. Install the required dependencies:
 
    ```bash
-   yarn add @duydpdev/style-generator@^5.4.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
    ```
 
    See the README [Install](../README.md#install) section to configure the `@duydpdev` scope registry and your Personal Access Token; without the scope config npmjs serves an unrelated `3.0.0`.

@@ -23,14 +23,15 @@ yarn dev          # Vite dev server on http://localhost:5173
 
 ## Scripts
 
-| Script           | What it does                       |
-| ---------------- | ---------------------------------- |
-| `yarn dev`       | Vite dev server (HMR on the theme) |
-| `yarn build`     | Production build via Vite          |
-| `yarn preview`   | Serve the production build         |
-| `yarn typecheck` | `tsc --noEmit`                     |
+| Script           | What it does                                                                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `yarn dev`       | Vite dev server (HMR on the theme)                                                             |
+| `yarn build`     | Production build via Vite                                                                      |
+| `yarn preview`   | Serve the production build                                                                     |
+| `yarn typecheck` | `tsc --noEmit`                                                                                 |
+| `yarn generate`  | Write `src/theme/theme.css` with the CLI, outside Vite (options from `package.json#style-gen`) |
 
-`doctor`, `generate` and `schema` live in the design-system package (`yarn workspace design-system-example doctor`).
+`doctor` and `schema` live in the design-system package (`yarn workspace design-system-example doctor`).
 
 ## What it demonstrates
 

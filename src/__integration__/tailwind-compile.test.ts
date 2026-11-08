@@ -110,10 +110,8 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     expect(offending).toEqual([]);
   });
 
-  it("build([]) emits expected classes for all categories and extraSources via @source inline", async () => {
-    const { css: themeCss } = generate(theme, {
-      extraSources: ["hover:bg-{primary,secondary}"],
-    });
+  it("build([]) emits expected classes for all categories via @source inline", async () => {
+    const { css: themeCss } = generate(theme);
     const compiled = await compileFixtureCss(themeCss, []);
 
     const selectors = [
@@ -247,11 +245,9 @@ describe("integration: Tailwind v4 compile pipeline", () => {
   });
 
   it('case @import "./theme.css": candidates still resolve when loading theme css via @import', async () => {
-    // `underline` is a Tailwind static utility the registry never emits, so
-    // it only shows up if the imported file's `@source inline` is honoured.
-    const { css: themeCss } = generate(theme, {
-      extraSources: ["underline"],
-    });
+    // Nothing but the imported file's `@source inline` can produce these
+    // classes: the candidate list passed to build() is empty.
+    const { css: themeCss } = generate(theme);
 
     const compiled = await compileFixtureCss('@import "./theme.css";', [], {
       imports: { "theme.css": themeCss },
@@ -259,9 +255,6 @@ describe("integration: Tailwind v4 compile pipeline", () => {
 
     expect(declsOf(compiled, ".bg-primary").get("background-color")).toBe(
       "var(--sg-color-primary)",
-    );
-    expect(declsOf(compiled, ".underline").get("text-decoration-line")).toBe(
-      "underline",
     );
     expect(compiled).toContain(".sp-p");
   });

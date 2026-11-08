@@ -191,22 +191,6 @@ describe("doctorCommand", () => {
   });
 
   describe("theme × options", () => {
-    it("a stale $-alias holder under axes.scope 'element' → ❌ Invalid theme/options, 1", () => {
-      writeProject(tmp, {
-        "style-gen.config.json": { axes: { scope: "element" } },
-        "styles/theme.json": {
-          colors: { brand: "#00f", primary: "$brand" },
-          themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
-        },
-      });
-
-      expect(doctorCommand(tmp)).toBe(1);
-
-      expect(lines()).toMatch(/Theme .*❌ Invalid theme\/options/);
-      expect(lines()).toMatch(/themeAxes\.theme\.dark\.colors\.brand → /);
-      expect(lines()).not.toContain("Valid JSON, schema OK");
-    });
-
     it("resetTailwindDefaults radius without borderRadius → ❌ Invalid theme/options, 1", () => {
       writeProject(tmp, {
         "style-gen.config.json": { resetTailwindDefaults: ["radius"] },
@@ -215,16 +199,17 @@ describe("doctorCommand", () => {
 
       expect(doctorCommand(tmp)).toBe(1);
 
-      expect(lines()).toMatch(/Invalid theme\/options/);
+      expect(lines()).toMatch(/Theme .*❌ Invalid theme\/options/);
       expect(lines()).toMatch(/resetTailwindDefaults\.0 → /);
+      expect(lines()).not.toContain("Valid JSON, schema OK");
     });
 
-    it("the same theme passes when the option does not conflict", () => {
+    it("the same option passes when the theme provides the replacement", () => {
       writeProject(tmp, {
-        "style-gen.config.json": { axes: { scope: "root" } },
+        "style-gen.config.json": { resetTailwindDefaults: ["shadow"] },
         "styles/theme.json": {
-          colors: { brand: "#00f", primary: "$brand" },
-          themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
+          colors: { primary: "#3B82F6" },
+          shadows: { base: "0 1px 2px #000" },
         },
       });
 

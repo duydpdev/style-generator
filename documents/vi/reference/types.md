@@ -1,4 +1,4 @@
-<!-- source: documents/reference/types.md sha256: eed1aea265c8 -->
+<!-- source: documents/reference/types.md sha256: e958df8a9dc1 -->
 
 # Kiểu (./types)
 
@@ -57,13 +57,8 @@ export declare interface StyleGeneratorOptions {
     enabled?: boolean;
     properties?: SpacingPropertyMap;
   };
-  extraSources?: readonly string[];
   coverage?: {
     [K in CategoryKey]?: boolean | CategoryCoverageRule<K>;
-  };
-  axes?: {
-    attribute?: Readonly<Record<string, string>>;
-    scope?: "root" | "element";
   };
   resetTailwindDefaults?: readonly ("colors" | "radius" | "shadow")[];
 }

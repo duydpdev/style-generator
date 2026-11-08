@@ -79,8 +79,8 @@ interface OpacityCoverage {
    * prefix and key and each listed step, in one extra `@source inline`
    * line after the category's own line. Distinct integers 1–100
    * (non-empty), emitted ascending. Not crossed with the state lines:
-   * `hover:bg-primary-hover/10` still needs `extraSources` or a literal
-   * class. Every step adds `prefixes × keys` classes to the built CSS.
+   * `hover:bg-primary-hover/10` still needs a literal class in your own
+   * `@source inline(...)`. Every step adds `prefixes × keys` classes to the built CSS.
    */
   opacities?: readonly [number, ...number[]];
 }
@@ -160,20 +160,6 @@ export interface StyleGeneratorOptions {
   };
 
   /**
-   * Extra Tailwind v4 `@source inline(...)` entries appended to the
-   * generated CSS, for classes built at runtime that Tailwind's static
-   * candidate scan can never see (e.g. a template-literal class name).
-   * Each entry is emitted verbatim inside `@source inline("<entry>")` —
-   * Tailwind's brace-expansion syntax (`{a,b,c}`) is supported.
-   *
-   * Validated by `generate()`: each entry must be non-empty, at most 512
-   * characters, and must not contain `"`, `'`, `\`, `;`, `@`, `<`, `>`, or
-   * a line break — those characters could escape the `inline("…")` string
-   * and inject an arbitrary at-rule.
-   */
-  extraSources?: readonly string[];
-
-  /**
    * Trim or extend the `@source inline(...)` coverage per token category.
    * Absent, `true` or `{}` keeps today's output (one line per category
    * covering every key and prefix, plus the colors state lines). `false`
@@ -192,40 +178,6 @@ export interface StyleGeneratorOptions {
    * `colors`.
    */
   coverage?: { [K in CategoryKey]?: boolean | CategoryCoverageRule<K> };
-
-  /**
-   * How `themeAxes` variants are switched on in the DOM.
-   *
-   * Validated by `generate()`: every attribute name must match
-   * `[a-z][a-z0-9-]*` (it is interpolated into a CSS selector), every
-   * `attribute` key must name a `themeAxes` axis, and no two axes may
-   * resolve to the same attribute name — all for every `scope`. With
-   * `scope: "element"`, no variant may leave a `$`-alias holder stale (see
-   * `scope`).
-   */
-  axes?: {
-    /**
-     * Axis name → DOM attribute name, e.g. `{ theme: "data-mode" }` emits
-     * `html[data-mode="dark"]` instead of `html[data-theme="dark"]`. Axes
-     * that are not listed keep `data-<axis-kebab>`. `themeAxisAttributes()`
-     * from `./recipes` reads the same map, so both sides stay in step.
-     * @default {}
-     */
-    attribute?: Readonly<Record<string, string>>;
-    /**
-     * Where a variant block applies. `"root"` pins the selector to `html`
-     * (`html[data-theme="dark"]`): custom properties are declared on
-     * `:root`, so a `$`-alias `var()` is computed there and every override
-     * is seen by its aliases. `"element"` drops the `html` anchor
-     * (`[data-theme="dark"]`) so the attribute can sit on any element for a
-     * scoped theme; a `$`-alias holder is then still computed where it is
-     * declared, so `generate()` rejects a variant that overrides an alias
-     * target without re-declaring each holder of it (a holder written in
-     * the base theme or in any other variant of any axis).
-     * @default "root"
-     */
-    scope?: "root" | "element";
-  };
 
   /**
    * Tailwind default theme namespaces to clear before the theme's own values

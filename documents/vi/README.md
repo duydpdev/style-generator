@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: c1d29321d350 -->
+<!-- source: README.md sha256: 57f4672ee80a -->
 
 # @duydpdev/style-generator
 
@@ -8,7 +8,7 @@ Thư viện TypeScript + CLI biến một file theme JSON thành một **design 
 
 Được phát hành trên **GitHub Packages** với tên `@duydpdev/style-generator` (cài đặt cần token, xem [Cài đặt](#cài-đặt)).
 
-> **Nâng cấp?** Đọc các hướng dẫn nâng cấp: [5.x → 6.0](./migration/5.x-to-6.0.md), [4.x → 5.0](./migration/4.x-to-5.0.md), [3.x → 4.0](./migration/3.x-to-4.0.md).
+> **Nâng cấp?** Đọc các hướng dẫn nâng cấp: [6.x → 7.0](./migration/6.x-to-7.0.md), [5.x → 6.0](./migration/5.x-to-6.0.md), [4.x → 5.0](./migration/4.x-to-5.0.md), [3.x → 4.0](./migration/3.x-to-4.0.md).
 
 ## Tính năng
 
@@ -110,8 +110,6 @@ yarn style-gen generate --watch    # regenerate on save
 Import `./theme.css` cạnh `@import "tailwindcss";` trong một file CSS của `styles/`.
 
 ### Theme
-
-Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
 
 Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
 

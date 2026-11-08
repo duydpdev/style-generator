@@ -34,26 +34,11 @@ describe("themeAxisAttributes", () => {
     themeAxisAttributes<typeof theme>({ mode: "dark" });
   });
 
-  it("attribute is an axis → attribute-name map, not a function", () => {
+  it("takes no options argument", () => {
     expectTypeOf<
-      NonNullable<Parameters<typeof themeAxisAttributes<typeof theme>>[1]>
-    >().toEqualTypeOf<{
-      readonly attribute?: Readonly<Record<string, string>> | undefined;
-    }>();
-    themeAxisAttributes<typeof theme>(
-      { theme: "dark" },
-      { attribute: { theme: "data-mode" } },
-    );
-    themeAxisAttributes<typeof theme>({}, {});
-    // an explicit `undefined` (e.g. `options.axes?.attribute`) is fine under exactOptionalPropertyTypes
-    const maybe: Readonly<Record<string, string>> | undefined = undefined as
-      | Readonly<Record<string, string>>
-      | undefined;
-    themeAxisAttributes<typeof theme>({ theme: "dark" }, { attribute: maybe });
-    themeAxisAttributes<typeof theme>(
-      { theme: "dark" },
-      // @ts-expect-error a function is not accepted (the map is shared with options.axes.attribute)
-      { attribute: (axis: string) => `data-${axis}` },
-    );
+      Parameters<typeof themeAxisAttributes<typeof theme>>
+    >().toEqualTypeOf<[state: ThemeAxesState<typeof theme>]>();
+    // @ts-expect-error a second argument is not accepted
+    themeAxisAttributes<typeof theme>({ theme: "dark" }, {});
   });
 });

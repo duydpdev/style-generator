@@ -166,19 +166,17 @@ describe("generateCommand", () => {
       expect(errorSpy.mock.calls[0]?.[0]).toMatch(/EXDEV/);
     });
 
-    it("threads extraSources from style-gen.config.json into generate()", async () => {
+    it("threads resetTailwindDefaults from style-gen.config.json into generate()", async () => {
       write("styles/theme.json", sampleTheme);
       write("style-gen.config.json", {
         theme: "styles/theme.json",
         output: "styles/theme.css",
-        extraSources: ["hover:bg-{primary,background}"],
+        resetTailwindDefaults: ["colors"],
       });
 
       expect(await generateCommand({}, tmp)).toBe(0);
 
-      expect(read("styles/theme.css")).toContain(
-        '@source inline("hover:bg-{primary,background}");',
-      );
+      expect(read("styles/theme.css")).toContain("--color-*: initial;");
     });
 
     it("returns 1 with an init hint when the theme file is missing", async () => {
@@ -262,10 +260,10 @@ describe("generateCommand", () => {
       expect(exists("styles/theme.css")).toBe(false);
     });
 
-    it("reports an invalid extraSources entry in style-gen.config.json as a config error with its path", async () => {
+    it("reports the removed extraSources key in style-gen.config.json as an unknown config key", async () => {
       write("styles/theme.json", sampleTheme);
       write("style-gen.config.json", {
-        extraSources: ["bg-primary", "bad;entry"],
+        extraSources: ["bg-primary"],
       });
 
       const code = await generateCommand(
@@ -275,17 +273,14 @@ describe("generateCommand", () => {
 
       expect(code).toBe(1);
       expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-        /^Invalid config \(style-gen\.config\.json\):\nextraSources\.1 → /,
+        /^Invalid config \(style-gen\.config\.json\):\nextraSources → Unrecognized key/,
       );
       expect(exists("styles/theme.css")).toBe(false);
     });
 
-    it('labels a theme × options conflict (axes.scope "element" with a stale alias) "Invalid theme/options"', async () => {
-      write("styles/theme.json", {
-        colors: { brand: "#00f", primary: "$brand" },
-        themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
-      });
-      write("style-gen.config.json", { axes: { scope: "element" } });
+    it('labels a theme × options conflict (resetTailwindDefaults "shadow" without shadows) "Invalid theme/options"', async () => {
+      write("styles/theme.json", { colors: { primary: "#3B82F6" } });
+      write("style-gen.config.json", { resetTailwindDefaults: ["shadow"] });
 
       const code = await generateCommand(
         { theme: "styles/theme.json", out: "styles/theme.css" },
@@ -294,7 +289,7 @@ describe("generateCommand", () => {
 
       expect(code).toBe(1);
       expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-        /^Invalid theme\/options:\nthemeAxes\.theme\.dark\.colors\.brand → /,
+        /^Invalid theme\/options:\nresetTailwindDefaults\.0 → /,
       );
       expect(exists("styles/theme.css")).toBe(false);
     });

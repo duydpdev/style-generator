@@ -18,8 +18,7 @@
  *   imports those three directly: the kit wraps them.
  * Each `IDENTICAL` rule names a file that must be byte-identical across its
  * apps. Scope `folder`: `<uiDir>/<folder>/<file>`, compared only for folders
- * present in both apps (`<Name>` in `file` expands to the folder's PascalCase
- * name); a folder that exists in some apps of the rule only is
+ * present in both apps; a folder that exists in some apps of the rule only is
  * a warning (printed, exit code unchanged), so adding a component to one app
  * is one folder. Scope `app`: `<src dir>/<file>` (`theme.ts`, `options.ts`,
  * `theme/theme.json`), where the src dir is the parent of `uiDir` (`src/`,
@@ -340,10 +339,9 @@ function checkIdentical(root, found, rule) {
     if (lacking.length > 0) {
       warnings.push(oneSidedWarning(having, lacking, folder));
     }
-    const file = rule.file.replaceAll("<Name>", toPascalCase(folder));
     compareAll(
       root,
-      having.map((entry) => `${entry.app.uiDir}/${folder}/${file}`),
+      having.map((entry) => `${entry.app.uiDir}/${folder}/${rule.file}`),
       errors,
     );
   }

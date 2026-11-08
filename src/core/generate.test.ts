@@ -133,32 +133,23 @@ describe("generate", () => {
     expect(css).not.toMatch(/@utility/);
   });
 
-  it("extraSources: emits one @source inline(...) per entry after the sp-* line", () => {
-    const { css } = generate(theme, {
-      extraSources: ["hover:bg-{primary,secondary}", "md:flex"],
-    });
-    expect(css).toMatch(
-      /@source inline\("hover:bg-\{primary,secondary\}"\);\n@source inline\("md:flex"\);/,
-    );
-  });
-
-  it('extraSources: throws on an entry that tries to escape the inline("…") string', () => {
+  it.each([
+    ["extraSources", { extraSources: ["a"] }],
+    ["axes", { axes: { scope: "root" } }],
+  ])("rejects the removed option %s as an unrecognized key", (key, options) => {
+    let error: unknown;
+    try {
+      generate(theme, options as never);
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(z.ZodError);
+    const issues = (error as z.ZodError).issues;
+    expect(issues.map((i) => i.code)).toContain("unrecognized_keys");
     expect(
-      zodIssuePaths(() =>
-        generate(theme, { extraSources: ['x")@import "evil'] }),
+      issues.some(
+        (i) => i.code === "unrecognized_keys" && i.keys.includes(key),
       ),
-    ).toContain("extraSources.0");
-  });
-
-  it("extraSources: throws on an empty entry", () => {
-    expect(
-      zodIssuePaths(() => generate(theme, { extraSources: [""] })),
-    ).toContain("extraSources.0");
-  });
-
-  it("extraSources: throws on an entry longer than 512 characters", () => {
-    expect(
-      zodIssuePaths(() => generate(theme, { extraSources: ["a".repeat(513)] })),
-    ).toContain("extraSources.0");
+    ).toBe(true);
   });
 });

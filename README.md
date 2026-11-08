@@ -6,7 +6,7 @@ TypeScript library + CLI that turns a theme JSON into a complete **design system
 
 Published on **GitHub Packages** as `@duydpdev/style-generator` (installing needs a token, see [Install](#install)).
 
-> **Upgrading?** Read the migration guides: [5.x → 6.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/5.x-to-6.0.md), [4.x → 5.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md), [3.x → 4.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
+> **Upgrading?** Read the migration guides: [6.x → 7.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/6.x-to-7.0.md), [5.x → 6.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/5.x-to-6.0.md), [4.x → 5.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md), [3.x → 4.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
 
 ## Features
 

@@ -139,25 +139,32 @@
     "order": 13,
     "vi": { "title": "./ui-react" }
   },
+  "documents/migration/6.x-to-7.0.md": {
+    "slug": "migration-6x-to-7",
+    "title": "Migration 6.x → 7.0",
+    "group": "Migration",
+    "order": 0,
+    "vi": { "title": "Nâng cấp 6.x → 7.0" }
+  },
   "documents/migration/5.x-to-6.0.md": {
     "slug": "migration-5x-to-6",
     "title": "Migration 5.x → 6.0",
     "group": "Migration",
-    "order": 0,
+    "order": 1,
     "vi": { "title": "Nâng cấp 5.x → 6.0" }
   },
   "documents/migration/4.x-to-5.0.md": {
     "slug": "migration-4x-to-5",
     "title": "Migration 4.x → 5.0",
     "group": "Migration",
-    "order": 1,
+    "order": 2,
     "vi": { "title": "Nâng cấp 4.x → 5.0" }
   },
   "documents/migration/3.x-to-4.0.md": {
     "slug": "migration-3x-to-4",
     "title": "Migration 3.x → 4.0",
     "group": "Migration",
-    "order": 2,
+    "order": 3,
     "vi": { "title": "Nâng cấp 3.x → 4.0" }
   },
   "documents/architecture.md": {

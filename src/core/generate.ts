@@ -33,8 +33,7 @@ export interface GenerateResult<
  * Validates `options` first, then `theme` against `ThemeSchema` — independent
  * of whether the caller already went through `defineTheme()` — so CLI/Vite/
  * Next callers that hand it raw `JSON.parse()` output get the same
- * guarantees. Both failures are a `ZodError`; with `axes.scope: "element"`
- * a variant that would leave a `$`-alias holder stale is rejected too.
+ * guarantees. Both failures are a `ZodError`.
  *
  * With `options`, their literal `breakpoints`, `screens` and
  * `spacing.properties` keys type `tokens`; options typed as

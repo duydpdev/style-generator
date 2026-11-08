@@ -346,17 +346,14 @@ describe("styleGenNext", () => {
       expect(existsSync(join(tmp, "gen/out.css"))).toBe(true);
     });
 
-    it("passes axes from the config file to generate() (V5 go/no-go)", () => {
-      writeTheme("styles/theme.json", {
-        ...sampleTheme,
-        themeAxes: { theme: { dark: { colors: { primary: "#000000" } } } },
-      });
-      writeConfig({ axes: { attribute: { theme: "data-mode" } } });
+    it("passes options from the config file to generate()", () => {
+      writeTheme("styles/theme.json");
+      writeConfig({ resetTailwindDefaults: ["colors"] });
 
       styleGenNext()({})("phase-production-build");
 
       const css = readFileSync(join(tmp, "styles/theme.css"), "utf8");
-      expect(css).toContain('html[data-mode="dark"]');
+      expect(css).toContain("--color-*: initial;");
     });
 
     it("starts the dev watcher on the configured theme", () => {

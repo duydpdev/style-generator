@@ -334,13 +334,12 @@ export { tokens };
 ### Classes built at runtime
 
 Every color always gets `bg-*`/`text-*`/`border-*` thanks to the `@source inline` lines the registry generates.
-Classes you assemble with template literals cannot be scanned by Tailwind — declare them with `extraSources`:
+Classes you assemble with template literals cannot be scanned by Tailwind — declare them in your own CSS, next to the generated import, with a plain Tailwind `@source inline` directive:
 
-```typescript
-import { generate } from "@duydpdev/style-generator";
-import theme from "./theme.json";
-
-generate(theme, { extraSources: ["hover:bg-{primary,secondary}"] });
+```css
+@import "tailwindcss";
+@import "./theme.css";
+@source inline("hover:bg-{primary,secondary}");
 ```
 
 ### Narrowing `@source inline` per category (`coverage`)
@@ -360,7 +359,7 @@ A large palette makes that line long; `coverage` narrows it per category (`color
 `prefixes`, `keys` and `opacities` can be combined; the `prefixes` and `opacities` lists must be non-empty.
 With `keys: "aliased"`, if the category has no alias-holding key (or declares no keys), nothing is emitted: the default value is not an alias.
 `coverage` only changes `@source inline`: `@theme inline`, `@utility` and the typed `DesignTokens` stay unchanged (except `DesignTokens.Web.opacities`,
-which lists the `opacities` steps), so a class that is still used but no longer covered must appear literally in the source or be declared through `extraSources`.
+which lists the `opacities` steps), so a class that is still used but no longer covered must appear literally in the source or be declared with your own `@source inline(...)`.
 
 ```typescript
 import { generate } from "@duydpdev/style-generator";
@@ -453,13 +452,15 @@ Activate on the `<html>` element:
 
 Rules to remember:
 
-- **The selector is pinned to `html`** (default, `axes.scope: "root"`). An attribute placed on another wrapping element has no effect:
+- **The selector is pinned to `html` and the attribute is `data-<axis-kebab>`; neither is configurable.** An attribute placed on another wrapping element has no effect:
   a `var()` alias is evaluated at the element that _declares_ the variable (`:root`), so an override on a child element never reaches the alias value.
-  For a local theme set `axes.scope: "element"` (see [Changing the attribute and scope](#changing-the-attribute-and-scope-axes)).
+  For a theme scoped to one element or a custom attribute name, write the override CSS by hand in your app (`[data-mode="dark"] { --sg-color-primary: …; }`).
 - **The attribute value is the kebab form of the key**: variant `highContrast` → `data-palette="high-contrast"`; axis `colorScheme` → `data-color-scheme`.
 - **Precedence = declaration order**: two axes overriding the same token have equal specificity, and the axis declared **later** wins.
 - **Axis/variant names must not be integers** (`100`, `2024`): JS enumerates number-like keys first and breaks the order. Use `contrast100`.
 - **An override key must exist in the base** — a key that exists only in an override produces no utility and is rejected at parse time.
+- **A variant named `base` is reserved:** `"base"` means "no override" (`ThemeAxesState`, `themeAxisAttributes`), so `ThemeSchema` rejects `themeAxes.<axis>.base`.
+  Pick another name (`default`, `standard`). An axis named `base` is still valid.
 - **Overrides combined across axes** (`[data-theme="dark"][data-palette="forest"]`) and variables outside `--sg-*` are still hand-written CSS;
   see the scope table in [`examples/design-system/README.md`](../examples/design-system/README.md).
 
@@ -468,42 +469,6 @@ prefer standard Tailwind classes (`bg-primary`) or `var(--color-primary)`. The v
 and spacing's `--sg-sp-*`) are public output: aliases point into them and hand-written CSS may read or override them; renaming one is a breaking change.
 Version 5.0 renamed the color variables from `--sg-<color>` to `--sg-color-<key>`; `style-gen doctor` warns with `file:line` for every leftover `var(--sg-<colorKey>)` or
 `--sg-<colorKey>:` declaration (see [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)).
-
-### Changing the attribute and scope (`axes`)
-
-By default the selector is `html[data-<axis-kebab>="<variant-kebab>"]`. `options.axes` renames the attribute per axis and lets you unpin `html`:
-
-```typescript
-import { generate } from "@duydpdev/style-generator";
-import theme from "./theme.json";
-
-generate(theme, {
-  axes: {
-    attribute: { theme: "data-mode" }, // axis → attribute name; axes not listed keep data-<axis-kebab>
-    scope: "element", // "root" (default) | "element"
-  },
-});
-```
-
-```css
-[data-mode="dark"] { … }            /* scope: "element" — no html */
-html[data-palette="forest"] { … }   /* scope: "root" — default */
-```
-
-- **`attribute` is a map**, not a function: `style-gen.config.json` can express it. Names must match `[a-z][a-z0-9-]*` (lowercase like the default `data-<axis-kebab>`;
-  it is embedded into the selector). `themeAxisAttributes(state, { attribute })` from `./recipes` reads exactly this map so the DOM and the CSS never drift apart.
-- **`scope: "root"`** keeps the selector pinned to `html` as in the rule above. **`scope: "element"`** drops `html`, so the attribute can be placed on any element (a local theme for one region).
-- **Alias rules when `scope: "element"`.** An alias `"$<key>"` is still evaluated at the element that _declares_ it (`:root`),
-  so it keeps the base value inside the element that carries the attribute. `generate()` therefore throws a `ZodError` when a variant overrides a key `T` that another entry `H`
-  aliases to (directly or through an alias chain, in any category), unless that variant re-declares `H` itself (with a literal value or `"$<key>"`).
-  `H`'s alias is looked up in the base theme **and** in every other variant of every axis (for example `dark` writes `primary: "$brand"` while `light` overrides `brand` without
-  re-declaring `primary`). The error is located at the overridden key (`themeAxes.<axis>.<variant>.<category>.<key>`); with an alias chain,
-  each old link is reported as a separate error at the same path. Fix it by re-declaring the alias-holding entry in the variant, or use `scope: "root"`.
-- **The attribute check runs for every `scope`:** a key in `attribute` must be the name of an axis in `themeAxes` (error at `axes.attribute.<axis>`),
-  and two axes must not resolve to the same attribute name (for example `attribute: { theme: "data-palette" }` when a `palette` axis exists; error at `axes.attribute.<axis>`).
-- **A variant named `base` is reserved:** `"base"` means "no override" (`ThemeAxesState`, `themeAxisAttributes`), so `ThemeSchema` rejects `themeAxes.<axis>.base`.
-  Pick another name (`default`, `standard`). An axis named `base` is still valid.
-- `generateThemeCss(theme, options)` accepts the same `options` as its second parameter.
 
 ---
 
@@ -700,7 +665,7 @@ Pass camelCase keys like the ones `DesignTokens.Web.colors` provides (`primaryHo
 
 `prefix` has the type `RegistryPrefix | ""` (the prefixes the registry emits `@source inline` for; `""` is for typography),
 so `createVariantMapper("fill", …)` or a prefix held in a `string`-typed variable is a type error: they map to classes that no `@source inline` line keeps.
-To bypass the check for a single prefix, pass `{ allowUnregisteredPrefix: true }` as the third argument and declare the classes in `extraSources`.
+To bypass the check for a single prefix, pass `{ allowUnregisteredPrefix: true }` as the third argument and declare the classes with your own `@source inline(...)`.
 This cannot be combined with `{ states }` or an array of prefixes.
 
 A headless recipe composes the mappers with `cva`; framework components (React, Vue) just wrap it. The DX anchor is `satisfies` on the intent list:
@@ -756,9 +721,8 @@ export const cn = createCn(tokens);
 
 ### 6. Enabling theme axes on the DOM: `themeAxisAttributes`
 
-`themeAxisAttributes<Theme>(state, attributes?)` returns the `data-*` attributes of the active axes, typed from `theme.json`; `"base"` or an omitted axis emits nothing.
-By default the attribute is `data-<axis>`; when `options.axes.attribute` renames attributes, pass the same map as the second argument so the DOM and the CSS selectors do not drift
-apart:
+`themeAxisAttributes<Theme>(state)` returns the `data-<axis-kebab>` attributes of the active axes, typed from `theme.json`; `"base"` or an omitted axis emits nothing.
+It uses the same attribute-name formula as the CSS selectors, so the DOM and the CSS do not drift apart:
 
 ```typescript
 // src/axes.ts
@@ -775,7 +739,6 @@ axisAttributes({ theme: "highContrast", palette: "forest" });
 ```
 
 Spread the result onto `<html>` (React: `<html {...axisAttributes(state)}>`; Nuxt: `useHead({ htmlAttrs: axisAttributes(state) })`).
-If `options.axes.attribute` renames attributes, pass the same map as the second parameter (`{ attribute }`).
 
 ### 7. Spacing props: `splitSpacingProps`
 

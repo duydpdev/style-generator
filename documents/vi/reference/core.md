@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: 0aaa6d9dc3ce -->
+<!-- source: documents/reference/core.md sha256: a8e9e4bf37bf -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -122,8 +122,7 @@ static CSS string meant to be written to a file and `@import`ed alongside
 Validates `options` first, then `theme` against `ThemeSchema` — independent
 of whether the caller already went through `defineTheme()` — so CLI/Vite/
 Next callers that hand it raw `JSON.parse()` output get the same
-guarantees. Both failures are a `ZodError`; with `axes.scope: "element"`
-a variant that would leave a `$`-alias holder stale is rejected too.
+guarantees. Both failures are a `ZodError`.
 
 With `options`, their literal `breakpoints`, `screens` and
 `spacing.properties` keys type `tokens`; options typed as
@@ -153,12 +152,10 @@ Output includes:
 1. `:root` block with `--sg-*` intermediate CSS variables
 2. `html[data-<axis-kebab>="<variant-kebab>"]` blocks for each `themeAxes`
    axis/variant, in config declaration order (both axes and variants) —
-   the selector is pinned to `html` by default because a `$`-alias
+   the selector is pinned to `html` because a `$`-alias
    `var()` resolves to the value computed at the element that DECLARES the
    custom property, so an override on a non-root element wouldn't affect
    an alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules).
-   `options.axes` renames the attribute per axis and, with
-   `scope: "element"`, drops the `html` anchor (guarded by an alias check)
 3. `\@theme inline` block: the `resetTailwindDefaults` lines
    (`--color-*: initial;`, …) first, then the mapping of `--sg-*` → Tailwind v4 namespaces
 

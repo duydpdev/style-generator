@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 90ea7d399acc -->
+<!-- source: documents/testing.md sha256: df16425e19c7 -->
 
 # Hướng dẫn kiểm thử
 
@@ -120,7 +120,7 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # a single 
 Test nằm cạnh mã (`*.test.ts`). Các nhóm chính:
 
 - `src/core/*` — `generate()`, `ThemeSchema` (key lạ, giá trị không an toàn, alias, `themeAxes`, tên là số nguyên, key không round-trip, xung đột `borderWidth`/`colors`,
-  `fontWeight` 1–1000, key typography che khuất `sp-*`/`font-*`), `defineTheme`, `parseAlias`, `forEachAxisVariant`, kiểm tra hợp lệ tùy chọn (`extraSources`, `screens`,
+  `fontWeight` 1–1000, key typography che khuất `sp-*`/`font-*`), `defineTheme`, `parseAlias`, `forEachAxisVariant`, kiểm tra hợp lệ tùy chọn (`screens`,
   `breakpoints`, `spacing.properties` dạng mảng), các thử nghiệm injection (kể cả `generateThemeCss`).
 - `src/features/registry/*` — descriptor, `flattenByCategory`, `generateSourceInline` (kể cả các dòng trạng thái).
 - `src/features/{theme-css,typography,spacing}/*` — từng khối CSS được sinh ra.

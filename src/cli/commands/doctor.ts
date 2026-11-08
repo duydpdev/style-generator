@@ -43,9 +43,9 @@ function resolveInsideRoot(cwd: string, input: string): string | undefined {
 
 /**
  * Validates the theme file: JSON syntax first, then `ThemeSchema`, then the
- * theme against the configured generator options (a stale `$`-alias holder
- * under `axes.scope: "element"`, `resetTailwindDefaults` without the matching
- * category) — the same verdict `generate` reaches. Schema violations (unknown
+ * theme against the configured generator options (`resetTailwindDefaults`
+ * without the matching category) — the same verdict `generate` reaches.
+ * Schema violations (unknown
  * keys, injection-unsafe values, ...) are printed as `path → message` lines
  * via `formatZodError`.
  * @param {string} cwd - Project root

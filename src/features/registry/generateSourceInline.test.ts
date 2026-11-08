@@ -26,24 +26,6 @@ describe("generateSourceInline", () => {
     expect(css).not.toMatch(/sp-\{/);
   });
 
-  it("appends one @source inline(...) line per extraSources entry after sp-*", () => {
-    const css = generateSourceInline(emptyTheme, {
-      extraSources: ["hover:bg-primary", "md:flex"],
-    });
-    const lines = css.trim().split("\n");
-    expect(lines[lines.length - 3]).toMatch(/^@source inline\("sp-\{.*\}"\);$/);
-    expect(lines[lines.length - 2]).toBe('@source inline("hover:bg-primary");');
-    expect(lines[lines.length - 1]).toBe('@source inline("md:flex");');
-  });
-
-  it("still emits extraSources lines when spacing is disabled", () => {
-    const css = generateSourceInline(emptyTheme, {
-      spacing: { enabled: false },
-      extraSources: ["hover:bg-primary"],
-    });
-    expect(css).toMatch(/@source inline\("hover:bg-primary"\);\n$/);
-  });
-
   it("still emits lines for categories with defaultValues even when theme is empty and spacing is disabled", () => {
     const css = generateSourceInline(
       { colors: {} },

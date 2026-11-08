@@ -52,6 +52,8 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // not carry it. Budgets raised for the measured intrinsic `axes` growth
 // (measured + ~10%): index 11100 -> 12050, vite 11150 -> 12050, next 11050 ->
 // 11950, cli 38000 -> 41450; plus the new `recipes` entry.
+// 7.0: the `axes` option (and `extraSources`) were removed, so the `axes`
+// growth described above is gone; the budgets were not lowered.
 // 2026-10-28 (phase 11, node runner): `vite` and `next` now carry the
 // shared emitter (config loader, `prepareGenerate`, atomic write, watcher
 // glue) and import the `tokens` chunk (the `./tokens` internals are pinned to

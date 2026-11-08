@@ -29,7 +29,7 @@ const cliKeys = {
 /**
  * Resolved configuration: the config-only keys plus every `generate()`
  * option (`breakpoints`, `screens`, `enableResponsive`, `spacing`,
- * `typography`, `extraSources`, `coverage`, `axes`, `resetTailwindDefaults`),
+ * `typography`, `coverage`, `resetTailwindDefaults`),
  * forwarded through {@link toGeneratorOptions}.
  */
 export const StyleGenConfigSchema = StyleGeneratorOptionsShape.extend(

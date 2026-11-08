@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 7bafe7f890d2 -->
+<!-- source: documents/architecture.md sha256: ea5b39a0cf8d -->
 
 # Kiến trúc
 
@@ -110,8 +110,7 @@ const { css, tokens, schema } = generate(theme, options);
 
 `generate()` kiểm tra hợp lệ `options` trước (`StyleGeneratorOptionsSchema.parse` → `resolveOptions`),
 sau đó luôn kiểm tra hợp lệ lại `theme` với `ThemeSchema` (kể cả khi caller đã gọi `defineTheme()`);
-`assertThemeOptions` (`src/core/themeOptionsChecks.ts`) kiểm tra cặp theme × options: với mọi `axes.scope`, một `axes.attribute` trỏ tới một trục không tồn tại,
-hoặc hai trục có cùng tên attribute, đều bị từ chối; `axes.scope: "element"` bổ sung `checkElementScopeAliases`;
+`assertThemeOptions` (`src/core/themeOptionsChecks.ts`) kiểm tra cặp theme × options:
 `resetTailwindDefaults: ["colors"|"radius"|"shadow"]` yêu cầu theme có `colors` tương ứng (không rỗng; `ThemeSchema` vẫn chấp nhận `colors: {}`), `borderRadius` hoặc `shadows`.
 Sau đó nó ghép các khối theo thứ tự này: breakpoint `@theme` → `:root` + `html[data-<axis>="<variant>"]` + `@theme inline` (các dòng `--color-*: initial;`… của
 `resetTailwindDefaults` đứng đầu trong khối này) → `@utility` của typography → `@utility` của spacing → `@source inline`.
@@ -261,7 +260,7 @@ Ba helper phía component, an toàn cho trình duyệt, không import `tailwind-
   mọi giá trị.
 - `splitSpacingProps(props, keys, unit)` + `SpacingProps<BKeys, K>` → `{ spacing: { className, style }, rest }`;
   nó gọi `resolveSpacing` một lần cho mỗi key (nên hãy import `./spacing` qua chunk dùng chung) và loại mọi key spacing khỏi `rest`, kể cả khi giá trị là `undefined`.
-- `themeAxisAttributes(state, { attribute })` → các attribute DOM của các trục đang hoạt động, dùng cùng công thức `axisAttributeName` với các selector mà `generate()` emit;
+- `themeAxisAttributes(state)` → các attribute DOM của các trục đang hoạt động, dùng cùng công thức `axisAttributeName` với các selector mà `generate()` emit;
   một trục là `"base"`/`undefined` thì không emit attribute nào.
 
 ### UI kit (`./ui`, `./ui-react`)
@@ -310,7 +309,7 @@ Vite 8 / Rolldown đánh dấu `manualChunks` là deprecated để chuyển sang
 
 **Vì sao dùng `@source inline` thay vì safelist:** Tailwind v4 không quét các class được dựng lúc runtime.
 `generateSourceInline` emit một dòng `@source inline("…")` cho mỗi nhóm token (và cho mỗi trạng thái có sibling, ví dụ `hover:bg-primary-hover`),
-nên các class luôn tồn tại dù không có nguồn nào tham chiếu tới chúng; các class dựng lúc runtime được khai báo qua `options.extraSources`.
+nên các class luôn tồn tại dù không có nguồn nào tham chiếu tới chúng; các class dựng lúc runtime mà registry không bao phủ được app tự khai báo bằng một directive `@source inline(...)` thuần của Tailwind trong CSS của app.
 Đánh đổi: mỗi màu luôn có `bg-/text-/border-/ring-/outline-/divide-/placeholder-*`, nên CSS lớn hơn một chút — `options.coverage` thu hẹp các dòng này theo từng nhóm token
 (`false`, `prefixes`, `keys: "aliased"`), và `coverage.colors.opacities` chủ động thêm một dòng modifier độ mờ `/<n>` (xem
 [`coverage`](./reference/options.md#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token)).

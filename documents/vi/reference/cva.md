@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cva.md sha256: 5643b029138b -->
+<!-- source: documents/reference/cva.md sha256: ea6c8e4af9bf -->
 
 # Helper CVA (./cva)
 
@@ -152,7 +152,7 @@ const bgStates = createVariantMapper("bg", tokens, { states: COLOR_STATES });
 
 Hãy luôn truyền `COLOR_STATES` thay vì tự viết cứng mảng — đó chính là danh sách dùng để sinh ra các dòng trạng thái `@source inline`.
 
-**Ràng buộc prefix.** `prefix` có kiểu `RegistryPrefix | ""` (các prefix mà registry sinh ra `@source inline`; `""` là typography), do đó `createVariantMapper("fill", …)` và một prefix lưu trong biến kiểu `string` đều là lỗi kiểu: chúng sẽ map sang các class mà không có dòng `@source inline` nào giữ lại. Để bỏ qua ràng buộc này cho một prefix đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và liệt kê các class đó trong `extraSources`. Tùy chọn bỏ qua này không kết hợp được với `{ states }`, với `{ opacities }` hoặc với một mảng các prefix.
+**Ràng buộc prefix.** `prefix` có kiểu `RegistryPrefix | ""` (các prefix mà registry sinh ra `@source inline`; `""` là typography), do đó `createVariantMapper("fill", …)` và một prefix lưu trong biến kiểu `string` đều là lỗi kiểu: chúng sẽ map sang các class mà không có dòng `@source inline` nào giữ lại. Để bỏ qua ràng buộc này cho một prefix đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và tự khai báo các class đó trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind. Tùy chọn bỏ qua này không kết hợp được với `{ states }`, với `{ opacities }` hoặc với một mảng các prefix.
 
 **Bước độ mờ.** `{ opacities }` thêm một key `token/step` cho mỗi token và mỗi bước (`primary/10` → `bg-primary/10`). Hãy truyền vào đó `DesignTokens.Web.opacities`, danh sách chính là `options.coverage.colors.opacities`, để các key bạn có thể gõ đúng bằng các class mà dòng độ mờ `@source inline` giữ lại. Với `{ states }`, các class trạng thái chỉ nằm trên key gốc (`primary/10` không bao giờ mang `hover:`); với một mảng các prefix, mỗi map prefix đều nhận các key này. Khi không có tùy chọn, `opacities` là `[]` và map không có key phụ nào.
 

@@ -132,7 +132,7 @@ Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/chec
 Source layout: `documents/architecture.md`; public exports per subpath and CLI: `documents/reference/`.
 Internal helpers (`toCamelCase`, `toPascalCase`) are not exported from any barrel; `toKebabCase` is public (from `./cva`) because it is the function the registry and
 `createVariantMapper` share. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`; from 4.x: `documents/migration/4.x-to-5.0.md`; from 5.x:
-`documents/migration/5.x-to-6.0.md`.
+`documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`.
 
 Sample components (examples, not an API; nothing is published): `Box`, `Text`, `Stack`, `Flex`, `Grid`, `Button` live in the harness app over the `examples/design-system` recipes.
 React: `examples/harness/src/ui/*.tsx`, each a self-contained factory file `create<Name>(tokens, preset?)` with its own prop types and `Polymorphic` type (all six import
@@ -158,15 +158,11 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   and `typography.*.fontWeight` is a number in 1–1000.
 - A `__proto__` key is rejected at its exact path wherever it appears in a theme (`rejectProtoKeys`, the raw-input `z.preprocess` step of `ThemeSchema`, `src/core/themeSchema.ts`):
   Zod's `z.record` skips that key before the key schema runs, so without the scan the token would be dropped silently. Only a parsed JSON document can carry it as an own key.
-  The options records (`screens`, `spacing.properties`, `axes.attribute`) are not scanned: they hold no token names.
+  The options records (`screens`, `spacing.properties`) are not scanned: they hold no token names.
 - `themeAxes: Record<axisName, Record<variantName, ThemeOverride>>` — independent axes (e.g. `theme.dark` and `palette.forest` at once),
-  each activated via `html[data-<axis-kebab>="<variant-kebab>"]`. Selectors are pinned to `html` because a `$`-alias `var()` resolves where the custom property is declared
-  (`:root`). With `options.axes.scope: "element"` the `html` anchor is dropped (`[data-<axis>="<variant>"]`) and `generate()` rejects a variant that overrides an alias target
-  without re-declaring each holder (holders are looked up in the base theme and in every other variant of every axis;
-  `ZodError` at `themeAxes.<axis>.<variant>.<category>.<overriddenKey>`, `checkElementScopeAliases` in `src/core/elementScopeAliases.ts`).
-  `options.axes.attribute` (axis → attribute name map, names match `[a-z][a-z0-9-]*`, resolved once in `resolveOptions`) renames the attribute via `axisAttributeName`
-  (`src/shared/axisAttributeName.ts`, also used by `themeAxisAttributes`); for every scope `checkAxesAttribute` (`src/core/themeOptionsChecks.ts`) rejects an attribute key that
-  names no `themeAxes` axis and two axes that resolve to the same attribute name (both at `axes.attribute.<axis>`).
+  each activated via `html[data-<axis-kebab>="<variant-kebab>"]` (`axisAttributeName`, `src/shared/axisAttributeName.ts`, shared with `themeAxisAttributes`).
+  The selector is always pinned to `html` and the attribute name is not configurable, because a `$`-alias `var()` resolves where the custom property is declared (`:root`);
+  a scoped theme on another element or a custom attribute name is hand-written CSS in the app.
   Blocks emit after `:root` in declaration order, so for a token overridden by two axes the axis declared **last** wins.
 - An override key must already exist in the matching base category — override-only keys are rejected (they would produce no utility).
 - Axis and variant names must NOT be canonical integers (`/^(0|[1-9]\d*)$/`) — JS enumerates integer-like keys first, which would silently invert "last declared wins". `007`/`2xl` are fine.
@@ -194,7 +190,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
 - `generate()` validates options with a strict schema (`src/core/optionsSchema.ts`, internal): unknown keys rejected (also in `spacing`/`typography`); flags are booleans;
   `screens` values are one px/rem/em length and the map merged with `defaultScreens` uses one unit; `breakpoints` must name a screen.
   `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`).
-  `extraSources`: non-empty, ≤512 chars, no `"'\;@<>`/line break.
+  The 7.0 removals (`extraSources`, `axes`) are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
 - `options.coverage` (`Partial<Record<CategoryKey, boolean | { prefixes?, keys?: "aliased" | "all", opacities? }>>`) only changes the registry's `@source inline` lines:
   `false` drops a category's lines (state lines included), `prefixes` must be a **non-empty** list of real `classPrefixes` of that category (typography has none),
   `keys: "aliased"` keeps the alias **holders** — declared keys whose value is a `$alias` in the base record or any `themeAxes` override of the same category;

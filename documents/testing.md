@@ -118,7 +118,7 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # a single 
 Tests sit next to the code (`*.test.ts`). The main groups:
 
 - `src/core/*` — `generate()`, `ThemeSchema` (unknown keys, unsafe values, aliases, `themeAxes`, integer names, keys that do not round-trip, `borderWidth`/`colors` collisions,
-  `fontWeight` 1–1000, typography keys that shadow `sp-*`/`font-*`), `defineTheme`, `parseAlias`, `forEachAxisVariant`, option validation (`extraSources`, `screens`, `breakpoints`,
+  `fontWeight` 1–1000, typography keys that shadow `sp-*`/`font-*`), `defineTheme`, `parseAlias`, `forEachAxisVariant`, option validation (removed keys such as `extraSources`/`axes` → `unrecognized_keys`, `screens`, `breakpoints`,
   array-form `spacing.properties`), injection attempts (including `generateThemeCss`).
 - `src/features/registry/*` — descriptors, `flattenByCategory`, `generateSourceInline` (including state lines).
 - `src/features/{theme-css,typography,spacing}/*` — each generated CSS block.

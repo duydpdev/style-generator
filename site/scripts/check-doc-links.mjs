@@ -37,6 +37,7 @@ const markdownIn = (dir) =>
 
 const EN_DOC_FILES = [
   "README.md",
+  "documents/migration/6.x-to-7.0.md",
   "documents/migration/5.x-to-6.0.md",
   "documents/migration/4.x-to-5.0.md",
   "documents/migration/3.x-to-4.0.md",

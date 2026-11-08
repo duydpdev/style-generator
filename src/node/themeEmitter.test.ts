@@ -150,12 +150,12 @@ describe("emitThemeCss", () => {
       expect(failed(emitThemeCss({ themeFile, outFile })).stage).toBe("theme");
     });
 
-    it("options: an invalid option is not labelled an invalid theme", () => {
+    it("options: an unknown option is not labelled an invalid theme", () => {
       const r = failed(
         emitThemeCss({
           themeFile,
           outFile,
-          options: { extraSources: ["a;b"] },
+          options: { extraSources: ["a"] } as never,
         }),
       );
 
@@ -178,22 +178,19 @@ describe("emitThemeCss", () => {
       expect(r.stage).toBe("options");
     });
 
-    it("cross: a stale $-alias holder under axes.scope element", () => {
-      writeTheme({
-        colors: { brand: "#00f", primary: "$brand" },
-        themeAxes: { theme: { dark: { colors: { brand: "#0af" } } } },
-      });
+    it("cross: resetTailwindDefaults shadow with no shadows", () => {
+      writeTheme({ colors: { primary: "#0af" } });
       const r = failed(
         emitThemeCss({
           themeFile,
           outFile,
-          options: { axes: { scope: "element" } },
+          options: { resetTailwindDefaults: ["shadow"] },
         }),
       );
 
       expect(r.stage).toBe("cross");
       expect(r.message).toMatch(/^Invalid theme\/options:\n/);
-      expect(r.message).toContain("themeAxes.theme.dark.colors.brand");
+      expect(r.message).toContain("resetTailwindDefaults.0");
     });
 
     it("cross: resetTailwindDefaults radius with no borderRadius", () => {

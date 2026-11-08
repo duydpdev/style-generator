@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: ff41c070ae47 -->
+<!-- source: documents/deploy.md sha256: 648793cf55f5 -->
 
 # Triển khai & CI/CD
 
@@ -69,7 +69,7 @@ Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-re
 **Các job** (Node 22, trừ `node-floor`); mỗi job chạy `yarn install` và `yarn build:all` riêng của nó:
 
 - `tailwind-floor`: ghi `resolutions` Tailwind `~4.1.0` vào `package.json` của runner (không commit) → `yarn install --no-immutable` → `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test` → `yarn test:e2e`.
-- `node-floor`: Node `20.19.0` (mức sàn của `engines.node`) → `yarn install --immutable` → `yarn build:all` → `yarn check:smoke` (mọi bước, kể cả `init`).
+- `node-floor`: Node `20.19.0` (mức sàn của `engines.node`) → `yarn install --immutable` → `yarn build:all` → `yarn check:smoke` (mọi bước, kể cả `init`) → `yarn check:next-build` (tarball đã pack + `next@16.4.5` trong một project nháp, `style-gen init`, `next build` bằng Turbopack; khẳng định `styleGenNext` đã ghi `styles/theme.css` và CSS đã build mang theme).
 - `peer-matrix`: 4 nhánh (`vite` 5/6/8, `typescript` 6). `yarn install --immutable` → `yarn build:all` → ghi `resolutions[<peer>] = ^<major>.0.0` (không commit) → `yarn install --no-immutable` → khẳng định phiên bản được resolve ở thư mục gốc và trong `examples/harness` là `<major>.x` → build `examples/harness` → (nhánh `vite`) `node scripts/vite-dev-smoke.mjs` → kiểm tra kiểu ví dụ → `yarn typecheck:dist` → (nhánh `typescript`) `yarn test:types`. Mọi nhánh đều phải xanh (không nhánh nào có `continue-on-error`); nhánh TypeScript 7 đã bị bỏ vì Yarn 4.10 không cài được TypeScript 7 native, nên nhánh đó chưa bao giờ xanh và tốn khoảng 45 phút mỗi tháng. Các nhánh xanh/đỏ quyết định các khoảng `peerDependencies` (được sửa tay).
 - `ui-peer-floor`: build thư viện bằng toolchain đã commit, ép bốn optional peer của UI kit (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`) về mức sàn của các khoảng `peerDependencies` qua `resolutions` (không commit), khẳng định các phiên bản được resolve, rồi chạy `yarn typecheck:dist` và `yarn vitest run src/features/ui`. Nó thất bại khi một mức sàn đã ghim không còn là mức tối thiểu của khoảng trong `package.json`. Hai bản ghim chỉ dành cho harness (bộ ví dụ dùng để kiểm thử DX) phản ánh những gì một consumer thực sự nhận được: cva 0.7.0 cần đúng clsx 2.0.0, nên nó giữ một bản sao lồng nhau riêng, và `@types/scheduler` được giữ ở 0.16.8, phiên bản cuối cùng có `scheduler/tracing`, thứ mà `@types/react` <=18.2.71 import.
 

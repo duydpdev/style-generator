@@ -12,6 +12,9 @@ import {
   type Theme,
   type options,
 } from "../src";
+import type { AltTheme } from "../src/alt";
+
+type AltColor = ColorVariant<AltTheme>;
 
 describe("design-system types", () => {
   it("intents are a subset of the theme's colors", () => {
@@ -29,6 +32,13 @@ describe("design-system types", () => {
       ColorVariant<Theme>
     >();
     expectTypeOf<"primaryFocus">().not.toExtend<ColorVariant<Theme>>();
+  });
+
+  it("the alt theme rejects the sample theme's intents", () => {
+    expectTypeOf<"brand" | "onBrand">().toExtend<AltColor>();
+    // @ts-expect-error "primary" is not a color of the alt theme
+    const bad = ["primary"] as const satisfies readonly AltColor[];
+    expectTypeOf(bad).toEqualTypeOf<readonly ["primary"]>();
   });
 
   it("the breakpoint keys are the shared options' literal tuple", () => {

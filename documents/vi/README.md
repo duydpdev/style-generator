@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 57f4672ee80a -->
+<!-- source: README.md sha256: a557bcdddce2 -->
 
 # @duydpdev/style-generator
 
@@ -94,7 +94,10 @@ File CSS đầu vào mà `src/main.*` của bạn import, `src/index.css`:
 ```css
 @import "tailwindcss";
 @import "./styles/theme.css";
+@source not "../.claude";
 ```
+
+`@source not` ngăn Tailwind quét `.claude/rules/style-generator.md`, tức [hợp đồng cho agent](./agent-contract.md) mà `init` ghi cho các coding agent.
 
 Next.js và Nuxt in ra đoạn mã riêng của chúng: xem [`style-gen init`](./reference/cli.md#style-gen-init), hoặc làm theo từng bước [Next.js](./getting-started/next.md) và [Nuxt + Vue](./getting-started/nuxt-vue.md).
 

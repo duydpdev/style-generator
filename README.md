@@ -92,7 +92,10 @@ The CSS entry your `src/main.*` imports, `src/index.css`:
 ```css
 @import "tailwindcss";
 @import "./styles/theme.css";
+@source not "../.claude";
 ```
+
+`@source not` keeps Tailwind from scanning `.claude/rules/style-generator.md`, the [agent contract](https://github.com/duydpdev/style-generator/blob/main/documents/agent-contract.md) `init` writes for coding agents.
 
 Next.js and Nuxt print their own snippets: see [`style-gen init`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md#style-gen-init), or follow [Next.js](https://github.com/duydpdev/style-generator/blob/main/documents/getting-started/next.md) and [Nuxt + Vue](https://github.com/duydpdev/style-generator/blob/main/documents/getting-started/nuxt-vue.md) step by step.
 

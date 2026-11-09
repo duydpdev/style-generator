@@ -4,12 +4,13 @@ Index of all documentation for `@duydpdev/style-generator`. API, option and CLI 
 
 ## Start here (shown on the site `/docs`)
 
-| File                                     | Contents                                                                              | Tiếng Việt                                     |
-| ---------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| [`getting-started/`](./getting-started/) | Getting started for React + Vite, Next.js, Nuxt + Vue; code embedded from `examples/` | [`vi/getting-started/`](./vi/getting-started/) |
-| [`guide.md`](./guide.md)                 | Step-by-step integration guide, links to `reference/` for the tables                  | [`vi/guide.md`](./vi/guide.md)                 |
-| [`cookbook.md`](./cookbook.md)           | Task-oriented recipes                                                                 | [`vi/cookbook.md`](./vi/cookbook.md)           |
-| [`reference/`](./reference/)             | One page per subpath plus `cli`, `options` and `theme`                                | [`vi/reference/`](./vi/reference/)             |
+| File                                       | Contents                                                                                          | Tiếng Việt                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| [`getting-started/`](./getting-started/)   | Getting started for React + Vite, Next.js, Nuxt + Vue; code embedded from `examples/`             | [`vi/getting-started/`](./vi/getting-started/)   |
+| [`guide.md`](./guide.md)                   | Step-by-step integration guide, links to `reference/` for the tables                              | [`vi/guide.md`](./vi/guide.md)                   |
+| [`cookbook.md`](./cookbook.md)             | Task-oriented recipes                                                                             | [`vi/cookbook.md`](./vi/cookbook.md)             |
+| [`agent-contract.md`](./agent-contract.md) | The component contract an agent follows in an app; `style-gen init` writes it to `.claude/rules/` | [`vi/agent-contract.md`](./vi/agent-contract.md) |
+| [`reference/`](./reference/)               | One page per subpath plus `cli`, `options` and `theme`                                            | [`vi/reference/`](./vi/reference/)               |
 
 ## Advanced (shown on the site `/docs`)
 

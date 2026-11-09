@@ -170,25 +170,37 @@ export default defineNuxtConfig({
 };
 
 /**
- * The two lines that load Tailwind and the generated CSS from a CSS entry.
- * The relative path is computed from absolute paths under `cwd`, never
- * from `process.cwd()`; the specifier is a JSON string literal, which is
- * also a valid CSS string.
+ * The lines that load Tailwind and the generated CSS from a CSS entry, plus
+ * an `@source not` for a directory Tailwind must not scan (the agent rules
+ * hold example class literals). Relative paths are computed from absolute
+ * paths under `cwd`, never from `process.cwd()`; each specifier is a JSON
+ * string literal, which is also a valid CSS string.
  * @param {string} cwd - The project root
  * @param {string} cssEntry - Project-relative POSIX path of the CSS entry
  * @param {string} output - Project-relative POSIX path of `theme.css`
- * @returns {string} `@import "tailwindcss";` and the relative theme import
+ * @param {string} [exclude] - Project-relative directory to exclude from scanning
+ * @returns {string} `@import "tailwindcss";`, the relative theme import and the optional `@source not`
  */
 export const getCssImport = (
   cwd: string,
   cssEntry: string,
   output: string,
+  exclude?: string,
 ): string => {
   const from = path.dirname(path.resolve(cwd, cssEntry));
-  const rel = path
-    .relative(from, path.resolve(cwd, output))
-    .split(path.sep)
-    .join("/");
-  const spec = rel.startsWith("../") ? rel : `./${rel}`;
-  return `@import "tailwindcss";\n@import ${JSON.stringify(spec)};`;
+  const spec = (target: string): string => {
+    const rel = path
+      .relative(from, path.resolve(cwd, target))
+      .split(path.sep)
+      .join("/");
+    return rel.startsWith("../") ? rel : `./${rel}`;
+  };
+  const lines = [
+    `@import "tailwindcss";`,
+    `@import ${JSON.stringify(spec(output))};`,
+  ];
+  if (exclude !== undefined) {
+    lines.push(`@source not ${JSON.stringify(spec(exclude))};`);
+  }
+  return lines.join("\n");
 };

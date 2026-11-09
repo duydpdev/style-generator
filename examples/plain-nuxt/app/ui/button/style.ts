@@ -13,6 +13,11 @@ import {
 
 import { tokens, type theme } from "../../theme";
 
+const BUTTON_TINTS = ["outline", "soft", "ghost", "link"] as const;
+
+type ButtonTint = (typeof BUTTON_TINTS)[number];
+
+// #region docs:button-preset
 /**
  * The intents `color` offers. `satisfies` is the DX anchor: rename or
  * remove one of these colors in theme.json and the compiler fails here.
@@ -24,13 +29,7 @@ export const buttonIntents = [
   "danger",
 ] as const satisfies readonly ColorVariant<typeof theme>[];
 
-export type ButtonIntent = (typeof buttonIntents)[number];
-
-const BUTTON_TINTS = ["outline", "soft", "ghost", "link"] as const;
-
-type ButtonTint = (typeof BUTTON_TINTS)[number];
-
-/** Literal classes, so Tailwind's scanner sees them: the registry emits no `outline-*` or `/10` classes. */
+/** Literal classes, so Tailwind's scanner sees them: the registry emits no `focus-visible:` variant, no `/15` step and no state × opacity (`hover:bg-<key>/10`). */
 const focusRing = {
   primary: "focus-visible:outline-primary",
   secondary: "focus-visible:outline-secondary",
@@ -65,6 +64,17 @@ const tint = {
   },
 } as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
 
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. */
+const themeKeys = {
+  background: "background",
+  radius: "md",
+  type: "text16Medium",
+  typeLg: "text32Bold",
+} as const;
+// #endregion docs:button-preset
+
+export type ButtonIntent = (typeof buttonIntents)[number];
+
 const colors: readonly string[] = tokens.colors;
 // `bg-primary hover:bg-primary-hover active:bg-primary-active` when the theme declares the state siblings.
 const bgStates = createVariantMapper("bg", tokens.colors, {
@@ -78,7 +88,7 @@ const type = createVariantMapper("", tokens.typography);
 const fill = (intent: ButtonIntent): string[] => {
   const classes = [
     pick(bgStates, intent),
-    contrastText(colors, intent, "background"),
+    contrastText(colors, intent, themeKeys.background),
   ];
   if (!colors.includes(`${intent}Hover`)) classes.push("hover:opacity-90");
   return classes;
@@ -88,8 +98,8 @@ const fill = (intent: ButtonIntent): string[] => {
 export const buttonTables = {
   base: [
     "inline-flex shrink-0 items-center justify-center gap-1.5",
-    `${pick(rounded, "md")} border`,
-    `cursor-pointer ${pick(type, "text16Medium")} whitespace-nowrap outline-hidden select-none`,
+    `${pick(rounded, themeKeys.radius)} border`,
+    `cursor-pointer ${pick(type, themeKeys.type)} whitespace-nowrap outline-hidden select-none`,
     "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2",
     "transition-[background-color,color,opacity] duration-150",
     "disabled:cursor-not-allowed disabled:opacity-50",
@@ -97,7 +107,7 @@ export const buttonTables = {
   variants: {
     variant: {
       fill: "border-transparent active:scale-[0.98]",
-      outline: `${pick(bg, "background")} active:scale-[0.98]`,
+      outline: `${pick(bg, themeKeys.background)} active:scale-[0.98]`,
       soft: "border-transparent active:scale-[0.98]",
       ghost: "border-transparent active:scale-[0.98]",
       link: "border-transparent underline-offset-4 hover:underline",
@@ -106,7 +116,7 @@ export const buttonTables = {
     size: {
       sm: "h-7 px-2.5",
       md: "h-9 px-3.5",
-      lg: `h-11 px-5 ${pick(type, "text32Bold")}`,
+      lg: `h-11 px-5 ${pick(type, themeKeys.typeLg)}`,
     },
   },
   compoundVariants: buttonIntents.flatMap((intent) => [

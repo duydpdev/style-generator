@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { getBundlerSnippet } from "./templates";
+import { getBundlerSnippet, getCssImport } from "./templates";
 
 /**
  * The bodies of the `ts` code fences in a repository doc.
@@ -34,5 +34,25 @@ describe("getBundlerSnippet matches the documented quickstarts", () => {
       outDir: "app/assets/css",
     });
     expect(tsBlocks(doc)).toContain(snippet);
+  });
+});
+
+describe("getCssImport", () => {
+  const cwd = "/project";
+
+  it("prints the Tailwind and theme imports without an exclude", () => {
+    expect(getCssImport(cwd, "src/index.css", "src/styles/theme.css")).toBe(
+      '@import "tailwindcss";\n@import "./styles/theme.css";',
+    );
+  });
+
+  it.each([
+    ["app/globals.css", "app/theme.css", "../.claude"],
+    ["src/app/globals.css", "src/styles/theme.css", "../../.claude"],
+    ["app/assets/css/main.css", "app/assets/css/theme.css", "../../../.claude"],
+  ])("excludes .claude relative to %s", (entry, output, excluded) => {
+    expect(getCssImport(cwd, entry, output, ".claude").split("\n")[2]).toBe(
+      `@source not "${excluded}";`,
+    );
   });
 });

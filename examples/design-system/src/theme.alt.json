@@ -1,0 +1,35 @@
+{
+  "$schema": "./theme.schema.json",
+  "colors": {
+    "brand": "#0f766e",
+    "brandHover": "#115e59",
+    "brandActive": "#134e4a",
+    "onBrand": "$paper",
+    "ink": "#1c1917",
+    "paper": "#fafaf9",
+    "panel": "#f5f5f4",
+    "hairline": "#d6d3d1",
+    "positive": "#15803d",
+    "alert": "#b91c1c"
+  },
+  "typography": {
+    "body": { "fontSize": "15px", "lineHeight": "160%", "fontWeight": 400 },
+    "title": { "fontSize": "28px", "lineHeight": "120%", "fontWeight": 650 },
+    "caption": { "fontSize": "12px", "lineHeight": "140%", "fontWeight": 500 }
+  },
+  "borderRadius": {
+    "soft": "10px"
+  },
+  "themeAxes": {
+    "mode": {
+      "night": {
+        "colors": {
+          "ink": "#f5f5f4",
+          "paper": "#0c0a09",
+          "panel": "#1c1917",
+          "hairline": "#44403c"
+        }
+      }
+    }
+  }
+}

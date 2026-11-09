@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 025695e8ca13 -->
+<!-- source: documents/reference/cli.md sha256: 75dc731d30c4 -->
 
 # CLI
 
@@ -20,7 +20,7 @@ Lệnh sẽ ghi theme, file `theme.schema.json` của nó (cho trường `"$sche
 Với mỗi key bị bỏ, lệnh in ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` hoặc `7.0`), và với `extraSources` nó còn in mỗi entry thành một dòng `@source inline("<entry>");` để dán vào CSS của app.
 Nếu theme hoặc schema đã tồn tại, nó sẽ hỏi trước khi ghi đè (không tương tác: thoát với mã 1).
 
-Sau đó nó sẽ tìm file cấu hình bundler trong thư mục gốc của dự án theo thứ tự sau, rồi in ra đoạn mã cần thêm vào đó cùng hai dòng CSS `@import`:
+Sau đó nó sẽ tìm file cấu hình bundler trong thư mục gốc của dự án theo thứ tự sau, rồi in ra đoạn mã cần thêm vào đó cùng các dòng CSS (hai dòng `@import`, thêm `@source not "<path>/.claude";` khi file [rules cho agent](#rules-cho-agent) tồn tại):
 
 | File cấu hình tìm thấy | Đoạn mã nối dây được in ra                                                                                                           | Dòng `@import` được in ra cho                                         |
 | :--------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
@@ -36,12 +36,28 @@ yarn style-gen init            # Interactive mode
 yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
 ```
 
-| Cờ        | Kiểu      | Mặc định            | Mô tả                            |
-| :-------- | :-------- | :------------------ | :------------------------------- |
-| `--theme` | `string`  | `styles/theme.json` | Đường dẫn đến file theme         |
-| `--dark`  | `boolean` | `false`             | Kèm theo template trục dark-mode |
+| Cờ             | Kiểu      | Mặc định            | Mô tả                                     |
+| :------------- | :-------- | :------------------ | :---------------------------------------- |
+| `--theme`      | `string`  | `styles/theme.json` | Đường dẫn đến file theme                  |
+| `--dark`       | `boolean` | `false`             | Kèm theo template trục dark-mode          |
+| `--skip-rules` | `boolean` | `false`             | Không ghi file rules cho agent            |
+| `--rules-only` | `boolean` | `false`             | Chỉ ghi hoặc làm mới file rules cho agent |
 
 Mặc định của `--theme` trở thành `src/styles/theme.json` khi có thư mục `src/`, và `app/assets/css/theme.json` (`assets/css/theme.json` nếu không có `app/`) khi tìm thấy `nuxt.config.*`. CSS được ghi ngay cạnh theme (`theme.css`).
+
+#### Rules cho agent
+
+`init` ghi `.claude/rules/style-generator.md`, tức [hợp đồng cho agent](../agent-contract.md) của phiên bản đang cài (dòng đầu ghi phiên bản). Các coding agent đọc `.claude/rules/` sẽ tuân theo nó khi viết theme và component. File này chứa các class literal làm ví dụ, và Tailwind quét cả thư mục ẩn, nên các dòng CSS được in ra kết thúc bằng `@source not "<path>/.claude";`.
+
+| File rules trong dự án                                                      | `init` làm gì                                                                |
+| :-------------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| chưa có                                                                     | ghi file (`Created .claude/rules/style-generator.md`)                        |
+| giống hệt bản của phiên bản này                                             | giữ nguyên (`Rules up to date: …`)                                           |
+| ghi phiên bản khác                                                          | thay luôn, kể cả khi không tương tác (`Updated … (7.0.0 → 7.1.0)`)           |
+| cùng phiên bản nhưng đã sửa, hoặc không có dòng phiên bản, chế độ tương tác | hỏi trước khi thay; từ chối hoặc huỷ prompt thì giữ file                     |
+| cùng phiên bản nhưng đã sửa, hoặc không có dòng phiên bản, không tương tác  | giữ file và nhắc chạy `style-gen init --rules-only` trong terminal tương tác |
+
+Sau khi nâng cấp, chạy `style-gen init --rules-only` để làm mới file: lệnh này không đụng tới theme, schema hay `style-gen.config.json`, không mở trình hướng dẫn, in các dòng CSS kèm `@source not` (đường dẫn CSS lấy từ `output` trong `style-gen.config.json` nếu có) và thoát với mã 0; nó không đi cùng `--theme`, `--dark` hay `--skip-rules` (mã 1). Một lần `init` thường mà giữ theme hiện có ở prompt ghi đè cũng cập nhật rules và in lại các bước tiếp theo. `--skip-rules` không ghi file rules. Một bản build thiếu rules (một lần `yarn build` cục bộ bỏ qua bước emit) sẽ in cảnh báo và thoát với mã 0.
 
 Đây là các đoạn mã `init` in ra cho Next.js và Nuxt (đoạn cho Vite nằm trong [README](../README.md#bắt-đầu-nhanh)).
 
@@ -67,6 +83,7 @@ export default styleGenNext()(nextConfig);
 ```css
 @import "tailwindcss";
 @import "../styles/theme.css";
+@source not "../.claude";
 ```
 
 #### Nuxt
@@ -103,6 +120,7 @@ Tạo `app/assets/css/main.css` (`init` không tạo file này; `css` trong `nux
 ```css
 @import "tailwindcss";
 @import "./theme.css";
+@source not "../../../.claude";
 ```
 
 ### `style-gen generate`

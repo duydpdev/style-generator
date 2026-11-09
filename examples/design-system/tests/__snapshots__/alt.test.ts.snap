@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`a second theme through the same factories > binds button, text and box recipes to the alt keys 1`] = `
+{
+  "box": "bg-panel rounded-soft",
+  "button": [
+    {
+      "color": "brand",
+      "fill": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-soft border cursor-pointer body whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-50 border-transparent active:scale-[0.98] focus-visible:outline-brand h-9 px-3.5 bg-brand hover:bg-brand-hover active:bg-brand-active text-on-brand",
+      "soft": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-soft border cursor-pointer body whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-50 border-transparent active:scale-[0.98] focus-visible:outline-brand h-11 px-5 title bg-brand/10 text-brand hover:bg-brand/15",
+    },
+    {
+      "color": "positive",
+      "fill": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-soft border cursor-pointer body whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-50 border-transparent active:scale-[0.98] focus-visible:outline-positive h-9 px-3.5 bg-positive text-paper hover:opacity-90",
+      "soft": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-soft border cursor-pointer body whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-50 border-transparent active:scale-[0.98] focus-visible:outline-positive h-11 px-5 title bg-positive/10 text-positive hover:bg-positive/15",
+    },
+    {
+      "color": "alert",
+      "fill": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-soft border cursor-pointer body whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-50 border-transparent active:scale-[0.98] focus-visible:outline-alert h-9 px-3.5 bg-alert text-paper hover:opacity-90",
+      "soft": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-soft border cursor-pointer body whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-50 border-transparent active:scale-[0.98] focus-visible:outline-alert h-11 px-5 title bg-alert/10 text-alert hover:bg-alert/15",
+    },
+  ],
+  "text": "caption text-ink",
+}
+`;

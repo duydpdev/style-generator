@@ -78,24 +78,34 @@ const initCli: CliCommand = {
 Scaffold the theme JSON, its JSON Schema and style-gen.config.json, then print
 the plugin snippet for the stack found in the project root (nuxt.config.*,
 next.config.*, vite.config.*) or the \`style-gen generate\` fallback. Never edits
-the bundler config.
+the bundler config. Writes .claude/rules/style-generator.md, the component
+contract coding agents follow; a copy from another version is replaced, an
+edited one only after an interactive confirm.
 
 Options:
   --theme <path>    Theme JSON location (default: styles/theme.json, src/styles/theme.json
                     with a src/ directory, app/assets/css/theme.json for Nuxt 4)
-  --dark            Include a dark mode variant in the theme template`,
+  --dark            Include a dark mode variant in the theme template
+  --skip-rules      Do not write .claude/rules/style-generator.md
+  --rules-only      Only write or refresh .claude/rules/style-generator.md (after an upgrade)`,
   options: {
     theme: { type: "string" },
     dark: { type: "boolean" },
+    "skip-rules": { type: "boolean" },
+    "rules-only": { type: "boolean" },
   },
   allowPositionals: false,
   run: (values, _positionals, ctx) => {
     const theme = str(values, "theme");
     const dark = flag(values, "dark");
+    const skipRules = flag(values, "skip-rules");
+    const rulesOnly = flag(values, "rules-only");
     return initCommand(
       {
         ...(theme !== undefined && { theme }),
         ...(dark !== undefined && { dark }),
+        ...(skipRules !== undefined && { skipRules }),
+        ...(rulesOnly !== undefined && { rulesOnly }),
       },
       ctx.cwd,
     );

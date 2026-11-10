@@ -19,11 +19,16 @@ import {
 
 // The harness side comes from the factory the harness itself uses, with the same tokens and preset.
 const harnessTables = harnessButtonTables(harnessTokens, buttonPreset);
+// `iconOnly` is derived from the slots, not a prop.
+const keep = (variant: string): boolean => variant !== "iconOnly";
 
 const cases: ParityCase[] = [
   { name: "defaults", props: {} },
   { name: "prefix and suffix", props: { prefix: "←", suffix: "→" } },
-  ...unionCases(variantCases(buttonTables), variantCases(harnessTables)),
+  ...unionCases(
+    variantCases(buttonTables, keep),
+    variantCases(harnessTables, keep),
+  ),
   ...spacingCases(tokens),
 ];
 
@@ -34,6 +39,16 @@ describe("Button parity (plain vs harness)", () => {
     expect([...buttonIntents].sort(byName)).toEqual(
       [...buttonPreset.intents].sort(byName),
     );
+  });
+
+  test.each([
+    { name: "icon only (prefix)", props: { prefix: "×", "aria-label": "x" } },
+    { name: "icon only (suffix)", props: { suffix: "×", "aria-label": "x" } },
+    { name: "false label", props: { prefix: "×", children: false } },
+  ])("$name", async ({ props }) => {
+    const plain = await renderClasses(loose(Button), props);
+    const harness = await renderClasses(loose(HarnessButton), props);
+    expect(plain).toEqual(harness);
   });
 
   test.each(cases)("$name", async ({ props }) => {

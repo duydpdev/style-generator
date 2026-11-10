@@ -30,7 +30,7 @@ export const buttonPreset = {
   background: "background",
   radius: "md",
   type: "text16Medium",
-  typeLg: "text32Bold",
+  typeLg: "text20Semibold",
   focusRing: {
     primary: "focus-visible:outline-primary",
     secondary: "focus-visible:outline-secondary",
@@ -70,6 +70,7 @@ export type ButtonRecipeProps = Readonly<{
   variant?: "fill" | ButtonTint | null | undefined;
   color?: Intent | null | undefined;
   size?: "sm" | "md" | "lg" | null | undefined;
+  iconOnly?: boolean | null | undefined;
 }>;
 
 /**

@@ -20,6 +20,7 @@ interface ButtonArgs extends ButtonProps {
   suffix?: string;
   disabled?: boolean;
   href?: string;
+  "aria-label"?: string;
   onClick?: (...args: unknown[]) => void;
 }
 
@@ -34,7 +35,7 @@ const meta = {
     template: `
       <Button v-bind="args">
         <template v-if="args.prefix" #prefix>{{ args.prefix }}</template>
-        {{ args.default }}
+        <template v-if="args.default" #default>{{ args.default }}</template>
         <template v-if="args.suffix" #suffix>{{ args.suffix }}</template>
       </Button>
     `,
@@ -138,6 +139,71 @@ export const Sizes: Story = {
 };
 
 export const WithIcons: Story = { args: { prefix: "←", suffix: "→" } };
+
+/** Icon only: the icon goes in the `prefix` slot, the default slot is absent, and `aria-label` names the button; no empty label span is rendered. */
+export const IconOnly: Story = {
+  args: { default: undefined, prefix: "×", "aria-label": "Close" },
+  play: async ({ canvas }) => {
+    const button = canvas.getByRole("button", { name: "Close" });
+    await expect(button.children).toHaveLength(1);
+  },
+};
+
+// An inline-level icon (FontAwesome's `.svg-inline--fa`, `<iconify-icon>`, a
+// wrapping span) sits on the text baseline unless its slot centres it; a raw
+// <svg> hides the bug because Tailwind's preflight makes svg a block.
+const inlineIcon = `<span data-testid="icon" style="display:inline-block"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" /></svg></span>`;
+
+/** Inline-level icons: centred at every size; icon-only buttons (no label, a `v-if`-false label or an empty `v-for`) are square with one child. */
+export const InlineIcon: Story = {
+  render: (args) => ({
+    components: { Button, Flex },
+    setup() {
+      return { args, sizes };
+    },
+    template: `
+      <Flex align="center" :gap="2">
+        <Button v-for="size in sizes" :key="size" v-bind="args" :size="size">
+          <template #prefix>${inlineIcon}</template>
+          {{ size }}
+        </Button>
+        <Button v-for="size in sizes" :key="'icon-' + size" :size="size" :aria-label="'Close ' + size">
+          <template #prefix>${inlineIcon}</template>
+        </Button>
+        <Button aria-label="Close hidden label">
+          <template #prefix>${inlineIcon}</template>
+          <span v-if="false">Label</span>
+        </Button>
+        <Button aria-label="Close empty list">
+          <template #prefix>${inlineIcon}</template>
+          <span v-for="item in []" :key="item">{{ item }}</span>
+        </Button>
+        <Button aria-label="Close empty suffix">
+          <template #prefix>${inlineIcon}</template>
+          <template #suffix><span v-if="false">→</span></template>
+        </Button>
+      </Flex>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const centre = (r: DOMRect): { x: number; y: number } => ({
+      x: r.left + r.width / 2,
+      y: r.top + r.height / 2,
+    });
+    for (const button of canvas.getAllByRole("button")) {
+      const box = button.getBoundingClientRect();
+      const svg = button.querySelector("[data-testid=icon] svg");
+      if (!svg) throw new Error("icon not rendered");
+      const b = centre(box);
+      const i = centre(svg.getBoundingClientRect());
+      await expect(Math.abs(i.y - b.y)).toBeLessThanOrEqual(0.5);
+      if (button.getAttribute("aria-label") === null) continue;
+      await expect(button.children).toHaveLength(1);
+      await expect(Math.abs(i.x - b.x)).toBeLessThanOrEqual(0.5);
+      await expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(0.5);
+    }
+  },
+};
 
 export const AsLink: Story = {
   args: {

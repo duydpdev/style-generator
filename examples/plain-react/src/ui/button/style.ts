@@ -106,8 +106,10 @@ export const buttonTables = {
     size: {
       sm: "h-7 px-2.5",
       md: "h-9 px-3.5",
-      lg: `h-11 px-5 ${pick(type, "text32Bold")}`,
+      lg: `h-11 px-5 ${pick(type, "text20Semibold")}`,
     },
+    // Set by the components when there is no label and exactly one icon slot.
+    iconOnly: { true: "aspect-square px-0" },
   },
   compoundVariants: buttonIntents.flatMap((intent) => [
     { color: intent, variant: "fill", class: fill(intent) },

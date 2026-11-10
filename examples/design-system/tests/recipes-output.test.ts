@@ -71,6 +71,11 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
       ),
     ).toMatchSnapshot();
   });
+  it("buttonRecipe iconOnly", () => {
+    expect(
+      run(buttonRecipe, cartesian({ iconOnly: [true], size: sizes })),
+    ).toMatchSnapshot();
+  });
   it("stackRecipe", () => {
     expect(
       run(

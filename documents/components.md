@@ -169,8 +169,10 @@ export const buttonTables = {
     size: {
       sm: "h-7 px-2.5",
       md: "h-9 px-3.5",
-      lg: `h-11 px-5 ${pick(type, "text32Bold")}`,
+      lg: `h-11 px-5 ${pick(type, "text20Semibold")}`,
     },
+    // Set by the components when there is no label and exactly one icon slot.
+    iconOnly: { true: "aspect-square px-0" },
   },
   compoundVariants: buttonIntents.flatMap((intent) => [
     { color: intent, variant: "fill", class: fill(intent) },
@@ -223,14 +225,29 @@ export type ButtonProps<T extends ElementType = "button"> = Polymorphic<
 
 ```tsx
 import { mergeStyle, splitSpacing } from "@duydpdev/style-generator/ui";
-import type { ElementType, JSX } from "react";
+import type { ElementType, JSX, ReactNode } from "react";
 
 import { cn, tokens } from "../../theme";
 
 import { buttonRecipe } from "./style";
 import type { ButtonProps } from "./types";
 
-/** `Button`: variant × intent × size; a `<button>` gets `type="button"` unless one is passed. */
+/**
+ * An icon slot is a flex box so an inline-level icon (an inline-block wrapper,
+ * `<iconify-icon>`) is centred instead of sitting on the 24px line box's baseline.
+ * `empty:hidden` drops a slot whose content rendered nothing, so it takes no `gap`.
+ */
+const ICON_SLOT = "flex shrink-0 items-center empty:hidden";
+
+/** Content React renders: not `null`/`undefined`, a boolean (`{open && "Label"}`) or `""`. */
+const present = (node: ReactNode): boolean =>
+  node != null && typeof node !== "boolean" && node !== "";
+
+/**
+ * `Button`: variant × intent × size; a `<button>` gets `type="button"` unless one is passed.
+ * An icon-only button passes the icon as `prefix` (or `suffix`) with no label and an `aria-label`:
+ * no label span is rendered, so `gap` cannot push the icon off centre, and the button is square.
+ */
 export function Button<T extends ElementType = "button">({
   as,
   className,
@@ -245,22 +262,23 @@ export function Button<T extends ElementType = "button">({
 }: ButtonProps<T>): JSX.Element {
   const Component: ElementType = as ?? "button";
   const split = splitSpacing(props, tokens.spacingProperties);
+  const iconOnly = !present(children) && present(prefix) !== present(suffix);
   return (
     <Component
       type={Component === "button" ? "button" : undefined}
       {...split.rest}
       className={
         cn(
-          buttonRecipe({ variant, color, size }),
+          buttonRecipe({ variant, color, size, iconOnly }),
           split.className,
           className,
         ) || undefined
       }
       style={mergeStyle(split.style, style)}
     >
-      {prefix != null && <span>{prefix}</span>}
-      <span>{children}</span>
-      {suffix != null && <span>{suffix}</span>}
+      {present(prefix) && <span className={ICON_SLOT}>{prefix}</span>}
+      {present(children) && <span className="empty:hidden">{children}</span>}
+      {present(suffix) && <span className={ICON_SLOT}>{suffix}</span>}
     </Component>
   );
 }
@@ -294,7 +312,7 @@ export interface ButtonProps extends /* @vue-ignore */ ThemeSpacingProps<
 ```vue
 <script setup lang="ts">
 import { splitSpacing } from "@duydpdev/style-generator/ui";
-import { useAttrs } from "vue";
+import { Comment, Fragment, Text, useAttrs, type VNode } from "vue";
 
 import { cn, tokens } from "../../theme";
 
@@ -306,14 +324,36 @@ type ClassValue = Parameters<typeof cn>[number];
 defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<ButtonProps>(), { as: "button" });
 const slots = defineSlots<{
-  default?: () => unknown;
+  default?: () => VNode[];
   prefix?: () => unknown;
   suffix?: () => unknown;
 }>();
 const attrs = useAttrs();
 
+// Whether slot output (vnodes, a fragment's children or one entry) renders
+// something. Comments (`v-if`), blank text, empty fragments and the raw
+// `null`/boolean entries a render function can leave in a fragment do not.
+const filled = (nodes: unknown): boolean => {
+  if (Array.isArray(nodes)) return nodes.some(filled);
+  if (nodes == null || typeof nodes === "boolean") return false;
+  if (typeof nodes === "string") return nodes.trim() !== "";
+  if (typeof nodes !== "object") return true;
+  const node = nodes as VNode;
+  if (node.type === Comment) return false;
+  if (node.type === Fragment || node.type === Text)
+    return filled(node.children);
+  return true;
+};
+
+// Runs the default slot only to create its vnodes (nothing mounts), so a
+// `v-if`-false or blank label counts as no label.
+const hasLabel = (): boolean => filled(slots.default?.());
+const hasPrefix = (): boolean => filled(slots.prefix?.());
+const hasSuffix = (): boolean => filled(slots.suffix?.());
+
 // Root attributes: defaults, the caller's attributes, then class and style.
 const root = () => {
+  const iconOnly = !hasLabel() && hasPrefix() !== hasSuffix();
   const split = splitSpacing(attrs, tokens.spacingProperties);
   const { class: klass, style, ...rest } = split.rest;
   return {
@@ -324,6 +364,7 @@ const root = () => {
         variant: props.variant,
         color: props.color,
         size: props.size,
+        iconOnly,
       }),
       split.className,
       klass as ClassValue,
@@ -335,9 +376,16 @@ const root = () => {
 
 <template>
   <component :is="props.as" v-bind="root()">
-    <span v-if="slots.prefix"><slot name="prefix" /></span>
-    <span><slot /></span>
-    <span v-if="slots.suffix"><slot name="suffix" /></span>
+    <!-- Icon slots are flex boxes so an inline-level icon is centred, not baseline-aligned. -->
+    <!-- A slot span renders only when its content does, so the DOM matches `iconOnly`; an empty span would still take a `gap` and push the icon off centre. -->
+    <!-- `empty:hidden` is the net for a child component that renders nothing, which the vnode check counts as content. -->
+    <span v-if="hasPrefix()" class="flex shrink-0 items-center empty:hidden"
+      ><slot name="prefix"
+    /></span>
+    <span v-if="hasLabel()" class="empty:hidden"><slot /></span>
+    <span v-if="hasSuffix()" class="flex shrink-0 items-center empty:hidden"
+      ><slot name="suffix"
+    /></span>
   </component>
 </template>
 ```

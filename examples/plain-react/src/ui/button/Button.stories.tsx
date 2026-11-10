@@ -104,6 +104,15 @@ export const Sizes: Story = {
 
 export const WithIcons: Story = { args: { prefix: "←", suffix: "→" } };
 
+/** Icon only: the icon goes in `prefix`, there are no children, and `aria-label` names the button; no empty label span is rendered. */
+export const IconOnly: Story = {
+  args: { children: undefined, prefix: "×", "aria-label": "Close" },
+  play: async ({ canvas }) => {
+    const button = canvas.getByRole("button", { name: "Close" });
+    await expect(button.children).toHaveLength(1);
+  },
+};
+
 export const AsLink: Story = {
   args: { as: "a", href: "#top", variant: "link", children: "Link" },
   play: async ({ canvas }) => {

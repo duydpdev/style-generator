@@ -147,7 +147,7 @@ const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
-  typeLg: "text32Bold",
+  typeLg: "text20Semibold",
 } as const;
 ```
 

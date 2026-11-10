@@ -178,6 +178,10 @@ export const InlineIcon: Story = {
           <template #prefix>${inlineIcon}</template>
           <span v-for="item in []" :key="item">{{ item }}</span>
         </Button>
+        <Button aria-label="Close hidden fragment">
+          <template #prefix>${inlineIcon}</template>
+          <template v-if="false"><span>Label</span> text</template>
+        </Button>
         <Button aria-label="Close empty suffix">
           <template #prefix>${inlineIcon}</template>
           <template #suffix><span v-if="false">→</span></template>
@@ -202,6 +206,28 @@ export const InlineIcon: Story = {
       await expect(Math.abs(i.x - b.x)).toBeLessThanOrEqual(0.5);
       await expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(0.5);
     }
+  },
+};
+
+/** Both icon slots and no label is not icon-only: two children and a button wider than it is tall (the `iconOnly` gate needs exactly one icon). */
+export const BothIconsNoLabel: Story = {
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: `
+      <Button v-bind="args" aria-label="Both">
+        <template #prefix>${inlineIcon}</template>
+        <template #suffix>${inlineIcon}</template>
+      </Button>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const button = canvas.getByRole("button", { name: "Both" });
+    const box = button.getBoundingClientRect();
+    await expect(button.children).toHaveLength(2);
+    await expect(box.width).toBeGreaterThan(box.height);
   },
 };
 

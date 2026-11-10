@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 76a849b2b737 -->
+<!-- source: documents/testing.md sha256: 61b2b6e1761b -->
 
 # Hướng dẫn kiểm thử
 
@@ -41,6 +41,9 @@ Các bước kiểm tra có hai lớp:
      nó chạy trên mọi PR kể cả PR draft và PR chỉ đổi tài liệu): `build:all` → `yarn playwright install --with-deps chromium` → `yarn workspace plain-react-example test` (các story
      và gate đối sánh plain-vs-harness dưới dạng các test trình duyệt của Vitest) → `yarn workspace plain-react-example storybook:build` →
      `node examples/plain-react/scripts/copy-out-smoke.mjs`;
+   - job `plain-nuxt` (một job riêng của `ci.yml`, tên check `Plain Nuxt (Storybook)`, ruleset không bắt buộc; cùng điều kiện chạy với `plain-react`): `build:all` →
+     `yarn workspace plain-nuxt-example prepare:nuxt` → `yarn playwright install --with-deps chromium` → `yarn workspace plain-nuxt-example test:stories`
+     (các story dưới dạng test trình duyệt của Vitest; việc kiểm tra slot của `Button.vue` và kích thước icon-only chỉ được khẳng định ở đây);
    - job `e2e` (một job của `ci.yml`, tên check `E2E (Playwright)`, được ruleset `main-develop` bắt buộc; nó chạy trên mọi PR kể cả PR chỉ đổi tài liệu,
      bỏ qua PR draft và chạy lại khi `ready_for_review`): `build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`;
    - job `tailwind-floor`: ghim các package Tailwind về `~4.1.0` (chỉ trong bản checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`,
@@ -347,7 +350,7 @@ nên CSS sinh ra giữ nguyên dù có hay không có story. Trong `examples/pla
 (`@storybook/addon-vitest`, Chromium), và `yarn check:plain-ui` yêu cầu một file story cho mỗi thư mục component.
 `examples/plain-nuxt` dùng `@storybook/vue3-vite` (không có module Nuxt) với các bản port `<Name>.stories.ts` viết tay có cùng title, tên story và args.
 Mỗi ứng dụng: `yarn workspace <app>-example storybook` (dev), `storybook:build` và `test:stories` (các story như test trình duyệt của Vitest);
-CI chỉ chạy của `plain-react` (job `plain-react`), các story của `plain-nuxt` chỉ là kiểm tra cục bộ.
+CI chạy các story của cả hai ứng dụng (job `plain-react` và `plain-nuxt`); chỉ `plain-react` có thêm gate parity.
 Project `parity` (`tests/parity/*.parity.test.{ts,tsx}`) render từng component trong sáu component dùng chung và twin harness của nó từ `harness-example/ui` với cùng các prop,
 và so sánh các token class đã sắp xếp của phần tử gốc và của mọi phần tử con có class. Mỗi file trước hết khẳng định các bảng plain và các bảng harness có cùng các variant,
 key tùy chọn và mục compound, rồi sinh các trường hợp từ cả hai (mỗi tùy chọn variant, mỗi mục compound) cộng với mọi thuộc tính spacing,

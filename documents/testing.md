@@ -40,6 +40,9 @@ The checks have two layers:
      it runs on every PR including drafts and documentation-only PRs): `build:all` → `yarn playwright install --with-deps chromium` → `yarn workspace plain-react-example test` (the
      stories and the plain-vs-harness parity gate as Vitest browser tests) → `yarn workspace plain-react-example storybook:build` →
      `node examples/plain-react/scripts/copy-out-smoke.mjs`;
+   - job `plain-nuxt` (a separate job of `ci.yml`, check name `Plain Nuxt (Storybook)`, not required by the ruleset; same triggers as `plain-react`): `build:all` →
+     `yarn workspace plain-nuxt-example prepare:nuxt` → `yarn playwright install --with-deps chromium` → `yarn workspace plain-nuxt-example test:stories`
+     (the stories as Vitest browser tests; `Button.vue`'s slot check and icon-only sizing are asserted only there);
    - job `e2e` (a job of `ci.yml`, check name `E2E (Playwright)`, required by the `main-develop` ruleset; it runs on every PR including documentation-only ones,
      skips draft PRs and re-runs on `ready_for_review`): `build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`;
    - job `tailwind-floor`: pins the Tailwind packages to `~4.1.0` (only in the runner's checkout) and then runs `yarn test` + `yarn test:e2e`,
@@ -345,7 +348,7 @@ and story comments avoid utility words such as `blur` and `filter`, so the gener
 In `examples/plain-react`, every `src/ui/<name>/<Name>.stories.tsx` story runs as a test in the `storybook` Vitest project (`@storybook/addon-vitest`, Chromium),
 and `yarn check:plain-ui` requires one story file per component folder. `examples/plain-nuxt` uses `@storybook/vue3-vite` (no Nuxt module) with hand-written `<Name>.stories.ts`
 ports of the same titles, story names and args. Per app: `yarn workspace <app>-example storybook` (dev), `storybook:build` and `test:stories` (the stories as Vitest browser tests);
-CI runs only `plain-react`'s (job `plain-react`), the `plain-nuxt` ones are a local check. The `parity` project (`tests/parity/*.parity.test.{ts,tsx}`) renders each of the six
+CI runs both apps' stories (jobs `plain-react` and `plain-nuxt`); only `plain-react` also has the parity gate. The `parity` project (`tests/parity/*.parity.test.{ts,tsx}`) renders each of the six
 shared components and its harness twin from `harness-example/ui` with the same props, and compares the sorted class tokens of the root and of every descendant with a class.
 Each file first asserts that the plain tables and the harness tables have the same variants, option keys and compound entries,
 then generates the cases from both (every variant option, every compound entry) plus every spacing property,

@@ -111,13 +111,47 @@ describe.each(buttons)("%s Button icon slots", (_name, Comp) => {
     }
   });
 
-  test("an empty fragment label takes no gap", async () => {
+  // Composite empty labels render nothing, so React must agree with Vue's
+  // `filled()`: the span is dropped and the button is square.
+  const emptyLabels: [string, ReactNode][] = [
+    ["an empty fragment", <></>],
+    ["an empty array", []],
+    ["only false/null entries", [false, null]],
+    ["a fragment of empty entries", <>{false}</>],
+    ["blank text", "   "],
+  ];
+  test.each(emptyLabels)("%s counts as no label", async (_label, label) => {
     const { container } = await render(
       <Comp aria-label="Close" prefix={icon()}>
-        <></>
+        {label}
       </Comp>,
     );
-    expect(Math.abs(measure(container).dx)).toBeLessThanOrEqual(0.5);
+    const m = measure(container);
+    expect(m.children).toBe(1);
+    expect(Math.abs(m.width - m.height)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(m.dx)).toBeLessThanOrEqual(0.5);
+  });
+
+  test("a fragment holding a label still counts as a label", async () => {
+    const { container } = await render(
+      <Comp prefix={icon()}>
+        <>{false}Go</>
+      </Comp>,
+    );
+    const m = measure(container);
+    expect(m.children).toBe(2);
+    expect(m.width).toBeGreaterThan(m.height);
+  });
+
+  test("prefix and suffix without a label are not icon-only", async () => {
+    const { container } = await render(
+      <Comp aria-label="Both" prefix={icon()} suffix={icon()} />,
+    );
+    const button = container.querySelector("button");
+    if (!button) throw new Error("button not rendered");
+    expect(button.children).toHaveLength(2);
+    const box = button.getBoundingClientRect();
+    expect(box.width).toBeGreaterThan(box.height);
   });
 
   test("the px spacing prop still widens an icon-only button", async () => {

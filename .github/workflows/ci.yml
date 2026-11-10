@@ -229,6 +229,46 @@ jobs:
       - name: Copy-out smoke (packed tarball + peers only)
         run: node examples/plain-react/scripts/copy-out-smoke.mjs
 
+  # examples/plain-nuxt: the stories run as Vitest browser tests (project
+  # `storybook`); Button.vue's slot check (`filled()`) and its icon-only
+  # sizing are asserted only there. `prepare:nuxt` writes the .nuxt tsconfigs
+  # the app's tooling reads and, like `test:stories`, needs dist/ built. Not a
+  # required check: it adds coverage without changing what the ruleset waits for.
+  plain-nuxt:
+    name: Plain Nuxt (Storybook)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      STORYBOOK_DISABLE_TELEMETRY: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Prepare plain-nuxt types
+        run: yarn workspace plain-nuxt-example prepare:nuxt
+
+      - name: Install Playwright Chromium
+        run: yarn playwright install --with-deps chromium
+
+      - name: Stories (Vitest browser)
+        run: yarn workspace plain-nuxt-example test:stories
+
   # In ci.yml (not ci-matrix.yml) so it runs on every PR: ci-matrix.yml skips documents/** PRs, which would leave this required check pending.
   e2e:
     name: E2E (Playwright)

@@ -33,7 +33,7 @@ yarn test:types     # vitest run --typecheck.only — *.test-d.ts (expectTypeOf)
 yarn test:e2e       # Playwright (Chromium + WebKit) — spacing inheritance, compiled CSS
 yarn test:visual    # after yarn site:build: Playwright screenshots of the built site (Chromium); Linux baselines, compared in visual.yml, rewritten only via the visual-update label (visual-update.yml)
 yarn workspace plain-react-example test   # after build:all + `yarn playwright install chromium`: Storybook stories + plain-vs-harness class parity gate (Vitest browser, Chromium)
-yarn workspace plain-nuxt-example test:stories   # needs `prepare:nuxt` first; local only (no CI job runs it)
+yarn workspace plain-nuxt-example test:stories   # needs `prepare:nuxt` first (CI job `plain-nuxt`)
 node examples/plain-react/scripts/copy-out-smoke.mjs   # after build:all: a copied src/ui/button/ type-checks with the packed tarball + peers only (CI)
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single file
 
@@ -242,7 +242,7 @@ the root `vitest.config.ts` excludes `examples/**`. The sample components have n
 Two example apps have a Storybook (`plain-react`, `plain-nuxt`; component stories only, `ui/**` per `.storybook/main.ts`; autodocs,
 `yarn workspace <app>-example test:stories` runs the stories as Vitest browser tests; `storybook:build` builds it; stories use the app's own components, never raw Tailwind classes,
 and each app's CSS has `@source not` for `*.stories.*`). The `plain-react` job of `ci.yml` (Storybook stories and the plain-vs-harness parity gate) is separate from `check` and
-runs on drafts and documentation-only PRs. Layers and CI legs (including `tailwind-floor`, `node-floor`,
+runs on drafts and documentation-only PRs; the `plain-nuxt` job (its stories, not a required check) runs alongside it. Layers and CI legs (including `tailwind-floor`, `node-floor`,
 `peer-matrix` (decides the `vite`/`typescript` peer ranges) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
 these 7 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
 it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;

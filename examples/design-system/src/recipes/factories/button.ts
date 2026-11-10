@@ -80,6 +80,7 @@ export const buttonTables = (
         lg: `h-11 px-5 ${pick(type, preset.typeLg)}`,
       },
       // Set by the components when there is no label and exactly one icon slot.
+      // `px-0` must beat the size's `px-*`: the components pass the recipe through `cn` (tailwind-merge), which keeps the later class, so `iconOnly` stays after `size`.
       iconOnly: { true: "aspect-square px-0" },
     },
     compoundVariants: preset.intents.flatMap((intent) => [

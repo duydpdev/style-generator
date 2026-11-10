@@ -10,7 +10,14 @@ import {
   createButtonRecipe,
   type ButtonPreset,
 } from "design-system-example/recipes";
-import type { CSSProperties, ElementType, JSX, ReactNode } from "react";
+import {
+  Fragment,
+  isValidElement,
+  type CSSProperties,
+  type ElementType,
+  type JSX,
+  type ReactNode,
+} from "react";
 
 type ButtonOwnProps<
   W extends RecipeTokens,
@@ -34,9 +41,18 @@ type ButtonOwnProps<
  */
 const ICON_SLOT = "flex shrink-0 items-center empty:hidden";
 
-/** Content React renders: not `null`/`undefined`, a boolean (`{open && "Label"}`) or `""`. */
-const present = (node: ReactNode): boolean =>
-  node != null && typeof node !== "boolean" && node !== "";
+/**
+ * Whether a slot renders something, matching `Button.vue`: not `null`/`undefined`, a
+ * boolean (`{open && "Label"}`), blank text, or an array/fragment holding only such entries.
+ */
+const present = (node: ReactNode): boolean => {
+  if (Array.isArray(node)) return node.some(present);
+  if (node == null || typeof node === "boolean") return false;
+  if (typeof node === "string") return node.trim() !== "";
+  if (isValidElement<{ children?: ReactNode }>(node) && node.type === Fragment)
+    return present(node.props.children);
+  return true;
+};
 
 /**
  * `Button`: variant × intent × size from the button recipe; a `<button>` gets `type="button"` unless one is passed.

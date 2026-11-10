@@ -1,3 +1,27 @@
+# [7.1.0](https://github.com/duydpdev/style-generator/compare/v7.0.0...v7.1.0) (2026-11-10)
+
+### Features
+
+- ship an agent contract that style-gen init writes for coding agents ([2711162](https://github.com/duydpdev/style-generator/commit/2711162c62dbf2e544827f9b8a16bcb49390389f))
+
+  documents/agent-contract.md (vi twin) states the theme-agnostic rules for
+  writing a theme and components with this library. The build emits it to
+  dist/agent/style-generator.md (scripts/emit-agent-rules.mjs): docs markers
+  stripped, relative links pinned to blob/v<version>/, a version header on
+  line 1. style-gen init copies it to .claude/rules/style-generator.md and
+  prints @source not "<path>/.claude"; so Tailwind skips its example classes.
+
+  A copy stamped with another version is replaced in any mode; an edited copy
+  is kept unless an interactive confirm replaces it. init --rules-only refreshes
+  only the rules (exit 0, no wizard, theme and config untouched), so a coding
+  agent can update them after an upgrade from a non-TTY shell; --skip-rules
+  writes none. Keeping the existing theme at the overwrite prompt refreshes the
+  rules and prints the next steps again.
+
+  examples/design-system adds a second theme (theme.alt.json, src/alt.ts) that
+  shares no key with the sample theme and binds the same recipe factories;
+  the plain button styles mark the preset region the contract embeds.
+
 # [7.0.0](https://github.com/duydpdev/style-generator/compare/v6.0.0...v7.0.0) (2026-11-08)
 
 ### Release

@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 0133cc2af231 -->
+<!-- source: documents/agent-contract.md sha256: 6c869f582425 -->
 
 # Hợp đồng cho agent
 
@@ -149,7 +149,7 @@ const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
-  typeLg: "text32Bold",
+  typeLg: "text20Semibold",
 } as const;
 ```
 

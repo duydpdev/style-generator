@@ -79,6 +79,8 @@ export const buttonTables = (
         md: "h-9 px-3.5",
         lg: `h-11 px-5 ${pick(type, preset.typeLg)}`,
       },
+      // Set by the components when there is no label and exactly one icon slot.
+      iconOnly: { true: "aspect-square px-0" },
     },
     compoundVariants: preset.intents.flatMap((intent) => [
       { color: intent, variant: "fill", class: fill(intent) },

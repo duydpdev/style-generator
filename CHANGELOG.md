@@ -1,3 +1,24 @@
+# [7.1.1](https://github.com/duydpdev/style-generator/compare/v7.1.0...v7.1.1) (2026-11-10)
+
+### Bug Fixes
+
+- align empty-label handling in the example buttons ([35413e6](https://github.com/duydpdev/style-generator/commit/35413e6572ec2360a4ff0f0bf3cca28fe3b9e8ce))
+
+  React `present()` now treats arrays, fragments and blank strings like Vue's
+  `filled()`, so `<></>`, `[]`, `[false, null]`, `<>{false}</>` and "   " count
+  as no label in plain-react and the harness: no label span, a square
+  icon-only button. A negative test covers prefix + suffix without a label
+  (not icon-only) in React and in a new Vue story.
+
+  - ci.yml: new `plain-nuxt` job runs the Nuxt stories (Button.vue `filled()`
+    had no CI coverage); documented in testing.md and CLAUDE.md.
+  - style.ts / recipe factory: comment that `iconOnly`'s `px-0` beats the
+    size's `px-*` only through tailwind-merge in `cn` and declaration order.
+  - Docs: re-embedded Button sources, refreshed Vietnamese twins and hashes.
+
+  The release also ships `documents/agent-contract.md`'s `typeLg:
+  "text20Semibold"` (the contract is embedded into dist/agent at build).
+
 # [7.1.0](https://github.com/duydpdev/style-generator/compare/v7.0.0...v7.1.0) (2026-11-10)
 
 ### Features

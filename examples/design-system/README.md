@@ -23,15 +23,18 @@ examples/design-system
 ├── src/
 │   ├── theme.json          source of truth ("$schema" → theme.schema.json)
 │   ├── theme.schema.json   `yarn schema`
+│   ├── theme.alt.json      second theme, no key shared with theme.json
 │   ├── style-gen.options.ts  `options` — `as const satisfies StyleGeneratorOptions`, dependency-free
 │   ├── tokens.ts           `theme`, `Theme`, `tokens` (createDesignTokens from the browser-safe /tokens subpath)
 │   ├── cn.ts               cn = createCn(tokens) from the /ui subpath
 │   ├── axes.ts             `axisAttributes()` — the `data-*` attributes of the active themeAxes
+│   ├── alt.ts              the factories bound to theme.alt.json (not exported from index.ts)
 │   ├── recipes/            box, text, stack, grid, button (bound) + factories/ (theme-free)
 │   ├── styles/             palettes.css (dark × palette), style-guide.css (bespoke chrome)
 │   └── index.ts            the public surface of the package
 └── tests/
     ├── dx.test.ts          compiler-API test + options ≡ style-gen.config.json
+    ├── alt.test.ts         the alt theme through the unchanged factories (snapshot)
     └── dx.test-d.ts        type assertions (`expectTypeOf`)
 ```
 

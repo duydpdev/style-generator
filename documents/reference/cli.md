@@ -18,7 +18,7 @@ It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`) and `
 For each dropped key it prints ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` or `7.0`), and for `extraSources` it also prints one `@source inline("<entry>");` line per entry to paste into the app's CSS.
 If the theme or its schema already exists, it asks before overwriting (non-interactive: exits with code 1).
 
-It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the two CSS `@import` lines:
+It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the CSS lines (two `@import` lines, plus `@source not "<path>/.claude";` when the [agent rules](#agent-rules) file exists):
 
 | Config file found | Printed wiring                                                                                                                 | `@import` lines printed for                                      |
 | :---------------- | :----------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
@@ -34,12 +34,28 @@ yarn style-gen init            # Interactive mode
 yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
 ```
 
-| Flag      | Type      | Default             | Description                         |
-| :-------- | :-------- | :------------------ | :---------------------------------- |
-| `--theme` | `string`  | `styles/theme.json` | Path to the theme file              |
-| `--dark`  | `boolean` | `false`             | Include the dark-mode axis template |
+| Flag           | Type      | Default             | Description                                |
+| :------------- | :-------- | :------------------ | :----------------------------------------- |
+| `--theme`      | `string`  | `styles/theme.json` | Path to the theme file                     |
+| `--dark`       | `boolean` | `false`             | Include the dark-mode axis template        |
+| `--skip-rules` | `boolean` | `false`             | Do not write the agent rules file          |
+| `--rules-only` | `boolean` | `false`             | Only write or refresh the agent rules file |
 
 The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The CSS is written next to the theme (`theme.css`).
+
+#### Agent rules
+
+`init` writes `.claude/rules/style-generator.md`, the [agent contract](../agent-contract.md) for the installed version (its first line names the version). Coding agents that read `.claude/rules/` follow it when they write the theme and components. The file holds example class literals, and Tailwind scans hidden directories, so the printed CSS lines end with `@source not "<path>/.claude";`.
+
+| Rules file in the project                                     | What `init` does                                                                  |
+| :------------------------------------------------------------ | :-------------------------------------------------------------------------------- |
+| absent                                                        | writes it (`Created .claude/rules/style-generator.md`)                            |
+| identical to this version's                                   | leaves it (`Rules up to date: …`)                                                 |
+| stamped with another version                                  | replaces it, also without a terminal (`Updated … (7.0.0 → 7.1.0)`)                |
+| same version but edited, or no version stamp, interactive     | asks before replacing it; a declined or cancelled prompt keeps it                 |
+| same version but edited, or no version stamp, non-interactive | keeps it and says to run `style-gen init --rules-only` in an interactive terminal |
+
+After upgrading, run `style-gen init --rules-only` to refresh the file: it leaves the theme, the schema and `style-gen.config.json` alone, never opens the wizard, prints the CSS lines with the `@source not` line (the CSS path comes from `output` in `style-gen.config.json` when present) and exits 0; it cannot be combined with `--theme`, `--dark` or `--skip-rules` (exit code 1). A plain `init` that keeps the existing theme at the overwrite prompt also updates the rules and prints the next steps again. `--skip-rules` writes no rules file. A build without the rules (a local `yarn build` that skipped the emit step) prints a warning and exits 0.
 
 These are the snippets `init` prints for Next.js and Nuxt (the Vite one is in the [README](../../README.md#quickstart)).
 
@@ -65,6 +81,7 @@ export default styleGenNext()(nextConfig);
 ```css
 @import "tailwindcss";
 @import "../styles/theme.css";
+@source not "../.claude";
 ```
 
 #### Nuxt
@@ -101,6 +118,7 @@ Create `app/assets/css/main.css` (`init` does not create it; `css` in `nuxt.conf
 ```css
 @import "tailwindcss";
 @import "./theme.css";
+@source not "../../../.claude";
 ```
 
 ### `style-gen generate`

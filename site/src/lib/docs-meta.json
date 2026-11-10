@@ -34,18 +34,25 @@
     "order": 1,
     "vi": { "title": "Component" }
   },
+  "documents/agent-contract.md": {
+    "slug": "agent-contract",
+    "title": "Agent contract",
+    "group": "Guides",
+    "order": 2,
+    "vi": { "title": "Hợp đồng cho agent" }
+  },
   "documents/cookbook.md": {
     "slug": "cookbook",
     "title": "Cookbook",
     "group": "Guides",
-    "order": 2,
+    "order": 3,
     "vi": { "title": "Công thức" }
   },
   "documents/guide.md": {
     "slug": "guide",
     "title": "Guide",
     "group": "Guides",
-    "order": 3,
+    "order": 4,
     "vi": { "title": "Hướng dẫn tích hợp" }
   },
   "documents/reference/core.md": {

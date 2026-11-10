@@ -123,7 +123,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && vite build && node scripts/emit-cts-types.mjs",
+    "build": "tsc && vite build && node scripts/emit-cts-types.mjs && node scripts/emit-agent-rules.mjs",
     "build:cli": "tsdown",
     "build:all": "yarn build && yarn build:cli",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",

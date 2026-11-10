@@ -1,6 +1,6 @@
 {
   "name": "@duydpdev/style-generator",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },

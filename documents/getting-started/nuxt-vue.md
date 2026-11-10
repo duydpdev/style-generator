@@ -104,6 +104,8 @@ Import the generated file next to Tailwind. There is no `@source` line, because 
 @import "../../theme/theme.css";
 ```
 
+If `style-gen init` wrote `.claude/rules/style-generator.md`, also add the `@source not "<path>/.claude";` line it printed: that file holds example classes Tailwind would otherwise pick up ([`style-gen init`](../reference/cli.md#agent-rules)).
+
 ## Build a component
 
 Components use one folder per component. `style.ts` is the same file as in React and Next. The Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`. Components are imported explicitly, for example `import Button from "~/ui/button/Button.vue"`:

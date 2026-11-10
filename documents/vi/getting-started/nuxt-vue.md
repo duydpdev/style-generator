@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 01f2520f517d -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 8b692662bf9b -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -105,6 +105,8 @@ Import file đã sinh cạnh Tailwind. Không có dòng `@source`, vì Tailwind 
 @import "tailwindcss";
 @import "../../theme/theme.css";
 ```
+
+Nếu `style-gen init` đã ghi `.claude/rules/style-generator.md`, thêm cả dòng `@source not "<path>/.claude";` mà nó in ra: file đó chứa các class ví dụ mà Tailwind sẽ quét vào nếu không loại trừ ([`style-gen init`](../reference/cli.md#rules-cho-agent)).
 
 ## Dựng một component
 

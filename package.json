@@ -1,6 +1,6 @@
 {
   "name": "@duydpdev/style-generator",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
@@ -123,7 +123,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && vite build && node scripts/emit-cts-types.mjs",
+    "build": "tsc && vite build && node scripts/emit-cts-types.mjs && node scripts/emit-agent-rules.mjs",
     "build:cli": "tsdown",
     "build:all": "yarn build && yarn build:cli",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",

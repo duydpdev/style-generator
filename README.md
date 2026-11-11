@@ -4,7 +4,7 @@
 
 TypeScript library + CLI that turns a theme JSON into a complete **design system for Tailwind CSS v4**: one generated CSS file (theme variables, dark-mode/palette overrides, typography and spacing utilities, `@source inline` class coverage), typed design tokens, and a JSON Schema for editor autocomplete.
 
-Published on **GitHub Packages** as `@duydpdev/style-generator` (installing needs a token, see [Install](#install)).
+Published on the public npm registry as `@duydpdev/style-generator`; installing needs no token (see [Install](#install)).
 
 > **Upgrading?** Read the migration guides: [6.x → 7.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/6.x-to-7.0.md), [5.x → 6.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/5.x-to-6.0.md), [4.x → 5.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md), [3.x → 4.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
 
@@ -20,42 +20,14 @@ Published on **GitHub Packages** as `@duydpdev/style-generator` (installing need
 
 ## Install
 
-This package is published to **GitHub Packages**. To install, authenticate with a
-GitHub Personal Access Token (classic) that has the `read:packages` scope.
-
-**1. Configure the `@duydpdev` scope** — use the file your package manager reads. Yarn Berry (v2 and later) reads `.yarnrc.yml` and ignores `.npmrc`.
-
-Yarn Berry — add to your project `.yarnrc.yml`:
-
-```yaml
-npmScopes:
-  duydpdev:
-    npmRegistryServer: "https://npm.pkg.github.com"
-    npmAlwaysAuth: true
-    npmAuthToken: "${GITHUB_PAT}"
-```
-
-npm, pnpm and Yarn Classic — add to your project `.npmrc`:
-
-```ini
-@duydpdev:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_PAT}
-```
-
-Set `GITHUB_PAT` in your environment (do not commit the token):
-
-```bash
-export GITHUB_PAT=ghp_xxxxxxxxxxxxxxxxxxxx
-```
-
-**2. Install:**
+The package is on the public npm registry, so no token and no registry configuration are needed:
 
 ```bash
 yarn add @duydpdev/style-generator
 ```
 
-> Access is granted per collaborator. If install returns `404`/`401`, your token
-> lacks `read:packages` or you have not been added to the repository.
+> **Installed it from GitHub Packages before (7.1.1 and earlier)?** Remove the `@duydpdev` scope from your project, otherwise the install keeps resolving against GitHub Packages, which gets no new versions:
+> delete the `npmScopes.duydpdev` block from `.yarnrc.yml` (Yarn Berry) or the `@duydpdev:registry=https://npm.pkg.github.com` and `//npm.pkg.github.com/:_authToken=…` lines from `.npmrc` (npm, pnpm, Yarn Classic), then run `yarn add @duydpdev/style-generator@latest`.
 
 Peer dependencies and the versions CI tests: [reference/core.md](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md#peer-dependencies).
 

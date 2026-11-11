@@ -40,7 +40,7 @@ describe("integration: scripts/check-publish-target.mjs", () => {
     writeFileSync(
       join(dir, "package.json"),
       JSON.stringify({
-        publishConfig: { access: "restricted", registry: GH },
+        publishConfig: { access: "public", registry: NPM },
       }),
     );
   });
@@ -58,14 +58,35 @@ describe("integration: scripts/check-publish-target.mjs", () => {
     expect(result.output).toContain("Publish target verified");
   });
 
-  it("fails when the scope lacks a field that only a sibling scope sets", () => {
+  it("fails when a leftover scope block redirects the publish to GitHub Packages", () => {
     writeFileSync(
       join(dir, ".yarnrc.yml"),
       [
         `npmRegistryServer: "${NPM}"`,
         "npmScopes:",
         "  duydpdev:",
-        `    npmRegistryServer: "${GH}"`,
+        `    npmPublishRegistry: "${GH}"`,
+        "",
+      ].join("\n"),
+    );
+
+    const result = runCheck(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.output).toContain(
+      `npmScopes.duydpdev.npmPublishRegistry = ${GH}, expected ${NPM}`,
+    );
+  });
+
+  it("ignores a commented-out scope override and a sibling scope's override", () => {
+    writeFileSync(
+      join(dir, ".yarnrc.yml"),
+      [
+        `npmRegistryServer: "${NPM}"`,
+        "npmScopes:",
+        "  duydpdev:",
+        `    # npmPublishRegistry: "${GH}"`,
+        "    npmAlwaysAuth: false",
         "  other:",
         `    npmPublishRegistry: "${GH}"`,
         "",
@@ -74,54 +95,41 @@ describe("integration: scripts/check-publish-target.mjs", () => {
 
     const result = runCheck(dir);
 
-    expect(result.status).toBe(1);
-    expect(result.output).toContain(
-      "missing npmScopes.duydpdev.npmPublishRegistry",
-    );
-  });
-
-  it("ignores a commented-out scope field", () => {
-    writeFileSync(
-      join(dir, ".yarnrc.yml"),
-      [
-        `npmRegistryServer: "${NPM}"`,
-        "npmScopes:",
-        "  duydpdev:",
-        `    # npmPublishRegistry: "${GH}"`,
-        `    npmRegistryServer: "${GH}"`,
-        "",
-      ].join("\n"),
-    );
-
-    const result = runCheck(dir);
-
-    expect(result.status).toBe(1);
-    expect(result.output).toContain(
-      "missing npmScopes.duydpdev.npmPublishRegistry",
-    );
-  });
-
-  it("reads the global registry from the top level, not from a scope declared first", () => {
-    writeFileSync(
-      join(dir, ".yarnrc.yml"),
-      [
-        "npmScopes:",
-        "  duydpdev:",
-        `    npmPublishRegistry: "${GH}"`,
-        `    npmRegistryServer: "${GH}"`,
-        "",
-        `npmRegistryServer: "${NPM}"`,
-        "",
-      ].join("\n"),
-    );
-
-    const result = runCheck(dir);
-
     expect(result.status).toBe(0);
-    expect(result.output).toContain(`global npmRegistryServer = ${NPM}`);
   });
 
-  it("fails when publishConfig.registry points at npmjs", () => {
+  it("reads the global registry from the top level, not from a scope block", () => {
+    writeFileSync(
+      join(dir, ".yarnrc.yml"),
+      ["npmScopes:", "  duydpdev:", `    npmRegistryServer: "${NPM}"`, ""].join(
+        "\n",
+      ),
+    );
+
+    const result = runCheck(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.output).toContain(".yarnrc.yml missing npmRegistryServer");
+  });
+
+  it("fails when publishConfig.registry points at GitHub Packages", () => {
+    copyFileSync(join(repoRoot, ".yarnrc.yml"), join(dir, ".yarnrc.yml"));
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({
+        publishConfig: { access: "public", registry: GH },
+      }),
+    );
+
+    const result = runCheck(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.output).toContain(
+      `publishConfig.registry = ${GH}, expected ${NPM}`,
+    );
+  });
+
+  it("fails when publishConfig.access is restricted", () => {
     copyFileSync(join(repoRoot, ".yarnrc.yml"), join(dir, ".yarnrc.yml"));
     writeFileSync(
       join(dir, "package.json"),
@@ -134,7 +142,7 @@ describe("integration: scripts/check-publish-target.mjs", () => {
 
     expect(result.status).toBe(1);
     expect(result.output).toContain(
-      `publishConfig.registry = ${NPM}, expected ${GH}`,
+      'publishConfig.access = restricted, expected "public"',
     );
   });
 });

@@ -79,7 +79,7 @@ Custom format `[type] subject`, lowercase type (NOT conventional-commits `type:`
 a PR into `develop` (pre-release `DEV` dist-tag), then, once approved, a PR from the same branch into `main` (stable).
 With `delete_branch_on_merge=true` GitHub deletes the branch when the `develop` PR merges: recreate it on GitHub at that PR's `headRefOid` (`gh api -X POST …/git/refs`,
 never a local push) and check that the `main` PR's `headRefOid` equals it before merging. `release/*` is never the head of a merged PR:
-promote it through a `promote/<x>` branch at the same SHA. Each merge triggers Semantic Release → tag → publish to **GitHub Packages** (`npm.pkg.github.com`, scope `@duydpdev`);
+promote it through a `promote/<x>` branch at the same SHA. Each merge triggers Semantic Release → tag → publish to **npmjs.org** (public, scope `@duydpdev`, npm trusted publishing: no token secret);
 the release type comes from the feature's commit headers. Every push to `main` back-merges to `develop`. Details: `documents/deploy.md`.
 
 ## Architecture
@@ -250,14 +250,14 @@ it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`
 
 ## Publishing guards
 
-- `yarn check:publish-target` (`prepublish` + `deploy.yml`) locks the registry to `npm.pkg.github.com`; `deploy.yml` also runs `yarn npm publish --dry-run` and asserts that host.
+- `yarn check:publish-target` (`prepublish` + `deploy.yml`) locks the registry to `registry.npmjs.org` and `access: public`; `deploy.yml` also runs `yarn npm publish --dry-run` and asserts `Package would be published to https://registry.npmjs.org`, then publishes with `--provenance` through npm trusted publishing (OIDC, `id-token: write`, no `NPM_TOKEN`).
   Yarn Berry runs `prepublish`, not `prepublishOnly`, on `yarn npm publish`.
 - `yarn check:externals` fails if any `dist/**/*.map` lists a peer/dependency under `node_modules/` (or a JS file ships without a map) or any entry but `./ui` reaches a UI peer;
   `yarn check:sizes` enforces gzip budgets incl. the `cli` bundle (`scripts/check-sizes.mjs`); `yarn check:browser-safe` keeps browser subpaths free of Node/Zod.
   Negative controls: `src/__integration__/publish-gates.test.ts`.
 - `yarn check:types-pack` (`scripts/check-types-pack.mjs`; CI after `build:all`, and `deploy.yml` before publish) packs the package and runs
   `@arethetypeswrong/cli --profile node16` on the tarball, so every subpath must resolve to `.d.ts` under `import` and `.d.cts` under `require`.
-- Only `@duydpdev` resolves to GitHub Packages; consumers need a PAT with `read:packages`.
+- The package is public on npmjs.org: consumers need no token or scope config. Versions up to 7.1.1 exist only on GitHub Packages (npm holds 1.7–3.0); the first npm release is the next one cut after the migration.
 
 ## Project-Specific Workflow Rules
 

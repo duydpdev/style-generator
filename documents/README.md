@@ -14,12 +14,12 @@ Index of all documentation for `@duydpdev/style-generator`. API, option and CLI 
 
 ## Advanced (shown on the site `/docs`)
 
-| File                                   | Contents                                                                        | Tiếng Việt                                   |
-| -------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- |
-| [`components.md`](./components.md)     | The six sample components (examples, not an API) and how to add one             | [`vi/components.md`](./vi/components.md)     |
-| [`architecture.md`](./architecture.md) | Architecture: data flow, registry, `themeAxes`, spacing, exports, site          | [`vi/architecture.md`](./vi/architecture.md) |
-| [`testing.md`](./testing.md)           | The test layers, why they exist, where they run                                 | [`vi/testing.md`](./vi/testing.md)           |
-| [`deploy.md`](./deploy.md)             | Git flow (features branch from `main`), CI, release, GitHub Packages publishing | [`vi/deploy.md`](./vi/deploy.md)             |
+| File                                   | Contents                                                               | Tiếng Việt                                   |
+| -------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------- |
+| [`components.md`](./components.md)     | The six sample components (examples, not an API) and how to add one    | [`vi/components.md`](./vi/components.md)     |
+| [`architecture.md`](./architecture.md) | Architecture: data flow, registry, `themeAxes`, spacing, exports, site | [`vi/architecture.md`](./vi/architecture.md) |
+| [`testing.md`](./testing.md)           | The test layers, why they exist, where they run                        | [`vi/testing.md`](./vi/testing.md)           |
+| [`deploy.md`](./deploy.md)             | Git flow (features branch from `main`), CI, release, npm publishing    | [`vi/deploy.md`](./vi/deploy.md)             |
 
 Migration guides, the Vietnamese mirror rules and the repo standards follow below.
 

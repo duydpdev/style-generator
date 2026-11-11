@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: ed6b8b9f97be -->
+<!-- source: documents/architecture.md sha256: b49ad377098e -->
 
 # Kiến trúc
 
@@ -463,6 +463,6 @@ Xem [`examples/README.md`](../../examples/README.md).
 
 ### Pipeline triển khai
 
-| Đích                      | Workflow                     | Xem                                  |
-| ------------------------- | ---------------------------- | ------------------------------------ |
-| Package → GitHub Packages | `release.yml` + `deploy.yml` | [`documents/deploy.md`](./deploy.md) |
+| Đích                | Workflow                     | Xem                                  |
+| ------------------- | ---------------------------- | ------------------------------------ |
+| Package → npmjs.org | `release.yml` + `deploy.yml` | [`documents/deploy.md`](./deploy.md) |

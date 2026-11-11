@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 648793cf55f5 -->
+<!-- source: documents/deploy.md sha256: e895b4f109fd -->
 
 # Triển khai & CI/CD
 
@@ -44,7 +44,7 @@ flowchart LR
     M2 -.->|back-merge after every push to main| D
 ```
 
-Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-release). Khi có tag mới, `deploy.yml` publish lên GitHub Packages. Mọi lần push vào `main` (có hoặc không có release) đều kết thúc bằng `back-merge.yml`, workflow này merge `main` ngược lại vào `develop`. `drift.yml` chạy hằng ngày (06:17 UTC) và cảnh báo khi `develop` vẫn thiếu các commit từ `main`.
+Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-release). Khi có tag mới, `deploy.yml` publish lên npm registry công khai (`registry.npmjs.org`). Mọi lần push vào `main` (có hoặc không có release) đều kết thúc bằng `back-merge.yml`, workflow này merge `main` ngược lại vào `develop`. `drift.yml` chạy hằng ngày (06:17 UTC) và cảnh báo khi `develop` vẫn thiếu các commit từ `main`.
 
 ---
 
@@ -151,8 +151,8 @@ Dự án dùng **Husky** và **lint-staged** để chặn các commit không đ�
 9. `yarn check:smoke` (bản build của tag chạy được: mọi subpath nạp được ở ESM/CJS, `style-gen --version` in ra đúng phiên bản vừa đặt ở bước 4)
 10. `yarn check:browser-safe`
 11. `yarn check:publish-target`
-12. `yarn npm publish --dry-run` (khẳng định output chứa `npm.pkg.github.com`)
-13. Publish lên **GitHub Packages** với `YARN_NPM_AUTH_TOKEN` = `GITHUB_TOKEN` tích hợp sẵn: một tag có hậu tố (`-DEV.N`) được publish với `--tag DEV`, một tag stable được publish dưới dạng `latest`
+12. `yarn npm publish --dry-run` (khẳng định output chứa `Package would be published to https://registry.npmjs.org`)
+13. `yarn npm publish --provenance` lên **npmjs.org**, xác thực bằng npm trusted publishing (OIDC token của job, không có secret): một tag có hậu tố (`-DEV.N`) được publish với `--tag DEV`, một tag stable được publish dưới dạng `latest`
 
 Các test không chạy lại ở đây: `release.yml` đã kiểm thử đúng commit này trước khi cắt tag. Chạy lại chúng trên cùng cây mã chỉ thêm sự flaky, thứ sẽ tạo ra một tag + GitHub release mà không có package. `check:smoke` thì khác: nó kiểm tra bản build mang phiên bản của tag, thứ duy nhất được publish.
 
@@ -229,13 +229,19 @@ Thất bại khi `git rev-list --count origin/develop..origin/main` > 0 và đ�
 4. Sau khi được duyệt → PR từ cùng branch vào `main`, CI đạt → **Create a merge commit** → `release.yml`:
    - Tính phiên bản mới từ header của các commit của feature
    - Commit `package.json` + `CHANGELOG.md` (`[chore] release x [skip ci]`) và tạo tag `vX.Y.Z`
-   - Kích hoạt `deploy.yml` để publish lên GitHub Packages
+   - Kích hoạt `deploy.yml` để publish lên npmjs.org
    - Kích hoạt `back-merge.yml` để merge `main` ngược lại vào `develop`
 
 ### Các secret bắt buộc
 
 - `CI_WORKER_REPOSITORY_TOKEN`: một PAT có quyền push commit release và tag lên repo GitHub. Nó không được khai báo trong `env` ở cấp workflow; nó chỉ được truyền cho checkout + semantic-release (env `GITHUB_TOKEN`) trong `release.yml` và cho checkout trong `back-merge.yml` (job gọi nó dùng `secrets: inherit`). `deploy.yml` không nhận nó (job `deploy` không dùng `secrets: inherit`). Checkout của job `release` dùng `persist-credentials: false`, nên token không nằm trong `.git/config` trong khi `yarn install`/test chạy: semantic-release tự chèn env `GITHUB_TOKEN` vào URL của mọi lệnh fetch/push, và bước phát hiện tag chỉ đọc các tag cục bộ. `back-merge.yml` giữ giá trị mặc định (`true`) vì nó tự chạy `git fetch`/`git push` sau checkout, và nó không cài dependency nào.
-- Việc publish dùng `GITHUB_TOKEN` tích hợp sẵn — không cần secret npm. `GITHUB_TOKEN` mặc định chỉ có `contents: read` trong toàn bộ `release.yml`; chỉ job `deploy` mở `packages: write` (quyền của một reusable workflow không thể vượt quá job gọi nó). `release` và `back-merge` push bằng PAT, nên không cần `contents: write` trên `GITHUB_TOKEN`.
+- Việc publish lên npm **không dùng secret**: npm trusted publishing (OIDC). Job `deploy` trong `release.yml` và workflow `deploy.yml` giữ `id-token: write` (quyền của một reusable workflow không thể vượt quá job gọi nó) và `yarn npm publish --provenance` đổi OIDC token đó lấy một credential publish tồn tại ngắn, nên không có `NPM_TOKEN` nào để hết hạn và không có token nào để các job dùng PAT làm lộ. `GITHUB_TOKEN` giữ `contents: read` trong toàn bộ `release.yml`. `release` và `back-merge` push bằng PAT, nên không cần `contents: write` trên `GITHUB_TOKEN`.
+
+### Trusted publisher của npm (thiết lập một lần)
+
+**Trusted Publisher** của package trên npmjs.com là thứ cho phép workflow publish. Package `@duydpdev/style-generator` → Settings → Trusted Publisher → GitHub Actions: user `duydpdev`, repository `style-generator`, tên file workflow `release.yml`, để trống environment, và tick "Allow npm publish" (một publisher tạo ra mà không tick chỉ có thể stage). npm so khớp với workflow **khởi chạy** run, nên lần publish tự động (được gọi từ `release.yml`) cần `release.yml`; chạy tay `deploy.yml` (runbook bên dưới) cần đăng ký thêm `deploy.yml` làm publisher thứ hai. Một publisher không publish gì trong 2 ngày sẽ hết hạn: hãy đăng ký vào đúng ngày merge bản release đầu tiên. Sau lần publish đầu, bật "Require two-factor authentication and disallow tokens" cho package.
+
+Nếu bước `Publish to npm` lỗi `E404`/`ENEEDAUTH`, publisher chưa có hoặc tên workflow không khớp: sửa trên npmjs.com rồi "Re-run failed jobs" trên run đó. Không bao giờ xóa tag.
 
 ---
 

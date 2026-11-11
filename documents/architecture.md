@@ -457,6 +457,6 @@ Node's type stripping). Only `harness` is embedded in the landing site; the plai
 
 ### Deploy pipelines
 
-| Target                    | Workflow                     | See                                  |
-| ------------------------- | ---------------------------- | ------------------------------------ |
-| Package → GitHub Packages | `release.yml` + `deploy.yml` | [`documents/deploy.md`](./deploy.md) |
+| Target              | Workflow                     | See                                  |
+| ------------------- | ---------------------------- | ------------------------------------ |
+| Package → npmjs.org | `release.yml` + `deploy.yml` | [`documents/deploy.md`](./deploy.md) |

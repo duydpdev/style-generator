@@ -1,3 +1,27 @@
+# [7.2.0](https://github.com/duydpdev/style-generator/compare/v7.1.1...v7.2.0) (2026-11-11)
+
+### Features
+
+- publish to npmjs.org ([6df45ac](https://github.com/duydpdev/style-generator/commit/6df45ac20f6931e331867fa5d76f2fb4df7ab5ad))
+
+  The package now publishes to the public npm registry so installing needs
+  no token and no scope configuration. CI authenticates with npm trusted
+  publishing (OIDC, id-token: write, yarn npm publish --provenance): there is
+  no NPM_TOKEN secret to expire.
+
+  - package.json publishConfig: access public, registry registry.npmjs.org
+  - .yarnrc.yml: drop the npmScopes.duydpdev GitHub Packages block
+  - deploy.yml / release.yml: id-token: write instead of packages: write,
+    dry-run asserts "Package would be published to https://registry.npmjs.org"
+  - check-publish-target.mjs expects npmjs.org + public access and rejects a
+    scope block that redirects @duydpdev elsewhere
+  - docs (EN + vi), site links, example READMEs: no token needed; users of the
+    old GitHub Packages setup must remove the @duydpdev scope
+
+  Required before the first release: register the Trusted Publisher
+  (workflow release.yml, "Allow npm publish") on npmjs.com; see
+  documents/deploy.md. Versions up to 7.1.1 exist only on GitHub Packages.
+
 # [7.1.1](https://github.com/duydpdev/style-generator/compare/v7.1.0...v7.1.1) (2026-11-10)
 
 ### Bug Fixes

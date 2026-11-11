@@ -53,6 +53,15 @@ When a new rule replaces an old entry, edit or merge it in place; never leave tw
   3. Yarn Berry auth comes from `.yarnrc.yml` (`npmScopes.<scope>.npmAuthToken` interpolating an env var), NOT from the `.npmrc` that `setup-node registry-url` creates. Set the env var `YARN_NPM_AUTH_TOKEN` correctly.
   4. GitHub Packages on a private repo: only collaborators/granted users can install, even with a `read:packages` PAT → to share with outsiders, invite them or use an org.
 
+### [2026-11-11] - Publish to npmjs.org with trusted publishing, not a stored token
+
+- **Context:** the package moved from GitHub Packages (installing needed a `read:packages` PAT) to the public npm registry. The old `NPM_TOKEN` incident above came from a token that expires.
+- **New Rule:**
+  1. npm publishing in CI authenticates with npm trusted publishing (OIDC): `permissions: id-token: write` on the `deploy` job of `release.yml` and in `deploy.yml`, `yarn npm publish --provenance`, and a Trusted Publisher on npmjs.com bound to the workflow filename that STARTS the run (`release.yml`; add `deploy.yml` for manual dispatch). Never add an `NPM_TOKEN` secret.
+  2. The publisher must be created with "Allow npm publish" ticked (otherwise publishes only stage) and expires after 2 unused days: create it on the day the release is merged.
+  3. Never keep an `npmScopes.duydpdev` block in `.yarnrc.yml`: it would send the publish back to GitHub Packages. `yarn check:publish-target` rejects it.
+  4. A failed publish on an existing tag: fix the npm side, then "Re-run failed jobs"; never delete or re-cut the tag (versions are immutable on npm).
+
 ### [2026-06-07] - An example workspace MUST NOT have a `postinstall` build hook
 
 - **Mistake:** Added `"postinstall": "nuxt prepare"` to `examples/nuxt-v4/package.json`. CI `yarn install --immutable` runs this hook in the Link step — BEFORE the library `dist/` is built — and `nuxt.config.ts` importing `@duydpdev/style-generator/vite` could not resolve → the workspace build failed (exit 1) → the whole install failed. It passed locally because `dist/` already existed.

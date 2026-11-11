@@ -1,8 +1,13 @@
 # ─────────────────────────────────────────────────────
-# Deploy — Build & publish the package to GitHub Packages (npm.pkg.github.com)
+# Deploy — Build & publish the package to the public npm registry (registry.npmjs.org)
 #
 # Reusable workflow, called from release.yml. Run it by hand (workflow_dispatch)
 # to publish a tag that was pushed but not yet published (runbook: documents/deploy.md).
+#
+# Auth is npm trusted publishing (OIDC): no NPM_TOKEN secret. The package's
+# Trusted Publisher on npmjs.com names the workflow that STARTS the run, so a
+# publish from release.yml needs `release.yml` registered and a manual dispatch
+# of this file needs `deploy.yml` registered as well.
 # Input: tag name (e.g. v1.2.0 or v1.2.0-DEV.1)
 # ─────────────────────────────────────────────────────
 name: Deploy
@@ -23,7 +28,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  id-token: write # npm trusted publishing (OIDC) and provenance
 
 jobs:
   deploy:
@@ -88,26 +93,25 @@ jobs:
       - name: Verify browser-safe subpaths
         run: yarn check:browser-safe
 
-      - name: Verify publish target = GitHub Packages (npm.pkg.github.com)
+      - name: Verify publish target = npmjs.org (registry.npmjs.org)
         run: yarn check:publish-target
 
+      # The dry-run prints the target registry; assert it from the output so a
+      # config drift cannot send the package elsewhere.
       - name: Publish dry-run (assert registry from output)
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
           OUT=$(yarn npm publish --dry-run 2>&1)
           echo "$OUT"
-          echo "$OUT" | grep -F "npm.pkg.github.com" \
-            || { echo "::error::Dry-run did not target npm.pkg.github.com"; exit 1; }
+          echo "$OUT" | grep -F "Package would be published to https://registry.npmjs.org" \
+            || { echo "::error::Dry-run did not target https://registry.npmjs.org"; exit 1; }
 
-      - name: Publish to GitHub Packages
+      - name: Publish to npm
         env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag }}
         run: |
           if [[ "$TAG" == *-* ]]; then
-            yarn npm publish --tag DEV
+            yarn npm publish --provenance --tag DEV
           else
-            yarn npm publish
+            yarn npm publish --provenance
           fi

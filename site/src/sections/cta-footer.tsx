@@ -33,11 +33,11 @@ export function CtaFooter() {
             gap={1.5}
             px={5}
             py={3}
-            href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
+            href="https://www.npmjs.com/package/@duydpdev/style-generator"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Install from GitHub Packages ↗
+            Install from npm ↗
           </Flex>
           <Flex
             as="a"
@@ -86,7 +86,7 @@ export function CtaFooter() {
         </Box>
         <Flex className="s-footer-meta" wrap gap={4}>
           <a
-            href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
+            href="https://www.npmjs.com/package/@duydpdev/style-generator"
             target="_blank"
             rel="noopener noreferrer"
           >

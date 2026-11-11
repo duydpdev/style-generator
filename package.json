@@ -242,8 +242,8 @@
     "url": "git+https://github.com/duydpdev/style-generator.git"
   },
   "publishConfig": {
-    "access": "restricted",
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "packageManager": "yarn@4.10.3",
   "license": "MIT",

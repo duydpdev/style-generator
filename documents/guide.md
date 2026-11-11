@@ -18,31 +18,13 @@ if you are upgrading from 4.x read [`migration/4.x-to-5.0.md`](./migration/4.x-t
 
 ## Installation
 
-The package is published to GitHub Packages. Configure the `@duydpdev` scope in the file your package manager reads (Yarn Berry reads `.yarnrc.yml` and ignores `.npmrc`);
-how to create a `read:packages` PAT is covered in the Install section of [`README.md`](../README.md#install).
-
-Yarn Berry — `.yarnrc.yml`:
-
-```yaml
-npmScopes:
-  duydpdev:
-    npmRegistryServer: "https://npm.pkg.github.com"
-    npmAlwaysAuth: true
-    npmAuthToken: "${GITHUB_PAT}"
-```
-
-npm, pnpm, Yarn Classic — `.npmrc`:
-
-```ini
-@duydpdev:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_PAT}
-```
-
-Then install:
+The package is published on the public npm registry: no token and no registry configuration are needed.
 
 ```bash
 yarn add @duydpdev/style-generator
 ```
+
+If the project still carries the old GitHub Packages setup (`npmScopes.duydpdev` in `.yarnrc.yml`, or `@duydpdev:registry=https://npm.pkg.github.com` in `.npmrc`), remove it first: that scope no longer receives new versions (see the Install section of [`README.md`](../README.md#install)).
 
 **Peer dependencies:** `tailwindcss ^4.1.0` (Tailwind v3 is no longer supported); `typescript ^5 || ^6` (optional,
 to type-check against the package's `.d.ts`) and `vite ^5 || ^6 || ^7 || ^8` (optional, only when you use `styleGenVite`).

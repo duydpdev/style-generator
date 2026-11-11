@@ -27,6 +27,6 @@
     "@duydpdev/style-generator": "link:../..",
     "@types/node": "^25.3.3",
     "typescript": "^5.9.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   }
 }

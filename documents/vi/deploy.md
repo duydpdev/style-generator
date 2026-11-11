@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: e895b4f109fd -->
+<!-- source: documents/deploy.md sha256: 24fff46b4547 -->
 
 # Triển khai & CI/CD
 
@@ -242,6 +242,8 @@ Thất bại khi `git rev-list --count origin/develop..origin/main` > 0 và đ�
 **Trusted Publisher** của package trên npmjs.com là thứ cho phép workflow publish. Package `@duydpdev/style-generator` → Settings → Trusted Publisher → GitHub Actions: user `duydpdev`, repository `style-generator`, tên file workflow `release.yml`, để trống environment, và tick "Allow npm publish" (một publisher tạo ra mà không tick chỉ có thể stage). npm so khớp với workflow **khởi chạy** run, nên lần publish tự động (được gọi từ `release.yml`) cần `release.yml`; chạy tay `deploy.yml` (runbook bên dưới) cần đăng ký thêm `deploy.yml` làm publisher thứ hai. Một publisher không publish gì trong 2 ngày sẽ hết hạn: hãy đăng ký vào đúng ngày merge bản release đầu tiên. Sau lần publish đầu, bật "Require two-factor authentication and disallow tokens" cho package.
 
 Nếu bước `Publish to npm` lỗi `E404`/`ENEEDAUTH`, publisher chưa có hoặc tên workflow không khớp: sửa trên npmjs.com rồi "Re-run failed jobs" trên run đó. Không bao giờ xóa tag.
+
+Bước `Publish to npm` xanh chưa chứng minh phiên bản đã công khai. Một publisher chỉ cho phép `npm stage publish` (mặc định với publisher tạo sau 2026-09-03) làm `yarn npm publish` thoát với mã 0 trong khi phiên bản chỉ nằm trong hàng chờ staging: `npm view @duydpdev/style-generator dist-tags` không đổi cho đến khi một maintainer duyệt trên npmjs.com (Staged Packages → Approve, kèm 2FA). Hoặc duyệt từng bản release ở đó, hoặc tạo lại publisher với action `npm publish` được tick để release lên thẳng. Sau mỗi lần release, hãy kiểm tra `npm view @duydpdev/style-generator dist-tags`.
 
 ---
 

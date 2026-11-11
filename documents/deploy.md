@@ -241,6 +241,8 @@ The package's **Trusted Publisher** on npmjs.com is what lets the workflow publi
 
 If `Publish to npm` fails with `E404`/`ENEEDAUTH`, the publisher is missing or its workflow name does not match: fix it on npmjs.com, then "Re-run failed jobs" on the run. Never delete the tag.
 
+A green `Publish to npm` does not prove the version is public. A publisher that allows only `npm stage publish` (the default for publishers created after 2026-09-03) makes `yarn npm publish` exit 0 while the version only waits in the staging queue: `npm view @duydpdev/style-generator dist-tags` does not move until a maintainer approves it on npmjs.com (Staged Packages → Approve, with 2FA). Either approve each release there, or recreate the publisher with the `npm publish` allowed action ticked so releases go out directly. After every release, check `npm view @duydpdev/style-generator dist-tags`.
+
 ---
 
 ## Commit Format

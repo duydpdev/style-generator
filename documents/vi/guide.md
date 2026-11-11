@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: a693182a5744 -->
+<!-- source: documents/guide.md sha256: 5237305e102c -->
 
 # Hướng dẫn sử dụng
 
@@ -20,31 +20,13 @@ nếu bạn đang nâng cấp từ 4.x, hãy đọc [`migration/4.x-to-5.0.md`](
 
 ## Cài đặt
 
-Package được phát hành lên GitHub Packages. Hãy cấu hình scope `@duydpdev` trong file mà trình quản lý package của bạn đọc (Yarn Berry đọc `.yarnrc.yml` và bỏ qua `.npmrc`);
-cách tạo PAT `read:packages` nằm ở mục Cài đặt của [`README.md`](./README.md#cài-đặt).
-
-Yarn Berry — `.yarnrc.yml`:
-
-```yaml
-npmScopes:
-  duydpdev:
-    npmRegistryServer: "https://npm.pkg.github.com"
-    npmAlwaysAuth: true
-    npmAuthToken: "${GITHUB_PAT}"
-```
-
-npm, pnpm, Yarn Classic — `.npmrc`:
-
-```ini
-@duydpdev:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_PAT}
-```
-
-Sau đó cài đặt:
+Package được phát hành trên npm registry công khai: không cần token và không cần cấu hình registry.
 
 ```bash
 yarn add @duydpdev/style-generator
 ```
+
+Nếu dự án vẫn còn cấu hình GitHub Packages cũ (`npmScopes.duydpdev` trong `.yarnrc.yml`, hoặc `@duydpdev:registry=https://npm.pkg.github.com` trong `.npmrc`), hãy xóa nó trước: scope đó không còn nhận phiên bản mới (xem mục Cài đặt của [`README.md`](./README.md#cài-đặt)).
 
 **Các peer dependency:** `tailwindcss ^4.1.0` (Tailwind v3 không còn được hỗ trợ); `typescript ^5 || ^6` (tùy chọn,
 để kiểm tra kiểu với `.d.ts` của package) và `vite ^5 || ^6 || ^7 || ^8` (tùy chọn, chỉ khi bạn dùng `styleGenVite`).

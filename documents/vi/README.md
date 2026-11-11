@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: a557bcdddce2 -->
+<!-- source: README.md sha256: d24f395dd396 -->
 
 # @duydpdev/style-generator
 
@@ -6,7 +6,7 @@
 
 Thư viện TypeScript + CLI biến một file theme JSON thành một **design system hoàn chỉnh cho Tailwind CSS v4**: một file CSS được sinh ra (biến theme, override dark mode/palette, utility cho typography và spacing, phần phủ class `@source inline`), design token có kiểu, và một JSON Schema để editor tự gợi ý.
 
-Được phát hành trên **GitHub Packages** với tên `@duydpdev/style-generator` (cài đặt cần token, xem [Cài đặt](#cài-đặt)).
+Được phát hành trên npm registry công khai với tên `@duydpdev/style-generator`; cài đặt không cần token (xem [Cài đặt](#cài-đặt)).
 
 > **Nâng cấp?** Đọc các hướng dẫn nâng cấp: [6.x → 7.0](./migration/6.x-to-7.0.md), [5.x → 6.0](./migration/5.x-to-6.0.md), [4.x → 5.0](./migration/4.x-to-5.0.md), [3.x → 4.0](./migration/3.x-to-4.0.md).
 
@@ -22,42 +22,14 @@ Thư viện TypeScript + CLI biến một file theme JSON thành một **design 
 
 ## Cài đặt
 
-Package này được phát hành trên **GitHub Packages**. Để cài đặt, hãy xác thực bằng một
-GitHub Personal Access Token (classic) có scope `read:packages`.
-
-**1. Cấu hình scope `@duydpdev`** — dùng file mà trình quản lý package của bạn đọc. Yarn Berry (v2 trở lên) đọc `.yarnrc.yml` và bỏ qua `.npmrc`.
-
-Yarn Berry — thêm vào `.yarnrc.yml` của dự án:
-
-```yaml
-npmScopes:
-  duydpdev:
-    npmRegistryServer: "https://npm.pkg.github.com"
-    npmAlwaysAuth: true
-    npmAuthToken: "${GITHUB_PAT}"
-```
-
-npm, pnpm và Yarn Classic — thêm vào `.npmrc` của dự án:
-
-```ini
-@duydpdev:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_PAT}
-```
-
-Đặt `GITHUB_PAT` trong môi trường của bạn (đừng commit token):
-
-```bash
-export GITHUB_PAT=ghp_xxxxxxxxxxxxxxxxxxxx
-```
-
-**2. Cài đặt:**
+Package nằm trên npm registry công khai, nên không cần token và không cần cấu hình registry:
 
 ```bash
 yarn add @duydpdev/style-generator
 ```
 
-> Quyền truy cập được cấp theo từng collaborator. Nếu lúc cài đặt nhận `404`/`401`, token của bạn
-> thiếu `read:packages` hoặc bạn chưa được thêm vào repository.
+> **Trước đây đã cài từ GitHub Packages (7.1.1 trở về trước)?** Hãy xóa scope `@duydpdev` khỏi dự án, nếu không việc cài đặt vẫn resolve về GitHub Packages, nơi không còn nhận phiên bản mới:
+> xóa khối `npmScopes.duydpdev` khỏi `.yarnrc.yml` (Yarn Berry) hoặc các dòng `@duydpdev:registry=https://npm.pkg.github.com` và `//npm.pkg.github.com/:_authToken=…` khỏi `.npmrc` (npm, pnpm, Yarn Classic), rồi chạy `yarn add @duydpdev/style-generator@latest`.
 
 Các peer dependency và các phiên bản mà CI kiểm thử: [reference/core.md](./reference/core.md#các-peer-dependency).
 

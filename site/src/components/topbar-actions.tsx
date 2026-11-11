@@ -61,7 +61,7 @@ export function TopbarActions({
         gap={1.5}
         px={3}
         py={2}
-        href="https://github.com/duydpdev/style-generator/pkgs/npm/style-generator"
+        href="https://www.npmjs.com/package/@duydpdev/style-generator"
         target="_blank"
         rel="noopener noreferrer"
       >

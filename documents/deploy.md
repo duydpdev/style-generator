@@ -42,7 +42,7 @@ flowchart LR
     M2 -.->|back-merge after every push to main| D
 ```
 
-Every merge into `main`/`develop` runs `release.yml` (semantic-release). When there is a new tag, `deploy.yml` publishes to GitHub Packages. Every push to `main` (with or without a release) ends with `back-merge.yml`, which merges `main` back into `develop`. `drift.yml` runs daily (06:17 UTC) and warns when `develop` still lacks commits from `main`.
+Every merge into `main`/`develop` runs `release.yml` (semantic-release). When there is a new tag, `deploy.yml` publishes to the public npm registry (`registry.npmjs.org`). Every push to `main` (with or without a release) ends with `back-merge.yml`, which merges `main` back into `develop`. `drift.yml` runs daily (06:17 UTC) and warns when `develop` still lacks commits from `main`.
 
 ---
 
@@ -149,8 +149,8 @@ The project uses **Husky** and **lint-staged** to block commits that do not meet
 9. `yarn check:smoke` (the tag's build works: every subpath loads in ESM/CJS, `style-gen --version` prints exactly the version just set in step 4)
 10. `yarn check:browser-safe`
 11. `yarn check:publish-target`
-12. `yarn npm publish --dry-run` (assert the output contains `npm.pkg.github.com`)
-13. Publish to **GitHub Packages** with `YARN_NPM_AUTH_TOKEN` = the built-in `GITHUB_TOKEN`: a tag with a suffix (`-DEV.N`) is published with `--tag DEV`, a stable tag is published as `latest`
+12. `yarn npm publish --dry-run` (assert the output contains `Package would be published to https://registry.npmjs.org`)
+13. `yarn npm publish --provenance` to **npmjs.org**, authenticated by npm trusted publishing (the job's OIDC token, no secret): a tag with a suffix (`-DEV.N`) is published with `--tag DEV`, a stable tag is published as `latest`
 
 Tests do not run again here: `release.yml` already tested exactly this commit before cutting the tag. Re-running them on the same code tree only adds flakiness that would produce a tag + GitHub release without a package. `check:smoke` is different: it checks the build that carries the tag's version, which is the only thing that gets published.
 
@@ -227,13 +227,19 @@ Fails when `git rev-list --count origin/develop..origin/main` > 0 and the tip of
 4. After approval → PR from the same branch into `main`, CI passes → **Create a merge commit** → `release.yml`:
    - Computes the new version from the headers of the feature's commits
    - Commits `package.json` + `CHANGELOG.md` (`[chore] release x [skip ci]`) and creates the tag `vX.Y.Z`
-   - Triggers `deploy.yml` to publish to GitHub Packages
+   - Triggers `deploy.yml` to publish to npmjs.org
    - Triggers `back-merge.yml` to merge `main` back into `develop`
 
 ### Required Secrets
 
 - `CI_WORKER_REPOSITORY_TOKEN`: a PAT with permission to push the release commit and tag to the GitHub repo. It is not declared at the workflow-level `env`; it is only passed to checkout + semantic-release (env `GITHUB_TOKEN`) in `release.yml` and to checkout in `back-merge.yml` (the job that calls it uses `secrets: inherit`). `deploy.yml` does not receive it (the `deploy` job does not use `secrets: inherit`). The `release` job's checkout uses `persist-credentials: false`, so the token is not in `.git/config` while `yarn install`/tests run: semantic-release injects the env `GITHUB_TOKEN` into the URL of every fetch/push command itself, and the tag detection step only reads local tags. `back-merge.yml` keeps the default (`true`) because it does its own `git fetch`/`git push` after checkout, and it installs no dependencies.
-- Publishing uses the built-in `GITHUB_TOKEN` — no npm secret is needed. `GITHUB_TOKEN` defaults to `contents: read` only throughout `release.yml`; only the `deploy` job opens `packages: write` (a reusable workflow's permissions cannot exceed the job that calls it). `release` and `back-merge` push with the PAT, so they do not need `contents: write` on `GITHUB_TOKEN`.
+- Publishing to npm uses **no secret**: npm trusted publishing (OIDC). The `deploy` job in `release.yml` and the `deploy.yml` workflow hold `id-token: write` (a reusable workflow's permissions cannot exceed the job that calls it) and `yarn npm publish --provenance` exchanges that OIDC token for a short-lived publish credential, so there is no `NPM_TOKEN` to expire and no token for the PAT-using jobs to leak. `GITHUB_TOKEN` stays `contents: read` throughout `release.yml`. `release` and `back-merge` push with the PAT, so they do not need `contents: write` on `GITHUB_TOKEN`.
+
+### npm trusted publisher (one-time setup)
+
+The package's **Trusted Publisher** on npmjs.com is what lets the workflow publish. Package `@duydpdev/style-generator` → Settings → Trusted Publisher → GitHub Actions: user `duydpdev`, repository `style-generator`, workflow filename `release.yml`, environment blank, and tick "Allow npm publish" (a publisher created without it can only stage). npm matches the workflow that **starts** the run, so the automatic publish (called from `release.yml`) needs `release.yml`; running `deploy.yml` by hand (runbook below) needs `deploy.yml` registered as a second publisher. A publisher that publishes nothing for 2 days expires: register it on the day the first release is merged. After the first publish, set "Require two-factor authentication and disallow tokens" on the package.
+
+If `Publish to npm` fails with `E404`/`ENEEDAUTH`, the publisher is missing or its workflow name does not match: fix it on npmjs.com, then "Re-run failed jobs" on the run. Never delete the tag.
 
 ---
 

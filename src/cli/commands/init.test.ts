@@ -436,7 +436,7 @@ describe("initCommand", () => {
         expect(out()).not.toContain("import type");
       });
 
-      it("nuxt 4: scaffolds under app/assets/css and passes absolute paths", async () => {
+      it("nuxt 4: scaffolds under app/assets/css and passes the project root", async () => {
         setup(["nuxt.config.ts"], ["app"]);
         expect(await run({}, tmp)).toBe(0);
         expect(config()).toEqual({
@@ -444,20 +444,16 @@ describe("initCommand", () => {
           output: "app/assets/css/theme.css",
         });
         expect(out()).toContain(
-          'new URL("./app/assets/css/theme.json", import.meta.url)',
+          'styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) })',
         );
-        expect(out()).toContain(
-          'outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),',
-        );
-        expect(out()).toContain(
-          "options: {}, // style-gen.config.json is NOT read when paths are passed; put generate() options here",
-        );
-        expect(out()).toContain(
-          "that file then serves only the CLI (generate, doctor, tokens)",
-        );
+        expect(out()).not.toContain("themePath");
+        expect(out()).not.toContain("outDir");
         expect(out()).toContain('css: ["~/assets/css/main.css"],');
         expect(out()).toContain(
           '@import "tailwindcss";\n@import "./theme.css";',
+        );
+        expect(out()).toContain(
+          "Commit app/assets/css/theme.tokens.ts and add app/assets/css/theme.css to .gitignore",
         );
       });
 
@@ -470,34 +466,14 @@ describe("initCommand", () => {
         });
       });
 
-      it("nuxt: --theme moves both snippet paths", async () => {
-        setup(["nuxt.config.ts"], ["app"]);
-        expect(await run({ theme: "app/tokens/theme.json" }, tmp)).toBe(0);
-        expect(out()).toContain(
-          'new URL("./app/tokens/theme.json", import.meta.url)',
-        );
-        expect(out()).toContain('new URL("./app/tokens", import.meta.url)');
-      });
-
-      it("nuxt: warns and still exits 0 when the theme is outside app/", async () => {
+      it("nuxt: --theme outside app/ prints the same root-only snippet and no warning", async () => {
         setup(["nuxt.config.ts"], ["app"]);
         const warn = vi
           .spyOn(logger, "warn")
           .mockImplementation(() => undefined);
         expect(await run({ theme: "styles/theme.json" }, tmp)).toBe(0);
-        expect(warn).toHaveBeenCalledTimes(1);
-        expect(warn.mock.calls[0]?.[0]).toContain(
-          "styles/theme.css is outside app/",
-        );
-      });
-
-      it("nuxt: no warning for the default location under app/", async () => {
-        setup(["nuxt.config.ts"], ["app"]);
-        const warn = vi
-          .spyOn(logger, "warn")
-          .mockImplementation(() => undefined);
-        expect(await run({}, tmp)).toBe(0);
         expect(warn).not.toHaveBeenCalled();
+        expect(out()).toContain("styleGenVite({ root: fileURLToPath(");
       });
 
       it("stores and prints an absolute --theme inside the root as a relative POSIX path", async () => {
@@ -511,15 +487,9 @@ describe("initCommand", () => {
         expect(out()).not.toContain(tmp);
       });
 
-      it("escapes a quote and keeps a space in every printed string literal", async () => {
+      it("escapes a quote and keeps a space in the printed CSS import", async () => {
         setup(["nuxt.config.ts"], ["app"]);
         expect(await run({ theme: 'app/my "x" dir/theme.json' }, tmp)).toBe(0);
-        expect(out()).toContain(
-          'new URL("./app/my \\"x\\" dir/theme.json", import.meta.url)',
-        );
-        expect(out()).toContain(
-          'new URL("./app/my \\"x\\" dir", import.meta.url)',
-        );
         expect(out()).toContain('@import "../../my \\"x\\" dir/theme.css";');
       });
 

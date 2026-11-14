@@ -20,15 +20,9 @@
  * apps. Scope `folder`: `<uiDir>/<folder>/<file>`, compared only for folders
  * present in both apps; a folder that exists in some apps of the rule only is
  * a warning (printed, exit code unchanged), so adding a component to one app
- * is one folder. Scope `app`: `<src dir>/<file>` (`theme.ts`, `options.ts`,
- * `theme/theme.json`), where the src dir is the parent of `uiDir` (`src/`,
- * Nuxt `app/`); a missing file is an error.
- * Every app with `opacities: true` declares `coverage.colors.opacities` twice
- * (the CLI reads `style-gen.config.json`, TypeScript needs the literal in
- * `options.ts`, which imports no JSON so the bundler configs can import it
- * without restarting the dev server on a theme edit): the config file must
- * exist, be byte-identical to the first such app's, and list the same numbers
- * as the `opacities: [...]` literal of the app's `options.ts`.
+ * is one folder. Scope `app`: `<src dir>/<file>` (`theme.ts`,
+ * `theme/theme.tokens.ts`, `theme/theme.json`), where the src dir is the
+ * parent of `uiDir` (`src/`, Nuxt `app/`); a missing file is an error.
  *
  * Extension points: append to `APPS`, flip `stories`, append to
  * `IDENTICAL`. Node built-ins only; paths go through node:path.
@@ -47,7 +41,6 @@ import { repoRootFromArgs } from "./doc-markdown.mjs";
  * @property {string} uiDir - Repo-relative POSIX path holding the component folders
  * @property {".tsx" | ".vue"} component - Extension of the `<Name>` component file
  * @property {false | ".stories.tsx" | ".stories.ts"} stories - `false`, or the suffix of the `<Name><suffix>` story file each folder needs
- * @property {true} [opacities] - The app declares `coverage.colors.opacities` in `options.ts` and in `style-gen.config.json` (the parent of the src dir)
  */
 
 /**
@@ -70,19 +63,17 @@ export const APPS = [
     uiDir: "examples/plain-react/src/ui",
     component: ".tsx",
     stories: ".stories.tsx",
-    opacities: true,
   },
   {
     name: "plain-nuxt",
     uiDir: "examples/plain-nuxt/app/ui",
     component: ".vue",
     stories: ".stories.ts",
-    opacities: true,
   },
 ];
 
 /**
- * `style.ts`, `theme.ts`, `options.ts` and `theme/theme.json` are byte-identical in
+ * `style.ts`, `theme.ts`, `theme/theme.tokens.ts` and `theme/theme.json` are byte-identical in
  * both apps; the component, `types.ts` and the stories are framework-specific
  * (plain-nuxt writes Vue types and `.stories.ts`), so they are not compared.
  * @type {readonly IdenticalRule[]}
@@ -100,7 +91,7 @@ export const IDENTICAL = [
   },
   {
     scope: "app",
-    file: "options.ts",
+    file: "theme/theme.tokens.ts",
     apps: ["plain-react", "plain-nuxt"],
   },
   {
@@ -348,64 +339,6 @@ function checkIdentical(root, found, rule) {
   return { errors, warnings };
 }
 
-/** The `opacities: [10, 20]` literal `options.ts` types `tokens.opacities` with. */
-const OPACITY_LITERAL = /opacities:\s*\[([^\]]*)\]/;
-
-/**
- * Config and `options.ts` agreement of the apps that set `opacities`.
- * @param {string} root - Repository root
- * @param {readonly PlainApp[]} apps - Apps being checked
- * @param {string[]} errors - Collector
- */
-function checkOpacityConfig(root, apps, errors) {
-  const withOpacities = apps.filter((app) => app.opacities === true);
-  /**
-   * @param {PlainApp} app - App entry
-   * @returns {string} Repo-relative path of its `style-gen.config.json`
-   */
-  const configOf = (app) =>
-    `${posix.dirname(srcDir(app))}/style-gen.config.json`;
-  const [first] = withOpacities;
-  if (first === undefined) return;
-  for (const app of withOpacities) {
-    const configPath = configOf(app);
-    if (!existsSync(join(root, configPath))) {
-      errors.push(`${configPath}: missing`);
-      continue;
-    }
-    compare(root, configOf(first), configPath, errors);
-    const optionsPath = `${srcDir(app)}/options.ts`;
-    if (!existsSync(join(root, optionsPath))) continue;
-    const literal = OPACITY_LITERAL.exec(
-      readFileSync(join(root, optionsPath), "utf8"),
-    );
-    if (literal === null) {
-      errors.push(`${optionsPath}: no opacities literal`);
-      continue;
-    }
-    /** @type {{ coverage?: { colors?: { opacities?: number[] } } } | null} */
-    let config;
-    try {
-      config = JSON.parse(readFileSync(join(root, configPath), "utf8"));
-    } catch {
-      errors.push(`${configPath}: not valid JSON`);
-      continue;
-    }
-    const fromConfig = config?.coverage?.colors?.opacities;
-    const json = (fromConfig ?? []).join(", ");
-    const declared = (literal[1] ?? "")
-      .split(",")
-      .map((step) => step.trim())
-      .filter((step) => step !== "")
-      .join(", ");
-    if (declared !== json) {
-      errors.push(
-        `${optionsPath}: opacities [${declared}] differ from style-gen.config.json [${json}]`,
-      );
-    }
-  }
-}
-
 /**
  * Every contract violation under `root`; warnings never fail the check.
  * @param {string} root - Repository root
@@ -444,7 +377,6 @@ export function checkPlainUi(root, apps = APPS, identical = IDENTICAL) {
     errors.push(...result.errors);
     for (const warning of result.warnings) warnings.add(warning);
   }
-  checkOpacityConfig(root, apps, errors);
   return { errors, warnings: [...warnings] };
 }
 

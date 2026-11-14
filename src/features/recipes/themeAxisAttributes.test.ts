@@ -19,7 +19,7 @@ const theme = defineTheme({
 describe("themeAxisAttributes", () => {
   it("kebab-cases the axis into data-<axis> and the variant into its value", () => {
     expect(
-      themeAxisAttributes<typeof theme>({
+      themeAxisAttributes({
         theme: "dark",
         colorPalette: "forestGreen",
       }),
@@ -28,15 +28,15 @@ describe("themeAxisAttributes", () => {
 
   it("emits nothing for base and for omitted/undefined axes", () => {
     expect(
-      // `undefined` is rejected by the types (exactOptionalPropertyTypes) but a JS caller can pass it
-      themeAxisAttributes<typeof theme>({
+      // `undefined` marks an axis the caller leaves unset
+      themeAxisAttributes({
         theme: "base",
         colorPalette: undefined,
-      } as never),
+      }),
     ).toEqual({});
-    expect(themeAxisAttributes<typeof theme>({})).toEqual({});
+    expect(themeAxisAttributes({})).toEqual({});
     expect(
-      themeAxisAttributes<typeof theme>({
+      themeAxisAttributes({
         theme: "base",
         colorPalette: "deep2xl",
       }),
@@ -48,7 +48,7 @@ describe("themeAxisAttributes", () => {
     const selectors = (css: string) => css.match(/html\[[^\]]+\]/g) ?? [];
 
     const { css } = generate(theme);
-    const attrs = themeAxisAttributes<typeof theme>(state);
+    const attrs = themeAxisAttributes(state);
     expect(attrs).toEqual({
       "data-theme": "dark",
       "data-color-palette": "forest-green",

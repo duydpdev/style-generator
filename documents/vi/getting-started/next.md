@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/next.md sha256: 32f2d3cc3f47 -->
+<!-- source: documents/getting-started/next.md sha256: af17675114d0 -->
 
 # Bắt đầu: Next.js
 
@@ -9,27 +9,26 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào Next.js (webpack ho�
 Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Tự quản lý theme
 
-File theme JSON là `src/theme/theme.json` (không được hiển thị ở đây). `src/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `src/options.ts`. Module đó không import JSON, nên `next.config.ts` import nó mà không nạp lại config ở mỗi lần sửa theme:
+File theme JSON là `src/theme/theme.json` (không được hiển thị ở đây). `src/theme.ts` biến nó thành kiểu `theme` và helper `cn`, đồng thời re-export `tokens` có kiểu mà `style-gen generate` (và `styleGenNext` khi `next dev`/`next build`) ghi vào `src/theme/theme.tokens.ts`. Hãy chạy `yarn style-gen generate` một lần và commit file đó; `style-gen generate --check` thất bại trong CI khi nó lỗi thời:
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -37,14 +36,18 @@ export const cn = createCn(tokens);
 
 ## Sinh theme.css bằng hàm bọc của Next.js
 
-`styleGenNext` ghi `src/theme/theme.css` khi `next dev` hoặc `next build` nạp config; một theme nằm trong ứng dụng thì không cần `transpilePackages`.
+`styleGenNext()` không nhận tùy chọn generator nào: nó đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở root dự án, chính file mà `style-gen generate` đọc. Nó ghi `src/theme/theme.css` và `src/theme/theme.tokens.ts` khi `next dev` hoặc `next build` nạp config; một theme nằm trong ứng dụng thì không cần `transpilePackages`.
 
-<!-- snippet: no-check imports ./src/options, the tutorial's own options module, which is not a checker fixture -->
+```json
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css"
+}
+```
 
 ```ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
-import { options } from "./src/options";
 
 const nextConfig: NextConfig = {};
 
@@ -52,15 +55,8 @@ const nextConfig: NextConfig = {};
 // plugin does not apply. `styleGenNext` does not import `next`, so it works
 // under both bundlers. It writes `src/theme/theme.css` when Next loads this
 // config in `phase-development-server` (`next dev`, which also watches the
-// theme JSON) or `phase-production-build` (`next build`). `options` comes from
-// `src/options.ts`, which imports no JSON (a theme edit must not reload this
-// config) and types the tokens with the same object; the `generate` CLI reads
-// the same steps from `style-gen.config.json`.
-export default styleGenNext({
-  themePath: "src/theme/theme.json",
-  outDir: "src/theme",
-  options,
-})(nextConfig);
+// theme JSON and the config file) or `phase-production-build` (`next build`).
+export default styleGenNext()(nextConfig);
 ```
 
 ## Import CSS
@@ -314,11 +310,13 @@ import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
 
-import type { theme } from "./theme";
+import type { ThemeAxesState } from "./theme/theme.tokens";
 import { Button } from "./ui/button";
 
+const DARK_STATE: ThemeAxesState = { theme: "dark" };
+
 /** `{ "data-theme": "dark" }`; the light theme is the base theme (no attribute). */
-const DARK = themeAxisAttributes<typeof theme>({ theme: "dark" });
+const DARK = themeAxisAttributes(DARK_STATE);
 
 /** Light/dark toggle: sets or removes the `theme` axis attribute on `<html>`. */
 export function ThemeSwitch(): JSX.Element {

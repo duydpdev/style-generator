@@ -3,12 +3,10 @@ import type { SpacingProps } from "@duydpdev/style-generator/recipes";
 import type {
   BackdropBlurVariant,
   BorderWidthVariant,
-  BreakpointKeys,
   RoundedVariant,
   ShadowVariant,
 } from "@duydpdev/style-generator/types";
 
-import type { options } from "../style-gen.options";
 import { tokens, type ColorValue, type Theme } from "../tokens";
 
 import {
@@ -57,10 +55,12 @@ export type BoxVariants = VariantProps<typeof boxRecipe>;
 /**
  * The responsive spacing props of a `Box` (`p`, `px`, …, `gap`, `gapX`,
  * `gapY`): numbers or `{ base, md, lg }` objects. The breakpoint keys come
- * from `options.breakpoints`, so `{ xl: 4 }` is a type error.
+ * from the generated `tokens.breakpoints`, so `{ xl: 4 }` is a type error.
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-arguments -- today equal to the default (md | lg); stays tied to options.breakpoints when it changes
-export type BoxSpacingProps = SpacingProps<BreakpointKeys<typeof options>>;
+export type BoxSpacingProps = SpacingProps<
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-arguments -- today equal to the default (md | lg); stays tied to tokens.breakpoints when it changes
+  (typeof tokens)["breakpoints"][number]
+>;
 
 /** Token-typed style props a framework `Box` accepts besides spacing. */
 export interface BoxStyleProps {

@@ -4,7 +4,7 @@ The design-system harness: the live demo behind the site route `/examples/v4` (t
 
 ## Prerequisites
 
-The library is linked (`"@duydpdev/style-generator": "link:../.."`) and the design system is a workspace package (`"design-system-example": "workspace:*"`), so install and build from the repo root first. Node >= 22.18 is required (the Vite config imports a `.ts` module through Node's type stripping):
+The library is linked (`"@duydpdev/style-generator": "link:../.."`) and the design system is a workspace package (`"design-system-example": "workspace:*"`), so install and build from the repo root first:
 
 ```bash
 # From the repo root
@@ -19,7 +19,7 @@ cd examples/harness
 yarn dev          # Vite dev server on http://localhost:5173
 ```
 
-`styleGenVite` (in `vite.config.ts`) reads `../design-system/src/theme.json`, takes `options` from `design-system-example/style-gen.options`, and writes `src/theme/theme.css` on dev start, on build and whenever the theme changes. That file is generated and gitignored. `src/index.css` imports it, then the design system's `palettes.css` and `style-guide.css`, and adds `@source "../../design-system/src"` so Tailwind scans the recipes.
+`styleGenVite()` (in `vite.config.ts`, no arguments) reads `package.json#style-gen`: the theme `../design-system/src/theme.json`, the CSS output `src/theme/theme.css` and the generator options. It writes the CSS on dev start, on build and whenever the theme or the config changes. That file is generated and gitignored (so is `src/theme/theme.tokens.ts`, which the harness does not import: its tokens come from `design-system-example`). Keep `style-gen.coverage` equal to the design system's `style-gen.config.json` (a test pins it). `src/index.css` imports the CSS, then the design system's `palettes.css` and `style-guide.css`, and adds `@source "../../design-system/src"` so Tailwind scans the recipes.
 
 ## Scripts
 

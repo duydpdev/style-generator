@@ -5,10 +5,10 @@ import {
   altBoxRecipe,
   altButtonRecipe,
   altIntents,
+  altOptions,
   altTextRecipe,
   altTheme,
 } from "../src/alt";
-import { options } from "../src/style-gen.options";
 import { theme } from "../src/tokens";
 
 type Loose = Readonly<Record<string, unknown>>;
@@ -36,7 +36,7 @@ describe("a second theme through the same factories", () => {
   });
 
   it("generates CSS for the alt theme's own variables", () => {
-    const { css } = generate(altTheme, options);
+    const { css } = generate(altTheme, altOptions);
     expect(css).toContain("--sg-color-brand:");
     expect(css).toContain("--sg-color-on-brand: var(--sg-color-paper);");
     expect(css).toContain('html[data-mode="night"]');

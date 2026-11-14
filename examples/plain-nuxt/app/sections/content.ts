@@ -2,7 +2,7 @@ export const REPO_URL = "https://github.com/duydpdev/style-generator";
 export const DOCS_URL = `${REPO_URL}/tree/main/documents`;
 export const INSTALL_URL = `${REPO_URL}#install`;
 export const INSTALL_COMMAND =
-  "yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge";
+  "yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge";
 
 export interface Feature {
   readonly tag: string;

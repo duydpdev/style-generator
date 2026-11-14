@@ -109,6 +109,7 @@ That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-pr
 - [Getting started](https://github.com/duydpdev/style-generator/blob/main/documents/getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
 - [Guide](https://github.com/duydpdev/style-generator/blob/main/documents/guide.md) and [cookbook](https://github.com/duydpdev/style-generator/blob/main/documents/cookbook.md)
 - [Reference](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md): one page per subpath, plus `theme`, `options` and `cli`
+- [Changelog](https://github.com/duydpdev/style-generator/blob/main/CHANGELOG.md)
 - [Migration guides](https://github.com/duydpdev/style-generator/blob/main/documents/README.md#migration)
 
 ## Examples

@@ -2,7 +2,7 @@
 
 Working consumer apps that link `@duydpdev/style-generator` through a Yarn `link:../..` dependency (see `documents/deploy.md` for why it is `link:`) and exercise the public API end-to-end. In every example, `v4` means **Tailwind CSS v4**, not the library's version: each app wires the library through a generated `theme.css` that it `@import`s next to `@import "tailwindcss"`, with no `@plugin` and no safelist file.
 
-Upgrading an existing project? See [`../documents/migration/4.x-to-5.0.md`](../documents/migration/4.x-to-5.0.md) (current) and [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md) (the move to the Tailwind v4 `theme.css` flow).
+Upgrading an existing project? See [`../documents/migration/6.x-to-7.0.md`](../documents/migration/6.x-to-7.0.md), [`../documents/migration/4.x-to-5.0.md`](../documents/migration/4.x-to-5.0.md) and [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md) (the move to the Tailwind v4 `theme.css` flow).
 
 ## Layout
 

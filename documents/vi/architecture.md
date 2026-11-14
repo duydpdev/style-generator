@@ -1,8 +1,8 @@
-<!-- source: documents/architecture.md sha256: b49ad377098e -->
+<!-- source: documents/architecture.md sha256: fb1e6a1c02b2 -->
 
 # Kiến trúc
 
-Tài liệu này mô tả kiến trúc tổng thể của `@duydpdev/style-generator` 4.0.0 (chỉ hỗ trợ Tailwind CSS v4).
+Tài liệu này mô tả kiến trúc tổng thể của `@duydpdev/style-generator` 7.x (chỉ hỗ trợ Tailwind CSS v4).
 Mã nguồn là nguồn chân lý cho việc _hoạt động như thế nào_; tài liệu này chỉ giữ lại phần _vì sao_ và _ở đâu_.
 
 ## Mục lục

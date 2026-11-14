@@ -422,8 +422,6 @@ const root = () => {
    yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
    ```
 
-   See the README [Install](../README.md#install) section to configure the `@duydpdev` scope registry and your Personal Access Token; without the scope config npmjs serves an unrelated `3.0.0`.
-
 2. Wire `theme.css` for your bundler ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
 
 3. Copy `theme.ts`, `options.ts` and your theme JSON, once.

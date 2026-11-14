@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 8b692662bf9b -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 26d490f5d159 -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -6,7 +6,7 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Nu
 
 ## Cài đặt
 
-Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`. Xem [Cài đặt](../README.md#cài-đặt) để biết cách cấu hình registry cho scope `@duydpdev` và GitHub Personal Access Token.
+Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`.
 
 ```bash
 yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge

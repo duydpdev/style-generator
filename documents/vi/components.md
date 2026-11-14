@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 7b5fced1a068 -->
+<!-- source: documents/components.md sha256: 1409739d7149 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -423,8 +423,6 @@ const root = () => {
    ```bash
    yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
    ```
-
-   Xem mục [Cài đặt](./README.md#cài-đặt) trong README để cấu hình registry cho scope `@duydpdev` và Personal Access Token của bạn; nếu không có cấu hình scope này npmjs sẽ phân phối một bản `3.0.0` không liên quan.
 
 2. Nối dây `theme.css` cho bundler của bạn ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
 

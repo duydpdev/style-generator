@@ -1,10 +1,10 @@
-<!-- source: documents/reference/vite.md sha256: 1b789d5b763f -->
+<!-- source: documents/reference/vite.md sha256: 3790d9b5efbc -->
 
 # Vite và Nuxt (./vite)
 
 Plugin Vite tự động ghi file `theme.css` cho bạn; Nuxt sử dụng nó thông qua `vite.plugins`. Plugin này cần peer dependency tùy chọn `vite` và chạy trong môi trường Node.
 
-Tất cả các công cụ này đều ghi ra cùng một file `theme.css` (kết quả trả về của `generate()`); hãy chọn công cụ phù hợp với bundler của bạn. Trong mọi trường hợp, hãy `@import` file đó ngay cạnh `@import "tailwindcss"`.
+Plugin ghi ra cùng file `theme.css` với `generate()`; hãy `@import` file đó ngay cạnh `@import "tailwindcss"`.
 
 ## `styleGenVite`
 
@@ -59,7 +59,7 @@ Sinh `theme.css` khi một dev server khởi động và khi một lần build b
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./style-gen.options"; // one shared options module, see §7
+import { options } from "./style-gen.options"; // one shared options module
 
 export default defineConfig({
   plugins: [

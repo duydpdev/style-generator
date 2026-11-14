@@ -4,10 +4,10 @@ This tutorial wires `@duydpdev/style-generator` into a Vite + React app and buil
 
 ## Install
 
-Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`. See [Install](../../README.md#install) for configuring the `@duydpdev` scope registry and the GitHub Personal Access Token.
+Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`; the Vite setup below also imports `tailwindcss`, `@tailwindcss/vite` and `@vitejs/plugin-react`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
 ```
 
 ## Own the theme
@@ -60,6 +60,12 @@ export default defineConfig({
     tailwindcss(),
   ],
 });
+```
+
+<!-- embed: examples/plain-react/style-gen.config.json -->
+
+```json
+{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }
 ```
 
 ## Import the CSS

@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: d24f395dd396 -->
+<!-- source: README.md sha256: c5e419a5509d -->
 
 # @duydpdev/style-generator
 
@@ -111,6 +111,7 @@ Chỉ vậy là xong phần nối dây: không có `@plugin`, không có file sa
 - [Bắt đầu](./getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
 - [Hướng dẫn](./guide.md) và [cookbook](./cookbook.md)
 - [Tham chiếu](./reference/core.md): một trang cho mỗi subpath, cùng `theme`, `options` và `cli`
+- [Nhật ký thay đổi](https://github.com/duydpdev/style-generator/blob/main/CHANGELOG.md)
 - [Các hướng dẫn nâng cấp](https://github.com/duydpdev/style-generator/blob/main/documents/README.md#migration)
 
 ## Ví dụ

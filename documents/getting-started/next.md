@@ -4,7 +4,7 @@ This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopa
 
 ## Install
 
-Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`. See [Install](../../README.md#install) for configuring the `@duydpdev` scope registry and the GitHub Personal Access Token.
+Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`.
 
 ```bash
 yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge

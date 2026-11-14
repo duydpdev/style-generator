@@ -1,7 +1,7 @@
 # User Guide
 
-How to integrate `@duydpdev/style-generator` 5.0 into a **Tailwind CSS v4** project. The full reference (options, exports, CLI) is in [`reference/`](./reference/core.md);
-if you are upgrading from 4.x read [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md), and from 3.x read [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
+How to integrate `@duydpdev/style-generator` into a **Tailwind CSS v4** project. The full reference (options, exports, CLI) is in [`reference/`](./reference/core.md);
+if you are upgrading from an older major, start with [Upgrading from older versions](#upgrading-from-older-versions).
 
 ## Table of contents
 
@@ -262,7 +262,7 @@ Do not run the CLI through `npx`: the name `style-gen` is not held by anyone on 
 
 `style-gen --help` lists the commands, and `style-gen <command> --help` prints that command's own flags.
 Flags are parsed **strictly**: an unknown flag (`--them`) is an error rather than being ignored. Exit codes: `0` success / `--help` / `--version` / prompt cancelled,
-`1` error (`budget` uses `2` for syntax errors, see below).
+`1` error (`budget` uses `2` for a usage error, see below).
 
 `generate` flags: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Configuration is resolved per key in this order:
 flags → config file → defaults (`styles/theme.json` → `styles/theme.css`). The config file is one of two sources, chosen _either/or_: `style-gen.config.json` if it exists,
@@ -282,7 +282,7 @@ plus `breakpoints`, `screens`, `spacingProperties`), so client bundles do not ha
 By default it is written next to the theme and must be inside the project (a theme outside the project needs `--out`); re-run it when the theme's keys change.
 
 `budget <file.css|dir> --max-gzip <bytes>` sums the gzip size of every `.css` file (recursively if given a directory) and prints `OK: …` or `OVER BUDGET: …`.
-Exit code `0` within budget, `1` over budget, `2` for a syntax error / unreadable input / no CSS. This command replaces the `check-css-budget.mjs` script that consumers used to
+Exit code `0` within budget, `1` over budget, `2` for a usage error, an unreadable target or no CSS found. This command replaces the `check-css-budget.mjs` script that consumers used to
 copy.
 
 `init` prints the wiring for the stack it detects (`nuxt.config.*`, `next.config.*`, `vite.config.*`):
@@ -809,6 +809,8 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 
 ## Upgrading from older versions
 
+- **6.x → 7.0.0**: [`migration/6.x-to-7.0.md`](./migration/6.x-to-7.0.md).
+- **5.x → 6.0.0**: [`migration/5.x-to-6.0.md`](./migration/5.x-to-6.0.md).
 - **4.x → 5.0.0** (breaking: `--sg-color-*`, `borderWidth` through `@theme`, `spacing.properties` as an array, renamed `DesignTokens.Web` keys, stricter typography, Node runner:
   emit in `buildStart`, no-argument plugin, `resolveProjectPath`, CLI exit codes + strict flags, `tokens`/`budget` commands, `resetTailwindDefaults`, reserved `base` variant,
   `.d.cts` declarations): [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).

@@ -5,7 +5,8 @@ import { z } from "zod";
 import type { StyleGeneratorOptions } from "../core/Options";
 import { formatZodError } from "../core/themeSchema";
 
-import { loadStyleGenConfig, toGeneratorOptions } from "./loadStyleGenConfig";
+import { loadStyleGenConfig } from "./loadStyleGenConfig";
+import { resolveEmitTarget, TOKENS_FILE_NAME } from "./resolveEmitTarget";
 import { resolveProjectPath } from "./resolveProjectPath";
 import type { EmitTarget } from "./themeEmitter";
 
@@ -28,18 +29,19 @@ const PluginTargetOptionsSchema = z.strictObject({
 
 /**
  * Resolve where a bundler integration reads the theme from and writes the CSS
- * to. With `opts` the paths come from it (`theme.css` inside `outDir`); with
+ * and `theme.tokens.ts` to. With `opts` the paths come from it (both files
+ * inside `outDir`); with
  * none they come from `style-gen.config.json` (else `package.json#style-gen`)
  * in `root`, the file the CLI reads, together with every `generate()` option
  * in it. A config that is malformed or violates the schema throws instead of
  * silently falling back to the defaults.
  *
  * Path rules (`resolveProjectPath`): the theme may live anywhere (a monorepo
- * shares one); the generated CSS must stay inside `root`.
+ * shares one); the generated files must stay inside `root`.
  * @param {string} root - Project root (Vite's `config.root`, Next's `process.cwd()`)
  * @param {PluginTargetOptions | undefined} opts - Integration options, if any
  * @param {string} label - Integration name for messages (`"style-gen-vite"`)
- * @returns {EmitTarget} Absolute theme and output files plus the options
+ * @returns {EmitTarget} Absolute theme, output and tokens files plus the options
  * @throws {Error} For unknown or mistyped keys in `opts`, an invalid config file or an output path that escapes `root`
  */
 export function resolvePluginTarget(
@@ -74,6 +76,7 @@ export function resolvePluginTarget(
         { allowOutsideRoot: true },
       ),
       outFile: resolve(outDir, "theme.css"),
+      tokensFile: resolve(outDir, TOKENS_FILE_NAME),
       options: opts.options ?? {},
     };
   }
@@ -85,20 +88,5 @@ export function resolvePluginTarget(
       `[${label}] Invalid config (${loaded.source ?? "style-gen.config.json"}):\n${problem}`,
     );
   }
-  return {
-    themeFile: resolveProjectPath(
-      root,
-      loaded.config.theme,
-      `[${label}] theme`,
-      {
-        allowOutsideRoot: true,
-      },
-    ),
-    outFile: resolveProjectPath(
-      root,
-      loaded.config.output,
-      `[${label}] output`,
-    ),
-    options: toGeneratorOptions(loaded.config),
-  };
+  return resolveEmitTarget(root, loaded.config, `[${label}] `);
 }

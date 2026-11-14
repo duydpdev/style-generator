@@ -114,22 +114,26 @@ Options:
 
 const generateCli: CliCommand = {
   name: "generate",
-  description: "Generate theme.css",
+  description: "Generate theme.css and theme.tokens.ts",
   usage: `Usage: style-gen generate [options] [theme] [out]
 
-Read the theme, validate it and write the Tailwind v4 CSS. With --watch the
-file is regenerated when the theme or style-gen.config.json changes.
+Read the theme, validate it and write the Tailwind v4 CSS and the typed
+theme.tokens.ts beside it. With --watch the files are regenerated when the
+theme or style-gen.config.json changes. With --check nothing is written and
+the exit code is 1 when theme.tokens.ts is missing or out of date.
 
 Options:
   --theme <path>    Theme JSON (default: styles/theme.json); a path outside the project is allowed
   --out <path>      CSS file to write (default: styles/theme.css); must stay inside the project
   -w, --watch       Watch the theme and the config file for changes
+  --check           Write nothing; exit 1 when theme.tokens.ts is missing or differs from the theme and config (not with --watch)
 
 The positional form \`generate <theme> <out>\` still works; flags win over it.`,
   options: {
     theme: { type: "string" },
     out: { type: "string" },
     watch: { type: "boolean", short: "w" },
+    check: { type: "boolean" },
   },
   allowPositionals: true,
   run: (values, positionals, ctx) => {
@@ -153,11 +157,13 @@ The positional form \`generate <theme> <out>\` still works; flags win over it.`,
     const theme = str(values, "theme") ?? themeFromPositional;
     const out = str(values, "out") ?? outFromPositional;
     const watch = flag(values, "watch");
+    const check = flag(values, "check");
     return generateCommand(
       {
         ...(theme !== undefined && { theme }),
         ...(out !== undefined && { out }),
         ...(watch !== undefined && { watch }),
+        ...(check !== undefined && { check }),
       },
       ctx.cwd,
     );
@@ -199,12 +205,14 @@ const tokensCli: CliCommand = {
   description: "Generate a keys-only theme.tokens.ts for client bundles",
   usage: `Usage: style-gen tokens [options]
 
-Write the theme's design-token keys (DesignTokens.Web) as \`export const tokens = {…} as const\`,
+Write the theme's design-token keys (DesignTokens.Web) and its themeAxes as
+\`export const tokens = {…} as const\` (plus Tokens, themeAxes and ThemeAxesState),
 so a client bundle can import them without the ./tokens runtime and the theme JSON.
+\`generate\` writes the same file next to the CSS; use this command to write it alone.
 
 Options:
   --theme <path>    Theme JSON (default: from style-gen.config.json, else styles/theme.json)
-  --out <path>      File to write: .ts, .mts or .cts, not a .d.ts (default: theme.tokens.ts next to the theme); must stay inside the project`,
+  --out <path>      File to write: .ts, .mts or .cts, not a .d.ts (default: tokensOutput from the config, else theme.tokens.ts beside the CSS output); must stay inside the project`,
   options: { theme: { type: "string" }, out: { type: "string" } },
   allowPositionals: false,
   run: (values, _positionals, ctx) => {

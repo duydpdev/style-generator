@@ -76,6 +76,12 @@ describe("generateCommand", () => {
       expect(successSpy).toHaveBeenCalledWith(
         `CSS written to ${path.join("styles", "theme.css")}`,
       );
+      expect(successSpy).toHaveBeenCalledWith(
+        `Tokens written to ${path.join("styles", "theme.tokens.ts")}`,
+      );
+      expect(read("styles/theme.tokens.ts")).toContain(
+        "export const tokens = {",
+      );
     });
 
     it("says the CSS is up to date, and leaves the file alone, on an identical second run", async () => {
@@ -89,6 +95,9 @@ describe("generateCommand", () => {
 
       expect(successSpy).toHaveBeenCalledWith(
         `CSS is up to date: ${path.join("styles", "theme.css")}`,
+      );
+      expect(successSpy).toHaveBeenCalledWith(
+        `Tokens up to date: ${path.join("styles", "theme.tokens.ts")}`,
       );
       expect(fs.statSync(file("styles/theme.css")).mtimeMs).toBe(before);
     });
@@ -141,12 +150,16 @@ describe("generateCommand", () => {
       expect(writeSpy.mock.calls.some(([target]) => isOutPath(target))).toBe(
         false,
       );
-      expect(renameSpy).toHaveBeenCalledTimes(1);
+      // The CSS first, then the tokens module: two atomic writes.
+      expect(renameSpy).toHaveBeenCalledTimes(2);
       const [from, to] = renameSpy.mock.calls[0] ?? [];
       expect(isOutPath(to)).toBe(true);
       expect(path.dirname(String(from))).toBe(path.dirname(String(to)));
       expect(path.basename(String(from))).toMatch(/\.tmp$/);
       expect(fs.existsSync(String(from))).toBe(false);
+      const [tokensFrom, tokensTo] = renameSpy.mock.calls[1] ?? [];
+      expect(path.basename(String(tokensTo))).toBe("theme.tokens.ts");
+      expect(path.basename(String(tokensFrom))).toMatch(/\.tmp$/);
       expect(read("styles/theme.css")).toMatch(/--sg-color-primary/);
     });
 
@@ -164,6 +177,113 @@ describe("generateCommand", () => {
       expect(code).toBe(1);
       expect(fs.readdirSync(file("styles"))).toEqual(["theme.json"]);
       expect(errorSpy.mock.calls[0]?.[0]).toMatch(/EXDEV/);
+    });
+
+    it("honours tokensOutput from style-gen.config.json", async () => {
+      write("styles/theme.json", sampleTheme);
+      write("style-gen.config.json", { tokensOutput: "src/gen/t.ts" });
+
+      expect(await generateCommand({}, tmp)).toBe(0);
+
+      expect(exists("src/gen/t.ts")).toBe(true);
+      expect(exists("styles/theme.tokens.ts")).toBe(false);
+    });
+
+    it("returns 1 when tokensOutput escapes the project root", async () => {
+      write("styles/theme.json", sampleTheme);
+      write("style-gen.config.json", { tokensOutput: "../t.ts" });
+
+      expect(await generateCommand({}, tmp)).toBe(1);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "tokensOutput escapes project root: ../t.ts",
+      );
+      expect(exists("styles/theme.css")).toBe(false);
+    });
+
+    describe("--check", () => {
+      const args = { theme: "styles/theme.json", out: "styles/theme.css" };
+
+      it("returns 0 and writes nothing when the tokens file is current", async () => {
+        write("styles/theme.json", sampleTheme);
+        await generateCommand(args, tmp);
+        fs.rmSync(file("styles/theme.css"));
+        const before = fs.statSync(file("styles/theme.tokens.ts")).mtimeMs;
+        successSpy.mockClear();
+
+        expect(await generateCommand({ ...args, check: true }, tmp)).toBe(0);
+
+        expect(successSpy).toHaveBeenCalledWith(
+          `Tokens up to date: ${path.join("styles", "theme.tokens.ts")}`,
+        );
+        expect(exists("styles/theme.css")).toBe(false);
+        expect(fs.statSync(file("styles/theme.tokens.ts")).mtimeMs).toBe(
+          before,
+        );
+      });
+
+      it("returns 1 and leaves the file untouched after a key was added to the theme", async () => {
+        write("styles/theme.json", sampleTheme);
+        await generateCommand(args, tmp);
+        fs.rmSync(file("styles/theme.css"));
+        const bytes = read("styles/theme.tokens.ts");
+        write("styles/theme.json", {
+          ...sampleTheme,
+          colors: { ...sampleTheme.colors, accent: "#0bf" },
+        });
+
+        expect(await generateCommand({ ...args, check: true }, tmp)).toBe(1);
+
+        expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+          /theme\.tokens\.ts is out of date\. Run: style-gen generate$/,
+        );
+        expect(read("styles/theme.tokens.ts")).toBe(bytes);
+        expect(exists("styles/theme.css")).toBe(false);
+      });
+
+      it("returns 0 after a value-only edit: the tokens file holds keys, not values", async () => {
+        write("styles/theme.json", sampleTheme);
+        await generateCommand(args, tmp);
+        write("styles/theme.json", {
+          ...sampleTheme,
+          colors: { primary: "#000000", background: "#FFFFFF" },
+        });
+
+        expect(await generateCommand({ ...args, check: true }, tmp)).toBe(0);
+      });
+
+      it("returns 1 when the tokens file is missing", async () => {
+        write("styles/theme.json", sampleTheme);
+
+        expect(await generateCommand({ ...args, check: true }, tmp)).toBe(1);
+
+        expect(errorSpy.mock.calls[0]?.[0]).toMatch(
+          /theme\.tokens\.ts does not exist\. Run: style-gen generate$/,
+        );
+        expect(exists("styles/theme.tokens.ts")).toBe(false);
+        expect(exists("styles/theme.css")).toBe(false);
+      });
+
+      it("returns 1 when combined with --watch", async () => {
+        write("styles/theme.json", sampleTheme);
+
+        expect(
+          await generateCommand({ ...args, check: true, watch: true }, tmp),
+        ).toBe(1);
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          "--check and --watch cannot be combined",
+        );
+        expect(exists("styles/theme.css")).toBe(false);
+      });
+
+      it("returns 1 for an invalid theme", async () => {
+        write("styles/theme.json", { colors: { primary_x: "#fff" } });
+
+        expect(await generateCommand({ ...args, check: true }, tmp)).toBe(1);
+
+        expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid theme /);
+      });
     });
 
     it("threads resetTailwindDefaults from style-gen.config.json into generate()", async () => {

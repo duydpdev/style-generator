@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: fb1e6a1c02b2 -->
+<!-- source: documents/architecture.md sha256: a2f8533855a0 -->
 
 # Kiến trúc
 
@@ -170,7 +170,7 @@ export default defineConfig({
   dùng chung với Next)
 
 **Vòng đời:** `configResolved` chỉ phân giải đường dẫn/config (nó cần `config.root`) và đăng ký `outFile` để cảnh báo khi có đích trùng lặp (đăng ký này được giải phóng khi dev
-server đóng — `server.close` được bọc lại; `closeBundle`/`buildEnd` không được dùng); `buildStart` emit `theme.css` qua `emitThemeCss` (Vite chạy `buildStart` khi `listen()`,
+server đóng — `server.close` được bọc lại; `closeBundle`/`buildEnd` không được dùng); `buildStart` emit `theme.css` và `theme.tokens.ts` qua `emitTheme` (Vite chạy `buildStart` khi `listen()`,
 ở middleware mode và cho các môi trường SSR; plugin đặt `perEnvironmentStartEndDuringDev: true`, nên từ Vite 6 `buildStart` cũng chạy khi dùng `createServer()` mà không
 `listen()` + `ssrLoadModule`) và gọi `this.addWatchFile(theme)` để `vite build --watch` build lại; `configureServer` thêm theme vào `server.watcher`,
 debounce việc emit lại và chỉ kích hoạt `full-reload` khi CSS thực sự thay đổi. `closeBundle` đã bị bỏ.
@@ -222,7 +222,7 @@ nên mọi lệnh đều có thể được kiểm thử trực tiếp mà khôn
 `loadStyleGenConfig`/`readConfigFile` (`src/node/loadStyleGenConfig.ts`, dùng chung với Vite/Next) kiểm tra hợp lệ file config bằng `StyleGenConfigSchema` (Shape và các refinement
 của nó dùng chung với `generate()` từ `src/core/optionsSchema.ts`), trả về `issues` khi schema bị vi phạm (không gộp gì cả) và `error` khi file là JSON hỏng (`generate` cảnh báo
 rồi dùng giá trị mặc định, `doctor` báo lỗi); các lỗi config khiến `generate` và `doctor` dừng với mã thoát 1 (`src/cli/loadCliConfig.ts` gói việc đọc và in lỗi).
-`generate` gọi `emitThemeCss` (`writeFileAtomic`, chỉ ghi khi nội dung thay đổi); một theme/tùy chọn không hợp lệ hoặc một lỗi ghi file trả về mã thoát 1.
+`generate` gọi `emitTheme` (`writeFileAtomic`, ghi `theme.css` và `theme.tokens.ts` chỉ khi nội dung thay đổi); một theme/tùy chọn không hợp lệ hoặc một lỗi ghi file trả về mã thoát 1. `generate --check` gọi `checkTokensModule` thay thế, không ghi gì và trả về mã 1 khi file tokens thiếu hoặc khác. `style-gen tokens` ghi cùng module đó qua `emitTokensModule`.
 `generate --watch` dùng `watchThemeFile` để theo dõi theme **và** file config: mỗi lần config thay đổi nó gọi `reloadTarget` để đọc lại,
 và một config không hợp lệ chỉ bị báo (giai đoạn `config`) trong khi **config hợp lệ gần nhất vẫn được dùng**; các lỗi theme/ghi file sau khi bắt đầu theo dõi chỉ được ghi log.
 `--version` đọc `package.json` qua `import.meta.url` (`src/cli/version.ts`), vì `__dirname` không tồn tại trong một bundle ESM.

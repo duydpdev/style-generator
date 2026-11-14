@@ -122,6 +122,30 @@ describe("loadStyleGenConfig", () => {
       /^resetTailwindDefaults\.0 → /m,
     );
   });
+
+  it("accepts tokensOutput, keeps it in the config and does not forward it to generate()", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ tokensOutput: "gen/t.ts", breakpoints: ["sm"] }),
+    );
+
+    const loaded = loadStyleGenConfig(tmp);
+
+    expect(loaded.issues).toBeUndefined();
+    expect(loaded.config.tokensOutput).toBe("gen/t.ts");
+    expect(toGeneratorOptions(loaded.config)).toEqual({ breakpoints: ["sm"] });
+    expect(toGeneratorOptions(loaded.config)).not.toHaveProperty(
+      "tokensOutput",
+    );
+  });
+
+  it("rejects an empty tokensOutput", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ tokensOutput: "" }),
+    );
+    expect(loadStyleGenConfig(tmp).issues).toMatch(/^tokensOutput → /m);
+  });
 });
 
 describe("resolveConfig", () => {

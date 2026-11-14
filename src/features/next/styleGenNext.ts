@@ -1,6 +1,6 @@
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { resolvePluginTarget } from "../../node/resolvePluginTarget";
-import { emitThemeCss, type EmitTarget } from "../../node/themeEmitter";
+import { emitTheme, type EmitTarget } from "../../node/themeEmitter";
 import {
   watchThemeFile,
   type ThemeWatchHandle,
@@ -85,6 +85,7 @@ const startDevWatcher = (target: EmitTarget): void => {
   const key = JSON.stringify([
     target.themeFile,
     target.outFile,
+    target.tokensFile,
     target.options,
   ]);
   if (devWatcher && devWatcherKey === key) return;
@@ -169,7 +170,7 @@ export const styleGenNext =
 
     const target = resolvePluginTarget(process.cwd(), opts, PLUGIN_NAME);
 
-    const result = emitThemeCss(target);
+    const result = emitTheme(target);
     if (!result.ok) {
       throw new Error(`[${PLUGIN_NAME}] ${result.message}`, {
         cause: result.cause,

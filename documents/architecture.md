@@ -167,7 +167,7 @@ export default defineConfig({
   shared with Next)
 
 **Lifecycle:** `configResolved` only resolves paths/config (it needs `config.root`) and registers `outFile` to warn about duplicate targets (this registration is released when the
-dev server closes — `server.close` is wrapped; `closeBundle`/`buildEnd` are not used); `buildStart` emits `theme.css` through `emitThemeCss` (Vite runs `buildStart` on `listen()`,
+dev server closes — `server.close` is wrapped; `closeBundle`/`buildEnd` are not used); `buildStart` emits `theme.css` and `theme.tokens.ts` through `emitTheme` (Vite runs `buildStart` on `listen()`,
 in middleware mode and for SSR environments; the plugin sets `perEnvironmentStartEndDuringDev: true`,
 so since Vite 6 `buildStart` also runs with `createServer()` without `listen()` + `ssrLoadModule`) and calls `this.addWatchFile(theme)` so `vite build --watch` rebuilds;
 `configureServer` adds the theme to `server.watcher`, debounces re-emission and triggers `full-reload` only when the CSS actually changed. `closeBundle` is gone.
@@ -218,7 +218,7 @@ Config resolution order: flags → `style-gen.config.json` → `package.json["st
 shared with Vite/Next) validate the config file with `StyleGenConfigSchema` (its Shape and refinements are shared with `generate()` from `src/core/optionsSchema.ts`),
 return `issues` when the schema is violated (nothing is merged) and `error` when the file is broken JSON (`generate` warns and then uses defaults, `doctor` reports an error);
 config issues make `generate` and `doctor` stop with exit code 1 (`src/cli/loadCliConfig.ts` bundles reading and error printing).
-`generate` calls `emitThemeCss` (`writeFileAtomic`, writes only when the content changed); an invalid theme/option or a file write error returns exit code 1.
+`generate` calls `emitTheme` (`writeFileAtomic`, writes `theme.css` and `theme.tokens.ts` only when their content changed); an invalid theme/option or a file write error returns exit code 1. `generate --check` calls `checkTokensModule` instead, writes nothing and returns 1 when the tokens file is missing or differs. `style-gen tokens` writes the same module through `emitTokensModule`.
 `generate --watch` uses `watchThemeFile` to watch the theme **and** the config file: every time the config changes it calls `reloadTarget` to re-read it,
 and an invalid config is only reported (stage `config`) while **the last valid config stays in use**; theme/write errors after watching has started are only logged.
 `--version` reads `package.json` via `import.meta.url` (`src/cli/version.ts`), because `__dirname` does not exist in an ESM bundle.

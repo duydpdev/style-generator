@@ -123,22 +123,25 @@ Create `app/assets/css/main.css` (`init` does not create it; `css` in `nuxt.conf
 
 ### `style-gen generate`
 
-Validate the theme and write the complete CSS (`@theme`, `:root` variables, axis overrides, `@theme inline`, `@utility` blocks, `@source inline`).
+Validate the theme and write the complete CSS (`@theme`, `:root` variables, axis overrides, `@theme inline`, `@utility` blocks, `@source inline`) and the typed `theme.tokens.ts` module next to it. The tokens file is written next to `theme.css`; commit it, keep `theme.css` ignored.
 
 ```bash
 yarn style-gen generate
 yarn style-gen generate --theme ./theme.json --out ./theme.css --watch
 ```
 
-| Flag            | Type      | Default             | Description                          |
-| :-------------- | :-------- | :------------------ | :----------------------------------- |
-| `--theme`       | `string`  | `styles/theme.json` | Path to the theme JSON file          |
-| `--out`         | `string`  | `styles/theme.css`  | Path to the output CSS file          |
-| `-w`, `--watch` | `boolean` | `false`             | Watch mode — auto-regenerate on save |
+| Flag            | Type      | Default             | Description                                                                                  |
+| :-------------- | :-------- | :------------------ | :------------------------------------------------------------------------------------------- |
+| `--theme`       | `string`  | `styles/theme.json` | Path to the theme JSON file                                                                  |
+| `--out`         | `string`  | `styles/theme.css`  | Path to the output CSS file                                                                  |
+| `-w`, `--watch` | `boolean` | `false`             | Watch mode — auto-regenerate on save                                                         |
+| `--check`       | `boolean` | `false`             | Write nothing; exit 1 when `theme.tokens.ts` is missing or differs from the theme and config |
 
 Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically and **only when its content changed** (a re-run on an unchanged theme does not touch the file, so file watchers stay quiet). `--theme` may point outside the project (a shared design-system package); `--out` and the config `output` must stay inside it (`output escapes project root: <path>`). An invalid theme (`Invalid theme (<path>):`), invalid options (`Invalid options:`) or theme × options pair (`Invalid theme/options:`), an invalid config file (`Invalid config (<file>):` followed by one `path → message` line per issue, for example `breakpoint` for a typo or `extraSources` for a key removed in 7.0) or a write error leaves the output untouched and exits with code 1. A malformed (not JSON) config file is warned about and the defaults are used.
 
 `--watch` re-runs on every change of the theme **and of the config file** (`style-gen.config.json`, or the `package.json` it came from). The config is re-read on each change, so a new `output`, `breakpoints`, `resetTailwindDefaults` … apply without a restart; an invalid config edit is reported and the **last valid config stays in effect** until the file is fixed. A theme that cannot be read at startup (missing file, a directory) or an invalid config at startup exits with code 1 before any watcher starts; once watching, a theme or write error is logged and watching continues.
+
+`--check` writes nothing and exits 1 when the tokens file is missing or differs from what the theme and config would generate (`<path> does not exist. Run: style-gen generate` / `<path> is out of date. Run: style-gen generate`); it exits 0 otherwise, even when `theme.css` does not exist, and it cannot be combined with `--watch` (exit code 1). The tokens file holds keys, not values: editing only a colour value leaves it current. Run it in CI to catch a theme edit that was committed without regenerating `theme.tokens.ts`.
 
 ### `style-gen schema`
 
@@ -164,7 +167,7 @@ yarn style-gen doctor
 Write the theme's design-token **keys** (`DesignTokens.Web`: one array of camelCased keys per category, plus `opacities` (the `coverage.colors.opacities` steps, ascending; `[]` without the option), `breakpoints`, `screens` and `spacingProperties`) as a TypeScript module, so a client bundle can import the key lists without shipping the `./tokens` runtime or the theme JSON (about 2.4 kB gzip together, versus roughly 0.6 kB for the generated keys).
 
 ```bash
-yarn style-gen tokens                                  # → styles/theme.tokens.ts (next to the theme)
+yarn style-gen tokens                                  # → styles/theme.tokens.ts (beside the configured output)
 yarn style-gen tokens --theme styles/theme.json --out src/theme.tokens.ts
 ```
 
@@ -175,7 +178,7 @@ import { tokens } from "./theme.tokens";
 type ColorKey = (typeof tokens.colors)[number];
 ```
 
-The module is `export const tokens = {…} as const` plus `export type Tokens = typeof tokens`; it is built by the same code as `createDesignTokens()`, with the config's `breakpoints`/`screens`/`spacing`, so the two cannot drift. The theme and options are validated as in `generate`; the default output is next to the theme and must stay inside the project, so a theme outside it needs `--out`. Re-run it (or put it next to `generate` in your script) when the theme's keys change.
+The module is `export const tokens = {…} as const` plus `export type Tokens = typeof tokens`, and `export const themeAxes = {…} as const` (each axis with its variant names, the raw keys of the theme) plus `export type ThemeAxesState`; it is built by the same code as `createDesignTokens()`, with the config's `breakpoints`/`screens`/`spacing`, so the two cannot drift. The theme and options are validated as in `generate`; the default output is the config's `tokensOutput`, else `theme.tokens.ts` beside `output`, and must stay inside the project. `generate` and the bundler plugins write the same file together with the CSS; run `tokens` to write it alone or with `--out`.
 
 ### `style-gen budget`
 
@@ -208,7 +211,8 @@ Print the installed CLI version.
 
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` and `resetTailwindDefaults` are forwarded to `generate()`.
 Any other key — a typo such as `breakpoint`, a legacy 3.x key such as `responsiveModules`, or a key removed in 7.0 (`extraSources`, `axes`; see the [migration guide](../migration/6.x-to-7.0.md)) — is rejected;
-only `$schema`, `theme` and `output` are accepted besides the forwarded keys.
+only `$schema`, `theme`, `output` and `tokensOutput` are accepted besides the forwarded keys.
+`tokensOutput` is the path of the generated tokens module, relative to the project root and inside it (default: `theme.tokens.ts` beside `output`); it must name a `.ts`, `.mts` or `.cts` file, not a `.d.ts`.
 `plugin`, which `init` wrote before 5.2.0 to name the generator script it scaffolded, has been rejected since 6.0.0 (delete it, or run `style-gen init`, which drops it);
 `extraSources` and `axes` have been rejected since 7.0.0, and `style-gen init` drops them too (it prints each `extraSources` entry as an `@source inline("<entry>");` line to paste into the app's CSS).
 `styleGenVite()` and `styleGenNext()` called **without an argument** read this same file (see [Vite](./vite.md) / [Next](./next.md)). The CLI resolves configuration in this order, per key:

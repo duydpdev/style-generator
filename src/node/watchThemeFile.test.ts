@@ -47,6 +47,7 @@ describe("watchThemeFile", () => {
   let dir: string;
   let themeFile: string;
   let outFile: string;
+  let tokensFile: string;
   let configFile: string;
   let fake: FakeWatcher | undefined;
   let results: EmitResult[];
@@ -57,7 +58,7 @@ describe("watchThemeFile", () => {
     o: WatchThemeOptions = {},
   ): FakeWatcher => {
     handle = watchThemeFile(
-      { themeFile, outFile, ...target },
+      { themeFile, outFile, tokensFile, ...target },
       (r) => results.push(r),
       {
         debounceMs: 50,
@@ -72,11 +73,26 @@ describe("watchThemeFile", () => {
     return fake;
   };
 
+  // What an emit reports when both files were written (`true`) or both left alone.
+  const ok = (
+    changed: boolean,
+    out: string = outFile,
+    tokens: string = tokensFile,
+  ): EmitResult => ({
+    ok: true,
+    outFile: out,
+    tokensFile: tokens,
+    changed,
+    cssChanged: changed,
+    tokensChanged: changed,
+  });
+
   beforeEach(() => {
     vi.useFakeTimers();
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-watch-"));
     themeFile = path.join(dir, "theme.json");
     outFile = path.join(dir, "theme.css");
+    tokensFile = path.join(dir, "theme.tokens.ts");
     configFile = path.join(dir, "style-gen.config.json");
     fs.writeFileSync(themeFile, theme("#111"));
     results = [];
@@ -117,7 +133,8 @@ describe("watchThemeFile", () => {
     expect(results).toEqual([]);
     vi.advanceTimersByTime(1);
 
-    expect(results).toEqual([{ ok: true, outFile, changed: true }]);
+    expect(results).toEqual([ok(true)]);
+    expect(fs.existsSync(tokensFile)).toBe(true);
     expect(fs.readFileSync(outFile, "utf8")).toContain("#222");
   });
 
@@ -128,10 +145,7 @@ describe("watchThemeFile", () => {
     w.emit("add", themeFile);
     vi.advanceTimersByTime(50);
 
-    expect(results).toEqual([
-      { ok: true, outFile, changed: true },
-      { ok: true, outFile, changed: false },
-    ]);
+    expect(results).toEqual([ok(true), ok(false)]);
   });
 
   it("reports an invalid theme and keeps watching; the next good edit recovers", () => {
@@ -147,7 +161,7 @@ describe("watchThemeFile", () => {
     w.emit("change", themeFile);
     vi.advanceTimersByTime(50);
 
-    expect(results[1]).toEqual({ ok: true, outFile, changed: true });
+    expect(results[1]).toEqual(ok(true));
   });
 
   it("forwards watcher errors as stage `watch` and keeps running", () => {
@@ -173,6 +187,7 @@ describe("watchThemeFile", () => {
         (): EmitTarget => ({
           themeFile,
           outFile,
+          tokensFile,
           options: { resetTailwindDefaults: ["colors"] },
         }),
       );
@@ -182,7 +197,7 @@ describe("watchThemeFile", () => {
       vi.advanceTimersByTime(50);
 
       expect(reloadTarget).toHaveBeenCalledTimes(1);
-      expect(results).toEqual([{ ok: true, outFile, changed: true }]);
+      expect(results).toEqual([ok(true)]);
       expect(fs.readFileSync(outFile, "utf8")).toContain("--color-*: initial;");
 
       fs.writeFileSync(themeFile, theme("#444"));
@@ -196,7 +211,9 @@ describe("watchThemeFile", () => {
     });
 
     it("reloads once when the config and the theme change in the same burst", () => {
-      const reloadTarget = vi.fn((): EmitTarget => ({ themeFile, outFile }));
+      const reloadTarget = vi.fn(
+        (): EmitTarget => ({ themeFile, outFile, tokensFile }),
+      );
       const w = start({}, { configFile, reloadTarget });
 
       w.emit("change", configFile);
@@ -235,7 +252,7 @@ describe("watchThemeFile", () => {
       w.emit("change", themeFile);
       vi.advanceTimersByTime(50);
 
-      expect(results[1]).toEqual({ ok: true, outFile, changed: true });
+      expect(results[1]).toEqual(ok(true));
       expect(fs.readFileSync(outFile, "utf8")).toContain("--color-*: initial;");
     });
 
@@ -293,12 +310,17 @@ describe("watchThemeFile", () => {
     it("unwatches the old theme, watches the new one and emits from it", () => {
       const other = path.join(dir, "other.json");
       const otherOut = path.join(dir, "other.css");
+      const otherTokens = path.join(dir, "other.tokens.ts");
       fs.writeFileSync(other, theme("#999"));
       const w = start(
         {},
         {
           configFile,
-          reloadTarget: () => ({ themeFile: other, outFile: otherOut }),
+          reloadTarget: () => ({
+            themeFile: other,
+            outFile: otherOut,
+            tokensFile: otherTokens,
+          }),
         },
       );
 
@@ -307,14 +329,17 @@ describe("watchThemeFile", () => {
 
       expect(w.unwatched).toEqual([themeFile]);
       expect(w.added).toEqual([other]);
-      expect(results).toEqual([{ ok: true, outFile: otherOut, changed: true }]);
+      expect(results).toEqual([ok(true, otherOut, otherTokens)]);
       expect(fs.readFileSync(otherOut, "utf8")).toContain("#999");
     });
 
     it("does not touch the watched paths when the theme file is unchanged", () => {
       const w = start(
         {},
-        { configFile, reloadTarget: () => ({ themeFile, outFile }) },
+        {
+          configFile,
+          reloadTarget: () => ({ themeFile, outFile, tokensFile }),
+        },
       );
       w.emit("change", configFile);
       vi.advanceTimersByTime(50);
@@ -324,7 +349,9 @@ describe("watchThemeFile", () => {
     });
 
     it("reloads when the config file is removed, but a removed theme triggers nothing", () => {
-      const reloadTarget = vi.fn((): EmitTarget => ({ themeFile, outFile }));
+      const reloadTarget = vi.fn(
+        (): EmitTarget => ({ themeFile, outFile, tokensFile }),
+      );
       const w = start({}, { configFile, reloadTarget });
 
       w.emit("unlink", themeFile);
@@ -344,7 +371,7 @@ describe("watchThemeFile", () => {
       vi.advanceTimersByTime(50);
 
       // Still re-emits (harmless, unchanged) but never reports a config stage.
-      expect(results).toEqual([{ ok: true, outFile, changed: true }]);
+      expect(results).toEqual([ok(true)]);
     });
   });
 
@@ -388,10 +415,11 @@ describe("watchThemeFile with the real chokidar", () => {
       );
       const themeFile = path.join(dir, "theme.json");
       const outFile = path.join(dir, "theme.css");
+      const tokensFile = path.join(dir, "theme.tokens.ts");
       fs.writeFileSync(themeFile, theme("#111"));
       const results: EmitResult[] = [];
       const handle = watchThemeFile(
-        { themeFile, outFile },
+        { themeFile, outFile, tokensFile },
         (r) => results.push(r),
         { debounceMs: 20 },
       );

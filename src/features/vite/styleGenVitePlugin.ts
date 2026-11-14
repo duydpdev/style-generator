@@ -2,7 +2,7 @@ import type { Logger, Plugin } from "vite";
 
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { resolvePluginTarget } from "../../node/resolvePluginTarget";
-import { emitThemeCss, type EmitTarget } from "../../node/themeEmitter";
+import { emitTheme, type EmitTarget } from "../../node/themeEmitter";
 
 /** Options of the `styleGenVite()` Vite plugin. */
 export interface StyleGenViteOptions {
@@ -146,12 +146,12 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
       const emitTarget = requireTarget();
       this.addWatchFile(emitTarget.themeFile);
 
-      const result = emitThemeCss(emitTarget);
+      const result = emitTheme(emitTarget);
       if (!result.ok) this.error(`[${PLUGIN_NAME}] ${result.message}`);
       if (result.changed) {
         logger?.info(
-          `[${PLUGIN_NAME}] Wrote ${emitTarget.outFile}\n` +
-            `  Tip: add this to .gitignore if theme.json is your source of truth.`,
+          `[${PLUGIN_NAME}] Wrote ${emitTarget.outFile} and ${emitTarget.tokensFile}\n` +
+            `  Tip: add theme.css to .gitignore; commit theme.tokens.ts.`,
         );
       }
     },
@@ -162,7 +162,7 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
       server.watcher.add(emitTarget.themeFile);
 
       const reemit = debounce(() => {
-        const result = emitThemeCss(emitTarget);
+        const result = emitTheme(emitTarget);
         if (!result.ok) {
           server.config.logger.error(
             `[${PLUGIN_NAME}] Re-emit failed:\n${result.message}`,

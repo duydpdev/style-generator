@@ -1,5 +1,4 @@
 export { theme, tokens, type ColorValue, type Theme } from "./tokens";
-export { options } from "./style-gen.options";
 export { cn } from "./cn";
 export { axisAttributes } from "./axes";
 

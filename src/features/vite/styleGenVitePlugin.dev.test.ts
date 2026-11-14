@@ -3,6 +3,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -23,7 +24,9 @@ import { styleGenVite, __resetForTests } from "./styleGenVitePlugin";
 
 describe("styleGenVite plugin", () => {
   let tmp: string;
-  const { writeTheme, serveConfig, start } = viteHarness(() => tmp);
+  const { writeTheme, writeConfig, serveConfig, start } = viteHarness(
+    () => tmp,
+  );
 
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), "style-gen-vite-"));
@@ -35,14 +38,17 @@ describe("styleGenVite plugin", () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
-  describe("no-argument form reads the config file", () => {
-    const writeConfig = (config: unknown, file = "style-gen.config.json") => {
+  describe("the config file is the only source of options", () => {
+    const writeRawConfig = (
+      config: unknown,
+      file = "style-gen.config.json",
+    ) => {
       writeFileSync(join(tmp, file), JSON.stringify(config), "utf8");
     };
 
     it("takes theme and output from style-gen.config.json", () => {
       const themeAbs = writeTheme("design/tokens.json");
-      writeConfig({ theme: "design/tokens.json", output: "gen/out.css" });
+      writeRawConfig({ theme: "design/tokens.json", output: "gen/out.css" });
       const plugin = styleGenVite();
 
       const ctx = start(plugin, serveConfig());
@@ -62,7 +68,7 @@ describe("styleGenVite plugin", () => {
 
     it("reads package.json#style-gen when there is no config file", () => {
       writeTheme("t.json");
-      writeConfig(
+      writeRawConfig(
         { "style-gen": { theme: "t.json", output: "o.css" } },
         "package.json",
       );
@@ -75,7 +81,7 @@ describe("styleGenVite plugin", () => {
 
     it("passes options from the config file to generate()", () => {
       writeTheme("styles/theme.json", minimalTheme);
-      writeConfig({ resetTailwindDefaults: ["colors"] });
+      writeRawConfig({ resetTailwindDefaults: ["colors"] });
       const plugin = styleGenVite();
 
       start(plugin, serveConfig());
@@ -86,7 +92,7 @@ describe("styleGenVite plugin", () => {
 
     it("throws a labelled error for a config that violates the schema (no silent defaults)", () => {
       writeTheme("styles/theme.json");
-      writeConfig({ breakpoint: ["xl"] });
+      writeRawConfig({ breakpoint: ["xl"] });
       const plugin = styleGenVite();
 
       expect(() => {
@@ -109,7 +115,7 @@ describe("styleGenVite plugin", () => {
     });
 
     it("rejects a configured output that escapes the project root", () => {
-      writeConfig({ output: "../elsewhere/theme.css" });
+      writeRawConfig({ output: "../elsewhere/theme.css" });
       const plugin = styleGenVite();
 
       expect(() => {
@@ -122,17 +128,18 @@ describe("styleGenVite plugin", () => {
     const setup = () => {
       vi.useFakeTimers();
       const themeAbs = writeTheme();
-      const plugin = styleGenVite({ themePath: "src/theme/theme.json" });
+      const configAbs = writeConfig();
+      const plugin = styleGenVite();
       const logger = makeLogger();
       start(plugin, serveConfig(logger));
       const server = makeServer(logger);
       callConfigureServer(plugin, server);
-      return { themeAbs, logger, server };
+      return { themeAbs, configAbs, logger, server };
     };
 
-    it("adds the theme to the dev watcher (a theme outside root is not watched otherwise)", () => {
-      const { themeAbs, server } = setup();
-      expect(server.watcher.add).toHaveBeenCalledExactlyOnceWith(themeAbs);
+    it("adds the theme and the config file to the dev watcher (a theme outside root is not watched otherwise)", () => {
+      const { themeAbs, configAbs, server } = setup();
+      expect(server.watcher.add.mock.calls).toEqual([[themeAbs], [configAbs]]);
     });
 
     it("re-emits + sends full-reload on theme.json change (debounced)", () => {
@@ -197,12 +204,151 @@ describe("styleGenVite plugin", () => {
       expect(server.ws.send).not.toHaveBeenCalled();
       expect(readFileSync(cssPath, "utf8")).toBe(before);
     });
-  });
 
-  it("accepts absolute themePath when inside root", () => {
-    const abs = writeTheme();
-    const plugin = styleGenVite({ themePath: abs });
-    start(plugin, serveConfig());
-    expect(existsSync(join(tmp, "src/theme/theme.css"))).toBe(true);
+    describe("config edits reload in place", () => {
+      it("re-emits to the new output and tokensOutput and sends full-reload (debounced)", () => {
+        const { configAbs, server } = setup();
+
+        writeConfig({
+          output: "gen/theme.css",
+          tokensOutput: "gen/theme.tokens.ts",
+          resetTailwindDefaults: ["colors"],
+        });
+        server.watcher.handlers.get("change")?.(configAbs);
+        server.watcher.handlers.get("change")?.(configAbs);
+
+        vi.advanceTimersByTime(199);
+        expect(server.ws.send).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+
+        expect(readFileSync(join(tmp, "gen/theme.css"), "utf8")).toContain(
+          "--color-*: initial;",
+        );
+        expect(existsSync(join(tmp, "gen/theme.tokens.ts"))).toBe(true);
+        expect(server.ws.send).toHaveBeenCalledExactlyOnceWith({
+          type: "full-reload",
+          path: "*",
+        });
+      });
+
+      it("keeps the new options for later theme edits", () => {
+        const { themeAbs, configAbs, server } = setup();
+        writeConfig({
+          output: "gen/theme.css",
+          resetTailwindDefaults: ["colors"],
+        });
+        server.watcher.handlers.get("change")?.(configAbs);
+        vi.advanceTimersByTime(200);
+
+        writeFileSync(
+          themeAbs,
+          JSON.stringify({
+            ...minimalTheme,
+            colors: { ...minimalTheme.colors, primary: "#00FF00" },
+          }),
+          "utf8",
+        );
+        server.watcher.handlers.get("change")?.(themeAbs);
+        vi.advanceTimersByTime(200);
+
+        const css = readFileSync(join(tmp, "gen/theme.css"), "utf8");
+        expect(css).toContain("#00FF00");
+        expect(css).toContain("--color-*: initial;");
+      });
+
+      it("watches a theme the edited config moved to, and re-emits its edits", () => {
+        const { server } = setup();
+        const moved = writeTheme("other/theme.json");
+        const configAbs = writeConfig({ theme: "other/theme.json" });
+        server.watcher.handlers.get("change")?.(configAbs);
+        vi.advanceTimersByTime(200);
+        expect(server.watcher.add).toHaveBeenLastCalledWith(moved);
+
+        writeFileSync(
+          moved,
+          JSON.stringify({
+            ...minimalTheme,
+            colors: { ...minimalTheme.colors, primary: "#0000FF" },
+          }),
+          "utf8",
+        );
+        server.watcher.handlers.get("change")?.(moved);
+        vi.advanceTimersByTime(200);
+
+        expect(readFileSync(join(tmp, "src/theme/theme.css"), "utf8")).toMatch(
+          /#0000FF/,
+        );
+      });
+
+      it("keeps the previous target, writes nothing and logs when the edited config is invalid", () => {
+        const { themeAbs, configAbs, logger, server } = setup();
+        const cssPath = join(tmp, "src/theme/theme.css");
+        const before = readFileSync(cssPath, "utf8");
+
+        writeFileSync(configAbs, JSON.stringify({ breakpoint: ["xl"] }));
+        server.watcher.handlers.get("change")?.(configAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(logger.error).toHaveBeenCalledWith(
+          expect.stringMatching(
+            /Cannot reload config, keeping the previous one:\n\[style-gen-vite\] Invalid config \(style-gen\.config\.json\):\n[^]*breakpoint/,
+          ),
+        );
+        expect(server.ws.send).not.toHaveBeenCalled();
+        expect(existsSync(join(tmp, "styles"))).toBe(false);
+        expect(readFileSync(cssPath, "utf8")).toBe(before);
+
+        // The last valid target still serves theme edits.
+        writeFileSync(
+          themeAbs,
+          JSON.stringify({
+            ...minimalTheme,
+            colors: { ...minimalTheme.colors, primary: "#FF00FF" },
+          }),
+          "utf8",
+        );
+        server.watcher.handlers.get("change")?.(themeAbs);
+        vi.advanceTimersByTime(200);
+        expect(readFileSync(cssPath, "utf8")).toMatch(/#FF00FF/);
+      });
+
+      it("reloads when the config file is replaced (add) or removed (unlink)", () => {
+        const { configAbs, logger, server } = setup();
+
+        writeConfig({ output: "gen/theme.css" });
+        server.watcher.handlers.get("add")?.(configAbs);
+        vi.advanceTimersByTime(200);
+        expect(existsSync(join(tmp, "gen/theme.css"))).toBe(true);
+
+        // Without the file the defaults apply: `styles/theme.json` is absent.
+        unlinkSync(configAbs);
+        server.watcher.handlers.get("unlink")?.(configAbs);
+        vi.advanceTimersByTime(200);
+        expect(logger.error).toHaveBeenCalledWith(
+          expect.stringMatching(/Re-emit failed:/),
+        );
+      });
+
+      it("ignores add and unlink events of other files", () => {
+        const { server } = setup();
+        server.watcher.handlers.get("add")?.(join(tmp, "src/random.tsx"));
+        server.watcher.handlers.get("unlink")?.(join(tmp, "src/random.tsx"));
+        vi.advanceTimersByTime(200);
+
+        expect(server.ws.send).not.toHaveBeenCalled();
+      });
+
+      it("never restarts the server", () => {
+        const { configAbs, server } = setup();
+        const restart = vi.fn();
+        Object.assign(server, { restart });
+
+        writeConfig({ output: "gen/theme.css" });
+        server.watcher.handlers.get("change")?.(configAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(restart).not.toHaveBeenCalled();
+      });
+    });
   });
 });

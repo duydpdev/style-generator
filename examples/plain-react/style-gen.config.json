@@ -1,1 +1,5 @@
-{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
+}

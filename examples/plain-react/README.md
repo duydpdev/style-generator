@@ -10,20 +10,20 @@ yarn build:all                               # at the repo root: the example lin
 yarn workspace plain-react-example dev
 ```
 
-`styleGenVite` (`vite.config.ts`) writes `src/theme/theme.css` from `src/theme/theme.json` on `dev` and `build`. The file is generated and git-ignored.
+`styleGenVite()` (`vite.config.ts`, no arguments) reads `style-gen.config.json` and writes `src/theme/theme.css` and `src/theme/theme.tokens.ts` from `src/theme/theme.json` on `dev` and `build`. The CSS is generated and git-ignored; `theme.tokens.ts` is committed (`yarn check:tokens` fails when it is stale).
 
 ## Copy a component into your app
 
-1. Install the package and the libraries a copied folder uses: `yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge`, plus `react` and `@types/react`. `@duydpdev/style-generator` is on the public npm registry, so no token or scope config is needed (the [Install](../../README.md#install) section of the repository README).
-2. Copy `src/theme/theme.json` (or use your own theme), `src/theme.ts`, `src/options.ts` and `style-gen.config.json`. `options.ts` holds the literal `options` (here `coverage.colors.opacities`) and imports no JSON, so `vite.config.ts` can import it without restarting the dev server on every theme edit; `vite.config.ts` passes it to `styleGenVite` and `theme.ts` passes it as the second argument of `createDesignTokens`. `style-gen.config.json` repeats the same steps for the `generate` CLI (`yarn check:plain-ui` keeps them equal).
-3. Wire the generator: `styleGenVite({ themePath: "src/theme/theme.json", outDir: "src/theme", options })` in `vite.config.ts` (`options` imported from `src/options.ts`), and `@import "tailwindcss";` + `@import "./theme/theme.css";` in your CSS entry.
+1. Install the package and the libraries a copied folder uses: `yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge`, plus `react` and `@types/react`. `@duydpdev/style-generator` is on the public npm registry, so no token or scope config is needed (the [Install](../../README.md#install) section of the repository README).
+2. Copy `src/theme/theme.json` (or use your own theme), `src/theme.ts` and `style-gen.config.json`. The config holds the `theme` and `output` paths and every generator option (here `coverage.colors.opacities`) in one place: the plugin and the `generate` CLI read it alike. Run `yarn style-gen generate` once and commit the `src/theme/theme.tokens.ts` it writes: `theme.ts` re-exports its `tokens`.
+3. Wire the generator: `styleGenVite()` in `vite.config.ts`, and `@import "tailwindcss";` + `@import "./theme/theme.css";` in your CSS entry.
 4. Copy one folder, for example `src/ui/button/`. A folder imports only its own files, `../../theme` and the packages, so nothing else comes with it.
 
 ## Components
 
 Every folder is self-contained: it imports only the package, `react`, `../../theme` and its own files (`yarn check:plain-ui` enforces this). Copying `card/` needs nothing else from this app.
 
-To use a folder in your own app: `yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge`, then copy the folder plus `src/theme.ts`, `src/options.ts` and `src/theme/theme.json`. The package is on the public npm registry, so no token or scope config is needed ([root README, Install](../../README.md#install)).
+To use a folder in your own app: `yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge`, then copy the folder plus `src/theme.ts`, `src/theme/theme.json`, `src/theme/theme.tokens.ts` and `style-gen.config.json`. The package is on the public npm registry, so no token or scope config is needed ([root README, Install](../../README.md#install)).
 
 | Folder           | Component | Parity gate | Notes                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------- | --------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -52,6 +52,6 @@ Create `src/ui/<kebab-name>/` with `style.ts` (tables + recipe via `recipeFromTa
 
 - `yarn workspace plain-react-example storybook`: the catalogue at http://localhost:6006 (each `src/ui/<name>/<Name>.stories.tsx`). Stories render through the app's own components, never raw Tailwind classes, and `src/index.css` has `@source not "./**/*.stories.*"`, so a story adds no utility to the app's CSS.
 - `yarn workspace plain-react-example test`: every story runs as a Vitest browser test, and the parity gate (`tests/parity/`) checks that Box, Text, Stack, Flex, Grid and Button render the same classes as the harness components in `examples/harness`. Needs `yarn build:all` and `yarn playwright install chromium` once.
-- `node examples/plain-react/scripts/copy-out-smoke.mjs`: proves that every folder of `src/ui/` plus `src/theme.ts`, `src/options.ts` and `src/theme/theme.json` compile in a fresh project with only `@duydpdev/style-generator`, `class-variance-authority`, `clsx`, `tailwind-merge` and React.
+- `node examples/plain-react/scripts/copy-out-smoke.mjs`: proves that every folder of `src/ui/` plus `src/theme.ts`, `src/theme/theme.tokens.ts` and `src/theme/theme.json` compile in a fresh project with only `@duydpdev/style-generator`, `class-variance-authority`, `clsx`, `tailwind-merge` and React.
 
 Adding a component: create its folder with a story. Only the six shared components have a parity test, because only they have a harness twin.

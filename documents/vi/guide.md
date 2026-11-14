@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: b66af2dd59c5 -->
+<!-- source: documents/guide.md sha256: 9484e513a0dd -->
 
 # Hướng dẫn sử dụng
 
@@ -160,38 +160,40 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./style-gen.options"; // one shared source of options, see "Build components"
 
 export default defineConfig({
-  plugins: [
-    react(),
-    styleGenVite({
-      themePath: "src/theme/theme.json",
-      outDir: "src/theme", // must match the @import path in your CSS
-      options,
-    }),
-    tailwindcss(),
-  ],
+  plugins: [react(), styleGenVite(), tailwindcss()],
 });
 ```
 
-Plugin ghi `theme.css` (theo kiểu nguyên tử, chỉ khi nội dung thay đổi) trong hook `buildStart`, tức là khi dev server khởi động và khi một lần build bắt đầu;
+```json
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "breakpoints": ["md", "lg"]
+}
+```
+
+`style-gen.config.json` (ở root dự án) là nơi duy nhất chứa các tùy chọn generator; `output` là file CSS cần ghi và phải khớp với đường dẫn `@import` trong CSS của bạn.
+
+Plugin không nhận tùy chọn generator nào: `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở root của Vite chứa `theme`, `output`, `tokensOutput` và mọi tùy chọn của `generate()`, chính file mà `style-gen generate` đọc. Đối số duy nhất của nó là `root`, cho dự án có config nằm ngoài root của Vite.
+Plugin ghi `theme.css` và `theme.tokens.ts` (theo kiểu nguyên tử, chỉ khi nội dung thay đổi) trong hook `buildStart`, tức là khi dev server khởi động và khi một lần build bắt đầu;
 theme được đăng ký với Rollup (`this.addWatchFile`), nên `vite build --watch` cũng build lại khi theme thay đổi.
-Trong dev, mỗi lần bạn lưu theme JSON, plugin ghi lại file (có debounce) và chỉ tải lại toàn trang trình duyệt khi CSS thực sự thay đổi.
+Trong dev, mỗi lần bạn lưu theme JSON, plugin ghi lại các file (có debounce) và chỉ tải lại toàn trang trình duyệt khi CSS thực sự thay đổi.
 Một lỗi trong `buildStart` làm build thất bại với thông báo theo từng giai đoạn (`Invalid JSON in …`, `Invalid options:`, `Invalid theme (<path>):`, `Invalid theme/options:`,
-`Cannot write …`). `themePath` có thể là đường dẫn tuyệt đối hoặc nằm ngoài root (một theme dùng chung trong monorepo); `outDir` phải nằm trong root.
-Hãy thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật.
+`Cannot write …`). `theme` có thể là đường dẫn tuyệt đối hoặc nằm ngoài root (một theme dùng chung trong monorepo); `output` và `tokensOutput` phải nằm trong root.
+Hãy thêm `theme.css` vào `.gitignore` nếu theme JSON là nguồn sự thật, và **commit `theme.tokens.ts`**: code của app import `tokens` từ đó (xem [Xây dựng component](#xây-dựng-component)); `style-gen generate --check` trong CI thất bại khi nó thiếu hoặc lỗi thời.
 
 Hai lưu ý về dev server:
 
 - **Vite 5 cần `listen()`.** `buildStart` của dev server chỉ chạy khi `server.listen()` (hoặc `middlewareMode`) được gọi;
   với `createServer()` rồi `ssrLoadModule` mà không có `listen()`, `theme.css` chưa được ghi trên Vite 5.
   Plugin đặt `perEnvironmentStartEndDuringDev`, nên từ Vite 6 trở đi `buildStart` cũng chạy trong trường hợp đó.
-- **Plugin chỉ đọc config một lần**, khi Vite nạp config của nó. Sửa `style-gen.config.json` (dạng không đối số) trong lúc dev server đang chạy thì chưa có tác dụng:
-  hãy khởi động lại dev server. Chỉ file theme JSON được theo dõi.
+- **Config được nạp lại tại chỗ.** Sửa `style-gen.config.json` (hoặc `package.json["style-gen"]`) trong lúc dev server đang chạy sẽ phân giải lại đích, emit lại các file và tải lại trang, mà không khởi động lại server.
+  Một lần sửa không hợp lệ được ghi log và config hợp lệ gần nhất vẫn có hiệu lực.
 
 Nuxt chạy trên Vite, nên hãy đăng ký cùng plugin đó trong `nuxt.config.ts → vite.plugins`. Nuxt 4 đặt `root` của Vite là `app/` (`srcDir`),
-nên đường dẫn tương đối được phân giải từ `app/`; hãy dùng đường dẫn tuyệt đối:
+nên hãy truyền thư mục dự án làm `root` và để `style-gen.config.json` ở đó:
 
 ```typescript
 // nuxt.config.ts
@@ -199,31 +201,26 @@ import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./style-gen.options";
 
 export default defineNuxtConfig({
   css: ["~/assets/css/globals.css"],
   vite: {
     plugins: [
-      styleGenVite({
-        themePath: fileURLToPath(new URL("./theme.json", import.meta.url)),
-        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
-        options,
-      }),
+      styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) }),
       tailwindcss(),
     ],
   },
 });
 ```
 
-Ví dụ hoàn chỉnh: `examples/harness` (Vite + React) dùng theme và các tùy chọn từ `examples/design-system`;
+Ví dụ hoàn chỉnh: `examples/harness` (Vite + React) dùng theme và token từ `examples/design-system`;
 xem [`examples/design-system/README.md`](../../examples/design-system/README.md). Các ứng dụng plain `examples/plain-react` và `examples/plain-nuxt` mỗi ứng dụng sở hữu theme
 riêng; xem [Component](./components.md#ví-dụ-plain-chép-dùng).
 
-**Không đối số:** `styleGenVite()` đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) tại root của Vite — `theme`,
-`output` (file CSS cần ghi) và mọi tùy chọn của `generate()` — nhờ đó CLI và bundler dùng chung một nguồn cấu hình duy nhất.
+**Cấu hình:** `styleGenVite()` đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) tại root của Vite — `theme`,
+`output` (file CSS cần ghi), `tokensOutput` và mọi tùy chọn của `generate()` — nhờ đó CLI và bundler dùng chung một nguồn cấu hình duy nhất.
 Một config bị hỏng hoặc không qua được schema sẽ ném `[style-gen-vite] Invalid config (<file>):` kèm từng dòng lỗi, và không bao giờ âm thầm quay về giá trị mặc định.
-Khi truyền đối số, file config không được đọc. File config chỉ được đọc **một lần**, khi bundler nạp config của nó (xem ở trên).
+Các tùy chọn 7.x `themePath`, `outDir` và `options` đã bị gỡ ở 8.0: truyền một trong chúng sẽ ném lỗi ngay lúc gọi (xem [hướng dẫn migration](./migration/7.x-to-8.0.md)).
 
 ### Cách 2: Next.js
 
@@ -231,25 +228,19 @@ Khi truyền đối số, file config không được đọc. File config chỉ 
 // next.config.ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
-import { options } from "./style-gen.options";
 
 const nextConfig: NextConfig = {};
 
-export default styleGenNext({
-  themePath: "app/theme/theme.json",
-  outDir: "app/theme",
-  options,
-})(nextConfig);
+export default styleGenNext()(nextConfig);
 ```
 
-Chạy được với cả webpack lẫn Turbopack, và không import `next`, nên không thêm peer dependency nào. Nó chỉ ghi `theme.css` khi Next nạp config ở `phase-development-server`
+Chạy được với cả webpack lẫn Turbopack, và không import `next`, nên không thêm peer dependency nào. Nó đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) từ `process.cwd()` giống Vite (`root` là tùy chọn duy nhất của nó) và chỉ ghi `theme.css` cùng `theme.tokens.ts` khi Next nạp config ở `phase-development-server`
 (`next dev`, kèm watcher) hoặc `phase-production-build` (`next build`); các phase khác (`next start`, export, …) trả về config mà không đọc theme.
 `nextConfig` có thể là một object hoặc một hàm `(phase, { defaultConfig }) => config` (được gọi với các đối số của chính Next).
-`styleGenNext()` không đối số đọc `style-gen.config.json` từ `process.cwd()` giống như Vite, và cũng chỉ **một lần** khi Next nạp config (sau khi sửa file config,
-hãy khởi động lại `next dev`). Watcher của `next dev` không chết khi theme tạm thời không hợp lệ (lỗi được ghi log và `theme.css` cũ được giữ lại) và được thay thế khi config nạp
-lại với theme/output khác. `themePath` có thể là đường dẫn tuyệt đối hoặc nằm ngoài dự án, trong khi `outDir` phải nằm trong dự án;
+Sửa file config trong lúc `next dev` đang chạy sẽ nạp lại nó tại chỗ (một lần sửa không hợp lệ giữ config hợp lệ gần nhất). Watcher của `next dev` không chết khi theme tạm thời không hợp lệ (lỗi được ghi log và `theme.css` cũ được giữ lại) và được thay thế khi config được đánh giá
+lại với theme/output khác. `theme` có thể là đường dẫn tuyệt đối hoặc nằm ngoài dự án, trong khi `output` và `tokensOutput` phải nằm trong dự án;
 một dấu `/` ở đầu không còn bị viết lại thành đường dẫn tương đối. Hạn chế: bước kiểm tra đường dẫn không `realpath` các symlink.
-Khi theme và các tùy chọn nằm trong một workspace package (như `examples/design-system`), hãy thêm package đó vào `transpilePackages` của Next.
+Khi theme nằm trong một workspace package (như `examples/design-system`), hãy thêm package đó vào `transpilePackages` của Next.
 
 ### Cách 3: CLI
 
@@ -269,7 +260,7 @@ yarn style-gen budget .next/static/css --max-gzip 14925   # CI: fail when built 
 Các flag được phân tích **chặt chẽ**: một flag lạ (`--them`) là lỗi chứ không bị bỏ qua. Mã thoát: `0` thành công / `--help` / `--version` / hủy ở bước nhắc,
 `1` lỗi (`budget` dùng `2` cho lỗi dùng sai lệnh, xem bên dưới).
 
-Các flag của `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Cấu hình được phân giải theo từng key theo thứ tự:
+Các flag của `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`, `--check`. `generate` ghi `theme.css` và `theme.tokens.ts` có kiểu (`tokensOutput`, mặc định cạnh `output`); `--check` không ghi gì và thoát với mã 1 khi file tokens thiếu hoặc lỗi thời. Cấu hình được phân giải theo từng key theo thứ tự:
 flag → file config → giá trị mặc định (`styles/theme.json` → `styles/theme.css`). File config là một trong hai nguồn, chọn theo kiểu _hoặc cái này hoặc cái kia_:
 `style-gen.config.json` nếu nó tồn tại, nếu không thì `package.json["style-gen"]`; hai nguồn không bao giờ được merge (một `style-gen.config.json` hỏng được báo là lỗi thay vì rơi
 xuống `package.json`). File config được kiểm tra hợp lệ bằng cùng schema với các tùy chọn của `generate()`:
@@ -283,16 +274,16 @@ Một file config không phải JSON parse được (bị hỏng) khiến `gener
 xong. Một theme không đọc được lúc khởi động (thiếu file, là một thư mục) hoặc một config không hợp lệ lúc khởi động sẽ thoát với mã 1 trước khi watcher được tạo;
 khi đã đang theo dõi, lỗi theme/ghi file chỉ được ghi log.
 
-`tokens` ghi `theme.tokens.ts` (`export const tokens = {…} as const`) chỉ chứa các **key** của `DesignTokens.Web` (một mảng key camelCase cho mỗi nhóm token,
+`tokens` chỉ ghi `theme.tokens.ts` (`export const tokens = {…} as const`), các **key** của `DesignTokens.Web` (một mảng key camelCase cho mỗi nhóm token,
 cộng với `breakpoints`, `screens`, `spacingProperties`), nhờ đó client bundle không phải mang theo runtime `./tokens` và theme JSON (khoảng 2.4 kB gzip so với khoảng 0.6 kB).
-Theo mặc định nó được ghi cạnh theme và phải nằm trong dự án (một theme ngoài dự án cần `--out`); hãy chạy lại khi các key của theme thay đổi.
+Đầu ra mặc định của nó là `tokensOutput` của config, nếu không thì `theme.tokens.ts` cạnh `output`, và phải nằm trong dự án; `generate` và các plugin ghi cùng file này, nên chỉ chạy `tokens` để ghi riêng nó.
 
 `budget <file.css|dir> --max-gzip <bytes>` cộng kích thước gzip của mọi file `.css` (đệ quy nếu truyền một thư mục) và in `OK: …` hoặc `OVER BUDGET: …`.
 Mã thoát `0` khi trong ngân sách, `1` khi vượt ngân sách, `2` cho lỗi dùng sai lệnh, đích không đọc được hoặc không tìm thấy CSS.
 Lệnh này thay thế script `check-css-budget.mjs` mà các bên dùng trước đây phải tự chép.
 
 `init` in ra cách nối dây cho stack mà nó phát hiện (`nuxt.config.*`, `next.config.*`, `vite.config.*`):
-đoạn mã `styleGenVite()`/`styleGenNext()` không đối số của Cách 1 và 2 (đường dẫn tuyệt đối cho Nuxt), hoặc `style-gen generate` khi không có config bundler;
+đoạn mã `styleGenVite()`/`styleGenNext()` không đối số của Cách 1 và 2 (`styleGenVite({ root })` cho Nuxt), hoặc `style-gen generate` khi không có config bundler;
 nó không bao giờ sửa config bundler. `doctor` kiểm tra cặp theme × tùy chọn (`❌ Invalid theme/options`), coi một `output` thoát ra ngoài root là lỗi,
 và in gợi ý `$alias` khi một override trong `themeAxes` lặp lại giá trị literal của một key khác trong base.
 
@@ -550,12 +541,13 @@ dụng; chi tiết trong [`examples/design-system/README.md`](../../examples/des
 `./cva`, `./recipes`, `./types`), không bao giờ kéo Zod hay Node vào client bundle.
 
 ```text
-src/theme.json         → theme (source of truth)
-src/style-gen.options.ts → shared options (bundler, tokens, recipe)
-src/tokens.ts          → createDesignTokens(theme, options)
-src/recipes/*.ts       → headless recipes (cva + createVariantMapper)
-src/cn.ts              → clsx + tailwind-merge aware of the theme's tokens
-src/axes.ts            → themeAxisAttributes<Theme>
+src/theme.json            → theme (source of truth)
+style-gen.config.json     → every generator option (bundler plugin, CLI)
+src/theme.tokens.ts       → generated by the plugin / `style-gen generate` (commit it)
+src/tokens.ts             → re-exports `tokens` (browser-safe typed keys)
+src/recipes/*.ts          → headless recipes (cva + createVariantMapper)
+src/cn.ts                 → clsx + tailwind-merge aware of the theme's tokens
+src/axes.ts               → themeAxisAttributes(state) typed by ThemeAxesState
 ```
 
 ### 1. Theme
@@ -569,37 +561,33 @@ export type Theme = typeof themeJson; // input of ColorVariant<Theme>, ThemeAxes
 export const theme = themeJson;
 ```
 
-### 2. Tùy chọn dùng chung: `style-gen.options.ts`
+### 2. Tùy chọn generator: `style-gen.config.json`
 
-Mọi nơi gọi `generate()` (plugin Vite, plugin Next, `createDesignTokens`, các kiểu của recipe) phải thấy **cùng một** bộ tùy chọn,
-nếu không `@source inline` và các token sẽ lệch nhau. Hãy đặt chúng trong một module không có dependency:
+Mọi nơi dùng các tùy chọn (plugin Vite, plugin Next, CLI, các token được sinh ra) đọc **cùng một** file, nên `@source inline` và các token không thể lệch nhau. Các tùy chọn nằm trong `style-gen.config.json` (hoặc `package.json["style-gen"]`), không nằm trong một module TypeScript:
 
-```typescript
-// src/style-gen.options.ts
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
-
-export const options = {
-  breakpoints: ["md", "lg"],
-} as const satisfies StyleGeneratorOptions;
+```json
+{
+  "theme": "src/theme.json",
+  "output": "src/styles/theme.css",
+  "tokensOutput": "src/theme.tokens.ts",
+  "breakpoints": ["md", "lg"]
+}
 ```
 
-Hãy dùng `as const satisfies` với `import type`, không dùng `defineOptions()`: `defineOptions` chỉ tồn tại ở root `.` (nó kéo Zod vào browser bundle),
-trong khi file này được nạp cả bởi config bundler dưới Node (type stripping) lẫn trong trình duyệt. Tuple `breakpoints` dạng literal là thứ thu hẹp `BreakpointKeys<typeof options>`
-thành `"md" | "lg"`. Nếu dự án cũng dùng CLI (`style-gen generate`), `style-gen.config.json` phải lặp lại các giá trị này; ví dụ có một test để hai bản sao không lệch nhau.
+Mảng `breakpoints` dạng literal là thứ thu hẹp `(typeof tokens)["breakpoints"][number]` thành `"md" | "lg"` trong file tokens được sinh ra.
 
 ### 3. Token
 
-`generate()` trả về `tokens`; để dùng chúng ở client, hãy dựng một bộ riêng, an toàn trên trình duyệt, bằng `createDesignTokens` từ `./tokens`:
+Plugin (và `style-gen generate`) ghi bộ token an toàn trên trình duyệt cạnh CSS thành `theme.tokens.ts`; hãy commit nó và import `tokens` từ đó. Nó được dựng từ theme và config bằng cùng đoạn mã với `createDesignTokens`, nên hai bên không thể lệch nhau:
 
 ```typescript
 // src/tokens.ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import { tokens } from "./theme.tokens";
 
-import { options } from "./style-gen.options";
-import themeJson from "./theme.json";
-
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+export { tokens };
 ```
+
+Chỉ gọi `createDesignTokens(theme, options)` từ `./tokens` cho một theme thứ hai được tạo lúc runtime.
 
 **Các token trong `DesignTokens.Web`:**
 
@@ -709,18 +697,17 @@ export const cn = createCn(tokens);
 
 ### 6. Bật các trục theme trên DOM: `themeAxisAttributes`
 
-`themeAxisAttributes<Theme>(state)` trả về các thuộc tính `data-*` của những trục đang hoạt động, được định kiểu từ `theme.json`;
-`"base"` hoặc một trục bị bỏ qua không phát ra gì. Thuộc tính luôn là `data-<axis-kebab>`, đúng như các selector mà `generate()` phát ra:
+`themeAxisAttributes(state)` trả về các thuộc tính `data-*` của những trục đang hoạt động; `"base"` hoặc một trục bị bỏ qua không phát ra gì. Hãy định kiểu `state` bằng `ThemeAxesState` từ `theme.tokens.ts` được sinh ra, file liệt kê các trục và variant của `theme.json`.
+Thuộc tính luôn là `data-<axis-kebab>`, đúng như các selector mà `generate()` phát ra:
 
 ```typescript
 // src/axes.ts
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
-import type { ThemeAxesState } from "@duydpdev/style-generator/types";
 
-import type { Theme } from "./tokens";
+import type { ThemeAxesState } from "./theme.tokens";
 
-export const axisAttributes = (state: ThemeAxesState<Theme>) =>
-  themeAxisAttributes<Theme>(state);
+export const axisAttributes = (state: ThemeAxesState) =>
+  themeAxisAttributes(state);
 
 axisAttributes({ theme: "highContrast", palette: "forest" });
 // { "data-theme": "high-contrast", "data-palette": "forest" }
@@ -731,7 +718,7 @@ Hãy spread kết quả lên `<html>` (React: `<html {...axisAttributes(state)}>
 ### 7. Prop spacing: `splitSpacingProps`
 
 Một component nhận các prop spacing (`p`, `px`, `gap`, …, một số hoặc `{ base, md, lg }`) tách chúng khỏi phần còn lại bằng `splitSpacingProps` từ `./recipes`;
-kiểu `SpacingProps<BreakpointKeys<typeof options>>` lấy các key breakpoint từ các tùy chọn, nên `{ xl: 4 }` là lỗi kiểu khi `xl` không có trong `breakpoints`:
+kiểu `SpacingProps<(typeof tokens)["breakpoints"][number]>` lấy các key breakpoint từ các token được sinh ra, nên `{ xl: 4 }` là lỗi kiểu khi `xl` không có trong `breakpoints`:
 
 ```typescript
 import { splitSpacingProps } from "@duydpdev/style-generator/recipes";

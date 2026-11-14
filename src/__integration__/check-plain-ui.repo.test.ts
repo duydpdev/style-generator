@@ -19,16 +19,12 @@ describe("check-plain-ui: the repo's plain apps", () => {
     mod = (await import(pathToFileURL(script).href)) as CheckPlainUiModule;
   });
 
-  /** `options.ts` and `style-gen.config.json` of every opacities app declare the same steps. */
   const THEME_TS = "export const theme = 1;\n";
-  const OPTIONS_TS =
-    "export const options = { coverage: { colors: { opacities: [10, 20, 50, 80] } } };\n";
-  const CONFIG =
-    '{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }\n';
+  const TOKENS_TS = "export const tokens = 1;\n";
 
   /**
    * The valid fixture: one `button` folder per app of `APPS`, plus the
-   * app-scope theme files and the opacity config.
+   * app-scope theme files.
    * @param {string} root - Fixture root
    */
   function validFixture(root: string) {
@@ -50,13 +46,8 @@ describe("check-plain-ui: the repo's plain apps", () => {
         writeTmpFile(root, `${ui}/button/Button${app.stories}`, "export {};\n");
       }
       writeTmpFile(root, `${dirname(ui)}/theme.ts`, THEME_TS);
-      writeTmpFile(root, `${dirname(ui)}/options.ts`, OPTIONS_TS);
+      writeTmpFile(root, `${dirname(ui)}/theme/theme.tokens.ts`, TOKENS_TS);
       writeTmpFile(root, `${dirname(ui)}/theme/theme.json`, "{}\n");
-      writeTmpFile(
-        root,
-        `${dirname(dirname(ui))}/style-gen.config.json`,
-        CONFIG,
-      );
     }
   }
 
@@ -108,19 +99,19 @@ describe("check-plain-ui: the repo's plain apps", () => {
     expect(mentions(check().errors, "plain-nuxt")).toBe(true);
   });
 
-  it("rejects an options.ts that differs in plain-nuxt", () => {
+  it("rejects a theme.tokens.ts that differs in plain-nuxt", () => {
     writeTmpFile(
       dir,
-      "examples/plain-nuxt/app/options.ts",
-      "export const options = 2;\n",
+      "examples/plain-nuxt/app/theme/theme.tokens.ts",
+      "export const tokens = 2;\n",
     );
     expect(mentions(check().errors, "plain-nuxt")).toBe(true);
   });
 
-  it("rejects a missing options.ts", () => {
-    rmSync(join(dir, "examples/plain-nuxt/app/options.ts"));
+  it("rejects a missing theme.tokens.ts", () => {
+    rmSync(join(dir, "examples/plain-nuxt/app/theme/theme.tokens.ts"));
     expect(check().errors).toEqual([
-      "examples/plain-nuxt/app/options.ts: missing",
+      "examples/plain-nuxt/app/theme/theme.tokens.ts: missing",
     ]);
   });
 
@@ -186,48 +177,5 @@ describe("check-plain-ui: the repo's plain apps", () => {
     rmSync(join(dir, "examples/plain-nuxt/app/ui/button/index.ts"));
     rmSync(join(dir, "examples/plain-react/src/ui/button/index.ts"));
     expect(mentions(check().errors, "plain-react")).toBe(true);
-  });
-
-  it("requires a style-gen.config.json in every app that declares opacities", () => {
-    rmSync(join(dir, "examples/plain-nuxt/style-gen.config.json"));
-    expect(check().errors).toEqual([
-      "examples/plain-nuxt/style-gen.config.json: missing",
-    ]);
-  });
-
-  it("rejects a style-gen.config.json that differs from plain-react's", () => {
-    writeTmpFile(
-      dir,
-      "examples/plain-nuxt/style-gen.config.json",
-      '{ "coverage": { "colors": { "opacities": [10,20,50,80] } } }\n',
-    );
-    expect(check().errors).toEqual([
-      "examples/plain-nuxt/style-gen.config.json: differs from examples/plain-react/style-gen.config.json",
-    ]);
-  });
-
-  it("rejects an options.ts whose opacities literal differs from the config", () => {
-    writeTmpFile(
-      dir,
-      "examples/plain-nuxt/app/options.ts",
-      "export const options = { coverage: { colors: { opacities: [10, 20, 50] } } };\n",
-    );
-    expect(check().errors).toEqual([
-      "examples/plain-nuxt/app/options.ts: differs from examples/plain-react/src/options.ts",
-      "examples/plain-nuxt/app/options.ts: opacities [10, 20, 50] differ from style-gen.config.json [10, 20, 50, 80]",
-    ]);
-  });
-
-  it("rejects an options.ts without an opacities literal", () => {
-    for (const options of [
-      "examples/plain-react/src/options.ts",
-      "examples/plain-nuxt/app/options.ts",
-    ]) {
-      writeTmpFile(dir, options, "export const options = {};\n");
-    }
-    expect(check().errors).toEqual([
-      "examples/plain-react/src/options.ts: no opacities literal",
-      "examples/plain-nuxt/app/options.ts: no opacities literal",
-    ]);
   });
 });

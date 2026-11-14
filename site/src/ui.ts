@@ -6,7 +6,7 @@ import {
   createText,
 } from "harness-example/ui";
 
-import { tokens } from "./ui-tokens";
+import { tokens } from "./theme/theme.tokens";
 
 /** The site's components: the harness's sample factories bound to the site theme (no recipe presets). */
 export const Box = createBox(tokens);

@@ -9,7 +9,7 @@
  * Packs the repo root with the repo's own Yarn release, creates a scratch
  * project in the OS temp directory (lifecycle scripts off, public npm
  * registry, the exact versions the repo itself resolves), copies
- * src/theme.ts, src/options.ts, src/theme/theme.json and every folder of src/ui/ (stories
+ * src/theme.ts, src/theme/theme.tokens.ts, src/theme/theme.json and every folder of src/ui/ (stories
  * excluded), installs with nodeLinker node-modules and runs
  * `tsc --noEmit`. The scratch directory is removed in every case; the exit
  * code is tsc's (1 for an earlier failure).
@@ -176,7 +176,10 @@ try {
     );
     mkdirSync(join(scratch, "src", "theme"), { recursive: true });
     cpSync(join(app, "src", "theme.ts"), join(scratch, "src", "theme.ts"));
-    cpSync(join(app, "src", "options.ts"), join(scratch, "src", "options.ts"));
+    cpSync(
+      join(app, "src", "theme", "theme.tokens.ts"),
+      join(scratch, "src", "theme", "theme.tokens.ts"),
+    );
     cpSync(
       join(app, "src", "theme", "theme.json"),
       join(scratch, "src", "theme", "theme.json"),

@@ -3,7 +3,7 @@ import { describe, it, expectTypeOf } from "vitest";
 import { styleGenNext } from "./styleGenNext";
 
 describe("styleGenNext resolved config type", () => {
-  const wrap = styleGenNext({ themePath: "theme.json" });
+  const wrap = styleGenNext();
 
   it("returns an object config's own type", () => {
     const config = { reactStrictMode: true };
@@ -22,12 +22,14 @@ describe("styleGenNext resolved config type", () => {
     }>();
   });
 
-  it("accepts no options (config-file form) and keeps the config type", () => {
+  it("accepts only a root option and keeps the config type", () => {
     const config = { reactStrictMode: true };
     expectTypeOf(
-      styleGenNext()(config)("phase-production-build"),
+      styleGenNext({ root: "app" })(config)("phase-production-build"),
     ).toEqualTypeOf<{
       reactStrictMode: boolean;
     }>();
+    // @ts-expect-error `themePath` was removed in 8.0: it lives in style-gen.config.json
+    styleGenNext({ themePath: "theme.json" });
   });
 });

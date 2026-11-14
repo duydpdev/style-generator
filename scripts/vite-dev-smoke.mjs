@@ -21,7 +21,7 @@ import { createLogger, createServer, version } from "vite";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const exampleDir = join(root, "examples/harness");
 // The theme lives in the shared design-system package; the app's plugin reads
-// it through `themePath` and emits `theme.css` into the harness example.
+// it through `package.json#style-gen.theme` and emits `theme.css` into the harness example.
 const themeJson = join(root, "examples/design-system/src/theme.json");
 const themeCss = join(exampleDir, "src/theme/theme.css");
 const MARKER = "#0a1b2c";

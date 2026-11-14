@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 1409739d7149 -->
+<!-- source: documents/components.md sha256: 27628457869b -->
 
 # Component: các ví dụ, không phải một API
 
@@ -13,8 +13,9 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 ### Mỗi component một thư mục
 
 ```text
+<app>/style-gen.config.json         # every generator option: theme, output, coverage, … (read by the bundler plugin and `style-gen generate`)
 <app>/src/theme/theme.json        # the app's own theme (Nuxt: app/theme/theme.json)
-<app>/src/options.ts              # export { options }: generator options, imports no JSON  (Nuxt: app/options.ts)
+<app>/src/theme/theme.tokens.ts   # generated typed tokens, committed (Nuxt: app/theme/theme.tokens.ts)
 <app>/src/theme.ts                # export { theme, tokens, cn }  (Nuxt: app/theme.ts)
 <app>/src/ui/<kebab-name>/        # one folder per component (Nuxt: app/ui/<kebab-name>/)
   style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
@@ -26,8 +27,9 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 ```
 
 - `theme.json` là cấu hình design token thu gọn của theme.
-- `options.ts` giữ literal `options` (ở đây là `coverage.colors.opacities`). File này không import JSON, nên config của bundler (`vite.config.ts`, `next.config.ts`, `nuxt.config.ts`) import nó mà không làm dev server khởi động lại ở mỗi lần sửa theme; `theme.ts` truyền nó cho `createDesignTokens` và `style-gen.config.json` lặp lại nó cho CLI (`check:plain-ui` giữ hai bản bằng nhau).
-- `theme.ts` export `theme`, `tokens`, và `cn` cho ứng dụng.
+- `style-gen.config.json` giữ các tùy chọn generator (ở đây là `coverage.colors.opacities`), đường dẫn theme và đường dẫn output. Plugin bundler (`styleGenVite()`, `styleGenNext()`) không nhận tùy chọn riêng nào, nên chỉ có một nơi để sửa và dev server nạp lại nó tại chỗ.
+- `theme.tokens.ts` được plugin (và `style-gen generate`) ghi cạnh `theme.css`; hãy commit nó và để `theme.css` trong git-ignore. `yarn check:tokens` thất bại khi nó lỗi thời.
+- `theme.ts` export `theme`, `tokens` (re-export từ `theme.tokens.ts`), và `cn` cho ứng dụng.
 - `style.ts` là cùng một file trong cả hai ứng dụng; file này chứa các bảng variant và recipe headless.
 - `types.ts` phụ thuộc framework (không được so sánh); `types.ts` của Vue khai báo các prop mà trình biên dịch SFC có thể đọc được và mở rộng các prop spacing bằng `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` render markup của component và áp dụng recipe cùng các utility spacing.
@@ -37,22 +39,21 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 
 ### Module theme
 
-Module theme export `theme`, `tokens` được tạo bằng `createDesignTokens(theme, options)` (`options` lấy từ `options.ts`), và helper `cn`.
+Module theme export `theme`, `tokens` (file `theme.tokens.ts` được sinh ra), và helper `cn`.
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -421,12 +422,12 @@ const root = () => {
 1. Cài đặt các dependency cần thiết:
 
    ```bash
-   yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
    ```
 
 2. Nối dây `theme.css` cho bundler của bạn ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
 
-3. Chép `theme.ts`, `options.ts` và file theme JSON của bạn, một lần.
+3. Chép `theme.ts`, file theme JSON và `style-gen.config.json` của bạn, một lần; chạy `yarn style-gen generate` để ghi `theme.tokens.ts` rồi commit nó.
 
 4. Chép thư mục component. Không cần làm gì thêm: một thư mục chỉ import các file của chính nó, `../../theme` và các package.
 
@@ -517,7 +518,7 @@ Mọi component đều chấp nhận các prop spacing của theme (`p`, `px`, `
 
 Mỗi prop bố cục tĩnh nhận hậu tố class của Tailwind viết theo camelCase (`display="inlineFlex"` → `inline-flex`, `cursor="notAllowed"` → `cursor-not-allowed`); `zIndex` (`0`-`50` theo bước 10, `"auto"`) và `opacity` (`0`-`100` theo bước 10) nhận số; các bước màu là `coverage.colors.opacities`; `Input` thuần cũng nhận `placeholderColor` (mặc định `muted`).
 
-Các màu `token/step` của `Text` (`color="primary/50"`) là các bước trong `coverage.colors.opacities`, mà các ứng dụng ví dụ khai báo trong `options.ts` và `style-gen.config.json`. `truncate` cũng đặt `whitespace-nowrap`, nên đừng kết hợp nó với `lineClamp`.
+Các màu `token/step` của `Text` (`color="primary/50"`) là các bước trong `coverage.colors.opacities`, mà các ứng dụng ví dụ khai báo trong `style-gen.config.json`. `truncate` cũng đặt `whitespace-nowrap`, nên đừng kết hợp nó với `lineClamp`.
 
 Các quy tắc cho mã nguồn ứng dụng:
 

@@ -7,7 +7,6 @@ import {
   createTextRecipe,
   type ButtonPreset,
 } from "./recipes/factories";
-import { options } from "./style-gen.options";
 import altJson from "./theme.alt.json";
 
 /**
@@ -19,7 +18,17 @@ export type AltTheme = typeof altJson;
 
 export const altTheme = altJson;
 
-export const altTokens = createDesignTokens(altJson, options).DesignTokens.Web;
+/**
+ * The alt theme's generator options: a second theme resolved at runtime; it
+ * does not read style-gen.config.json (which belongs to `theme.json`).
+ */
+export const altOptions = {
+  breakpoints: ["md", "lg"],
+  coverage: { colors: { opacities: [10, 20, 50, 80] } },
+} as const;
+
+export const altTokens = createDesignTokens(altJson, altOptions).DesignTokens
+  .Web;
 
 /** The alt theme's intents; `satisfies` fails here if one leaves the theme. */
 export const altIntents = [

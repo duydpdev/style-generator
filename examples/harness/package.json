@@ -8,6 +8,9 @@
     "./package.json": "./package.json"
   },
   "style-gen": {
+    "theme": "../design-system/src/theme.json",
+    "output": "src/theme/theme.css",
+    "tokensOutput": "src/theme/theme.tokens.ts",
     "coverage": {
       "colors": {
         "opacities": [
@@ -24,7 +27,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "generate": "node ../../dist/cli/index.mjs generate --theme ../design-system/src/theme.json --out src/theme/theme.css"
+    "generate": "node ../../dist/cli/index.mjs generate"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",

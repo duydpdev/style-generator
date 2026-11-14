@@ -1,3 +1,9 @@
+# [7.2.1](https://github.com/duydpdev/style-generator/compare/v7.2.0...v7.2.1) (2026-11-14)
+
+### Bug Fixes
+
+- remove the generator script from doctor help ([328fad0](https://github.com/duydpdev/style-generator/commit/328fad02010ef0e099d08d2c1918b10a089ece61))
+
 # [7.2.0](https://github.com/duydpdev/style-generator/compare/v7.1.1...v7.2.0) (2026-11-11)
 
 ### Features

@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the overall architecture of `@duydpdev/style-generator` 4.0.0 (Tailwind CSS v4 only).
+This document describes the overall architecture of `@duydpdev/style-generator` 7.x (Tailwind CSS v4 only).
 The code is the source of truth for _how_ things work; this document only keeps _why_ and _where_.
 
 ## Table of contents

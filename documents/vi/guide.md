@@ -1,9 +1,9 @@
-<!-- source: documents/guide.md sha256: 5237305e102c -->
+<!-- source: documents/guide.md sha256: b66af2dd59c5 -->
 
 # Hướng dẫn sử dụng
 
-Cách tích hợp `@duydpdev/style-generator` 5.0 vào một dự án **Tailwind CSS v4**. Tài liệu tham chiếu đầy đủ (tùy chọn, export, CLI) nằm trong [`reference/`](./reference/core.md);
-nếu bạn đang nâng cấp từ 4.x, hãy đọc [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md), còn từ 3.x thì đọc [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md).
+Cách tích hợp `@duydpdev/style-generator` vào một dự án **Tailwind CSS v4**. Tài liệu tham chiếu đầy đủ (tùy chọn, export, CLI) nằm trong [`reference/`](./reference/core.md);
+nếu bạn đang nâng cấp từ một major cũ hơn, hãy bắt đầu từ [Nâng cấp từ phiên bản cũ](#nâng-cấp-từ-phiên-bản-cũ).
 
 ## Mục lục
 
@@ -267,7 +267,7 @@ yarn style-gen budget .next/static/css --max-gzip 14925   # CI: fail when built 
 
 `style-gen --help` liệt kê các lệnh, và `style-gen <command> --help` in ra các flag riêng của lệnh đó.
 Các flag được phân tích **chặt chẽ**: một flag lạ (`--them`) là lỗi chứ không bị bỏ qua. Mã thoát: `0` thành công / `--help` / `--version` / hủy ở bước nhắc,
-`1` lỗi (`budget` dùng `2` cho lỗi cú pháp, xem bên dưới).
+`1` lỗi (`budget` dùng `2` cho lỗi dùng sai lệnh, xem bên dưới).
 
 Các flag của `generate`: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Cấu hình được phân giải theo từng key theo thứ tự:
 flag → file config → giá trị mặc định (`styles/theme.json` → `styles/theme.css`). File config là một trong hai nguồn, chọn theo kiểu _hoặc cái này hoặc cái kia_:
@@ -288,7 +288,7 @@ cộng với `breakpoints`, `screens`, `spacingProperties`), nhờ đó client b
 Theo mặc định nó được ghi cạnh theme và phải nằm trong dự án (một theme ngoài dự án cần `--out`); hãy chạy lại khi các key của theme thay đổi.
 
 `budget <file.css|dir> --max-gzip <bytes>` cộng kích thước gzip của mọi file `.css` (đệ quy nếu truyền một thư mục) và in `OK: …` hoặc `OVER BUDGET: …`.
-Mã thoát `0` khi trong ngân sách, `1` khi vượt ngân sách, `2` cho lỗi cú pháp / đầu vào không đọc được / không có CSS.
+Mã thoát `0` khi trong ngân sách, `1` khi vượt ngân sách, `2` cho lỗi dùng sai lệnh, đích không đọc được hoặc không tìm thấy CSS.
 Lệnh này thay thế script `check-css-budget.mjs` mà các bên dùng trước đây phải tự chép.
 
 `init` in ra cách nối dây cho stack mà nó phát hiện (`nuxt.config.*`, `next.config.*`, `vite.config.*`):
@@ -815,6 +815,8 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 
 ## Nâng cấp từ phiên bản cũ
 
+- **6.x → 7.0.0**: [`migration/6.x-to-7.0.md`](./migration/6.x-to-7.0.md).
+- **5.x → 6.0.0**: [`migration/5.x-to-6.0.md`](./migration/5.x-to-6.0.md).
 - **4.x → 5.0.0** (thay đổi phá vỡ tương thích (breaking change): `--sg-color-*`, `borderWidth` thông qua `@theme`, `spacing.properties` là một mảng,
   đổi tên các key của `DesignTokens.Web`, typography chặt chẽ hơn, Node runner: phát ra trong `buildStart`, plugin không đối số, `resolveProjectPath`, mã thoát CLI + flag chặt chẽ,
   các lệnh `tokens`/`budget`, `resetTailwindDefaults`, variant `base` dành riêng, khai báo `.d.cts`): [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).

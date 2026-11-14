@@ -1,6 +1,6 @@
 # Documents
 
-Index of all documentation for `@duydpdev/style-generator`. API, option and CLI reference lives in [`reference/`](./reference/core.md); the repo's [`README.md`](../README.md) only keeps the introduction, installation and quickstart. Conventions for agents live in [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
+Index of all documentation for `@duydpdev/style-generator`. API, option and CLI reference lives in [`reference/`](./reference/core.md); the repo's [`README.md`](../README.md) only keeps the introduction, installation and quickstart; releases are listed in the [`CHANGELOG.md`](../CHANGELOG.md). Conventions for agents live in [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
 
 ## Start here (shown on the site `/docs`)
 

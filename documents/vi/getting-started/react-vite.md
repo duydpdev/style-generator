@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: 1d2aef8d1152 -->
+<!-- source: documents/getting-started/react-vite.md sha256: 1f4814c84207 -->
 
 # Bắt đầu: React + Vite
 
@@ -6,10 +6,10 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Vi
 
 ## Cài đặt
 
-Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`. Xem [Cài đặt](../README.md#cài-đặt) để biết cách cấu hình registry cho scope `@duydpdev` và GitHub Personal Access Token.
+Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`; phần thiết lập Vite bên dưới còn import `tailwindcss`, `@tailwindcss/vite` và `@vitejs/plugin-react`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
 ```
 
 ## Tự quản lý theme
@@ -62,6 +62,12 @@ export default defineConfig({
     tailwindcss(),
   ],
 });
+```
+
+<!-- embed: examples/plain-react/style-gen.config.json -->
+
+```json
+{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }
 ```
 
 ## Import CSS

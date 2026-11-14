@@ -2,7 +2,7 @@
 
 The Vite plugin that writes `theme.css` for you; Nuxt uses it through `vite.plugins`. It needs the optional `vite` peer dependency and runs in Node.
 
-All of them write the same `theme.css` (the output of `generate()`); pick the one that matches your bundler. In each case, `@import` the file next to `@import "tailwindcss"`.
+The plugin writes the same `theme.css` as `generate()`; `@import` the file next to `@import "tailwindcss"`.
 
 ## `styleGenVite`
 
@@ -57,7 +57,7 @@ Emits `theme.css` when a dev server starts and when a build starts (`buildStart`
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./style-gen.options"; // one shared options module, see §7
+import { options } from "./style-gen.options"; // one shared options module
 
 export default defineConfig({
   plugins: [

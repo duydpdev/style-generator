@@ -24,6 +24,11 @@ const cliKeys = {
   theme: z.string().min(1),
   /** Generated CSS path, relative to the project root. */
   output: z.string().min(1),
+  /**
+   * Generated tokens module path, relative to the project root; default:
+   * `theme.tokens.ts` beside `output`.
+   */
+  tokensOutput: z.string().min(1).optional(),
 };
 
 /**
@@ -176,7 +181,7 @@ const GENERATOR_OPTION_KEYS = StyleGeneratorOptionsShape.keyof().options;
 
 /**
  * Pick the `generate()` options out of a resolved config, dropping the
- * config-only keys (`theme`, `output`, `$schema`) that the strict
+ * config-only keys (`theme`, `output`, `tokensOutput`, `$schema`) that the strict
  * options schema would reject. The key list comes from
  * `StyleGeneratorOptionsShape`, so a new option is forwarded automatically.
  * The only way config options reach `generate()` and the runner.

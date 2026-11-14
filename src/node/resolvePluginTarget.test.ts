@@ -30,6 +30,7 @@ describe("resolvePluginTarget", () => {
       ).toEqual({
         themeFile: join(root, "src/theme.json"),
         outFile: join(root, "src/theme.css"),
+        tokensFile: join(root, "src/theme.tokens.ts"),
         options: {},
       });
     });
@@ -42,7 +43,11 @@ describe("resolvePluginTarget", () => {
           { themePath: "theme.json", outDir: "gen", options },
           "x",
         ),
-      ).toMatchObject({ outFile: join(root, "gen/theme.css"), options });
+      ).toMatchObject({
+        outFile: join(root, "gen/theme.css"),
+        tokensFile: join(root, "gen/theme.tokens.ts"),
+        options,
+      });
     });
 
     it("allows a theme outside the root but not an outDir outside it", () => {
@@ -111,6 +116,7 @@ describe("resolvePluginTarget", () => {
       expect(resolvePluginTarget(root, undefined, "x")).toEqual({
         themeFile: join(root, "styles/theme.json"),
         outFile: join(root, "styles/theme.css"),
+        tokensFile: join(root, "styles/theme.tokens.ts"),
         options: {},
       });
     });
@@ -128,6 +134,7 @@ describe("resolvePluginTarget", () => {
       expect(resolvePluginTarget(root, undefined, "x")).toEqual({
         themeFile: join(root, "t.json"),
         outFile: join(root, "out/o.css"),
+        tokensFile: join(root, "out/theme.tokens.ts"),
         options: { enableResponsive: false },
       });
     });
@@ -159,6 +166,24 @@ describe("resolvePluginTarget", () => {
 
       expect(() => resolvePluginTarget(root, undefined, "x")).toThrow(
         /output escapes project root/,
+      );
+    });
+
+    it("honours tokensOutput and labels its errors with the integration", () => {
+      writeFileSync(
+        join(root, "style-gen.config.json"),
+        JSON.stringify({ tokensOutput: "gen/t.ts" }),
+      );
+      expect(resolvePluginTarget(root, undefined, "x").tokensFile).toBe(
+        join(root, "gen/t.ts"),
+      );
+
+      writeFileSync(
+        join(root, "style-gen.config.json"),
+        JSON.stringify({ tokensOutput: "../t.ts" }),
+      );
+      expect(() => resolvePluginTarget(root, undefined, "my-plugin")).toThrow(
+        "[my-plugin] tokensOutput escapes project root: ../t.ts",
       );
     });
   });

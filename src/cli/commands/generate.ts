@@ -4,12 +4,10 @@ import { errorMessage } from "../../node/errorMessage";
 import {
   readConfigFile,
   resolveConfig,
-  toGeneratorOptions,
-  type StyleGenConfig,
   type StyleGenConfigFlags,
 } from "../../node/loadStyleGenConfig";
-import { resolveProjectPath } from "../../node/resolveProjectPath";
-import { emitThemeCss } from "../../node/themeEmitter";
+import { resolveEmitTarget } from "../../node/resolveEmitTarget";
+import { checkTokensModule, emitTheme } from "../../node/themeEmitter";
 import type { EmitResult, EmitTarget } from "../../node/themeEmitter";
 import {
   watchThemeFile,
@@ -24,6 +22,7 @@ export interface GenerateArgs {
   theme?: string;
   out?: string;
   watch?: boolean;
+  check?: boolean;
 }
 
 /** Handle on a `--watch` run, so callers can stop it. */
@@ -40,58 +39,76 @@ export interface GenerateHooks {
 }
 
 /**
- * The emit target a resolved configuration points at. The theme may live
- * outside the project root (a theme shared by a monorepo); the CSS output
- * may not.
- * @param {string} cwd - Project root
- * @param {StyleGenConfig} config - Resolved configuration
- * @returns {EmitTarget} Absolute theme and output paths plus the generator options
- * @throws {Error} When the output path escapes the project root
+ * Print one failure the way the command always has.
+ * @param {{stage: string, message: string}} failure - The failed outcome
+ * @param {string} failure.stage - Pipeline stage that failed
+ * @param {string} failure.message - The message to print
  */
-function toEmitTarget(cwd: string, config: StyleGenConfig): EmitTarget {
-  return {
-    themeFile: resolveProjectPath(cwd, config.theme, "theme", {
-      allowOutsideRoot: true,
-    }),
-    outFile: resolveProjectPath(cwd, config.output, "output"),
-    options: toGeneratorOptions(config),
-  };
+function reportFailure(failure: { stage: string; message: string }): void {
+  const hint =
+    failure.stage === "read" &&
+    failure.message.startsWith("Theme file not found")
+      ? "\n💡 Run: yarn style-gen init"
+      : "";
+  logger.error(`${failure.message}${hint}`);
 }
 
 /**
  * Print one emit outcome the way the command always has.
- * @param {string} cwd - Project root, for the relative output path
- * @param {EmitResult} result - What `emitThemeCss`/`watchThemeFile` reported
+ * @param {string} cwd - Project root, for the relative output paths
+ * @param {EmitResult} result - What `emitTheme`/`watchThemeFile` reported
  */
 function report(cwd: string, result: EmitResult): void {
-  if (result.ok) {
-    const out = path.relative(cwd, result.outFile);
-    logger.success(
-      result.changed ? `CSS written to ${out}` : `CSS is up to date: ${out}`,
-    );
+  if (!result.ok) {
+    reportFailure(result);
     return;
   }
-  const hint =
-    result.stage === "read" && result.message.startsWith("Theme file not found")
-      ? "\n💡 Run: yarn style-gen init"
-      : "";
-  logger.error(`${result.message}${hint}`);
+  const out = path.relative(cwd, result.outFile);
+  const tokens = path.relative(cwd, result.tokensFile);
+  logger.success(
+    result.cssChanged ? `CSS written to ${out}` : `CSS is up to date: ${out}`,
+  );
+  logger.success(
+    result.tokensChanged
+      ? `Tokens written to ${tokens}`
+      : `Tokens up to date: ${tokens}`,
+  );
+}
+
+/**
+ * `--check`: report whether the tokens file matches the theme and config,
+ * writing nothing.
+ * @param {string} cwd - Project root, for the relative path in the message
+ * @param {EmitTarget} target - The resolved emit target
+ * @returns {number} 0 when current, 1 otherwise
+ */
+function check(cwd: string, target: EmitTarget): number {
+  const checked = checkTokensModule(target);
+  if (!checked.ok) {
+    reportFailure(checked);
+    return 1;
+  }
+  logger.success(`Tokens up to date: ${path.relative(cwd, target.tokensFile)}`);
+  return 0;
 }
 
 /**
  * Generate command handler: reads the theme, validates it, runs the same
  * pipeline as `generate()` (through the shared Node runner) and writes the
  * resulting CSS (`@theme`/`@theme inline`/typography/spacing/`@source
- * inline` blocks) to disk, only when it changed. Consumers `@import` the
- * written file directly next to `@import "tailwindcss";`.
+ * inline` blocks) and the typed `theme.tokens.ts` to disk, only when a file
+ * changed. Consumers `@import` the CSS directly next to `@import
+ * "tailwindcss";` and import `tokens` from the tokens module.
  *
- * One-shot: returns 1 on any failure so scripts and CI stop. `--watch`:
- * emits once, then re-emits when the theme or the config file changes. A
- * failure after startup is logged and watching continues; an invalid config
- * edit keeps the last valid one. An unreadable theme or an invalid config at
- * startup still returns 1, before any watcher starts. In watch mode the
- * promise resolves 0 once the watcher is attached; chokidar then keeps the
- * process alive.
+ * One-shot: returns 1 on any failure so scripts and CI stop. `--check`
+ * writes nothing and returns 1 when the tokens file is missing or differs
+ * from what the theme and config generate (it cannot be combined with
+ * `--watch`). `--watch`: emits once, then re-emits when the theme or the
+ * config file changes. A failure after startup is logged and watching
+ * continues; an invalid config edit keeps the last valid one. An unreadable
+ * theme or an invalid config at startup still returns 1, before any watcher
+ * starts. In watch mode the promise resolves 0 once the watcher is attached;
+ * chokidar then keeps the process alive.
  * @param {GenerateArgs} args - Generate arguments from CLI
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
  * @param {GenerateHooks} [hooks] - Test seams
@@ -113,13 +130,20 @@ export async function generateCommand(
 
   let target: EmitTarget;
   try {
-    target = toEmitTarget(cwd, config);
+    target = resolveEmitTarget(cwd, config);
   } catch (error) {
     logger.error(errorMessage(error));
     return 1;
   }
 
-  const first = emitThemeCss(target);
+  if (args.check && args.watch) {
+    logger.error("--check and --watch cannot be combined");
+    return 1;
+  }
+
+  if (args.check) return check(cwd, target);
+
+  const first = emitTheme(target);
   report(cwd, first);
 
   if (!args.watch) return first.ok ? 0 : 1;
@@ -142,7 +166,7 @@ export async function generateCommand(
         ...(reloaded.source !== undefined && { source: reloaded.source }),
       };
     }
-    return toEmitTarget(cwd, resolveConfig(flags, reloaded));
+    return resolveEmitTarget(cwd, resolveConfig(flags, reloaded));
   };
 
   const handle = watchThemeFile(

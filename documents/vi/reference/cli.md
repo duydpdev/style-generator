@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 75dc731d30c4 -->
+<!-- source: documents/reference/cli.md sha256: 8dea698915e4 -->
 
 # CLI
 
@@ -125,22 +125,25 @@ Tạo `app/assets/css/main.css` (`init` không tạo file này; `css` trong `nux
 
 ### `style-gen generate`
 
-Kiểm tra hợp lệ theme và ghi file CSS hoàn chỉnh (`@theme`, các biến `:root`, override cho trục, `@theme inline`, các khối `@utility`, `@source inline`).
+Kiểm tra hợp lệ theme và ghi file CSS hoàn chỉnh (`@theme`, các biến `:root`, override cho trục, `@theme inline`, các khối `@utility`, `@source inline`) cùng module `theme.tokens.ts` có kiểu ngay cạnh nó. File tokens được ghi cạnh `theme.css`; hãy commit nó và giữ `theme.css` trong danh sách ignore.
 
 ```bash
 yarn style-gen generate
 yarn style-gen generate --theme ./theme.json --out ./theme.css --watch
 ```
 
-| Cờ              | Kiểu      | Mặc định            | Mô tả                                       |
-| :-------------- | :-------- | :------------------ | :------------------------------------------ |
-| `--theme`       | `string`  | `styles/theme.json` | Đường dẫn đến file theme JSON               |
-| `--out`         | `string`  | `styles/theme.css`  | Đường dẫn đến file CSS đầu ra               |
-| `-w`, `--watch` | `boolean` | `false`             | Chế độ watch — tự động sinh lại mỗi khi lưu |
+| Cờ              | Kiểu      | Mặc định            | Mô tả                                                                                                  |
+| :-------------- | :-------- | :------------------ | :----------------------------------------------------------------------------------------------------- |
+| `--theme`       | `string`  | `styles/theme.json` | Đường dẫn đến file theme JSON                                                                          |
+| `--out`         | `string`  | `styles/theme.css`  | Đường dẫn đến file CSS đầu ra                                                                          |
+| `-w`, `--watch` | `boolean` | `false`             | Chế độ watch — tự động sinh lại mỗi khi lưu                                                            |
+| `--check`       | `boolean` | `false`             | Không ghi gì; thoát với mã 1 khi `theme.tokens.ts` thiếu hoặc khác với kết quả sinh từ theme và config |
 
 Dạng truyền vị trí `style-gen generate <theme> <out>` cũng hoạt động; các cờ được ưu tiên hơn. File được ghi một cách nguyên tử và **chỉ khi nội dung của nó có sự thay đổi** (chạy lại trên một theme chưa đổi sẽ không chạm vào file, giúp các file watcher không bị kích hoạt). `--theme` có thể trỏ ra ngoài dự án (một package design-system dùng chung); `--out` và `output` trong config phải nằm bên trong dự án (`output escapes project root: <path>`). Một theme không hợp lệ (`Invalid theme (<path>):`), tùy chọn không hợp lệ (`Invalid options:`) hoặc cặp theme × options không hợp lệ (`Invalid theme/options:`), file config không hợp lệ (`Invalid config (<file>):` theo sau là từng dòng `path → message` cho mỗi lỗi, ví dụ `breakpoint` do gõ nhầm hoặc `extraSources` cho một key đã bị loại bỏ ở 7.0) hoặc lỗi ghi file sẽ giữ nguyên file output và thoát với mã 1. File config sai định dạng (không phải JSON) sẽ bị cảnh báo và các giá trị mặc định sẽ được dùng.
 
 `--watch` sẽ chạy lại mỗi khi có thay đổi trong theme **và trong file config** (`style-gen.config.json`, hoặc `package.json` chứa nó). Config được đọc lại sau mỗi lần thay đổi, nhờ đó `output`, `breakpoints`, `resetTailwindDefaults` mới … được áp dụng mà không cần khởi động lại; chỉnh sửa config không hợp lệ sẽ được báo cáo và **config hợp lệ gần nhất vẫn giữ hiệu lực** cho đến khi file được sửa lại đúng. Một theme không thể đọc khi khởi động (file không tồn tại, là thư mục) hoặc config không hợp lệ khi khởi động sẽ thoát với mã 1 trước khi bất kỳ watcher nào bắt đầu; khi đang watch, lỗi theme hoặc lỗi ghi file sẽ được ghi log và quá trình watch vẫn tiếp tục.
+
+`--check` không ghi gì và thoát với mã 1 khi file tokens thiếu hoặc khác với những gì theme và config sẽ sinh ra (`<path> does not exist. Run: style-gen generate` / `<path> is out of date. Run: style-gen generate`); ngược lại nó thoát với mã 0, kể cả khi `theme.css` không tồn tại, và không thể dùng chung với `--watch` (mã thoát 1). File tokens chỉ chứa key, không chứa giá trị: chỉ sửa một giá trị màu thì file vẫn được coi là còn mới. Hãy chạy nó trong CI để bắt trường hợp commit chỉnh sửa theme mà quên sinh lại `theme.tokens.ts`.
 
 ### `style-gen schema`
 
@@ -166,7 +169,7 @@ yarn style-gen doctor
 Ghi các **key** design token của theme (`DesignTokens.Web`: một mảng các camelCase key cho mỗi nhóm token, cộng thêm `opacities` (các bước của `coverage.colors.opacities`, tăng dần; `[]` khi không có tùy chọn), `breakpoints`, `screens` và `spacingProperties`) dưới dạng một module TypeScript, nhờ đó client bundle có thể import danh sách key mà không cần kèm theo runtime `./tokens` hay file theme JSON (khoảng 2.4 kB gzip khi đi chung, so với khoảng 0.6 kB cho các key được sinh ra).
 
 ```bash
-yarn style-gen tokens                                  # → styles/theme.tokens.ts (next to the theme)
+yarn style-gen tokens                                  # → styles/theme.tokens.ts (beside the configured output)
 yarn style-gen tokens --theme styles/theme.json --out src/theme.tokens.ts
 ```
 
@@ -177,7 +180,7 @@ import { tokens } from "./theme.tokens";
 type ColorKey = (typeof tokens.colors)[number];
 ```
 
-Module có dạng `export const tokens = {…} as const` cùng `export type Tokens = typeof tokens`; nó được dựng bằng chính mã nguồn của `createDesignTokens()`, với `breakpoints`/`screens`/`spacing` từ config, vì vậy cả hai không thể lệch nhau. Theme và các tùy chọn được kiểm tra hợp lệ tương tự trong `generate`; output mặc định nằm cạnh theme và phải ở bên trong dự án, vì vậy theme ở ngoài dự án cần có `--out`. Hãy chạy lại lệnh này (hoặc đặt nó cạnh `generate` trong script của bạn) mỗi khi key của theme thay đổi.
+Module có dạng `export const tokens = {…} as const` cùng `export type Tokens = typeof tokens`, và `export const themeAxes = {…} as const` (mỗi trục kèm tên các variant, đúng là các key gốc của theme) cùng `export type ThemeAxesState`; nó được dựng bằng chính mã nguồn của `createDesignTokens()`, với `breakpoints`/`screens`/`spacing` từ config, vì vậy cả hai không thể lệch nhau. Theme và các tùy chọn được kiểm tra hợp lệ tương tự trong `generate`; output mặc định là `tokensOutput` trong config, nếu không có thì `theme.tokens.ts` cạnh `output`, và phải ở bên trong dự án. `generate` và các plugin bundler ghi cùng file này cùng với CSS; hãy chạy `tokens` để ghi riêng nó hoặc dùng `--out`.
 
 ### `style-gen budget`
 
@@ -210,7 +213,8 @@ In ra phiên bản CLI đã cài đặt.
 
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` và `resetTailwindDefaults` được chuyển tiếp đến `generate()`.
 Bất kỳ key nào khác — một lỗi gõ nhầm như `breakpoint`, hoặc key 3.x cũ như `responsiveModules` — đều bị từ chối;
-chỉ `$schema`, `theme` và `output` được chấp nhận ngoài các key chuyển tiếp.
+chỉ `$schema`, `theme`, `output` và `tokensOutput` được chấp nhận ngoài các key chuyển tiếp.
+`tokensOutput` là đường dẫn của module tokens được sinh ra, tương đối so với thư mục gốc dự án và nằm bên trong đó (mặc định: `theme.tokens.ts` cạnh `output`); nó phải là file `.ts`, `.mts` hoặc `.cts`, không phải `.d.ts`.
 `plugin`, key mà `init` từng ghi trước bản 5.2.0 để đặt tên cho generator script mà nó tạo sẵn, bị từ chối từ 6.0.0 (hãy xóa nó, hoặc chạy `style-gen init`, lệnh này sẽ bỏ nó);
 `extraSources` và `axes` bị từ chối từ 7.0.0 (xem [hướng dẫn nâng cấp](../migration/6.x-to-7.0.md)), và `style-gen init` cũng bỏ chúng
 (lệnh in mỗi entry của `extraSources` thành một dòng `@source inline("<entry>");` để dán vào CSS của app).

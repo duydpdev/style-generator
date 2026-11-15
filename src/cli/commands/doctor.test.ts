@@ -256,8 +256,65 @@ describe("doctorCommand", () => {
 
       expect(doctorCommand(tmp)).toBe(1);
 
-      expect(lines()).toMatch(/Output +\(.*\) ❌ Escapes project root/);
+      expect(lines()).toMatch(/Output +\(.*\) ❌ Invalid emit paths/);
       expect(lines()).toContain("output escapes project root: ../out/");
+    });
+
+    it.each([
+      [
+        "escapes the project root",
+        { tokensOutput: "../keys.ts" },
+        "tokensOutput escapes project root: ../keys.ts",
+      ],
+      [
+        "is not a TypeScript file",
+        { tokensOutput: "gen/keys.js" },
+        "tokensOutput must be a .ts, .mts or .cts file",
+      ],
+      [
+        "is a declaration file",
+        { tokensOutput: "gen/keys.d.ts" },
+        "tokensOutput must be a .ts, .mts or .cts file",
+      ],
+    ])(
+      "a tokensOutput that %s → ❌, 1, as generate refuses it (C-M2)",
+      (_name, config, message) => {
+        writeProject(tmp, {
+          "style-gen.config.json": config,
+          "styles/theme.json": { colors: { primary: "#3B82F6" } },
+        });
+
+        expect(doctorCommand(tmp)).toBe(1);
+
+        expect(lines()).toMatch(/Output +\(.*\) ❌ Invalid emit paths/);
+        expect(lines()).toContain(message);
+        expect(lines()).not.toContain("Setup looks complete");
+      },
+    );
+
+    it("an output that is the theme file → ❌, 1 (N-M3)", () => {
+      writeProject(tmp, {
+        "style-gen.config.json": {
+          theme: "styles/theme.json",
+          output: "styles/theme.json",
+        },
+        "styles/theme.json": { colors: { primary: "#3B82F6" } },
+      });
+
+      expect(doctorCommand(tmp)).toBe(1);
+
+      expect(lines()).toContain("theme and output must be different files");
+    });
+
+    it("an output that is the tokens module → ❌, 1 (N-M1)", () => {
+      writeProject(tmp, {
+        "style-gen.config.json": { output: "styles/theme.tokens.ts" },
+        "styles/theme.json": { colors: { primary: "#3B82F6" } },
+      });
+
+      expect(doctorCommand(tmp)).toBe(1);
+
+      expect(lines()).toContain("output and tokens file");
     });
   });
 

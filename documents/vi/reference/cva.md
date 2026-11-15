@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cva.md sha256: b6e8a6b927f9 -->
+<!-- source: documents/reference/cva.md sha256: aa26296a831d -->
 
 # Helper CVA (./cva)
 
@@ -169,7 +169,7 @@ const bg = createVariantMapper("bg", web.colors, {
 const half: "bg-primary/50" = bg["primary/50"];
 ```
 
-Hãy truyền cùng một object `options` cho plugin bundler hoặc `style-gen.config.json` để dòng độ mờ `@source inline` và `web.opacities` khớp nhau.
+Hãy đặt cùng `coverage.colors.opacities` trong `style-gen.config.json` (file mà plugin bundler và CLI đọc) để dòng độ mờ `@source inline` và `web.opacities` khớp nhau; file `theme.tokens.ts` được sinh ra mang `opacities` từ file đó.
 
 ## `COLOR_STATES`
 

@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import { z } from "zod";
 
 import { ThemeSchema } from "../core/themeSchema";
-import { StyleGenConfigFileSchema } from "../node/loadStyleGenConfig";
+import { buildConfigJsonSchema } from "../cli/configJsonSchema";
 
 const repoRoot = join(__dirname, "..", "..");
 
@@ -40,8 +40,8 @@ const committedConfigSchemas = [
   "site/style-gen.config.schema.json",
 ];
 
-describe("integration: committed style-gen.config.schema.json files match StyleGenConfigFileSchema", () => {
-  const expected = z.toJSONSchema(StyleGenConfigFileSchema);
+describe("integration: committed style-gen.config.schema.json files match buildConfigJsonSchema", () => {
+  const expected = buildConfigJsonSchema();
 
   it.each(committedConfigSchemas)("%s is up to date", (file) => {
     const actual: unknown = JSON.parse(

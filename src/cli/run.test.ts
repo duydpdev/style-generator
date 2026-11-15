@@ -103,6 +103,24 @@ describe("runCli", () => {
     });
   });
 
+  describe("usage text", () => {
+    // D-M2: the doc gate reads these flags from `--help`; a flag missing
+    // from the usage would be missing from the docs check too.
+    it.each(commands.map((c) => [c.name, c]))(
+      "`%s` usage names every option and its short form",
+      (_name, command) => {
+        for (const [key, option] of Object.entries(command.options)) {
+          expect(command.usage, `--${key}`).toContain(`--${key}`);
+          if (option.short !== undefined) {
+            expect(command.usage, `-${option.short}`).toMatch(
+              new RegExp(`(?<![\\w-])-${option.short}(?![\\w-])`),
+            );
+          }
+        }
+      },
+    );
+  });
+
   describe("strict per-command flags", () => {
     it("returns 1 with the flag named and the usage printed when a flag is unknown", async () => {
       expect(await runCli(["generate", "--them", "t.json"], CWD)).toBe(1);

@@ -105,6 +105,43 @@ describe("emitTheme", () => {
       expect(tokensAfter.mtimeMs).toBe(tokensBefore.mtimeMs);
     });
 
+    // N-L2: a `core.autocrlf` checkout of the committed tokens file holds CRLF.
+    it("leaves a CRLF tokens file alone (the check accepts it too) but still compares the CSS byte for byte", () => {
+      emitTheme({ themeFile, outFile, tokensFile });
+      const crlf = (file: string): string => {
+        const text = fs.readFileSync(file, "utf8").replace(/\n/g, "\r\n");
+        fs.writeFileSync(file, text);
+        return text;
+      };
+      const tokensCrlf = crlf(tokensFile);
+      crlf(outFile);
+
+      const r = emitTheme({ themeFile, outFile, tokensFile });
+
+      expect(r).toMatchObject({
+        ok: true,
+        cssChanged: true,
+        tokensChanged: false,
+      });
+      expect(fs.readFileSync(tokensFile, "utf8")).toBe(tokensCrlf);
+      expect(checkTokensModule({ themeFile, tokensFile })).toEqual({
+        ok: true,
+      });
+    });
+
+    it("still rewrites a tokens file whose content really differs, whatever its line endings", () => {
+      emitTheme({ themeFile, outFile, tokensFile });
+      fs.writeFileSync(
+        tokensFile,
+        fs.readFileSync(tokensFile, "utf8").replace(/\n/g, "\r\n") + "// x\r\n",
+      );
+
+      const r = emitTheme({ themeFile, outFile, tokensFile });
+
+      expect(r).toMatchObject({ ok: true, tokensChanged: true });
+      expect(fs.readFileSync(tokensFile, "utf8")).not.toContain("// x");
+    });
+
     it("reports changed: true again when the theme or the options change the CSS", () => {
       emitTheme({ themeFile, outFile, tokensFile });
 

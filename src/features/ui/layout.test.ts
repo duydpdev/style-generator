@@ -159,6 +159,27 @@ describe("splitLayout", () => {
       expect(split.className).toBe("box");
     },
   );
+
+  describe("a call in the pre-8.0 positional form (L-L8)", () => {
+    const message =
+      "splitLayout(props, { recipe, spacingKeys, variantKeys, sizeKeys })";
+
+    it("throws a TypeError that names the options form", () => {
+      const old = splitLayout as unknown as (...args: unknown[]) => unknown;
+      expect(() => old({ p: 4 }, box, ["p"], VARIANT_KEYS, SIZE_KEYS)).toThrow(
+        TypeError,
+      );
+      expect(() => old({ p: 4 }, box, ["p"], VARIANT_KEYS, SIZE_KEYS)).toThrow(
+        message,
+      );
+    });
+
+    it("throws the same error when options is missing or has no recipe", () => {
+      const old = splitLayout as unknown as (...args: unknown[]) => unknown;
+      expect(() => old({})).toThrow(message);
+      expect(() => old({}, { spacingKeys: [] })).toThrow(message);
+    });
+  });
 });
 
 describe("mergeStyle", () => {

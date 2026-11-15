@@ -28,6 +28,28 @@ export function assertTokensFile(
 }
 
 /**
+ * Reject two roles that resolve to the same file: one write would silently
+ * overwrite the other (the CSS over the tokens module, the CSS over the theme
+ * JSON).
+ * @param {ReadonlyArray<readonly [string, string]>} entries - `[label, absolute file]` pairs, in the order they are reported
+ * @throws {Error} Naming the first two labels whose files are the same
+ */
+export function assertDistinctFiles(
+  entries: readonly (readonly [label: string, file: string])[],
+): void {
+  const seen = new Map<string, string>();
+  for (const [label, file] of entries) {
+    const first = seen.get(file);
+    if (first !== undefined) {
+      throw new Error(
+        `${first} and ${label} must be different files, both resolve to ${file}`,
+      );
+    }
+    seen.set(file, label);
+  }
+}
+
+/**
  * The emit target a resolved configuration points at: the one place the
  * theme, CSS and tokens paths are derived, for the CLI and the bundler
  * integrations alike. The theme may live outside the project root (a theme
@@ -37,7 +59,7 @@ export function assertTokensFile(
  * @param {StyleGenConfig} config - Resolved configuration
  * @param {string} [labelPrefix] - Put before `theme`/`output`/`tokensOutput` in error messages (`"[style-gen-vite] "`)
  * @returns {EmitTarget} Absolute theme, CSS and tokens paths plus the generator options
- * @throws {Error} When `output` or `tokensOutput` escapes the project root or `tokensOutput` is not a TypeScript file
+ * @throws {Error} When `output` or `tokensOutput` escapes the project root, `tokensOutput` is not a TypeScript file, or `theme`, `output` and the tokens file are not three different files
  */
 export function resolveEmitTarget(
   root: string,
@@ -64,6 +86,16 @@ export function resolveEmitTarget(
           `${labelPrefix}tokensOutput`,
         );
   assertTokensFile(tokensFile, `${labelPrefix}tokensOutput`);
+  assertDistinctFiles([
+    [`${labelPrefix}theme`, themeFile],
+    [`${labelPrefix}output`, outFile],
+    [
+      config.tokensOutput === undefined
+        ? `${labelPrefix}tokens file (${TOKENS_FILE_NAME} beside output)`
+        : `${labelPrefix}tokensOutput`,
+      tokensFile,
+    ],
+  ]);
   return {
     themeFile,
     outFile,

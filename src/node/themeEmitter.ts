@@ -18,7 +18,7 @@ import { writeFileAtomic } from "./writeFileAtomic";
 
 /**
  * Where an emit failed. `read` → `parse` → `options` → `theme` → `cross`
- * (theme × options) → `write` are the steps of {@link emitTheme};
+ * (theme × options) → `generate` → `write` are the steps of {@link emitTheme};
  * `stale` is reported by {@link checkTokensModule} only (the tokens file is
  * missing or differs); `config` (an invalid `style-gen.config.json` on reload)
  * and `watch` (a watcher error) are reported by `watchThemeFile` only.
@@ -162,10 +162,21 @@ export function readAndPrepareTheme(
   }
 }
 
+// The committed tokens file may hold CRLF after a `core.autocrlf` checkout.
+// The ONE comparison `emitTokensModule` and `checkTokensModule` share, so a
+// checkout that `generate --check` accepts is never rewritten by an emit.
+const tokensModuleCurrent = (existing: string, expected: string): boolean =>
+  existing.replace(/\r\n/g, "\n") === expected;
+
 // `content` was written (atomically, creating the directory) unless the file
-// already held exactly it. A missing or unreadable file counts as changed; a
-// real problem surfaces from the write.
-const writeIfChanged = (file: string, content: string): boolean => {
+// already held it (`isCurrent`, byte-exact by default). A missing or
+// unreadable file counts as changed; a real problem surfaces from the write.
+const writeIfChanged = (
+  file: string,
+  content: string,
+  isCurrent: (existing: string, expected: string) => boolean = (a, b) =>
+    a === b,
+): boolean => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   let existing: string | undefined;
   try {
@@ -173,7 +184,7 @@ const writeIfChanged = (file: string, content: string): boolean => {
   } catch {
     existing = undefined;
   }
-  if (existing === content) return false;
+  if (existing !== undefined && isCurrent(existing, content)) return false;
   writeFileAtomic(file, content);
   return true;
 };
@@ -199,7 +210,13 @@ export function emitTokensModule(
   prepared: ValidTheme,
   tokensFile: string,
 ): { changed: boolean } {
-  return { changed: writeIfChanged(tokensFile, renderTokens(prepared)) };
+  return {
+    changed: writeIfChanged(
+      tokensFile,
+      renderTokens(prepared),
+      tokensModuleCurrent,
+    ),
+  };
 }
 
 /**
@@ -309,7 +326,7 @@ export function checkTokensModule(
     );
   }
 
-  if (existing.replace(/\r\n/g, "\n") !== expected) {
+  if (!tokensModuleCurrent(existing, expected)) {
     return fail(
       "stale",
       `${tokensFile} is out of date. Run: style-gen generate`,

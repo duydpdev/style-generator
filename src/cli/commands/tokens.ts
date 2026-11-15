@@ -3,6 +3,7 @@ import path from "node:path";
 import type { StyleGeneratorOptions } from "../../core/Options";
 import { errorMessage } from "../../node/errorMessage";
 import {
+  assertDistinctFiles,
   assertTokensFile,
   resolveEmitTarget,
 } from "../../node/resolveEmitTarget";
@@ -32,7 +33,8 @@ export interface TokensArgs {
  * labels) as `generate`. The default `--out` is the config's `tokensOutput`,
  * else `theme.tokens.ts` beside `output`, and must stay inside the project
  * root. `--out` must name a `.ts`, `.mts` or `.cts` file (not a
- * declaration file): the module is TypeScript. A file whose content is
+ * declaration file): the module is TypeScript. It must not be the theme file
+ * or the configured `output`: either would be overwritten. A file whose content is
  * already current is not rewritten, so file watchers stay quiet.
  * @param {TokensArgs} args - `--theme` and `--out`
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
@@ -60,6 +62,11 @@ export function tokensCommand(
         ? target.tokensFile
         : resolveProjectPath(cwd, args.out, "--out");
     assertTokensFile(tokensFile, "--out", path.relative(cwd, tokensFile));
+    assertDistinctFiles([
+      ["theme", target.themeFile],
+      ["output", target.outFile],
+      ["--out", tokensFile],
+    ]);
   } catch (error) {
     logger.error(errorMessage(error));
     return 1;

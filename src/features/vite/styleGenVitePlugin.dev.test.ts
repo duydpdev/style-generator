@@ -66,6 +66,18 @@ describe("styleGenVite plugin", () => {
       expect(existsSync(join(tmp, "styles/theme.css"))).toBe(true);
     });
 
+    it("logs the no-config line once per plugin instance, not once per environment", () => {
+      writeTheme("styles/theme.json");
+      const logger = makeLogger();
+      const plugin = styleGenVite();
+
+      // Vite runs `configResolved` once per environment (client, ssr, …).
+      callConfigResolved(plugin, serveConfig(logger));
+      callConfigResolved(plugin, serveConfig(logger));
+
+      expect(logger.info).toHaveBeenCalledTimes(1);
+    });
+
     it("reads package.json#style-gen when there is no config file", () => {
       writeTheme("t.json");
       writeRawConfig(
@@ -137,9 +149,12 @@ describe("styleGenVite plugin", () => {
       return { themeAbs, configAbs, logger, server };
     };
 
-    it("adds the theme and the config file to the dev watcher (a theme outside root is not watched otherwise)", () => {
+    it("adds the theme and every config candidate to the dev watcher (a theme outside root is not watched otherwise)", () => {
       const { themeAbs, configAbs, server } = setup();
-      expect(server.watcher.add.mock.calls).toEqual([[themeAbs], [configAbs]]);
+      expect(server.watcher.add.mock.calls).toEqual([
+        [themeAbs],
+        [[configAbs, join(tmp, "package.json")]],
+      ]);
     });
 
     it("re-emits + sends full-reload on theme.json change (debounced)", () => {
@@ -348,6 +363,86 @@ describe("styleGenVite plugin", () => {
         vi.advanceTimersByTime(200);
 
         expect(restart).not.toHaveBeenCalled();
+      });
+    });
+
+    // N-L1: the config moves between `style-gen.config.json` and
+    // `package.json#style-gen` while the server runs.
+    describe("config candidates", () => {
+      const writePackage = (pkg: unknown): string => {
+        const file = join(tmp, "package.json");
+        writeFileSync(file, JSON.stringify(pkg), "utf8");
+        return file;
+      };
+      const setupWithoutConfig = (pkg?: unknown) => {
+        vi.useFakeTimers();
+        writeTheme("styles/theme.json");
+        if (pkg !== undefined) writePackage(pkg);
+        const plugin = styleGenVite();
+        const logger = makeLogger();
+        start(plugin, serveConfig(logger));
+        const server = makeServer(logger);
+        callConfigureServer(plugin, server);
+        logger.info.mockClear();
+        return { logger, server };
+      };
+
+      it("picks up a style-gen section added to package.json when no config exists", () => {
+        const { server } = setupWithoutConfig();
+
+        const pkgAbs = writePackage({
+          "style-gen": { resetTailwindDefaults: ["colors"] },
+        });
+        server.watcher.handlers.get("change")?.(pkgAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(readFileSync(join(tmp, "styles/theme.css"), "utf8")).toContain(
+          "--color-*: initial;",
+        );
+        expect(server.ws.send).toHaveBeenCalledExactlyOnceWith({
+          type: "full-reload",
+          path: "*",
+        });
+      });
+
+      it("lets a style-gen.config.json created later take precedence over package.json#style-gen", () => {
+        const { server } = setupWithoutConfig({
+          "style-gen": { output: "a.css" },
+        });
+        expect(existsSync(join(tmp, "a.css"))).toBe(true);
+
+        const configAbs = join(tmp, "style-gen.config.json");
+        writeFileSync(configAbs, JSON.stringify({ output: "gen/b.css" }));
+        server.watcher.handlers.get("add")?.(configAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(existsSync(join(tmp, "gen/b.css"))).toBe(true);
+        expect(server.ws.send).toHaveBeenCalledOnce();
+      });
+
+      it("ignores package.json events while style-gen.config.json exists", () => {
+        const { logger, server } = setup();
+        const pkgAbs = join(tmp, "package.json");
+        // Not even valid JSON: a reload would log it.
+        writeFileSync(pkgAbs, "{ not json", "utf8");
+        server.watcher.handlers.get("change")?.(pkgAbs);
+        server.watcher.handlers.get("add")?.(pkgAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(logger.error).not.toHaveBeenCalled();
+        expect(server.ws.send).not.toHaveBeenCalled();
+      });
+
+      it("neither reloads nor logs for a package.json change without a style-gen section", () => {
+        const { logger, server } = setupWithoutConfig();
+
+        const pkgAbs = writePackage({ name: "app", dependencies: { a: "1" } });
+        server.watcher.handlers.get("change")?.(pkgAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(logger.info).not.toHaveBeenCalled();
+        expect(logger.error).not.toHaveBeenCalled();
+        expect(server.ws.send).not.toHaveBeenCalled();
       });
     });
   });

@@ -23,6 +23,11 @@
  * is one folder. Scope `app`: `<src dir>/<file>` (`theme.ts`,
  * `theme/theme.tokens.ts`, `theme/theme.json`), where the src dir is the
  * parent of `uiDir` (`src/`, Nuxt `app/`); a missing file is an error.
+ * Scope `config`: `<app root>/<file>` (`style-gen.config.json`), the parent of
+ * the src dir; the JSON is compared with the rule's `ignoreKeys` removed
+ * (the keys that name the app's own paths), so the generator options that
+ * shape the CSS (`coverage`, `breakpoints`, …) cannot drift between apps;
+ * a missing or unparsable file is an error.
  *
  * Extension points: append to `APPS`, flip `stories`, append to
  * `IDENTICAL`. Node built-ins only; paths go through node:path.
@@ -45,9 +50,10 @@ import { repoRootFromArgs } from "./doc-markdown.mjs";
 
 /**
  * @typedef {object} IdenticalRule
- * @property {"folder" | "app"} scope - `folder`: `file` inside each component folder; `app`: `file` relative to the app's src dir (the parent of `uiDir`)
- * @property {string} file - File path inside the folder or the src dir
+ * @property {"folder" | "app" | "config"} scope - `folder`: `file` inside each component folder; `app`: `file` relative to the app's src dir (the parent of `uiDir`); `config`: JSON `file` in the app root (the parent of the src dir), compared without `ignoreKeys`
+ * @property {string} file - File path inside the folder, the src dir or the app root
  * @property {readonly string[]} apps - `PlainApp.name`s whose copies must be byte-identical
+ * @property {readonly string[]} [ignoreKeys] - `config` scope: top-level keys left out of the comparison
  */
 
 /**
@@ -74,8 +80,10 @@ export const APPS = [
 
 /**
  * `style.ts`, `theme.ts`, `theme/theme.tokens.ts` and `theme/theme.json` are byte-identical in
- * both apps; the component, `types.ts` and the stories are framework-specific
- * (plain-nuxt writes Vue types and `.stories.ts`), so they are not compared.
+ * both apps, and so is `style-gen.config.json` apart from the keys that name an
+ * app's own paths (`$schema`, `theme`, `output`, `tokensOutput`); the component,
+ * `types.ts` and the stories are framework-specific (plain-nuxt writes Vue
+ * types and `.stories.ts`), so they are not compared.
  * @type {readonly IdenticalRule[]}
  */
 export const IDENTICAL = [
@@ -98,6 +106,12 @@ export const IDENTICAL = [
     scope: "app",
     file: "theme/theme.json",
     apps: ["plain-react", "plain-nuxt"],
+  },
+  {
+    scope: "config",
+    file: "style-gen.config.json",
+    apps: ["plain-react", "plain-nuxt"],
+    ignoreKeys: ["$schema", "theme", "output", "tokensOutput"],
   },
 ];
 
@@ -288,6 +302,85 @@ function compareAll(root, paths, errors) {
 }
 
 /**
+ * JSON text with object keys sorted at every depth, so two configs that differ
+ * only in key order compare equal.
+ * @param {unknown} value - Parsed JSON
+ * @returns {string} Canonical text
+ */
+function canonicalJson(value) {
+  return JSON.stringify(value, (_key, v) =>
+    v !== null && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.keys(v)
+            .sort()
+            .map((k) => [k, v[k]]),
+        )
+      : v,
+  );
+}
+
+/**
+ * Parsed JSON file without the ignored top-level keys.
+ * @param {string} root - Repository root
+ * @param {string} path - Repo-relative path
+ * @param {readonly string[]} ignoreKeys - Top-level keys to drop
+ * @returns {{ text: string } | { error: string }} Canonical text, or why the file cannot be read
+ */
+function readConfig(root, path, ignoreKeys) {
+  try {
+    const parsed = JSON.parse(readFileSync(join(root, path), "utf8"));
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed)
+    ) {
+      return { error: `${path}: not a JSON object` };
+    }
+    const kept = Object.fromEntries(
+      Object.entries(parsed).filter(([key]) => !ignoreKeys.includes(key)),
+    );
+    return { text: canonicalJson(kept) };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return { error: `${path}: ${reason}` };
+  }
+}
+
+/**
+ * Errors of a config comparison: a missing or unparsable file, or a copy that
+ * differs from the first one once `ignoreKeys` are removed.
+ * @param {string} root - Repository root
+ * @param {string[]} paths - Repo-relative paths of the copies, reference first
+ * @param {readonly string[]} ignoreKeys - Top-level keys left out of the comparison
+ * @returns {string[]} Violations
+ */
+function compareConfigs(root, paths, ignoreKeys) {
+  /** @type {string[]} */
+  const errors = [];
+  /** @type {{ path: string, text: string }[]} */
+  const configs = [];
+  for (const path of paths) {
+    if (!existsSync(join(root, path))) {
+      errors.push(`${path}: missing`);
+      continue;
+    }
+    const read = readConfig(root, path, ignoreKeys);
+    if ("error" in read) errors.push(read.error);
+    else configs.push({ path, text: read.text });
+  }
+  const [ref, ...others] = configs;
+  if (ref === undefined) return errors;
+  for (const other of others) {
+    if (other.text !== ref.text) {
+      errors.push(
+        `${other.path}: differs from ${ref.path} outside ${ignoreKeys.join(", ")}`,
+      );
+    }
+  }
+  return errors;
+}
+
+/**
  * The warning for a folder that exists in some apps of a rule only.
  * @param {FoundApp[]} having - Apps that have the folder
  * @param {FoundApp[]} lacking - Apps that lack it
@@ -315,6 +408,13 @@ function checkIdentical(root, found, rule) {
   const present = rule.apps
     .map((name) => found.get(name))
     .filter((entry) => entry !== undefined);
+  if (rule.scope === "config") {
+    const files = present.map(
+      (entry) => `${posix.dirname(srcDir(entry.app))}/${rule.file}`,
+    );
+    errors.push(...compareConfigs(root, files, rule.ignoreKeys ?? []));
+    return { errors, warnings };
+  }
   if (rule.scope === "app") {
     const files = present.map((entry) => `${srcDir(entry.app)}/${rule.file}`);
     for (const file of files) {

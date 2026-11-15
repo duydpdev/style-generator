@@ -3,19 +3,31 @@
  * Reference gate of the rendered docs, three mechanical checks:
  *
  *  1. CLI flags. `dist/cli/index.mjs <command> --help` is run for every
- *     command; each `--flag` it prints must appear in an inline code span of
- *     the command's section (the heading `` `style-gen <command>` `` up to the
- *     next heading of the same or a higher level) in `documents/reference/cli.md`.
+ *     command; each long (`--flag`) and short (`-y`) flag it prints must appear
+ *     in an inline code span of the command's section (the heading
+ *     `` `style-gen <command>` `` up to the next heading of the same or a higher
+ *     level) in `documents/reference/cli.md`.
  *  2. Config keys. `style-gen schema` writes the JSON Schema of
- *     `style-gen.config.json` into a scratch project; each key of its
- *     `properties` (`$schema` included) must appear in an inline code span of
- *     `documents/reference/options.md`.
+ *     `style-gen.config.json` into a scratch project; its `properties` are
+ *     walked and each key must be defined in `documents/reference/options.md`:
+ *       - a top-level key is defined where a table row, a list item or a
+ *         heading starts with its inline code span (`$schema` included);
+ *         a mention in running text does not count;
+ *       - a child of a fixed-shape object (`spacing.enabled`) is defined by the
+ *         dotted path in that position, or by its leaf name in an inline code
+ *         span of the parent's section (the heading carrying the parent's name);
+ *       - a per-category map (`coverage`: every child is an object of its own)
+ *         needs each distinct leaf name (`prefixes`, `keys`, `opacities`) and
+ *         each category name in an inline code span of the map's section, not
+ *         every category x leaf pair;
+ *       - records (`screens`) have no fixed keys to check.
  *  3. History phrases. No rendered page (README, `documents/**` except plans,
  *     brainstorm and migration guides) tells version history outside a fenced
  *     block: that is the changelog's and the migration guides' job.
  *
  * A span matches a flag or key when it equals it or continues it with a
- * separator (`--max-gzip <n>`, `--theme=<path>`, `spacing.enabled`); never as
+ * separator (`--max-gzip <n>`, `--theme=<path>`, `spacing.enabled`), a span
+ * listing flags (`-w, --watch`) is matched per comma-separated part; never as
  * a substring.
  *
  *   --root    repository root (default: the repo of this script)
@@ -89,15 +101,17 @@ function spansOfLines(lines) {
 }
 
 /**
- * Whether a span names a flag: equal, or followed by a space or `=`.
+ * Whether a span names a flag: equal, or followed by a space or `=`. A span
+ * such as `-w, --watch` names both flags.
  * @param {string} span - Inline code span content
- * @param {string} flag - `--flag`
+ * @param {string} flag - `--flag` or `-f`
  * @returns {boolean} Match
  */
 function namesFlag(span, flag) {
-  return (
-    span === flag || span.startsWith(`${flag} `) || span.startsWith(`${flag}=`)
-  );
+  return span.split(",").some((part) => {
+    const p = part.trim();
+    return p === flag || p.startsWith(`${flag} `) || p.startsWith(`${flag}=`);
+  });
 }
 
 /**
@@ -184,7 +198,12 @@ function helpFlags(root, command) {
   const label = `\`style-gen ${command} --help\``;
   if ("error" in run) return { error: `${label} ${run.error}` };
   if (run.stdout.trim() === "") return { error: `${label} printed nothing` };
-  const flags = [...new Set(run.stdout.match(/--[a-z][a-z-]*/g) ?? [])];
+  const flags = [
+    ...new Set([
+      ...(run.stdout.match(/--[a-z][a-z-]*/g) ?? []),
+      ...(run.stdout.match(/(?<![\w-])-[a-z](?![\w-])/g) ?? []),
+    ]),
+  ];
   if (flags.length === 0 && !FLAGLESS.has(command)) {
     return { error: `${label} lists no flag` };
   }
@@ -227,7 +246,145 @@ function cliErrors(root) {
 }
 
 /**
- * Check 2: every key of the config's JSON Schema is documented.
+ * Inline code spans that start a table row, a list item or a heading: where a
+ * page defines a name, as opposed to running text that merely mentions it.
+ * @param {Line[]} lines - Tagged lines
+ * @returns {string[]} The spans
+ */
+function definitionSpans(lines) {
+  /** @type {string[]} */
+  const spans = [];
+  for (const l of lines) {
+    if (l.fenced) continue;
+    const row = /^\s*\|([^|]*)\|/.exec(l.text);
+    if (row !== null) {
+      spans.push(...spansOf(row[1]));
+      continue;
+    }
+    const heading = /^#{1,6} (.*)$/.exec(l.text);
+    if (heading !== null) {
+      spans.push(...spansOf(heading[1]));
+      continue;
+    }
+    const item = /^\s*(?:[-*+]|\d+[.)])\s+((`+).+?\2)/.exec(l.text);
+    if (item !== null) spans.push(...spansOf(item[1]));
+  }
+  return spans;
+}
+
+/**
+ * Whether a span mentions a name as a whole word (`{ prefixes: [...] }` and
+ * `prefixes` mention `prefixes`; `skip-rules` does not mention `rules`).
+ * @param {string} span - Inline code span content
+ * @param {string} name - Key name
+ * @returns {boolean} Match
+ */
+function mentionsName(span, name) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\w$.-])${escaped}(?![\\w-])`).test(span);
+}
+
+/**
+ * The `properties` of a schema node that has fixed keys: its own, or those of
+ * the first `anyOf` member that has them (`boolean | { … }`).
+ * @param {unknown} node - JSON Schema node
+ * @returns {Record<string, unknown> | null} Fixed keys, `null` for records and scalars
+ */
+function fixedKeys(node) {
+  if (node === null || typeof node !== "object") return null;
+  const n = /** @type {{ properties?: unknown, anyOf?: unknown }} */ (node);
+  if (n.properties !== null && typeof n.properties === "object") {
+    return /** @type {Record<string, unknown>} */ (n.properties);
+  }
+  if (Array.isArray(n.anyOf)) {
+    for (const member of n.anyOf) {
+      const keys = fixedKeys(member);
+      if (keys !== null) return keys;
+    }
+  }
+  return null;
+}
+
+/**
+ * @typedef {object} KeyRequirement
+ * @property {string[]} path - Key path from the schema root
+ * @property {string[]} [categories] - Per-category map: the category names
+ * @property {string[]} [leaves] - Per-category map: the distinct leaf names
+ */
+
+/**
+ * Walks a schema's `properties` into what the page must define: every key of
+ * a fixed-shape object, and for a per-category map (every child an object of
+ * its own) the category names and the distinct leaf names, not their product.
+ * @param {Record<string, unknown>} properties - `properties` of a schema node
+ * @param {string[]} [parent] - Path of the node
+ * @returns {KeyRequirement[]} The requirements, parents before children
+ */
+function keyRequirements(properties, parent = []) {
+  /** @type {KeyRequirement[]} */
+  const out = [];
+  for (const [key, value] of Object.entries(properties)) {
+    const path = [...parent, key];
+    out.push({ path });
+    const children = fixedKeys(value);
+    if (children === null) continue;
+    const entries = Object.entries(children);
+    if (entries.length > 0 && entries.every(([, c]) => fixedKeys(c) !== null)) {
+      const leaves = new Set(
+        entries.flatMap(([, c]) => Object.keys(fixedKeys(c) ?? {})),
+      );
+      out.push({
+        path,
+        categories: entries.map(([k]) => k),
+        leaves: [...leaves],
+      });
+    } else {
+      out.push(...keyRequirements(children, path));
+    }
+  }
+  return out;
+}
+
+/**
+ * Violations of one requirement.
+ * @param {KeyRequirement} req - What the page must define
+ * @param {Line[]} lines - Tagged lines of the page
+ * @param {string[]} defined - `definitionSpans(lines)`
+ * @returns {string[]} Violations
+ */
+function requirementErrors(req, lines, defined) {
+  const dotted = req.path.join(".");
+  const name = req.path[req.path.length - 1];
+  if (req.categories !== undefined && req.leaves !== undefined) {
+    const section = sectionOf(lines, name);
+    if (section === null) {
+      return [`options.md: no section for \`${name}\` to define its keys`];
+    }
+    const spans = spansOfLines(section);
+    return [...req.categories, ...req.leaves]
+      .filter((k) => !spans.some((s) => mentionsName(s, k)))
+      .map(
+        (k) =>
+          `options.md: config key ${dotted}.${k} is not documented in the \`${name}\` section`,
+      );
+  }
+  if (defined.some((s) => namesKey(s, dotted))) return [];
+  if (req.path.length > 1) {
+    const parent = req.path[req.path.length - 2];
+    const section = sectionOf(lines, parent);
+    if (
+      section !== null &&
+      spansOfLines(section).some((s) => mentionsName(s, name))
+    ) {
+      return [];
+    }
+  }
+  return [`options.md: config key ${dotted} is not documented`];
+}
+
+/**
+ * Check 2: every key of the config's JSON Schema, nested ones included, is
+ * documented.
  * @param {string} root - Repository root
  * @returns {{ errors: string[], keys: number }} Violations and the key count
  */
@@ -260,15 +417,19 @@ function configErrors(root) {
     const schema = JSON.parse(
       readFileSync(join(scratch, "config.schema.json"), "utf8"),
     );
-    const keys = Object.keys(schema.properties ?? {});
-    if (keys.length === 0) {
+    const requirements = keyRequirements(schema.properties ?? {});
+    if (requirements.length === 0) {
       return { errors: ["options.md: the config schema has no keys"], keys: 0 };
     }
-    const spans = spansOfLines(tagLines(page));
-    const errors = keys
-      .filter((key) => !spans.some((s) => namesKey(s, key)))
-      .map((key) => `options.md: config key ${key} is not documented`);
-    return { errors, keys: keys.length };
+    const lines = tagLines(page);
+    const defined = definitionSpans(lines);
+    const errors = requirements.flatMap((r) =>
+      requirementErrors(r, lines, defined),
+    );
+    return {
+      errors,
+      keys: requirements.filter((r) => r.categories === undefined).length,
+    };
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

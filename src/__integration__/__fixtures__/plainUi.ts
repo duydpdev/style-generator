@@ -7,9 +7,10 @@ export interface PlainApp {
   readonly stories: false | ".stories.tsx" | ".stories.ts";
 }
 export interface IdenticalRule {
-  readonly scope: "folder" | "app";
+  readonly scope: "folder" | "app" | "config";
   readonly file: string;
   readonly apps: readonly string[];
+  readonly ignoreKeys?: readonly string[];
 }
 export interface Report {
   readonly errors: string[];

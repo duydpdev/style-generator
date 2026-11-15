@@ -4,6 +4,7 @@ import path from "node:path";
 import * as p from "@clack/prompts";
 
 import { isPlainObject } from "../../node/isPlainObject";
+import { readConfigFile, resolveConfig } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { logger } from "../logger";
 import {
@@ -18,7 +19,7 @@ import {
   type BundlerStack,
   type DetectedStack,
 } from "./detectStack";
-import { schemaCommand } from "./schema";
+import { writeConfigSchema, writeThemeSchema } from "./schema";
 
 export interface InitArgs {
   theme?: string;
@@ -316,9 +317,51 @@ function cssEntryFor(
 }
 
 /**
+ * The `theme`/`output` of a project's config, resolved the way `generate`
+ * reads it: a config without a `theme` key means `styles/theme.json`.
+ */
+interface ConfigLayout {
+  /** `style-gen.config.json` or `package.json`. */
+  source: string;
+  theme: string;
+  output: string;
+  /** Why `generate` ignores the config (malformed, schema issues); `theme`/`output` are then the defaults. */
+  problem: string | undefined;
+}
+
+/**
+ * Read the existing config (`style-gen.config.json`, else
+ * `package.json#style-gen`) with the defaults `generate` applies.
+ * @param {string} cwd - The project root
+ * @returns {ConfigLayout | undefined} The layout, or `undefined` without a config
+ */
+function readConfigLayout(cwd: string): ConfigLayout | undefined {
+  const file = readConfigFile(cwd);
+  if (file.source === undefined) return undefined;
+  const { theme, output } = resolveConfig({}, file);
+  return {
+    source: file.source,
+    theme,
+    output,
+    problem: file.error ?? file.issues,
+  };
+}
+
+/**
+ * Whether two project-relative paths name the same file.
+ * @param {string} cwd - The project root
+ * @param {string} a - A path, relative to `cwd` or absolute
+ * @param {string} b - Another path
+ * @returns {boolean} `true` when both resolve to one absolute path
+ */
+function samePath(cwd: string, a: string, b: string): boolean {
+  return path.resolve(cwd, a) === path.resolve(cwd, b);
+}
+
+/**
  * The theme and generated CSS of a project `init` already set up: the
- * `theme`/`output` of the existing config, else the theme location and the
- * `theme.css` next to it (what a fresh `init` writes).
+ * `theme`/`output` of a valid existing config, else the theme location and
+ * the `theme.css` next to it (what a fresh `init` writes).
  * @param {string} cwd - The project root
  * @param {string} themeLoc - Project-relative POSIX theme location
  * @returns {{ theme: string; output: string }} The layout to print
@@ -327,19 +370,223 @@ function existingLayout(
   cwd: string,
   themeLoc: string,
 ): { theme: string; output: string } {
-  let content: Record<string, unknown> = {};
-  try {
-    ({ content } = loadMergeBase(cwd));
-  } catch {
-    // An unreadable config only costs the printed paths their accuracy;
-    // `generate` reports it with the real error.
+  const found = readConfigLayout(cwd);
+  if (found?.problem === undefined && found !== undefined) return found;
+  // An unreadable config only costs the printed paths their accuracy;
+  // `generate` reports it with the real error.
+  return {
+    theme: themeLoc,
+    output: path.posix.join(path.posix.dirname(themeLoc), "theme.css"),
+  };
+}
+
+/**
+ * The config `init` can build on: a valid existing one. `--yes` refuses a
+ * config it cannot read the theme from, and a `--theme` that disagrees with
+ * it: defaults would put a second theme next to the one the config names.
+ * Without `--yes`, an explicit `--theme` or a wizard answer is the user's own
+ * choice, and an invalid config is merged into as before.
+ * @param {InitArgs} args - The CLI arguments
+ * @param {string} cwd - The project root
+ * @returns {ConfigLayout | undefined} The config, or `undefined` when there is none to keep
+ * @throws {Error} Under `--yes`, when the config is invalid or `--theme` names another theme
+ */
+function usableConfig(args: InitArgs, cwd: string): ConfigLayout | undefined {
+  const found = readConfigLayout(cwd);
+  if (found === undefined || args.yes !== true) {
+    return found?.problem === undefined ? found : undefined;
   }
-  const theme = typeof content.theme === "string" ? content.theme : themeLoc;
-  const output =
-    typeof content.output === "string"
-      ? content.output
-      : path.posix.join(path.posix.dirname(theme), "theme.css");
-  return { theme, output };
+  if (found.problem !== undefined) {
+    throw new Error(
+      `${found.source} is invalid, so --yes cannot tell where its theme lives:\n${found.problem}\n💡 Fix it first: yarn style-gen doctor`,
+    );
+  }
+  if (args.theme !== undefined && !samePath(cwd, args.theme, found.theme)) {
+    throw new Error(
+      `--theme ${args.theme} differs from the theme of ${found.source} (${found.theme}); --yes never redirects an existing config.\n💡 Drop --theme, or run init without --yes to change it`,
+    );
+  }
+  return found;
+}
+
+/**
+ * The theme location and the dark-mode answer: the wizard's, else the flags',
+ * else the config's theme, else the stack's default.
+ * @param {InitArgs} args - The CLI arguments
+ * @param {ConfigLayout | undefined} config - The config to keep, when there is one
+ * @param {string} defaultTheme - The stack's default theme location
+ * @param {boolean} isInteractive - Whether a TTY can answer the prompts
+ * @returns {Promise<InteractiveConfig>} The theme location and dark-mode choice
+ */
+async function chooseTheme(
+  args: InitArgs,
+  config: ConfigLayout | undefined,
+  defaultTheme: string,
+  isInteractive: boolean,
+): Promise<InteractiveConfig> {
+  const themeLoc = config?.theme ?? defaultTheme;
+  // `--skip-rules` alone still opens the wizard: it asks only for these two.
+  if (isInteractive && args.theme === undefined && args.dark === undefined) {
+    return getInteractiveConfig(themeLoc);
+  }
+  return {
+    themeLoc: args.theme ?? themeLoc,
+    includeDark: args.dark ?? false,
+  };
+}
+
+/**
+ * Resolve the theme path inside the project root. A config's own theme may
+ * live outside it (a monorepo's shared theme): that one is returned as the
+ * config instead.
+ * @param {string} cwd - The project root
+ * @param {string} themeLoc - The chosen theme location
+ * @param {ConfigLayout | undefined} config - The config to keep, when there is one
+ * @returns {string | ConfigLayout} The absolute theme path, or the config naming a theme outside the root
+ * @throws {Error} When any other theme path escapes the root
+ */
+function resolveThemePath(
+  cwd: string,
+  themeLoc: string,
+  config: ConfigLayout | undefined,
+): string | ConfigLayout {
+  try {
+    return resolveProjectPath(cwd, themeLoc.trim(), "theme");
+  } catch (error) {
+    if (config !== undefined && samePath(cwd, themeLoc.trim(), config.theme)) {
+      return config;
+    }
+    throw error;
+  }
+}
+
+/** Where `init` writes the theme and its schemas. */
+interface ThemeTarget {
+  /** Absolute theme path. */
+  abs: string;
+  /** Repo-relative POSIX theme path (an absolute `--theme` inside the root is stored relative). */
+  loc: string;
+  /** The theme's schema, next to the theme. */
+  schemaAbs: string;
+  configSchemaAbs: string;
+}
+
+/**
+ * @param {string} cwd - The project root
+ * @param {string} abs - Absolute theme path inside the root
+ * @returns {ThemeTarget} The theme and schema paths, all inside the root
+ */
+function themeTarget(cwd: string, abs: string): ThemeTarget {
+  const loc = toRepoPath(cwd, abs);
+  return {
+    abs,
+    loc,
+    schemaAbs: resolveProjectPath(
+      cwd,
+      path.posix.join(path.posix.dirname(loc), "theme.schema.json"),
+      "schema output",
+    ),
+    configSchemaAbs: resolveProjectPath(
+      cwd,
+      CONFIG_SCHEMA_FILE,
+      "config schema output",
+    ),
+  };
+}
+
+/**
+ * Write the config's JSON Schema in the project root unless it is there.
+ * @param {string} cwd - The project root
+ */
+function writeMissingConfigSchema(cwd: string): void {
+  const abs = resolveProjectPath(
+    cwd,
+    CONFIG_SCHEMA_FILE,
+    "config schema output",
+  );
+  if (!fs.existsSync(abs)) writeConfigSchema(cwd, abs);
+}
+
+/**
+ * Write the theme and the schemas that are missing, or all of them when the
+ * user confirmed the overwrite. A file that exists is not touched and not
+ * reported. The theme template references "./theme.schema.json" via
+ * "$schema", the config "./style-gen.config.schema.json".
+ * @param {string} cwd - The project root
+ * @param {ThemeTarget} target - Where they go
+ * @param {boolean} includeDark - Whether the theme template has the dark axis
+ * @param {boolean} overwrite - Replace what exists
+ * @returns {number} How many files were written
+ */
+function writeThemeFiles(
+  cwd: string,
+  target: ThemeTarget,
+  includeDark: boolean,
+  overwrite: boolean,
+): number {
+  let wrote = 0;
+  if (overwrite || !fs.existsSync(target.abs)) {
+    writeFile(target.abs, includeDark ? themeTemplateDark : themeTemplate);
+    logger.success(`Created ${target.loc}`);
+    wrote++;
+  }
+  if (overwrite || !fs.existsSync(target.schemaAbs)) {
+    writeThemeSchema(cwd, target.schemaAbs);
+    wrote++;
+  }
+  if (overwrite || !fs.existsSync(target.configSchemaAbs)) {
+    writeConfigSchema(cwd, target.configSchemaAbs);
+    wrote++;
+  }
+  return wrote;
+}
+
+/**
+ * Settle the config: one that already names this theme stays as it is
+ * (`package.json#style-gen` included, so no `style-gen.config.json` shadows
+ * it); otherwise `theme` and `output` are merged into it, or a new one is
+ * written.
+ * @param {string} cwd - The project root
+ * @param {MergeBase} mergeBase - The existing config content, if any
+ * @param {ConfigLayout | undefined} config - The valid existing config, if any
+ * @param {string} themeLoc - Repo-relative POSIX path of the theme
+ * @returns {{ layout: { theme: string; output: string }; changed: boolean }} The theme and output in effect, and whether a config file was written
+ */
+function updateConfig(
+  cwd: string,
+  mergeBase: MergeBase,
+  config: ConfigLayout | undefined,
+  themeLoc: string,
+): { layout: { theme: string; output: string }; changed: boolean } {
+  if (config !== undefined && samePath(cwd, themeLoc, config.theme)) {
+    logger.info(`Kept ${config.source}: theme and output stay as configured.`);
+    return { layout: config, changed: false };
+  }
+  const written = {
+    theme: themeLoc,
+    output: path.posix.join(path.posix.dirname(themeLoc), "theme.css"),
+  };
+  writeFile(
+    mergeBase.configPath,
+    JSON.stringify(
+      {
+        ...configSchemaRef(mergeBase.content),
+        ...mergeBase.content,
+        ...written,
+      },
+      null,
+      2,
+    ),
+  );
+  logger.success(
+    `${mergeBase.source === "style-gen.config.json" ? "Updated" : "Created"} style-gen.config.json`,
+  );
+  if (mergeBase.source === "package.json") {
+    logger.info(
+      'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
+    );
+  }
+  return { layout: written, changed: true };
 }
 
 /**
@@ -390,16 +637,16 @@ async function getInteractiveConfig(
 /**
  * Decide whether existing scaffold files may be replaced.
  * @param {boolean} isInteractive - Whether a TTY can answer the prompt
- * @param {boolean} yes - `--yes`: keep the files instead of asking or failing
- * @returns {Promise<"overwrite" | "kept" | "refused">} The outcome
+ * @param {boolean} yes - `--yes`: keep the files that exist and write only the missing ones, instead of asking or failing
+ * @returns {Promise<"overwrite" | "fill" | "kept" | "refused">} The outcome
  */
 async function confirmOverwrite(
   isInteractive: boolean,
   yes: boolean,
-): Promise<"overwrite" | "kept" | "refused"> {
+): Promise<"overwrite" | "fill" | "kept" | "refused"> {
   if (yes) {
     logger.info("Existing files kept (--yes never overwrites).");
-    return "kept";
+    return "fill";
   }
   if (!isInteractive) {
     logger.error(
@@ -584,8 +831,9 @@ async function scaffold(
   cwd: string,
   rulesSource: string | URL,
 ): Promise<number> {
+  const yes = args.yes === true;
   // `--yes` answers every prompt with its default, so it never asks.
-  const isInteractive = args.yes !== true && process.stdin.isTTY;
+  const isInteractive = !yes && process.stdin.isTTY;
 
   const detected = detectStack(cwd);
   const defaultTheme = defaultThemeLoc(detected, cwd);
@@ -594,93 +842,48 @@ async function scaffold(
     return runRulesOnly(args, detected, cwd, rulesSource, isInteractive);
   }
 
-  let themeLoc = args.theme ?? defaultTheme;
-  let includeDark = args.dark ?? false;
-
-  // `--skip-rules` alone still opens the wizard: it asks only for these two.
-  if (isInteractive && args.theme === undefined && args.dark === undefined) {
-    const config = await getInteractiveConfig(defaultTheme);
-    themeLoc = config.themeLoc;
-    includeDark = config.includeDark;
-  }
-
-  // Everything `init` scaffolds stays inside the project root. From here
-  // on only the repo-relative POSIX form is used (an absolute --theme
-  // inside the root is stored and printed relative).
-  const themeAbsPath = resolveProjectPath(cwd, themeLoc.trim(), "theme");
-  themeLoc = toRepoPath(cwd, themeAbsPath);
-  const schemaLoc = path.posix.join(
-    path.posix.dirname(themeLoc),
-    "theme.schema.json",
-  );
-  const schemaAbsPath = resolveProjectPath(cwd, schemaLoc, "schema output");
-  const configSchemaAbsPath = resolveProjectPath(
-    cwd,
-    CONFIG_SCHEMA_FILE,
-    "config schema output",
-  );
-
-  if ([themeAbsPath, schemaAbsPath, configSchemaAbsPath].some(fs.existsSync)) {
-    const proceed = await confirmOverwrite(isInteractive, args.yes === true);
-    if (proceed === "refused") return 1;
-    // Keeping the theme still refreshes the rules: re-running init after an
-    // upgrade is how they are updated.
-    if (proceed === "kept") {
-      const rules = await applyAgentRules(
-        args,
-        cwd,
-        rulesSource,
-        isInteractive,
-      );
-      printNextSteps(detected, existingLayout(cwd, themeLoc), cwd, rules);
-      return 0;
-    }
-  }
-
-  /* ---------- Existing config (read before anything is written) ---------- */
-
+  // Read before anything is written, so an unreadable config aborts with no
+  // file created.
   const mergeBase = loadMergeBase(cwd);
+  const config = usableConfig(args, cwd);
+  const choice = await chooseTheme(args, config, defaultTheme, isInteractive);
 
-  /* ---------- Theme file + JSON Schema ---------- */
-
-  writeFile(themeAbsPath, includeDark ? themeTemplateDark : themeTemplate);
-
-  logger.success(`Created ${themeLoc}`);
-
-  // The theme template references "./theme.schema.json" via "$schema", the
-  // config "./style-gen.config.schema.json".
-  const schemaCode = schemaCommand(
-    { out: schemaLoc, configOut: CONFIG_SCHEMA_FILE },
-    cwd,
-  );
-  if (schemaCode !== 0) return schemaCode;
-
-  /* ---------- Config file (merged into the existing one) ---------- */
-
-  const written = {
-    theme: themeLoc,
-    output: path.posix.join(path.posix.dirname(themeLoc), "theme.css"),
-  };
-  writeFile(
-    mergeBase.configPath,
-    JSON.stringify(
-      {
-        ...configSchemaRef(mergeBase.content),
-        ...mergeBase.content,
-        ...written,
-      },
-      null,
-      2,
-    ),
-  );
-  logger.success(
-    `${mergeBase.source === "style-gen.config.json" ? "Updated" : "Created"} style-gen.config.json`,
-  );
-  if (mergeBase.source === "package.json") {
+  const resolved = resolveThemePath(cwd, choice.themeLoc, config);
+  if (typeof resolved !== "string") {
+    // A shared theme outside the root (monorepo): `init` writes neither the
+    // theme nor its schema; the config schema lives in the root.
     logger.info(
-      'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
+      `The theme of ${resolved.source} (${resolved.theme}) is outside the project root: init writes no theme or theme schema for it.`,
     );
+    writeMissingConfigSchema(cwd);
+    const rules = await applyAgentRules(args, cwd, rulesSource, isInteractive);
+    printNextSteps(detected, resolved, cwd, rules);
+    return 0;
   }
+  const target = themeTarget(cwd, resolved);
+
+  const proceed = [target.abs, target.schemaAbs, target.configSchemaAbs].some(
+    fs.existsSync,
+  )
+    ? await confirmOverwrite(isInteractive, yes)
+    : "overwrite";
+  if (proceed === "refused") return 1;
+  // Keeping the theme still refreshes the rules: re-running init after an
+  // upgrade is how they are updated. A declined overwrite keeps everything,
+  // the config included.
+  if (proceed === "kept") {
+    const rules = await applyAgentRules(args, cwd, rulesSource, isInteractive);
+    printNextSteps(detected, existingLayout(cwd, target.loc), cwd, rules);
+    return 0;
+  }
+
+  const wrote = writeThemeFiles(
+    cwd,
+    target,
+    choice.includeDark,
+    proceed === "overwrite",
+  );
+  const settled = updateConfig(cwd, mergeBase, config, target.loc);
 
   /* ---------- Agent rules ---------- */
 
@@ -688,8 +891,12 @@ async function scaffold(
 
   /* ---------- Next steps ---------- */
 
-  logger.info("✅ Tailwind v4 configuration scaffolded successfully");
-  printNextSteps(detected, written, cwd, rules);
+  logger.info(
+    wrote === 0 && !settled.changed
+      ? "Nothing to do: the theme, its schemas and the config are already in place."
+      : "✅ Tailwind v4 configuration scaffolded successfully",
+  );
+  printNextSteps(detected, settled.layout, cwd, rules);
 
   if (isInteractive) {
     p.outro("You're all set!");

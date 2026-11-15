@@ -89,7 +89,8 @@ Options:
   --dark            Include a dark mode variant in the theme template
   --skip-rules      Do not write .claude/rules/style-generator.md
   --rules-only      Only write or refresh .claude/rules/style-generator.md (after an upgrade)
-  -y, --yes         Answer every prompt with its default and never overwrite an existing file (for scripts, CI and coding agents)`,
+  -y, --yes         Answer every prompt with its default and never overwrite an existing file; writes only what is missing and keeps the
+                    theme and output of an existing config (for scripts, CI and coding agents)`,
   options: {
     theme: { type: "string" },
     dark: { type: "boolean" },

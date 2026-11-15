@@ -2,6 +2,7 @@ import path from "node:path";
 
 import type { Logger, Plugin } from "vite";
 
+import { liveConfigIndex, sameEmitTarget } from "../../node/configSource";
 import { errorMessage } from "../../node/errorMessage";
 import { noConfigMessage } from "../../node/loadStyleGenConfig";
 import {
@@ -104,7 +105,9 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
   let logger: Pick<Logger, "info" | "error" | "warn"> | undefined;
   let target: EmitTarget | null = null;
   let root = "";
-  let configFile = "";
+  let configFiles: readonly string[] = [];
+  // `configResolved` runs once per environment: log the no-config line once.
+  let noConfigLogged = false;
   let owner = "";
   let registeredOutFile: string | null = null;
   const self = {};
@@ -173,8 +176,9 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
       // so a bad config or path is a plain throw.
       const resolved = resolvePluginTarget(root, PLUGIN_NAME);
       target = resolved.target;
-      configFile = resolved.configFile;
-      if (!resolved.configFound) {
+      configFiles = resolved.configFiles;
+      if (!resolved.configFound && !noConfigLogged) {
+        noConfigLogged = true;
         config.logger.info(`[${PLUGIN_NAME}] ${noConfigMessage(root)}`);
       }
       register(config.logger);
@@ -191,9 +195,11 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
 
     configureServer(server) {
       // A theme outside the project root is not watched by Vite otherwise,
-      // and the config file may be git-ignored or outside Vite's module graph.
+      // and a config file may be git-ignored or outside Vite's module graph.
+      // Both candidates are watched, existing or not: the config can move
+      // between `style-gen.config.json` and `package.json#style-gen`.
       server.watcher.add(requireTarget().themeFile);
-      server.watcher.add(configFile);
+      server.watcher.add([...configFiles]);
 
       const reemit = debounce(() => {
         const result = emitTheme(requireTarget());
@@ -211,7 +217,12 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
       // Reload the config in place (never `server.restart()`: hosts such as
       // Nuxt and Storybook own the server). An invalid edit keeps the last
       // valid target, like `style-gen generate --watch`.
+      let primaryPending = false;
       const reloadConfig = debounce(() => {
+        // A `package.json` event alone (`yarn add`) that leaves the target
+        // as it is needs no emit.
+        const conditionalOnly = !primaryPending;
+        primaryPending = false;
         let resolved: PluginTarget;
         try {
           resolved = resolvePluginTarget(root, PLUGIN_NAME);
@@ -222,13 +233,12 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
           return;
         }
         const previous = requireTarget();
+        if (conditionalOnly && sameEmitTarget(resolved.target, previous)) {
+          return;
+        }
         target = resolved.target;
         if (resolved.target.themeFile !== previous.themeFile) {
           server.watcher.add(resolved.target.themeFile);
-        }
-        if (resolved.configFile !== configFile) {
-          configFile = resolved.configFile;
-          server.watcher.add(configFile);
         }
         register(server.config.logger);
 
@@ -243,15 +253,20 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
         }
       }, 200);
 
+      // An event of a candidate shadowed by an earlier one that exists is not
+      // the config (`yarn add` while `style-gen.config.json` is in force).
+      const onConfigFile = (file: string): void => {
+        const index = liveConfigIndex(configFiles, file);
+        if (index === undefined) return;
+        if (index === 0) primaryPending = true;
+        reloadConfig();
+      };
       server.watcher.on("change", (file) => {
         if (file === requireTarget().themeFile) reemit();
-        else if (path.resolve(file) === configFile) reloadConfig();
+        else onConfigFile(file);
       });
       // `add`/`unlink` cover editors that save by replacing the file, and a
       // config created or removed while the server runs.
-      const onConfigFile = (file: string): void => {
-        if (path.resolve(file) === configFile) reloadConfig();
-      };
       server.watcher.on("add", onConfigFile);
       server.watcher.on("unlink", onConfigFile);
       // Free this instance's `activeOutFiles` slot when the dev server

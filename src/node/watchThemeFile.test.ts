@@ -49,6 +49,7 @@ describe("watchThemeFile", () => {
   let outFile: string;
   let tokensFile: string;
   let configFile: string;
+  let packageFile: string;
   let fake: FakeWatcher | undefined;
   let results: EmitResult[];
   let handle: ThemeWatchHandle | undefined;
@@ -94,6 +95,7 @@ describe("watchThemeFile", () => {
     outFile = path.join(dir, "theme.css");
     tokensFile = path.join(dir, "theme.tokens.ts");
     configFile = path.join(dir, "style-gen.config.json");
+    packageFile = path.join(dir, "package.json");
     fs.writeFileSync(themeFile, theme("#111"));
     results = [];
     fake = undefined;
@@ -115,10 +117,13 @@ describe("watchThemeFile", () => {
     expect(fs.existsSync(outFile)).toBe(false);
   });
 
-  it("passes persistent: false and watches the config next to the theme", () => {
-    const w = start({}, { configFile, persistent: false });
+  it("passes persistent: false and watches every config candidate next to the theme", () => {
+    const w = start(
+      {},
+      { configFiles: [configFile, packageFile], persistent: false },
+    );
 
-    expect(w.watched).toEqual([themeFile, configFile]);
+    expect(w.watched).toEqual([themeFile, configFile, packageFile]);
     expect(w.options).toMatchObject({ persistent: false });
   });
 
@@ -191,7 +196,7 @@ describe("watchThemeFile", () => {
           options: { resetTailwindDefaults: ["colors"] },
         }),
       );
-      const w = start({}, { configFile, reloadTarget });
+      const w = start({}, { configFiles: [configFile], reloadTarget });
 
       w.emit("change", configFile);
       vi.advanceTimersByTime(50);
@@ -214,7 +219,7 @@ describe("watchThemeFile", () => {
       const reloadTarget = vi.fn(
         (): EmitTarget => ({ themeFile, outFile, tokensFile }),
       );
-      const w = start({}, { configFile, reloadTarget });
+      const w = start({}, { configFiles: [configFile], reloadTarget });
 
       w.emit("change", configFile);
       w.emit("change", themeFile);
@@ -232,7 +237,10 @@ describe("watchThemeFile", () => {
           issues: "breakpoint → Unrecognized key",
           source: "style-gen.config.json",
         });
-      const w = start({ options: opts }, { configFile, reloadTarget });
+      const w = start(
+        { options: opts },
+        { configFiles: [configFile], reloadTarget },
+      );
 
       w.emit("change", configFile);
       vi.advanceTimersByTime(50);
@@ -259,7 +267,10 @@ describe("watchThemeFile", () => {
     it("still emits a theme edit that arrives in the same burst as an invalid config", () => {
       const w = start(
         {},
-        { configFile, reloadTarget: () => ({ issues: "x → bad" }) },
+        {
+          configFiles: [configFile],
+          reloadTarget: () => ({ issues: "x → bad" }),
+        },
       );
       fs.writeFileSync(themeFile, theme("#666"));
       w.emit("change", configFile);
@@ -276,7 +287,10 @@ describe("watchThemeFile", () => {
     it("falls back to the config file's basename when the issues carry no source", () => {
       const w = start(
         {},
-        { configFile, reloadTarget: () => ({ issues: "x → bad" }) },
+        {
+          configFiles: [configFile],
+          reloadTarget: () => ({ issues: "x → bad" }),
+        },
       );
       w.emit("change", configFile);
       vi.advanceTimersByTime(50);
@@ -291,7 +305,7 @@ describe("watchThemeFile", () => {
       const w = start(
         {},
         {
-          configFile,
+          configFiles: [configFile],
           reloadTarget: () => {
             throw new Error("disk gone");
           },
@@ -315,7 +329,7 @@ describe("watchThemeFile", () => {
       const w = start(
         {},
         {
-          configFile,
+          configFiles: [configFile],
           reloadTarget: () => ({
             themeFile: other,
             outFile: otherOut,
@@ -337,7 +351,7 @@ describe("watchThemeFile", () => {
       const w = start(
         {},
         {
-          configFile,
+          configFiles: [configFile],
           reloadTarget: () => ({ themeFile, outFile, tokensFile }),
         },
       );
@@ -352,7 +366,7 @@ describe("watchThemeFile", () => {
       const reloadTarget = vi.fn(
         (): EmitTarget => ({ themeFile, outFile, tokensFile }),
       );
-      const w = start({}, { configFile, reloadTarget });
+      const w = start({}, { configFiles: [configFile], reloadTarget });
 
       w.emit("unlink", themeFile);
       vi.advanceTimersByTime(50);
@@ -366,12 +380,106 @@ describe("watchThemeFile", () => {
     });
 
     it("ignores config events when no reloadTarget is given", () => {
-      const w = start({}, { configFile });
+      const w = start({}, { configFiles: [configFile] });
       w.emit("change", configFile);
       vi.advanceTimersByTime(50);
 
       // Still re-emits (harmless, unchanged) but never reports a config stage.
       expect(results).toEqual([ok(true)]);
+    });
+
+    // N-L1: the config can move between `style-gen.config.json` and
+    // `package.json#style-gen`; both candidates are watched.
+    describe("config candidates (N-L1)", () => {
+      const candidates = (): string[] => [configFile, packageFile];
+      const withOptions = (): EmitTarget => ({
+        themeFile,
+        outFile,
+        tokensFile,
+        options: { resetTailwindDefaults: ["colors"] },
+      });
+
+      it("reloads when package.json gains the config while no style-gen.config.json exists", () => {
+        const reloadTarget = vi.fn(withOptions);
+        const w = start({}, { configFiles: candidates(), reloadTarget });
+
+        w.emit("change", packageFile);
+        vi.advanceTimersByTime(50);
+
+        expect(reloadTarget).toHaveBeenCalledTimes(1);
+        expect(results).toEqual([ok(true)]);
+        expect(fs.readFileSync(outFile, "utf8")).toContain(
+          "--color-*: initial;",
+        );
+      });
+
+      it("reloads when style-gen.config.json appears while package.json is the source", () => {
+        const reloadTarget = vi.fn(withOptions);
+        const w = start({}, { configFiles: candidates(), reloadTarget });
+        fs.writeFileSync(configFile, "{}");
+
+        w.emit("add", configFile);
+        vi.advanceTimersByTime(50);
+
+        expect(reloadTarget).toHaveBeenCalledTimes(1);
+        expect(results).toEqual([ok(true)]);
+      });
+
+      it("ignores package.json events while style-gen.config.json exists", () => {
+        const reloadTarget = vi.fn(withOptions);
+        const w = start({}, { configFiles: candidates(), reloadTarget });
+        fs.writeFileSync(configFile, "{}");
+
+        w.emit("change", packageFile);
+        vi.advanceTimersByTime(50);
+
+        expect(reloadTarget).not.toHaveBeenCalled();
+        expect(results).toEqual([]);
+      });
+
+      it("emits and logs nothing for a package.json change that leaves the target as it is", () => {
+        const unchanged: EmitTarget = { themeFile, outFile, tokensFile };
+        const reloadTarget = vi.fn(() => unchanged);
+        const w = start({}, { configFiles: candidates(), reloadTarget });
+
+        w.emit("change", packageFile);
+        vi.advanceTimersByTime(50);
+
+        expect(reloadTarget).toHaveBeenCalledTimes(1);
+        expect(results).toEqual([]);
+        expect(fs.existsSync(outFile)).toBe(false);
+      });
+
+      it("still reports an unusable package.json section", () => {
+        const w = start(
+          {},
+          {
+            configFiles: candidates(),
+            reloadTarget: () => ({ issues: "x → bad", source: "package.json" }),
+          },
+        );
+
+        w.emit("change", packageFile);
+        vi.advanceTimersByTime(50);
+
+        expect(results).toHaveLength(1);
+        expect(results[0]).toMatchObject({
+          ok: false,
+          stage: "config",
+          message: "Invalid config (package.json):\nx → bad",
+        });
+      });
+
+      it("reloads when style-gen.config.json is removed, falling back to package.json", () => {
+        const reloadTarget = vi.fn(withOptions);
+        const w = start({}, { configFiles: candidates(), reloadTarget });
+
+        w.emit("unlink", configFile);
+        vi.advanceTimersByTime(50);
+
+        expect(reloadTarget).toHaveBeenCalledTimes(1);
+        expect(results).toEqual([ok(true)]);
+      });
     });
   });
 
@@ -437,6 +545,57 @@ describe("watchThemeFile with the real chokidar", () => {
           { timeout: 10_000, interval: 100 },
         );
         expect(fs.readFileSync(outFile, "utf8")).toMatch(/#00\d+/);
+      } finally {
+        await handle.close();
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  // N-L1: chokidar must report a candidate that does not exist yet.
+  it(
+    "reloads when a config candidate that did not exist is created",
+    { timeout: 15_000 },
+    async () => {
+      const dir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "style-gen-watch-cand-"),
+      );
+      const themeFile = path.join(dir, "theme.json");
+      const outFile = path.join(dir, "theme.css");
+      const tokensFile = path.join(dir, "theme.tokens.ts");
+      const configFile = path.join(dir, "style-gen.config.json");
+      const packageFile = path.join(dir, "package.json");
+      fs.writeFileSync(themeFile, theme("#111"));
+      const reloadTarget = vi.fn(
+        (): EmitTarget => ({
+          themeFile,
+          outFile,
+          tokensFile,
+          options: { resetTailwindDefaults: ["colors"] },
+        }),
+      );
+      const handle = watchThemeFile(
+        { themeFile, outFile, tokensFile },
+        () => undefined,
+        {
+          debounceMs: 20,
+          configFiles: [configFile, packageFile],
+          reloadTarget,
+        },
+      );
+      try {
+        await handle.ready;
+        // The first write creates the missing candidate; chokidar may miss an
+        // event in the same mtime tick as its scan, so keep writing until one
+        // gets through (a later write is a `change` of the now-existing file).
+        let edit = 0;
+        await vi.waitFor(
+          () => {
+            fs.writeFileSync(packageFile, JSON.stringify({ edit: edit++ }));
+            expect(reloadTarget).toHaveBeenCalled();
+          },
+          { timeout: 10_000, interval: 100 },
+        );
       } finally {
         await handle.close();
         fs.rmSync(dir, { recursive: true, force: true });

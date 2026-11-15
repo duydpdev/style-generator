@@ -2,6 +2,7 @@ import path from "node:path";
 
 import { watch as chokidarWatch } from "chokidar";
 
+import { liveConfigIndex, sameEmitTarget } from "./configSource";
 import { errorMessage } from "./errorMessage";
 import { emitTheme } from "./themeEmitter";
 import type { EmitResult, EmitTarget } from "./themeEmitter";
@@ -16,12 +17,16 @@ export interface ConfigIssues {
 
 export interface WatchThemeOptions {
   /**
-   * A config file to watch next to the theme. A change (or its creation or
-   * removal) calls {@link WatchThemeOptions.reloadTarget} and re-emits.
+   * The files the config can live in, highest precedence first
+   * (`configCandidates(root)`). All are watched, also when they do not exist
+   * yet; a change, creation or removal of one calls
+   * {@link WatchThemeOptions.reloadTarget} and re-emits. An event of a file
+   * shadowed by an earlier one that exists is ignored, and an edit of a later
+   * one (`package.json`) that leaves the reloaded target unchanged emits nothing.
    */
-  configFile?: string;
+  configFiles?: readonly string[];
   /**
-   * Build the target again after `configFile` changed. Return
+   * Build the target again after a config file changed. Return
    * {@link ConfigIssues} for a config that cannot be used: it is reported
    * (`stage: "config"`), the last valid target stays in force and watching
    * goes on. A target with another `themeFile` makes the watcher unwatch the
@@ -69,19 +74,21 @@ export function watchThemeFile(
   onResult: (r: EmitResult) => void,
   o: WatchThemeOptions = {},
 ): ThemeWatchHandle {
-  const { configFile, reloadTarget, debounceMs = 200, persistent = true } = o;
+  const { reloadTarget, debounceMs = 200, persistent = true } = o;
   const watchFn = o.watch ?? chokidarWatch;
-  const configAbs =
-    configFile === undefined ? undefined : path.resolve(configFile);
+  const candidates = (o.configFiles ?? []).map((file) => path.resolve(file));
 
   let current = target;
   let timer: NodeJS.Timeout | undefined;
   let configDirty = false;
+  // A first-candidate (`style-gen.config.json`) event: always worth an emit.
+  let primaryDirty = false;
   let themeDirty = false;
 
-  // `false`: the config could not be used and `current` stays in force.
-  const reload = (): boolean => {
-    if (reloadTarget === undefined) return true;
+  // `failed`: the config could not be used and `current` stays in force.
+  // `same`: it loaded and describes the target already in force.
+  const reload = (): "failed" | "same" | "changed" => {
+    if (reloadTarget === undefined) return "changed";
     let next: EmitTarget | ConfigIssues;
     try {
       next = reloadTarget();
@@ -92,33 +99,39 @@ export function watchThemeFile(
         message: `Cannot reload config: ${errorMessage(error)}`,
         cause: error,
       });
-      return false;
+      return "failed";
     }
     if ("issues" in next) {
+      const first = candidates[0];
       const source =
-        next.source ??
-        (configAbs === undefined ? "config" : path.basename(configAbs));
+        next.source ?? (first === undefined ? "config" : path.basename(first));
       onResult({
         ok: false,
         stage: "config",
         message: `Invalid config (${source}):\n${next.issues}`,
         cause: next,
       });
-      return false;
+      return "failed";
     }
+    const same = sameEmitTarget(next, current);
     if (next.themeFile !== current.themeFile) {
       watcher.unwatch(current.themeFile);
       watcher.add(next.themeFile);
     }
     current = next;
-    return true;
+    return same ? "same" : "changed";
   };
 
   const run = (): void => {
     timer = undefined;
-    const reloadFailed = configDirty && !reload();
-    const nothingToEmit = reloadFailed && !themeDirty;
+    const outcome = configDirty ? reload() : "changed";
+    const nothingToEmit =
+      (outcome === "failed" && !themeDirty) ||
+      // `package.json` changed (`yarn add`, a version bump) without touching
+      // the `style-gen` section: nothing to emit and nothing to log.
+      (outcome === "same" && !primaryDirty && !themeDirty);
     configDirty = false;
+    primaryDirty = false;
     themeDirty = false;
     // An unusable config alone changes nothing: report it and leave the
     // output as the last valid config made it. A theme edit in the same
@@ -127,8 +140,13 @@ export function watchThemeFile(
   };
 
   const schedule = (changedFile: string): void => {
-    if (configAbs !== undefined && path.resolve(changedFile) === configAbs) {
+    const abs = path.resolve(changedFile);
+    if (candidates.includes(abs)) {
+      // `undefined`: shadowed by an earlier config file that exists.
+      const index = liveConfigIndex(candidates, abs);
+      if (index === undefined) return;
       configDirty = true;
+      if (index === 0) primaryDirty = true;
     } else {
       themeDirty = true;
     }
@@ -136,21 +154,18 @@ export function watchThemeFile(
     timer = setTimeout(run, debounceMs);
   };
 
-  const watcher = watchFn(
-    configAbs === undefined
-      ? current.themeFile
-      : [current.themeFile, configAbs],
-    { persistent, ignoreInitial: true },
-  );
+  const watcher = watchFn([current.themeFile, ...candidates], {
+    persistent,
+    ignoreInitial: true,
+  });
   // `add`/`unlink` cover editors that save by replacing the file.
   watcher.on("change", schedule);
   watcher.on("add", schedule);
   watcher.on("unlink", (file) => {
-    // The config being removed means "defaults again": reload. A removed
-    // theme needs nothing: its `add` event re-emits when it comes back.
-    if (configAbs !== undefined && path.resolve(file) === configAbs) {
-      schedule(file);
-    }
+    // A config file being removed means "the next candidate, else defaults":
+    // reload. A removed theme needs nothing: its `add` event re-emits when it
+    // comes back.
+    if (candidates.includes(path.resolve(file))) schedule(file);
   });
   watcher.on("error", (error) => {
     onResult({

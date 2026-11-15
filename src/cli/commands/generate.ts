@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { configCandidates } from "../../node/configSource";
 import { errorMessage } from "../../node/errorMessage";
 import {
   noConfigMessage,
@@ -205,8 +206,9 @@ export async function generateCommand(
       report(cwd, result);
     },
     {
-      // Also when no config exists yet: creating one is picked up.
-      configFile: path.resolve(cwd, file.source ?? "style-gen.config.json"),
+      // Both candidates, also when no config exists yet: creating one, or
+      // moving it between the two files, is picked up.
+      configFiles: configCandidates(cwd),
       reloadTarget,
       ...(hooks.watch !== undefined && { watch: hooks.watch }),
       ...(hooks.debounceMs !== undefined && { debounceMs: hooks.debounceMs }),

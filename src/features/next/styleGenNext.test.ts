@@ -309,6 +309,7 @@ describe("styleGenNext", () => {
       expect(vi.mocked(watch).mock.calls[1]?.[0]).toEqual([
         join(tmp, "b.json"),
         join(tmp, "style-gen.config.json"),
+        join(tmp, "package.json"),
       ]);
     });
 
@@ -379,7 +380,7 @@ describe("styleGenNext", () => {
     });
 
     describe("config edits", () => {
-      it("watches the config file next to the theme", () => {
+      it("watches both config candidates next to the theme (N-L1)", () => {
         const configAbs = writeConfig();
         writeTheme();
 
@@ -388,6 +389,7 @@ describe("styleGenNext", () => {
         expect(vi.mocked(watch).mock.calls[0]?.[0]).toEqual([
           join(tmp, "theme.json"),
           configAbs,
+          join(tmp, "package.json"),
         ]);
       });
 
@@ -511,6 +513,7 @@ describe("styleGenNext", () => {
       expect(vi.mocked(watch).mock.calls[0]?.[0]).toEqual([
         join(tmp, "design/tokens.json"),
         join(tmp, "style-gen.config.json"),
+        join(tmp, "package.json"),
       ]);
     });
 

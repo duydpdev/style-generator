@@ -82,12 +82,12 @@ const closeQuietly = (watcher: ThemeWatchHandle): void => {
  * nothing else keeps its event loop busy. `persistent: false` lets Node
  * exit on its own schedule regardless of who's holding this reference.
  * @param {EmitTarget} target - Theme file, output file and options to re-emit with
- * @param {string} configFile - Config file to watch; an edit reloads the target in place
+ * @param {readonly string[]} configFiles - Config files to watch; an edit of one reloads the target in place
  * @param {string} root - Directory the config is read from
  */
 const startDevWatcher = (
   target: EmitTarget,
-  configFile: string,
+  configFiles: readonly string[],
   root: string,
 ): void => {
   // Options take part in the key: a re-evaluated config with the same paths
@@ -98,7 +98,7 @@ const startDevWatcher = (
     target.outFile,
     target.tokensFile,
     target.options,
-    configFile,
+    configFiles,
   ]);
   if (devWatcher && devWatcherKey === key) return;
   if (devWatcher) closeQuietly(devWatcher);
@@ -132,7 +132,7 @@ const startDevWatcher = (
         );
       }
     },
-    { persistent: false, configFile, reloadTarget },
+    { persistent: false, configFiles, reloadTarget },
   );
   devWatcherKey = key;
 };
@@ -213,7 +213,7 @@ export const styleGenNext = (opts?: StyleGenNextOptions) => {
       if (!EMIT_PHASES.has(phase)) return resolvedConfig;
 
       const root = path.resolve(process.cwd(), rootOption ?? ".");
-      const { target, configFile, configFound } = resolvePluginTarget(
+      const { target, configFiles, configFound } = resolvePluginTarget(
         root,
         PLUGIN_NAME,
       );
@@ -229,7 +229,7 @@ export const styleGenNext = (opts?: StyleGenNextOptions) => {
       }
 
       if (phase === "phase-development-server") {
-        startDevWatcher(target, configFile, root);
+        startDevWatcher(target, configFiles, root);
       }
 
       return resolvedConfig;

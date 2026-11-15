@@ -137,7 +137,7 @@ Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/chec
 Source layout: `documents/architecture.md`; public exports per subpath and CLI: `documents/reference/`.
 Internal helpers (`toCamelCase`, `toPascalCase`) are not exported from any barrel; `toKebabCase` is public (from `./cva`) because it is the function the registry and
 `createVariantMapper` share. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`; from 4.x: `documents/migration/4.x-to-5.0.md`; from 5.x:
-`documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`.
+`documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`; from 7.x: `documents/migration/7.x-to-8.0.md`.
 
 Sample components (examples, not an API; nothing is published): `Box`, `Text`, `Stack`, `Flex`, `Grid`, `Button` live in the harness app over the `examples/design-system` recipes.
 React: `examples/harness/src/ui/*.tsx`, each a self-contained factory file `create<Name>(tokens, preset?)` with its own prop types and `Polymorphic` type (all six import
@@ -266,7 +266,7 @@ it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`
   Negative controls: `src/__integration__/publish-gates.test.ts`.
 - `yarn check:types-pack` (`scripts/check-types-pack.mjs`; CI after `build:all`, and `deploy.yml` before publish) packs the package and runs
   `@arethetypeswrong/cli --profile node16` on the tarball, so every subpath must resolve to `.d.ts` under `import` and `.d.cts` under `require`.
-- The package is public on npmjs.org: consumers need no token or scope config. 7.2.0 is the first npm release; versions up to 7.1.1 exist only on GitHub Packages (npm holds 1.7–3.0).
+- The package is public on npmjs.org: consumers need no token or scope config. 7.2.0 is the first npm release and 8.0.0 the first npm major; versions up to 7.1.1 exist only on GitHub Packages (npm holds 1.7–3.0).
 
 ## Project-Specific Workflow Rules
 

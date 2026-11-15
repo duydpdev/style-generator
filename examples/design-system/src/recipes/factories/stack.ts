@@ -1,7 +1,6 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
 } from "@duydpdev/style-generator/ui";
@@ -23,38 +22,39 @@ export type FlexBasis =
  * Flex layout of `Stack` (column): `direction`, `align`, `justify`, `wrap` and
  * `divideColor` (a color token or `token/step`); gap comes from spacing props.
  */
-export const stackTables = (t: RecipeTokens): RecipeTables => ({
-  base: "flex",
-  variants: {
-    direction: { column: "flex-col", row: "flex-row" },
-    align: {
-      start: "items-start",
-      center: "items-center",
-      end: "items-end",
-      stretch: "items-stretch",
+export const stackTables = (t: RecipeTokens) =>
+  ({
+    base: "flex",
+    variants: {
+      direction: { column: "flex-col", row: "flex-row" },
+      align: {
+        start: "items-start",
+        center: "items-center",
+        end: "items-end",
+        stretch: "items-stretch",
+      },
+      justify: {
+        start: "justify-start",
+        center: "justify-center",
+        end: "justify-end",
+        between: "justify-between",
+      },
+      wrap: { true: "flex-wrap" },
+      divideColor: createVariantMapper("divide", t.colors, {
+        opacities: t.opacities ?? [],
+      }),
     },
-    justify: {
-      start: "justify-start",
-      center: "justify-center",
-      end: "justify-end",
-      between: "justify-between",
-    },
-    wrap: { true: "flex-wrap" },
-    divideColor: createVariantMapper("divide", t.colors, {
-      opacities: t.opacities ?? [],
-    }),
-  },
-  defaultVariants: { direction: "column" },
-});
+    defaultVariants: { direction: "column" },
+  }) satisfies RecipeTables;
 
-export const createStackRecipe = (t: RecipeTokens): RecipeFn =>
+export const createStackRecipe = (t: RecipeTokens) =>
   recipeFromTables(stackTables(t));
 
 /**
  * `Flex` (row): the stack variants plus the item props `grow`, `shrink` and
  * `basis`. `Stack` does not take the item props.
  */
-export const flexTables = (t: RecipeTokens): RecipeTables => {
+export const flexTables = (t: RecipeTokens) => {
   const s = stackTables(t);
   return {
     ...s,
@@ -74,8 +74,8 @@ export const flexTables = (t: RecipeTokens): RecipeTables => {
       } satisfies Record<FlexBasis, string>,
     },
     defaultVariants: { direction: "row" },
-  };
+  } satisfies RecipeTables;
 };
 
-export const createFlexRecipe = (t: RecipeTokens): RecipeFn =>
+export const createFlexRecipe = (t: RecipeTokens) =>
   recipeFromTables(flexTables(t));

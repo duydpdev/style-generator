@@ -45,12 +45,13 @@ yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn pret
 yarn tsc --noEmit   # Type check
 yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
+yarn check:tokens   # after build:all: `generate --check` in each app that commits a theme.tokens.ts (plain-react, plain-nuxt, design-system, site) — fails when one is stale (CI)
 yarn check:next-build   # after build:all, needs network: packed tarball + next@16.4.5 in a scratch project, init + `next build` (Turbopack) through styleGenNext (CI node-floor)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
 yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
-yarn check:docs-embed && yarn check:docs-i18n && yarn check:doc-snippets && yarn check:doc-exports   # docs gates (after build:all; CI check job)
+yarn check:docs-embed && yarn check:docs-i18n && yarn check:doc-snippets && yarn check:doc-exports && yarn check:doc-reference   # docs gates (after build:all; CI check job); doc-reference: CLI flags + config keys documented, no version history on pages
 yarn check:plain-ui     # examples/plain-react/src/ui/<folder>/: style.ts, types.ts, <Name>.tsx, index.ts; relative imports only ./… and ../../theme; package allow-list (CI)
 ```
 
@@ -96,7 +97,7 @@ also `createDesignTokens()` from `./tokens`) and `schema` (`z.toJSONSchema(Theme
 
 Pipelines, all driven by the category registry:
 
-1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backDropBlurs`,
+1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backdropBlurs`,
    `borderRadius`, `fontFamily`, `borderWidth`; `colors` feeds `bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`);
    `generateSourceInline.ts` emits one `@source inline(...)` per category.
 2. **theme-css** (`src/features/theme-css/`) — `:root` `--sg-*` vars, `html[data-<axis>="<variant>"]` overrides,
@@ -109,11 +110,14 @@ Pipelines, all driven by the category registry:
    `ui-peer-floor` tests their floors). `borderRadius` goes through tailwind-merge's `radius` theme scale (every `rounded-*` group reads it);
    its local prefix table for `border`/`divide-*`/`shadow`/`backdrop-blur` is pinned to the registry descriptors by `extendTailwindMerge.test.ts`;
    do not import `builtInCategories.ts`/`classPrefixes.ts` from it (that would split a shared chunk and grow `./tokens`).
+   `recipeFromTables(tables)` returns `RecipeFn<typeof tables>` (props typed by the tables' variant names; a bare `RecipeFn` is the loose `(props?: RecipeProps) => string` and opts out of the check);
+   `splitLayout(props, { recipe, spacingKeys, variantKeys, sizeKeys, extra? })` takes one options object (`SplitLayoutOptions`).
+   Every public symbol has ONE import path (8.0): `COLOR_STATES` from `./cva` only; `ResponsiveValueStrict`, `DefaultBreakpointKeys`, `SpacingKey` from `./types` only; `./spacing` exports `resolveSpacing`
+   and `DEFAULT_SPACING_PROPERTIES` (`resolveSpacingProps` is gone).
 
 `DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants,
 spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only:
-the pre-v4 baseline emitted only `md:`/`lg:` and the consumer passes `[Breakpoint.MD, Breakpoint.LG]`;
-defaulting to every `screens` key advertised breakpoints no `@source inline` line covered. `src/shared/classPrefixes.ts` holds the `roundedProperties`/`borderProperties`
+defaulting to every `screens` key would advertise breakpoints no `@source inline` line covers. `src/shared/classPrefixes.ts` holds the `roundedProperties`/`borderProperties`
 class-prefix lists.
 
 Build outputs: `dist/{index,tokens,cva,spacing,recipes,types,ui,ui-react,vite,next}.{js,cjs,d.ts,d.cts}` (10 subpaths, Vite lib multi-entry;
@@ -148,7 +152,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
 
 ## Theme / Color Rules (current v4 API)
 
-- `colors` is the only **required** field in `ThemeConfig`; all others (`typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`) are optional.
+- `colors` is the only **required** field in `ThemeConfig`; all others (`typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`) are optional.
 - Colors are a **flat camelCase** object. Nested color objects and `DEFAULT` key are unsupported.
 - Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`).
   Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` and a leading uppercase run of two or more letters (`CTA`, `ABtn`,
@@ -174,9 +178,8 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
 - Alias `"$<key>"` resolves within the SAME category to `var(--<cssVarPrefix>-<kebab-key>)` using that category's `cssVarPrefix` (`src/features/registry/builtInCategories.ts`):
   `$blue500` in `colors` → `var(--sg-color-blue-500)`, `$base` in `shadows` → `var(--sg-shadow-base)`. Existence and acyclicity are validated at parse time.
   Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`. The emitted `--sg-*` variables (`--sg-color-<key>`, `--sg-shadow-<key>`,
-  …) are a public contract (consumers read them); renaming one is breaking (5.0 renamed `--sg-<color>` → `--sg-color-<key>`; `style-gen doctor` warns on leftovers;
-  see `documents/migration/4.x-to-5.0.md`).
-- `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`) is the single state list for the registry's `@source inline` state lines and
+  …) are a public contract (consumers read them); renaming one is breaking.
+- `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`, exported from `./cva` only) is the single state list for the registry's `@source inline` state lines and
   `createVariantMapper(prefix, tokens, { states: COLOR_STATES })`. Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`);
   states emit kebab-cased (`focusVisible` → `focus-visible:`).
 - A theme key whose class equals a Tailwind _static_ utility (`bg-none`, typography `text-sm`, …) is not rejected, but Tailwind picks the winner — rename it (`clear`, `flat`,
@@ -190,8 +193,9 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `divide-<key>` would be a Tailwind divider width).
 - `generate()` validates options with a strict schema (`src/core/optionsSchema.ts`, internal): unknown keys rejected (also in `spacing`/`typography`); flags are booleans;
   `screens` values are one px/rem/em length and the map merged with `defaultScreens` uses one unit; `breakpoints` must name a screen.
-  `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`).
-  The 7.0 removals (`extraSources`, `axes`) are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
+  `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`);
+  the file-level `StyleGenConfigFileSchema` adds the `$schema` editor pointer (dropped on read, never reaches `generate()`) and is what the config JSON Schema is generated from.
+  `extraSources` and `axes` are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
 - `options.coverage` (`Partial<Record<CategoryKey, boolean | { prefixes?, keys?: "aliased" | "all", opacities? }>>`) only changes the registry's `@source inline` lines:
   `false` drops a category's lines (state lines included), `prefixes` must be a **non-empty** list of real `classPrefixes` of that category (typography has none),
   `keys: "aliased"` keeps the alias **holders** — declared keys whose value is a `$alias` in the base record or any `themeAxes` override of the same category;
@@ -213,20 +217,25 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `isPlainObject`) and is imported only by `src/cli/**`, `src/features/vite/**` and `src/features/next/**`; never from `src/core`,
   the browser-safe exports or the root barrel (it would leak `node:*`/chokidar into `dist/index.js`; `check:browser-safe` and `check:sizes` catch it).
   `resolveProjectPath(root, input, label, { allowOutsideRoot })` replaces the old `resolveSafePath`,
-  normalises every path through `resolve(root, input)` (absolute ones too) and does NOT rewrite a leading `/`: `themePath`/`--theme` may be absolute or outside the root,
-  `outDir`/`output`/`--out` must stay inside it. `generate()` is `prepareGenerate()` (validation) + `generateFromParsed()` (CSS only; `generate()` builds `tokens`/`schema` itself);
+  normalises every path through `resolve(root, input)` (absolute ones too) and does NOT rewrite a leading `/`: `theme`/`--theme` may be absolute or outside the root,
+  `output`/`tokensOutput`/`--out` must stay inside it. `styleGenVite()`/`styleGenNext()` take only `{ root }` (the directory holding the config; Nuxt passes the project folder because it sets Vite's root to `app/`):
+  `resolvePluginTarget(root, label)` reads `style-gen.config.json` (else `package.json#style-gen`) exactly like the CLI, so `theme`, `output`, `tokensOutput` and every `generate()` option live there, and a config edit is reloaded in place (re-resolve, re-register, re-emit, full reload; an invalid edit keeps the last target).
+  The plugins write `theme.css` and `theme.tokens.ts` (the typed `tokens` plus `ThemeAxesState`; apps import them from that file instead of calling `createDesignTokens`); the file is committed in apps that import it (`yarn check:tokens` fails when it is stale) and git-ignored where nothing imports it (harness).
+  `generate()` is `prepareGenerate()` (validation) + `generateFromParsed()` (CSS only; `generate()` builds `tokens`/`schema` itself);
   the emitter calls the two separately to label the failing stage (`read`, `parse`, `options`, `theme`, `cross`, `generate`, `write`; the watcher adds `config`, `watch`).
 - CLI (`src/cli/`): `run.ts` holds the command registry (`init`, `generate`, `doctor`, `schema`, `tokens`, `budget`),
   `runCli(args, cwd)` returns the exit code (0 ok/help/version/cancel, 1 failure, `budget` 2 for usage) and parses flags strictly per command;
   **commands never call `process.exit`** (only `src/cli/index.ts` assigns `process.exitCode`), so tests drive `runCli`/the command functions directly.
   `generate --watch` watches the theme AND the config file and keeps the last valid config when an edit is invalid.
+  `schema` writes `theme.schema.json` (next to the theme, `--out`) and `style-gen.config.schema.json` (project root, `--config-out`) from `z.toJSONSchema(StyleGenConfigFileSchema)`,
+  which has no cross-field refinements; the three committed copies (`examples/`, `examples/design-system/`, `site/`) are pinned by `committed-schema.test.ts`.
+  `init --yes`/`-y` never prompts and never overwrites (existing files kept, exit 0); `init` writes `"$schema": "./style-gen.config.schema.json"` as the config's first key.
   `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
   shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
-  it never edits a bundler config and has scaffolded no generator script since 5.2.0; `init` drops the config keys a major removed while merging
-  (`plugin` since 6.0.0, `extraSources`/`axes` since 7.0.0, the `extraSources` entries printed as `@source inline(...)` lines;
-  `doctor` has no `Script` check). `budget` is the in-repo replacement for the removed `scripts/check-css-budget.mjs` (its `OK: …`/`OVER BUDGET: …` lines are a contract
-  consumers grep).
+  it never edits a bundler config and scaffolds no generator script; `init` merges `theme`/`output`/`$schema` into an existing config (or `package.json["style-gen"]`) as written,
+  so a key the schema rejects (`plugin`, `extraSources`, `axes`) stays and `generate` reports it as an unknown key. `budget` writes `OK: …`/`OVER BUDGET: …` lines that are a contract
+  consumers grep.
 
 ## Testing
 
@@ -278,7 +287,7 @@ including the AgentKit `ak:docs` skill (also set in `.agentkit/config.yaml` → 
 ```text
 documents/
 ├── README.md                     # index of everything below
-├── architecture.md guide.md testing.md deploy.md components.md cookbook.md   # rendered by the site
+├── architecture.md guide.md troubleshooting.md testing.md deploy.md components.md cookbook.md   # rendered by the site
 ├── getting-started/  reference/  # rendered by the site (site/src/lib/docs-meta.json)
 ├── vi/                           # Vietnamese twin of every rendered doc (yarn check:docs-i18n)
 ├── migration/                    # upgrade guides + v4 measurement proofs

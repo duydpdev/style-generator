@@ -13,7 +13,7 @@ Name the keys after the app's own roles. The library derives every type and clas
 - An intent may declare an `on<Intent>` text colour (`brand` → `onBrand`). `contrastText(tokens.colors, intent, fallback)` returns `text-on-brand` when it exists, else `text-<fallback>`.
 - A value `"$<key>"` aliases another key **of the same category** (`"brandHover": "$brandActive"` in `colors`). Not in `typography`. Unknown targets and cycles are schema errors.
 - Dark mode and palettes go in `themeAxes.<axis>.<variant>`; an override may only redefine keys that exist in the base category. Activation is `html[data-<axis>="<variant>"]` (use `themeAxisAttributes` from `@duydpdev/style-generator/recipes`). `base` is reserved as a variant name.
-- Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backDropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
+- Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
 - Avoid keys whose class equals a Tailwind utility (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` warns; rename to `clear`, `flat`, `heading1`.
 - `style-gen init` writes a starter theme. Rename its keys to the app's roles and set every value for this app; a starter key left with its starter value is a copy, not a choice.
 
@@ -23,8 +23,8 @@ Each rule above is enforced by the theme schema (`generate()`, `style-gen genera
 
 ```text
 <theme JSON>                # the path `style-gen.config.json#theme` names (init default: src/styles/theme.json)
-src/options.ts              # export const options = { … } as const satisfies StyleGeneratorOptions; imports no JSON
-src/theme.ts                # export { theme, tokens, cn }; imports the theme JSON and ./options
+<theme>.tokens.ts           # written by `style-gen generate` and the bundler plugin beside the CSS (commit it); exports `tokens`
+src/theme.ts                # export { theme, tokens, cn }; imports the theme JSON and the generated tokens file
 src/ui/<kebab-name>/        # one folder per component, never a loose src/components/<Name>.tsx
   style.ts                  # intents, tables, recipe
   types.ts                  # <Name>OwnProps / <Name>Props
@@ -32,7 +32,7 @@ src/ui/<kebab-name>/        # one folder per component, never a loose src/compon
   index.ts                  # re-exports the component and its types
 ```
 
-`options.ts` repeats the generator options of `style-gen.config.json` (an empty object when there are none); the bundler config may import it.
+All generator options live in `style-gen.config.json` (`theme`, `output`, `tokensOutput` and every `generate()` option); the plugin takes only `root`. Run `yarn style-gen generate` once and commit the `theme.tokens.ts` it writes.
 
 Imports allowed inside `src/ui/<folder>/`:
 
@@ -55,22 +55,21 @@ Imports allowed inside `src/ui/<folder>/`:
 
 ## 4. Type contract
 
-`theme.ts` is written once. `tokens` always comes from `createDesignTokens(theme, options)` here; never import a file written by `style-gen tokens` (it goes stale on every theme edit):
+`theme.ts` is written once. `tokens` is imported from the generated `theme.tokens.ts`; the bundler plugin (and `style-gen generate`) rewrite it on every theme edit, so it never goes stale. Do not call `createDesignTokens` in the app:
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);

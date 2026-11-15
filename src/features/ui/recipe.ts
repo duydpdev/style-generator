@@ -12,12 +12,12 @@ export interface RecipeTokens {
   readonly colors: readonly string[];
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
   readonly spacingProperties: readonly string[];
   readonly breakpoints: readonly string[];
-  /** `DesignTokens.Web.opacities`; optional so token objects built before 5.4 still fit. */
+  /** `DesignTokens.Web.opacities`; optional so a token object without it still fits. */
   readonly opacities?: readonly number[];
 }
 
@@ -41,21 +41,48 @@ export type RecipeProps = Readonly<
   Record<string, string | number | boolean | null | undefined>
 >;
 
-/** A recipe built from tables: props in, one class string out; components type the exact props. */
-export type RecipeFn = (props?: RecipeProps) => string;
+type VariantOptionValue<O> = O extends "true" | "false"
+  ? boolean
+  : O extends string | number
+    ? O
+    : never;
+
+/** Call props of a recipe: every variant name of `T`, its option keys as values (`"true"`/`"false"` keys mean boolean). */
+export type RecipeVariantProps<T extends RecipeTables> = Readonly<{
+  [K in keyof T["variants"]]?:
+    | VariantOptionValue<keyof T["variants"][K]>
+    | boolean
+    | number
+    | null
+    | undefined;
+}>;
+
+/** A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows the variant names of its tables `T`. */
+export type RecipeFn<T extends RecipeTables = RecipeTables> = (
+  props?: RecipeVariantProps<T>,
+) => string;
 
 /**
  * cva over a recipe's tables. Compound and default entries are loose
  * records, so they are cast here once instead of in every recipe.
- * @param {RecipeTables} tables - Base classes, variants, compound and default variants
- * @returns {RecipeFn} The recipe
+ * @template T - The tables type; its variant names type the recipe's props
+ * @param {T} tables - Base classes, variants, compound and default variants
+ * @returns {RecipeFn<T>} The recipe
+ * @example
+ * const box = recipeFromTables({
+ *   base: "flex",
+ *   variants: { rounded: createVariantMapper("rounded", tokens.borderRadius) },
+ * });
+ * box({ rounded: "pill" });
  */
-export const recipeFromTables = (tables: RecipeTables): RecipeFn =>
+export const recipeFromTables = <T extends RecipeTables>(
+  tables: T,
+): RecipeFn<T> =>
   cva<VariantTable>(tables.base, {
     variants: tables.variants,
     compoundVariants: tables.compoundVariants as never,
     defaultVariants: tables.defaultVariants as never,
-  }) as RecipeFn;
+  }) as RecipeFn<T>;
 
 /**
  * `map[key]`, or a thrown error naming the missing token, so a renamed

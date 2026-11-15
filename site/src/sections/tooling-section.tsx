@@ -9,17 +9,15 @@ import { styleGenVite }
   from "@duydpdev/style-generator/vite";
 
 export default defineConfig({
-  plugins: [
-    styleGenVite({
-      themePath: "src/theme/theme.json",
-      outDir:    "src/theme",
-      options: {
-        breakpoints: ["md", "lg"],
-      },
-    }),
-    tailwindcss(),
-  ],
-});`;
+  plugins: [styleGenVite(), tailwindcss()],
+});
+
+// style-gen.config.json
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "breakpoints": ["md", "lg"]
+}`;
 
 /**
  *
@@ -55,10 +53,11 @@ export function ToolingSection() {
         <Stack gap={3}>
           <KeyPoint
             badge="V1"
-            title={<code>{"styleGenVite({ themePath, outDir })"}</code>}
+            title={<code>{"styleGenVite()"}</code>}
             body={
               <>
-                Emits <code>theme.css</code> on every JSON save. HMR-friendly.
+                Reads <code>style-gen.config.json</code>, emits{" "}
+                <code>theme.css</code> on every JSON save. HMR-friendly.
               </>
             }
           />

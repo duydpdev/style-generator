@@ -11,8 +11,9 @@ There are two sets. The plain examples are what you copy: one folder per compone
 ### One folder per component
 
 ```text
+<app>/style-gen.config.json         # every generator option: theme, output, coverage, … (read by the bundler plugin and `style-gen generate`)
 <app>/src/theme/theme.json        # the app's own theme (Nuxt: app/theme/theme.json)
-<app>/src/options.ts              # export { options }: generator options, imports no JSON  (Nuxt: app/options.ts)
+<app>/src/theme/theme.tokens.ts   # generated typed tokens, committed (Nuxt: app/theme/theme.tokens.ts)
 <app>/src/theme.ts                # export { theme, tokens, cn }  (Nuxt: app/theme.ts)
 <app>/src/ui/<kebab-name>/        # one folder per component (Nuxt: app/ui/<kebab-name>/)
   style.ts                        # tables + recipe; imports only "../../theme" and @duydpdev/style-generator/{ui,cva,types}
@@ -24,8 +25,9 @@ There are two sets. The plain examples are what you copy: one folder per compone
 ```
 
 - `theme.json` is the reduced theme token configuration.
-- `options.ts` holds the literal `options` (here `coverage.colors.opacities`). It imports no JSON, so the bundler config (`vite.config.ts`, `next.config.ts`, `nuxt.config.ts`) can import it without restarting the dev server on every theme edit; `theme.ts` passes it to `createDesignTokens` and `style-gen.config.json` repeats it for the CLI (`check:plain-ui` keeps both equal).
-- `theme.ts` exports `theme`, `tokens`, and `cn` for the application.
+- `style-gen.config.json` holds the generator options (here `coverage.colors.opacities`), the theme path and the output paths. The bundler plugin (`styleGenVite()`, `styleGenNext()`) takes no options of its own, so there is one place to edit and the dev server reloads it in place.
+- `theme.tokens.ts` is written by the plugin (and `style-gen generate`) next to `theme.css`; commit it and keep `theme.css` git-ignored. `yarn check:tokens` fails when it is stale.
+- `theme.ts` exports `theme`, `tokens` (re-exported from `theme.tokens.ts`), and `cn` for the application.
 - `style.ts` is the same file in both apps; it holds the variant tables and the headless recipe.
 - `types.ts` is framework-specific (not compared); the Vue `types.ts` declares the props the SFC compiler can read and extends the spacing props with `/* @vue-ignore */`.
 - `<Name>.tsx` / `<Name>.vue` renders the component markup and applies the recipe and spacing utilities.
@@ -35,22 +37,21 @@ There are two sets. The plain examples are what you copy: one folder per compone
 
 ### The theme module
 
-The theme module exports `theme`, `tokens` created with `createDesignTokens(theme, options)` (`options` comes from `options.ts`), and the `cn` helper.
+The theme module exports `theme`, `tokens` (the generated `theme.tokens.ts`), and the `cn` helper.
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -70,7 +71,6 @@ import {
   contrastText,
   pick,
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -198,7 +198,7 @@ export const buttonTables = {
   },
 } satisfies RecipeTables;
 
-export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
+export const buttonRecipe = recipeFromTables(buttonTables);
 ```
 
 <!-- embed: examples/plain-react/src/ui/button/types.ts -->
@@ -419,12 +419,12 @@ const root = () => {
 1. Install the required dependencies:
 
    ```bash
-   yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
    ```
 
 2. Wire `theme.css` for your bundler ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
 
-3. Copy `theme.ts`, `options.ts` and your theme JSON, once.
+3. Copy `theme.ts`, your theme JSON and `style-gen.config.json`, once; run `yarn style-gen generate` to write `theme.tokens.ts` and commit it.
 
 4. Copy the folder. Nothing else is needed: a folder imports only its own files, `../../theme` and packages.
 
@@ -515,7 +515,7 @@ Every component accepts the spacing props of the theme (`p`, `px`, `mt`, `gapX`,
 
 Each static layout prop takes the Tailwind class suffix in camelCase (`display="inlineFlex"` → `inline-flex`, `cursor="notAllowed"` → `cursor-not-allowed`); `zIndex` (`0`-`50` in steps of 10, `"auto"`) and `opacity` (`0`-`100` in steps of 10) take numbers; the colour steps are `coverage.colors.opacities`; the plain `Input` also takes `placeholderColor` (default `muted`).
 
-The `token/step` colors of `Text` (`color="primary/50"`) are the steps in `coverage.colors.opacities`, which the example apps declare in `options.ts` and `style-gen.config.json`. `truncate` also sets `whitespace-nowrap`, so do not combine it with `lineClamp`.
+The `token/step` colors of `Text` (`color="primary/50"`) are the steps in `coverage.colors.opacities`, which the example apps declare in `style-gen.config.json`. `truncate` also sets `whitespace-nowrap`, so do not combine it with `lineClamp`.
 
 The rules for app code:
 
@@ -556,7 +556,6 @@ The factory knows no theme values:
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
 } from "@duydpdev/style-generator/ui";
@@ -568,61 +567,57 @@ export interface TextPreset {
   readonly defaultColor?: string | undefined;
 }
 
-export const textTables = (
-  t: RecipeTokens,
-  preset?: TextPreset,
-): RecipeTables => ({
-  base: preset?.base ?? "",
-  variants: {
-    type: createVariantMapper("", t.typography),
-    decoration: {
-      underline: "underline",
-      lineThrough: "line-through",
-      none: "no-underline",
+export const textTables = (t: RecipeTokens, preset?: TextPreset) =>
+  ({
+    base: preset?.base ?? "",
+    variants: {
+      type: createVariantMapper("", t.typography),
+      decoration: {
+        underline: "underline",
+        lineThrough: "line-through",
+        none: "no-underline",
+      },
+      align: {
+        center: "text-center",
+        left: "text-left",
+        right: "text-right",
+      },
+      color: createVariantMapper("text", t.colors, {
+        opacities: t.opacities ?? [],
+      }),
+      transform: {
+        uppercase: "uppercase",
+        lowercase: "lowercase",
+        capitalize: "capitalize",
+        normalCase: "normal-case",
+      },
+      italic: { true: "italic" },
+      truncate: { true: "truncate whitespace-nowrap" },
+      lineClamp: {
+        1: "line-clamp-1",
+        2: "line-clamp-2",
+        3: "line-clamp-3",
+        4: "line-clamp-4",
+        5: "line-clamp-5",
+        6: "line-clamp-6",
+        none: "line-clamp-none",
+      },
+      wrap: {
+        wrap: "text-wrap",
+        nowrap: "text-nowrap whitespace-nowrap",
+        balance: "text-balance",
+        pretty: "text-pretty",
+      },
     },
-    align: {
-      center: "text-center",
-      left: "text-left",
-      right: "text-right",
-    },
-    color: createVariantMapper("text", t.colors, {
-      opacities: t.opacities ?? [],
-    }),
-    transform: {
-      uppercase: "uppercase",
-      lowercase: "lowercase",
-      capitalize: "capitalize",
-      normalCase: "normal-case",
-    },
-    italic: { true: "italic" },
-    truncate: { true: "truncate whitespace-nowrap" },
-    lineClamp: {
-      1: "line-clamp-1",
-      2: "line-clamp-2",
-      3: "line-clamp-3",
-      4: "line-clamp-4",
-      5: "line-clamp-5",
-      6: "line-clamp-6",
-      none: "line-clamp-none",
-    },
-    wrap: {
-      wrap: "text-wrap",
-      nowrap: "text-nowrap whitespace-nowrap",
-      balance: "text-balance",
-      pretty: "text-pretty",
-    },
-  },
-});
+  }) satisfies RecipeTables;
 
 /**
  * Text recipe for one theme: `type`, `color` (a token or `token/step`),
  * `decoration`, `align`, `transform`, `italic`, `truncate` (also sets
  * `whitespace-nowrap`), `lineClamp` and `wrap`.
  */
-export const createTextRecipe = (
-  t: RecipeTokens,
-  preset?: TextPreset,
-): RecipeFn => recipeFromTables(textTables(t, preset));
+export const createTextRecipe = (t: RecipeTokens, preset?: TextPreset) =>
+  recipeFromTables(textTables(t, preset));
 ```
 
 The preset holds the theme's values, and the bound recipe applies the factory to the design system's tokens (`textRecipe({ type, color, decoration, align, transform, italic, truncate, lineClamp, wrap })`):

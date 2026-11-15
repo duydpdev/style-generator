@@ -349,10 +349,11 @@ function linkTree(dir: string, withVi: boolean) {
     "site/src/lib/docs-meta.json",
     JSON.stringify({
       "README.md": entry("introduction", "Start", 1),
-      "documents/migration/6.x-to-7.0.md": entry("m7", "Migration", 0),
-      "documents/migration/5.x-to-6.0.md": entry("m6", "Migration", 1),
-      "documents/migration/4.x-to-5.0.md": entry("m5", "Migration", 2),
-      "documents/migration/3.x-to-4.0.md": entry("m4", "Migration", 3),
+      "documents/migration/7.x-to-8.0.md": entry("m8", "Migration", 0),
+      "documents/migration/6.x-to-7.0.md": entry("m7", "Migration", 1),
+      "documents/migration/5.x-to-6.0.md": entry("m6", "Migration", 2),
+      "documents/migration/4.x-to-5.0.md": entry("m5", "Migration", 3),
+      "documents/migration/3.x-to-4.0.md": entry("m4", "Migration", 4),
       "documents/guide.md": entry("guide", "Guides", 1),
       "documents/getting-started/a.md": entry("start-a", "Start", 2),
       "documents/reference/core.md": entry("core", "Reference", 1),
@@ -370,6 +371,7 @@ function linkTree(dir: string, withVi: boolean) {
   );
   writeTmpFile(dir, "documents/getting-started/a.md", "# A\n");
   writeTmpFile(dir, "documents/reference/core.md", "# Core\n");
+  writeTmpFile(dir, "documents/migration/7.x-to-8.0.md", "# M8\n");
   writeTmpFile(dir, "documents/migration/6.x-to-7.0.md", "# M7\n");
   writeTmpFile(dir, "documents/migration/5.x-to-6.0.md", "# M6\n");
   writeTmpFile(dir, "documents/migration/4.x-to-5.0.md", "# M5\n");

@@ -7,7 +7,7 @@ interface W {
   readonly colors: readonly ("primary" | "onPrimary")[];
   readonly typography: readonly "body"[];
   readonly shadows: readonly "card"[];
-  readonly backDropBlurs: readonly "glass"[];
+  readonly backdropBlurs: readonly "glass"[];
   readonly borderRadius: readonly "pill"[];
   readonly borderWidth: readonly "thin"[];
   readonly spacingProperties: readonly ("p" | "gap-x")[];

@@ -6,7 +6,7 @@ TypeScript library + CLI that turns a theme JSON into a complete **design system
 
 Published on the public npm registry as `@duydpdev/style-generator`; installing needs no token (see [Install](#install)).
 
-> **Upgrading?** Read the migration guides: [6.x → 7.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/6.x-to-7.0.md), [5.x → 6.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/5.x-to-6.0.md), [4.x → 5.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md), [3.x → 4.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
+> **Upgrading?** Read the migration guides: [7.x → 8.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/7.x-to-8.0.md), [6.x → 7.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/6.x-to-7.0.md), [5.x → 6.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/5.x-to-6.0.md), [4.x → 5.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md), [3.x → 4.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
 
 ## Features
 
@@ -107,7 +107,7 @@ That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-pr
 - [CLI](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, flags and the configuration file
 - [Subpaths](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md#all-exports-by-subpath): the root entry point holds the generator; tokens, CVA, spacing, recipes, plugins and the UI kit live in `./tokens`, `./cva`, `./spacing`, `./recipes`, `./vite`, `./next`, `./ui`, `./ui-react`, `./types`
 - [Getting started](https://github.com/duydpdev/style-generator/blob/main/documents/getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
-- [Guide](https://github.com/duydpdev/style-generator/blob/main/documents/guide.md) and [cookbook](https://github.com/duydpdev/style-generator/blob/main/documents/cookbook.md)
+- [Guide](https://github.com/duydpdev/style-generator/blob/main/documents/guide.md), [troubleshooting](https://github.com/duydpdev/style-generator/blob/main/documents/troubleshooting.md) and [cookbook](https://github.com/duydpdev/style-generator/blob/main/documents/cookbook.md)
 - [Reference](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md): one page per subpath, plus `theme`, `options` and `cli`
 - [Changelog](https://github.com/duydpdev/style-generator/blob/main/CHANGELOG.md)
 - [Migration guides](https://github.com/duydpdev/style-generator/blob/main/documents/README.md#migration)

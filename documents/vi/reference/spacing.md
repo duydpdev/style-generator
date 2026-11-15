@@ -1,4 +1,4 @@
-<!-- source: documents/reference/spacing.md sha256: bc6d8bb69ac4 -->
+<!-- source: documents/reference/spacing.md sha256: 9afb2a1fbd8e -->
 
 # Spacing (./spacing)
 
@@ -24,29 +24,23 @@ Các key mặc định: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`
 
 ```tsx
 import {
-  resolveSpacingProps,
-  type ResponsiveValueStrict,
-} from "@duydpdev/style-generator/spacing";
-import type { CSSProperties, ReactNode } from "react";
+  splitSpacingProps,
+  type SpacingProps,
+} from "@duydpdev/style-generator/recipes";
+import type { ComponentPropsWithoutRef } from "react";
 
-interface BoxProps {
-  p?: ResponsiveValueStrict<number>;
-  px?: ResponsiveValueStrict<number>;
-  m?: ResponsiveValueStrict<number>;
-  className?: string;
-  style?: CSSProperties;
-  children?: ReactNode;
-}
+import { tokens } from "./theme/theme.tokens";
 
-const Box = ({ p, px, m, className, style, children }: BoxProps) => {
-  const spacing = resolveSpacingProps({ p, px, m });
+type BoxProps = ComponentPropsWithoutRef<"div"> & SpacingProps;
+
+const Box = ({ className, style, ...props }: BoxProps) => {
+  const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
   return (
     <div
-      className={[spacing.classNames, className].filter(Boolean).join(" ")}
+      {...rest}
+      className={[spacing.className, className].filter(Boolean).join(" ")}
       style={{ ...spacing.style, ...style }}
-    >
-      {children}
-    </div>
+    />
   );
 };
 
@@ -55,13 +49,28 @@ const Box = ({ p, px, m, className, style, children }: BoxProps) => {
 
 <Box p={{ base: 2, md: 4, lg: 8 }} />;
 // → class="sp-p" style="--sg-sp-p: 0.5rem; --sg-sp-p-md: 1rem; --sg-sp-p-lg: 2rem"
+
+<Box p={13.5} />;
+// → class="sp-p" style="--sg-sp-p: 3.375rem"
+
+<Box gap={{ base: 4, md: 8 }} gapX={2} />;
+// → class="sp-gap sp-gap-x" (with the `--sg-sp-gap*` variables in `style`)
 ```
 
-- `classNames` là một **chuỗi string** (nối bằng dấu cách), không phải một mảng.
+## Dùng tầng nào
+
+| Tầng                | Subpath     | Dùng cho                                                                                                   |
+| :------------------ | :---------- | :--------------------------------------------------------------------------------------------------------- |
+| `resolveSpacing`    | `./spacing` | Một prop và giá trị → `{ className, style }`. Nguyên thủy mà các tầng khác gọi.                            |
+| `splitSpacingProps` | `./recipes` | Props của component → `{ spacing, rest }`; kiểu theo `SpacingProps`, không phụ thuộc framework.            |
+| `splitSpacing`      | `./ui`      | Cùng phép tách đó nhưng trả `{ className, style, rest }`, cho các component của bộ UI kit.                 |
+| `splitLayout`       | `./ui`      | Component layout: spacing, variant của recipe và kích thước inline trong một lượt (xem [UI kit](./ui.md)). |
+
+- `spacing.className` là một **chuỗi string** (nối bằng dấu cách), không phải một mảng.
 - **Quy tắc cùng phần tử (same-element rule):** các biến không kế thừa, vì vậy class và các biến `style` phải nằm trên **cùng một phần tử**; biến `--sg-sp-p` của phần tử cha không bao giờ bị rò rỉ sang phần tử con.
 - Chỉ các breakpoint được liệt kê trong `options.breakpoints` (mặc định `["md","lg"]`) mới có chuỗi giá trị dự phòng; một biến dành cho bất kỳ breakpoint nào khác sẽ không có tác dụng.
 - `resolveSpacing(prop, value, unit?)` xử lý một prop đơn lẻ; `unit` mặc định là `0.25` (rem cho mỗi bước).
-- Các giá trị responsive sử dụng `ResponsiveValueStrict<T, B>`: một lỗi chính tả như `{ typo: 4 }` là lỗi kiểu, và `base` luôn luôn được cho phép. `B` mặc định là `md | lg`, các breakpoint mà CSS spacing mặc định bao phủ; với `options.breakpoints` tùy biến, hãy truyền cùng các key đó làm tham số kiểu (`resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`).
+- Các giá trị responsive sử dụng `ResponsiveValueStrict<T, B>` (từ `./types`): một lỗi chính tả như `{ typo: 4 }` là lỗi kiểu, và `base` luôn luôn được cho phép. `B` mặc định là `md | lg`, các breakpoint mà CSS spacing mặc định bao phủ; với `options.breakpoints` tùy biến, hãy truyền cùng các key đó làm tham số kiểu (`resolveSpacing<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`).
 
 ## `resolveSpacing`
 
@@ -88,32 +97,6 @@ from the value ({@link NoInferBKeys}), so a typo such as `{ tablet: 4 }` stays a
 <!-- /signature -->
 
 Chuyển đổi một prop spacing thành một `className` và các biến `style` inline của nó.
-
-## `resolveSpacingProps`
-
-<!-- signature: resolveSpacingProps -->
-
-```ts
-export declare const resolveSpacingProps: <
-  BKeys extends string = DefaultBreakpointKeys,
->(
-  props: Partial<
-    Record<
-      SpacingKey,
-      ResponsiveValueStrict<number, NoInferBKeys<BKeys>> | undefined
-    >
-  >,
-) => {
-  classNames: string;
-  style: Record<string, string>;
-};
-```
-
-Resolve multiple spacing props at once.
-
-<!-- /signature -->
-
-Chuyển đổi đồng thời nhiều prop spacing thành một chuỗi `classNames` nối bằng dấu cách và một đối tượng `style`.
 
 ## `DEFAULT_SPACING_PROPERTIES`
 
@@ -153,53 +136,3 @@ whose declarations read `var(--sg-sp-<key>)`. Passing
 <!-- /signature -->
 
 Các key spacing mặc định và các thuộc tính CSS mà mỗi utility `sp-<key>` thiết lập.
-
-## `SpacingKey`
-
-<!-- signature: SpacingKey -->
-
-```ts
-export declare type SpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
-```
-
-Literal union of every default spacing property key (e.g. `"p" | "px" |
-... | "left"`). The single spacing-key type used repo-wide — inferred
-from `DEFAULT_SPACING_PROPERTIES` via `as const satisfies` so it stays a
-literal union instead of widening to `string`.
-
-<!-- /signature -->
-
-Union kiểu literal của mọi key spacing mặc định.
-
-## `ResponsiveValueStrict`, `DefaultBreakpointKeys`
-
-<!-- signature: ResponsiveValueStrict -->
-
-```ts
-export declare type ResponsiveValueStrict<
-  T,
-  BKeys extends string = DefaultBreakpointKeys,
-> = T | Partial<Record<BKeys | "base", T | undefined>>;
-```
-
-Responsive value type: simple value or per-breakpoint object.
-The generic `BKeys` lets a project customize the breakpoints when wrapping the type.
-`base` is always available by default, independent of `BKeys`. A typo in a
-breakpoint key is a type error — there is no `(string & {})` fallback.
-
-<!-- /signature -->
-
-<!-- signature: DefaultBreakpointKeys -->
-
-```ts
-export declare type DefaultBreakpointKeys =
-  (typeof DEFAULT_BREAKPOINTS)[number];
-```
-
-Breakpoint keys the spacing CSS covers by default (`DEFAULT_BREAKPOINTS`,
-`md`/`lg`). A project that sets `options.breakpoints` passes its own keys
-as `BKeys`, e.g. `ResponsiveValueStrict<number, "sm" | "md" | "xl">`.
-
-<!-- /signature -->
-
-Kiểu giá trị theo từng breakpoint và các key breakpoint mà CSS spacing bao phủ theo mặc định (`md`, `lg`).

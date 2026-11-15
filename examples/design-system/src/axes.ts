@@ -1,7 +1,6 @@
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
-import type { ThemeAxesState } from "@duydpdev/style-generator/types";
 
-import type { Theme } from "./tokens";
+import type { ThemeAxesState } from "./theme.tokens";
 
 /**
  * The DOM attributes that switch the theme's axes on, typed by `theme.json`:
@@ -11,5 +10,5 @@ import type { Theme } from "./tokens";
  * `useHead({ htmlAttrs })`.
  */
 export const axisAttributes = (
-  state: ThemeAxesState<Theme>,
-): Readonly<Record<string, string>> => themeAxisAttributes<Theme>(state);
+  state: ThemeAxesState,
+): Readonly<Record<string, string>> => themeAxisAttributes(state);

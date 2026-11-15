@@ -63,6 +63,9 @@ jobs:
       - name: Build
         run: yarn build:all
 
+      - name: Check committed tokens
+        run: yarn check:tokens
+
       - name: Prepare plain-nuxt types
         # ESLint lints examples/plain-nuxt/app/**, whose tsconfig references
         # .nuxt/tsconfig.*.json. `nuxt prepare` writes them and needs dist/
@@ -121,6 +124,13 @@ jobs:
         # in documents/reference/<subpath>.md with a signature block that
         # matches dist/*.d.ts and a non-empty TSDoc (yarn docs:signatures).
         run: yarn check:doc-exports
+
+      - name: Check CLI and config reference
+        # Every flag printed by a built `style-gen <command> --help` must sit
+        # in that command's section of documents/reference/cli.md, every key of
+        # the style-gen.config.json schema in documents/reference/options.md,
+        # and no rendered page may tell version history.
+        run: yarn check:doc-reference
 
       - name: Typecheck examples
         # The examples and the site consume the built library through `link:../..`.

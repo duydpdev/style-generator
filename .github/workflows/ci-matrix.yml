@@ -281,7 +281,7 @@ jobs:
           node -e '
             const ui = require("./dist/ui.cjs");
             if (typeof ui.createCn !== "function" || typeof ui.recipeFromTables !== "function") process.exit(1);
-            const cn = ui.createCn({ typography: ["heading1"], shadows: ["card"], backDropBlurs: [], borderRadius: ["pill"], borderWidth: ["thin"] });
+            const cn = ui.createCn({ typography: ["heading1"], shadows: ["card"], backdropBlurs: [], borderRadius: ["pill"], borderWidth: ["thin"] });
             if (cn("rounded-lg", "rounded-pill") !== "rounded-pill") process.exit(1);
             if (ui.recipeFromTables({ base: "flex", variants: {} })() !== "flex") process.exit(1);
           '

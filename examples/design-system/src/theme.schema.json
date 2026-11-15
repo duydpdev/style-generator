@@ -22,7 +22,7 @@
         "type": "string"
       }
     },
-    "backDropBlurs": {
+    "backdropBlurs": {
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -134,7 +134,7 @@
                 "type": "string"
               }
             },
-            "backDropBlurs": {
+            "backdropBlurs": {
               "type": "object",
               "propertyNames": {
                 "type": "string",

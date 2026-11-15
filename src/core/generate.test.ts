@@ -42,7 +42,7 @@ const theme = defineTheme({
     },
   },
   shadows: { sm: "0px 1px 2px rgba(0, 0, 0, 0.05)" },
-  backDropBlurs: { sm: "4px" },
+  backdropBlurs: { sm: "4px" },
   borderRadius: { sm: "4px" },
   themeAxes: {
     theme: {
@@ -123,7 +123,7 @@ describe("generate", () => {
     expect(tokens.Web.typography).toEqual(["text12Mono", "heading"]);
     expect(tokens.Web.colors).toContain("primary");
     expect(tokens.Web.shadows).toEqual(["sm"]);
-    expect(tokens.Web.backDropBlurs).toEqual(["sm"]);
+    expect(tokens.Web.backdropBlurs).toEqual(["sm"]);
   });
 
   it("omits typography/spacing blocks when the theme has neither", () => {

@@ -1,7 +1,6 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -74,7 +73,7 @@ export const layoutTables = {
     roundedL: createVariantMapper("rounded-l", tokens.borderRadius),
     roundedR: createVariantMapper("rounded-r", tokens.borderRadius),
     shadow: createVariantMapper("shadow", tokens.shadows),
-    backdropBlur: createVariantMapper("backdrop-blur", tokens.backDropBlurs),
+    backdropBlur: createVariantMapper("backdrop-blur", tokens.backdropBlurs),
     position: {
       absolute: "absolute",
       relative: "relative",
@@ -174,7 +173,7 @@ export const layoutTables = {
   },
 } satisfies RecipeTables;
 
-export const layoutRecipe: RecipeFn = recipeFromTables(layoutTables);
+export const layoutRecipe = recipeFromTables(layoutTables);
 
 /** One column of items (`direction` defaults to `column`), optional `divideColor`; the gap comes from spacing props. */
 export const stackTables = {
@@ -201,4 +200,4 @@ export const stackTables = {
   defaultVariants: { direction: "column" },
 } satisfies RecipeTables;
 
-export const stackRecipe: RecipeFn = recipeFromTables(stackTables);
+export const stackRecipe = recipeFromTables(stackTables);

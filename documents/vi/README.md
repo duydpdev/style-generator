@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: c5e419a5509d -->
+<!-- source: README.md sha256: ed433b2594da -->
 
 # @duydpdev/style-generator
 
@@ -8,7 +8,7 @@ Thư viện TypeScript + CLI biến một file theme JSON thành một **design 
 
 Được phát hành trên npm registry công khai với tên `@duydpdev/style-generator`; cài đặt không cần token (xem [Cài đặt](#cài-đặt)).
 
-> **Nâng cấp?** Đọc các hướng dẫn nâng cấp: [6.x → 7.0](./migration/6.x-to-7.0.md), [5.x → 6.0](./migration/5.x-to-6.0.md), [4.x → 5.0](./migration/4.x-to-5.0.md), [3.x → 4.0](./migration/3.x-to-4.0.md).
+> **Nâng cấp?** Đọc các hướng dẫn nâng cấp: [7.x → 8.0](./migration/7.x-to-8.0.md), [6.x → 7.0](./migration/6.x-to-7.0.md), [5.x → 6.0](./migration/5.x-to-6.0.md), [4.x → 5.0](./migration/4.x-to-5.0.md), [3.x → 4.0](./migration/3.x-to-4.0.md).
 
 ## Tính năng
 
@@ -109,7 +109,7 @@ Chỉ vậy là xong phần nối dây: không có `@plugin`, không có file sa
 - [CLI](./reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, các flag và file cấu hình
 - [Subpath](./reference/core.md#toàn-bộ-export-theo-subpath): entry point gốc chứa generator; token, CVA, spacing, recipe, plugin và bộ component nằm trong `./tokens`, `./cva`, `./spacing`, `./recipes`, `./vite`, `./next`, `./ui`, `./ui-react`, `./types`
 - [Bắt đầu](./getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
-- [Hướng dẫn](./guide.md) và [cookbook](./cookbook.md)
+- [Hướng dẫn](./guide.md), [khắc phục sự cố](./troubleshooting.md) và [cookbook](./cookbook.md)
 - [Tham chiếu](./reference/core.md): một trang cho mỗi subpath, cùng `theme`, `options` và `cli`
 - [Nhật ký thay đổi](https://github.com/duydpdev/style-generator/blob/main/CHANGELOG.md)
 - [Các hướng dẫn nâng cấp](https://github.com/duydpdev/style-generator/blob/main/documents/README.md#migration)

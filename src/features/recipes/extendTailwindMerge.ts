@@ -8,7 +8,7 @@ import { toKebabCase } from "../../shared/helpers";
 export interface TailwindMergeTokens {
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
 }
@@ -66,7 +66,7 @@ const BORDER_WIDTH_PREFIXES = [
  *
  * const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
  * ```
- * - `shadows`, `backDropBlurs` and `borderWidth` (incl. side, logical and
+ * - `shadows`, `backdropBlurs` and `borderWidth` (incl. side, logical and
  *   `divide-*` prefixes) extend the matching `tailwind-merge` groups; the
  *   group ids are `tailwind-merge`'s own (`border-w`, `border-w-x`, …).
  * - `borderRadius` extends `tailwind-merge`'s `radius` theme scale, which
@@ -85,6 +85,10 @@ const BORDER_WIDTH_PREFIXES = [
  * group.
  * @param {TailwindMergeTokens} tokens - `generate().tokens.Web` or `createDesignTokens().DesignTokens.Web`
  * @returns {TailwindMergeExtension} Argument for `extendTailwindMerge`
+ * @example
+ * import { extendTailwindMerge } from "tailwind-merge";
+ *
+ * const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
  */
 export const createTailwindMergeExtension = (
   tokens: TailwindMergeTokens,
@@ -98,7 +102,7 @@ export const createTailwindMergeExtension = (
   };
 
   addGroup("shadow", "shadow", tokens.shadows);
-  addGroup("backdrop-blur", "backdrop-blur", tokens.backDropBlurs);
+  addGroup("backdrop-blur", "backdrop-blur", tokens.backdropBlurs);
   if (tokens.borderRadius.length > 0) {
     theme.radius = tokens.borderRadius.map(toKebabCase);
   }

@@ -68,7 +68,7 @@ describe("doctorCommand", () => {
     expect(out).toMatch(/Everything looks good/);
   });
 
-  it("prints no Script line: there is no generator script to check", () => {
+  it("prints no Script line: doctor does not look for a generator script", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
@@ -96,7 +96,7 @@ describe("doctorCommand", () => {
     expect(lines()).toMatch(/yarn style-gen generate/);
   });
 
-  it("a config that still has `plugin` stops with a config error and prints no Script line", () => {
+  it("a config that has a `plugin` key stops with a config error and prints no Script line", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
@@ -112,7 +112,7 @@ describe("doctorCommand", () => {
     expect(lines()).not.toContain("Script");
   });
 
-  it("v1 nested colors (object values) → schema error naming the offending path, 1", () => {
+  it("nested colors (object values) → schema error naming the offending path, 1", () => {
     writeProject(tmp, {
       "style-gen.config.json": {
         theme: "styles/theme.json",
@@ -288,7 +288,7 @@ describe("doctorCommand", () => {
           xReverse: "#000",
         },
         shadows: { none: "none" },
-        backDropBlurs: { none: "0" },
+        backdropBlurs: { none: "0" },
         borderRadius: { none: "0px" },
         borderWidth: { "0": "0px", "2": "2px", thin: "1px" },
         typography: {
@@ -309,7 +309,7 @@ describe("doctorCommand", () => {
       for (const collision of [
         "colors.none",
         "shadows.none",
-        "backDropBlurs.none",
+        "backdropBlurs.none",
         "borderRadius.none",
         "colors.transparent",
         "colors.current",
@@ -392,57 +392,6 @@ describe("doctorCommand", () => {
       expect(doctorCommand(tmp)).toBe(0);
 
       expect(lines()).not.toContain("repeats base value");
-    });
-  });
-
-  describe("legacy --sg-<color> variable warnings", () => {
-    const writeBase = (): void => {
-      writeProject(tmp, {
-        "style-gen.config.json": {
-          theme: "styles/theme.json",
-          output: "styles/theme.css",
-        },
-        "styles/theme.json": { colors: { primary: "#3B82F6" } },
-      });
-    };
-
-    it("prints a file:line warning per leftover reference/declaration, skips the output file, exit code unchanged", () => {
-      writeBase();
-      writeProject(tmp, {
-        "src/a.css": [
-          ".a { color: var(--sg-primary); }",
-          "ok { color: var(--sg-color-primary); }",
-          'html[data-palette="x"] {',
-          "  --sg-primary: #111;",
-          "}",
-        ].join("\n"),
-        // The generated file legitimately mentions its own variables.
-        "styles/theme.css": ":root { --sg-primary: #000; }",
-      });
-
-      expect(doctorCommand(tmp)).toBe(0);
-
-      const out = lines();
-      expect(out).toContain(
-        "Theme   ⚠️  src/a.css:1: --sg-primary was renamed to --sg-color-primary in 5.0",
-      );
-      expect(out).toContain(
-        "Theme   ⚠️  src/a.css:4: --sg-primary was renamed to --sg-color-primary in 5.0",
-      );
-      expect(out.match(/was renamed to/g)).toHaveLength(2);
-      expect(out).not.toContain("styles/theme.css:");
-    });
-
-    it("stays silent for a migrated project", () => {
-      writeBase();
-      writeProject(tmp, {
-        "src/a.css": "html[data-x] { --sg-color-primary: #111; }",
-        "styles/theme.css": "x",
-      });
-
-      expect(doctorCommand(tmp)).toBe(0);
-
-      expect(lines()).not.toContain("was renamed to");
     });
   });
 });

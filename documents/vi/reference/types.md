@@ -1,4 +1,4 @@
-<!-- source: documents/reference/types.md sha256: e958df8a9dc1 -->
+<!-- source: documents/reference/types.md sha256: 266fe49b2c88 -->
 
 # Kiểu (./types)
 
@@ -145,7 +145,7 @@ export declare type BackdropBlurVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["backdropBlurKey"];
 ```
 
-Backdrop-blur variant union derived from theme.backDropBlurs keys.
+Backdrop-blur variant union derived from theme.backdropBlurs keys.
 
 <!-- /signature -->
 
@@ -328,7 +328,7 @@ breakpoint key is a type error — there is no `(string & {})` fallback.
 Các key breakpoint mà `options.breakpoints` đặt tên, cặp mặc định, các key screen tùy biến, và kiểu giá trị responsive.
 
 ```ts
-import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/types";
 
 // "base" is always allowed; every other key must be declared in `options.breakpoints`
 // and exist in `screens` (or `defaultScreens`), or it has no CSS behind it.
@@ -476,7 +476,7 @@ Distinct from `DesignTokensWeb` in `./inference` which describes the runtime
 token arrays returned by `createDesignTokens()`. Consumers can pluck individual
 variant unions via the semantic aliases below instead of writing
 `(typeof DesignTokens.Web.X)[number]` everywhere.
-Kept an interface (as in 4.1) so consumers can still augment it.
+Kept an interface so consumers can still augment it.
 
 <!-- /signature -->
 

@@ -5,7 +5,6 @@ export interface PlainApp {
   readonly uiDir: string;
   readonly component: ".tsx" | ".vue";
   readonly stories: false | ".stories.tsx" | ".stories.ts";
-  readonly opacities?: true;
 }
 export interface IdenticalRule {
   readonly scope: "folder" | "app";

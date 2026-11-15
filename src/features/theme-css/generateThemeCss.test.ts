@@ -90,7 +90,7 @@ describe("generateThemeCss", () => {
     const config: ThemeConfig = {
       colors: { brand: "#00f", primary: "$brand" },
       shadows: { soft: "0 1px #000", card: "$soft" },
-      backDropBlurs: { light: "4px", panel: "$light" },
+      backdropBlurs: { light: "4px", panel: "$light" },
       borderRadius: { round: "4px", card: "$round" },
       fontFamily: { sans: "Inter", body: "$sans" },
       borderWidth: { hairline: "1px", card: "$hairline" },
@@ -206,7 +206,7 @@ describe("generateThemeCss", () => {
       colors: { primary: "#007AFF" },
       shadows: { sm: "0 1px 2px #0000000d" },
       borderRadius: { md: "8px" },
-      backDropBlurs: { sm: "4px" },
+      backdropBlurs: { sm: "4px" },
     };
     const themeBlock = generateThemeCss(config).split("@theme inline")[1];
     expect(themeBlock).toContain("--color-primary: var(--sg-color-primary);");

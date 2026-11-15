@@ -5,3 +5,4 @@ dist
 
 # Generated theme artifacts
 src/theme/theme.css
+src/theme/theme.tokens.ts

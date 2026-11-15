@@ -75,38 +75,3 @@ export const resolveSpacing = <BKeys extends string = DefaultBreakpointKeys>(
 
   return { className: `sp-${prop}`, style };
 };
-
-/**
- * Resolve multiple spacing props at once.
- * @template BKeys - Breakpoint keys accepted in each value (default `md | lg`)
- * @param {Partial<Record<SpacingKey, ResponsiveValueStrict<number, BKeys> | undefined>>} props - Object of spacing prop name → value
- * @returns {{ classNames: string; style: Record<string, string> }} Combined class names (space-joined) and merged CSS variable style map
- * @example
- * resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } })
- * // → {
- * //     classNames: 'sp-p sp-mx',
- * //     style: { '--sg-sp-p': '1rem', '--sg-sp-mx': '0.5rem', '--sg-sp-mx-md': '1rem' }
- * //   }
- */
-export const resolveSpacingProps = <
-  BKeys extends string = DefaultBreakpointKeys,
->(
-  props: Partial<
-    Record<
-      SpacingKey,
-      ResponsiveValueStrict<number, NoInferBKeys<BKeys>> | undefined
-    >
-  >,
-): { classNames: string; style: Record<string, string> } => {
-  const classNames: string[] = [];
-  const style: Record<string, string> = {};
-
-  for (const [prop, value] of Object.entries(props)) {
-    if (value == null) continue;
-    const result = resolveSpacing<BKeys>(prop as SpacingKey, value);
-    classNames.push(result.className);
-    Object.assign(style, result.style);
-  }
-
-  return { classNames: classNames.join(" "), style };
-};

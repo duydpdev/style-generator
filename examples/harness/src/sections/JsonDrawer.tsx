@@ -37,7 +37,7 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
         colors,
         typography: baseTheme.typography,
         shadows: baseTheme.shadows,
-        backDropBlurs: baseTheme.backDropBlurs,
+        backdropBlurs: baseTheme.backdropBlurs,
         borderRadius: baseTheme.borderRadius,
         themeAxes: {
           theme: {

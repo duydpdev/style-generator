@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * DEV.7 class-family diff: which utility families the baseline CSS had that
+ * Class-family diff: which utility families the baseline CSS had that
  * the proxy CSS no longer has.
  *
  * Usage:

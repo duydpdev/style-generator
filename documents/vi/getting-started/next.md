@@ -1,35 +1,148 @@
-<!-- source: documents/getting-started/next.md sha256: 32f2d3cc3f47 -->
+<!-- source: documents/getting-started/next.md sha256: 2600921f4041 -->
 
 # Bắt đầu: Next.js
 
-Hướng dẫn này nối `@duydpdev/style-generator` vào Next.js (webpack hoặc Turbopack) và dựng một landing page từ các component chép dùng được. Theme, style của `Button`, component `Button` và theme switch được nhúng từ [`examples/plain-react`](../../../examples/plain-react/README.md), nơi các bản sao giống hệt nhau; file riêng của Next.js (config) được hiển thị dưới dạng một đoạn mã độc lập, và không có thư mục ví dụ Next.js chạy được.
+Hướng dẫn này nối `@duydpdev/style-generator` vào Next.js (webpack hoặc Turbopack) và render một `Button` có theme, dựng từ một component chép dùng được. Theme, các file của `Button` và theme switch được nhúng từ [`examples/plain-react`](../../../examples/plain-react/README.md), nơi các bản sao giống hệt nhau; các file riêng của Next.js (config và trang) được hiển thị dưới dạng các đoạn mã độc lập, và không có thư mục ví dụ Next.js chạy được.
 
 ## Cài đặt
 
-Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`.
+Bắt đầu từ một ứng dụng Next.js được tạo cùng Tailwind (`yarn create next-app my-app --ts --tailwind --src-dir --app`), lệnh này cài `tailwindcss` và phần tích hợp bundler của nó. Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
 ```
+
+## Tạo theme
+
+Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, `secondary`, `success`, `danger`, `background` và `foreground`, bo góc `md` cùng các kiểu chữ `text16Medium` và `text20Semibold`, nên hãy bắt đầu từ theme đầy đủ này (chính là `examples/plain-react/src/theme/theme.json`):
+
+<!-- embed: examples/plain-react/src/theme/theme.json -->
+
+```json
+{
+  "colors": {
+    "primary": "#2647D9",
+    "primaryHover": "#1F3BB8",
+    "primaryActive": "#19319A",
+    "onPrimary": "$surface",
+    "secondary": "#6E5BFF",
+    "accent": "$secondary",
+    "success": "#2E7D5B",
+    "danger": "#C8462C",
+    "background": "#FAF7F2",
+    "surface": "#FFFFFF",
+    "foreground": "#0F1530",
+    "muted": "#6B6D7A",
+    "line": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)"
+  },
+  "typography": {
+    "text12Mono": {
+      "fontSize": "12px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text14Regular": {
+      "fontSize": "14px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text20Semibold": {
+      "fontSize": "20px",
+      "fontWeight": 600,
+      "lineHeight": "140%",
+      "letterSpacing": "-0.01em"
+    },
+    "text32Bold": {
+      "fontSize": "32px",
+      "fontWeight": 700,
+      "lineHeight": "120%",
+      "letterSpacing": "-0.02em"
+    },
+    "display56Serif": {
+      "fontSize": "56px",
+      "fontWeight": 400,
+      "lineHeight": "100%",
+      "letterSpacing": "-0.025em"
+    }
+  },
+  "shadows": {
+    "sm": "0px 1px 2px rgba(15, 21, 48, 0.06), 0px 1px 1px rgba(15, 21, 48, 0.04)",
+    "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
+    "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)"
+  },
+  "backdropBlurs": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "14px"
+  },
+  "borderRadius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "16px",
+    "pill": "999px"
+  },
+  "fontFamily": {
+    "sans": "\"Geist\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "serif": "\"Instrument Serif\", \"Geist\", serif",
+    "mono": "\"JetBrains Mono\", ui-monospace, \"SFMono-Regular\", monospace"
+  },
+  "borderWidth": {
+    "thin": "1px",
+    "thick": "2px"
+  },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#8FA6FF",
+          "primaryHover": "#A9BBFF",
+          "primaryActive": "#C2CEFF",
+          "secondary": "#A89AFF",
+          "success": "#6BBF93",
+          "danger": "#F08369",
+          "background": "#0B0E1D",
+          "surface": "#161A2D",
+          "foreground": "#F2EFE9",
+          "muted": "#8A8FA8"
+        },
+        "shadows": {
+          "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
+          "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+          "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+        }
+      }
+    }
+  }
+}
+```
+
+`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi một theme khởi đầu nhỏ hơn vào `src/styles/theme.json` và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `src/theme/`: hoặc bỏ qua `init`, hoặc xóa thư mục `src/styles/` mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
 
 ## Tự quản lý theme
 
-File theme JSON là `src/theme/theme.json` (không được hiển thị ở đây). `src/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `src/options.ts`. Module đó không import JSON, nên `next.config.ts` import nó mà không nạp lại config ở mỗi lần sửa theme:
+`src/theme.ts` biến JSON thành kiểu `theme` và helper `cn`, đồng thời re-export `tokens` có kiểu mà `style-gen generate` (và `styleGenNext` khi `next dev`/`next build`) ghi vào `src/theme/theme.tokens.ts`. Hãy chạy `yarn style-gen generate` một lần và commit file đó; `style-gen generate --check` thất bại trong CI khi nó lỗi thời:
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -37,42 +150,64 @@ export const cn = createCn(tokens);
 
 ## Sinh theme.css bằng hàm bọc của Next.js
 
-`styleGenNext` ghi `src/theme/theme.css` khi `next dev` hoặc `next build` nạp config; một theme nằm trong ứng dụng thì không cần `transpilePackages`.
+`styleGenNext()` không nhận tùy chọn generator nào: nó đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở root dự án, chính file mà `style-gen generate` đọc. Nó ghi `src/theme/theme.css` và `src/theme/theme.tokens.ts` khi `next dev` hoặc `next build` nạp config; một theme nằm trong ứng dụng thì không cần `transpilePackages`. Lưu file này thành `style-gen.config.json`:
 
-<!-- snippet: no-check imports ./src/options, the tutorial's own options module, which is not a checker fixture -->
+<!-- embed: examples/plain-react/style-gen.config.json -->
+
+```json
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
+}
+```
+
+Sau đó bọc `next.config.ts` mà `create-next-app` đã tạo; đừng thay nó bằng một object rỗng. Giữ mọi tùy chọn nó đã ghi, đặc biệt là `turbopack.rules`:
 
 ```ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
-import { options } from "./src/options";
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  /* config options here */
+  cacheComponents: true,
+  partialPrefetching: true,
+  // Runs Tailwind on your CSS under Turbopack; written by `create-next-app --tailwind`.
+  turbopack: {
+    rules: {
+      "*.css": {
+        loaders: ["@tailwindcss/turbopack"],
+        as: "*.css",
+      },
+    },
+  },
+};
 
 // Next.js runs on Turbopack/webpack (no Vite), so the Vite-only `styleGenVite`
 // plugin does not apply. `styleGenNext` does not import `next`, so it works
 // under both bundlers. It writes `src/theme/theme.css` when Next loads this
 // config in `phase-development-server` (`next dev`, which also watches the
-// theme JSON) or `phase-production-build` (`next build`). `options` comes from
-// `src/options.ts`, which imports no JSON (a theme edit must not reload this
-// config) and types the tokens with the same object; the `generate` CLI reads
-// the same steps from `style-gen.config.json`.
-export default styleGenNext({
-  themePath: "src/theme/theme.json",
-  outDir: "src/theme",
-  options,
-})(nextConfig);
+// theme JSON and the config file) or `phase-production-build` (`next build`).
+export default styleGenNext()(nextConfig);
+```
+
+Không có loader Tailwind, `next build` vẫn thành công nhưng xuất ra các rule `@theme`/`@source` thô và không có utility nào, còn `next dev` chỉ in cảnh báo `Unknown at rule`. Nếu config của bạn không có khối Tailwind (ứng dụng được tạo không có `--tailwind`, hoặc build bằng webpack), hãy chạy `yarn add tailwindcss @tailwindcss/postcss` và thêm `postcss.config.mjs`:
+
+```js
+// postcss.config.mjs
+export default { plugins: { "@tailwindcss/postcss": {} } };
 ```
 
 ## Import CSS
 
-Import file đã sinh cạnh Tailwind. Không cần dòng `@source`: Tailwind quét `src/`, và `theme.css` liệt kê mọi utility của token trong `@source inline(...)`.
+Thay nội dung của `src/app/globals.css` bằng file đã sinh cạnh Tailwind (các khối `:root` và `@theme inline` của scaffold định nghĩa một `--color-background` sẽ xung đột với màu `background` của theme). Không cần dòng `@source`: Tailwind quét `src/`, và `theme.css` liệt kê mọi utility của token trong `@source inline(...)`.
 
 ```css
 @import "tailwindcss";
 @import "../theme/theme.css";
 ```
 
-Nếu `style-gen init` đã ghi `.claude/rules/style-generator.md`, thêm cả dòng `@source not "<path>/.claude";` mà nó in ra: file đó chứa các class ví dụ mà Tailwind sẽ quét vào nếu không loại trừ ([`style-gen init`](../reference/cli.md#rules-cho-agent)).
+Nếu bạn đã chạy `style-gen init`, nó cũng ghi `.claude/rules/style-generator.md`; hãy thêm `@source not "../../.claude";` làm dòng cuối của `src/app/globals.css`: file đó chứa các class ví dụ mà Tailwind sẽ quét vào nếu không loại trừ ([`style-gen init`](../reference/cli.md#rules-cho-agent)).
 
 ## Dựng một component
 
@@ -90,7 +225,6 @@ import {
   contrastText,
   pick,
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -218,8 +352,41 @@ export const buttonTables = {
   },
 } satisfies RecipeTables;
 
-export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
+export const buttonRecipe = recipeFromTables(buttonTables);
 ```
+
+`types.ts` chứa các kiểu prop:
+
+<!-- embed: examples/plain-react/src/ui/button/types.ts -->
+
+```ts
+import type { ThemeSpacingProps } from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
+
+import type { tokens } from "../../theme";
+
+import type { ButtonIntent } from "./style";
+
+export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
+  readonly variant?: "fill" | "outline" | "soft" | "ghost" | "link" | undefined;
+  /** One of `buttonIntents`. */
+  readonly color?: ButtonIntent | undefined;
+  readonly size?: "sm" | "md" | "lg" | undefined;
+  readonly prefix?: ReactNode;
+  readonly suffix?: ReactNode;
+  readonly children?: ReactNode;
+  readonly className?: string | undefined;
+  readonly style?: CSSProperties | undefined;
+};
+
+export type ButtonProps<T extends ElementType = "button"> = Polymorphic<
+  T,
+  ButtonOwnProps
+>;
+```
+
+`Button.tsx` là component:
 
 <!-- embed: examples/plain-react/src/ui/button/Button.tsx -->
 
@@ -299,9 +466,35 @@ export function Button<T extends ElementType = "button">({
 }
 ```
 
+`index.ts` là entry công khai của thư mục:
+
+<!-- embed: examples/plain-react/src/ui/button/index.ts -->
+
+```ts
+export { Button } from "./Button";
+export type { ButtonOwnProps, ButtonProps } from "./types";
+```
+
 ## Ghép trang
 
-`src/app/page.tsx` là một server component trả về `<App />` từ `src/App.tsx` (cùng file với [`examples/plain-react/src/App.tsx`](../../../examples/plain-react/src/App.tsx)); chỉ `ThemeSwitch` là client component.
+Hướng dẫn này chỉ dựng `Button`; các section landing page của ví dụ không được đưa vào. Thay `src/app/page.tsx` bằng một server component dùng nó (`Button` không có hook, nên không cần `"use client"`):
+
+<!-- snippet: no-check imports ../ui/button from the app being built -->
+
+```tsx
+import { Button } from "../ui/button";
+
+export default function Page() {
+  return (
+    <main className="flex min-h-screen items-center justify-center gap-3 bg-background text-foreground">
+      <Button>Get started</Button>
+      <Button variant="soft" color="danger">
+        Delete
+      </Button>
+    </main>
+  );
+}
+```
 
 ## Chuyển sang dark
 
@@ -314,11 +507,13 @@ import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
 
-import type { theme } from "./theme";
+import type { ThemeAxesState } from "./theme/theme.tokens";
 import { Button } from "./ui/button";
 
+const DARK_STATE: ThemeAxesState = { theme: "dark" };
+
 /** `{ "data-theme": "dark" }`; the light theme is the base theme (no attribute). */
-const DARK = themeAxisAttributes<typeof theme>({ theme: "dark" });
+const DARK = themeAxisAttributes(DARK_STATE);
 
 /** Light/dark toggle: sets or removes the `theme` axis attribute on `<html>`. */
 export function ThemeSwitch(): JSX.Element {
@@ -346,6 +541,8 @@ export function ThemeSwitch(): JSX.Element {
   );
 }
 ```
+
+Lưu nó thành `src/ThemeSwitch.tsx` với `"use client";` là dòng đầu tiên (override `themeAxes.theme.dark` mà nó bật/tắt đã có trong theme ở trên), import nó trong `src/app/page.tsx` bằng `import { ThemeSwitch } from "../ThemeSwitch";` và render `<ThemeSwitch />` cạnh các nút.
 
 ## Bước tiếp theo
 

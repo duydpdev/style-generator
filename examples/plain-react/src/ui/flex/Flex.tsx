@@ -27,13 +27,12 @@ export function Flex<T extends ElementType = "div">({
   ...props
 }: FlexProps<T>): JSX.Element {
   const Component: ElementType = as ?? "div";
-  const split = splitLayout(
-    props,
-    layoutRecipe,
-    tokens.spacingProperties,
-    LAYOUT_VARIANT_KEYS,
-    LAYOUT_SIZE_KEYS,
-  );
+  const split = splitLayout(props, {
+    recipe: layoutRecipe,
+    spacingKeys: tokens.spacingProperties,
+    variantKeys: LAYOUT_VARIANT_KEYS,
+    sizeKeys: LAYOUT_SIZE_KEYS,
+  });
   return (
     <Component
       {...split.rest}

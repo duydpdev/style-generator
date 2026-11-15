@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: e1812d014d25 -->
+<!-- source: documents/reference/recipes.md sha256: 8422e621a117 -->
 
 # Recipe (./recipes)
 
@@ -14,12 +14,10 @@ import {
   themeAxisAttributes,
   type SpacingProps,
 } from "@duydpdev/style-generator/recipes";
-import type { BreakpointKeys } from "@duydpdev/style-generator/types";
 
-// `theme` is your theme JSON, `options` the const object shared with the bundler
-// plugin, `tokens` = createDesignTokens(theme, options).DesignTokens.Web
-import { options } from "./style-gen.options";
-import { theme, tokens } from "./tokens";
+// `tokens` is the generated `theme.tokens.ts` (the bundler plugin and
+// `style-gen generate` write it from your theme and `style-gen.config.json`)
+import { tokens } from "./theme.tokens";
 
 // 1. `twMerge` that knows your custom tokens (`border-thin` is a width, not a color)
 export const twMerge = extendTailwindMerge(
@@ -27,19 +25,19 @@ export const twMerge = extendTailwindMerge(
 );
 
 // 2. Typed spacing props → `sp-*` class + inline `--sg-sp-*` style
-type BoxProps = SpacingProps<BreakpointKeys<typeof options>> & { id?: string };
+type BoxProps = SpacingProps<(typeof tokens)["breakpoints"][number]> & {
+  id?: string;
+};
 export const Box = (props: BoxProps) => {
   const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
   return <div {...rest} className={spacing.className} style={spacing.style} />;
 };
 
 // 3. DOM attributes of the active theme axes
-export const Root = () => (
-  <html {...themeAxisAttributes<typeof theme>({ theme: "dark" })} />
-);
+export const Root = () => <html {...themeAxisAttributes({ theme: "dark" })} />;
 ```
 
-Một phiên bản đầy đủ, đã được kiểm thử (`cn`, `axisAttributes`, các headless recipe của sáu component mẫu, CSS dùng chung) nằm trong [`examples/design-system`](../../../examples/design-system/README.md). [Component](../components.md) chỉ ra cách các component mẫu của `examples/harness` bọc các recipe này; [`guide.md`](../guide.md#xây-dựng-component) hướng dẫn từng bước qua quy trình đó. [`createCn`](./ui.md#createcn-cn) trong `./ui` bọc extension này cùng với `clsx`.
+Một phiên bản đầy đủ, đã được kiểm thử (`cn`, `axisAttributes`, các headless recipe của sáu component mẫu, CSS dùng chung) nằm trong [`examples/design-system`](../../../examples/design-system/README.md). [Component](../components.md) chỉ ra cách các component mẫu của `examples/harness` bọc các recipe này; [Xây dựng component](../getting-started/build-components.md) hướng dẫn từng bước qua quy trình đó. [`createCn`](./ui.md#createcn-cn) trong `./ui` bọc extension này cùng với `clsx`.
 
 ## `createTailwindMergeExtension`, `TailwindMergeExtension`, `TailwindMergeTokens`
 
@@ -64,7 +62,7 @@ declare const tokens: Parameters<typeof createTailwindMergeExtension>[0];
 const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
 ```
 
-- `shadows`, `backDropBlurs` and `borderWidth` (incl. side, logical and
+- `shadows`, `backdropBlurs` and `borderWidth` (incl. side, logical and
   `divide-*` prefixes) extend the matching `tailwind-merge` groups; the
   group ids are `tailwind-merge`'s own (`border-w`, `border-w-x`, …).
 - `borderRadius` extends `tailwind-merge`'s `radius` theme scale, which
@@ -115,7 +113,7 @@ argument. Declared here, not imported, so `dist/recipes.d.ts` never names
 export declare interface TailwindMergeTokens {
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
 }
@@ -127,7 +125,7 @@ and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
 
 <!-- /signature -->
 
-- `createTailwindMergeExtension` bao quát các token `typography`, `shadows`, `backDropBlurs`, `borderRadius` và `borderWidth`; màu sắc và font family vốn đã khớp với các group `color`/`font-family` mặc định của tailwind-merge. `borderRadius` mở rộng scale theme `radius` của tailwind-merge, nhờ đó các utility theo phía, theo logic và góc (`rounded-tl-pill`, `rounded-s-pill`) sẽ merge với các sibling `rounded-*` của chúng. Một class typography đứng sau sẽ loại bỏ các class `font-size`/`font-weight`/`leading`/`tracking` đứng trước; một utility đơn thuộc tính đứng sau sẽ tinh chỉnh lại nó.
+- `createTailwindMergeExtension` bao quát các token `typography`, `shadows`, `backdropBlurs`, `borderRadius` và `borderWidth`; màu sắc và font family vốn đã khớp với các group `color`/`font-family` mặc định của tailwind-merge. `borderRadius` mở rộng scale theme `radius` của tailwind-merge, nhờ đó các utility theo phía, theo logic và góc (`rounded-tl-pill`, `rounded-s-pill`) sẽ merge với các sibling `rounded-*` của chúng. Một class typography đứng sau sẽ loại bỏ các class `font-size`/`font-weight`/`leading`/`tracking` đứng trước; một utility đơn thuộc tính đứng sau sẽ tinh chỉnh lại nó.
 
 ## `splitSpacingProps`, `SpacingProps`
 
@@ -198,21 +196,23 @@ explicit literal keys give the narrowest result.
 <!-- signature: themeAxisAttributes -->
 
 ```ts
-export declare const themeAxisAttributes: <T extends ThemeConfig>(
-  state: ThemeAxesState<T>,
+export declare const themeAxisAttributes: (
+  state: Readonly<Record<string, string | undefined>>,
 ) => Readonly<Record<string, string>>;
 ```
 
 The DOM attributes that activate a theme's axis variants, mirroring the
 `html[data-<axis>="<variant>"]` selectors `generate()` emits. Spread the
-result on `<html>`, the element the selectors target:
+result on `<html>`, the element the selectors target. Type the state with
+`ThemeAxesState` from the generated `theme.tokens.ts`:
 
 ```tsx
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 
-const root = (
-  <html {...themeAxisAttributes({ theme: "dark", palette: "base" })} />
-);
+import type { ThemeAxesState } from "~/theme/theme.tokens";
+
+const state: ThemeAxesState = { theme: "dark", palette: "base" };
+const root = <html {...themeAxisAttributes(state)} />;
 // → data-theme="dark" (palette emits nothing)
 ```
 

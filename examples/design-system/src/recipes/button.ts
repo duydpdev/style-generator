@@ -9,6 +9,7 @@ import {
   type ButtonTint,
 } from "./factories/button";
 
+// #region docs:intents
 /**
  * The semantic intents the components expose. `satisfies` is the DX anchor:
  * rename or remove one of these colors in `theme.json` and the compiler fails
@@ -23,6 +24,7 @@ export const intents = [
 ] as const satisfies readonly ColorVariant<Theme>[];
 
 export type Intent = (typeof intents)[number];
+// #endregion docs:intents
 
 /** Design-system button roles. */
 export const buttonPreset = {

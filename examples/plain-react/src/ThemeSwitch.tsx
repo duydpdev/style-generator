@@ -2,11 +2,13 @@ import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
 
-import type { theme } from "./theme";
+import type { ThemeAxesState } from "./theme/theme.tokens";
 import { Button } from "./ui/button";
 
+const DARK_STATE: ThemeAxesState = { theme: "dark" };
+
 /** `{ "data-theme": "dark" }`; the light theme is the base theme (no attribute). */
-const DARK = themeAxisAttributes<typeof theme>({ theme: "dark" });
+const DARK = themeAxisAttributes(DARK_STATE);
 
 /** Light/dark toggle: sets or removes the `theme` axis attribute on `<html>`. */
 export function ThemeSwitch(): JSX.Element {

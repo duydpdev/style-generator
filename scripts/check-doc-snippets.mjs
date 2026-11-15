@@ -44,7 +44,10 @@ function noCheckReason(marker) {
   if (!marker.endsWith("-->")) return "";
   return marker.slice(NO_CHECK_OPEN.length, -3).trim();
 }
-const FIXTURES = ["theme.json", "style-gen.options.ts", "tokens.ts"];
+// Copied flat next to the snippets. `theme.tokens.ts` is also copied to
+// `theme/theme.tokens.ts`, the path the docs import the generated tokens from.
+const FIXTURES = ["theme.json", "theme.tokens.ts", "tokens.ts"];
+const NESTED_FIXTURES = ["theme.tokens.ts"];
 
 /**
  * Modules the docs name but the repo does not install: the stub declares only
@@ -124,6 +127,8 @@ function compile(root, dir, scriptRepo, written) {
     paths: {
       "@duydpdev/style-generator": [join(root, "dist/index.d.ts")],
       "@duydpdev/style-generator/*": [join(root, "dist/*.d.ts")],
+      // The docs import the generated tokens through the Nuxt-style `~` alias.
+      "~/*": [join(dir, "*")],
       ...Object.fromEntries(
         Object.keys(MODULE_STUBS).map((name) => [
           name,
@@ -171,6 +176,11 @@ function main() {
   for (const name of FIXTURES) {
     const from = join(root, "examples/design-system/src", name);
     if (existsSync(from)) copyFileSync(from, join(dir, name));
+  }
+  mkdirSync(join(dir, "theme"));
+  for (const name of NESTED_FIXTURES) {
+    const from = join(root, "examples/design-system/src", name);
+    if (existsSync(from)) copyFileSync(from, join(dir, "theme", name));
   }
   mkdirSync(join(dir, "stubs"));
   for (const [name, source] of Object.entries(MODULE_STUBS)) {

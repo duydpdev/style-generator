@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { z } from "zod";
 
 import { ThemeSchema } from "../../core/themeSchema";
-import { StyleGenConfigSchema } from "../../node/loadStyleGenConfig";
+import { StyleGenConfigFileSchema } from "../../node/loadStyleGenConfig";
 import { logger } from "../logger";
 
 import { initCommand, type InitArgs } from "./init";
@@ -35,6 +35,9 @@ function setTty(value: boolean): void {
 const RULES =
   "<!-- @duydpdev/style-generator 0.0.0-test -->\n\n# Agent contract\n";
 const RULES_FILE = ".claude/rules/style-generator.md";
+/** The `$schema` pointer `init` writes first into style-gen.config.json. */
+const CONFIG_SCHEMA_REF = "./style-gen.config.schema.json";
+const CONFIG_SCHEMA_FILE = "style-gen.config.schema.json";
 
 describe("initCommand", () => {
   let tmp: string;
@@ -114,6 +117,7 @@ describe("initCommand", () => {
         output: string;
       };
       expect(cfg).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
         theme: "styles/theme.json",
         output: "styles/theme.css",
       });
@@ -169,78 +173,8 @@ describe("initCommand", () => {
       );
     });
 
-    it("drops a `plugin` key while keeping the other keys of an existing style-gen.config.json", async () => {
-      const infoSpy = vi
-        .spyOn(logger, "info")
-        .mockImplementation(() => undefined);
-      fs.writeFileSync(
-        path.join(tmp, "style-gen.config.json"),
-        JSON.stringify({
-          breakpoints: ["xl"],
-          typography: { cssVarDriven: true },
-          plugin: "old/theme-plugin.ts",
-        }),
-      );
-
-      await run({ theme: "a/theme.json", dark: false }, tmp);
-
-      const cfg: unknown = JSON.parse(
-        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
-      );
-      expect(cfg).toEqual({
-        theme: "a/theme.json",
-        output: "a/theme.css",
-        breakpoints: ["xl"],
-        typography: { cssVarDriven: true },
-      });
-      expect(infoSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Removed the `plugin` key"),
-      );
-    });
-
-    it("drops the keys removed in 7.0 so the merged config loads, and prints extraSources as @source inline lines", async () => {
-      const infoSpy = vi
-        .spyOn(logger, "info")
-        .mockImplementation(() => undefined);
-      const logSpy = vi
-        .spyOn(logger, "log")
-        .mockImplementation(() => undefined);
-      fs.writeFileSync(
-        path.join(tmp, "style-gen.config.json"),
-        JSON.stringify({
-          breakpoints: ["xl"],
-          extraSources: ["hover:bg-{primary,secondary}", "md:flex"],
-          axes: { scope: "element" },
-        }),
-      );
-
-      await run({ theme: "a/theme.json", dark: false }, tmp);
-
-      const cfg: unknown = JSON.parse(
-        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
-      );
-      expect(cfg).toEqual({
-        theme: "a/theme.json",
-        output: "a/theme.css",
-        breakpoints: ["xl"],
-      });
-      expect(StyleGenConfigSchema.safeParse(cfg).success).toBe(true);
-      expect(infoSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Removed the `extraSources` key"),
-      );
-      expect(infoSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Removed the `axes` key"),
-      );
-      expect(logSpy).toHaveBeenCalledWith(
-        '   @source inline("hover:bg-{primary,secondary}");',
-      );
-      expect(logSpy).toHaveBeenCalledWith('   @source inline("md:flex");');
-    });
-
-    it("merges theme/output into an existing style-gen.config.json without a removal line when it has no `plugin`", async () => {
-      const infoSpy = vi
-        .spyOn(logger, "info")
-        .mockImplementation(() => undefined);
+    it("merges theme/output into an existing style-gen.config.json and keeps its other keys", async () => {
+      vi.spyOn(logger, "info").mockImplementation(() => undefined);
       fs.writeFileSync(
         path.join(tmp, "style-gen.config.json"),
         JSON.stringify({ breakpoints: ["xl"] }),
@@ -252,13 +186,36 @@ describe("initCommand", () => {
         fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
       );
       expect(cfg).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
         theme: "a/theme.json",
         output: "a/theme.css",
         breakpoints: ["xl"],
       });
-      expect(infoSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining("`plugin` key"),
+    });
+
+    it("keeps a `plugin` key of an existing config as written and prints no removal line", async () => {
+      const infoSpy = vi
+        .spyOn(logger, "info")
+        .mockImplementation(() => undefined);
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({ plugin: "plugins/theme-plugin.ts" }),
       );
+
+      await run({ theme: "a/theme.json", dark: false }, tmp);
+
+      const cfg: unknown = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      );
+      expect(cfg).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
+        theme: "a/theme.json",
+        output: "a/theme.css",
+        plugin: "plugins/theme-plugin.ts",
+      });
+      for (const call of infoSpy.mock.calls) {
+        expect(call[0]).not.toMatch(/Removed/i);
+      }
     });
 
     it("returns 1 and leaves the file untouched if theme.schema.json already exists", async () => {
@@ -291,42 +248,13 @@ describe("initCommand", () => {
         fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
       );
       expect(cfg).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
         theme: "a/theme.json",
         output: "a/theme.css",
         breakpoints: ["xl"],
       });
-      expect(infoSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining("`plugin` key"),
-      );
-    });
-
-    it('drops a `plugin` key from package.json["style-gen"] while keeping its other keys', async () => {
-      const infoSpy = vi
-        .spyOn(logger, "info")
-        .mockImplementation(() => undefined);
-      fs.writeFileSync(
-        path.join(tmp, "package.json"),
-        JSON.stringify({
-          name: "app",
-          "style-gen": {
-            typography: { cssVarDriven: true },
-            plugin: "old/theme-plugin.ts",
-          },
-        }),
-      );
-
-      await run({ theme: "a/theme.json", dark: false }, tmp);
-
-      const cfg: unknown = JSON.parse(
-        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
-      );
-      expect(cfg).toEqual({
-        theme: "a/theme.json",
-        output: "a/theme.css",
-        typography: { cssVarDriven: true },
-      });
       expect(infoSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Removed the `plugin` key"),
+        expect.stringContaining('Copied package.json["style-gen"]'),
       );
     });
 
@@ -402,6 +330,7 @@ describe("initCommand", () => {
           '@import "tailwindcss";\n@import "./styles/theme.css";',
         );
         expect(config()).toEqual({
+          $schema: CONFIG_SCHEMA_REF,
           theme: "src/styles/theme.json",
           output: "src/styles/theme.css",
         });
@@ -420,6 +349,7 @@ describe("initCommand", () => {
           '@import "tailwindcss";\n@import "../styles/theme.css";',
         );
         expect(config()).toEqual({
+          $schema: CONFIG_SCHEMA_REF,
           theme: "styles/theme.json",
           output: "styles/theme.css",
         });
@@ -436,28 +366,25 @@ describe("initCommand", () => {
         expect(out()).not.toContain("import type");
       });
 
-      it("nuxt 4: scaffolds under app/assets/css and passes absolute paths", async () => {
+      it("nuxt 4: scaffolds under app/assets/css and passes the project root", async () => {
         setup(["nuxt.config.ts"], ["app"]);
         expect(await run({}, tmp)).toBe(0);
         expect(config()).toEqual({
+          $schema: CONFIG_SCHEMA_REF,
           theme: "app/assets/css/theme.json",
           output: "app/assets/css/theme.css",
         });
         expect(out()).toContain(
-          'new URL("./app/assets/css/theme.json", import.meta.url)',
+          'styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) })',
         );
-        expect(out()).toContain(
-          'outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),',
-        );
-        expect(out()).toContain(
-          "options: {}, // style-gen.config.json is NOT read when paths are passed; put generate() options here",
-        );
-        expect(out()).toContain(
-          "that file then serves only the CLI (generate, doctor, tokens)",
-        );
+        expect(out()).not.toContain("themePath");
+        expect(out()).not.toContain("outDir");
         expect(out()).toContain('css: ["~/assets/css/main.css"],');
         expect(out()).toContain(
           '@import "tailwindcss";\n@import "./theme.css";',
+        );
+        expect(out()).toContain(
+          "Commit app/assets/css/theme.tokens.ts and add app/assets/css/theme.css to .gitignore",
         );
       });
 
@@ -465,39 +392,20 @@ describe("initCommand", () => {
         setup(["nuxt.config.ts"]);
         expect(await run({}, tmp)).toBe(0);
         expect(config()).toEqual({
+          $schema: CONFIG_SCHEMA_REF,
           theme: "assets/css/theme.json",
           output: "assets/css/theme.css",
         });
       });
 
-      it("nuxt: --theme moves both snippet paths", async () => {
-        setup(["nuxt.config.ts"], ["app"]);
-        expect(await run({ theme: "app/tokens/theme.json" }, tmp)).toBe(0);
-        expect(out()).toContain(
-          'new URL("./app/tokens/theme.json", import.meta.url)',
-        );
-        expect(out()).toContain('new URL("./app/tokens", import.meta.url)');
-      });
-
-      it("nuxt: warns and still exits 0 when the theme is outside app/", async () => {
+      it("nuxt: --theme outside app/ prints the same root-only snippet and no warning", async () => {
         setup(["nuxt.config.ts"], ["app"]);
         const warn = vi
           .spyOn(logger, "warn")
           .mockImplementation(() => undefined);
         expect(await run({ theme: "styles/theme.json" }, tmp)).toBe(0);
-        expect(warn).toHaveBeenCalledTimes(1);
-        expect(warn.mock.calls[0]?.[0]).toContain(
-          "styles/theme.css is outside app/",
-        );
-      });
-
-      it("nuxt: no warning for the default location under app/", async () => {
-        setup(["nuxt.config.ts"], ["app"]);
-        const warn = vi
-          .spyOn(logger, "warn")
-          .mockImplementation(() => undefined);
-        expect(await run({}, tmp)).toBe(0);
         expect(warn).not.toHaveBeenCalled();
+        expect(out()).toContain("styleGenVite({ root: fileURLToPath(");
       });
 
       it("stores and prints an absolute --theme inside the root as a relative POSIX path", async () => {
@@ -505,21 +413,16 @@ describe("initCommand", () => {
         const abs = path.join(tmp, "src", "styles", "theme.json");
         expect(await run({ theme: abs }, tmp)).toBe(0);
         expect(config()).toEqual({
+          $schema: CONFIG_SCHEMA_REF,
           theme: "src/styles/theme.json",
           output: "src/styles/theme.css",
         });
         expect(out()).not.toContain(tmp);
       });
 
-      it("escapes a quote and keeps a space in every printed string literal", async () => {
+      it("escapes a quote and keeps a space in the printed CSS import", async () => {
         setup(["nuxt.config.ts"], ["app"]);
         expect(await run({ theme: 'app/my "x" dir/theme.json' }, tmp)).toBe(0);
-        expect(out()).toContain(
-          'new URL("./app/my \\"x\\" dir/theme.json", import.meta.url)',
-        );
-        expect(out()).toContain(
-          'new URL("./app/my \\"x\\" dir", import.meta.url)',
-        );
         expect(out()).toContain('@import "../../my \\"x\\" dir/theme.css";');
       });
 
@@ -539,6 +442,69 @@ describe("initCommand", () => {
         );
         expect(fs.existsSync(path.join(tmp, "plugins"))).toBe(false);
       });
+    });
+
+    it("writes the config's JSON Schema and makes `$schema` the config's first key", async () => {
+      expect(await run({ theme: "styles/theme.json" }, tmp)).toBe(0);
+
+      const cfg = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(Object.keys(cfg)[0]).toBe("$schema");
+      expect(
+        JSON.parse(
+          fs.readFileSync(
+            path.join(tmp, path.normalize(CONFIG_SCHEMA_REF)),
+            "utf8",
+          ),
+        ),
+      ).toEqual(z.toJSONSchema(StyleGenConfigFileSchema));
+    });
+
+    it("adds `$schema` first to an existing config and keeps its other keys", async () => {
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({ breakpoints: ["xl"] }),
+      );
+
+      expect(await run({ theme: "a/theme.json" }, tmp)).toBe(0);
+
+      const cfg = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(Object.keys(cfg)[0]).toBe("$schema");
+      expect(cfg).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
+        theme: "a/theme.json",
+        output: "a/theme.css",
+        breakpoints: ["xl"],
+      });
+    });
+
+    it("keeps a `$schema` the existing config already has", async () => {
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({ $schema: "./node_modules/x.json" }),
+      );
+
+      expect(await run({ theme: "a/theme.json" }, tmp)).toBe(0);
+
+      const cfg = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(cfg.$schema).toBe("./node_modules/x.json");
+    });
+
+    it("returns 1 and leaves the file untouched if style-gen.config.schema.json already exists", async () => {
+      fs.writeFileSync(path.join(tmp, CONFIG_SCHEMA_FILE), '{"x":1}');
+      vi.spyOn(logger, "error").mockImplementation(() => undefined);
+
+      expect(await run({ theme: "styles/theme.json" }, tmp)).toBe(1);
+
+      expect(fs.readFileSync(path.join(tmp, CONFIG_SCHEMA_FILE), "utf8")).toBe(
+        '{"x":1}',
+      );
+      expect(fs.existsSync(path.join(tmp, "styles"))).toBe(false);
     });
   });
 
@@ -613,6 +579,92 @@ describe("initCommand", () => {
           initialValue: "app/assets/css/theme.json",
         }),
       );
+    });
+  });
+
+  describe("--yes", () => {
+    const rulesPath = (): string => path.join(tmp, RULES_FILE);
+
+    beforeEach(() => {
+      // A terminal is attached: `--yes` must still never prompt.
+      setTty(true);
+      vi.spyOn(logger, "info").mockImplementation(() => undefined);
+      vi.spyOn(logger, "log").mockImplementation(() => undefined);
+      vi.spyOn(logger, "success").mockImplementation(() => undefined);
+    });
+
+    it("scaffolds with the defaults and asks nothing", async () => {
+      expect(await run({ yes: true }, tmp)).toBe(0);
+
+      expect(fs.existsSync(path.join(tmp, "styles/theme.json"))).toBe(true);
+      expect(fs.existsSync(path.join(tmp, CONFIG_SCHEMA_FILE))).toBe(true);
+      expect(fs.readFileSync(rulesPath(), "utf8")).toBe(RULES);
+      expect(p.intro).not.toHaveBeenCalled();
+      expect(p.text).not.toHaveBeenCalled();
+      expect(p.confirm).not.toHaveBeenCalled();
+    });
+
+    it("still honours --theme and --dark", async () => {
+      expect(
+        await run({ yes: true, theme: "a/theme.json", dark: true }, tmp),
+      ).toBe(0);
+
+      const theme = JSON.parse(
+        fs.readFileSync(path.join(tmp, "a/theme.json"), "utf8"),
+      ) as { themeAxes?: { theme?: Record<string, unknown> } };
+      expect(theme.themeAxes?.theme).toHaveProperty("dark");
+      expect(p.text).not.toHaveBeenCalled();
+    });
+
+    it("exits 0 and keeps an existing theme, refreshing the rules", async () => {
+      fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), "{}");
+
+      expect(await run({ yes: true }, tmp)).toBe(0);
+
+      expect(logger.info).toHaveBeenCalledWith(
+        "Existing files kept (--yes never overwrites).",
+      );
+      expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
+        "{}",
+      );
+      expect(fs.existsSync(path.join(tmp, "style-gen.config.json"))).toBe(
+        false,
+      );
+      expect(fs.readFileSync(rulesPath(), "utf8")).toBe(RULES);
+      expect(p.confirm).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["a theme schema", "styles/theme.schema.json"],
+      ["a config schema", CONFIG_SCHEMA_FILE],
+    ])("keeps %s that already exists", async (_label, file) => {
+      fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
+      fs.writeFileSync(path.join(tmp, file), '{"x":1}');
+
+      expect(await run({ yes: true }, tmp)).toBe(0);
+
+      expect(fs.readFileSync(path.join(tmp, file), "utf8")).toBe('{"x":1}');
+      expect(fs.existsSync(path.join(tmp, "styles/theme.json"))).toBe(false);
+    });
+
+    it("keeps an edited rules file without asking", async () => {
+      fs.mkdirSync(path.dirname(rulesPath()), { recursive: true });
+      fs.writeFileSync(rulesPath(), `${RULES}\nLocal note.\n`);
+
+      expect(await run({ yes: true }, tmp)).toBe(0);
+
+      expect(fs.readFileSync(rulesPath(), "utf8")).toBe(
+        `${RULES}\nLocal note.\n`,
+      );
+      expect(p.confirm).not.toHaveBeenCalled();
+    });
+
+    it("is accepted with --rules-only", async () => {
+      expect(await run({ yes: true, rulesOnly: true }, tmp)).toBe(0);
+
+      expect(fs.readFileSync(rulesPath(), "utf8")).toBe(RULES);
+      expect(fs.existsSync(path.join(tmp, "styles"))).toBe(false);
     });
   });
 

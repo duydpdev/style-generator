@@ -220,7 +220,7 @@ describe("tokensCommand", () => {
     );
   });
 
-  it("with a theme outside the project root the default --out escapes it and the hint asks for --out", () => {
+  it("with a theme outside the project root the default path follows output, inside the root", () => {
     const shared = fs.mkdtempSync(
       path.join(os.tmpdir(), "style-gen-tokens-shared-"),
     );
@@ -229,22 +229,44 @@ describe("tokensCommand", () => {
 
       expect(
         tokensCommand({ theme: path.join(shared, "theme.json") }, tmp),
-      ).toBe(1);
-
-      expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-        /tokens output escapes project root.*\n💡 Pass --out$/s,
-      );
-      expect(fs.existsSync(path.join(shared, "theme.tokens.ts"))).toBe(false);
-
-      expect(
-        tokensCommand(
-          { theme: path.join(shared, "theme.json"), out: "keys.ts" },
-          tmp,
-        ),
       ).toBe(0);
-      expect(fs.existsSync(file("keys.ts"))).toBe(true);
+
+      expect(fs.existsSync(file("styles/theme.tokens.ts"))).toBe(true);
+      expect(fs.existsSync(path.join(shared, "theme.tokens.ts"))).toBe(false);
     } finally {
       fs.rmSync(shared, { recursive: true, force: true });
     }
+  });
+
+  it("writes to tokensOutput from style-gen.config.json, else beside output", () => {
+    write("src/t.json", theme);
+    write("style-gen.config.json", {
+      theme: "src/t.json",
+      output: "src/css/t.css",
+    });
+    expect(tokensCommand({}, tmp)).toBe(0);
+    expect(fs.existsSync(file("src/css/theme.tokens.ts"))).toBe(true);
+
+    write("style-gen.config.json", {
+      theme: "src/t.json",
+      output: "src/css/t.css",
+      tokensOutput: "gen/keys.ts",
+    });
+    expect(tokensCommand({}, tmp)).toBe(0);
+    expect(fs.existsSync(file("gen/keys.ts"))).toBe(true);
+  });
+
+  it("exports themeAxes and ThemeAxesState with the raw variant names", () => {
+    write("styles/theme.json", {
+      ...theme,
+      themeAxes: { theme: { darkMode: { colors: { primary: "#000" } } } },
+    });
+
+    expect(tokensCommand({ theme: "styles/theme.json" }, tmp)).toBe(0);
+
+    const source = fs.readFileSync(file("styles/theme.tokens.ts"), "utf8");
+    expect(source).toContain("export const themeAxes = {");
+    expect(source).toContain('"darkMode"');
+    expect(source).toContain("export type ThemeAxesState");
   });
 });

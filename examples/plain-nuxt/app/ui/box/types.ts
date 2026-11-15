@@ -30,7 +30,7 @@ export interface BoxProps extends /* @vue-ignore */ ThemeSpacingProps<
   roundedL?: (typeof tokens)["borderRadius"][number];
   roundedR?: (typeof tokens)["borderRadius"][number];
   shadow?: (typeof tokens)["shadows"][number];
-  backdropBlur?: (typeof tokens)["backDropBlurs"][number];
+  backdropBlur?: (typeof tokens)["backdropBlurs"][number];
   position?: "absolute" | "relative" | "fixed" | "sticky";
   display?:
     | "block"

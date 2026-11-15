@@ -79,6 +79,46 @@ describe("resolveEmitTarget", () => {
       resolveEmitTarget(project, { theme: "t.json", output: "../o.css" }, "x "),
     ).toThrow("x output escapes project root: ../o.css");
   });
+
+  it("rejects an output that is the tokens module (N-M1)", () => {
+    expect(() =>
+      resolveEmitTarget(
+        root,
+        { theme: "t.json", output: "gen/theme.tokens.ts" },
+        "[p] ",
+      ),
+    ).toThrow(
+      `[p] output and [p] tokens file (theme.tokens.ts beside output) must be different files, both resolve to ${join(root, "gen/theme.tokens.ts")}`,
+    );
+    expect(() =>
+      resolveEmitTarget(root, {
+        theme: "t.json",
+        output: "o.ts",
+        tokensOutput: "./o.ts",
+      }),
+    ).toThrow("output and tokensOutput must be different files");
+  });
+
+  it("rejects an output that is the theme file (N-M3)", () => {
+    expect(() =>
+      resolveEmitTarget(root, {
+        theme: "styles/t.json",
+        output: "styles/./t.json",
+      }),
+    ).toThrow(
+      `theme and output must be different files, both resolve to ${join(root, "styles/t.json")}`,
+    );
+  });
+
+  it("rejects a tokensOutput that is the theme file (N-M3)", () => {
+    expect(() =>
+      resolveEmitTarget(root, {
+        theme: "t.ts",
+        output: "o.css",
+        tokensOutput: "t.ts",
+      }),
+    ).toThrow("theme and tokensOutput must be different files");
+  });
 });
 
 describe("assertTokensFile", () => {

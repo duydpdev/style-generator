@@ -2,6 +2,7 @@ import path from "node:path";
 
 import { errorMessage } from "../../node/errorMessage";
 import {
+  noConfigMessage,
   readConfigFile,
   resolveConfig,
   type StyleGenConfigFlags,
@@ -43,24 +44,37 @@ export interface GenerateHooks {
  * @param {{stage: string, message: string}} failure - The failed outcome
  * @param {string} failure.stage - Pipeline stage that failed
  * @param {string} failure.message - The message to print
+ * @param {string} [noConfig] - Set when no config file exists: said before the init hint of a missing theme
  */
-function reportFailure(failure: { stage: string; message: string }): void {
-  const hint =
+function reportFailure(
+  failure: { stage: string; message: string },
+  noConfig?: string,
+): void {
+  const missingTheme =
     failure.stage === "read" &&
-    failure.message.startsWith("Theme file not found")
-      ? "\n💡 Run: yarn style-gen init"
-      : "";
-  logger.error(`${failure.message}${hint}`);
+    failure.message.startsWith("Theme file not found");
+  if (!missingTheme) {
+    logger.error(failure.message);
+    return;
+  }
+  logger.error(
+    [
+      failure.message,
+      ...(noConfig === undefined ? [] : [noConfig]),
+      "💡 Run: yarn style-gen init",
+    ].join("\n"),
+  );
 }
 
 /**
  * Print one emit outcome the way the command always has.
  * @param {string} cwd - Project root, for the relative output paths
  * @param {EmitResult} result - What `emitTheme`/`watchThemeFile` reported
+ * @param {string} [noConfig] - See {@link reportFailure}
  */
-function report(cwd: string, result: EmitResult): void {
+function report(cwd: string, result: EmitResult, noConfig?: string): void {
   if (!result.ok) {
-    reportFailure(result);
+    reportFailure(result, noConfig);
     return;
   }
   const out = path.relative(cwd, result.outFile);
@@ -77,12 +91,23 @@ function report(cwd: string, result: EmitResult): void {
 
 /**
  * `--check`: report whether the tokens file matches the theme and config,
- * writing nothing.
+ * writing nothing. A malformed config fails it: the other commands fall back
+ * to the defaults, and a check that did so would vouch for a tokens file
+ * nobody configured.
  * @param {string} cwd - Project root, for the relative path in the message
  * @param {EmitTarget} target - The resolved emit target
+ * @param {string | undefined} configError - Why the config file was ignored, if it was
  * @returns {number} 0 when current, 1 otherwise
  */
-function check(cwd: string, target: EmitTarget): number {
+function check(
+  cwd: string,
+  target: EmitTarget,
+  configError: string | undefined,
+): number {
+  if (configError !== undefined) {
+    logger.error(`--check needs a readable config: ${configError}`);
+    return 1;
+  }
   const checked = checkTokensModule(target);
   if (!checked.ok) {
     reportFailure(checked);
@@ -102,8 +127,9 @@ function check(cwd: string, target: EmitTarget): number {
  *
  * One-shot: returns 1 on any failure so scripts and CI stop. `--check`
  * writes nothing and returns 1 when the tokens file is missing or differs
- * from what the theme and config generate (it cannot be combined with
- * `--watch`). `--watch`: emits once, then re-emits when the theme or the
+ * from what the theme and config generate, or when the config file is
+ * malformed (the other commands fall back to the defaults). It cannot be
+ * combined with `--watch`. `--watch`: emits once, then re-emits when the theme or the
  * config file changes. A failure after startup is logged and watching
  * continues; an invalid config edit keeps the last valid one. An unreadable
  * theme or an invalid config at startup still returns 1, before any watcher
@@ -141,10 +167,14 @@ export async function generateCommand(
     return 1;
   }
 
-  if (args.check) return check(cwd, target);
+  if (args.check) return check(cwd, target, file.error);
 
   const first = emitTheme(target);
-  report(cwd, first);
+  report(
+    cwd,
+    first,
+    file.source === undefined ? noConfigMessage(cwd) : undefined,
+  );
 
   if (!args.watch) return first.ok ? 0 : 1;
 

@@ -12,7 +12,9 @@ import {
   type ConfigFile,
   type StyleGenConfig,
 } from "../../node/loadStyleGenConfig";
+import { resolveEmitTarget } from "../../node/resolveEmitTarget";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
+import type { EmitTarget } from "../../node/themeEmitter";
 import { logger } from "../logger";
 
 import { findAliasHints } from "./aliasHints";
@@ -24,17 +26,22 @@ const padStr = (str: string) => {
 };
 
 /**
- * Resolve the configured output path, or report that it escapes the
- * project root (an error: `generate` would refuse to write there).
+ * Resolve the emit paths the way `generate` does (`resolveEmitTarget`), or
+ * report why it would refuse: `output` or `tokensOutput` outside the project
+ * root, a `tokensOutput` that is not a `.ts` file, two of theme, output and
+ * tokens module being the same file.
  * @param {string} cwd - Project root
- * @param {string} input - Path as configured
- * @returns {string | undefined} The absolute path, or `undefined` after printing the error
+ * @param {StyleGenConfig} config - Resolved configuration
+ * @returns {EmitTarget | undefined} The target, or `undefined` after printing the error
  */
-function resolveInsideRoot(cwd: string, input: string): string | undefined {
+function resolveTarget(
+  cwd: string,
+  config: StyleGenConfig,
+): EmitTarget | undefined {
   try {
-    return resolveProjectPath(cwd, input, "output");
+    return resolveEmitTarget(cwd, config);
   } catch (error) {
-    logger.log(`  Output  (${padStr(input)}) ❌ Escapes project root`);
+    logger.log(`  Output  (${padStr(config.output)}) ❌ Invalid emit paths`);
     logger.log(`    ${errorMessage(error)}`);
     return undefined;
   }
@@ -126,16 +133,11 @@ function checkConfig(configFile: ConfigFile): boolean {
 
 /**
  * Report the generated CSS file.
- * @param {string} cwd - Project root
- * @param {string} output - The configured output path
- * @returns {"error" | "missing" | "generated"} Its state
+ * @param {string} output - The configured output path, as shown
+ * @param {string} outPath - Its absolute path
+ * @returns {"missing" | "generated"} Its state
  */
-function checkOutput(
-  cwd: string,
-  output: string,
-): "error" | "missing" | "generated" {
-  const outPath = resolveInsideRoot(cwd, output);
-  if (outPath === undefined) return "error";
+function checkOutput(output: string, outPath: string): "missing" | "generated" {
   if (fs.existsSync(outPath)) {
     logger.log(`  Output  (${padStr(output)}) ✅ Generated`);
     return "generated";
@@ -164,7 +166,9 @@ export function doctorCommand(cwd: string = process.cwd()): number {
   const config = resolveConfig({}, configFile);
   // No short-circuit: every check reports, whatever the others found.
   const themeFailed = checkTheme(cwd, config);
-  const output = checkOutput(cwd, config.output);
+  const target = resolveTarget(cwd, config);
+  const output =
+    target === undefined ? "error" : checkOutput(config.output, target.outFile);
 
   logger.log("");
 

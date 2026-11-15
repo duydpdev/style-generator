@@ -23,7 +23,7 @@ import { isAbsolute, relative, resolve, sep } from "node:path";
  * @param {string} root - Absolute directory to resolve `inputPath` against
  * @param {string} inputPath - User-supplied path, absolute or relative to `root`
  * @param {string} label - Prefixed onto the thrown message so callers can tell
- *   which option failed (e.g. `"[style-gen-vite] outDir"`)
+ *   which option failed (e.g. `"[style-gen-vite] output"`)
  * @param {object} [opts] - Options
  * @param {boolean} [opts.allowOutsideRoot] - `true` skips the containment check
  * @returns {string} The absolute path

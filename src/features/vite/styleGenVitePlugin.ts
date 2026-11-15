@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Logger, Plugin } from "vite";
 
 import { errorMessage } from "../../node/errorMessage";
+import { noConfigMessage } from "../../node/loadStyleGenConfig";
 import {
   parsePluginRootOptions,
   resolvePluginTarget,
@@ -95,8 +96,8 @@ const debounce = <Args extends unknown[]>(
  *   plugins: [styleGenVite(), tailwindcss()],
  * });
  *
- * // Nuxt: the Vite root is the project root, so `root` is the `rootDir`
- * // vite: { plugins: [styleGenVite({ root: rootDir })] }
+ * // Nuxt 4 sets Vite's root to `app/`: pass the project folder, which holds the config
+ * // vite: { plugins: [styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) })] }
  */
 export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
   const { root: rootOption } = parsePluginRootOptions(opts, PLUGIN_NAME);
@@ -173,6 +174,9 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
       const resolved = resolvePluginTarget(root, PLUGIN_NAME);
       target = resolved.target;
       configFile = resolved.configFile;
+      if (!resolved.configFound) {
+        config.logger.info(`[${PLUGIN_NAME}] ${noConfigMessage(root)}`);
+      }
       register(config.logger);
     },
 

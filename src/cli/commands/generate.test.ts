@@ -284,6 +284,21 @@ describe("generateCommand", () => {
 
         expect(errorSpy.mock.calls[0]?.[0]).toMatch(/^Invalid theme /);
       });
+
+      it("returns 1 when the config is malformed, even if the defaults match the tokens file (C-L5)", async () => {
+        write("styles/theme.json", sampleTheme);
+        expect(await generateCommand(args, tmp)).toBe(0);
+        write("style-gen.config.json", '{ "output": ');
+        errorSpy.mockClear();
+
+        expect(await generateCommand({ ...args, check: true }, tmp)).toBe(1);
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringMatching(
+            /^--check needs a readable config: style-gen\.config\.json is not valid JSON/,
+          ),
+        );
+      });
     });
 
     it("threads resetTailwindDefaults from style-gen.config.json into generate()", async () => {
@@ -310,6 +325,24 @@ describe("generateCommand", () => {
         /Theme file not found.*\n💡 Run: yarn style-gen init$/s,
       );
       expect(exists("out.css")).toBe(false);
+    });
+
+    it("says no config was found before the init hint when the theme is missing (missing-config message)", async () => {
+      expect(await generateCommand({ out: "out.css" }, tmp)).toBe(1);
+
+      expect(errorSpy.mock.calls[0]?.[0]).toBe(
+        `Theme file not found: ${file("styles/theme.json")}\n` +
+          `No style-gen.config.json or package.json#style-gen found in ${tmp}; using the defaults.\n` +
+          "💡 Run: yarn style-gen init",
+      );
+    });
+
+    it("does not claim a missing config when one exists", async () => {
+      write("style-gen.config.json", { output: "out.css" });
+
+      expect(await generateCommand({}, tmp)).toBe(1);
+
+      expect(errorSpy.mock.calls[0]?.[0]).not.toContain("No style-gen.config");
     });
 
     it("returns 1 when the theme path is a directory", async () => {

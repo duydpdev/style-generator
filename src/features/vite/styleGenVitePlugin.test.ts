@@ -74,6 +74,27 @@ describe("styleGenVite plugin", () => {
     expect(logger.info).toHaveBeenCalledOnce();
   });
 
+  it("logs one info line when the root holds no config and the defaults apply (missing-config message)", () => {
+    const plugin = styleGenVite();
+    const logger = makeLogger();
+
+    callConfigResolved(plugin, serveConfig(logger));
+
+    expect(logger.info).toHaveBeenCalledOnce();
+    expect(logger.info).toHaveBeenCalledWith(
+      `[style-gen-vite] No style-gen.config.json or package.json#style-gen found in ${tmp}; using the defaults.`,
+    );
+  });
+
+  it("logs nothing about the config when one exists", () => {
+    writeConfig();
+    const logger = makeLogger();
+
+    callConfigResolved(styleGenVite(), serveConfig(logger));
+
+    expect(logger.info).not.toHaveBeenCalled();
+  });
+
   it("registers the theme with addWatchFile so a build re-runs when it changes", () => {
     const themeAbs = writeTheme();
     writeConfig();

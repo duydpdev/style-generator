@@ -125,6 +125,13 @@ jobs:
         # matches dist/*.d.ts and a non-empty TSDoc (yarn docs:signatures).
         run: yarn check:doc-exports
 
+      - name: Check CLI and config reference
+        # Every flag printed by a built `style-gen <command> --help` must sit
+        # in that command's section of documents/reference/cli.md, every key of
+        # the style-gen.config.json schema in documents/reference/options.md,
+        # and no rendered page may tell version history.
+        run: yarn check:doc-reference
+
       - name: Typecheck examples
         # The examples and the site consume the built library through `link:../..`.
         run: yarn workspaces foreach -A --include '*-example' --include site run typecheck

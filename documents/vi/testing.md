@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: a6e43bab6b59 -->
+<!-- source: documents/testing.md sha256: 4bf8d10804c5 -->
 
 # Hướng dẫn kiểm thử
 
@@ -21,7 +21,8 @@ Các bước kiểm tra có hai lớp:
      và các `#anchor` trong markdown mà site render) → `yarn check:docs-embed` (mã trong hướng dẫn bằng với các vùng ví dụ mà nó nhúng) → `yarn check:docs-i18n` (mỗi tài liệu được
      render có một twin `documents/vi/` với hash nguồn hiện tại và cùng các heading, marker và khối mã) → `yarn check:doc-snippets` (mọi khối `ts`/`tsx` trong tài liệu đều qua kiểm
      tra kiểu với `dist/*.d.ts`) → `yarn check:doc-exports` (mỗi export có một heading tham chiếu, một khối signature khớp và một TSDoc không rỗng,
-     xem [lớp 9](#9-docs-embed-snippet-export)) → kiểm tra kiểu cho mọi workspace `*-example` và cho `site` (một lệnh `yarn workspaces foreach`;
+     xem [lớp 9](#9-docs-embed-snippet-export)) → `yarn check:doc-reference` (mọi cờ trong `style-gen <command> --help` của bản build và mọi khóa của `style-gen.config.json` đều được ghi lại,
+     không trang được render nào kể lịch sử phiên bản) → kiểm tra kiểu cho mọi workspace `*-example` và cho `site` (một lệnh `yarn workspaces foreach`;
      `tsconfig.json` gốc không bao gồm `site/`, nên đây là nơi duy nhất một kiểu prop sai trong `site/src` bị bắt) — nó cũng biên dịch các file kiểm tra kiểu của component mẫu,
      xem [lớp 8](#8-kiểm-tra-các-component-mẫu) → `yarn workspace design-system-example test` (DX test,
      xem [lớp 6](#6-dx-test-cho-ví-dụ-design-system)) → build các ứng dụng ví dụ (`plain-react`, `plain-nuxt`) → `check:externals` → `check:browser-safe` → `check:sizes` →
@@ -108,6 +109,7 @@ Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:al
 | `yarn check:docs-i18n`                                                          | một bản twin tiếng Việt bị thiếu, cũ hoặc khác cấu trúc                                                                | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                                                   |
 | `yarn check:doc-snippets`                                                       | một block `ts`/`tsx` trong doc không qua được kiểm tra kiểu, hoặc số block opt-out vượt 10%                            | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                                                   |
 | `yarn check:doc-exports`                                                        | một export công khai thiếu heading tham chiếu, signature block hoặc TSDoc                                              | `check`: Check reference coverage of exports                   | export trong `src/**`, `documents/reference/**`                               |
+| `yarn check:doc-reference`                                                      | một cờ CLI, một khóa config hoặc một cụm lịch sử phiên bản mà các trang tham chiếu ghi sai                             | `check`: Check CLI and config reference                        | `src/cli/**`, `documents/reference/**`, các trang được render                 |
 | `yarn check:plain-ui`                                                           | một thư mục component plain vi phạm quy tắc layout hoặc import                                                         | `check`: Check plain UI folders                                | `examples/plain-*`                                                            |
 | `yarn workspaces foreach -A --include '*-example' --include site run typecheck` | lỗi kiểu trong các app ví dụ và site so với thư viện đã build                                                          | `check`: Typecheck examples                                    | `examples/**`, `site/**`, kiểu trong `src/**`                                 |
 | `yarn workspace site typecheck`                                                 | lỗi kiểu trong `site/**` (cũng được dòng trên bao phủ)                                                                 | `check`: Typecheck examples                                    | `site/**`                                                                     |
@@ -319,6 +321,7 @@ yarn check:docs-embed       # a block with <!-- embed: path#region --> must equa
 yarn check:docs-i18n        # every rendered doc has a documents/vi/ twin: current source hash, same headings, markers and code blocks
 yarn check:doc-snippets     # every ts/tsx block in README.md and documents/ (not plans, brainstorm, migration) must type-check
 yarn check:doc-exports      # every export of every subpath needs a heading in documents/reference/<subpath>.md, a signature block matching dist/*.d.ts and a non-empty TSDoc (fix with yarn docs:signatures)
+yarn check:doc-reference     # every flag of the built CLI's --help in its documents/reference/cli.md section, every config-schema key in options.md, no version history on rendered pages
 ```
 
 Vì sao: các hướng dẫn không bao giờ chứa mã chép tay (nên chúng không thể lệch khỏi ví dụ đang chạy), và một ví dụ trong tài liệu không thể lặng lẽ hỏng khi API đổi.

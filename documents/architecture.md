@@ -212,16 +212,17 @@ config issues make `generate` and `doctor` stop with exit code 1 (`src/cli/loadC
 `generate --watch` uses `watchThemeFile` to watch the theme **and** the config file: every time the config changes it calls `reloadTarget` to re-read it,
 and an invalid config is only reported (stage `config`) while **the last valid config stays in use**; theme/write errors after watching has started are only logged.
 `--version` reads `package.json` via `import.meta.url` (`src/cli/version.ts`), because `__dirname` does not exist in an ESM bundle.
-`init` (`src/cli/commands/init.ts`) writes the theme and `theme.schema.json` next to it, detects the stack with `detectStack` (`src/cli/commands/detectStack.ts`:
+`init` (`src/cli/commands/init.ts`) writes the theme, `theme.schema.json` next to it and the config's JSON Schema, detects the stack with `detectStack` (`src/cli/commands/detectStack.ts`:
 the first file `nuxt.config.*`, `next.config.*`, `vite.config.*` in the project root, in that order) and prints the bundler snippet from `src/cli/templates.ts`
 (`getBundlerSnippet`: no-argument `styleGenVite()`/`styleGenNext()`, absolute paths and `options` for Nuxt) plus the CSS `@import` lines, or the `style-gen generate` fallback;
 every printed or stored path is repo-relative POSIX; it never edits a bundler config and, since 5.2.0, scaffolds no generator script;
 it merges `theme`/`output` into an existing `style-gen.config.json`, or into a copy of `package.json["style-gen"]` when that file does not exist (a new file takes precedence over
 that section), keeps the other keys (a `plugin` key is dropped: 6.0 rejects it) and reads the config before writing anything;
-an existing `theme.schema.json` is treated as an existing file (it asks before overwriting; non-interactive exits with code 1).
+an existing `theme.schema.json` or `style-gen.config.schema.json` is treated as an existing file (it asks before overwriting; non-interactive exits with code 1; `--yes` keeps every existing file and exits 0 without prompting);
+the config it writes gets `"$schema": "./style-gen.config.schema.json"` as its first key unless it already has one.
 `schema` without `--out` reads the config like `generate` (a config that violates the schema → exit code 1,
 nothing written) and then writes `theme.schema.json` into the directory of the resolved `theme` (via `resolveProjectPath`; the theme may be outside the project,
-the written file may not). `tokens` (`src/cli/commands/tokens.ts`) runs `readAndPrepareTheme` and then serializes exactly the `DesignTokens.Web` object from `buildDesignTokens`
+the written file may not) and `style-gen.config.schema.json` (`z.toJSONSchema(StyleGenConfigFileSchema)`, which carries no cross-field refinements) into the project root, or where `--config-out` says. `tokens` (`src/cli/commands/tokens.ts`) runs `readAndPrepareTheme` and then serializes exactly the `DesignTokens.Web` object from `buildDesignTokens`
 into `export const tokens = {…} as const` — keys only, so a client bundle does not need to ship the `./tokens` runtime and the theme JSON.
 `budget` (`src/cli/commands/budget.ts`) sums the gzip size (`node:zlib` defaults) of every `.css` under the target file/directory and compares it with `--max-gzip`;
 the two summary lines `OK: …`/`OVER BUDGET: …` are a stable contract for consumers' CI, replacing the `check-css-budget.mjs` script that used to be copied by hand.

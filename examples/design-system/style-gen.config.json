@@ -1,4 +1,5 @@
 {
+  "$schema": "./style-gen.config.schema.json",
   "theme": "src/theme.json",
   "output": "src/styles/theme.css",
   "tokensOutput": "src/theme.tokens.ts",

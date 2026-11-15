@@ -75,10 +75,11 @@ const initCli: CliCommand = {
   description: "Scaffold the theme and print the bundler wiring",
   usage: `Usage: style-gen init [options]
 
-Scaffold the theme JSON, its JSON Schema and style-gen.config.json, then print
-the plugin snippet for the stack found in the project root (nuxt.config.*,
-next.config.*, vite.config.*) or the \`style-gen generate\` fallback. Never edits
-the bundler config. Writes .claude/rules/style-generator.md, the component
+Scaffold the theme JSON, its JSON Schema, style-gen.config.json and the
+config's JSON Schema, then print the plugin snippet for the stack found in the
+project root (nuxt.config.*, next.config.*, vite.config.*) or the
+\`style-gen generate\` fallback. Never edits the bundler config. Writes
+.claude/rules/style-generator.md, the component
 contract coding agents follow; a copy from another version is replaced, an
 edited one only after an interactive confirm.
 
@@ -87,12 +88,14 @@ Options:
                     with a src/ directory, app/assets/css/theme.json for Nuxt 4)
   --dark            Include a dark mode variant in the theme template
   --skip-rules      Do not write .claude/rules/style-generator.md
-  --rules-only      Only write or refresh .claude/rules/style-generator.md (after an upgrade)`,
+  --rules-only      Only write or refresh .claude/rules/style-generator.md (after an upgrade)
+  -y, --yes         Answer every prompt with its default and never overwrite an existing file (for scripts, CI and coding agents)`,
   options: {
     theme: { type: "string" },
     dark: { type: "boolean" },
     "skip-rules": { type: "boolean" },
     "rules-only": { type: "boolean" },
+    yes: { type: "boolean", short: "y" },
   },
   allowPositionals: false,
   run: (values, _positionals, ctx) => {
@@ -100,12 +103,14 @@ Options:
     const dark = flag(values, "dark");
     const skipRules = flag(values, "skip-rules");
     const rulesOnly = flag(values, "rules-only");
+    const yes = flag(values, "yes");
     return initCommand(
       {
         ...(theme !== undefined && { theme }),
         ...(dark !== undefined && { dark }),
         ...(skipRules !== undefined && { skipRules }),
         ...(rulesOnly !== undefined && { rulesOnly }),
+        ...(yes !== undefined && { yes }),
       },
       ctx.cwd,
     );
@@ -185,18 +190,28 @@ override literals that could be $aliases. Exits 1 on any error.`,
 
 const schemaCli: CliCommand = {
   name: "schema",
-  description: "Generate theme.schema.json for editor autocomplete",
+  description:
+    "Generate the JSON Schemas of theme.json and style-gen.config.json",
   usage: `Usage: style-gen schema [options]
 
-Write the theme's JSON Schema so editors can autocomplete and flag unknown keys.
+Write the JSON Schemas of the theme and of style-gen.config.json so editors can
+autocomplete and flag unknown keys.
 
 Options:
-  --out <path>      File to write (default: theme.schema.json next to the theme); must stay inside the project`,
-  options: { out: { type: "string" } },
+  --out <path>         File for the theme's JSON Schema (default: theme.schema.json next to the theme); must stay inside the project
+  --config-out <path>  File for the config's JSON Schema (default: style-gen.config.schema.json in the project root); must stay inside the project`,
+  options: { out: { type: "string" }, "config-out": { type: "string" } },
   allowPositionals: false,
   run: (values, _positionals, ctx) => {
     const out = str(values, "out");
-    return schemaCommand({ ...(out !== undefined && { out }) }, ctx.cwd);
+    const configOut = str(values, "config-out");
+    return schemaCommand(
+      {
+        ...(out !== undefined && { out }),
+        ...(configOut !== undefined && { configOut }),
+      },
+      ctx.cwd,
+    );
   },
 };
 

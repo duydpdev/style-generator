@@ -189,7 +189,7 @@ The concerns locked down here:
 - `toKebabCase` parity between runtime and types (`kebab-parity`).
 - Multi-axis `themeAxes` on the real theme of `examples/design-system` (`multi-axis.test.ts`; the `theme` axis is declared before `palette`).
 - Every `theme.json` in `examples/`/`site/` passes the strict `ThemeSchema`, and the committed `theme.schema.json` files (`examples/`, `examples/design-system/src/`,
-  `site/src/theme/`) match `z.toJSONSchema(ThemeSchema)`.
+  `site/src/theme/`) match `z.toJSONSchema(ThemeSchema)`; the committed `style-gen.config.schema.json` files (`examples/`, `examples/design-system/`, `site/`) match `z.toJSONSchema(StyleGenConfigFileSchema)`.
 - The plain apps share files on purpose; `yarn check:plain-ui` checks them. Code the harness and a plain app both need lives in `examples/design-system` or is copied on purpose.
 - The `THEME_JSON`/`THEME_CSS` samples on the landing site (`site-build-sample.test.ts`) are a valid theme and an excerpt, in the right order, of the real `generate().css`.
 - Non-default options (`custom-options.test.ts`): custom `screens`/`breakpoints`, `spacing.properties`, `cssVarDriven`, `enableResponsive: false`, `spacing.enabled: false`.

@@ -130,10 +130,10 @@ State names are kebab-cased (`focusVisible` → `focus-visible:`).
 ### Editor autocomplete
 
 ```bash
-yarn style-gen schema        # writes theme.schema.json next to the theme file
+yarn style-gen schema        # writes theme.schema.json next to the theme file and style-gen.config.schema.json in the project root
 ```
 
-Add `"$schema": "./theme.schema.json"` to the theme so the editor suggests keys and warns about unknown ones.
+Add `"$schema": "./theme.schema.json"` to the theme and `"$schema": "./style-gen.config.schema.json"` to `style-gen.config.json` so the editor suggests keys and warns about unknown ones.
 
 ---
 
@@ -239,11 +239,12 @@ When the theme lives in a workspace package (like `examples/design-system`), add
 ### Option 3: CLI
 
 ```bash
-yarn style-gen init                 # scaffold theme + theme.schema.json + style-gen.config.json, print the bundler snippet for your stack
+yarn style-gen init                 # scaffold theme + theme.schema.json + style-gen.config.json + style-gen.config.schema.json, print the bundler snippet for your stack
+yarn style-gen init --yes           # same without prompts (CI, coding agents); never overwrites an existing file
 yarn style-gen generate             # writes styles/theme.css
 yarn style-gen generate --watch     # regenerates when theme or style-gen.config.json is saved
 yarn style-gen doctor               # checks config, schema, theme × options; warns about utility collisions, suggests $alias and flags leftover 4.x-style --sg-<color> variables (scans source files under the current directory)
-yarn style-gen schema               # writes theme.schema.json next to the theme
+yarn style-gen schema               # writes theme.schema.json next to the theme and style-gen.config.schema.json in the project root
 yarn style-gen tokens               # writes theme.tokens.ts: only the DesignTokens.Web keys, for client bundles
 yarn style-gen budget .next/static/css --max-gzip 14925   # CI: fail when built CSS exceeds the gzip budget
 ```

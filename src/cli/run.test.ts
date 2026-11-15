@@ -188,12 +188,23 @@ describe("runCli", () => {
       );
     });
 
-    it("passes --out to schema only when given", async () => {
+    it("passes init --yes (and its -y short form) as yes: true", async () => {
+      await runCli(["init", "--yes"], CWD);
+      await runCli(["init", "-y", "--dark"], CWD);
+      expect(vi.mocked(initCommand).mock.calls).toEqual([
+        [{ yes: true }, CWD],
+        [{ dark: true, yes: true }, CWD],
+      ]);
+    });
+
+    it("passes --out and --config-out to schema only when given", async () => {
       await runCli(["schema"], CWD);
       await runCli(["schema", "--out", "s.json"], CWD);
+      await runCli(["schema", "--config-out", "c.json"], CWD);
       expect(vi.mocked(schemaCommand).mock.calls).toEqual([
         [{}, CWD],
         [{ out: "s.json" }, CWD],
+        [{ configOut: "c.json" }, CWD],
       ]);
     });
 

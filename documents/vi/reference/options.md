@@ -1,8 +1,8 @@
-<!-- source: documents/reference/options.md sha256: aae842aeec69 -->
+<!-- source: documents/reference/options.md sha256: f17214c39fd3 -->
 
 # Tùy chọn
 
-`StyleGeneratorOptions`: tham số thứ hai của `generate()`, trường `options` của các plugin Vite và Next, và (dưới dạng JSON) `style-gen.config.json`.
+`StyleGeneratorOptions`: tham số thứ hai của `generate()`, trường `options` của các plugin Vite và Next, và (dưới dạng JSON) `style-gen.config.json`. File config cũng chấp nhận `"$schema": "./style-gen.config.schema.json"` (do `style-gen schema` ghi) để editor tự hoàn thành các key của nó; xem [CLI](./cli.md#file-cấu-hình).
 
 `generate(theme, options)` và trường `options` của các plugin nhận `StyleGeneratorOptions`:
 

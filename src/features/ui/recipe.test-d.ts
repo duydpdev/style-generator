@@ -35,6 +35,46 @@ describe("RecipeFn<T>", () => {
     expectTypeOf(button({ iconOnly: "yes" })).toBeString();
   });
 
+  // L-L7: a value must be an option the table declares
+  it("rejects a boolean or a number on a string-keyed variant (L-L7)", () => {
+    // @ts-expect-error `size` has string keys only
+    expectTypeOf(button({ size: true })).toBeString();
+    // @ts-expect-error `size` has string keys only
+    expectTypeOf(button({ size: 3 })).toBeString();
+    // @ts-expect-error `tone` has string keys only
+    expectTypeOf(button({ tone: false })).toBeString();
+  });
+
+  it("takes a boolean for a true/false variant and either form of a numeric key (L-L7)", () => {
+    button({ iconOnly: true });
+    button({ iconOnly: false });
+    button({ zIndex: 10 });
+    button({ zIndex: "10" });
+    button({ zIndex: 0 });
+    // @ts-expect-error 3 is not a `zIndex` option
+    expectTypeOf(button({ zIndex: 3 })).toBeString();
+    // @ts-expect-error "3" is not a `zIndex` option
+    expectTypeOf(button({ zIndex: "3" })).toBeString();
+  });
+
+  it("takes the number form of a numeric string key (L-L7)", () => {
+    const spacing = recipeFromTables({
+      base: "",
+      variants: { gap: { "4": "gap-4", "8": "gap-8" } },
+    });
+    spacing({ gap: 4 });
+    spacing({ gap: "8" });
+    // @ts-expect-error 5 is not a `gap` option
+    expectTypeOf(spacing({ gap: 5 })).toBeString();
+  });
+
+  it("accepts any widened value when the recipe is annotated RecipeFn (L-L7)", () => {
+    const loose: RecipeFn = button;
+    const call = (size: string, zIndex: number) =>
+      loose({ size, iconOnly: true, zIndex, tone: null });
+    expectTypeOf(call).returns.toBeString();
+  });
+
   it("is assignable to the untyped RecipeFn that splitLayout accepts", () => {
     expectTypeOf(button).toExtend<RecipeFn>();
   });

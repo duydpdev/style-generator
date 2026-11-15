@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: 6bcf286d6fb1 -->
+<!-- source: documents/reference/ui.md sha256: 9e9f393429da -->
 
 # UI kit (./ui)
 
@@ -130,14 +130,12 @@ A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows 
 export declare type RecipeVariantProps<T extends RecipeTables> = Readonly<{
   [K in keyof T["variants"]]?:
     | VariantOptionValue<keyof T["variants"][K]>
-    | boolean
-    | number
     | null
     | undefined;
 }>;
 ```
 
-Call props of a recipe: every variant name of `T`, its option keys as values (`"true"`/`"false"` keys mean boolean).
+Call props of a recipe: every variant name of `T`, only the option keys of its table as values (`"true"`/`"false"` keys mean boolean, a numeric key also takes its number or string form).
 
 <!-- /signature -->
 

@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: cdc198aaf9f3 -->
+<!-- source: documents/guide.md sha256: 25d0eda5187b -->
 
 # Hướng dẫn sử dụng
 
@@ -64,7 +64,7 @@ Theme được kiểm tra bằng một schema Zod **chặt chẽ**: key lạ, gi
     }
   },
   "shadows": { "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)" },
-  "backDropBlurs": { "sm": "4px" },
+  "backdropBlurs": { "sm": "4px" },
   "borderRadius": { "md": "8px" },
   "fontFamily": { "sans": "\"Inter\", system-ui, sans-serif" },
   "borderWidth": { "thin": "1px" }
@@ -76,7 +76,7 @@ Theme được kiểm tra bằng một schema Zod **chặt chẽ**: key lạ, gi
 | `colors`        | `bg-*`, `text-*`, `border-*` (bắt buộc)                                                                                              |
 | `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)                                                                          |
 | `shadows`       | `shadow-*`                                                                                                                           |
-| `backDropBlurs` | `backdrop-blur-*`                                                                                                                    |
+| `backdropBlurs` | `backdrop-blur-*`                                                                                                                    |
 | `borderRadius`  | `rounded-*` (+ các variant `md:`/`lg:` cho những breakpoint được bật)                                                                |
 | `fontFamily`    | `font-*` thông qua namespace `--font-*` của Tailwind                                                                                 |
 | `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` thông qua namespace `--border-width-*` của Tailwind (thay thế key `border` của 3.x) |
@@ -325,7 +325,7 @@ hiện nguyên văn trong mã nguồn, hoặc tự khai báo chúng trong CSS c�
 ### Thu hẹp `@source inline` theo từng nhóm token (`coverage`)
 
 Theo mặc định, mỗi nhóm token có một dòng `@source inline` bao phủ mọi key (colors: bảy tiền tố `bg-`/`text-`/`border-`/`ring-`/`outline-`/`divide-`/`placeholder-`).
-Một bảng màu lớn làm dòng đó rất dài; `coverage` thu hẹp nó theo từng nhóm token (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
+Một bảng màu lớn làm dòng đó rất dài; `coverage` thu hẹp nó theo từng nhóm token (`colors`, `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
 
 | `coverage.<category>`        | Tác dụng                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -597,7 +597,7 @@ Chỉ gọi `createDesignTokens(theme, options)` từ `./tokens` cho một theme
 | `colors`            | Mọi key của color (phẳng, camelCase)                                                              |
 | `typography`        | Các key của `typography`                                                                          |
 | `shadows`           | Các key của `shadows`                                                                             |
-| `backDropBlurs`     | Các key của `backDropBlurs`                                                                       |
+| `backdropBlurs`     | Các key của `backdropBlurs`                                                                       |
 | `fontFamily`        | Các key của `fontFamily`                                                                          |
 | `borderWidth`       | Các key của `borderWidth` (mặc định `0, 1, 2, 4` khi vắng mặt hoặc `{}`)                          |
 | `borderRadius`      | Các key của `borderRadius` (mặc định `DEFAULT_ROUNDED_VALUES` khi vắng mặt hoặc `{}`)             |

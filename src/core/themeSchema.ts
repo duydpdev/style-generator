@@ -91,7 +91,7 @@ const TypographyRecordSchema = z
 const ThemeCssVarShape = z.strictObject({
   colors: z.record(TokenKey, TokenValue),
   shadows: z.record(TokenKey, TokenValue).optional(),
-  backDropBlurs: z.record(TokenKey, TokenValue).optional(),
+  backdropBlurs: z.record(TokenKey, TokenValue).optional(),
   borderRadius: z.record(TokenKey, TokenValue).optional(),
   fontFamily: z.record(TokenKey, TokenValue).optional(),
   borderWidth: z.record(TokenKey, TokenValue).optional(),

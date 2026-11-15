@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 747678a5aa5c -->
+<!-- source: documents/agent-contract.md sha256: 52eab10b23bb -->
 
 # Hợp đồng cho agent
 
@@ -15,7 +15,7 @@ Các quy tắc mà một agent (hoặc một người) tuân theo khi viết the
 - Một intent có thể khai báo màu chữ `on<Intent>` (`brand` → `onBrand`). `contrastText(tokens.colors, intent, fallback)` trả về `text-on-brand` khi màu đó tồn tại, nếu không thì `text-<fallback>`.
 - Giá trị `"$<key>"` là alias tới một key khác **trong cùng category** (`"brandHover": "$brandActive"` trong `colors`). Không dùng trong `typography`. Đích không tồn tại và vòng lặp là lỗi schema.
 - Dark mode và palette nằm trong `themeAxes.<axis>.<variant>`; một override chỉ được định nghĩa lại các key đã có trong category gốc. Kích hoạt bằng `html[data-<axis>="<variant>"]` (dùng `themeAxisAttributes` từ `@duydpdev/style-generator/recipes`). `base` là tên variant dành riêng.
-- Mọi category khác (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backDropBlurs`) là tùy chọn và theo cùng ngữ pháp key. Mỗi mục typography cần `fontSize`, `lineHeight` và `fontWeight` dạng số.
+- Mọi category khác (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) là tùy chọn và theo cùng ngữ pháp key. Mỗi mục typography cần `fontSize`, `lineHeight` và `fontWeight` dạng số.
 - Tránh key có class trùng một utility của Tailwind (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` sẽ cảnh báo; đổi tên thành `clear`, `flat`, `heading1`.
 - `style-gen init` ghi một theme khởi đầu. Đổi tên key của nó theo vai trò của app và đặt lại mọi giá trị cho app này; một key khởi đầu còn nguyên giá trị khởi đầu là bản chép, không phải một lựa chọn.
 

@@ -163,7 +163,7 @@ describe("subpath exports — symbols match their implementations", () => {
       | "colors"
       | "typography"
       | "shadows"
-      | "backDropBlurs"
+      | "backdropBlurs"
       | "borderRadius"
       | "borderWidth"
       | "spacingProperties"

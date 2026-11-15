@@ -288,7 +288,7 @@ describe("doctorCommand", () => {
           xReverse: "#000",
         },
         shadows: { none: "none" },
-        backDropBlurs: { none: "0" },
+        backdropBlurs: { none: "0" },
         borderRadius: { none: "0px" },
         borderWidth: { "0": "0px", "2": "2px", thin: "1px" },
         typography: {
@@ -309,7 +309,7 @@ describe("doctorCommand", () => {
       for (const collision of [
         "colors.none",
         "shadows.none",
-        "backDropBlurs.none",
+        "backdropBlurs.none",
         "borderRadius.none",
         "colors.transparent",
         "colors.current",

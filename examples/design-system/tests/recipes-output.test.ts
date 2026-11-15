@@ -137,7 +137,7 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
           roundedL: radii,
           roundedR: radii,
           shadow: tokens.shadows,
-          backdropBlur: tokens.backDropBlurs,
+          backdropBlur: tokens.backdropBlurs,
           position: ["absolute", "relative", "fixed", "sticky"],
           display: [
             "block",

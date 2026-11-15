@@ -19,7 +19,7 @@ describe("builtInCategories", () => {
       "colors",
       "typography",
       "shadows",
-      "backDropBlurs",
+      "backdropBlurs",
       "borderRadius",
       "fontFamily",
       "borderWidth",

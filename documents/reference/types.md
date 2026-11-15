@@ -143,7 +143,7 @@ export declare type BackdropBlurVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["backdropBlurKey"];
 ```
 
-Backdrop-blur variant union derived from theme.backDropBlurs keys.
+Backdrop-blur variant union derived from theme.backdropBlurs keys.
 
 <!-- /signature -->
 

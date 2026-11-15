@@ -5,7 +5,7 @@ import { createCn } from "./cn";
 const cn = createCn({
   typography: ["text10Light", "heading1"],
   shadows: ["card"],
-  backDropBlurs: [],
+  backdropBlurs: [],
   borderRadius: ["pill"],
   borderWidth: ["thin"],
 });

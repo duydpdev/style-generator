@@ -182,7 +182,7 @@ const colorKeyCollisions = (key: string): string[] => {
 const NONE_COLLIDING_CATEGORIES = [
   "colors",
   "shadows",
-  "backDropBlurs",
+  "backdropBlurs",
   "borderRadius",
 ] as const;
 
@@ -190,7 +190,7 @@ const NONE_COLLIDING_CATEGORIES = [
  * Warnings for theme keys that are schema-valid but collide with a Tailwind
  * static utility, so the generated `@theme`/`@utility` output silently
  * overrides (or is overridden by) the built-in class:
- * - `none` in colors/shadows/backDropBlurs/borderRadius (`bg-none`,
+ * - `none` in colors/shadows/backdropBlurs/borderRadius (`bg-none`,
  *   `shadow-none`, `backdrop-blur-none`, `rounded-none`);
  * - digit-only `borderWidth` keys (`border-0`, `border-2`, ...): the theme value
  *   replaces Tailwind's built-in width, so this is an override to confirm;

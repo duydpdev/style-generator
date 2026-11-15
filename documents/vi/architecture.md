@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 980929c03ac7 -->
+<!-- source: documents/architecture.md sha256: 07ec3c6b555f -->
 
 # Kiến trúc
 
@@ -30,7 +30,7 @@ Mã nguồn là nguồn chân lý cho việc _hoạt động như thế nào_; t
 
 | Khái niệm         | Mô tả                                                                                                                                                                     |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Theme Config**  | Đầu vào duy nhất: một JSON/object khai báo `colors` (bắt buộc), `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`.       |
+| **Theme Config**  | Đầu vào duy nhất: một JSON/object khai báo `colors` (bắt buộc), `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`.       |
 | **ThemeSchema**   | Một `strictObject` của Zod, là nguồn chân lý cho cả JSON lẫn TypeScript: key lạ, giá trị không an toàn và alias bị hỏng đều bị từ chối trước khi sinh bất kỳ CSS nào.     |
 | **Registry**      | Mỗi nhóm token (colors, typography, …) là một descriptor trong `builtInCategories`; mọi bước sinh CSS/`@source inline` đều đi qua registry thay vì lặp lại danh sách key. |
 | **`generate()`**  | Hàm duy nhất sinh ra các artifact: `{ css, tokens, schema }`. CLI, `styleGenVite` và `styleGenNext` đều gọi nó.                                                           |
@@ -244,7 +244,7 @@ Ba helper phía component, an toàn cho trình duyệt, không import `tailwind-
 
 - `createTailwindMergeExtension(tokens)` → `{ extend: { classGroups, conflictingClassGroups, theme } }` cho `extendTailwindMerge`.
   Token là các key camelCase, nên chúng đi qua `toKebabCase` trước khi trở thành class. `borderRadius` đi vào `theme.radius` (thang đo mà mọi group `rounded-*` của tailwind-merge
-  đều đọc, nhờ đó `rounded-tl-pill` và `rounded-s-pill` cũng được gộp đúng); `shadows`, `backDropBlurs` và `borderWidth` là các class group.
+  đều đọc, nhờ đó `rounded-tl-pill` và `rounded-s-pill` cũng được gộp đúng); `shadows`, `backdropBlurs` và `borderWidth` là các class group.
   Bảng tiền tố cho `border`/`divide-*` (→ id `border-w*`), `shadow` và `backdrop-blur` nằm cục bộ trong module để registry không bị kéo vào chunk `./tokens`;
   `extendTailwindMerge.test.ts` ghim bảng này theo `classPrefixes` của registry. `colors` và `fontFamily` không được liệt kê vì các group mặc định của tailwind-merge đã chấp nhận
   mọi giá trị.

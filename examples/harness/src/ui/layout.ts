@@ -41,7 +41,7 @@ export type LayoutProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly roundedL?: W["borderRadius"][number] | undefined;
   readonly roundedR?: W["borderRadius"][number] | undefined;
   readonly shadow?: W["shadows"][number] | undefined;
-  readonly backdropBlur?: W["backDropBlurs"][number] | undefined;
+  readonly backdropBlur?: W["backdropBlurs"][number] | undefined;
   readonly position?: "absolute" | "relative" | "fixed" | "sticky" | undefined;
   readonly display?: BoxDisplay | undefined;
   readonly overflow?: BoxOverflow | undefined;

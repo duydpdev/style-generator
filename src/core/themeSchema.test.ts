@@ -25,7 +25,7 @@ describe("ThemeSchema — valid themes", () => {
         },
       },
       shadows: { sm: "0 1px 2px rgba(0,0,0,.1)" },
-      backDropBlurs: { sm: "4px" },
+      backdropBlurs: { sm: "4px" },
       borderRadius: { sm: "4px" },
       borderWidth: { hairline: "1px" },
       themeAxes: {

@@ -105,9 +105,9 @@ export const buildDesignTokens = <
         TTheme,
         "shadows"
       >[],
-      backDropBlurs: categoryTokenKeys(
-        config.backDropBlurs,
-      ) as CategoryTokenKey<TTheme, "backDropBlurs">[],
+      backdropBlurs: categoryTokenKeys(
+        config.backdropBlurs,
+      ) as CategoryTokenKey<TTheme, "backdropBlurs">[],
       fontFamily: categoryTokenKeys(config.fontFamily) as CategoryTokenKey<
         TTheme,
         "fontFamily"

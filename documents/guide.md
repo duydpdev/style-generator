@@ -61,7 +61,7 @@ The theme is checked by a **strict** Zod schema: unknown keys, unsafe values and
     }
   },
   "shadows": { "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)" },
-  "backDropBlurs": { "sm": "4px" },
+  "backdropBlurs": { "sm": "4px" },
   "borderRadius": { "md": "8px" },
   "fontFamily": { "sans": "\"Inter\", system-ui, sans-serif" },
   "borderWidth": { "thin": "1px" }
@@ -73,7 +73,7 @@ The theme is checked by a **strict** Zod schema: unknown keys, unsafe values and
 | `colors`        | `bg-*`, `text-*`, `border-*` (required)                                                                                               |
 | `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)                                                                           |
 | `shadows`       | `shadow-*`                                                                                                                            |
-| `backDropBlurs` | `backdrop-blur-*`                                                                                                                     |
+| `backdropBlurs` | `backdrop-blur-*`                                                                                                                     |
 | `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the enabled breakpoints)                                                                      |
 | `fontFamily`    | `font-*` through Tailwind's `--font-*` namespace                                                                                      |
 | `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` through Tailwind's `--border-width-*` namespace (replaces the `border` key from 3.x) |
@@ -318,7 +318,7 @@ Classes you assemble with template literals cannot be scanned by Tailwind — de
 ### Narrowing `@source inline` per category (`coverage`)
 
 By default each category has one `@source inline` line covering every key (colors: the seven prefixes `bg-`/`text-`/`border-`/`ring-`/`outline-`/`divide-`/`placeholder-`).
-A large palette makes that line long; `coverage` narrows it per category (`colors`, `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
+A large palette makes that line long; `coverage` narrows it per category (`colors`, `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`):
 
 | `coverage.<category>`     | Effect                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -590,7 +590,7 @@ Call `createDesignTokens(theme, options)` from `./tokens` only for a second them
 | `colors`            | All color keys (flat, camelCase)                                                               |
 | `typography`        | Keys of `typography`                                                                           |
 | `shadows`           | Keys of `shadows`                                                                              |
-| `backDropBlurs`     | Keys of `backDropBlurs`                                                                        |
+| `backdropBlurs`     | Keys of `backdropBlurs`                                                                        |
 | `fontFamily`        | Keys of `fontFamily`                                                                           |
 | `borderWidth`       | Keys of `borderWidth` (default `0, 1, 2, 4` when absent or `{}`)                               |
 | `borderRadius`      | Keys of `borderRadius` (default `DEFAULT_ROUNDED_VALUES` when absent or `{}`)                  |

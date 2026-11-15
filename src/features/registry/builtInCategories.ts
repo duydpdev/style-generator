@@ -58,7 +58,7 @@ export const shadowsCategory = {
 } as const satisfies TokenCategoryDescriptor;
 
 /**
- * `backDropBlurs` — named blur presets.
+ * `backdropBlurs` — named blur presets.
  *
  * Maps into `--backdrop-blur-*`, which Tailwind v4's `backdrop-blur-*`
  * utility resolves (the DEV.1 baseline fixture compiles
@@ -66,8 +66,8 @@ export const shadowsCategory = {
  * is deliberately NOT used: it would also redefine the `blur-*` filter
  * scale and override Tailwind's default `--blur-sm`/`md`/`lg` values.
  */
-export const backDropBlursCategory = {
-  key: "backDropBlurs",
+export const backdropBlursCategory = {
+  key: "backdropBlurs",
   tokenKeyName: "backdropBlurKey",
   cssVarPrefix: "sg-backdrop-blur",
   themeNamespace: "--backdrop-blur-",
@@ -135,7 +135,7 @@ export const builtInCategories = [
   colorsCategory,
   typographyCategory,
   shadowsCategory,
-  backDropBlursCategory,
+  backdropBlursCategory,
   borderRadiusCategory,
   fontFamilyCategory,
   borderWidthCategory,

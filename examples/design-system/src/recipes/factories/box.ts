@@ -118,7 +118,7 @@ export const boxTables = (
     roundedL: createVariantMapper("rounded-l", t.borderRadius),
     roundedR: createVariantMapper("rounded-r", t.borderRadius),
     shadow: createVariantMapper("shadow", t.shadows),
-    backdropBlur: createVariantMapper("backdrop-blur", t.backDropBlurs),
+    backdropBlur: createVariantMapper("backdrop-blur", t.backdropBlurs),
     position: {
       absolute: "absolute",
       relative: "relative",

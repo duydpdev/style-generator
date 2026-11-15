@@ -25,7 +25,7 @@
   "shadows": {
     "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)"
   },
-  "backDropBlurs": {
+  "backdropBlurs": {
     "sm": "4px"
   },
   "borderRadius": {

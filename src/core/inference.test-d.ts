@@ -205,7 +205,7 @@ describe("DesignTokensWeb", () => {
     interface Bare {
       colors: { primary: string };
     }
-    expectTypeOf<DesignTokensWeb<Bare>["backDropBlurs"]>().toEqualTypeOf<
+    expectTypeOf<DesignTokensWeb<Bare>["backdropBlurs"]>().toEqualTypeOf<
       readonly never[]
     >();
     expectTypeOf<DesignTokensWeb<Bare>["borderRadius"]>().toEqualTypeOf<
@@ -367,7 +367,7 @@ describe("kebab-case keys in every category become camelCase", () => {
       };
     };
     shadows: { "soft-lg": string };
-    backDropBlurs: { "blur-md": string };
+    backdropBlurs: { "blur-md": string };
     borderRadius: { "pill-lg": string };
     borderWidth: { "thin-line": string };
     fontFamily: { "sans-serif": string };
@@ -385,8 +385,8 @@ describe("kebab-case keys in every category become camelCase", () => {
   it("shadows", () => {
     expectTypeOf<Web["shadows"][number]>().toEqualTypeOf<"softLg">();
   });
-  it("backDropBlurs", () => {
-    expectTypeOf<Web["backDropBlurs"][number]>().toEqualTypeOf<"blurMd">();
+  it("backdropBlurs", () => {
+    expectTypeOf<Web["backdropBlurs"][number]>().toEqualTypeOf<"blurMd">();
   });
   it("borderRadius", () => {
     expectTypeOf<Web["borderRadius"][number]>().toEqualTypeOf<"pillLg">();
@@ -503,6 +503,6 @@ describe("CategoryTokenKey", () => {
       "primaryHover" | "blue500"
     >();
     expectTypeOf<CategoryTokenKey<T, "shadows">>().toEqualTypeOf<"soft">();
-    expectTypeOf<CategoryTokenKey<T, "backDropBlurs">>().toBeNever();
+    expectTypeOf<CategoryTokenKey<T, "backdropBlurs">>().toBeNever();
   });
 });

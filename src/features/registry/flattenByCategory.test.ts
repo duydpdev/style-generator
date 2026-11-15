@@ -4,7 +4,7 @@ import { flattenByCategory } from "./flattenByCategory";
 import {
   colorsCategory,
   shadowsCategory,
-  backDropBlursCategory,
+  backdropBlursCategory,
   borderRadiusCategory,
   typographyCategory,
 } from "./builtInCategories";
@@ -30,8 +30,8 @@ describe("flattenByCategory", () => {
     });
   });
 
-  it("uses the category's own cssVarPrefix for backDropBlurs", () => {
-    expect(flattenByCategory(backDropBlursCategory, { sm: "4px" })).toEqual({
+  it("uses the category's own cssVarPrefix for backdropBlurs", () => {
+    expect(flattenByCategory(backdropBlursCategory, { sm: "4px" })).toEqual({
       "--sg-backdrop-blur-sm": "4px",
     });
   });

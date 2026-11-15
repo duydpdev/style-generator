@@ -34,7 +34,7 @@ export type TextVariant<T extends ThemeConfig> = DesignTokenKeys<T>["textKey"];
 export type ShadowVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["shadowKey"];
 
-/** Backdrop-blur variant union derived from theme.backDropBlurs keys. */
+/** Backdrop-blur variant union derived from theme.backdropBlurs keys. */
 export type BackdropBlurVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["backdropBlurKey"];
 

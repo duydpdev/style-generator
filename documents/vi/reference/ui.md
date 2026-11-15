@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: f02eabd8231f -->
+<!-- source: documents/reference/ui.md sha256: 78fa6051ef8c -->
 
 # UI kit (./ui)
 
@@ -132,7 +132,7 @@ export declare interface RecipeTokens {
   readonly colors: readonly string[];
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
   readonly spacingProperties: readonly string[];

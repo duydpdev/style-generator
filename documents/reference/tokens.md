@@ -47,7 +47,7 @@ const { DesignTokens } = createDesignTokens(theme, {
 | `colors`            | All color keys (flat, camelCase)                                                                                                           |
 | `typography`        | Keys of `typography`                                                                                                                       |
 | `shadows`           | Keys of `shadows`                                                                                                                          |
-| `backDropBlurs`     | Keys of `backDropBlurs`                                                                                                                    |
+| `backdropBlurs`     | Keys of `backdropBlurs`                                                                                                                    |
 | `fontFamily`        | Keys of `fontFamily`                                                                                                                       |
 | `borderWidth`       | Keys of `borderWidth` (falls back to `0, 1, 2, 4` when omitted or empty)                                                                   |
 | `borderRadius`      | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES` when omitted or empty)                                                      |

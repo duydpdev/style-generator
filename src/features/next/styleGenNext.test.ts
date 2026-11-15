@@ -309,6 +309,7 @@ describe("styleGenNext", () => {
       expect(vi.mocked(watch).mock.calls[1]?.[0]).toEqual([
         join(tmp, "b.json"),
         join(tmp, "style-gen.config.json"),
+        join(tmp, "package.json"),
       ]);
     });
 
@@ -379,7 +380,7 @@ describe("styleGenNext", () => {
     });
 
     describe("config edits", () => {
-      it("watches the config file next to the theme", () => {
+      it("watches both config candidates next to the theme (N-L1)", () => {
         const configAbs = writeConfig();
         writeTheme();
 
@@ -388,6 +389,7 @@ describe("styleGenNext", () => {
         expect(vi.mocked(watch).mock.calls[0]?.[0]).toEqual([
           join(tmp, "theme.json"),
           configAbs,
+          join(tmp, "package.json"),
         ]);
       });
 
@@ -425,10 +427,29 @@ describe("styleGenNext", () => {
 
         expect(error).toHaveBeenCalledWith(
           expect.stringMatching(
-            /\[style-gen-next\] Re-emit failed:\nInvalid config \(style-gen\.config\.json\):\n[^]*breakpoint/,
+            /\[style-gen-next\] Cannot reload config, keeping the previous one:\nInvalid config \(style-gen\.config\.json\):\n[^]*breakpoint/,
           ),
         );
         expect(existsSync(join(tmp, "styles"))).toBe(false);
+      });
+
+      it("reports a path error of an edited config once, as a config error (N-L5)", () => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+        const error = vi.spyOn(console, "error").mockReturnValue(undefined);
+        project();
+        const configAbs = join(tmp, "style-gen.config.json");
+        styleGenNext()({})("phase-development-server");
+
+        writeConfig({ output: "../escaped.css" });
+        watcherAt(0).emit("change", configAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(error).toHaveBeenCalledTimes(1);
+        expect(error).toHaveBeenCalledWith(
+          "[style-gen-next] Cannot reload config, keeping the previous one:\n" +
+            "Invalid config (style-gen.config.json):\n" +
+            "output escapes project root: ../escaped.css",
+        );
       });
     });
   });
@@ -441,6 +462,48 @@ describe("styleGenNext", () => {
         "utf8",
       );
     };
+
+    it("says so when no config file exists and the defaults are used (missing-config message)", () => {
+      writeTheme("styles/theme.json");
+      const info = vi.spyOn(console, "info").mockReturnValue(undefined);
+
+      styleGenNext()({})("phase-production-build");
+
+      expect(existsSync(join(tmp, "styles/theme.css"))).toBe(true);
+      expect(info).toHaveBeenCalledWith(
+        `[style-gen-next] No style-gen.config.json or package.json#style-gen found in ${tmp}; using the defaults.`,
+      );
+    });
+
+    it("FR-2: says so once per root and process, however often Next evaluates the config", () => {
+      writeTheme("styles/theme.json");
+      const info = vi.spyOn(console, "info").mockReturnValue(undefined);
+
+      styleGenNext()({})("phase-production-build");
+      styleGenNext()({})("phase-production-build");
+      styleGenNext()({})("phase-development-server");
+
+      expect(info).toHaveBeenCalledTimes(1);
+
+      mkdirSync(join(tmp, "app/styles"), { recursive: true });
+      writeTheme("app/styles/theme.json");
+      styleGenNext({ root: "app" })({})("phase-production-build");
+
+      expect(info).toHaveBeenCalledTimes(2);
+      expect(info).toHaveBeenLastCalledWith(
+        `[style-gen-next] No style-gen.config.json or package.json#style-gen found in ${join(tmp, "app")}; using the defaults.`,
+      );
+    });
+
+    it("stays quiet about the config when one exists", () => {
+      writeTheme("styles/theme.json");
+      writeRawConfig({});
+      const info = vi.spyOn(console, "info").mockReturnValue(undefined);
+
+      styleGenNext()({})("phase-production-build");
+
+      expect(info).not.toHaveBeenCalled();
+    });
 
     it("takes theme and output from style-gen.config.json", () => {
       writeTheme("design/tokens.json");
@@ -470,6 +533,7 @@ describe("styleGenNext", () => {
       expect(vi.mocked(watch).mock.calls[0]?.[0]).toEqual([
         join(tmp, "design/tokens.json"),
         join(tmp, "style-gen.config.json"),
+        join(tmp, "package.json"),
       ]);
     });
 

@@ -312,7 +312,54 @@ describe("generateCommand", () => {
       expect(watched).toEqual([
         path.join(tmp, "styles/theme.json"),
         path.join(tmp, "style-gen.config.json"),
+        path.join(tmp, "package.json"),
       ]);
+    });
+
+    // N-L1: the config can move between the two files while watching.
+    it(
+      "picks up a style-gen section added to package.json when no config existed at startup",
+      { timeout: 10_000 },
+      async () => {
+        write("styles/theme.json", sampleTheme);
+
+        await start({});
+        expect(read("styles/theme.css")).not.toContain("--color-*: initial;");
+
+        await until(
+          () => {
+            write("package.json", {
+              "style-gen": { resetTailwindDefaults: ["colors"] },
+            });
+          },
+          () => {
+            expect(read("styles/theme.css")).toContain("--color-*: initial;");
+          },
+        );
+      },
+    );
+
+    it("stays silent for a package.json change without a style-gen section", async () => {
+      write("styles/theme.json", sampleTheme);
+      const { watcher, emit } = fakeWatcher();
+      const fakeWatch = (() =>
+        watcher) as unknown as WatchThemeOptions["watch"];
+      await start({}, { watch: fakeWatch });
+      const successSpy = vi.mocked(logger.success);
+      successSpy.mockClear();
+      errorSpy.mockClear();
+
+      write("package.json", { name: "app", dependencies: { a: "1" } });
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      emit("change", path.join(tmp, "package.json"));
+      vi.advanceTimersByTime(1000);
+      vi.useRealTimers();
+
+      expect(successSpy).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(logger.info).not.toHaveBeenCalledWith(
+        expect.stringContaining("written"),
+      );
     });
 
     it("close() cancels the pending debounced generation", async () => {

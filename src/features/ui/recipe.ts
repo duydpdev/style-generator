@@ -41,18 +41,24 @@ export type RecipeProps = Readonly<
   Record<string, string | number | boolean | null | undefined>
 >;
 
-type VariantOptionValue<O> = O extends "true" | "false"
-  ? boolean
-  : O extends string | number
-    ? O
-    : never;
+// `string extends O`: the tables are not literal, so any option is possible.
+// A numeric key (`10`) also takes its string form; a numeric string key (`"10"`) also takes the number.
+type VariantOptionValue<O> = string extends O
+  ? string | number | boolean
+  : O extends "true" | "false"
+    ? boolean
+    : O extends number
+      ? O | `${O}`
+      : O extends `${infer N extends number}`
+        ? N | O
+        : O extends string
+          ? O
+          : never;
 
-/** Call props of a recipe: every variant name of `T`, its option keys as values (`"true"`/`"false"` keys mean boolean). */
+/** Call props of a recipe: every variant name of `T`, only the option keys of its table as values (`"true"`/`"false"` keys mean boolean, a numeric key also takes its number or string form). */
 export type RecipeVariantProps<T extends RecipeTables> = Readonly<{
   [K in keyof T["variants"]]?:
     | VariantOptionValue<keyof T["variants"][K]>
-    | boolean
-    | number
     | null
     | undefined;
 }>;

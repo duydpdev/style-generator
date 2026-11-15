@@ -7,8 +7,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { z } from "zod";
 
 import { ThemeSchema } from "../../core/themeSchema";
-import { StyleGenConfigFileSchema } from "../../node/loadStyleGenConfig";
+import { buildConfigJsonSchema } from "../configJsonSchema";
 import { logger } from "../logger";
+import { runCli } from "../run";
+import { themeTemplate } from "../templates";
 
 import { initCommand, type InitArgs } from "./init";
 
@@ -458,7 +460,7 @@ describe("initCommand", () => {
             "utf8",
           ),
         ),
-      ).toEqual(z.toJSONSchema(StyleGenConfigFileSchema));
+      ).toEqual(buildConfigJsonSchema());
     });
 
     it("adds `$schema` first to an existing config and keeps its other keys", async () => {
@@ -616,9 +618,9 @@ describe("initCommand", () => {
       expect(p.text).not.toHaveBeenCalled();
     });
 
-    it("exits 0 and keeps an existing theme, refreshing the rules", async () => {
+    it("C-M3: keeps an existing theme, writes the missing config and leaves a project `generate` builds", async () => {
       fs.mkdirSync(path.join(tmp, "styles"), { recursive: true });
-      fs.writeFileSync(path.join(tmp, "styles/theme.json"), "{}");
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), themeTemplate);
 
       expect(await run({ yes: true }, tmp)).toBe(0);
 
@@ -626,13 +628,314 @@ describe("initCommand", () => {
         "Existing files kept (--yes never overwrites).",
       );
       expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
-        "{}",
+        themeTemplate,
       );
-      expect(fs.existsSync(path.join(tmp, "style-gen.config.json"))).toBe(
-        false,
-      );
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ),
+      ).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
+        theme: "styles/theme.json",
+        output: "styles/theme.css",
+      });
       expect(fs.readFileSync(rulesPath(), "utf8")).toBe(RULES);
       expect(p.confirm).not.toHaveBeenCalled();
+
+      expect(await runCli(["generate"], tmp)).toBe(0);
+      expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(true);
+    });
+
+    it("FR-1: keeps a theme at the generate default when `src/` exists, so `generate` still reads it", async () => {
+      fs.mkdirSync(path.join(tmp, "src"));
+      fs.mkdirSync(path.join(tmp, "styles"));
+      const theme = JSON.stringify({ colors: { zebraStripe: "#123456" } });
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), theme);
+
+      expect(await run({ yes: true }, tmp)).toBe(0);
+
+      expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
+        theme,
+      );
+      expect(fs.existsSync(path.join(tmp, "src/styles"))).toBe(false);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ),
+      ).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
+        theme: "styles/theme.json",
+        output: "styles/theme.css",
+      });
+
+      expect(await runCli(["generate"], tmp)).toBe(0);
+      expect(
+        fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8"),
+      ).toContain("zebra-stripe");
+    });
+
+    it("FR-1: an explicit --theme still wins over a theme at the generate default", async () => {
+      fs.mkdirSync(path.join(tmp, "styles"));
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), "{}");
+
+      expect(await run({ yes: true, theme: "a/theme.json" }, tmp)).toBe(0);
+
+      expect(fs.existsSync(path.join(tmp, "a/theme.json"))).toBe(true);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ),
+      ).toMatchObject({ theme: "a/theme.json", output: "a/theme.css" });
+    });
+
+    describe("an existing config (C-H1)", () => {
+      const CONFIG = "style-gen.config.json";
+      const read = (file: string): string =>
+        fs.readFileSync(path.join(tmp, file), "utf8");
+      const exists = (file: string): boolean =>
+        fs.existsSync(path.join(tmp, file));
+      const writeConfig = (content: unknown): string => {
+        const text = JSON.stringify(content, null, 2);
+        fs.writeFileSync(path.join(tmp, CONFIG), text);
+        return text;
+      };
+
+      it("C-H1: keeps a config whose theme is not the default, creating no second theme", async () => {
+        fs.mkdirSync(path.join(tmp, "src/theme"), { recursive: true });
+        fs.writeFileSync(path.join(tmp, "src/theme/theme.json"), "{}");
+        const config = writeConfig({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+
+        expect(await run({ yes: true }, tmp)).toBe(0);
+
+        expect(read(CONFIG)).toBe(config);
+        expect(read("src/theme/theme.json")).toBe("{}");
+        expect(exists("src/styles")).toBe(false);
+        // The missing schemas land next to the configured theme.
+        expect(exists("src/theme/theme.schema.json")).toBe(true);
+        expect(exists(CONFIG_SCHEMA_FILE)).toBe(true);
+        expect(read(RULES_FILE)).toBe(RULES);
+      });
+
+      it("C-H1: keeps a config schema that exists and writes only the missing theme schema", async () => {
+        fs.mkdirSync(path.join(tmp, "src/theme"), { recursive: true });
+        fs.writeFileSync(path.join(tmp, "src/theme/theme.json"), "{}");
+        fs.writeFileSync(path.join(tmp, CONFIG_SCHEMA_FILE), '{"x":1}');
+        const config = writeConfig({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+
+        expect(await run({ yes: true }, tmp)).toBe(0);
+
+        expect(read(CONFIG_SCHEMA_FILE)).toBe('{"x":1}');
+        expect(exists("src/theme/theme.schema.json")).toBe(true);
+        expect(read(CONFIG)).toBe(config);
+        expect(logger.success).toHaveBeenCalledWith(
+          "Theme JSON Schema written to src/theme/theme.schema.json",
+        );
+        expect(logger.success).not.toHaveBeenCalledWith(
+          expect.stringContaining("Config JSON Schema written"),
+        );
+      });
+
+      it("C-H1: keeps a theme schema that exists and writes only the missing config schema", async () => {
+        fs.mkdirSync(path.join(tmp, "src/theme"), { recursive: true });
+        fs.writeFileSync(path.join(tmp, "src/theme/theme.json"), "{}");
+        fs.writeFileSync(
+          path.join(tmp, "src/theme/theme.schema.json"),
+          '{"x":1}',
+        );
+        const config = writeConfig({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+
+        expect(await run({ yes: true }, tmp)).toBe(0);
+
+        expect(read("src/theme/theme.schema.json")).toBe('{"x":1}');
+        expect(exists(CONFIG_SCHEMA_FILE)).toBe(true);
+        expect(read(CONFIG)).toBe(config);
+        expect(logger.success).toHaveBeenCalledWith(
+          `Config JSON Schema written to ${CONFIG_SCHEMA_FILE}`,
+        );
+        expect(logger.success).not.toHaveBeenCalledWith(
+          expect.stringContaining("Theme JSON Schema written"),
+        );
+      });
+
+      it("C-H1: a config without a `theme` key resolves to styles/theme.json, as generate reads it", async () => {
+        fs.mkdirSync(path.join(tmp, "src"));
+        const config = writeConfig({ breakpoints: ["xl"] });
+
+        expect(await run({ yes: true }, tmp)).toBe(0);
+
+        expect(exists("styles/theme.json")).toBe(true);
+        expect(exists("src/styles")).toBe(false);
+        expect(read(CONFIG)).toBe(config);
+      });
+
+      it("C-H1: package.json#style-gen is the source; no style-gen.config.json is written", async () => {
+        const pkg = JSON.stringify({
+          name: "app",
+          "style-gen": { theme: "app/t.json", output: "app/t.css" },
+        });
+        fs.writeFileSync(path.join(tmp, "package.json"), pkg);
+
+        expect(await run({ yes: true }, tmp)).toBe(0);
+
+        expect(exists("app/t.json")).toBe(true);
+        expect(exists(CONFIG)).toBe(false);
+        expect(read("package.json")).toBe(pkg);
+      });
+
+      it("C-H1: exits 1 naming both paths when --theme disagrees with the config", async () => {
+        const error = vi
+          .spyOn(logger, "error")
+          .mockImplementation(() => undefined);
+        const config = writeConfig({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+
+        expect(await run({ yes: true, theme: "styles/other.json" }, tmp)).toBe(
+          1,
+        );
+
+        const message = String(error.mock.calls[0]?.[0]);
+        expect(message).toContain("styles/other.json");
+        expect(message).toContain("src/theme/theme.json");
+        expect(read(CONFIG)).toBe(config);
+        expect(exists("styles")).toBe(false);
+        expect(exists("src")).toBe(false);
+      });
+
+      it("C-H1: accepts --theme that names the config's theme", async () => {
+        const config = writeConfig({
+          theme: "src/theme/theme.json",
+          output: "gen/out.css",
+        });
+
+        expect(
+          await run({ yes: true, theme: "./src/theme/theme.json" }, tmp),
+        ).toBe(0);
+
+        expect(exists("src/theme/theme.json")).toBe(true);
+        expect(read(CONFIG)).toBe(config);
+      });
+
+      it("C-H1: a config theme outside the root skips the theme and its schema, still writes a missing config schema, and says so", async () => {
+        const config = writeConfig({
+          theme: "../shared/theme.json",
+          output: "gen/theme.css",
+        });
+
+        expect(await run({ yes: true }, tmp)).toBe(0);
+
+        expect(logger.info).toHaveBeenCalledWith(
+          expect.stringContaining("outside the project root"),
+        );
+        expect(read(CONFIG)).toBe(config);
+        expect(fs.readdirSync(tmp).sort((a, b) => a.localeCompare(b))).toEqual([
+          ".claude",
+          "style-gen.config.json",
+          CONFIG_SCHEMA_FILE,
+        ]);
+      });
+
+      it("C-H1: prints no `scaffolded` line when nothing was written, and reports no file that was kept", async () => {
+        fs.mkdirSync(path.join(tmp, "src/theme"), { recursive: true });
+        fs.writeFileSync(path.join(tmp, "src/theme/theme.json"), "{}");
+        fs.writeFileSync(path.join(tmp, "src/theme/theme.schema.json"), "{}");
+        fs.writeFileSync(path.join(tmp, CONFIG_SCHEMA_FILE), "{}");
+        writeConfig({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+
+        expect(await run({ yes: true }, tmp)).toBe(0);
+
+        expect(logger.info).toHaveBeenCalledWith(
+          expect.stringContaining("Nothing to do"),
+        );
+        expect(logger.info).not.toHaveBeenCalledWith(
+          expect.stringContaining("scaffolded successfully"),
+        );
+        expect(logger.success).not.toHaveBeenCalledWith(
+          expect.stringMatching(/written to|Created src\/theme/),
+        );
+        expect(read("src/theme/theme.schema.json")).toBe("{}");
+        expect(read(CONFIG_SCHEMA_FILE)).toBe("{}");
+      });
+
+      it("C-H1: exits 1 and writes nothing when the config is invalid", async () => {
+        const error = vi
+          .spyOn(logger, "error")
+          .mockImplementation(() => undefined);
+        const config = writeConfig({ theme: "a/theme.json", bogus: 1 });
+
+        expect(await run({ yes: true }, tmp)).toBe(1);
+
+        expect(String(error.mock.calls[0]?.[0])).toContain(
+          "style-gen.config.json",
+        );
+        expect(read(CONFIG)).toBe(config);
+        expect(fs.readdirSync(tmp)).toEqual(["style-gen.config.json"]);
+      });
+    });
+
+    describe("without --yes", () => {
+      it("C-H1: --theme naming the config's theme leaves the config's output alone", async () => {
+        const config = JSON.stringify({
+          theme: "a/theme.json",
+          output: "gen/out.css",
+        });
+        fs.writeFileSync(path.join(tmp, "style-gen.config.json"), config);
+
+        expect(await run({ theme: "a/theme.json" }, tmp)).toBe(0);
+
+        expect(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ).toBe(config);
+        expect(fs.existsSync(path.join(tmp, "a/theme.json"))).toBe(true);
+      });
+
+      it("C-H1: the wizard offers the config's theme as the default", async () => {
+        vi.mocked(p.text).mockResolvedValueOnce("src/theme/theme.json");
+        vi.mocked(p.confirm).mockResolvedValueOnce(false); // dark mode
+        const config = JSON.stringify({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+        fs.writeFileSync(path.join(tmp, "style-gen.config.json"), config);
+
+        expect(await run({}, tmp)).toBe(0);
+
+        expect(p.text).toHaveBeenCalledWith(
+          expect.objectContaining({ initialValue: "src/theme/theme.json" }),
+        );
+        expect(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ).toBe(config);
+        expect(fs.existsSync(path.join(tmp, "src/styles"))).toBe(false);
+      });
+
+      it("FR-1: the wizard offers a theme at the generate default when no config exists", async () => {
+        vi.mocked(p.text).mockResolvedValueOnce("styles/theme.json");
+        vi.mocked(p.confirm).mockResolvedValueOnce(false); // dark mode
+        fs.mkdirSync(path.join(tmp, "src"));
+        fs.mkdirSync(path.join(tmp, "styles"));
+        fs.writeFileSync(path.join(tmp, "styles/theme.json"), "{}");
+
+        expect(await run({}, tmp)).toBe(0);
+
+        expect(p.text).toHaveBeenCalledWith(
+          expect.objectContaining({ initialValue: "styles/theme.json" }),
+        );
+        expect(fs.existsSync(path.join(tmp, "src/styles"))).toBe(false);
+      });
     });
 
     it.each([
@@ -645,7 +948,8 @@ describe("initCommand", () => {
       expect(await run({ yes: true }, tmp)).toBe(0);
 
       expect(fs.readFileSync(path.join(tmp, file), "utf8")).toBe('{"x":1}');
-      expect(fs.existsSync(path.join(tmp, "styles/theme.json"))).toBe(false);
+      // The missing files are written, so the config `init` writes points at a theme.
+      expect(fs.existsSync(path.join(tmp, "styles/theme.json"))).toBe(true);
     });
 
     it("keeps an edited rules file without asking", async () => {

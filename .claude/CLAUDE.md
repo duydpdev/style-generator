@@ -226,14 +226,15 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
 - CLI (`src/cli/`): `run.ts` holds the command registry (`init`, `generate`, `doctor`, `schema`, `tokens`, `budget`),
   `runCli(args, cwd)` returns the exit code (0 ok/help/version/cancel, 1 failure, `budget` 2 for usage) and parses flags strictly per command;
   **commands never call `process.exit`** (only `src/cli/index.ts` assigns `process.exitCode`), so tests drive `runCli`/the command functions directly.
-  `generate --watch` watches the theme AND the config file and keeps the last valid config when an edit is invalid.
-  `schema` writes `theme.schema.json` (next to the theme, `--out`) and `style-gen.config.schema.json` (project root, `--config-out`) from `z.toJSONSchema(StyleGenConfigFileSchema)`,
-  which has no cross-field refinements; the three committed copies (`examples/`, `examples/design-system/`, `site/`) are pinned by `committed-schema.test.ts`.
-  `init --yes`/`-y` never prompts and never overwrites (existing files kept, exit 0); `init` writes `"$schema": "./style-gen.config.schema.json"` as the config's first key.
+  `generate --watch` (like the Vite/Next dev servers) watches the theme AND both config candidates (`style-gen.config.json`, `package.json#style-gen`; resolved by `src/node/configSource.ts`, `package.json` events ignored while `style-gen.config.json` exists) and keeps the last valid config when an edit is invalid.
+  `generate --check` compares the committed tokens file with CRLF normalised and fails on a malformed config (the other commands warn `Ignoring … using defaults`). `generate`, `doctor` and the plugins resolve outputs through `resolveEmitTarget` (`output`/`tokensOutput` inside the root, `tokensOutput` a `.ts`/`.mts`/`.cts` file, theme/CSS/tokens module three distinct files); `doctor` reports a refusal as `Output (…) ❌ Invalid emit paths`.
+  `schema` writes `theme.schema.json` (next to the theme, `--out`) and `style-gen.config.schema.json` (project root, `--config-out`; the config schema is written even when the config violates the schema, the exit code is then 1) from `z.toJSONSchema(StyleGenConfigFileSchema)` narrowed by `buildConfigJsonSchema` (`src/cli/configJsonSchema.ts`: per-category `coverage` prefixes/`keys`, distinct `opacities`);
+  cross-field rules (`breakpoints` ⊂ screens, one `screens` unit, `resetTailwindDefaults` replacements) and path rules stay out of the JSON Schema; the three committed copies (`examples/`, `examples/design-system/`, `site/`) are pinned by `committed-schema.test.ts`.
+  `init --yes`/`-y` never prompts and never overwrites (existing files kept, exit 0) and keeps an existing config as it is: it reads the theme from it and exits 1 when the config is invalid or `--theme` names another theme; `init` writes `"$schema": "./style-gen.config.schema.json"` as a new config's first key.
   `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
   shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
-  it never edits a bundler config and scaffolds no generator script; `init` merges `theme`/`output`/`$schema` into an existing config (or `package.json["style-gen"]`) as written,
+  it never edits a bundler config and scaffolds no generator script; `init` merges `theme`/`output`/`$schema` into an existing config (or `package.json["style-gen"]`) as written when it prompts,
   so a key the schema rejects (`plugin`, `extraSources`, `axes`) stays and `generate` reports it as an unknown key. `budget` writes `OK: …`/`OVER BUDGET: …` lines that are a contract
   consumers grep.
 

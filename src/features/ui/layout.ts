@@ -89,6 +89,14 @@ export const splitLayout = (
   props: object,
   options: SplitLayoutOptions,
 ): Split => {
+  if (
+    typeof (options as Partial<SplitLayoutOptions> | undefined)?.recipe !==
+    "function"
+  ) {
+    throw new TypeError(
+      "splitLayout(props, { recipe, spacingKeys, variantKeys, sizeKeys }): the second argument must be an options object with a `recipe` function",
+    );
+  }
   const { recipe, spacingKeys, variantKeys, sizeKeys, extra = {} } = options;
   const variants: Record<string, string | number | boolean | undefined> = {};
   const size: Record<string, string> = {};

@@ -34,7 +34,11 @@ describe("resolvePluginTarget", () => {
         tokensFile: join(root, "styles/theme.tokens.ts"),
         options: {},
       },
-      configFile: join(root, "style-gen.config.json"),
+      configFiles: [
+        join(root, "style-gen.config.json"),
+        join(root, "package.json"),
+      ],
+      configFound: false,
     });
   });
 
@@ -55,19 +59,27 @@ describe("resolvePluginTarget", () => {
         tokensFile: join(root, "out/theme.tokens.ts"),
         options: { enableResponsive: false },
       },
-      configFile: join(root, "style-gen.config.json"),
+      configFiles: [
+        join(root, "style-gen.config.json"),
+        join(root, "package.json"),
+      ],
+      configFound: true,
     });
   });
 
-  it("reports package.json as the config file when the config lives in package.json#style-gen", () => {
+  it("lists both config candidates, highest precedence first, even when only package.json#style-gen exists", () => {
     writeFileSync(
       join(root, "package.json"),
       JSON.stringify({ "style-gen": { theme: "pkg/t.json", output: "o.css" } }),
     );
 
-    const { target, configFile } = resolvePluginTarget(root, "x");
+    const { target, configFiles, configFound } = resolvePluginTarget(root, "x");
 
-    expect(configFile).toBe(join(root, "package.json"));
+    expect(configFiles).toEqual([
+      join(root, "style-gen.config.json"),
+      join(root, "package.json"),
+    ]);
+    expect(configFound).toBe(true);
     expect(target.themeFile).toBe(join(root, "pkg/t.json"));
   });
 
@@ -141,11 +153,11 @@ describe("parsePluginRootOptions", () => {
   });
 
   it.each(["themePath", "outDir", "options"])(
-    "rejects the removed %s key and points to the migration guide",
+    "rejects the removed %s key and links the migration guide by its absolute URL (N-L4)",
     (key) => {
       expect(() => parsePluginRootOptions({ [key]: "a" }, "my-plugin")).toThrow(
         new RegExp(
-          `^\\[my-plugin\\] Invalid options:\\n[^]*${key}[^]*7\\.x-to-8\\.0`,
+          `^\\[my-plugin\\] Invalid options:\\n[^]*${key}[^]*\\(see https://github\\.com/duydpdev/style-generator/blob/main/documents/migration/7\\.x-to-8\\.0\\.md#b1-plugins-take-only-root\\)`,
         ),
       );
     },

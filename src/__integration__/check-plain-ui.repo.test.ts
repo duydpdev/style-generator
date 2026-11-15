@@ -23,8 +23,24 @@ describe("check-plain-ui: the repo's plain apps", () => {
   const TOKENS_TS = "export const tokens = 1;\n";
 
   /**
+   * A config as the two apps keep it: their own paths differ, the generator
+   * options are shared.
+   * @param {string} app - App name
+   * @returns {string} JSON text
+   */
+  const config = (app: string) =>
+    `${JSON.stringify({
+      $schema: "./style-gen.config.schema.json",
+      theme: `${app}/theme.json`,
+      output: `${app}/theme.css`,
+      tokensOutput: `${app}/theme.tokens.ts`,
+      coverage: { colors: { opacities: [10, 20] } },
+      breakpoints: ["md", "lg"],
+    })}\n`;
+
+  /**
    * The valid fixture: one `button` folder per app of `APPS`, plus the
-   * app-scope theme files.
+   * app-scope theme files and the app config.
    * @param {string} root - Fixture root
    */
   function validFixture(root: string) {
@@ -48,10 +64,16 @@ describe("check-plain-ui: the repo's plain apps", () => {
       writeTmpFile(root, `${dirname(ui)}/theme.ts`, THEME_TS);
       writeTmpFile(root, `${dirname(ui)}/theme/theme.tokens.ts`, TOKENS_TS);
       writeTmpFile(root, `${dirname(ui)}/theme/theme.json`, "{}\n");
+      writeTmpFile(
+        root,
+        `${dirname(dirname(ui))}/style-gen.config.json`,
+        config(app.name),
+      );
     }
   }
 
   const check = () => mod.checkPlainUi(dir);
+  const configOf = (app: string) => `examples/${app}/style-gen.config.json`;
   const mentions = (errors: readonly string[], text: string) =>
     errors.some((error) => error.includes(text));
 
@@ -118,6 +140,55 @@ describe("check-plain-ui: the repo's plain apps", () => {
   it("rejects a theme.json that differs in plain-nuxt", () => {
     writeTmpFile(dir, "examples/plain-nuxt/app/theme/theme.json", '{"a":1}\n');
     expect(mentions(check().errors, "plain-nuxt")).toBe(true);
+  });
+
+  it("accepts configs that differ only in $schema, theme, output and tokensOutput (D-L6)", () => {
+    writeTmpFile(
+      dir,
+      configOf("plain-nuxt"),
+      `${JSON.stringify({
+        breakpoints: ["md", "lg"],
+        output: "elsewhere.css",
+        coverage: { colors: { opacities: [10, 20] } },
+        theme: "elsewhere.json",
+      })}\n`,
+    );
+    expect(check()).toEqual({ errors: [], warnings: [] });
+  });
+
+  it("rejects a plain-nuxt config whose coverage drifts from plain-react (D-L6)", () => {
+    writeTmpFile(
+      dir,
+      configOf("plain-nuxt"),
+      `${JSON.stringify({
+        theme: "plain-nuxt/theme.json",
+        coverage: { colors: { opacities: [10, 20, 50] } },
+        breakpoints: ["md", "lg"],
+      })}\n`,
+    );
+    expect(check().errors).toEqual([
+      `${configOf("plain-nuxt")}: differs from ${configOf("plain-react")} outside $schema, theme, output, tokensOutput`,
+    ]);
+  });
+
+  it("rejects a plain-nuxt config with an extra generator option (D-L6)", () => {
+    writeTmpFile(
+      dir,
+      configOf("plain-nuxt"),
+      `${JSON.stringify({
+        coverage: { colors: { opacities: [10, 20] } },
+        breakpoints: ["md", "lg"],
+        enableResponsive: false,
+      })}\n`,
+    );
+    expect(mentions(check().errors, "differs from")).toBe(true);
+  });
+
+  it("rejects a missing or unparsable config (D-L6)", () => {
+    rmSync(join(dir, configOf("plain-nuxt")));
+    expect(check().errors).toEqual([`${configOf("plain-nuxt")}: missing`]);
+    writeTmpFile(dir, configOf("plain-nuxt"), "{ not json");
+    expect(mentions(check().errors, configOf("plain-nuxt"))).toBe(true);
   });
 
   it("warns, never fails, on a folder that exists in one app only", () => {

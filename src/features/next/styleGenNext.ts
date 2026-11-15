@@ -1,6 +1,11 @@
 import path from "node:path";
 
-import { readConfigFile, resolveConfig } from "../../node/loadStyleGenConfig";
+import { errorMessage } from "../../node/errorMessage";
+import {
+  noConfigMessage,
+  readConfigFile,
+  resolveConfig,
+} from "../../node/loadStyleGenConfig";
 import {
   parsePluginRootOptions,
   resolvePluginTarget,
@@ -54,6 +59,13 @@ let devWatcher: ThemeWatchHandle | null = null;
 let devWatcherKey: string | null = null;
 
 /**
+ * Roots whose "no config found" line was already printed. Next evaluates
+ * `next.config.*` several times per process, so the line is said once per
+ * root and process (Next's workers each print it once).
+ */
+const noConfigReported = new Set<string>();
+
+/**
  * Close a watcher without letting its rejection escape: nothing can react to
  * a failed close during a swap or teardown.
  * @param {ThemeWatchHandle} watcher - The watcher to close
@@ -77,12 +89,12 @@ const closeQuietly = (watcher: ThemeWatchHandle): void => {
  * nothing else keeps its event loop busy. `persistent: false` lets Node
  * exit on its own schedule regardless of who's holding this reference.
  * @param {EmitTarget} target - Theme file, output file and options to re-emit with
- * @param {string} configFile - Config file to watch; an edit reloads the target in place
+ * @param {readonly string[]} configFiles - Config files to watch; an edit of one reloads the target in place
  * @param {string} root - Directory the config is read from
  */
 const startDevWatcher = (
   target: EmitTarget,
-  configFile: string,
+  configFiles: readonly string[],
   root: string,
 ): void => {
   // Options take part in the key: a re-evaluated config with the same paths
@@ -93,7 +105,7 @@ const startDevWatcher = (
     target.outFile,
     target.tokensFile,
     target.options,
-    configFile,
+    configFiles,
   ]);
   if (devWatcher && devWatcherKey === key) return;
   if (devWatcher) closeQuietly(devWatcher);
@@ -102,28 +114,32 @@ const startDevWatcher = (
   // target instead of falling back to the defaults halfway through an edit.
   const reloadTarget = (): EmitTarget | ConfigIssues => {
     const reloaded = readConfigFile(root);
+    const toIssues = (problem: string): ConfigIssues => ({
+      issues: problem,
+      ...(reloaded.source !== undefined && { source: reloaded.source }),
+    });
     const problem = reloaded.issues ?? reloaded.error;
-    if (problem !== undefined) {
-      return {
-        issues: problem,
-        ...(reloaded.source !== undefined && { source: reloaded.source }),
-      };
+    if (problem !== undefined) return toIssues(problem);
+    // No label prefix: the handler below names the plugin once.
+    try {
+      return resolveEmitTarget(root, resolveConfig({}, reloaded));
+    } catch (error) {
+      return toIssues(errorMessage(error));
     }
-    return resolveEmitTarget(
-      root,
-      resolveConfig({}, reloaded),
-      `[${PLUGIN_NAME}] `,
-    );
   };
 
   devWatcher = watchThemeFile(
     target,
     (result) => {
       if (!result.ok) {
-        console.error(`[${PLUGIN_NAME}] Re-emit failed:\n${result.message}`);
+        console.error(
+          result.stage === "config"
+            ? `[${PLUGIN_NAME}] Cannot reload config, keeping the previous one:\n${result.message}`
+            : `[${PLUGIN_NAME}] Re-emit failed:\n${result.message}`,
+        );
       }
     },
-    { persistent: false, configFile, reloadTarget },
+    { persistent: false, configFiles, reloadTarget },
   );
   devWatcherKey = key;
 };
@@ -142,9 +158,9 @@ const startDevWatcher = (
  * ```
  *
  * Every option lives in `style-gen.config.json` (else
- * `package.json#style-gen`) in `process.cwd()` — the `theme`, `output`,
- * `tokensOutput` and every `generate()` option — exactly as
- * `style-gen generate` reads them. The only plugin option is `root`, the
+ * `package.json#style-gen`) in `root` (default `process.cwd()`) — the
+ * `theme`, `output`, `tokensOutput` and every `generate()` option — exactly
+ * as `style-gen generate` reads them. The only plugin option is `root`, the
  * directory holding that file (a relative one resolves against
  * `process.cwd()`): `styleGenNext({ root })(nextConfig)`.
  *
@@ -204,7 +220,14 @@ export const styleGenNext = (opts?: StyleGenNextOptions) => {
       if (!EMIT_PHASES.has(phase)) return resolvedConfig;
 
       const root = path.resolve(process.cwd(), rootOption ?? ".");
-      const { target, configFile } = resolvePluginTarget(root, PLUGIN_NAME);
+      const { target, configFiles, configFound } = resolvePluginTarget(
+        root,
+        PLUGIN_NAME,
+      );
+      if (!configFound && !noConfigReported.has(root)) {
+        noConfigReported.add(root);
+        console.info(`[${PLUGIN_NAME}] ${noConfigMessage(root)}`);
+      }
 
       const result = emitTheme(target);
       if (!result.ok) {
@@ -214,7 +237,7 @@ export const styleGenNext = (opts?: StyleGenNextOptions) => {
       }
 
       if (phase === "phase-development-server") {
-        startDevWatcher(target, configFile, root);
+        startDevWatcher(target, configFiles, root);
       }
 
       return resolvedConfig;
@@ -224,6 +247,7 @@ export const styleGenNext = (opts?: StyleGenNextOptions) => {
 /** Test-only: reset module-level state. Not part of public API. */
 export const __resetForTests = (): void => {
   if (devWatcher) closeQuietly(devWatcher);
+  noConfigReported.clear();
   devWatcher = null;
   devWatcherKey = null;
 };

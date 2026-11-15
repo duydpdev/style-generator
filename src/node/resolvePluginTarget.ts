@@ -1,9 +1,8 @@
-import { resolve } from "node:path";
-
 import { z } from "zod";
 
 import { formatZodError } from "../core/themeSchema";
 
+import { configCandidates } from "./configSource";
 import { loadStyleGenConfig } from "./loadStyleGenConfig";
 import { resolveEmitTarget } from "./resolveEmitTarget";
 import type { EmitTarget } from "./themeEmitter";
@@ -13,6 +12,13 @@ export interface PluginRootOptions {
   /** Directory holding `style-gen.config.json` (or `package.json#style-gen`). */
   root?: string | undefined;
 }
+
+/**
+ * The shipped package holds no `documents/`, so a message links the guide by
+ * its absolute URL (`messageLinks.test.ts` checks that the file and anchor exist).
+ */
+const MIGRATION_B1_URL =
+  "https://github.com/duydpdev/style-generator/blob/main/documents/migration/7.x-to-8.0.md#b1-plugins-take-only-root";
 
 const PluginRootOptionsSchema = z.strictObject({
   root: z.string().min(1).optional(),
@@ -37,7 +43,7 @@ export function parsePluginRootOptions(
   if (!parsed.success) {
     throw new Error(
       `[${label}] Invalid options:\n${formatZodError(parsed.error)}\n` +
-        `Only { root } is accepted: every generator option lives in style-gen.config.json (see documents/migration/7.x-to-8.0.md).`,
+        `Only { root } is accepted: every generator option lives in style-gen.config.json (see ${MIGRATION_B1_URL}).`,
     );
   }
   return parsed.data;
@@ -47,8 +53,13 @@ export function parsePluginRootOptions(
 export interface PluginTarget {
   /** Absolute theme, output and tokens files plus the generator options. */
   target: EmitTarget;
-  /** Absolute path of the config file to watch (it may not exist yet). */
-  configFile: string;
+  /**
+   * Absolute paths of every file the config can live in, highest precedence
+   * first (`style-gen.config.json`, `package.json`); they may not exist yet.
+   */
+  configFiles: string[];
+  /** `false` when `root` holds no config file and every default applies. */
+  configFound: boolean;
 }
 
 /**
@@ -75,6 +86,7 @@ export function resolvePluginTarget(root: string, label: string): PluginTarget {
   }
   return {
     target: resolveEmitTarget(root, loaded.config, `[${label}] `),
-    configFile: resolve(root, loaded.source ?? "style-gen.config.json"),
+    configFiles: configCandidates(root),
+    configFound: loaded.source !== undefined,
   };
 }

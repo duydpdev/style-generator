@@ -12,23 +12,70 @@ const gate = join(repoRoot, "scripts", "check-doc-reference.mjs");
 
 /** Flags each fake command prints in `--help` and the page must document. */
 const COMMAND_FLAGS: Record<string, string[]> = {
-  init: ["--force"],
-  generate: ["--theme", "--watch"],
+  init: ["--force", "-y"],
+  generate: ["--theme", "-w", "--watch"],
   doctor: [],
   schema: ["--out", "--config-out"],
   tokens: ["--out"],
   budget: ["--max-gzip"],
 };
 
-const CONFIG_KEYS = ["$schema", "themePath", "outDir"];
+/** The shape of a per-category entry: `boolean | { prefixes?, keys? }`. */
+const CATEGORY = {
+  anyOf: [
+    { type: "boolean" },
+    { type: "object", properties: { prefixes: {}, keys: {} } },
+  ],
+};
+
+/** Properties of the config schema the fake CLI writes. */
+const SCHEMA_PROPERTIES: Record<string, unknown> = {
+  $schema: { type: "string" },
+  themePath: { type: "string" },
+  screens: { type: "object", additionalProperties: { type: "string" } },
+  spacing: {
+    type: "object",
+    properties: { enabled: {}, properties: {} },
+  },
+  coverage: {
+    type: "object",
+    properties: { colors: CATEGORY, shadows: CATEGORY },
+  },
+};
+
+/** The options page the gate accepts for `SCHEMA_PROPERTIES`. */
+const OPTIONS_PAGE = [
+  "# Options",
+  "",
+  "| Option | Type |",
+  "| :-- | :-- |",
+  "| `$schema` | `string` |",
+  "| `themePath` | `string` |",
+  "| `screens` | `Record<string, string>` |",
+  "| `spacing.enabled` | `boolean` |",
+  "| `spacing.properties` | `SpacingPropertyMap` |",
+  "| `coverage` | `Partial<Record<CategoryKey, CoverageRule>>` |",
+  "",
+  "### `coverage`: trim the lines per category",
+  "",
+  "Categories: `colors`, `shadows`.",
+  "",
+  "| Value | Effect |",
+  "| :-- | :-- |",
+  "| `{ prefixes: [...] }` | Keep only these prefixes. |",
+  '| `{ keys: "aliased" }` | Keep only the aliased keys. |',
+  "",
+].join("\n");
 
 /**
  * A stand-in for `dist/cli/index.mjs`: `<command> --help` prints the fixed
  * flags, `schema` writes both schema files relative to the working directory.
- * @param {string[]} schemaKeys - Keys of the config schema it writes
+ * @param {Record<string, unknown>} properties - `properties` of the config schema it writes
  * @returns {string} Script source
  */
-const fakeCli = (schemaKeys: string[]): string => `#!/usr/bin/env node
+const fakeCli = (
+  properties: Record<string, unknown>,
+): string => `#!/usr/bin/env node
 import { writeFileSync } from "node:fs";
 
 const flags = ${JSON.stringify(COMMAND_FLAGS)};
@@ -40,9 +87,7 @@ if (command === "schema" && !rest.includes("--help")) {
   writeFileSync(out, "{}\\n");
   writeFileSync(
     configOut,
-    JSON.stringify({
-      properties: Object.fromEntries(${JSON.stringify(schemaKeys)}.map((k) => [k, {}])),
-    }),
+    JSON.stringify({ properties: ${JSON.stringify(properties)} }),
   );
 } else {
   console.log(\`Usage: style-gen \${command} \${(flags[command] ?? []).join(" ")}\`);
@@ -51,12 +96,13 @@ if (command === "schema" && !rest.includes("--help")) {
 
 /**
  * A fixture root the gate accepts: fake CLI, both reference pages (one
- * section per command with each flag in an inline code span; every key in an
- * inline code span) and one clean rendered page.
+ * section per command with each flag in an inline code span; every key
+ * defined in a table row, nested keys and the `coverage` section included)
+ * and one clean rendered page.
  * @param {string} root - Fixture root
- * @param {string[]} [schemaKeys] - Keys the fake `schema` command writes
+ * @param {Record<string, unknown>} [properties] - Properties the fake `schema` command writes
  */
-const writeFixture = (root: string, schemaKeys = CONFIG_KEYS) => {
+const writeFixture = (root: string, properties = SCHEMA_PROPERTIES) => {
   const cliSections = Object.entries(COMMAND_FLAGS).flatMap(
     ([command, flags]) => {
       const spans = flags.map((f) => `\`${f}\``).join(", ");
@@ -68,17 +114,13 @@ const writeFixture = (root: string, schemaKeys = CONFIG_KEYS) => {
       ];
     },
   );
-  writeTmpFile(root, "dist/cli/index.mjs", fakeCli(schemaKeys));
+  writeTmpFile(root, "dist/cli/index.mjs", fakeCli(properties));
   writeTmpFile(
     root,
     "documents/reference/cli.md",
     ["# CLI", "", ...cliSections].join("\n"),
   );
-  writeTmpFile(
-    root,
-    "documents/reference/options.md",
-    ["# Options", "", ...CONFIG_KEYS.map((k) => `- \`${k}\``), ""].join("\n"),
-  );
+  writeTmpFile(root, "documents/reference/options.md", OPTIONS_PAGE);
   writeTmpFile(root, "documents/guide.md", "# Guide\n\nPlain text.\n");
 };
 
@@ -95,6 +137,17 @@ const runGate = (root: string) => {
 };
 
 const HISTORY_LINE = "> Changed in 5.2.0: the flag moved.";
+
+/**
+ * Rewrite a fixture page in place.
+ * @param {string} root - Fixture root
+ * @param {string} rel - Repo-relative page
+ * @param {(page: string) => string} change - Page transform
+ */
+const editPage = (root: string, rel: string, change: (p: string) => string) => {
+  const file = join(root, rel);
+  writeFileSync(file, change(readFileSync(file, "utf8")));
+};
 
 describe("integration: check-doc-reference rejects stale references", () => {
   let dir: string;
@@ -115,21 +168,107 @@ describe("integration: check-doc-reference rejects stale references", () => {
   });
 
   it("fails when a flag of `generate --help` is missing from its section", () => {
-    const page = join(dir, "documents/reference/cli.md");
-    writeFileSync(
-      page,
-      readFileSync(page, "utf8").replace("`--theme`, `--watch`", "`--theme`"),
+    editPage(dir, "documents/reference/cli.md", (p) =>
+      p.replace("`--theme`, `-w`, `--watch`", "`--theme`, `-w`"),
     );
     const { status, output } = runGate(dir);
     expect(status).toBe(1);
     expect(output).toContain("style-gen generate does not document --watch");
   });
 
+  it("fails when a short flag of `--help` is missing from its section (D-M2)", () => {
+    editPage(dir, "documents/reference/cli.md", (p) =>
+      p.replace("`--force`, `-y`", "`--force`"),
+    );
+    const { status, output } = runGate(dir);
+    expect(status).toBe(1);
+    expect(output).toContain("style-gen init does not document -y");
+  });
+
+  it("accepts a short and a long flag together in one span", () => {
+    editPage(dir, "documents/reference/cli.md", (p) =>
+      p.replace("`-w`, `--watch`", "`-w, --watch`"),
+    );
+    expect(runGate(dir).status).toBe(0);
+  });
+
   it("fails when the config schema holds a key options.md lacks", () => {
-    writeFixture(dir, [...CONFIG_KEYS, "extraKey"]);
+    writeFixture(dir, { ...SCHEMA_PROPERTIES, extraKey: {} });
     const { status, output } = runGate(dir);
     expect(status).toBe(1);
     expect(output).toContain("config key extraKey is not documented");
+  });
+
+  it("fails when a key is named only in running text, not defined (D-M2)", () => {
+    editPage(dir, "documents/reference/options.md", (p) =>
+      p
+        .replace("| `themePath` | `string` |\n", "")
+        .concat("\nRemoved: `themePath` is no longer read.\n"),
+    );
+    const { status, output } = runGate(dir);
+    expect(status).toBe(1);
+    expect(output).toContain("config key themePath is not documented");
+  });
+
+  it("fails when a nested key of a fixed-shape object is removed (D-M2)", () => {
+    editPage(dir, "documents/reference/options.md", (p) =>
+      p
+        .replace("| `spacing.properties` | `SpacingPropertyMap` |\n", "")
+        .concat("\nRunning text about `spacing.properties` stays.\n"),
+    );
+    const { status, output } = runGate(dir);
+    expect(status).toBe(1);
+    expect(output).toContain("config key spacing.properties is not documented");
+    expect(output).not.toContain("spacing.enabled");
+  });
+
+  it("accepts a nested key named by its leaf inside the parent's section", () => {
+    editPage(dir, "documents/reference/options.md", (p) =>
+      p
+        .replace("| `spacing.properties` | `SpacingPropertyMap` |\n", "")
+        .concat(
+          "\n### `spacing`: the utilities\n\nSet `properties` to replace the map.\n",
+        ),
+    );
+    expect(runGate(dir).status).toBe(0);
+  });
+
+  it("fails when a leaf of the per-category map is gone from its section (D-M2)", () => {
+    editPage(dir, "documents/reference/options.md", (p) =>
+      p.replace(
+        '| `{ keys: "aliased" }` | Keep only the aliased keys. |\n',
+        "",
+      ),
+    );
+    const { status, output } = runGate(dir);
+    expect(status).toBe(1);
+    expect(output).toContain(
+      "config key coverage.keys is not documented in the `coverage` section",
+    );
+    expect(output).not.toContain("coverage.prefixes");
+  });
+
+  it("fails when a category of the per-category map is gone from its section", () => {
+    editPage(dir, "documents/reference/options.md", (p) =>
+      p.replace("Categories: `colors`, `shadows`.", "Categories: `colors`."),
+    );
+    const { status, output } = runGate(dir);
+    expect(status).toBe(1);
+    expect(output).toContain("config key coverage.shadows is not documented");
+  });
+
+  it("does not ask for every category x leaf pair", () => {
+    // The fixture names each leaf once; no `colors.prefixes`-style pair.
+    expect(runGate(dir).status).toBe(0);
+  });
+
+  it("fails when a per-category map has no section", () => {
+    editPage(dir, "documents/reference/options.md", (p) =>
+      p.replace("### `coverage`: trim the lines per category", "### Trimming"),
+    );
+    const { status, output } = runGate(dir);
+    expect(status).toBe(1);
+    expect(output).toContain("no section for `coverage`");
   });
 
   it("fails on version history in a rendered page, naming file and line", () => {

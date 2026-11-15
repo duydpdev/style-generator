@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: 6bcf286d6fb1 -->
+<!-- source: documents/reference/ui.md sha256: acbd6fe8d2ff -->
 
 # UI kit (./ui)
 
@@ -21,7 +21,7 @@ import {
   splitLayout,
 } from "@duydpdev/style-generator/ui";
 
-// `tokens` = createDesignTokens(theme, options).DesignTokens.Web
+// `tokens` = the `tokens` export of the generated `theme.tokens.ts`
 import { tokens } from "./tokens";
 
 // 1. One `cn` per theme: a later `rounded-pill` replaces `rounded-md`.
@@ -130,14 +130,12 @@ A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows 
 export declare type RecipeVariantProps<T extends RecipeTables> = Readonly<{
   [K in keyof T["variants"]]?:
     | VariantOptionValue<keyof T["variants"][K]>
-    | boolean
-    | number
     | null
     | undefined;
 }>;
 ```
 
-Call props of a recipe: every variant name of `T`, its option keys as values (`"true"`/`"false"` keys mean boolean).
+Call props of a recipe: every variant name of `T`, only the option keys of its table as values (`"true"`/`"false"` keys mean boolean, a numeric key also takes its number or string form).
 
 <!-- /signature -->
 

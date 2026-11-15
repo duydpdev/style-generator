@@ -7,7 +7,8 @@
       "items": {
         "type": "string",
         "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
-      }
+      },
+      "description": "Not checked by this JSON Schema: `generate`, `style-gen doctor` and the bundler plugins also require each entry to name a screen: a key of `screens` or one of the default screens."
     },
     "screens": {
       "type": "object",
@@ -18,7 +19,8 @@
       "additionalProperties": {
         "type": "string",
         "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
-      }
+      },
+      "description": "Not checked by this JSON Schema: `generate`, `style-gen doctor` and the bundler plugins also require every screen, merged with the default screens, to use one unit."
     },
     "enableResponsive": {
       "type": "boolean"
@@ -58,53 +60,237 @@
     },
     "coverage": {
       "type": "object",
-      "propertyNames": {
-        "type": "string",
-        "enum": [
-          "colors",
-          "typography",
-          "shadows",
-          "backdropBlurs",
-          "borderRadius",
-          "fontFamily",
-          "borderWidth"
-        ]
-      },
-      "additionalProperties": {
-        "anyOf": [
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "prefixes": {
-                "minItems": 1,
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "keys": {
-                "type": "string",
-                "enum": [
-                  "aliased",
-                  "all"
-                ]
-              },
-              "opacities": {
-                "minItems": 1,
-                "type": "array",
-                "items": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 100
-                }
-              }
+      "additionalProperties": false,
+      "properties": {
+        "colors": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
-            "additionalProperties": false
-          }
-        ]
+            {
+              "type": "object",
+              "properties": {
+                "prefixes": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "bg",
+                      "text",
+                      "border",
+                      "ring",
+                      "outline",
+                      "divide",
+                      "placeholder"
+                    ]
+                  }
+                },
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "aliased",
+                    "all"
+                  ]
+                },
+                "opacities": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "typography": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "shadows": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "prefixes": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "shadow"
+                    ]
+                  }
+                },
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "aliased",
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "backdropBlurs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "prefixes": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "backdrop-blur"
+                    ]
+                  }
+                },
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "aliased",
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "borderRadius": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "prefixes": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "rounded",
+                      "rounded-t",
+                      "rounded-r",
+                      "rounded-b",
+                      "rounded-l"
+                    ]
+                  }
+                },
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "aliased",
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fontFamily": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "prefixes": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "font"
+                    ]
+                  }
+                },
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "aliased",
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "borderWidth": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "prefixes": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "border",
+                      "border-x",
+                      "border-y",
+                      "border-t",
+                      "border-r",
+                      "border-b",
+                      "border-l",
+                      "border-s",
+                      "border-e",
+                      "divide-x",
+                      "divide-y"
+                    ]
+                  }
+                },
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "aliased",
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
       }
     },
     "resetTailwindDefaults": {

@@ -241,3 +241,14 @@ export function loadStyleGenConfig(root: string): LoadedStyleGenConfig {
   const file = readConfigFile(root);
   return { ...file, config: resolveConfig({}, file) };
 }
+
+/**
+ * The line a caller prints when it finds no config in `root`, so a wrong
+ * `root` (Nuxt's `app/` folder) or a misplaced file is visible instead of
+ * silently meaning "use the defaults".
+ * @param {string} root - The directory that was searched
+ * @returns {string} One sentence, no label prefix
+ */
+export function noConfigMessage(root: string): string {
+  return `No style-gen.config.json or package.json#style-gen found in ${root}; using the defaults.`;
+}

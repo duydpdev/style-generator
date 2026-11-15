@@ -1,3 +1,20 @@
+# [8.0.0](https://github.com/duydpdev/style-generator/compare/v7.2.1...v8.0.0) (2026-11-15)
+
+### Release
+
+- read all generator options from style-gen.config.json ([db409e6](https://github.com/duydpdev/style-generator/commit/db409e6baeb3b5dfb130458071c77bcc5308cf43))
+
+### Features
+
+- add a JSON Schema for style-gen.config.json and init --yes ([77f874c](https://github.com/duydpdev/style-generator/commit/77f874c61a52809a760c5cb23f22ece5d59226d0))
+- write theme.tokens.ts on every emit and add generate --check ([06a9dc8](https://github.com/duydpdev/style-generator/commit/06a9dc8745b5e43cd558eeaabfbc2dce1d17fd22))
+
+### Refactor
+
+- give every public symbol one import path ([722ec07](https://github.com/duydpdev/style-generator/commit/722ec07052ab8f073d241ca00bd738bcfaa89032))
+- remove migration helpers for versions that never reached npm ([7600042](https://github.com/duydpdev/style-generator/commit/7600042dfc7986498dc7f0f4975574c49056085e))
+- rename backDropBlurs to backdropBlurs ([40aa7c4](https://github.com/duydpdev/style-generator/commit/40aa7c4d24d9c9d1ae11dce235fec7b49f218586))
+
 # [7.2.1](https://github.com/duydpdev/style-generator/compare/v7.2.0...v7.2.1) (2026-11-14)
 
 ### Bug Fixes

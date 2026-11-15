@@ -156,37 +156,38 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./style-gen.options"; // one shared source of options, see "Build components"
 
 export default defineConfig({
-  plugins: [
-    react(),
-    styleGenVite({
-      themePath: "src/theme/theme.json",
-      outDir: "src/theme", // must match the @import path in your CSS
-      options,
-    }),
-    tailwindcss(),
-  ],
+  plugins: [react(), styleGenVite(), tailwindcss()],
 });
 ```
 
-The plugin writes `theme.css` (atomically, only when the content changes) in the `buildStart` hook, i.e.
+```json
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "breakpoints": ["md", "lg"]
+}
+```
+
+`style-gen.config.json` (project root) is the one place for the generator options; `output` is the CSS file to write and must match the `@import` path in your CSS.
+The plugin takes no generator options: `style-gen.config.json` (or `package.json["style-gen"]`) at the Vite root carries `theme`, `output`, `tokensOutput` and every `generate()` option, the same file `style-gen generate` reads. Its only argument is `root`, for a project whose config lives outside Vite's root.
+The plugin writes `theme.css` and `theme.tokens.ts` (atomically, only when the content changes) in the `buildStart` hook, i.e.
 when the dev server starts and when a build begins; the theme is registered with Rollup (`this.addWatchFile`), so `vite build --watch` also rebuilds when the theme changes.
-In dev, every time you save the theme JSON the plugin rewrites the file (debounced) and only full-reloads the browser when the CSS actually changed.
+In dev, every time you save the theme JSON the plugin rewrites the files (debounced) and only full-reloads the browser when the CSS actually changed.
 An error in `buildStart` fails the build with a per-stage message (`Invalid JSON in …`, `Invalid options:`, `Invalid theme (<path>):`, `Invalid theme/options:`, `Cannot write …`).
-`themePath` may be an absolute path or sit outside the root (a theme shared across a monorepo); `outDir` must be inside the root.
-Add `theme.css` to `.gitignore` if the theme JSON is the source of truth.
+`theme` may be an absolute path or sit outside the root (a theme shared across a monorepo); `output` and `tokensOutput` must be inside the root.
+Add `theme.css` to `.gitignore` if the theme JSON is the source of truth, and **commit `theme.tokens.ts`**: app code imports `tokens` from it (see [Build components](#build-components)); `style-gen generate --check` in CI fails when it is missing or stale.
 
 Two notes about the dev server:
 
 - **Vite 5 needs `listen()`.** The dev server's `buildStart` only runs when `server.listen()` (or `middlewareMode`) is called;
   with `createServer()` followed by `ssrLoadModule` and no `listen()`, `theme.css` is not yet written on Vite 5.
   The plugin sets `perEnvironmentStartEndDuringDev`, so from Vite 6 onwards `buildStart` also runs in that case.
-- **The plugin reads the config only once**, when Vite loads its config. Editing `style-gen.config.json` (the no-argument form) while the dev server is running has no effect yet:
-  restart the dev server. Only the theme JSON file is watched.
+- **The config reloads in place.** Editing `style-gen.config.json` (or `package.json["style-gen"]`) while the dev server is running re-resolves the target, re-emits the files and reloads the page, without restarting the server.
+  An invalid edit is logged and the last valid config stays in force.
 
-Nuxt runs on Vite, so register the same plugin in `nuxt.config.ts → vite.plugins`. Nuxt 4 sets Vite's `root` to `app/` (`srcDir`), so relative paths are resolved from `app/`; use absolute paths:
+Nuxt runs on Vite, so register the same plugin in `nuxt.config.ts → vite.plugins`. Nuxt 4 sets Vite's `root` to `app/` (`srcDir`), so pass the project folder as `root` and keep `style-gen.config.json` there:
 
 ```typescript
 // nuxt.config.ts
@@ -194,31 +195,26 @@ import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./style-gen.options";
 
 export default defineNuxtConfig({
   css: ["~/assets/css/globals.css"],
   vite: {
     plugins: [
-      styleGenVite({
-        themePath: fileURLToPath(new URL("./theme.json", import.meta.url)),
-        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
-        options,
-      }),
+      styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) }),
       tailwindcss(),
     ],
   },
 });
 ```
 
-Complete example: `examples/harness` (Vite + React) shares the theme and options from `examples/design-system`;
+Complete example: `examples/harness` (Vite + React) shares the theme and tokens from `examples/design-system`;
 see [`examples/design-system/README.md`](../examples/design-system/README.md). The plain apps `examples/plain-react` and `examples/plain-nuxt` each own their theme;
 see [Components](./components.md#plain-examples-copy-these).
 
-**No arguments:** `styleGenVite()` reads `style-gen.config.json` (or `package.json["style-gen"]`) at the Vite root — `theme`,
-`output` (the CSS file to write) and every `generate()` option — so the CLI and the bundler share a single source of configuration.
+**Configuration:** `styleGenVite()` reads `style-gen.config.json` (or `package.json["style-gen"]`) at the Vite root — `theme`,
+`output` (the CSS file to write), `tokensOutput` and every `generate()` option — so the CLI and the bundler share a single source of configuration.
 A broken config or one that fails the schema throws `[style-gen-vite] Invalid config (<file>):` followed by each error line, and never silently falls back to defaults.
-When arguments are passed the config file is not read. The config file is read **once**, when the bundler loads its config (see above).
+The 7.x options `themePath`, `outDir` and `options` were removed in 8.0: passing one throws at call time (see the [migration guide](./migration/7.x-to-8.0.md)).
 
 ### Option 2: Next.js
 
@@ -226,25 +222,19 @@ When arguments are passed the config file is not read. The config file is read *
 // next.config.ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
-import { options } from "./style-gen.options";
 
 const nextConfig: NextConfig = {};
 
-export default styleGenNext({
-  themePath: "app/theme/theme.json",
-  outDir: "app/theme",
-  options,
-})(nextConfig);
+export default styleGenNext()(nextConfig);
 ```
 
-Works with both webpack and Turbopack, and does not import `next`, so it adds no peer dependency. It writes `theme.css` only when Next loads the config in
+Works with both webpack and Turbopack, and does not import `next`, so it adds no peer dependency. It reads `style-gen.config.json` (or `package.json["style-gen"]`) from `process.cwd()` like Vite does (`root` is its only option) and writes `theme.css` and `theme.tokens.ts` only when Next loads the config in
 `phase-development-server` (`next dev`, with a watcher) or `phase-production-build` (`next build`); other phases (`next start`, export,
 …) return the config without reading the theme. `nextConfig` can be an object or a function `(phase, { defaultConfig }) => config` (called with Next's own arguments).
-The no-argument `styleGenNext()` reads `style-gen.config.json` from `process.cwd()` like Vite does, and also only **once** when Next loads the config (after editing the config
-file, restart `next dev`). The `next dev` watcher does not die when the theme is temporarily invalid (the error is logged and the old `theme.css` is kept) and is replaced when the
-config reloads with a different theme/output. `themePath` may be absolute or outside the project, while `outDir` must be inside the project;
+Editing the config file while `next dev` runs reloads it in place (an invalid edit keeps the last valid config). The `next dev` watcher does not die when the theme is temporarily invalid (the error is logged and the old `theme.css` is kept) and is replaced when the
+config is evaluated again with a different theme/output. `theme` may be absolute or outside the project, while `output` and `tokensOutput` must be inside the project;
 a leading `/` is no longer rewritten into a relative path. Limitation: the path guard does not `realpath` symlinks.
-When the theme and options live in a workspace package (like `examples/design-system`), add that package to Next's `transpilePackages`.
+When the theme lives in a workspace package (like `examples/design-system`), add that package to Next's `transpilePackages`.
 
 ### Option 3: CLI
 
@@ -264,7 +254,7 @@ Do not run the CLI through `npx`: the name `style-gen` is not held by anyone on 
 Flags are parsed **strictly**: an unknown flag (`--them`) is an error rather than being ignored. Exit codes: `0` success / `--help` / `--version` / prompt cancelled,
 `1` error (`budget` uses `2` for a usage error, see below).
 
-`generate` flags: `--theme <path>`, `--out <path>`, `-w`/`--watch`. Configuration is resolved per key in this order:
+`generate` flags: `--theme <path>`, `--out <path>`, `-w`/`--watch`, `--check`. `generate` writes `theme.css` and the typed `theme.tokens.ts` (`tokensOutput`, default beside `output`); `--check` writes nothing and exits 1 when the tokens file is missing or stale. Configuration is resolved per key in this order:
 flags → config file → defaults (`styles/theme.json` → `styles/theme.css`). The config file is one of two sources, chosen _either/or_: `style-gen.config.json` if it exists,
 otherwise `package.json["style-gen"]`; the two sources are never merged (a broken `style-gen.config.json` is reported as an error rather than falling through to `package.json`).
 The config file is validated with the same schema as the `generate()` options: a mistyped key (`breakpoint` instead of `breakpoints`) or an invalid value makes `generate` print
@@ -277,16 +267,16 @@ stops there (later steps would run on wrong defaults) and exits with code 1. A c
 A theme that cannot be read at startup (missing file, is a directory) or an invalid config at startup exits with code 1 before the watcher is created; once watching,
 theme/write errors are only logged.
 
-`tokens` writes `theme.tokens.ts` (`export const tokens = {…} as const`) containing only the **keys** of `DesignTokens.Web` (one array of camelCase keys per category,
+`tokens` writes only `theme.tokens.ts` (`export const tokens = {…} as const`), the **keys** of `DesignTokens.Web` (one array of camelCase keys per category,
 plus `breakpoints`, `screens`, `spacingProperties`), so client bundles do not have to carry the `./tokens` runtime and the theme JSON (about 2.4 kB gzip versus about 0.6 kB).
-By default it is written next to the theme and must be inside the project (a theme outside the project needs `--out`); re-run it when the theme's keys change.
+Its default output is the config's `tokensOutput`, else `theme.tokens.ts` beside `output`, and it must be inside the project; `generate` and the plugins write the same file, so run `tokens` only to write it alone.
 
 `budget <file.css|dir> --max-gzip <bytes>` sums the gzip size of every `.css` file (recursively if given a directory) and prints `OK: …` or `OVER BUDGET: …`.
 Exit code `0` within budget, `1` over budget, `2` for a usage error, an unreadable target or no CSS found. This command replaces the `check-css-budget.mjs` script that consumers used to
 copy.
 
 `init` prints the wiring for the stack it detects (`nuxt.config.*`, `next.config.*`, `vite.config.*`):
-the no-argument `styleGenVite()`/`styleGenNext()` snippet of Options 1 and 2 (absolute paths for Nuxt), or `style-gen generate` when there is no bundler config;
+the no-argument `styleGenVite()`/`styleGenNext()` snippet of Options 1 and 2 (`styleGenVite({ root })` for Nuxt), or `style-gen generate` when there is no bundler config;
 it never edits the bundler config. `doctor` checks the theme × options pair (`❌ Invalid theme/options`), treats an `output` that escapes the root as an error,
 and prints an `$alias` suggestion when an override in `themeAxes` repeats the literal value of another key in the base.
 
@@ -544,12 +534,13 @@ details in [`examples/design-system/README.md`](../examples/design-system/README
 `./types`), never pulling Zod or Node into the client bundle.
 
 ```text
-src/theme.json         → theme (source of truth)
-src/style-gen.options.ts → shared options (bundler, tokens, recipe)
-src/tokens.ts          → createDesignTokens(theme, options)
-src/recipes/*.ts       → headless recipes (cva + createVariantMapper)
-src/cn.ts              → clsx + tailwind-merge aware of the theme's tokens
-src/axes.ts            → themeAxisAttributes<Theme>
+src/theme.json            → theme (source of truth)
+style-gen.config.json     → every generator option (bundler plugin, CLI)
+src/theme.tokens.ts       → generated by the plugin / `style-gen generate` (commit it)
+src/tokens.ts             → re-exports `tokens` (browser-safe typed keys)
+src/recipes/*.ts          → headless recipes (cva + createVariantMapper)
+src/cn.ts                 → clsx + tailwind-merge aware of the theme's tokens
+src/axes.ts               → themeAxisAttributes(state) typed by ThemeAxesState
 ```
 
 ### 1. Theme
@@ -563,38 +554,33 @@ export type Theme = typeof themeJson; // input of ColorVariant<Theme>, ThemeAxes
 export const theme = themeJson;
 ```
 
-### 2. Shared options: `style-gen.options.ts`
+### 2. Generator options: `style-gen.config.json`
 
-Every place that calls `generate()` (Vite plugin, Next plugin, `createDesignTokens`, the recipe types) must see the **same** options,
-otherwise `@source inline` and the tokens drift apart. Put them in a module with no dependencies:
+Every consumer of the options (Vite plugin, Next plugin, CLI, the generated tokens) reads the **same** file, so `@source inline` and the tokens cannot drift apart. The options live in `style-gen.config.json` (or `package.json["style-gen"]`), not in a TypeScript module:
 
-```typescript
-// src/style-gen.options.ts
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
-
-export const options = {
-  breakpoints: ["md", "lg"],
-} as const satisfies StyleGeneratorOptions;
+```json
+{
+  "theme": "src/theme.json",
+  "output": "src/styles/theme.css",
+  "tokensOutput": "src/theme.tokens.ts",
+  "breakpoints": ["md", "lg"]
+}
 ```
 
-Use `as const satisfies` with `import type`, not `defineOptions()`: `defineOptions` exists only at the root `.` (it pulls Zod into the browser bundle),
-while this file is loaded both by the bundler config under Node (type stripping) and in the browser.
-The literal `breakpoints` tuple is what narrows `BreakpointKeys<typeof options>` to `"md" | "lg"`. If the project also uses the CLI (`style-gen generate`),
-`style-gen.config.json` must repeat these values; the example has a test so the two copies do not drift apart.
+The literal `breakpoints` array is what narrows `(typeof tokens)["breakpoints"][number]` to `"md" | "lg"` in the generated tokens file.
 
 ### 3. Tokens
 
-`generate()` returns `tokens`; to use them on the client, build a separate, browser-safe set with `createDesignTokens` from `./tokens`:
+The plugin (and `style-gen generate`) writes the browser-safe set next to the CSS as `theme.tokens.ts`; commit it and import `tokens` from it. It is built from the theme and the config by the same code as `createDesignTokens`, so the two cannot drift:
 
 ```typescript
 // src/tokens.ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
+import { tokens } from "./theme.tokens";
 
-import { options } from "./style-gen.options";
-import themeJson from "./theme.json";
-
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+export { tokens };
 ```
+
+Call `createDesignTokens(theme, options)` from `./tokens` only for a second theme created at runtime.
 
 **Tokens in `DesignTokens.Web`:**
 
@@ -703,18 +689,17 @@ export const cn = createCn(tokens);
 
 ### 6. Enabling theme axes on the DOM: `themeAxisAttributes`
 
-`themeAxisAttributes<Theme>(state)` returns the `data-<axis-kebab>` attributes of the active axes, typed from `theme.json`; `"base"` or an omitted axis emits nothing.
+`themeAxisAttributes(state)` returns the `data-<axis-kebab>` attributes of the active axes; `"base"` or an omitted axis emits nothing. Type `state` with `ThemeAxesState` from the generated `theme.tokens.ts`, which lists the axes and variants of `theme.json`.
 It uses the same attribute-name formula as the CSS selectors, so the DOM and the CSS do not drift apart:
 
 ```typescript
 // src/axes.ts
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
-import type { ThemeAxesState } from "@duydpdev/style-generator/types";
 
-import type { Theme } from "./tokens";
+import type { ThemeAxesState } from "./theme.tokens";
 
-export const axisAttributes = (state: ThemeAxesState<Theme>) =>
-  themeAxisAttributes<Theme>(state);
+export const axisAttributes = (state: ThemeAxesState) =>
+  themeAxisAttributes(state);
 
 axisAttributes({ theme: "highContrast", palette: "forest" });
 // { "data-theme": "high-contrast", "data-palette": "forest" }
@@ -725,7 +710,7 @@ Spread the result onto `<html>` (React: `<html {...axisAttributes(state)}>`; Nux
 ### 7. Spacing props: `splitSpacingProps`
 
 A component that accepts spacing props (`p`, `px`, `gap`, …, a number or `{ base, md, lg }`) separates them from the rest with `splitSpacingProps` from `./recipes`;
-the type `SpacingProps<BreakpointKeys<typeof options>>` takes its breakpoint keys from options, so `{ xl: 4 }` is a type error when `xl` is not in `breakpoints`:
+the type `SpacingProps<(typeof tokens)["breakpoints"][number]>` takes its breakpoint keys from the generated tokens, so `{ xl: 4 }` is a type error when `xl` is not in `breakpoints`:
 
 ```typescript
 import { splitSpacingProps } from "@duydpdev/style-generator/recipes";

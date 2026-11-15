@@ -45,6 +45,7 @@ yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn pret
 yarn tsc --noEmit   # Type check
 yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
+yarn check:tokens   # after build:all: `generate --check` in each app that commits a theme.tokens.ts (plain-react, plain-nuxt, design-system, site) — fails when one is stale (CI)
 yarn check:next-build   # after build:all, needs network: packed tarball + next@16.4.5 in a scratch project, init + `next build` (Turbopack) through styleGenNext (CI node-floor)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
@@ -213,8 +214,11 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `isPlainObject`) and is imported only by `src/cli/**`, `src/features/vite/**` and `src/features/next/**`; never from `src/core`,
   the browser-safe exports or the root barrel (it would leak `node:*`/chokidar into `dist/index.js`; `check:browser-safe` and `check:sizes` catch it).
   `resolveProjectPath(root, input, label, { allowOutsideRoot })` replaces the old `resolveSafePath`,
-  normalises every path through `resolve(root, input)` (absolute ones too) and does NOT rewrite a leading `/`: `themePath`/`--theme` may be absolute or outside the root,
-  `outDir`/`output`/`--out` must stay inside it. `generate()` is `prepareGenerate()` (validation) + `generateFromParsed()` (CSS only; `generate()` builds `tokens`/`schema` itself);
+  normalises every path through `resolve(root, input)` (absolute ones too) and does NOT rewrite a leading `/`: `theme`/`--theme` may be absolute or outside the root,
+  `output`/`tokensOutput`/`--out` must stay inside it. `styleGenVite()`/`styleGenNext()` take only `{ root }` (the directory holding the config; Nuxt passes the project folder because it sets Vite's root to `app/`):
+  `resolvePluginTarget(root, label)` reads `style-gen.config.json` (else `package.json#style-gen`) exactly like the CLI, so `theme`, `output`, `tokensOutput` and every `generate()` option live there, and a config edit is reloaded in place (re-resolve, re-register, re-emit, full reload; an invalid edit keeps the last target).
+  The plugins write `theme.css` and `theme.tokens.ts` (the typed `tokens` plus `ThemeAxesState`; apps import them from that file instead of calling `createDesignTokens`); the file is committed in apps that import it (`yarn check:tokens` fails when it is stale) and git-ignored where nothing imports it (harness).
+  `generate()` is `prepareGenerate()` (validation) + `generateFromParsed()` (CSS only; `generate()` builds `tokens`/`schema` itself);
   the emitter calls the two separately to label the failing stage (`read`, `parse`, `options`, `theme`, `cross`, `generate`, `write`; the watcher adds `config`, `watch`).
 - CLI (`src/cli/`): `run.ts` holds the command registry (`init`, `generate`, `doctor`, `schema`, `tokens`, `budget`),
   `runCli(args, cwd)` returns the exit code (0 ok/help/version/cancel, 1 failure, `budget` 2 for usage) and parses flags strictly per command;

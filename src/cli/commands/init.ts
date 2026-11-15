@@ -288,16 +288,20 @@ function printNextSteps(
   rules: boolean,
 ): void {
   const outDir = path.posix.dirname(written.output);
+  const tokensFile = path.posix.join(outDir, "theme.tokens.ts");
   const exclude = rules ? AGENT_DIR : undefined;
   const entry = cssEntryFor(detected, written.output, cwd);
   if (detected.stack === "none") {
     logger.info(
       `📝 Next steps (no vite.config.*, next.config.* or nuxt.config.* found):
    1. Edit ${written.theme} with your design tokens
-   2. Write ${written.output}: \`yarn style-gen generate\` (add --watch while you edit the theme)
-   3. Import it next to Tailwind from a CSS file in ${outDir}/:`,
+   2. Write ${written.output} and ${tokensFile}: \`yarn style-gen generate\` (add --watch while you edit the theme)
+   3. Import the CSS next to Tailwind from a CSS file in ${outDir}/:`,
     );
     logger.log(getCssImport(cwd, entry, written.output, exclude));
+    logger.info(
+      `   4. Commit ${tokensFile} and add ${written.output} to .gitignore`,
+    );
     printRulesNote(rules);
     return;
   }
@@ -306,24 +310,16 @@ function printNextSteps(
    1. Edit ${written.theme} with your design tokens
    2. Add the plugin to ${detected.configFile} (merge it into your config; init never edits it):`,
   );
-  logger.log(getBundlerSnippet(detected, { theme: written.theme, outDir }));
-  if (detected.stack === "nuxt") {
-    logger.info(
-      "   With explicit paths the plugin does not read style-gen.config.json; that file then serves only the CLI (generate, doctor, tokens).",
-    );
-    const appDir = fs.existsSync(path.resolve(cwd, "app"));
-    if (appDir && !written.output.startsWith("app/")) {
-      logger.warn(
-        `${written.output} is outside app/: Nuxt 4 sets Vite's root to app/ and styleGenVite writes only inside it, so the dev server will reject this outDir. Re-run init with --theme under app/ (default app/assets/css/theme.json).`,
-      );
-    }
-  }
+  logger.log(getBundlerSnippet(detected));
   logger.info(
     `   3. Import the generated CSS next to Tailwind in ${entry} (or the CSS file in ${path.posix.dirname(entry)}/ that imports Tailwind):`,
   );
   logger.log(getCssImport(cwd, entry, written.output, exclude));
   logger.info(
-    `   4. Start the dev server: it writes ${written.output} and rewrites it on every theme save`,
+    `   4. Start the dev server: it writes ${written.output} and ${tokensFile} and rewrites them on every theme or config save`,
+  );
+  logger.info(
+    `   5. Commit ${tokensFile} and add ${written.output} to .gitignore`,
   );
   printRulesNote(rules);
 }

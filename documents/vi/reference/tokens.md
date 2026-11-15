@@ -1,4 +1,4 @@
-<!-- source: documents/reference/tokens.md sha256: 0b02a5e87fd1 -->
+<!-- source: documents/reference/tokens.md sha256: 6f6bc10c93f5 -->
 
 # Design token (./tokens)
 
@@ -61,18 +61,7 @@ const { DesignTokens } = createDesignTokens(theme, {
 
 Mỗi mảng được đặt tên theo trường `ThemeConfig` tương ứng (`DesignTokens.Web.colors` chứa các key của `theme.colors`); `spacingProperties`, `breakpoints` và `screens` đến từ options. Mọi mảng đều là `readonly`, và options được suy luận kiểu dưới dạng literal (`generate`, `createDesignTokens` và `defineOptions` nhận `const O`): `createDesignTokens(theme, { breakpoints: ["md", "xl"] }).DesignTokens.Web.breakpoints` có kiểu `readonly ("md" | "xl")[]`. Options được chú thích kiểu là `StyleGeneratorOptions` sẽ nới rộng kiểu thành `readonly string[]`, và việc truyền tham số kiểu tường minh chỉ cho theme cũng làm như vậy (`createDesignTokens<typeof theme>(theme, { breakpoints: ["xl"] })`): hãy bỏ tham số kiểu để giữ lại các kiểu literal. Khi không có `options`, các giá trị mặc định sẽ được áp dụng (`readonly ("md" | "lg")[]`). `aliasedColors` được tính toán tại runtime từ bản ghi gốc và mọi override; kiểu của nó giữ lại từng key có giá trị là một literal `$…` hoặc một `string` thuần túy. Các kiểu tương ứng là `DesignTokensWeb<TTheme, O>` và `DesignTokensResult<TTheme, O>`.
 
-**Một module options duy nhất.** Plugin bundler, `createDesignTokens` và các kiểu của recipe phải nhìn thấy cùng một options, nếu không độ bao phủ `@source inline` và các mảng token sẽ bị lệch nhau. Hãy đặt chúng trong một module không có dependency, có kiểu với `as const satisfies` và chỉ dùng import dạng type (`defineOptions` nằm ở entry gốc, vốn sẽ kéo Zod vào bundle trình duyệt):
-
-```ts
-// style-gen.options.ts
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
-
-export const options = {
-  breakpoints: ["md", "lg"],
-} as const satisfies StyleGeneratorOptions;
-```
-
-Import nó trong `vite.config.ts` / `next.config.ts` ([Vite](./vite.md), [Next](./next.md)) và trong `createDesignTokens(theme, options)`; `style-gen.config.json` phải lặp lại các giá trị tương tự nếu bạn cũng dùng CLI. Xem [`examples/design-system`](../../../examples/design-system/README.md).
+**Một file cấu hình duy nhất.** Các plugin bundler, `style-gen generate` và `theme.tokens.ts` được sinh ra đọc cùng một `style-gen.config.json` (hoặc `package.json["style-gen"]`), nên độ bao phủ `@source inline` và các mảng token không thể lệch nhau. Các plugin và `style-gen generate` ghi các key token an toàn trên trình duyệt vào `theme.tokens.ts`; hãy commit nó và import `tokens` từ đó ([Vite](./vite.md), [Next](./next.md)). Chỉ gọi `createDesignTokens(theme, options)` cho một theme thứ hai được tạo lúc runtime. Xem [`examples/design-system`](../../../examples/design-system/README.md).
 
 ## `Breakpoint`, `defaultScreens`
 

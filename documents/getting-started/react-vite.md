@@ -7,27 +7,26 @@ This tutorial wires `@duydpdev/style-generator` into a Vite + React app and buil
 Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`; the Vite setup below also imports `tailwindcss`, `@tailwindcss/vite` and `@vitejs/plugin-react`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
+yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
 ```
 
 ## Own the theme
 
-The theme JSON is [`src/theme/theme.json`](../../examples/plain-react/src/theme/theme.json) (not embedded here). `src/theme.ts` turns it into typed tokens and the `cn` helper, using the `options` literal of `src/options.ts`. That module imports no JSON, so `vite.config.ts` can import it without restarting the dev server on every theme edit:
+The theme JSON is [`src/theme/theme.json`](../../examples/plain-react/src/theme/theme.json) (not embedded here). `src/theme.ts` turns it into the `theme` type and the `cn` helper, and re-exports the typed `tokens` that the plugin writes to `src/theme/theme.tokens.ts` (commit that file; `style-gen generate --check` fails in CI when it is stale):
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -35,7 +34,7 @@ export const cn = createCn(tokens);
 
 ## Generate theme.css with the Vite plugin
 
-`styleGenVite` writes `src/theme/theme.css` when the dev server or a build starts and whenever the theme file changes. It takes the same `options` literal that `src/options.ts` exports and `src/theme.ts` passes to `createDesignTokens`; `style-gen.config.json` repeats it for the `generate` CLI (`check:plain-ui` keeps the two equal):
+`styleGenVite()` takes no generator options: it reads `style-gen.config.json` at the project root, the same file `style-gen generate` reads. It writes `src/theme/theme.css` and `src/theme/theme.tokens.ts` when the dev server or a build starts and whenever the theme file or the config changes:
 
 <!-- embed: examples/plain-react/vite.config.ts#vite-config -->
 
@@ -44,28 +43,21 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./src/options";
 
-// One literal `options` (src/options.ts, no JSON import, so a theme edit does
-// not restart the dev server) feeds the plugin and the typed tokens;
-// style-gen.config.json holds the same steps for the `generate` CLI.
+// Theme, output and generator options live in style-gen.config.json.
 export default defineConfig({
-  plugins: [
-    react(),
-    styleGenVite({
-      themePath: "src/theme/theme.json",
-      outDir: "src/theme",
-      options,
-    }),
-    tailwindcss(),
-  ],
+  plugins: [react(), styleGenVite(), tailwindcss()],
 });
 ```
 
 <!-- embed: examples/plain-react/style-gen.config.json -->
 
 ```json
-{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
+}
 ```
 
 ## Import the CSS

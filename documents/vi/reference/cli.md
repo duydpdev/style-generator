@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 8dea698915e4 -->
+<!-- source: documents/reference/cli.md sha256: cddbb4b49bb2 -->
 
 # CLI
 
@@ -22,14 +22,14 @@ Nếu theme hoặc schema đã tồn tại, nó sẽ hỏi trước khi ghi đè
 
 Sau đó nó sẽ tìm file cấu hình bundler trong thư mục gốc của dự án theo thứ tự sau, rồi in ra đoạn mã cần thêm vào đó cùng các dòng CSS (hai dòng `@import`, thêm `@source not "<path>/.claude";` khi file [rules cho agent](#rules-cho-agent) tồn tại):
 
-| File cấu hình tìm thấy | Đoạn mã nối dây được in ra                                                                                                           | Dòng `@import` được in ra cho                                         |
-| :--------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
-| `nuxt.config.*`        | `styleGenVite({ themePath, outDir, options: {} })` trong `vite.plugins` với đường dẫn tuyệt đối, và `css: ["~/assets/css/main.css"]` | `app/assets/css/main.css` (`assets/css/main.css` nếu không có `app/`) |
-| `next.config.*`        | `styleGenNext()(nextConfig)`                                                                                                         | `app/globals.css` (`src/app/globals.css` khi có `src/app/`)           |
-| `vite.config.*`        | `styleGenVite()` đứng trước `tailwindcss()` trong `plugins`                                                                          | `src/index.css` (`index.css` nếu không có `src/`)                     |
-| không có               | `yarn style-gen generate` (`--watch` trong khi bạn chỉnh sửa theme)                                                                  | một file CSS cạnh file `theme.css` được sinh ra                       |
+| File cấu hình tìm thấy | Đoạn mã nối dây được in ra                                                                                     | Dòng `@import` được in ra cho                                         |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| `nuxt.config.*`        | `styleGenVite({ root })` trong `vite.plugins` với `root` là thư mục dự án, và `css: ["~/assets/css/main.css"]` | `app/assets/css/main.css` (`assets/css/main.css` nếu không có `app/`) |
+| `next.config.*`        | `styleGenNext()(nextConfig)`                                                                                   | `app/globals.css` (`src/app/globals.css` khi có `src/app/`)           |
+| `vite.config.*`        | `styleGenVite()` đứng trước `tailwindcss()` trong `plugins`                                                    | `src/index.css` (`index.css` nếu không có `src/`)                     |
+| không có               | `yarn style-gen generate` (`--watch` trong khi bạn chỉnh sửa theme)                                            | một file CSS cạnh file `theme.css` được sinh ra                       |
 
-`*` là `.ts`, `.mts`, `.cts`, `.js`, `.mjs` hoặc `.cjs`; chỉ các file nằm trực tiếp tại thư mục gốc của dự án mới được tính (có hỗ trợ symlink). Cấu hình framework được ưu tiên hơn `vite.config.*` vì các ứng dụng Next.js và Nuxt thường giữ lại một file cho Vitest. `styleGenVite()` và `styleGenNext()` khi gọi không có đối số sẽ đọc `style-gen.config.json` từ thư mục gốc của Vite và từ `process.cwd()`, nhờ đó theme, output và mọi tùy chọn vẫn nằm trong file đó. Nuxt 4 đặt thư mục gốc của Vite thành `app/`, và `styleGenVite` chỉ ghi bên trong thư mục gốc đó, vì vậy đoạn mã cho Nuxt truyền đường dẫn tuyệt đối và theme của Nuxt mặc định là `app/assets/css/theme.json`; với thư mục `app/`, một `--theme` nằm ngoài nó sẽ in cảnh báo (mã thoát 0) vì dev server sẽ từ chối `outDir` đó. Khi truyền đường dẫn tường minh, plugin sẽ không đọc `style-gen.config.json`: hãy đặt các tùy chọn generator vào `options: {}` trong đoạn mã; khi đó `style-gen.config.json` chỉ phục vụ CLI (`generate`, `doctor`, `tokens`). Mọi đường dẫn được in ra hoặc lưu trữ đều tương đối với thư mục gốc của dự án và dùng dấu phân cách `/` (một `--theme` tuyệt đối nằm trong thư mục gốc sẽ được lưu dưới dạng tương đối), và các đường dẫn bên trong chuỗi string in ra đều được escape dạng JSON. Các đoạn mã dùng cú pháp ES module; một cấu hình CommonJS (`.cjs`, hoặc `.js` không có `"type": "module"`) sẽ nạp các hàm tương tự bằng `require()`. Một file `next.config.*` bằng JavaScript sẽ nhận comment JSDoc `@type` thay vì `import type`.
+`*` là `.ts`, `.mts`, `.cts`, `.js`, `.mjs` hoặc `.cjs`; chỉ các file nằm trực tiếp tại thư mục gốc của dự án mới được tính (có hỗ trợ symlink). Cấu hình framework được ưu tiên hơn `vite.config.*` vì các ứng dụng Next.js và Nuxt thường giữ lại một file cho Vitest. `styleGenVite()` và `styleGenNext()` không nhận tùy chọn nào ngoài `root`, thư mục chứa `style-gen.config.json` (mặc định: thư mục gốc của Vite và `process.cwd()`), nhờ đó theme, output, file tokens và mọi tùy chọn của generator đều nằm trong đúng một file đó; dev server đang chạy sẽ nhận thay đổi của file config. Nuxt 4 đặt thư mục gốc của Vite thành `app/`, nên đoạn mã cho Nuxt truyền `root` (thư mục dự án) và theme của Nuxt mặc định là `app/assets/css/theme.json`. Sau khi nối dây, hãy chạy `yarn style-gen generate` một lần và commit file `theme.tokens.ts` được sinh ra; giữ `theme.css` trong danh sách ignore. Mọi đường dẫn được in ra hoặc lưu trữ đều tương đối với thư mục gốc của dự án và dùng dấu phân cách `/` (một `--theme` tuyệt đối nằm trong thư mục gốc sẽ được lưu dưới dạng tương đối), và các đường dẫn bên trong chuỗi string in ra đều được escape dạng JSON. Các đoạn mã dùng cú pháp ES module; một cấu hình CommonJS (`.cjs`, hoặc `.js` không có `"type": "module"`) sẽ nạp các hàm tương tự bằng `require()`. Một file `next.config.*` bằng JavaScript sẽ nhận comment JSDoc `@type` thay vì `import type`.
 
 ```bash
 yarn style-gen init            # Interactive mode
@@ -88,7 +88,7 @@ export default styleGenNext()(nextConfig);
 
 #### Nuxt
 
-Nuxt 4 đặt root của Vite là `app/`, nên theme nằm ở `app/assets/css/theme.json` và plugin nhận đường dẫn tuyệt đối. Khi truyền đường dẫn tường minh, plugin không đọc `style-gen.config.json` (file đó khi ấy chỉ phục vụ CLI): hãy đặt các tùy chọn của generator vào `options`.
+Nuxt 4 đặt root của Vite là `app/`, nên theme nằm ở `app/assets/css/theme.json` và plugin nhận `root`, thư mục dự án chứa `style-gen.config.json`. Hãy đặt các tùy chọn của generator vào file đó.
 
 ```ts
 // nuxt.config.ts
@@ -101,14 +101,8 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   vite: {
     plugins: [
-      // Absolute paths: Nuxt 4 sets Vite's root to app/.
-      styleGenVite({
-        themePath: fileURLToPath(
-          new URL("./app/assets/css/theme.json", import.meta.url),
-        ),
-        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
-        options: {}, // style-gen.config.json is NOT read when paths are passed; put generate() options here
-      }),
+      // Nuxt 4 sets Vite's root to app/: root is the folder with style-gen.config.json.
+      styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) }),
       tailwindcss(),
     ],
   },

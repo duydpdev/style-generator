@@ -7,27 +7,26 @@ This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopa
 Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Own the theme
 
-The theme JSON is `src/theme/theme.json` (not shown here). `src/theme.ts` turns it into typed tokens and the `cn` helper, using the `options` literal of `src/options.ts`. That module imports no JSON, so `next.config.ts` can import it without reloading the config on every theme edit:
+The theme JSON is `src/theme/theme.json` (not shown here). `src/theme.ts` turns it into the `theme` type and the `cn` helper, and re-exports the typed `tokens` that `style-gen generate` (and `styleGenNext` on `next dev`/`next build`) writes to `src/theme/theme.tokens.ts`. Run `yarn style-gen generate` once and commit that file; `style-gen generate --check` fails in CI when it is stale:
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -35,14 +34,18 @@ export const cn = createCn(tokens);
 
 ## Generate theme.css with the Next.js wrapper
 
-`styleGenNext` writes `src/theme/theme.css` when `next dev` or `next build` loads the config; a theme inside the app needs no `transpilePackages`.
+`styleGenNext()` takes no generator options: it reads `style-gen.config.json` (or `package.json["style-gen"]`) from the project root, the same file `style-gen generate` reads. It writes `src/theme/theme.css` and `src/theme/theme.tokens.ts` when `next dev` or `next build` loads the config; a theme inside the app needs no `transpilePackages`.
 
-<!-- snippet: no-check imports ./src/options, the tutorial's own options module, which is not a checker fixture -->
+```json
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css"
+}
+```
 
 ```ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
-import { options } from "./src/options";
 
 const nextConfig: NextConfig = {};
 
@@ -50,15 +53,8 @@ const nextConfig: NextConfig = {};
 // plugin does not apply. `styleGenNext` does not import `next`, so it works
 // under both bundlers. It writes `src/theme/theme.css` when Next loads this
 // config in `phase-development-server` (`next dev`, which also watches the
-// theme JSON) or `phase-production-build` (`next build`). `options` comes from
-// `src/options.ts`, which imports no JSON (a theme edit must not reload this
-// config) and types the tokens with the same object; the `generate` CLI reads
-// the same steps from `style-gen.config.json`.
-export default styleGenNext({
-  themePath: "src/theme/theme.json",
-  outDir: "src/theme",
-  options,
-})(nextConfig);
+// theme JSON and the config file) or `phase-production-build` (`next build`).
+export default styleGenNext()(nextConfig);
 ```
 
 ## Import the CSS
@@ -312,11 +308,13 @@ import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
 
-import type { theme } from "./theme";
+import type { ThemeAxesState } from "./theme/theme.tokens";
 import { Button } from "./ui/button";
 
+const DARK_STATE: ThemeAxesState = { theme: "dark" };
+
 /** `{ "data-theme": "dark" }`; the light theme is the base theme (no attribute). */
-const DARK = themeAxisAttributes<typeof theme>({ theme: "dark" });
+const DARK = themeAxisAttributes(DARK_STATE);
 
 /** Light/dark toggle: sets or removes the `theme` axis attribute on `<html>`. */
 export function ThemeSwitch(): JSX.Element {

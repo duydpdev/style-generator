@@ -113,9 +113,8 @@ import {
   COLOR_STATES,
 } from "@duydpdev/style-generator/cva";
 import theme from "./theme.json";
-import { options } from "./style-gen.options";
 
-const { DesignTokens } = createDesignTokens(theme, options);
+const { DesignTokens } = createDesignTokens(theme);
 
 const bg = createVariantMapper("bg", DesignTokens.Web.colors);
 // { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }

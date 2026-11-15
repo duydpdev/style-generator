@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 6c869f582425 -->
+<!-- source: documents/agent-contract.md sha256: 747678a5aa5c -->
 
 # Hợp đồng cho agent
 
@@ -25,8 +25,8 @@ Mỗi quy tắc trên được schema của theme bắt buộc (`generate()`, `s
 
 ```text
 <theme JSON>                # the path `style-gen.config.json#theme` names (init default: src/styles/theme.json)
-src/options.ts              # export const options = { … } as const satisfies StyleGeneratorOptions; imports no JSON
-src/theme.ts                # export { theme, tokens, cn }; imports the theme JSON and ./options
+<theme>.tokens.ts           # written by `style-gen generate` and the bundler plugin beside the CSS (commit it); exports `tokens`
+src/theme.ts                # export { theme, tokens, cn }; imports the theme JSON and the generated tokens file
 src/ui/<kebab-name>/        # one folder per component, never a loose src/components/<Name>.tsx
   style.ts                  # intents, tables, recipe
   types.ts                  # <Name>OwnProps / <Name>Props
@@ -34,7 +34,7 @@ src/ui/<kebab-name>/        # one folder per component, never a loose src/compon
   index.ts                  # re-exports the component and its types
 ```
 
-`options.ts` lặp lại các option của generator trong `style-gen.config.json` (một object rỗng khi không có); config của bundler có thể import nó.
+Mọi tùy chọn của generator nằm trong `style-gen.config.json` (`theme`, `output`, `tokensOutput` và mọi tùy chọn của `generate()`); plugin chỉ nhận `root`. Chạy `yarn style-gen generate` một lần và commit file `theme.tokens.ts` mà nó ghi ra.
 
 Import được phép bên trong `src/ui/<folder>/`:
 
@@ -57,22 +57,21 @@ Import được phép bên trong `src/ui/<folder>/`:
 
 ## 4. Hợp đồng type
 
-`theme.ts` được viết một lần. `tokens` luôn đến từ `createDesignTokens(theme, options)` ở đây; không bao giờ import file do `style-gen tokens` ghi ra (nó lỗi thời sau mỗi lần sửa theme):
+`theme.ts` được viết một lần. `tokens` được import từ `theme.tokens.ts` được sinh ra; plugin bundler (và `style-gen generate`) ghi lại nó sau mỗi lần sửa theme, nên nó không bao giờ lỗi thời. Đừng gọi `createDesignTokens` trong app:
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);

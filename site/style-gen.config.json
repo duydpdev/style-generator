@@ -1,0 +1,6 @@
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "tokensOutput": "src/theme/theme.tokens.ts",
+  "breakpoints": ["md", "lg"]
+}

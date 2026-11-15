@@ -1,4 +1,4 @@
-<!-- source: documents/cookbook.md sha256: 4a837526c25c -->
+<!-- source: documents/cookbook.md sha256: 23121961bed5 -->
 
 # Công thức
 
@@ -50,10 +50,9 @@ writeFileSync("styles/theme.css", css, "utf8");
 import { ZodError } from "zod";
 import { generate, formatZodError } from "@duydpdev/style-generator";
 import theme from "./theme.json";
-import { options } from "./style-gen.options";
 
 try {
-  generate(theme, options);
+  generate(theme);
 } catch (e) {
   if (e instanceof ZodError) console.error(formatZodError(e));
   throw e;

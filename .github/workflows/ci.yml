@@ -63,6 +63,9 @@ jobs:
       - name: Build
         run: yarn build:all
 
+      - name: Check committed tokens
+        run: yarn check:tokens
+
       - name: Prepare plain-nuxt types
         # ESLint lints examples/plain-nuxt/app/**, whose tsconfig references
         # .nuxt/tsconfig.*.json. `nuxt prepare` writes them and needs dist/

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: e1812d014d25 -->
+<!-- source: documents/reference/recipes.md sha256: 7c7209adfe8e -->
 
 # Recipe (./recipes)
 
@@ -14,12 +14,10 @@ import {
   themeAxisAttributes,
   type SpacingProps,
 } from "@duydpdev/style-generator/recipes";
-import type { BreakpointKeys } from "@duydpdev/style-generator/types";
 
-// `theme` is your theme JSON, `options` the const object shared with the bundler
-// plugin, `tokens` = createDesignTokens(theme, options).DesignTokens.Web
-import { options } from "./style-gen.options";
-import { theme, tokens } from "./tokens";
+// `tokens` is the generated `theme.tokens.ts` (the bundler plugin and
+// `style-gen generate` write it from your theme and `style-gen.config.json`)
+import { tokens } from "./theme.tokens";
 
 // 1. `twMerge` that knows your custom tokens (`border-thin` is a width, not a color)
 export const twMerge = extendTailwindMerge(
@@ -27,16 +25,16 @@ export const twMerge = extendTailwindMerge(
 );
 
 // 2. Typed spacing props → `sp-*` class + inline `--sg-sp-*` style
-type BoxProps = SpacingProps<BreakpointKeys<typeof options>> & { id?: string };
+type BoxProps = SpacingProps<(typeof tokens)["breakpoints"][number]> & {
+  id?: string;
+};
 export const Box = (props: BoxProps) => {
   const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
   return <div {...rest} className={spacing.className} style={spacing.style} />;
 };
 
 // 3. DOM attributes of the active theme axes
-export const Root = () => (
-  <html {...themeAxisAttributes<typeof theme>({ theme: "dark" })} />
-);
+export const Root = () => <html {...themeAxisAttributes({ theme: "dark" })} />;
 ```
 
 Một phiên bản đầy đủ, đã được kiểm thử (`cn`, `axisAttributes`, các headless recipe của sáu component mẫu, CSS dùng chung) nằm trong [`examples/design-system`](../../../examples/design-system/README.md). [Component](../components.md) chỉ ra cách các component mẫu của `examples/harness` bọc các recipe này; [`guide.md`](../guide.md#xây-dựng-component) hướng dẫn từng bước qua quy trình đó. [`createCn`](./ui.md#createcn-cn) trong `./ui` bọc extension này cùng với `clsx`.
@@ -198,21 +196,23 @@ explicit literal keys give the narrowest result.
 <!-- signature: themeAxisAttributes -->
 
 ```ts
-export declare const themeAxisAttributes: <T extends ThemeConfig>(
-  state: ThemeAxesState<T>,
+export declare const themeAxisAttributes: (
+  state: Readonly<Record<string, string | undefined>>,
 ) => Readonly<Record<string, string>>;
 ```
 
 The DOM attributes that activate a theme's axis variants, mirroring the
 `html[data-<axis>="<variant>"]` selectors `generate()` emits. Spread the
-result on `<html>`, the element the selectors target:
+result on `<html>`, the element the selectors target. Type the state with
+`ThemeAxesState` from the generated `theme.tokens.ts`:
 
 ```tsx
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 
-const root = (
-  <html {...themeAxisAttributes({ theme: "dark", palette: "base" })} />
-);
+import type { ThemeAxesState } from "~/theme/theme.tokens";
+
+const state: ThemeAxesState = { theme: "dark", palette: "base" };
+const root = <html {...themeAxisAttributes(state)} />;
 // → data-theme="dark" (palette emits nothing)
 ```
 

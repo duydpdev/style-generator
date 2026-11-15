@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: 1f4814c84207 -->
+<!-- source: documents/getting-started/react-vite.md sha256: df0d43d627e1 -->
 
 # Bắt đầu: React + Vite
 
@@ -9,27 +9,26 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Vi
 Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`; phần thiết lập Vite bên dưới còn import `tailwindcss`, `@tailwindcss/vite` và `@vitejs/plugin-react`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
+yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
 ```
 
 ## Tự quản lý theme
 
-File theme JSON là [`src/theme/theme.json`](../../../examples/plain-react/src/theme/theme.json) (không được nhúng ở đây). `src/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `src/options.ts`. Module đó không import JSON, nên `vite.config.ts` import nó mà không làm dev server khởi động lại ở mỗi lần sửa theme:
+File theme JSON là [`src/theme/theme.json`](../../../examples/plain-react/src/theme/theme.json) (không được nhúng ở đây). `src/theme.ts` biến nó thành kiểu `theme` và helper `cn`, đồng thời re-export `tokens` có kiểu mà plugin ghi vào `src/theme/theme.tokens.ts` (hãy commit file đó; `style-gen generate --check` thất bại trong CI khi nó lỗi thời):
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -37,7 +36,7 @@ export const cn = createCn(tokens);
 
 ## Sinh theme.css bằng plugin Vite
 
-`styleGenVite` ghi `src/theme/theme.css` khi dev server hoặc một lần build khởi động và mỗi khi file theme thay đổi. Plugin nhận cùng literal `options` mà `src/options.ts` export và `src/theme.ts` truyền cho `createDesignTokens`; `style-gen.config.json` lặp lại nó cho CLI `generate` (`check:plain-ui` giữ hai bản bằng nhau):
+`styleGenVite()` không nhận tùy chọn generator nào: nó đọc `style-gen.config.json` ở root dự án, chính file mà `style-gen generate` đọc. Nó ghi `src/theme/theme.css` và `src/theme/theme.tokens.ts` khi dev server hoặc một lần build khởi động và mỗi khi file theme hay file config thay đổi:
 
 <!-- embed: examples/plain-react/vite.config.ts#vite-config -->
 
@@ -46,28 +45,21 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./src/options";
 
-// One literal `options` (src/options.ts, no JSON import, so a theme edit does
-// not restart the dev server) feeds the plugin and the typed tokens;
-// style-gen.config.json holds the same steps for the `generate` CLI.
+// Theme, output and generator options live in style-gen.config.json.
 export default defineConfig({
-  plugins: [
-    react(),
-    styleGenVite({
-      themePath: "src/theme/theme.json",
-      outDir: "src/theme",
-      options,
-    }),
-    tailwindcss(),
-  ],
+  plugins: [react(), styleGenVite(), tailwindcss()],
 });
 ```
 
 <!-- embed: examples/plain-react/style-gen.config.json -->
 
 ```json
-{ "coverage": { "colors": { "opacities": [10, 20, 50, 80] } } }
+{
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
+}
 ```
 
 ## Import CSS

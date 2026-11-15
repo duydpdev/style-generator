@@ -1,6 +1,7 @@
 {
   "theme": "src/theme.json",
   "output": "src/styles/theme.css",
+  "tokensOutput": "src/theme.tokens.ts",
   "breakpoints": ["md", "lg"],
   "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
 }

@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import * as ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { generate } from "@duydpdev/style-generator";
+import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
 
-import { options } from "../src/style-gen.options";
 import { theme } from "../src/tokens";
 
 /**
@@ -103,32 +103,24 @@ describe("design-system DX", () => {
 });
 
 describe("design-system configuration", () => {
-  it("style-gen.config.json mirrors style-gen.options.ts", () => {
-    const file = JSON.parse(
-      readFileSync(resolve(root, "style-gen.config.json"), "utf8"),
-    ) as Record<string, unknown>;
-    const cliKeys = new Set(["$schema", "theme", "output"]);
-    const mirror = Object.fromEntries(
-      Object.entries(file).filter(([key]) => !cliKeys.has(key)),
-    );
-    expect(mirror).toEqual(options);
+  const readConfig = (file: string): Record<string, unknown> =>
+    JSON.parse(readFileSync(resolve(root, file), "utf8")) as Record<
+      string,
+      unknown
+    >;
+
+  it("keeps the opacity coverage equal in the design-system config and the harness package.json", () => {
+    const config = readConfig("style-gen.config.json");
+    const harness = readConfig("../harness/package.json");
+    expect(harness["style-gen"]).toMatchObject({ coverage: config.coverage });
   });
 
-  it("keeps the opacity steps equal in options, design-system config and harness package.json", () => {
-    const config = JSON.parse(
-      readFileSync(resolve(root, "style-gen.config.json"), "utf8"),
-    ) as { coverage: { colors: { opacities: number[] } } };
-    const pkg = JSON.parse(
-      readFileSync(resolve(root, "../harness/package.json"), "utf8"),
-    ) as { "style-gen": { coverage: { colors: { opacities: number[] } } } };
-    const steps = [...options.coverage.colors.opacities];
-
-    expect(config.coverage.colors.opacities).toEqual(steps);
-    expect(pkg["style-gen"].coverage.colors.opacities).toEqual(steps);
-  });
-
-  it("theme.json and the shared options pass generate() validation", () => {
-    const { css } = generate(theme, options);
+  it("theme.json and the config's generator options pass generate() validation", () => {
+    // `theme`, `output` and `tokensOutput` are the file settings, not generate() options.
+    const { breakpoints, coverage } = readConfig(
+      "style-gen.config.json",
+    ) as Required<Pick<StyleGeneratorOptions, "breakpoints" | "coverage">>;
+    const { css } = generate(theme, { breakpoints, coverage });
     expect(css).toContain('html[data-theme="dark"]');
     // `highContrast` is kebab-cased in the attribute value.
     expect(css).toContain('html[data-theme="high-contrast"]');

@@ -96,7 +96,7 @@ const split = splitSpacingProps(
   {} as SpacingProps<"md" | "xl", "inset"> & { id: string },
   web.spacingProperties,
 );
-const axisAttributes = themeAxisAttributes<typeof theme>({ theme: "dark" });
+const axisAttributes = themeAxisAttributes({ theme: "dark" });
 const uiCn = createCn(web);
 const uiRecipe = recipeFromTables({ base: "flex", variants: {} });
 const uiStyle = mergeStyle<StyleRecord>({ width: 1 });

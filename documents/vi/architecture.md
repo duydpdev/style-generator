@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: a2f8533855a0 -->
+<!-- source: documents/architecture.md sha256: 995f36771c59 -->
 
 # Kiến trúc
 
@@ -100,9 +100,8 @@ giống `./vite`/`./next`, nên ngân sách của `index` không phải gánh c�
 ```typescript
 import { generate } from "@duydpdev/style-generator";
 import theme from "./theme.json";
-import { options } from "./style-gen.options";
 
-const { css, tokens, schema } = generate(theme, options);
+const { css, tokens, schema } = generate(theme);
 // css    → written to a file, @import next to tailwindcss
 // tokens → DesignTokens (same result as createDesignTokens)
 // schema → z.toJSONSchema(ThemeSchema)
@@ -126,9 +125,8 @@ Trả về một object chứa các mảng key lấy từ theme; dùng cho logic
 ```typescript
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import theme from "./theme.json";
-import { options } from "./style-gen.options";
 
-const { DesignTokens } = createDesignTokens(theme, options);
+const { DesignTokens } = createDesignTokens(theme);
 // Each array is named after the matching ThemeConfig field (since 5.0):
 // DesignTokens.Web.colors        → ["primary", "primaryHover", ...]
 // DesignTokens.Web.typography    → ["text16Medium", ...]
@@ -146,7 +144,7 @@ vì lúc runtime nó có thể là một key đã khai báo hoặc một giá tr
 
 ### Plugin Vite (chỉ emit)
 
-`styleGenVite` emit `theme.css` từ theme JSON, thay thế quy trình predev/prebuild làm thủ công.
+`styleGenVite` emit `theme.css` và `theme.tokens.ts` từ theme JSON, thay thế quy trình predev/prebuild làm thủ công.
 
 ```typescript
 // vite.config.ts
@@ -155,37 +153,29 @@ import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
 
 export default defineConfig({
-  plugins: [
-    styleGenVite({ themePath: "src/theme/theme.json", outDir: "src/theme" }),
-    tailwindcss(),
-  ],
+  plugins: [styleGenVite(), tailwindcss()],
 });
 ```
 
-- `themePath` — đường dẫn tới theme JSON, tính từ thư mục gốc của dự án; có thể là đường dẫn tuyệt đối hoặc nằm ngoài thư mục gốc (một theme dùng chung trong monorepo)
-- `outDir` — thư mục output; BẮT BUỘC nằm trong thư mục gốc của dự án (mặc định là `dirname(themePath)`, và BẮT BUỘC khớp với đường dẫn `@import`)
-- `options` — được chuyển tiếp tới `generate()`
-- gọi `styleGenVite()` không có đối số: đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở thư mục gốc của Vite qua `loadStyleGenConfig` — `theme`,
-  `output` và mọi tùy chọn; một config hỏng sẽ ném `[style-gen-vite] Invalid config (<source>):` thay vì rơi về giá trị mặc định (`src/node/resolvePluginTarget.ts`,
-  dùng chung với Next)
+- mọi tùy chọn của generator nằm trong `style-gen.config.json` (hoặc `package.json["style-gen"]`) ở thư mục gốc của Vite, chính file mà `style-gen generate` đọc: `theme`, `output`, `tokensOutput` và từng tùy chọn của `generate()`; plugin nạp nó qua `loadStyleGenConfig` (`resolvePluginTarget`, `src/node/resolvePluginTarget.ts`, dùng chung với Next). Một config hỏng sẽ ném `[style-gen-vite] Invalid config (<source>):` thay vì rơi về giá trị mặc định
+- tùy chọn duy nhất của plugin là `root` (`StyleGenViteOptions`): thư mục chứa config, tính từ thư mục gốc của Vite. Nuxt 4 đặt thư mục gốc của Vite là `app/`, nên `nuxt.config.ts` truyền thư mục dự án. Mọi key khác (`themePath`, `outDir`, `options`, đã bị gỡ ở 8.0) ném lỗi ngay lúc gọi và nêu tên hướng dẫn migration (`parsePluginRootOptions`)
 
 **Vòng đời:** `configResolved` chỉ phân giải đường dẫn/config (nó cần `config.root`) và đăng ký `outFile` để cảnh báo khi có đích trùng lặp (đăng ký này được giải phóng khi dev
 server đóng — `server.close` được bọc lại; `closeBundle`/`buildEnd` không được dùng); `buildStart` emit `theme.css` và `theme.tokens.ts` qua `emitTheme` (Vite chạy `buildStart` khi `listen()`,
 ở middleware mode và cho các môi trường SSR; plugin đặt `perEnvironmentStartEndDuringDev: true`, nên từ Vite 6 `buildStart` cũng chạy khi dùng `createServer()` mà không
-`listen()` + `ssrLoadModule`) và gọi `this.addWatchFile(theme)` để `vite build --watch` build lại; `configureServer` thêm theme vào `server.watcher`,
-debounce việc emit lại và chỉ kích hoạt `full-reload` khi CSS thực sự thay đổi. `closeBundle` đã bị bỏ.
+`listen()` + `ssrLoadModule`) và gọi `this.addWatchFile(theme)` để `vite build --watch` build lại; `configureServer` thêm theme và file config vào `server.watcher`.
+Sửa theme sẽ debounce việc emit lại và chỉ kích hoạt `full-reload` khi CSS thực sự thay đổi. Sửa config sẽ **nạp lại config tại chỗ** (không bao giờ `server.restart()`, vì các host như Nuxt và Storybook sở hữu server):
+đích được phân giải lại, file theme mới được theo dõi, đăng ký `outFile` được chuyển, các file được emit lại và trang tải lại; một lần sửa không hợp lệ ghi log `Cannot reload config, keeping the previous one` và config hợp lệ gần nhất vẫn có hiệu lực, giống `style-gen generate --watch`.
 Mọi lần ghi đều đi qua `writeFileAtomic` (một file tạm trong cùng thư mục + `rename`), và chỉ khi nội dung thay đổi,
 nhờ đó bundler không bao giờ đọc một file ghi dở và watcher không bị đánh thức vô ích. Một lỗi trong `buildStart` là một `this.error` kèm nhãn giai đoạn (`Invalid JSON in …`,
 `Invalid options:`, `Invalid theme (<path>):`, `Invalid theme/options:`, `Failed to generate CSS: …`, `Cannot write …`);
-một lỗi trong `configResolved` (Vite 5/6 gọi hook này mà không bind `this`) vẫn là `throw new Error(…, { cause })`;
-một `outDir` mặc định (`dirname(themePath)`) nằm ngoài thư mục gốc sẽ báo `outDir (defaults to dirname(themePath); set outDir inside the project root) escapes project root: <dir>`.
+một lỗi trong `configResolved` (Vite 5/6 gọi hook này mà không bind `this`) vẫn là `throw new Error(…, { cause })`.
 Các ví dụ đặt `styleGenVite` trước `tailwindcss()`.
 
 **Bảo mật:** `resolveProjectPath(root, input, label, { allowOutsideRoot })` (`src/node/resolveProjectPath.ts`) chuẩn hóa mọi đường dẫn bằng `resolve(root, input)` (cả đường dẫn
-tuyệt đối: `..`, `.` và dấu phân cách lặp đều được gộp lại; không cắt khoảng trắng) rồi giữ `outDir`/`output` bên trong thư mục gốc của dự án (nó so sánh các đường dẫn đã chuẩn
-hóa, không dùng `realpath`; lỗi `<label> escapes project root: <input>`); `themePath` có thể nằm ngoài thư mục gốc.
-Dấu `/` đứng đầu không còn bị viết lại thành đường dẫn tương đối. Nó cảnh báo khi nhiều instance cùng ghi vào cùng một **file output** (`outFile`,
-không chỉ cùng `outDir`) trong một process (monorepo).
+tuyệt đối: `..`, `.` và dấu phân cách lặp đều được gộp lại; không cắt khoảng trắng) rồi giữ `output`/`tokensOutput` bên trong thư mục gốc của dự án (nó so sánh các đường dẫn đã chuẩn
+hóa, không dùng `realpath`; lỗi `<label> escapes project root: <input>`); `theme` có thể nằm ngoài thư mục gốc.
+Dấu `/` đứng đầu không còn bị viết lại thành đường dẫn tương đối. Nó cảnh báo khi nhiều instance cùng ghi vào cùng một **file output** (`outFile`) trong một process (monorepo).
 
 ### Plugin Next.js (chỉ emit)
 
@@ -196,16 +186,15 @@ import { styleGenNext } from "@duydpdev/style-generator/next";
 
 declare const nextConfig: object;
 
-export default styleGenNext({
-  themePath: "app/theme/theme.json",
-  outDir: "app/theme",
-})(nextConfig);
+export default styleGenNext()(nextConfig);
 ```
 
+Tùy chọn duy nhất của nó là `root` (`StyleGenNextOptions`, mặc định `process.cwd()`): mọi thứ khác được đọc từ `style-gen.config.json`, giống plugin Vite.
+
 - `styleGenNext(opts)(nextConfig)` trả về một hàm `(phase, ctx) => config`, mà Next chấp nhận cho `next.config.*`;
-  có thể bỏ `opts` (nó đọc `style-gen.config.json` tại `process.cwd()`, giống Vite). Chỉ `phase-development-server` và `phase-production-build` đọc theme và ghi `theme.css` (một
+  có thể bỏ `opts` (nó đọc `style-gen.config.json` tại `process.cwd()`, giống Vite). Chỉ `phase-development-server` và `phase-production-build` đọc theme và ghi `theme.css` và `theme.tokens.ts` (một
   cách atomic); `phase-development-server` còn thêm một watcher qua `watchThemeFile` (debounce 200ms,
-  `persistent: false`) — watcher ghi log lỗi và tiếp tục chạy khi theme không hợp lệ, và được đóng khi config được nạp lại với một theme/output khác.
+  `persistent: false`) — watcher ghi log lỗi và tiếp tục chạy khi theme không hợp lệ, nạp lại config tại chỗ khi file config thay đổi (một lần sửa không hợp lệ giữ config hợp lệ gần nhất), và bị thay thế khi config được đánh giá lại với một theme/output khác.
   Các phase còn lại (`next start`, export, info, test) trả về config mà không đụng đến đĩa, nên một production image không cần theme JSON.
   Một `nextConfig` dạng hàm `(phase, { defaultConfig })` được gọi đúng với các đối số mà Next truyền vào.
 - **Hạn chế:** bộ bảo vệ đường dẫn không dùng `realpath` (một symlink trỏ ra ngoài thư mục gốc sẽ không bị phát hiện).
@@ -443,22 +432,21 @@ và ở 5.0.0 trong [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
 4 workspace trong `examples/*` (chúng liên kết thư viện qua `link:../..`; `design-system-example` được `harness` tham chiếu qua `workspace:*`).
 Các ứng dụng plain (`plain-react`, `plain-nuxt`) không phụ thuộc workspace nào khác: mỗi ứng dụng sở hữu một bản sao theme rút gọn,
 `src/theme.ts` (Nuxt `app/theme.ts`) và một thư mục cho mỗi component trên `@duydpdev/style-generator/ui`; `yarn check:plain-ui` giữ các file dùng chung của chúng giống hệt nhau.
-**`examples/design-system`** chứa mọi thứ dùng chung — `theme.json` (+ schema), `style-gen.options.ts`, `tokens`, `cn`, các recipe headless của sáu component mẫu (`box`, `text`,
+**`examples/design-system`** chứa mọi thứ dùng chung — `theme.json` (+ schema), `style-gen.config.json`, `theme.tokens.ts` được sinh ra, `tokens`, `cn`, các recipe headless của sáu component mẫu (`box`, `text`,
 `stack`, `grid`, `button`), CSS dùng chung (`palettes.css`, `style-guide.css`) và DX test — nên mỗi ứng dụng chỉ giữ phần nối dây,
-mã demo và (ở `harness`) sáu component mẫu trong thư mục `ui/` của nó. `style-gen.options.ts` là `as const satisfies StyleGeneratorOptions` (các kiểu được import từ `./types`,
-không phải `defineOptions`, vì hàm đó chỉ có trong `.` và sẽ kéo Zod vào bundle trình duyệt); `harness` import `options` từ `design-system-example/style-gen.options`.
+mã demo và (ở `harness`) sáu component mẫu trong thư mục `ui/` của nó. Mỗi ứng dụng khai báo các tùy chọn generator trong một file config duy nhất (`style-gen.config.json`, hoặc `package.json#style-gen` ở `harness`) và nối `styleGenVite()` không có đối số;
+`plain-react`, `plain-nuxt`, `design-system` và `site` commit file `theme.tokens.ts` do plugin hoặc `style-gen generate` ghi ra (`yarn check:tokens` thất bại khi một file lỗi thời); `harness` tự sinh file của nó lúc dev/build và đưa vào git-ignore.
 
-| Ví dụ           | Stack                           | Vai trò / cách nối dây theme                                                                                                                                                                  |
-| --------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `design-system` | TypeScript thuần (không có app) | Theme, options, tokens, `cn`, các recipe headless, CSS dùng chung, DX test (`yarn workspace design-system-example test`); luồng chỉ dùng CLI (`style-gen.config.json` → `style-gen generate`) |
-| `harness`       | Vite + React + Tailwind v4      | `styleGenVite({ themePath, outDir, options })` → `@import "./theme/theme.css"`; sáu component mẫu (`src/ui/*.tsx`) bọc các recipe, và `site` import chúng                                     |
-| `plain-nuxt`    | Nuxt 4 (Vue 3) + TW v4          | `styleGenVite` trong `nuxt.config.ts` với đường dẫn tuyệt đối tới `app/theme/`; landing page plain từ các SFC `app/ui/<folder>/`                                                              |
-| `plain-react`   | Vite + React + Tailwind v4      | `styleGenVite` → `src/theme/theme.css`; landing page plain, các story Storybook và gate đối sánh với `harness`                                                                                |
+| Ví dụ           | Stack                           | Vai trò / cách nối dây theme                                                                                                                                                                     |
+| --------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `design-system` | TypeScript thuần (không có app) | Theme, config, tokens được sinh ra, `cn`, các recipe headless, CSS dùng chung, DX test (`yarn workspace design-system-example test`); luồng CLI (`style-gen.config.json` → `style-gen generate`) |
+| `harness`       | Vite + React + Tailwind v4      | `styleGenVite()` đọc `package.json#style-gen` → `@import "./theme/theme.css"`; sáu component mẫu (`src/ui/*.tsx`) bọc các recipe, và `site` import chúng                                         |
+| `plain-nuxt`    | Nuxt 4 (Vue 3) + TW v4          | `styleGenVite({ root })` trong `nuxt.config.ts` (root = thư mục dự án); landing page plain từ các SFC `app/ui/<folder>/`                                                                         |
+| `plain-react`   | Vite + React + Tailwind v4      | `styleGenVite()` → `src/theme/theme.css` + `theme.tokens.ts`; landing page plain, các story Storybook và gate đối sánh với `harness`                                                             |
 
 Mỗi ứng dụng emit `theme.css` vào file gitignore của riêng nó và `@import` CSS dùng chung qua `design-system-example/styles/*`;
 `harness` thêm các dòng `@source` quay về `design-system/src` (tương đối so với file CSS), trong khi các component `ui/` của nó nằm bên trong ứng dụng và được quét theo mặc định;
-các ứng dụng plain không cần dòng nào, vì mọi class literal đều nằm bên trong ứng dụng. Chạy ứng dụng harness yêu cầu Node >= 22.18 (config bundler của nó import các
-module `.ts` qua tính năng type stripping của Node). Chỉ `harness` được nhúng trong landing site; các ứng dụng plain là ứng dụng độc lập.
+các ứng dụng plain không cần dòng nào, vì mọi class literal đều nằm bên trong ứng dụng. Chỉ `harness` được nhúng trong landing site; các ứng dụng plain là ứng dụng độc lập.
 Xem [`examples/README.md`](../../examples/README.md).
 
 ### Pipeline triển khai

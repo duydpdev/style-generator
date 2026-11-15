@@ -10,7 +10,7 @@
     "preview": "nuxt preview",
     "prepare:nuxt": "nuxt prepare",
     "typecheck": "nuxt typecheck",
-    "generate:theme": "node ../../dist/cli/index.mjs generate --theme app/theme/theme.json --out app/theme/theme.css",
+    "generate:theme": "node ../../dist/cli/index.mjs generate",
     "storybook": "yarn generate:theme && storybook dev -p 6009 --no-open --disable-telemetry",
     "storybook:build": "yarn generate:theme && storybook build --disable-telemetry",
     "test:stories": "yarn generate:theme && vitest run --project 'storybook*'"

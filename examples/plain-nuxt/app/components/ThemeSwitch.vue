@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 
-import type { theme } from "~/theme";
+import type { ThemeAxesState } from "~/theme/theme.tokens";
 import Button from "~/ui/button/Button.vue";
 
-const DARK = themeAxisAttributes<typeof theme>({ theme: "dark" });
+const DARK_STATE: ThemeAxesState = { theme: "dark" };
+const DARK = themeAxisAttributes(DARK_STATE);
 
 // SSR-safe state: the server and the client start light, so the <html>
 // attributes match across hydration; useHead drops stale keys.

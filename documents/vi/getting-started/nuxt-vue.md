@@ -1,20 +1,137 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 1e0891365d1a -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 730e63ff2a87 -->
 
 # Bắt đầu: Nuxt + Vue
 
-Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Nuxt 4 và dựng một landing page từ các component Vue chép dùng được. Mọi khối mã bên dưới đều được chép từ [`examples/plain-nuxt`](../../../examples/plain-nuxt/README.md), thư mục này được build và kiểm tra kiểu trong CI.
+Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Nuxt 4 và render một `Button` có theme, dựng từ một component Vue chép dùng được. Mọi khối mã bên dưới, trừ `app/app.vue` ở cuối, đều được chép từ [`examples/plain-nuxt`](../../../examples/plain-nuxt/README.md), thư mục này được build và kiểm tra kiểu trong CI; các section landing page của ví dụ (`Hero`, `Features`, ...) không thuộc hướng dẫn này.
 
 ## Cài đặt
 
-Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`.
+Bắt đầu từ một ứng dụng Nuxt 4 (`npx nuxi@latest init my-app --template minimal`, rồi `yarn install`). Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`; phần thiết lập Vite bên dưới import `@tailwindcss/vite`, và package cần `tailwindcss` (template minimal không có cái nào):
 
 ```bash
-yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite
+yarn add -D typescript@^5.9.0
 ```
+
+`typescript` là development dependency của ứng dụng vì `@vue/compiler-sfc` đọc kiểu props từ `types.ts` qua TypeScript compiler API. Dùng 5.x hoặc 6.x (peer range của chính package là `^5.0.0 || ^6.0.0`): TypeScript 7 không cung cấp API đó, và trang sẽ thất bại với `No fs option provided to compileScript`.
+
+## Tạo theme
+
+Tạo `app/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, `secondary`, `success`, `danger`, `background` và `foreground`, bo góc `md` cùng các kiểu chữ `text16Medium` và `text20Semibold`, nên hãy bắt đầu từ theme đầy đủ này (chính là `examples/plain-nuxt/app/theme/theme.json`):
+
+<!-- embed: examples/plain-nuxt/app/theme/theme.json -->
+
+```json
+{
+  "colors": {
+    "primary": "#2647D9",
+    "primaryHover": "#1F3BB8",
+    "primaryActive": "#19319A",
+    "onPrimary": "$surface",
+    "secondary": "#6E5BFF",
+    "accent": "$secondary",
+    "success": "#2E7D5B",
+    "danger": "#C8462C",
+    "background": "#FAF7F2",
+    "surface": "#FFFFFF",
+    "foreground": "#0F1530",
+    "muted": "#6B6D7A",
+    "line": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)"
+  },
+  "typography": {
+    "text12Mono": {
+      "fontSize": "12px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text14Regular": {
+      "fontSize": "14px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text20Semibold": {
+      "fontSize": "20px",
+      "fontWeight": 600,
+      "lineHeight": "140%",
+      "letterSpacing": "-0.01em"
+    },
+    "text32Bold": {
+      "fontSize": "32px",
+      "fontWeight": 700,
+      "lineHeight": "120%",
+      "letterSpacing": "-0.02em"
+    },
+    "display56Serif": {
+      "fontSize": "56px",
+      "fontWeight": 400,
+      "lineHeight": "100%",
+      "letterSpacing": "-0.025em"
+    }
+  },
+  "shadows": {
+    "sm": "0px 1px 2px rgba(15, 21, 48, 0.06), 0px 1px 1px rgba(15, 21, 48, 0.04)",
+    "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
+    "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)"
+  },
+  "backdropBlurs": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "14px"
+  },
+  "borderRadius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "16px",
+    "pill": "999px"
+  },
+  "fontFamily": {
+    "sans": "\"Geist\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "serif": "\"Instrument Serif\", \"Geist\", serif",
+    "mono": "\"JetBrains Mono\", ui-monospace, \"SFMono-Regular\", monospace"
+  },
+  "borderWidth": {
+    "thin": "1px",
+    "thick": "2px"
+  },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#8FA6FF",
+          "primaryHover": "#A9BBFF",
+          "primaryActive": "#C2CEFF",
+          "secondary": "#A89AFF",
+          "success": "#6BBF93",
+          "danger": "#F08369",
+          "background": "#0B0E1D",
+          "surface": "#161A2D",
+          "foreground": "#F2EFE9",
+          "muted": "#8A8FA8"
+        },
+        "shadows": {
+          "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
+          "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+          "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+        }
+      }
+    }
+  }
+}
+```
+
+`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi một theme khởi đầu nhỏ hơn vào `app/assets/css/theme.json` (cùng một `theme.schema.json` bên cạnh) và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `app/theme/`: hoặc bỏ qua `init`, hoặc xóa hai file đó mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
 
 ## Tự quản lý theme
 
-File theme JSON là [`app/theme/theme.json`](../../../examples/plain-nuxt/app/theme/theme.json) (không được nhúng ở đây). `app/theme.ts` biến nó thành kiểu `theme` và helper `cn`, đồng thời re-export `tokens` có kiểu mà plugin ghi vào `app/theme/theme.tokens.ts` (hãy commit file đó; `style-gen generate --check` thất bại trong CI khi nó lỗi thời):
+`app/theme.ts` biến JSON thành kiểu `theme` và helper `cn`, đồng thời re-export `tokens` có kiểu mà plugin ghi vào `app/theme/theme.tokens.ts` (hãy commit file đó; `style-gen generate --check` thất bại trong CI khi nó lỗi thời):
 
 <!-- embed: examples/plain-nuxt/app/theme.ts -->
 
@@ -84,6 +201,18 @@ export default defineNuxtConfig({
 });
 ```
 
+Lưu file này thành `style-gen.config.json` trong thư mục dự án:
+
+<!-- embed: examples/plain-nuxt/style-gen.config.json -->
+
+```json
+{
+  "theme": "app/theme/theme.json",
+  "output": "app/theme/theme.css",
+  "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
+}
+```
+
 ## Import CSS
 
 Import file đã sinh cạnh Tailwind. Không có dòng `@source`, vì Tailwind quét `app/`, nơi chứa mọi class literal (kể cả `app/ui`), và `theme.css` liệt kê các utility của token:
@@ -95,11 +224,155 @@ Import file đã sinh cạnh Tailwind. Không có dòng `@source`, vì Tailwind 
 @import "../../theme/theme.css";
 ```
 
-Nếu `style-gen init` đã ghi `.claude/rules/style-generator.md`, thêm cả dòng `@source not "<path>/.claude";` mà nó in ra: file đó chứa các class ví dụ mà Tailwind sẽ quét vào nếu không loại trừ ([`style-gen init`](../reference/cli.md#rules-cho-agent)).
+Nếu bạn đã chạy `style-gen init`, nó cũng ghi `.claude/rules/style-generator.md`; hãy thêm `@source not "../../../.claude";` làm dòng cuối của `app/assets/css/globals.css`: file đó chứa các class ví dụ mà Tailwind sẽ quét vào nếu không loại trừ ([`style-gen init`](../reference/cli.md#rules-cho-agent)).
 
 ## Dựng một component
 
-Mỗi component có một thư mục riêng. `style.ts` là cùng một file như ở React và Next. File `types.ts` của Vue khai báo các prop mà trình biên dịch SFC đọc được và mở rộng các prop spacing bằng `/* @vue-ignore */`. Component được import tường minh, ví dụ `import Button from "~/ui/button/Button.vue"`:
+Mỗi component có một thư mục riêng. `style.ts` là cùng một file như ở React và Next:
+
+<!-- embed: examples/plain-nuxt/app/ui/button/style.ts -->
+
+```ts
+import {
+  COLOR_STATES,
+  createVariantMapper,
+} from "@duydpdev/style-generator/cva";
+import type { ColorVariant } from "@duydpdev/style-generator/types";
+import {
+  contrastText,
+  pick,
+  recipeFromTables,
+  type RecipeTables,
+} from "@duydpdev/style-generator/ui";
+
+import { tokens, type theme } from "../../theme";
+
+const BUTTON_TINTS = ["outline", "soft", "ghost", "link"] as const;
+
+type ButtonTint = (typeof BUTTON_TINTS)[number];
+
+/**
+ * The intents `color` offers. `satisfies` is the DX anchor: rename or
+ * remove one of these colors in theme.json and the compiler fails here.
+ */
+export const buttonIntents = [
+  "primary",
+  "secondary",
+  "success",
+  "danger",
+] as const satisfies readonly ColorVariant<typeof theme>[];
+
+/** Literal classes, so Tailwind's scanner sees them: the registry emits no `focus-visible:` variant, no `/15` step and no state × opacity (`hover:bg-<key>/10`). */
+const focusRing = {
+  primary: "focus-visible:outline-primary",
+  secondary: "focus-visible:outline-secondary",
+  success: "focus-visible:outline-success",
+  danger: "focus-visible:outline-danger",
+} as const satisfies Record<ButtonIntent, string>;
+
+const tint = {
+  primary: {
+    outline: "border-primary text-primary hover:bg-primary/10",
+    soft: "bg-primary/10 text-primary hover:bg-primary/15",
+    ghost: "text-primary hover:bg-primary/10",
+    link: "text-primary",
+  },
+  secondary: {
+    outline: "border-secondary text-secondary hover:bg-secondary/10",
+    soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
+    ghost: "text-secondary hover:bg-secondary/10",
+    link: "text-secondary",
+  },
+  success: {
+    outline: "border-success text-success hover:bg-success/10",
+    soft: "bg-success/10 text-success hover:bg-success/15",
+    ghost: "text-success hover:bg-success/10",
+    link: "text-success",
+  },
+  danger: {
+    outline: "border-danger text-danger hover:bg-danger/10",
+    soft: "bg-danger/10 text-danger hover:bg-danger/15",
+    ghost: "text-danger hover:bg-danger/10",
+    link: "text-danger",
+  },
+} as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
+
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. */
+const themeKeys = {
+  background: "background",
+  radius: "md",
+  type: "text16Medium",
+  typeLg: "text20Semibold",
+} as const;
+
+export type ButtonIntent = (typeof buttonIntents)[number];
+
+const colors: readonly string[] = tokens.colors;
+// `bg-primary hover:bg-primary-hover active:bg-primary-active` when the theme declares the state siblings.
+const bgStates = createVariantMapper("bg", tokens.colors, {
+  states: COLOR_STATES,
+});
+const bg = createVariantMapper("bg", tokens.colors);
+const rounded = createVariantMapper("rounded", tokens.borderRadius);
+const type = createVariantMapper("", tokens.typography);
+
+/** A filled intent: state backgrounds, `on<Intent>` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
+const fill = (intent: ButtonIntent): string[] => {
+  const classes = [
+    pick(bgStates, intent),
+    contrastText(colors, intent, themeKeys.background),
+  ];
+  if (!colors.includes(`${intent}Hover`)) classes.push("hover:opacity-90");
+  return classes;
+};
+
+/** Button as data: variant × intent × size. */
+export const buttonTables = {
+  base: [
+    "inline-flex shrink-0 items-center justify-center gap-1.5",
+    `${pick(rounded, themeKeys.radius)} border`,
+    `cursor-pointer ${pick(type, themeKeys.type)} whitespace-nowrap outline-hidden select-none`,
+    "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2",
+    "transition-[background-color,color,opacity] duration-150",
+    "disabled:cursor-not-allowed disabled:opacity-50",
+  ],
+  variants: {
+    variant: {
+      fill: "border-transparent active:scale-[0.98]",
+      outline: `${pick(bg, themeKeys.background)} active:scale-[0.98]`,
+      soft: "border-transparent active:scale-[0.98]",
+      ghost: "border-transparent active:scale-[0.98]",
+      link: "border-transparent underline-offset-4 hover:underline",
+    },
+    color: focusRing,
+    size: {
+      sm: "h-7 px-2.5",
+      md: "h-9 px-3.5",
+      lg: `h-11 px-5 ${pick(type, themeKeys.typeLg)}`,
+    },
+    // Set by the components when there is no label and exactly one icon slot.
+    // `px-0` must beat the size's `px-*`: the components pass the recipe through `cn` (tailwind-merge), which keeps the later class, so `iconOnly` stays after `size`.
+    iconOnly: { true: "aspect-square px-0" },
+  },
+  compoundVariants: buttonIntents.flatMap((intent) => [
+    { color: intent, variant: "fill", class: fill(intent) },
+    ...BUTTON_TINTS.map((variant) => ({
+      color: intent,
+      variant,
+      class: tint[intent][variant],
+    })),
+  ]),
+  defaultVariants: {
+    variant: "fill",
+    color: buttonIntents[0],
+    size: "md",
+  },
+} satisfies RecipeTables;
+
+export const buttonRecipe = recipeFromTables(buttonTables);
+```
+
+File `types.ts` của Vue khai báo các prop mà trình biên dịch SFC đọc được và mở rộng các prop spacing bằng `/* @vue-ignore */`. Component được import tường minh, ví dụ `import Button from "~/ui/button/Button.vue"`:
 
 <!-- embed: examples/plain-nuxt/app/ui/button/types.ts -->
 
@@ -205,45 +478,26 @@ const root = () => {
 </template>
 ```
 
-## Sử dụng
+## Dùng nó
 
-<!-- embed: examples/plain-nuxt/app/pages/index.vue#usage -->
+Hướng dẫn này chỉ dựng `Button`; các section landing page của ví dụ không được đưa vào. Thay `app/app.vue` bằng một trang dùng nó:
 
 ```vue
+<script setup lang="ts">
+import Button from "~/ui/button/Button.vue";
+</script>
+
 <template>
-  <Box backgroundColor="background" class="min-h-screen text-foreground">
-    <Box
-      as="header"
-      position="sticky"
-      backdropBlur="md"
-      borderB="thin"
-      borderColor="line"
-      class="top-0 z-10 bg-background/80"
-    >
-      <Container>
-        <Flex align="center" justify="between" :gap="4" :py="4">
-          <Link href="#hero" tone="foreground" underline="none">
-            <Text as="span" type="text16Medium">style-generator</Text>
-          </Link>
-          <Flex as="nav" aria-label="Main" align="center" :gap="4">
-            <Link href="#features" tone="muted">Features</Link>
-            <Link href="#pricing" tone="muted">Pricing</Link>
-            <Link :href="DOCS_URL" tone="muted">Docs</Link>
-            <ThemeSwitch />
-          </Flex>
-        </Flex>
-      </Container>
-    </Box>
-    <main>
-      <Hero />
-      <Features />
-      <Pricing />
-      <Cta />
-    </main>
-    <Footer />
-  </Box>
+  <main
+    class="flex min-h-screen items-center justify-center gap-3 bg-background text-foreground"
+  >
+    <Button>Get started</Button>
+    <Button variant="soft" color="danger">Delete</Button>
+  </main>
 </template>
 ```
+
+Chạy `yarn dev`: một nút primary đặc và một nút danger dạng soft được render với màu của theme.
 
 ## Bước tiếp theo
 

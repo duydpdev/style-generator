@@ -1,18 +1,132 @@
 # Getting started: React + Vite
 
-This tutorial wires `@duydpdev/style-generator` into a Vite + React app and builds a landing page from copy-paste components. Every code block below is copied from [`examples/plain-react`](../../examples/plain-react/README.md), which is built and type-checked in CI.
+This tutorial wires `@duydpdev/style-generator` into a Vite + React app and renders a themed `Button` built from a copy-paste component. Every code block below except the final `src/App.tsx` is copied from [`examples/plain-react`](../../examples/plain-react/README.md), which is built and type-checked in CI; the example's landing-page sections (`Hero`, `Features`, ...) are not part of this tutorial.
 
 ## Install
 
-Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`; the Vite setup below also imports `tailwindcss`, `@tailwindcss/vite` and `@vitejs/plugin-react`.
+Start from a Vite React TypeScript app (`yarn create vite my-app --template react-ts`, then `yarn install`). Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`; the Vite setup below also imports `tailwindcss`, `@tailwindcss/vite` and `@vitejs/plugin-react` (the template already lists the last one).
 
 ```bash
 yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
 ```
 
+## Create the theme
+
+Create `src/theme/theme.json`. The `Button` below reads the colors `primary`, `secondary`, `success`, `danger`, `background` and `foreground`, the `md` radius and the `text16Medium` and `text20Semibold` type styles, so start from this complete theme (it is `examples/plain-react/src/theme/theme.json`):
+
+<!-- embed: examples/plain-react/src/theme/theme.json -->
+
+```json
+{
+  "colors": {
+    "primary": "#2647D9",
+    "primaryHover": "#1F3BB8",
+    "primaryActive": "#19319A",
+    "onPrimary": "$surface",
+    "secondary": "#6E5BFF",
+    "accent": "$secondary",
+    "success": "#2E7D5B",
+    "danger": "#C8462C",
+    "background": "#FAF7F2",
+    "surface": "#FFFFFF",
+    "foreground": "#0F1530",
+    "muted": "#6B6D7A",
+    "line": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)"
+  },
+  "typography": {
+    "text12Mono": {
+      "fontSize": "12px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text14Regular": {
+      "fontSize": "14px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text20Semibold": {
+      "fontSize": "20px",
+      "fontWeight": 600,
+      "lineHeight": "140%",
+      "letterSpacing": "-0.01em"
+    },
+    "text32Bold": {
+      "fontSize": "32px",
+      "fontWeight": 700,
+      "lineHeight": "120%",
+      "letterSpacing": "-0.02em"
+    },
+    "display56Serif": {
+      "fontSize": "56px",
+      "fontWeight": 400,
+      "lineHeight": "100%",
+      "letterSpacing": "-0.025em"
+    }
+  },
+  "shadows": {
+    "sm": "0px 1px 2px rgba(15, 21, 48, 0.06), 0px 1px 1px rgba(15, 21, 48, 0.04)",
+    "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
+    "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)"
+  },
+  "backdropBlurs": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "14px"
+  },
+  "borderRadius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "16px",
+    "pill": "999px"
+  },
+  "fontFamily": {
+    "sans": "\"Geist\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "serif": "\"Instrument Serif\", \"Geist\", serif",
+    "mono": "\"JetBrains Mono\", ui-monospace, \"SFMono-Regular\", monospace"
+  },
+  "borderWidth": {
+    "thin": "1px",
+    "thick": "2px"
+  },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#8FA6FF",
+          "primaryHover": "#A9BBFF",
+          "primaryActive": "#C2CEFF",
+          "secondary": "#A89AFF",
+          "success": "#6BBF93",
+          "danger": "#F08369",
+          "background": "#0B0E1D",
+          "surface": "#161A2D",
+          "foreground": "#F2EFE9",
+          "muted": "#8A8FA8"
+        },
+        "shadows": {
+          "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
+          "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+          "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+        }
+      }
+    }
+  }
+}
+```
+
+`yarn style-gen init` (the [Quickstart](../../README.md#quickstart)) writes a smaller starter theme to `src/styles/theme.json` and a `style-gen.config.json` that points there. This tutorial keeps the theme in `src/theme/` instead: either skip `init`, or delete the `src/styles/` folder it wrote and replace `style-gen.config.json` with the file shown below.
+
 ## Own the theme
 
-The theme JSON is [`src/theme/theme.json`](../../examples/plain-react/src/theme/theme.json) (not embedded here). `src/theme.ts` turns it into the `theme` type and the `cn` helper, and re-exports the typed `tokens` that the plugin writes to `src/theme/theme.tokens.ts` (commit that file; `style-gen generate --check` fails in CI when it is stale):
+`src/theme.ts` turns the JSON into the `theme` type and the `cn` helper, and re-exports the typed `tokens` that the plugin writes to `src/theme/theme.tokens.ts` (commit that file; `style-gen generate --check` fails in CI when it is stale):
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
@@ -60,9 +174,11 @@ export default defineConfig({
 }
 ```
 
+The plugin writes those two files only when the dev server or a build starts, but `src/theme.ts` imports `./theme/theme.tokens`, and the Vite template's `build` script runs `tsc -b` before Vite starts. Run `yarn style-gen generate` once (or start `yarn dev`) before the first `yarn build` or type check, otherwise it fails with `Cannot find module './theme/theme.tokens'`.
+
 ## Import the CSS
 
-Import the generated file next to Tailwind. No `@source` line is needed: Tailwind scans `src/`, `src/ui` included:
+Replace the contents of `src/index.css` (the one `src/main.tsx` imports) with the generated file imported next to Tailwind. No `@source` line is needed: Tailwind scans `src/`, `src/ui` included:
 
 <!-- embed: examples/plain-react/src/index.css#css-entry -->
 
@@ -71,7 +187,7 @@ Import the generated file next to Tailwind. No `@source` line is needed: Tailwin
 @import "./theme/theme.css";
 ```
 
-If `style-gen init` wrote `.claude/rules/style-generator.md`, also add the `@source not "<path>/.claude";` line it printed: that file holds example classes Tailwind would otherwise pick up ([`style-gen init`](../reference/cli.md#agent-rules)).
+If you ran `style-gen init`, it also wrote `.claude/rules/style-generator.md`; add `@source not "../.claude";` as the last line of `src/index.css`: that file holds example classes Tailwind would otherwise pick up ([`style-gen init`](../reference/cli.md#agent-rules)).
 
 ## Build a component
 
@@ -219,6 +335,39 @@ export const buttonTables = {
 export const buttonRecipe = recipeFromTables(buttonTables);
 ```
 
+`types.ts` holds the prop types:
+
+<!-- embed: examples/plain-react/src/ui/button/types.ts -->
+
+```ts
+import type { ThemeSpacingProps } from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
+
+import type { tokens } from "../../theme";
+
+import type { ButtonIntent } from "./style";
+
+export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
+  readonly variant?: "fill" | "outline" | "soft" | "ghost" | "link" | undefined;
+  /** One of `buttonIntents`. */
+  readonly color?: ButtonIntent | undefined;
+  readonly size?: "sm" | "md" | "lg" | undefined;
+  readonly prefix?: ReactNode;
+  readonly suffix?: ReactNode;
+  readonly children?: ReactNode;
+  readonly className?: string | undefined;
+  readonly style?: CSSProperties | undefined;
+};
+
+export type ButtonProps<T extends ElementType = "button"> = Polymorphic<
+  T,
+  ButtonOwnProps
+>;
+```
+
+`Button.tsx` is the component:
+
 <!-- embed: examples/plain-react/src/ui/button/Button.tsx -->
 
 ```tsx
@@ -297,18 +446,37 @@ export function Button<T extends ElementType = "button">({
 }
 ```
 
-## Use them
+`index.ts` is the folder's public entry:
 
-<!-- embed: examples/plain-react/src/App.tsx#usage -->
+<!-- embed: examples/plain-react/src/ui/button/index.ts -->
+
+```ts
+export { Button } from "./Button";
+export type { ButtonOwnProps, ButtonProps } from "./types";
+```
+
+## Use it
+
+This tutorial builds only `Button`; the landing-page sections of the example are not included. Replace `src/App.tsx` (the template's `src/main.tsx` already imports it and `./index.css`) with a page that uses it:
+
+<!-- snippet: no-check imports ./ui/button from the app being built -->
 
 ```tsx
-<main>
-  <Hero />
-  <Features />
-  <Pricing />
-  <Cta />
-</main>
+import { Button } from "./ui/button";
+
+export default function App() {
+  return (
+    <main className="flex min-h-screen items-center justify-center gap-3 bg-background text-foreground">
+      <Button>Get started</Button>
+      <Button variant="soft" color="danger">
+        Delete
+      </Button>
+    </main>
+  );
+}
 ```
+
+Run `yarn dev`: a filled primary button and a soft danger button render with the theme's colors.
 
 ## Next steps
 

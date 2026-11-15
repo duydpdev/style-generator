@@ -39,13 +39,12 @@ const props = {
   width: 320,
   id: "card",
 };
-const split = splitLayout(
-  props,
-  box,
-  tokens.spacingProperties,
-  ["rounded"],
-  ["width", "height"],
-);
+const split = splitLayout(props, {
+  recipe: box,
+  spacingKeys: tokens.spacingProperties,
+  variantKeys: ["rounded"],
+  sizeKeys: ["width", "height"],
+});
 export const element = {
   ...split.rest,
   className: cn(split.className, "shadow-md"),
@@ -55,12 +54,14 @@ export const element = {
 
 The harness components in [`examples/harness/src/ui/`](../../examples/harness/src/ui/Box.tsx) and the recipe factories in [`examples/design-system`](../../examples/design-system/README.md) are built on this kit; [Components](../components.md) walks through one.
 
-## `recipeFromTables`, `RecipeTables`, `VariantTable`, `RecipeProps`, `RecipeFn`
+## `recipeFromTables`, `RecipeTables`, `VariantTable`, `RecipeProps`, `RecipeFn`, `RecipeVariantProps`
 
 <!-- signature: recipeFromTables -->
 
 ```ts
-export declare const recipeFromTables: (tables: RecipeTables) => RecipeFn;
+export declare const recipeFromTables: <T extends RecipeTables>(
+  tables: T,
+) => RecipeFn<T>;
 ```
 
 cva over a recipe's tables. Compound and default entries are loose
@@ -112,14 +113,34 @@ Recipe call props: variant name → option (`true`/`false` for boolean variants,
 <!-- signature: RecipeFn -->
 
 ```ts
-export declare type RecipeFn = (props?: RecipeProps) => string;
+export declare type RecipeFn<T extends RecipeTables = RecipeTables> = (
+  props?: RecipeVariantProps<T>,
+) => string;
 ```
 
-A recipe built from tables: props in, one class string out; components type the exact props.
+A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows the variant names of its tables `T`.
+
+<!-- /signature -->
+
+<!-- signature: RecipeVariantProps -->
+
+```ts
+export declare type RecipeVariantProps<T extends RecipeTables> = Readonly<{
+  [K in keyof T["variants"]]?:
+    | VariantOptionValue<keyof T["variants"][K]>
+    | boolean
+    | number
+    | null
+    | undefined;
+}>;
+```
+
+Call props of a recipe: every variant name of `T`, its option keys as values (`"true"`/`"false"` keys mean boolean).
 
 <!-- /signature -->
 
 - A recipe is data (`base`, `variants`, optional `compoundVariants` and `defaultVariants`); `recipeFromTables` turns it into a function with `class-variance-authority`.
+- `recipeFromTables(tables)` returns `RecipeFn<typeof tables>`: its props are typed by the variant names and option keys of `tables`, so `button({ intnet: "primary" })` is a type error. A bare `RecipeFn` (no type argument) is the loose `(props?: RecipeProps) => string`; annotating a recipe with it opts that recipe out of the check.
 
 ## `RecipeTokens`
 
@@ -205,7 +226,7 @@ clsx + a tailwind-merge that knows one theme's custom utilities.
 
 - `createCn(tokens)` = `clsx` + `tailwind-merge` extended with [`createTailwindMergeExtension`](./recipes.md#createtailwindmergeextension-tailwindmergeextension-tailwindmergetokens).
 
-## `splitSpacing`, `splitLayout`, `Split`
+## `splitSpacing`, `splitLayout`, `SplitLayoutOptions`, `Split`
 
 <!-- signature: splitSpacing -->
 
@@ -226,11 +247,7 @@ Spacing props → `.sp-*` classes + `--sg-sp-*` style (the library's
 ```ts
 export declare const splitLayout: (
   props: object,
-  box: RecipeFn,
-  spacingKeys: readonly string[],
-  variantKeys: readonly string[],
-  sizeKeys: readonly string[],
-  extra?: Readonly<Record<string, string | boolean>>,
+  options: SplitLayoutOptions,
 ) => Split;
 ```
 
@@ -240,6 +257,22 @@ finite number is passed on; anything else becomes `undefined`); a key in `sizeKe
 inline size: a string is kept, a finite number `n` becomes `"<n>px"`
 (`0` becomes `"0"`), anything else is dropped. `extra` variants win
 over props.
+
+<!-- /signature -->
+
+<!-- signature: SplitLayoutOptions -->
+
+```ts
+export declare interface SplitLayoutOptions {
+  readonly recipe: RecipeFn;
+  readonly spacingKeys: readonly string[];
+  readonly variantKeys: readonly string[];
+  readonly sizeKeys: readonly string[];
+  readonly extra?: Readonly<Record<string, string | boolean>>;
+}
+```
+
+Options of `splitLayout`.
 
 <!-- /signature -->
 
@@ -260,7 +293,7 @@ The result of `splitSpacing`/`splitLayout`: classes, inline style, the variant p
 
 <!-- /signature -->
 
-- `splitLayout(props, box, spacingKeys, variantKeys, sizeKeys, extra)`: `variantKeys` are the prop names that are recipe variants, `sizeKeys` the prop names that are inline sizes; the component's own variants (`extra`) win over props.
+- `splitLayout(props, { recipe, spacingKeys, variantKeys, sizeKeys, extra })`: `variantKeys` are the prop names that are recipe variants, `sizeKeys` the prop names that are inline sizes; the component's own variants (`extra`) win over props.
 - A size value is turned into a CSS length: a string is kept as is, a finite number `n` becomes `"<n>px"`, `0` becomes `"0"` (what React renders for the same numbers, so a React component's CSS does not change); any other value is dropped.
 
 ## `ThemeSpacingProps`

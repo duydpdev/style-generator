@@ -1,4 +1,4 @@
-<!-- source: documents/reference/types.md sha256: 1a1625927048 -->
+<!-- source: documents/reference/types.md sha256: 304c2904b373 -->
 
 # Kiểu (./types)
 
@@ -328,7 +328,7 @@ breakpoint key is a type error — there is no `(string & {})` fallback.
 Các key breakpoint mà `options.breakpoints` đặt tên, cặp mặc định, các key screen tùy biến, và kiểu giá trị responsive.
 
 ```ts
-import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/types";
 
 // "base" is always allowed; every other key must be declared in `options.breakpoints`
 // and exist in `screens` (or `defaultScreens`), or it has no CSS behind it.

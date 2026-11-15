@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_SPACING_PROPERTIES } from "../../shared/defaultOption";
 import type { SpacingKey } from "../../shared/defaultOption";
-import { resolveSpacingProps } from "../spacing/spacingHelpers";
+import { resolveSpacing } from "../spacing/spacingHelpers";
 
 import { splitSpacingProps } from "./spacingProps";
 
@@ -26,12 +26,18 @@ describe("splitSpacingProps", () => {
     expect(rest.onClick).toBe(onClick);
   });
 
-  it("matches resolveSpacingProps for the props it resolves", () => {
+  it("matches resolveSpacing for each prop it resolves", () => {
     const props = { p: 4, mx: { base: 2, md: 4 }, mt: 0 } as const;
     const { spacing } = splitSpacingProps(props, KEYS);
-    const expected = resolveSpacingProps(props);
-    expect(spacing.className).toBe(expected.classNames);
-    expect(spacing.style).toEqual(expected.style);
+    const parts = [
+      resolveSpacing("p", 4),
+      resolveSpacing("mx", { base: 2, md: 4 }),
+      resolveSpacing("mt", 0),
+    ];
+    expect(spacing.className).toBe(parts.map((p) => p.className).join(" "));
+    expect(spacing.style).toEqual(
+      Object.assign({}, ...parts.map((p) => p.style)),
+    );
   });
 
   it("returns an empty className/style and the full props when none are set", () => {

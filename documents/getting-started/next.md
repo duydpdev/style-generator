@@ -84,7 +84,6 @@ import {
   contrastText,
   pick,
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -212,7 +211,7 @@ export const buttonTables = {
   },
 } satisfies RecipeTables;
 
-export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
+export const buttonRecipe = recipeFromTables(buttonTables);
 ```
 
 <!-- embed: examples/plain-react/src/ui/button/Button.tsx -->

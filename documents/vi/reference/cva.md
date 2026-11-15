@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cva.md sha256: 54651c41e6ee -->
+<!-- source: documents/reference/cva.md sha256: b6e8a6b927f9 -->
 
 # Helper CVA (./cva)
 
@@ -185,8 +185,8 @@ sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`).
 Single source of truth for BOTH sides of the contract: the registry's
 `colorsCategory.states` (which drives the `@source inline` state lines) and
 consumers passing `{ states: COLOR_STATES }` to `createVariantMapper`.
-Kept in its own dependency-free module so the browser-safe `./tokens` and
-`./cva` subpaths can re-export it without pulling Zod or the registry.
+Kept in its own dependency-free module so the browser-safe `./cva`
+subpath can re-export it without pulling Zod or the registry.
 
 <!-- /signature -->
 

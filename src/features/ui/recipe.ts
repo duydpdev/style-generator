@@ -41,21 +41,42 @@ export type RecipeProps = Readonly<
   Record<string, string | number | boolean | null | undefined>
 >;
 
-/** A recipe built from tables: props in, one class string out; components type the exact props. */
-export type RecipeFn = (props?: RecipeProps) => string;
+type VariantOptionValue<O> = O extends "true" | "false"
+  ? boolean
+  : O extends string | number
+    ? O
+    : never;
+
+/** Call props of a recipe: every variant name of `T`, its option keys as values (`"true"`/`"false"` keys mean boolean). */
+export type RecipeVariantProps<T extends RecipeTables> = Readonly<{
+  [K in keyof T["variants"]]?:
+    | VariantOptionValue<keyof T["variants"][K]>
+    | boolean
+    | number
+    | null
+    | undefined;
+}>;
+
+/** A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows the variant names of its tables `T`. */
+export type RecipeFn<T extends RecipeTables = RecipeTables> = (
+  props?: RecipeVariantProps<T>,
+) => string;
 
 /**
  * cva over a recipe's tables. Compound and default entries are loose
  * records, so they are cast here once instead of in every recipe.
- * @param {RecipeTables} tables - Base classes, variants, compound and default variants
- * @returns {RecipeFn} The recipe
+ * @template T - The tables type; its variant names type the recipe's props
+ * @param {T} tables - Base classes, variants, compound and default variants
+ * @returns {RecipeFn<T>} The recipe
  */
-export const recipeFromTables = (tables: RecipeTables): RecipeFn =>
+export const recipeFromTables = <T extends RecipeTables>(
+  tables: T,
+): RecipeFn<T> =>
   cva<VariantTable>(tables.base, {
     variants: tables.variants,
     compoundVariants: tables.compoundVariants as never,
     defaultVariants: tables.defaultVariants as never,
-  }) as RecipeFn;
+  }) as RecipeFn<T>;
 
 /**
  * `map[key]`, or a thrown error naming the missing token, so a renamed

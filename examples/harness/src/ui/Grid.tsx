@@ -51,13 +51,12 @@ export const createGrid = <W extends RecipeTokens>(tokens: W) => {
     ...props
   }: Polymorphic<T, GridOwnProps<W>>): JSX.Element {
     const Component: ElementType = as ?? "div";
-    const split = splitLayout(
-      props,
-      layout,
+    const split = splitLayout(props, {
+      recipe: layout,
       spacingKeys,
-      BOX_VARIANT_KEYS,
-      LAYOUT_SIZE_KEYS,
-    );
+      variantKeys: BOX_VARIANT_KEYS,
+      sizeKeys: LAYOUT_SIZE_KEYS,
+    });
     const cols = columns === undefined ? undefined : gridColumns(columns);
     return (
       <Component

@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/next.md sha256: af17675114d0 -->
+<!-- source: documents/getting-started/next.md sha256: e814e6447ba7 -->
 
 # Bắt đầu: Next.js
 
@@ -86,7 +86,6 @@ import {
   contrastText,
   pick,
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -214,7 +213,7 @@ export const buttonTables = {
   },
 } satisfies RecipeTables;
 
-export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
+export const buttonRecipe = recipeFromTables(buttonTables);
 ```
 
 <!-- embed: examples/plain-react/src/ui/button/Button.tsx -->

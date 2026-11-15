@@ -1,7 +1,6 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -36,4 +35,4 @@ export const inputTables = {
 } satisfies RecipeTables;
 
 /** `inputRecipe({ size, placeholderColor })` → class string. */
-export const inputRecipe: RecipeFn = recipeFromTables(inputTables);
+export const inputRecipe = recipeFromTables(inputTables);

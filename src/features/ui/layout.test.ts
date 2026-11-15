@@ -36,10 +36,12 @@ describe("splitLayout", () => {
   it("routes variant keys, sizes, spacing and the rest", () => {
     const split = splitLayout(
       { rounded: "pill", width: 320, maxWidth: "50%", p: 4, id: "card" },
-      box,
-      ["p"],
-      VARIANT_KEYS,
-      SIZE_KEYS,
+      {
+        recipe: box,
+        spacingKeys: ["p"],
+        variantKeys: VARIANT_KEYS,
+        sizeKeys: SIZE_KEYS,
+      },
     );
     expect(split).toEqual({
       className: "box rounded-pill sp-p",
@@ -59,10 +61,12 @@ describe("splitLayout", () => {
   ])("renders the size %j as %j", (value, css) => {
     const split = splitLayout(
       { width: value },
-      box,
-      [],
-      VARIANT_KEYS,
-      SIZE_KEYS,
+      {
+        recipe: box,
+        spacingKeys: [],
+        variantKeys: VARIANT_KEYS,
+        sizeKeys: SIZE_KEYS,
+      },
     );
     expect(split.style).toEqual({ width: css });
   });
@@ -72,10 +76,12 @@ describe("splitLayout", () => {
     (value) => {
       const split = splitLayout(
         { width: value },
-        box,
-        [],
-        VARIANT_KEYS,
-        SIZE_KEYS,
+        {
+          recipe: box,
+          spacingKeys: [],
+          variantKeys: VARIANT_KEYS,
+          sizeKeys: SIZE_KEYS,
+        },
       );
       expect(split.style).toEqual({});
       expect(split.rest).toEqual({});
@@ -85,11 +91,13 @@ describe("splitLayout", () => {
   it("lets extra win over a prop of the same variant", () => {
     const split = splitLayout(
       { position: "absolute" },
-      box,
-      [],
-      VARIANT_KEYS,
-      SIZE_KEYS,
-      { position: "relative" },
+      {
+        recipe: box,
+        spacingKeys: [],
+        variantKeys: VARIANT_KEYS,
+        sizeKeys: SIZE_KEYS,
+        extra: { position: "relative" },
+      },
     );
     expect(split.variants).toEqual({ position: "relative" });
     expect(split.className).toBe("box relative");
@@ -98,10 +106,12 @@ describe("splitLayout", () => {
   it("leaves a key outside variantKeys or sizeKeys in rest", () => {
     const split = splitLayout(
       { rounded: "pill", width: 320 },
-      box,
-      [],
-      ["position"],
-      ["height"],
+      {
+        recipe: box,
+        spacingKeys: [],
+        variantKeys: ["position"],
+        sizeKeys: ["height"],
+      },
     );
     expect(split.rest).toEqual({ rounded: "pill", width: 320 });
     expect(split.style).toEqual({});
@@ -111,10 +121,12 @@ describe("splitLayout", () => {
   it("drops a non-string variant value", () => {
     const split = splitLayout(
       { rounded: true },
-      box,
-      [],
-      VARIANT_KEYS,
-      SIZE_KEYS,
+      {
+        recipe: box,
+        spacingKeys: [],
+        variantKeys: VARIANT_KEYS,
+        sizeKeys: SIZE_KEYS,
+      },
     );
     expect(split.variants.rounded).toBeUndefined();
     expect(split.rest).toEqual({});
@@ -127,7 +139,10 @@ describe("splitLayout", () => {
   ])(
     "passes a finite number variant value through (%s)",
     (value, className) => {
-      const split = splitLayout({ zIndex: value }, box, [], ["zIndex"], []);
+      const split = splitLayout(
+        { zIndex: value },
+        { recipe: box, spacingKeys: [], variantKeys: ["zIndex"], sizeKeys: [] },
+      );
       expect(split.variants.zIndex).toBe(value);
       expect(split.className).toBe(className);
     },
@@ -136,7 +151,10 @@ describe("splitLayout", () => {
   it.each([Number.NaN, Number.POSITIVE_INFINITY])(
     "drops a non-finite number variant value (%s)",
     (value) => {
-      const split = splitLayout({ zIndex: value }, box, [], ["zIndex"], []);
+      const split = splitLayout(
+        { zIndex: value },
+        { recipe: box, spacingKeys: [], variantKeys: ["zIndex"], sizeKeys: [] },
+      );
       expect(split.variants.zIndex).toBeUndefined();
       expect(split.className).toBe("box");
     },

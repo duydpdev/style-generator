@@ -1,7 +1,6 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -174,7 +173,7 @@ export const layoutTables = {
   },
 } satisfies RecipeTables;
 
-export const layoutRecipe: RecipeFn = recipeFromTables(layoutTables);
+export const layoutRecipe = recipeFromTables(layoutTables);
 
 /** A row of two or more items; direction defaults to row. Item props: `grow`, `shrink`, `basis`. */
 export const flexTables = {
@@ -213,4 +212,4 @@ export const flexTables = {
   defaultVariants: { direction: "row" },
 } satisfies RecipeTables;
 
-export const flexRecipe: RecipeFn = recipeFromTables(flexTables);
+export const flexRecipe = recipeFromTables(flexTables);

@@ -3,7 +3,6 @@ import type { ColorVariant } from "@duydpdev/style-generator/types";
 import {
   contrastText,
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -63,4 +62,4 @@ export const badgeTables = {
 } satisfies RecipeTables;
 
 /** `badgeRecipe({ color, variant })` → class string. */
-export const badgeRecipe: RecipeFn = recipeFromTables(badgeTables);
+export const badgeRecipe = recipeFromTables(badgeTables);

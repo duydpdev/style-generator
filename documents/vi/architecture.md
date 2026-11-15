@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 07ec3c6b555f -->
+<!-- source: documents/architecture.md sha256: e0168c797388 -->
 
 # Kiến trúc
 
@@ -257,8 +257,8 @@ Ba helper phía component, an toàn cho trình duyệt, không import `tailwind-
 
 Bộ kit không có style mà các component ví dụ được xây dựng trên đó, nằm trong `src/features/ui/`: `recipeFromTables(tables)` (cva trên các bảng class thuần),
 `pick`/`contrastText` (token → class, ném lỗi khi thiếu token), `createCn(tokens)` (`clsx` + `tailwind-merge` với `createTailwindMergeExtension`),
-và `splitSpacing`/`splitLayout`/`mergeStyle` (props → class, inline style và phần còn lại). `splitLayout` nhận tên các prop variant của recipe và tên các prop kích thước làm đối
-số, nên bộ kit không biết gì về design system hay kiểu prop bố cục; nó đổi một kích thước số thành px (`320` → `"320px"`, `0` → `"0"`, chuỗi được giữ nguyên).
+và `splitSpacing`/`splitLayout`/`mergeStyle` (props → class, inline style và phần còn lại). `splitLayout` nhận recipe, các key spacing, tên các prop variant của recipe và tên các prop kích thước trong một object tùy chọn duy nhất,
+nên bộ kit không biết gì về design system hay kiểu prop bố cục; nó đổi một kích thước số thành px (`320` → `"320px"`, `0` → `"0"`, chuỗi được giữ nguyên).
 `class-variance-authority`, `clsx` và `tailwind-merge` là các optional peer dependency: chỉ `./ui` import chúng, được bảo vệ bởi `check:externals`.
 `./ui-react` chỉ có kiểu (`Polymorphic`) nên `./ui` không dính kiểu của React. Cả hai đều không được re-export từ `.`.
 
@@ -362,11 +362,12 @@ giá trị responsive của phần tử cha sẽ rò xuống một phần tử c
 Hồi quy này được kiểm thử trên Chromium và WebKit (`e2e/spacing-inheritance.spec.ts`).
 
 ```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
+import { resolveSpacing } from "@duydpdev/style-generator/spacing";
 
-const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
-// classNames: "sp-p sp-mx"                       (a string, not an array)
-// style: { "--sg-sp-p": "1rem", "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" }
+const p = resolveSpacing("p", 4);
+// { className: "sp-p", style: { "--sg-sp-p": "1rem" } }
+const mx = resolveSpacing("mx", { base: 2, md: 4 });
+// { className: "sp-mx", style: { "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" } }
 ```
 
 Tắt nó bằng `options.spacing.enabled = false`; tùy biến bằng `options.spacing.properties` (key spacing → mảng các thuộc tính CSS, ví dụ `{ inset: ["top", "bottom"] }`;

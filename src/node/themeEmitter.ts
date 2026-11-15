@@ -18,7 +18,7 @@ import { writeFileAtomic } from "./writeFileAtomic";
 
 /**
  * Where an emit failed. `read` → `parse` → `options` → `theme` → `cross`
- * (theme × options) → `write` are the steps of {@link emitTheme};
+ * (theme × options) → `generate` → `write` are the steps of {@link emitTheme};
  * `stale` is reported by {@link checkTokensModule} only (the tokens file is
  * missing or differs); `config` (an invalid `style-gen.config.json` on reload)
  * and `watch` (a watcher error) are reported by `watchThemeFile` only.

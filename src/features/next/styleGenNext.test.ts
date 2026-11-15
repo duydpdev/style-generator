@@ -425,10 +425,29 @@ describe("styleGenNext", () => {
 
         expect(error).toHaveBeenCalledWith(
           expect.stringMatching(
-            /\[style-gen-next\] Re-emit failed:\nInvalid config \(style-gen\.config\.json\):\n[^]*breakpoint/,
+            /\[style-gen-next\] Cannot reload config, keeping the previous one:\nInvalid config \(style-gen\.config\.json\):\n[^]*breakpoint/,
           ),
         );
         expect(existsSync(join(tmp, "styles"))).toBe(false);
+      });
+
+      it("reports a path error of an edited config once, as a config error (N-L5)", () => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+        const error = vi.spyOn(console, "error").mockReturnValue(undefined);
+        project();
+        const configAbs = join(tmp, "style-gen.config.json");
+        styleGenNext()({})("phase-development-server");
+
+        writeConfig({ output: "../escaped.css" });
+        watcherAt(0).emit("change", configAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(error).toHaveBeenCalledTimes(1);
+        expect(error).toHaveBeenCalledWith(
+          "[style-gen-next] Cannot reload config, keeping the previous one:\n" +
+            "Invalid config (style-gen.config.json):\n" +
+            "output escapes project root: ../escaped.css",
+        );
       });
     });
   });
@@ -441,6 +460,28 @@ describe("styleGenNext", () => {
         "utf8",
       );
     };
+
+    it("says so when no config file exists and the defaults are used (missing-config message)", () => {
+      writeTheme("styles/theme.json");
+      const info = vi.spyOn(console, "info").mockReturnValue(undefined);
+
+      styleGenNext()({})("phase-production-build");
+
+      expect(existsSync(join(tmp, "styles/theme.css"))).toBe(true);
+      expect(info).toHaveBeenCalledWith(
+        `[style-gen-next] No style-gen.config.json or package.json#style-gen found in ${tmp}; using the defaults.`,
+      );
+    });
+
+    it("stays quiet about the config when one exists", () => {
+      writeTheme("styles/theme.json");
+      writeRawConfig({});
+      const info = vi.spyOn(console, "info").mockReturnValue(undefined);
+
+      styleGenNext()({})("phase-production-build");
+
+      expect(info).not.toHaveBeenCalled();
+    });
 
     it("takes theme and output from style-gen.config.json", () => {
       writeTheme("design/tokens.json");

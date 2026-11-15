@@ -30,9 +30,9 @@ export default styleGenNext()(nextConfig);
 ```
 
 Every option lives in `style-gen.config.json` (else
-`package.json#style-gen`) in `process.cwd()` — the `theme`, `output`,
-`tokensOutput` and every `generate()` option — exactly as
-`style-gen generate` reads them. The only plugin option is `root`, the
+`package.json#style-gen`) in `root` (default `process.cwd()`) — the
+`theme`, `output`, `tokensOutput` and every `generate()` option — exactly
+as `style-gen generate` reads them. The only plugin option is `root`, the
 directory holding that file (a relative one resolves against
 `process.cwd()`): `styleGenNext({ root })(nextConfig)`.
 

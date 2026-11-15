@@ -35,6 +35,7 @@ describe("resolvePluginTarget", () => {
         options: {},
       },
       configFile: join(root, "style-gen.config.json"),
+      configFound: false,
     });
   });
 
@@ -56,6 +57,7 @@ describe("resolvePluginTarget", () => {
         options: { enableResponsive: false },
       },
       configFile: join(root, "style-gen.config.json"),
+      configFound: true,
     });
   });
 
@@ -141,11 +143,11 @@ describe("parsePluginRootOptions", () => {
   });
 
   it.each(["themePath", "outDir", "options"])(
-    "rejects the removed %s key and points to the migration guide",
+    "rejects the removed %s key and links the migration guide by its absolute URL (N-L4)",
     (key) => {
       expect(() => parsePluginRootOptions({ [key]: "a" }, "my-plugin")).toThrow(
         new RegExp(
-          `^\\[my-plugin\\] Invalid options:\\n[^]*${key}[^]*7\\.x-to-8\\.0`,
+          `^\\[my-plugin\\] Invalid options:\\n[^]*${key}[^]*\\(see https://github\\.com/duydpdev/style-generator/blob/main/documents/migration/7\\.x-to-8\\.0\\.md#b1-plugins-take-only-root\\)`,
         ),
       );
     },

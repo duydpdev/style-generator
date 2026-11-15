@@ -220,6 +220,31 @@ describe("tokensCommand", () => {
     );
   });
 
+  it("refuses an --out that is the configured output file and writes nothing (F3)", () => {
+    write("styles/theme.json", theme);
+    write("style-gen.config.json", { output: "gen/theme.ts" });
+
+    expect(tokensCommand({ out: "gen/./theme.ts" }, tmp)).toBe(1);
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      `output and --out must be different files, both resolve to ${file("gen/theme.ts")}`,
+    );
+    expect(fs.existsSync(file("gen/theme.ts"))).toBe(false);
+  });
+
+  it("refuses an --out that is the theme file (F3)", () => {
+    write("styles/theme.ts", "keep");
+
+    expect(
+      tokensCommand({ theme: "styles/theme.ts", out: "styles/theme.ts" }, tmp),
+    ).toBe(1);
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      `theme and --out must be different files, both resolve to ${file("styles/theme.ts")}`,
+    );
+    expect(fs.readFileSync(file("styles/theme.ts"), "utf8")).toBe("keep");
+  });
+
   it("with a theme outside the project root the default path follows output, inside the root", () => {
     const shared = fs.mkdtempSync(
       path.join(os.tmpdir(), "style-gen-tokens-shared-"),

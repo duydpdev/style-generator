@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { z } from "zod";
 
 import { ThemeSchema } from "../../core/themeSchema";
-import { StyleGenConfigFileSchema } from "../../node/loadStyleGenConfig";
+import { buildConfigJsonSchema } from "../configJsonSchema";
 import { logger } from "../logger";
 
 import { initCommand, type InitArgs } from "./init";
@@ -458,7 +458,7 @@ describe("initCommand", () => {
             "utf8",
           ),
         ),
-      ).toEqual(z.toJSONSchema(StyleGenConfigFileSchema));
+      ).toEqual(buildConfigJsonSchema());
     });
 
     it("adds `$schema` first to an existing config and keeps its other keys", async () => {

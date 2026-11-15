@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the overall architecture of `@duydpdev/style-generator` 7.x (Tailwind CSS v4 only).
+This document describes the overall architecture of `@duydpdev/style-generator` (Tailwind CSS v4 only).
 The code is the source of truth for _how_ things work; this document only keeps _why_ and _where_.
 
 ## Table of contents
@@ -28,7 +28,7 @@ The code is the source of truth for _how_ things work; this document only keeps 
 
 | Concept           | Description                                                                                                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Theme Config**  | The only input: a JSON/object declaring `colors` (required), `typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`.                   |
+| **Theme Config**  | The only input: a JSON/object declaring `colors` (required), `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`.                   |
 | **ThemeSchema**   | A Zod `strictObject` that is the source of truth for both JSON and TypeScript: unknown keys, unsafe values and broken aliases are all rejected before any CSS is generated.        |
 | **Registry**      | Each category (colors, typography, …) is a descriptor in `builtInCategories`; every CSS/`@source inline` generation step goes through the registry instead of repeating key lists. |
 | **`generate()`**  | The single function that generates artifacts: `{ css, tokens, schema }`. The CLI, `styleGenVite` and `styleGenNext` all call it.                                                   |
@@ -98,9 +98,8 @@ otherwise `dist/index.js` and the browser-safe subpaths would pull Node into the
 ```typescript
 import { generate } from "@duydpdev/style-generator";
 import theme from "./theme.json";
-import { options } from "./style-gen.options";
 
-const { css, tokens, schema } = generate(theme, options);
+const { css, tokens, schema } = generate(theme);
 // css    → written to a file, @import next to tailwindcss
 // tokens → DesignTokens (same result as createDesignTokens)
 // schema → z.toJSONSchema(ThemeSchema)
@@ -123,10 +122,9 @@ Returns an object holding arrays of keys from the theme; used for component logi
 ```typescript
 import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import theme from "./theme.json";
-import { options } from "./style-gen.options";
 
-const { DesignTokens } = createDesignTokens(theme, options);
-// Each array is named after the matching ThemeConfig field (since 5.0):
+const { DesignTokens } = createDesignTokens(theme);
+// Each array is named after the matching ThemeConfig field:
 // DesignTokens.Web.colors        → ["primary", "primaryHover", ...]
 // DesignTokens.Web.typography    → ["text16Medium", ...]
 // DesignTokens.Web.fontFamily    → ["sans", ...]
@@ -143,7 +141,7 @@ shared by `defineTheme` and `generate`.
 
 ### Vite Plugin (emit-only)
 
-`styleGenVite` emits `theme.css` from the theme JSON, replacing the manual predev/prebuild workflow.
+`styleGenVite` emits `theme.css` and `theme.tokens.ts` from the theme JSON, replacing the manual predev/prebuild workflow.
 
 ```typescript
 // vite.config.ts
@@ -152,36 +150,29 @@ import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
 
 export default defineConfig({
-  plugins: [
-    styleGenVite({ themePath: "src/theme/theme.json", outDir: "src/theme" }),
-    tailwindcss(),
-  ],
+  plugins: [styleGenVite(), tailwindcss()],
 });
 ```
 
-- `themePath` — path to the theme JSON, relative to the project root; it may be absolute or outside the root (a theme shared across a monorepo)
-- `outDir` — output directory; it MUST be inside the project root (defaults to `dirname(themePath)`, and MUST match the `@import` path)
-- `options` — forwarded to `generate()`
-- calling `styleGenVite()` with no arguments: reads `style-gen.config.json` (or `package.json["style-gen"]`) at the Vite root via `loadStyleGenConfig` — `theme`,
-  `output` and every option; a broken config throws `[style-gen-vite] Invalid config (<source>):` instead of falling back to defaults (`src/node/resolvePluginTarget.ts`,
-  shared with Next)
+- every generator option lives in `style-gen.config.json` (or `package.json["style-gen"]`) at the Vite root, the file `style-gen generate` reads: `theme`, `output`, `tokensOutput` and each `generate()` option; the plugin loads it through `loadStyleGenConfig` (`resolvePluginTarget`, `src/node/resolvePluginTarget.ts`, shared with Next). A broken config throws `[style-gen-vite] Invalid config (<source>):` instead of falling back to defaults
+- the only plugin option is `root` (`StyleGenViteOptions`): the directory that holds the config, relative to Vite's root. Nuxt 4 sets Vite's root to `app/`, so `nuxt.config.ts` passes the project folder. Any other key throws at call time and names the migration guide (`parsePluginRootOptions`)
 
 **Lifecycle:** `configResolved` only resolves paths/config (it needs `config.root`) and registers `outFile` to warn about duplicate targets (this registration is released when the
-dev server closes — `server.close` is wrapped; `closeBundle`/`buildEnd` are not used); `buildStart` emits `theme.css` through `emitThemeCss` (Vite runs `buildStart` on `listen()`,
+dev server closes — `server.close` is wrapped; `closeBundle`/`buildEnd` are not used); `buildStart` emits `theme.css` and `theme.tokens.ts` through `emitTheme` (Vite runs `buildStart` on `listen()`,
 in middleware mode and for SSR environments; the plugin sets `perEnvironmentStartEndDuringDev: true`,
 so since Vite 6 `buildStart` also runs with `createServer()` without `listen()` + `ssrLoadModule`) and calls `this.addWatchFile(theme)` so `vite build --watch` rebuilds;
-`configureServer` adds the theme to `server.watcher`, debounces re-emission and triggers `full-reload` only when the CSS actually changed. `closeBundle` is gone.
+`configureServer` adds the theme and the config file to `server.watcher`. A theme edit debounces re-emission and triggers `full-reload` only when the CSS actually changed. A config edit **reloads the config in place** (never `server.restart()`, because hosts such as Nuxt and Storybook own the server):
+the target is resolved again, the new theme file is watched, the `outFile` registration moves, the files are re-emitted and the page reloads; an invalid edit logs `Cannot reload config, keeping the previous one` and the last valid config stays in force, like `style-gen generate --watch`.
 Every write goes through `writeFileAtomic` (a temp file in the same directory + `rename`), and only when the content changed,
 so the bundler never reads a half-written file and the watcher is not woken needlessly. An error in `buildStart` is a `this.error` with a stage label (`Invalid JSON in …`,
 `Invalid options:`, `Invalid theme (<path>):`, `Invalid theme/options:`, `Failed to generate CSS: …`, `Cannot write …`);
-an error in `configResolved` (Vite 5/6 calls this hook without binding `this`) is still a `throw new Error(…, { cause })`;
-a default `outDir` (`dirname(themePath)`) outside the root reports `outDir (defaults to dirname(themePath); set outDir inside the project root) escapes project root: <dir>`.
+an error in `configResolved` (Vite 5/6 calls this hook without binding `this`) is still a `throw new Error(…, { cause })`.
 The examples place `styleGenVite` before `tailwindcss()`.
 
 **Security:** `resolveProjectPath(root, input, label, { allowOutsideRoot })` (`src/node/resolveProjectPath.ts`) normalizes every path with `resolve(root, input)` (absolute paths
-too: `..`, `.` and doubled separators are collapsed; no trimming) and then keeps `outDir`/`output` inside the project root (it compares the normalized paths, with no `realpath`;
-error `<label> escapes project root: <input>`); `themePath` may be outside the root. A leading `/` is no longer rewritten into a relative path.
-It warns when several instances write the same **output file** (`outFile`, not merely the same `outDir`) within one process (monorepo).
+too: `..`, `.` and doubled separators are collapsed; no trimming) and then keeps `output`/`tokensOutput` inside the project root (it compares the normalized paths, with no `realpath`;
+error `<label> escapes project root: <input>`); `theme` may be outside the root. A leading `/` is not rewritten into a relative path.
+It warns when several instances write the same **output file** (`outFile`) within one process (monorepo).
 
 ### Next.js Plugin (emit-only)
 
@@ -192,16 +183,15 @@ import { styleGenNext } from "@duydpdev/style-generator/next";
 
 declare const nextConfig: object;
 
-export default styleGenNext({
-  themePath: "app/theme/theme.json",
-  outDir: "app/theme",
-})(nextConfig);
+export default styleGenNext()(nextConfig);
 ```
+
+Its only option is `root` (`StyleGenNextOptions`, default `process.cwd()`): everything else is read from `style-gen.config.json`, like the Vite plugin.
 
 - `styleGenNext(opts)(nextConfig)` returns a `(phase, ctx) => config` function, which Next accepts for `next.config.*`;
   `opts` may be omitted (it reads `style-gen.config.json` at `process.cwd()`, like Vite). Only `phase-development-server` and `phase-production-build` read the theme and write
-  `theme.css` (atomically); `phase-development-server` also adds a watcher via `watchThemeFile` (200ms debounce,
-  `persistent: false`) — the watcher logs errors and keeps running when the theme is invalid, and is closed when the config is reloaded with a different theme/output.
+  `theme.css` and `theme.tokens.ts` (atomically); `phase-development-server` also adds a watcher via `watchThemeFile` (200ms debounce,
+  `persistent: false`) — the watcher logs errors and keeps running when the theme is invalid, reloads the config in place when the config file changes (an invalid edit keeps the last valid config), and is replaced when the config is evaluated again for another theme/output.
   The other phases (`next start`, export, info, test) return the config without touching the disk, so a production image does not need the theme JSON.
   A function-form `nextConfig` `(phase, { defaultConfig })` is called with exactly the arguments Next passes.
 - **Limitation:** the path guard does not use `realpath` (a symlink pointing outside the root is not detected).
@@ -218,32 +208,28 @@ Config resolution order: flags → `style-gen.config.json` → `package.json["st
 shared with Vite/Next) validate the config file with `StyleGenConfigSchema` (its Shape and refinements are shared with `generate()` from `src/core/optionsSchema.ts`),
 return `issues` when the schema is violated (nothing is merged) and `error` when the file is broken JSON (`generate` warns and then uses defaults, `doctor` reports an error);
 config issues make `generate` and `doctor` stop with exit code 1 (`src/cli/loadCliConfig.ts` bundles reading and error printing).
-`generate` calls `emitThemeCss` (`writeFileAtomic`, writes only when the content changed); an invalid theme/option or a file write error returns exit code 1.
+`generate` calls `emitTheme` (`writeFileAtomic`, writes `theme.css` and `theme.tokens.ts` only when their content changed); an invalid theme/option or a file write error returns exit code 1. `generate --check` calls `checkTokensModule` instead, writes nothing and returns 1 when the tokens file is missing or differs. `style-gen tokens` writes the same module through `emitTokensModule`.
 `generate --watch` uses `watchThemeFile` to watch the theme **and** the config file: every time the config changes it calls `reloadTarget` to re-read it,
 and an invalid config is only reported (stage `config`) while **the last valid config stays in use**; theme/write errors after watching has started are only logged.
 `--version` reads `package.json` via `import.meta.url` (`src/cli/version.ts`), because `__dirname` does not exist in an ESM bundle.
-`init` (`src/cli/commands/init.ts`) writes the theme and `theme.schema.json` next to it, detects the stack with `detectStack` (`src/cli/commands/detectStack.ts`:
+`init` (`src/cli/commands/init.ts`) writes the theme, `theme.schema.json` next to it and the config's JSON Schema, detects the stack with `detectStack` (`src/cli/commands/detectStack.ts`:
 the first file `nuxt.config.*`, `next.config.*`, `vite.config.*` in the project root, in that order) and prints the bundler snippet from `src/cli/templates.ts`
 (`getBundlerSnippet`: no-argument `styleGenVite()`/`styleGenNext()`, absolute paths and `options` for Nuxt) plus the CSS `@import` lines, or the `style-gen generate` fallback;
-every printed or stored path is repo-relative POSIX; it never edits a bundler config and, since 5.2.0, scaffolds no generator script;
+every printed or stored path is repo-relative POSIX; it never edits a bundler config and scaffolds no generator script;
 it merges `theme`/`output` into an existing `style-gen.config.json`, or into a copy of `package.json["style-gen"]` when that file does not exist (a new file takes precedence over
-that section), keeps the other keys (a `plugin` key is dropped: 6.0 rejects it) and reads the config before writing anything;
-an existing `theme.schema.json` is treated as an existing file (it asks before overwriting; non-interactive exits with code 1).
+that section), keeps the other keys as they are and reads the config before writing anything;
+an existing `theme.schema.json` or `style-gen.config.schema.json` is treated as an existing file (it asks before overwriting; non-interactive exits with code 1; `--yes` keeps every existing file and exits 0 without prompting);
+the config it writes gets `"$schema": "./style-gen.config.schema.json"` as its first key unless it already has one.
 `schema` without `--out` reads the config like `generate` (a config that violates the schema → exit code 1,
 nothing written) and then writes `theme.schema.json` into the directory of the resolved `theme` (via `resolveProjectPath`; the theme may be outside the project,
-the written file may not). `tokens` (`src/cli/commands/tokens.ts`) runs `readAndPrepareTheme` and then serializes exactly the `DesignTokens.Web` object from `buildDesignTokens`
+the written file may not) and `style-gen.config.schema.json` (`z.toJSONSchema(StyleGenConfigFileSchema)`, which carries no cross-field refinements) into the project root, or where `--config-out` says. `tokens` (`src/cli/commands/tokens.ts`) runs `readAndPrepareTheme` and then serializes exactly the `DesignTokens.Web` object from `buildDesignTokens`
 into `export const tokens = {…} as const` — keys only, so a client bundle does not need to ship the `./tokens` runtime and the theme JSON.
 `budget` (`src/cli/commands/budget.ts`) sums the gzip size (`node:zlib` defaults) of every `.css` under the target file/directory and compares it with `--max-gzip`;
-the two summary lines `OK: …`/`OVER BUDGET: …` are a stable contract for consumers' CI, replacing the `check-css-budget.mjs` script that used to be copied by hand.
+the two summary lines `OK: …`/`OVER BUDGET: …` are a stable contract for consumers' CI.
 `doctor` reads the config (invalid → stop, exit code 1), validates the theme with `ThemeSchema`, then runs `prepareGenerate` with the config's options to catch theme × options
 errors (`❌ Invalid theme/options`), treats an `output` that escapes the root as an error, and prints warnings (without changing the exit code) when a key collides with a Tailwind
 utility (`src/cli/commands/utilityCollisions.ts`, the list is verified against the real compiler in `src/__integration__/utility-collisions.test.ts`) or when a `themeAxes` override
 repeats the literal of another key in the base (suggesting `$alias`, `src/cli/commands/aliasHints.ts`).
-
-Besides checking the config/theme, `doctor` also scans source files (`.css/.scss/.ts/.tsx/.vue/.svelte/.astro/.html`,
-…) under the current directory to warn with `file:line` about leftover 4.x-style `--sg-<color>` variables (`src/cli/commands/legacyColorVars.ts`): it skips `node_modules`, `.git`,
-build directories (`dist`, `build`, `out`, `.next`, `.nuxt`, `.output`, …), the config's output file and files > 1 MiB; it does not follow symlinks;
-it does not change the exit code.
 
 ### Recipes (`./recipes`)
 
@@ -252,7 +238,7 @@ the app declares `tailwind-merge` 3.x itself — the extension uses v3 group ids
 
 - `createTailwindMergeExtension(tokens)` → `{ extend: { classGroups, conflictingClassGroups, theme } }` for `extendTailwindMerge`.
   Tokens are camelCase keys, so they go through `toKebabCase` before becoming classes. `borderRadius` goes into `theme.radius` (the scale that every `rounded-*` group of
-  tailwind-merge reads, so `rounded-tl-pill` and `rounded-s-pill` merge correctly too); `shadows`, `backDropBlurs` and `borderWidth` are class groups.
+  tailwind-merge reads, so `rounded-tl-pill` and `rounded-s-pill` merge correctly too); `shadows`, `backdropBlurs` and `borderWidth` are class groups.
   The prefix table for `border`/`divide-*` (→ id `border-w*`), `shadow` and `backdrop-blur` is local to the module so the registry is not pulled into the `./tokens` chunk;
   `extendTailwindMerge.test.ts` pins this table to the registry's `classPrefixes`. `colors` and `fontFamily` are not listed because tailwind-merge's default groups already accept
   any value.
@@ -265,7 +251,7 @@ the app declares `tailwind-merge` 3.x itself — the extension uses v3 group ids
 
 The styleless kit the example components are built on, in `src/features/ui/`: `recipeFromTables(tables)` (cva over plain class tables), `pick`/`contrastText` (token → class,
 throwing on a missing token), `createCn(tokens)` (`clsx` + `tailwind-merge` with `createTailwindMergeExtension`), and `splitSpacing`/`splitLayout`/`mergeStyle` (props → classes,
-inline style and the rest). `splitLayout` takes the recipe's variant prop names and the size prop names as arguments, so the kit knows no design system and no layout prop type;
+inline style and the rest). `splitLayout` takes the recipe, the spacing keys, the variant prop names and the size prop names in one options object, so the kit knows no design system and no layout prop type;
 it turns a numeric size into px (`320` → `"320px"`, `0` → `"0"`, strings kept). `class-variance-authority`, `clsx` and `tailwind-merge` are optional peer dependencies:
 only `./ui` imports them, guarded by `check:externals`. `./ui-react` is type-only (`Polymorphic`) so `./ui` stays free of React types. Neither is re-exported from `.`.
 
@@ -273,8 +259,8 @@ only `./ui` imports them, guarded by `check:externals`. `./ui-react` is type-onl
 
 ## Registry & `@source inline`
 
-**Why a registry:** before 4.0.0 each category had key/prefix lists repeated in the plugin, the safelist and the tokens.
-Now a single `TokenCategoryDescriptor` (`src/features/registry/builtInCategories.ts`) declares `cssVarPrefix`, `themeNamespace`, `classPrefixes`, `responsive`,
+**Why a registry:** key and prefix lists would otherwise repeat in the plugin, the safelist and the tokens.
+A single `TokenCategoryDescriptor` (`src/features/registry/builtInCategories.ts`) declares `cssVarPrefix`, `themeNamespace`, `classPrefixes`, `responsive`,
 `states` and default values; adding a category = 1 line in `ThemeSchema` + 1 descriptor + 1 test. Category data is read with `theme[descriptor.key]`;
 the unions `CategoryKey`/`CssVarCategoryKey`/`RegistryPrefix` and `CategoryTokenKey<T, K>` (the token key type) are inferred from the `builtInCategories` array itself.
 Default values (`defaultValues` of `borderRadius`/`borderWidth`) live in `categoryTokenMeta.ts` — a separate, small file that does not drag in the descriptor's CSS part;
@@ -365,15 +351,16 @@ together with `@property --sg-sp-<key>[-<bp>] { syntax: "*"; inherits: false }` 
 ```
 
 **Why `inherits: false`:** variables do not inherit, so an `sp-*` class only reads variables declared on the **same element**;
-otherwise a parent's responsive value leaks down to a child that has not set the variable itself (a bug in 3.x).
+otherwise a parent's responsive value leaks down to a child that has not set the variable itself.
 The `--sg-sp-*` namespace also avoids occupying Tailwind's internal `--tw-*` namespace. The regression is tested on Chromium and WebKit (`e2e/spacing-inheritance.spec.ts`).
 
 ```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
+import { resolveSpacing } from "@duydpdev/style-generator/spacing";
 
-const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
-// classNames: "sp-p sp-mx"                       (a string, not an array)
-// style: { "--sg-sp-p": "1rem", "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" }
+const p = resolveSpacing("p", 4);
+// { className: "sp-p", style: { "--sg-sp-p": "1rem" } }
+const mx = resolveSpacing("mx", { base: 2, md: 4 });
+// { className: "sp-mx", style: { "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" } }
 ```
 
 Turn it off with `options.spacing.enabled = false`; customize it with `options.spacing.properties` (spacing key → array of CSS properties,
@@ -384,8 +371,7 @@ for example `{ inset: ["top", "bottom"] }`; the value is always `var(--sg-sp-<ke
 ## Exports API
 
 The export list per subpath, with signatures and examples, lives in [`reference/`](./reference/core.md#all-exports-by-subpath);
-`yarn check:doc-exports` guarantees that every export has a heading there. What was removed in 4.0.0 is in [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md),
-and in 5.0.0 in [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
+`yarn check:doc-exports` guarantees that every export has a heading there. Breaking changes between majors are in the guides under `migration/` (the latest is [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
 
 ---
 
@@ -420,7 +406,7 @@ The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) th
 - `/` — landing (editorial scroll).
 - `/docs` — redirects to `/docs/introduction` (the repo `README.md`).
 - `/docs/:slug` — renders the files listed in `site/src/lib/docs-meta.json` (the repo `README.md`, `documents/*.md`, `documents/getting-started/*.md`,
-  `documents/reference/*.md` and the two migration guides; each entry has a unique slug, group and order) via `react-markdown`.
+  `documents/reference/*.md` and the migration guides; each entry has a unique slug, group and order) via `react-markdown`.
   HTML comments used by the docs scripts (`<!-- embed: … -->`, `<!-- signature: … -->`, `<!-- snippet: … -->`) are stripped before rendering
   (`site/src/lib/strip-html-comments.ts`).
 - `/vi/docs`, `/vi/docs/:slug` — the Vietnamese twin of the same page (`documents/vi/<path>`; the repo `README.md` → `documents/vi/README.md`) under the same slug,
@@ -438,22 +424,21 @@ into `site/public/examples/v4` (gitignored). The iframe in `examples-page.tsx` l
 4 workspaces in `examples/*` (they link the lib via `link:../..`; `design-system-example` is referenced by `harness` via `workspace:*`).
 The plain apps (`plain-react`, `plain-nuxt`) depend on no other workspace: each owns a reduced theme copy,
 `src/theme.ts` (Nuxt `app/theme.ts`) and one folder per component over `@duydpdev/style-generator/ui`; `yarn check:plain-ui` keeps their shared files identical.
-**`examples/design-system`** holds everything shared — `theme.json` (+ schema), `style-gen.options.ts`, `tokens`, `cn`, the headless recipes of the six sample components (`box`,
+**`examples/design-system`** holds everything shared — `theme.json` (+ schema), `style-gen.config.json`, the generated `theme.tokens.ts`, `tokens`, `cn`, the headless recipes of the six sample components (`box`,
 `text`, `stack`, `grid`, `button`), the shared CSS (`palettes.css`, `style-guide.css`) and the DX test — so each app keeps only its wiring,
-its demo code and (in `harness`) the six sample components in its `ui/` folder. `style-gen.options.ts` is `as const satisfies StyleGeneratorOptions` (types imported from `./types`,
-not `defineOptions`, because that exists only in `.` and would pull Zod into the browser bundle); `harness` imports `options` from `design-system-example/style-gen.options`.
+its demo code and (in `harness`) the six sample components in its `ui/` folder. Every app declares its generator options in one config file (`style-gen.config.json`, or `package.json#style-gen` in `harness`) and wires `styleGenVite()` with no arguments;
+`plain-react`, `plain-nuxt`, `design-system` and `site` commit the `theme.tokens.ts` the plugin or `style-gen generate` writes (`yarn check:tokens` fails when one is stale); `harness` generates its own at dev/build time and git-ignores it.
 
-| Example         | Stack                      | Role / theme wiring                                                                                                                                                               |
-| --------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `design-system` | Plain TypeScript (no app)  | Theme, options, tokens, `cn`, headless recipes, shared CSS, DX test (`yarn workspace design-system-example test`); CLI-only flow (`style-gen.config.json` → `style-gen generate`) |
-| `harness`       | Vite + React + Tailwind v4 | `styleGenVite({ themePath, outDir, options })` → `@import "./theme/theme.css"`; the six sample components (`src/ui/*.tsx`) wrap the recipes, and `site` imports them              |
-| `plain-nuxt`    | Nuxt 4 (Vue 3) + TW v4     | `styleGenVite` in `nuxt.config.ts` with absolute paths to `app/theme/`; the plain landing page from `app/ui/<folder>/` SFCs                                                       |
-| `plain-react`   | Vite + React + Tailwind v4 | `styleGenVite` → `src/theme/theme.css`; the plain landing page, Storybook stories and the parity gate against `harness`                                                           |
+| Example         | Stack                      | Role / theme wiring                                                                                                                                                                   |
+| --------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `design-system` | Plain TypeScript (no app)  | Theme, config, generated tokens, `cn`, headless recipes, shared CSS, DX test (`yarn workspace design-system-example test`); CLI flow (`style-gen.config.json` → `style-gen generate`) |
+| `harness`       | Vite + React + Tailwind v4 | `styleGenVite()` reading `package.json#style-gen` → `@import "./theme/theme.css"`; the six sample components (`src/ui/*.tsx`) wrap the recipes, and `site` imports them               |
+| `plain-nuxt`    | Nuxt 4 (Vue 3) + TW v4     | `styleGenVite({ root })` in `nuxt.config.ts` (root = the project folder); the plain landing page from `app/ui/<folder>/` SFCs                                                         |
+| `plain-react`   | Vite + React + Tailwind v4 | `styleGenVite()` → `src/theme/theme.css` + `theme.tokens.ts`; the plain landing page, Storybook stories and the parity gate against `harness`                                         |
 
 Each app emits `theme.css` into its own gitignored file and `@import`s the shared CSS through `design-system-example/styles/*`;
 `harness` adds `@source` lines back to `design-system/src` (relative to the CSS file), while its `ui/` components sit inside the app and are scanned by default;
-the plain apps need none, because every class literal lives inside the app. Running the harness app requires Node >= 22.18 (its bundler config imports `.ts` modules through
-Node's type stripping). Only `harness` is embedded in the landing site; the plain apps are standalone. See [`examples/README.md`](../examples/README.md).
+the plain apps need none, because every class literal lives inside the app. Only `harness` is embedded in the landing site; the plain apps are standalone. See [`examples/README.md`](../examples/README.md).
 
 ### Deploy pipelines
 

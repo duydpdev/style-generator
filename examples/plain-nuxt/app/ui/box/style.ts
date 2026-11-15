@@ -1,7 +1,6 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -91,7 +90,7 @@ export const boxTables = {
     roundedL: createVariantMapper("rounded-l", tokens.borderRadius),
     roundedR: createVariantMapper("rounded-r", tokens.borderRadius),
     shadow: createVariantMapper("shadow", tokens.shadows),
-    backdropBlur: createVariantMapper("backdrop-blur", tokens.backDropBlurs),
+    backdropBlur: createVariantMapper("backdrop-blur", tokens.backdropBlurs),
     position: {
       absolute: "absolute",
       relative: "relative",
@@ -193,4 +192,4 @@ export const boxTables = {
   },
 } satisfies RecipeTables;
 
-export const boxRecipe: RecipeFn = recipeFromTables(boxTables);
+export const boxRecipe = recipeFromTables(boxTables);

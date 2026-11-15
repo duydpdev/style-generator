@@ -45,7 +45,7 @@ function collectCss(target: string, cwd: string): string[] {
 
 /**
  * Executes the `budget` CLI command: sums the gzip size (`node:zlib`
- * defaults, the level the DEV.1 baseline used) of every `.css` file under
+ * defaults) of every `.css` file under
  * the target and compares it with `--max-gzip`. Directories are walked
  * recursively (Next emits `.next/static/css/*.css`). The two summary lines
  * (`OK: …` / `OVER BUDGET: …`) are stable: consumer CI greps them.

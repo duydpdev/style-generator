@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: f02eabd8231f -->
+<!-- source: documents/reference/ui.md sha256: 6bcf286d6fb1 -->
 
 # UI kit (./ui)
 
@@ -41,13 +41,12 @@ const props = {
   width: 320,
   id: "card",
 };
-const split = splitLayout(
-  props,
-  box,
-  tokens.spacingProperties,
-  ["rounded"],
-  ["width", "height"],
-);
+const split = splitLayout(props, {
+  recipe: box,
+  spacingKeys: tokens.spacingProperties,
+  variantKeys: ["rounded"],
+  sizeKeys: ["width", "height"],
+});
 export const element = {
   ...split.rest,
   className: cn(split.className, "shadow-md"),
@@ -57,12 +56,14 @@ export const element = {
 
 Các component harness trong [`examples/harness/src/ui/`](../../../examples/harness/src/ui/Box.tsx) và các factory recipe trong [`examples/design-system`](../../../examples/design-system/README.md) đều được dựng trên bộ kit này; [Component](../components.md) hướng dẫn chi tiết qua một component mẫu.
 
-## `recipeFromTables`, `RecipeTables`, `VariantTable`, `RecipeProps`, `RecipeFn`
+## `recipeFromTables`, `RecipeTables`, `VariantTable`, `RecipeProps`, `RecipeFn`, `RecipeVariantProps`
 
 <!-- signature: recipeFromTables -->
 
 ```ts
-export declare const recipeFromTables: (tables: RecipeTables) => RecipeFn;
+export declare const recipeFromTables: <T extends RecipeTables>(
+  tables: T,
+) => RecipeFn<T>;
 ```
 
 cva over a recipe's tables. Compound and default entries are loose
@@ -114,14 +115,34 @@ Recipe call props: variant name → option (`true`/`false` for boolean variants,
 <!-- signature: RecipeFn -->
 
 ```ts
-export declare type RecipeFn = (props?: RecipeProps) => string;
+export declare type RecipeFn<T extends RecipeTables = RecipeTables> = (
+  props?: RecipeVariantProps<T>,
+) => string;
 ```
 
-A recipe built from tables: props in, one class string out; components type the exact props.
+A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows the variant names of its tables `T`.
+
+<!-- /signature -->
+
+<!-- signature: RecipeVariantProps -->
+
+```ts
+export declare type RecipeVariantProps<T extends RecipeTables> = Readonly<{
+  [K in keyof T["variants"]]?:
+    | VariantOptionValue<keyof T["variants"][K]>
+    | boolean
+    | number
+    | null
+    | undefined;
+}>;
+```
+
+Call props of a recipe: every variant name of `T`, its option keys as values (`"true"`/`"false"` keys mean boolean).
 
 <!-- /signature -->
 
 - Một recipe là dữ liệu (`base`, `variants`, cùng các trường tùy chọn `compoundVariants` và `defaultVariants`); `recipeFromTables` chuyển nó thành một hàm bằng `class-variance-authority`.
+- `recipeFromTables(tables)` trả về `RecipeFn<typeof tables>`: props của nó được định kiểu theo tên variant và các key option của `tables`, nên `button({ intnet: "primary" })` là lỗi kiểu. `RecipeFn` trần (không có tham số kiểu) là kiểu lỏng `(props?: RecipeProps) => string`; chú thích một recipe bằng nó khiến recipe đó bỏ qua việc kiểm tra.
 
 ## `RecipeTokens`
 
@@ -132,7 +153,7 @@ export declare interface RecipeTokens {
   readonly colors: readonly string[];
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
   readonly spacingProperties: readonly string[];
@@ -207,7 +228,7 @@ clsx + a tailwind-merge that knows one theme's custom utilities.
 
 - `createCn(tokens)` = `clsx` + `tailwind-merge` được mở rộng với [`createTailwindMergeExtension`](./recipes.md#createtailwindmergeextension-tailwindmergeextension-tailwindmergetokens).
 
-## `splitSpacing`, `splitLayout`, `Split`
+## `splitSpacing`, `splitLayout`, `SplitLayoutOptions`, `Split`
 
 <!-- signature: splitSpacing -->
 
@@ -228,11 +249,7 @@ Spacing props → `.sp-*` classes + `--sg-sp-*` style (the library's
 ```ts
 export declare const splitLayout: (
   props: object,
-  box: RecipeFn,
-  spacingKeys: readonly string[],
-  variantKeys: readonly string[],
-  sizeKeys: readonly string[],
-  extra?: Readonly<Record<string, string | boolean>>,
+  options: SplitLayoutOptions,
 ) => Split;
 ```
 
@@ -242,6 +259,22 @@ finite number is passed on; anything else becomes `undefined`); a key in `sizeKe
 inline size: a string is kept, a finite number `n` becomes `"<n>px"`
 (`0` becomes `"0"`), anything else is dropped. `extra` variants win
 over props.
+
+<!-- /signature -->
+
+<!-- signature: SplitLayoutOptions -->
+
+```ts
+export declare interface SplitLayoutOptions {
+  readonly recipe: RecipeFn;
+  readonly spacingKeys: readonly string[];
+  readonly variantKeys: readonly string[];
+  readonly sizeKeys: readonly string[];
+  readonly extra?: Readonly<Record<string, string | boolean>>;
+}
+```
+
+Options of `splitLayout`.
 
 <!-- /signature -->
 
@@ -262,7 +295,7 @@ The result of `splitSpacing`/`splitLayout`: classes, inline style, the variant p
 
 <!-- /signature -->
 
-- `splitLayout(props, box, spacingKeys, variantKeys, sizeKeys, extra)`: `variantKeys` là tên các prop đóng vai trò là variant của recipe, `sizeKeys` là tên các prop đóng vai trò là kích thước inline; các variant riêng của component (`extra`) sẽ được ưu tiên hơn props.
+- `splitLayout(props, { recipe, spacingKeys, variantKeys, sizeKeys, extra })`: `variantKeys` là tên các prop đóng vai trò là variant của recipe, `sizeKeys` là tên các prop đóng vai trò là kích thước inline; các variant riêng của component (`extra`) sẽ được ưu tiên hơn props.
 - Một giá trị kích thước sẽ được chuyển đổi thành một độ dài CSS: một chuỗi ký tự được giữ nguyên, một số hữu hạn `n` trở thành `"<n>px"`, `0` trở thành `"0"` (đúng như những gì React render cho cùng các con số đó, nhờ đó CSS của một component React không bị thay đổi); bất kỳ giá trị nào khác đều bị bỏ qua.
 
 ## `ThemeSpacingProps`

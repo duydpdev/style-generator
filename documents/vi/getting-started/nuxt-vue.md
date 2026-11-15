@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 26d490f5d159 -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 1e0891365d1a -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -9,27 +9,26 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Nu
 Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`.
 
 ```bash
-yarn add @duydpdev/style-generator@^7.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Tự quản lý theme
 
-File theme JSON là [`app/theme/theme.json`](../../../examples/plain-nuxt/app/theme/theme.json) (không được nhúng ở đây). `app/theme.ts` biến nó thành token có kiểu và helper `cn`, dùng literal `options` của `app/options.ts`. Module đó không import JSON, nên `nuxt.config.ts` import nó mà không làm server khởi động lại ở mỗi lần sửa theme:
+File theme JSON là [`app/theme/theme.json`](../../../examples/plain-nuxt/app/theme/theme.json) (không được nhúng ở đây). `app/theme.ts` biến nó thành kiểu `theme` và helper `cn`, đồng thời re-export `tokens` có kiểu mà plugin ghi vào `app/theme/theme.tokens.ts` (hãy commit file đó; `style-gen generate --check` thất bại trong CI khi nó lỗi thời):
 
 <!-- embed: examples/plain-nuxt/app/theme.ts -->
 
 ```ts
-import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import { createCn } from "@duydpdev/style-generator/ui";
 
-import { options } from "./options";
 import themeJson from "./theme/theme.json";
+import { tokens } from "./theme/theme.tokens";
 
 /** The theme; `typeof theme` feeds `ColorVariant<typeof theme>` in the ui folders. */
 export const theme = themeJson;
 
-/** Typed token arrays from the theme and `options` (`./options`, shared with the bundler config). */
-export const tokens = createDesignTokens(themeJson, options).DesignTokens.Web;
+/** Typed token arrays, generated into `./theme/theme.tokens.ts` (commit it). */
+export { tokens };
 
 /** clsx + a tailwind-merge that knows this theme's utilities. */
 export const cn = createCn(tokens);
@@ -37,7 +36,7 @@ export const cn = createCn(tokens);
 
 ## Sinh theme.css bằng plugin Vite
 
-Nuxt chạy trên Vite, nên `styleGenVite` nằm dưới `vite.plugins`. Nuxt 4 đặt root của Vite là `app/`, vì vậy các đường dẫn là đường dẫn tuyệt đối. Plugin nhận cùng literal `options` mà `app/options.ts` export và `app/theme.ts` truyền cho `createDesignTokens`; `style-gen.config.json` lặp lại nó cho CLI `generate` (`check:plain-ui` giữ hai bản bằng nhau):
+Nuxt chạy trên Vite, nên `styleGenVite` nằm dưới `vite.plugins`. Nuxt 4 đặt root của Vite là `app/`, vì vậy plugin nhận thư mục dự án làm `root` và đọc `style-gen.config.json` từ đó; nó không nhận tùy chọn nào khác, nên CLI và bundler dùng chung một cấu hình:
 
 <!-- embed: examples/plain-nuxt/nuxt.config.ts#nuxt-config -->
 
@@ -46,7 +45,6 @@ import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
 import tailwindcss from "@tailwindcss/vite";
 import { styleGenVite } from "@duydpdev/style-generator/vite";
-import { options } from "./app/options";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -56,20 +54,11 @@ export default defineNuxtConfig({
   // Global stylesheet entry: Tailwind v4 + the generated theme.css.
   css: ["~/assets/css/globals.css"],
 
-  // Nuxt runs on Vite, so styleGenVite works as in plain-react. Nuxt 4 sets
-  // the Vite `root` to `app/`, so the paths are absolute. `options` comes
-  // from `app/options.ts`, which imports no JSON (a theme edit must not
-  // restart the server) and types the tokens with the same object; the
-  // `generate:theme` CLI reads the same steps from `style-gen.config.json`.
+  // Nuxt 4 sets the Vite root to `app/`, so `root` points at the project
+  // folder that holds `style-gen.config.json`.
   vite: {
     plugins: [
-      styleGenVite({
-        themePath: fileURLToPath(
-          new URL("./app/theme/theme.json", import.meta.url),
-        ),
-        outDir: fileURLToPath(new URL("./app/theme", import.meta.url)),
-        options,
-      }),
+      styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) }),
       tailwindcss(),
     ],
   },

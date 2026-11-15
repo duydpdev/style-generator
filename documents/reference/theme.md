@@ -16,6 +16,36 @@ const { css } = generate({
 });
 ```
 
+## A theme with every category
+
+A theme that uses every category (`$schema` is the editor's pointer, see [Editor autocomplete](#editor-autocomplete)):
+
+```json
+{
+  "$schema": "./theme.schema.json",
+  "colors": {
+    "blue500": "#3B82F6",
+    "primary": "$blue500",
+    "primaryForeground": "#FFFFFF",
+    "background": "#FFFFFF",
+    "muted": "#8E8E93"
+  },
+  "typography": {
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    }
+  },
+  "shadows": { "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)" },
+  "backdropBlurs": { "sm": "4px" },
+  "borderRadius": { "md": "8px" },
+  "fontFamily": { "sans": "\"Inter\", system-ui, sans-serif" },
+  "borderWidth": { "thin": "1px" }
+}
+```
+
 ## Key grammar
 
 Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Each category owns a distinct `--sg-<category>-` variable namespace (`--sg-color-*`, `--sg-shadow-*`, `--sg-sp-*`, …), so keys in different categories never collide (`colors.shadowPrimary` → `--sg-color-shadow-primary`, `shadows.primary` → `--sg-shadow-primary`). A `typography` key may not kebab-case to `sp-*` or `font-*`, and `fontWeight` must be a number from 1 to 1000. Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, quotes must be balanced, and so must parentheses and brackets (`rgb(0 0 0` is rejected at its path).
@@ -36,11 +66,25 @@ Everything the schema rejects about a name, in one place (every rule is reported
 | A `colors` key may not kebab-case to `x`, `y`, `x-<integer>`/`y-<integer>` or `x-<borderWidth key>`/`y-<borderWidth key>` (`divide-<key>` would be a Tailwind divider width)                                                | `colors` vs `borderWidth`                                                           | `x`, `y2`, `xThin` + `borderWidth.thin`                             | `xl`, `yellow`                     |
 | A `typography` key may not kebab-case to `sp-*` or `font-*` (it would shadow the spacing and font utilities)                                                                                                                | `typography`                                                                        | `spBody`, `sp-body`, `fontBold`                                     | `body`, `spacious`                 |
 | A `fontFamily` key may not kebab-case to `weight` / `size` or start with `weight-` / `size-` (Tailwind ignores `--font-weight-*` / `--font-size-*` as font families, so the key would overwrite the weight and size scales) | `fontFamily`                                                                        | `weightBold`, `size-xl`                                             | `weighty`, `sizeable`              |
-| A `typography` key may not kebab-case to a class another category emits (`<prefix>-<key>`)                                                                                                                                  | `typography` vs `colors`, `borderWidth`, `shadows`, `borderRadius`, `backDropBlurs` | `textPrimary` next to `colors.primary`                              | `text12Mono`, `heading`            |
+| A `typography` key may not kebab-case to a class another category emits (`<prefix>-<key>`)                                                                                                                                  | `typography` vs `colors`, `borderWidth`, `shadows`, `borderRadius`, `backdropBlurs` | `textPrimary` next to `colors.primary`                              | `text12Mono`, `heading`            |
 | Variants of one axis may not kebab-case to the same name (they would share one selector)                                                                                                                                    | `themeAxes.<axis>`                                                                  | `darkMode` + `dark-mode`                                            | `dark`, `highContrast`             |
+| A `__proto__` key is never allowed (it can only come from parsed JSON)                                                                                                                                                      | every token, axis and variant name, at any depth                                    | `__proto__`                                                         | any other name                     |
 | Axis and variant names may not be canonical integers                                                                                                                                                                        | `themeAxes`                                                                         | `100`, `2024`                                                       | `contrast100`, `007`               |
 
 The CLI, `styleGenVite` and `styleGenNext` print the rename hint on the offending path (for example `colors.CTA → Key "CTA" yields class "cta" in the CSS but "c-ta" through the typed tokens; rename it to "cta" …`).
+
+A `__proto__` key is rejected at its exact path wherever it appears in a theme. It can only come from a parsed JSON document, and without the check the token would be dropped silently:
+
+```json
+{
+  "colors": { "primary": "#3B82F6", "__proto__": "#000000" }
+}
+```
+
+```text
+Invalid theme (styles/theme.json):
+colors.__proto__ → "__proto__" is not a valid token name
+```
 
 ## Categories
 
@@ -49,10 +93,10 @@ The CLI, `styleGenVite` and `styleGenNext` print the rename hint on the offendin
 | `colors`        | `bg-*`, `text-*`, `border-*` via `@theme inline` (`--color-*`)                                                                 | Required. Flat, camelCase.                                                                                                                                                     |
 | `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)                                                                    | Entry: `fontSize`, `lineHeight`, `fontWeight` (number, 1–1000), optional `letterSpacing`/`fontFamily`/`fontStyle`; an absent `letterSpacing` emits no declaration. No aliases. |
 | `shadows`       | `shadow-*`                                                                                                                     |                                                                                                                                                                                |
-| `backDropBlurs` | `backdrop-blur-*`                                                                                                              |                                                                                                                                                                                |
+| `backdropBlurs` | `backdrop-blur-*`                                                                                                              |                                                                                                                                                                                |
 | `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)                                                                | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                                                                        |
 | `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                                                                                   | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                                                                              |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` via Tailwind's `--border-width-*` namespace (backed by `--sg-border-width-*`) | Falls back to Tailwind's own `0/1/2/4` scale when omitted or empty (`{}`). Replaces the 3.x `border` key.                                                                      |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` via Tailwind's `--border-width-*` namespace (backed by `--sg-border-width-*`) | Falls back to Tailwind's own `0/1/2/4` scale when omitted or empty (`{}`). Replaces Tailwind's `border` width scale.                                                           |
 
 ## Colors — camelCase keys
 
@@ -106,6 +150,14 @@ Declare flat sibling keys next to a color and the registry emits the state utili
 ```
 
 `primary` now opts into `hover:bg-primary-hover` and `active:bg-primary-active` (and the `text-`/`border-` forms). The state list is the exported constant `COLOR_STATES` (`["hover", "active"]`); feed it to `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` to get the class string, see [section 7](./cva.md). State names are kebab-cased (`focusVisible` → `focus-visible:`).
+
+## Editor autocomplete
+
+```bash
+yarn style-gen schema
+```
+
+`style-gen schema` writes `theme.schema.json` next to the theme file and `style-gen.config.schema.json` in the project root. Add `"$schema": "./theme.schema.json"` to the theme and `"$schema": "./style-gen.config.schema.json"` to `style-gen.config.json`, and the editor suggests keys and flags unknown ones. The schemas describe keys and value shapes; the checks that compare values with each other (aliases, collisions, `breakpoints` against `screens`) run in `generate`, the plugins and `style-gen doctor`.
 
 ## Multi-axis theming (`themeAxes`)
 
@@ -170,7 +222,32 @@ Rules:
 | compound `[data-theme="dark"][data-palette="…"]`     | cross-axis override (dark × a specific palette)                                        | Hand-written CSS: its `(0,2,0)` specificity beats either single-axis `html[data-…]` rule `(0,1,1)` regardless of source order                                                                        |
 | `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, and a nested `.x-sg-glass-target` child rule | Hand-written CSS: variables outside `--sg-*` and nested-child selectors are not representable by a theme override (see [`examples/design-system/README.md`](../../examples/design-system/README.md)) |
 
-The old single-axis key was renamed; a theme still using it is rejected with a message pointing at `themeAxes`. See the [migration guide](../migration/3.x-to-4.0.md) for the exact message and the rewrite.
+### Cross-axis alias cycles
+
+Every axis applies to the same `html` element, so an alias in one axis can chain into an alias in another. The theme is rejected when a combination of at most one variant per axis closes a cycle, even though each axis is acyclic on its own:
+
+```json
+{
+  "colors": { "a": "#111111", "b": "#222222" },
+  "themeAxes": {
+    "theme": {
+      "dark": { "colors": { "a": "$b" } }
+    },
+    "palette": {
+      "forest": { "colors": { "b": "$a" } }
+    }
+  }
+}
+```
+
+`theme.dark` points `a` at `b` and `palette.forest` points `b` at `a`; with both active `a → b → a`. The error names the later axis:
+
+```text
+Invalid theme (styles/theme.json):
+themeAxes.palette.forest.colors.b → Alias cycle detected when themeAxes.theme.dark and themeAxes.palette.forest are active together: a → b → a — axes apply to the same element, so these aliases chain across axes; point one of them at a literal value.
+```
+
+Point one of the two keys at a literal value to break the cycle.
 
 ## The `--sg-*` intermediate variables
 
@@ -206,8 +283,8 @@ Prefer standard Tailwind classes and the `--color-*` variables in application co
 }
 ```
 
-**Public contract.** The variables the generator emits (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, and the inline `--sg-sp-*` spacing variables) are part of the public output: aliases resolve to them, and hand-written CSS may read or override them. Renaming one is a breaking change — 5.0 renamed the color variables from `--sg-<color>` to `--sg-color-<key>`. `style-gen doctor` warns (`file:line`) about leftover `var(--sg-<colorKey>)` references or `--sg-<colorKey>:` declarations; see the [4.x → 5.0 guide](../migration/4.x-to-5.0.md).
+**Public contract.** The variables the generator emits (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, and the inline `--sg-sp-*` spacing variables) are part of the public output: aliases resolve to them, and hand-written CSS may read or override them. Renaming one is a breaking change.
 
 ## Built-in utility name clashes
 
-A theme key whose class equals a Tailwind utility (`bg-none`, `shadow-none`, `rounded-none`, a typography key that becomes `text-sm`, `h-1` from `h1`, or `italic`, colors named `transparent`/`current`/`inherit`, colors whose `ring-`/`outline-`/`divide-` class is a Tailwind static such as `solid` → `outline-solid` or an integer width such as `3` → `ring-3`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the clashes it recognises. A digit-only `borderWidth` key (`2`) is different: since 5.0 the theme value replaces Tailwind's built-in `border-2`, `border-x-2` and `divide-x-2` (Tailwind looks up the theme before its default scale); `doctor` still reports it so you confirm the override is intended.
+A theme key whose class equals a Tailwind utility (`bg-none`, `shadow-none`, `rounded-none`, a typography key that becomes `text-sm`, `h-1` from `h1`, or `italic`, colors named `transparent`/`current`/`inherit`, colors whose `ring-`/`outline-`/`divide-` class is a Tailwind static such as `solid` → `outline-solid` or an integer width such as `3` → `ring-3`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the clashes it recognises. A digit-only `borderWidth` key (`2`) is different: its theme value replaces Tailwind's built-in `border-2`, `border-x-2` and `divide-x-2` (Tailwind looks up the theme before its default scale); `doctor` still reports it so you confirm the override is intended.

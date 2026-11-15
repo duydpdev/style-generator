@@ -27,7 +27,15 @@ export interface InitArgs {
   skipRules?: boolean;
   /** Only write or refresh the agent rules file; scaffold nothing else. */
   rulesOnly?: boolean;
+  /**
+   * Answer every prompt with its default and never overwrite an existing
+   * file (scripts, CI, coding agents).
+   */
+  yes?: boolean;
 }
+
+/** The config's JSON Schema `init` writes in the project root. */
+const CONFIG_SCHEMA_FILE = "style-gen.config.schema.json";
 
 /** Agent configuration directory; it holds prose Tailwind must not scan. */
 const AGENT_DIR = ".claude";
@@ -147,32 +155,16 @@ interface MergeBase {
   configPath: string;
   /** Where `content` came from; `undefined` when `init` starts empty. */
   source?: "style-gen.config.json" | "package.json";
-  /** Keys `init` merges `theme`/`output` into: every existing key except the {@link REMOVED_CONFIG_KEYS}. */
+  /** The existing config object, as it is: `init` merges `theme`/`output` into it. */
   content: Record<string, unknown>;
-  /** The removed keys found in the existing config and dropped from `content`, in {@link REMOVED_CONFIG_KEYS} order. */
-  dropped: readonly (typeof REMOVED_CONFIG_KEYS)[number][];
-  /** The string entries of a dropped `extraSources`, to print as `@source inline(...)` lines. */
-  droppedSources: readonly string[];
 }
-
-/**
- * Config keys the schema used to accept and now rejects, with the major that
- * removed them. `init` drops them while merging: the merged file must load.
- */
-const REMOVED_CONFIG_KEYS = [
-  { key: "plugin", since: "6.0" },
-  { key: "extraSources", since: "7.0" },
-  { key: "axes", since: "7.0" },
-] as const;
 
 /**
  * The config `init` merges into: an existing `style-gen.config.json`, else
  * `package.json["style-gen"]`, else nothing. Read before anything is
- * written, so an unreadable config aborts with no file created. The
- * {@link REMOVED_CONFIG_KEYS} are dropped: the schema rejects them, and the
- * merged file must load.
+ * written, so an unreadable config aborts with no file created.
  * @param {string} cwd The project root.
- * @returns {MergeBase} The config path, the keys to keep and the removed keys that were dropped.
+ * @returns {MergeBase} The config path, where the content came from and the content.
  */
 function loadMergeBase(cwd: string): MergeBase {
   const configPath = path.resolve(cwd, "style-gen.config.json");
@@ -182,27 +174,8 @@ function loadMergeBase(cwd: string): MergeBase {
   const existing = source
     ? readExistingConfig(configPath)
     : readPackageJsonSection(cwd);
-  if (!existing) {
-    return { configPath, content: {}, dropped: [], droppedSources: [] };
-  }
-  const dropped = REMOVED_CONFIG_KEYS.filter(({ key }) =>
-    Object.hasOwn(existing, key),
-  );
-  const content = Object.fromEntries(
-    Object.entries(existing).filter(
-      ([key]) => !dropped.some((removed) => removed.key === key),
-    ),
-  );
-  const sources = existing.extraSources;
-  return {
-    configPath,
-    source: source ?? "package.json",
-    content,
-    dropped,
-    droppedSources: Array.isArray(sources)
-      ? sources.filter((entry): entry is string => typeof entry === "string")
-      : [],
-  };
+  if (!existing) return { configPath, content: {} };
+  return { configPath, source: source ?? "package.json", content: existing };
 }
 
 /**
@@ -288,16 +261,20 @@ function printNextSteps(
   rules: boolean,
 ): void {
   const outDir = path.posix.dirname(written.output);
+  const tokensFile = path.posix.join(outDir, "theme.tokens.ts");
   const exclude = rules ? AGENT_DIR : undefined;
   const entry = cssEntryFor(detected, written.output, cwd);
   if (detected.stack === "none") {
     logger.info(
       `📝 Next steps (no vite.config.*, next.config.* or nuxt.config.* found):
    1. Edit ${written.theme} with your design tokens
-   2. Write ${written.output}: \`yarn style-gen generate\` (add --watch while you edit the theme)
-   3. Import it next to Tailwind from a CSS file in ${outDir}/:`,
+   2. Write ${written.output} and ${tokensFile}: \`yarn style-gen generate\` (add --watch while you edit the theme)
+   3. Import the CSS next to Tailwind from a CSS file in ${outDir}/:`,
     );
     logger.log(getCssImport(cwd, entry, written.output, exclude));
+    logger.info(
+      `   4. Commit ${tokensFile} and add ${written.output} to .gitignore`,
+    );
     printRulesNote(rules);
     return;
   }
@@ -306,24 +283,16 @@ function printNextSteps(
    1. Edit ${written.theme} with your design tokens
    2. Add the plugin to ${detected.configFile} (merge it into your config; init never edits it):`,
   );
-  logger.log(getBundlerSnippet(detected, { theme: written.theme, outDir }));
-  if (detected.stack === "nuxt") {
-    logger.info(
-      "   With explicit paths the plugin does not read style-gen.config.json; that file then serves only the CLI (generate, doctor, tokens).",
-    );
-    const appDir = fs.existsSync(path.resolve(cwd, "app"));
-    if (appDir && !written.output.startsWith("app/")) {
-      logger.warn(
-        `${written.output} is outside app/: Nuxt 4 sets Vite's root to app/ and styleGenVite writes only inside it, so the dev server will reject this outDir. Re-run init with --theme under app/ (default app/assets/css/theme.json).`,
-      );
-    }
-  }
+  logger.log(getBundlerSnippet(detected));
   logger.info(
     `   3. Import the generated CSS next to Tailwind in ${entry} (or the CSS file in ${path.posix.dirname(entry)}/ that imports Tailwind):`,
   );
   logger.log(getCssImport(cwd, entry, written.output, exclude));
   logger.info(
-    `   4. Start the dev server: it writes ${written.output} and rewrites it on every theme save`,
+    `   4. Start the dev server: it writes ${written.output} and ${tokensFile} and rewrites them on every theme or config save`,
+  );
+  logger.info(
+    `   5. Commit ${tokensFile} and add ${written.output} to .gitignore`,
   );
   printRulesNote(rules);
 }
@@ -421,11 +390,17 @@ async function getInteractiveConfig(
 /**
  * Decide whether existing scaffold files may be replaced.
  * @param {boolean} isInteractive - Whether a TTY can answer the prompt
+ * @param {boolean} yes - `--yes`: keep the files instead of asking or failing
  * @returns {Promise<"overwrite" | "kept" | "refused">} The outcome
  */
 async function confirmOverwrite(
   isInteractive: boolean,
+  yes: boolean,
 ): Promise<"overwrite" | "kept" | "refused"> {
+  if (yes) {
+    logger.info("Existing files kept (--yes never overwrites).");
+    return "kept";
+  }
   if (!isInteractive) {
     logger.error(
       "Files already exist. Run interactively to confirm overwrite.",
@@ -440,26 +415,6 @@ async function confirmOverwrite(
   if (overwrite) return "overwrite";
   logger.info("Operation cancelled. Existing files kept.");
   return "kept";
-}
-
-/**
- * Tell the user which removed keys `init` dropped from the merged config,
- * and print the former `extraSources` entries as CSS to paste instead.
- * @param {MergeBase} mergeBase The merge base `loadMergeBase` returned.
- */
-function logDroppedKeys({ dropped, droppedSources }: MergeBase): void {
-  for (const { key, since } of dropped) {
-    logger.info(
-      `Removed the \`${key}\` key from style-gen.config.json: ${since} no longer accepts it.`,
-    );
-  }
-  if (droppedSources.length === 0) return;
-  logger.info(
-    "   Declare those runtime classes in your CSS next to the generated import instead:",
-  );
-  for (const entry of droppedSources) {
-    logger.log(`   @source inline(${JSON.stringify(entry)});`);
-  }
 }
 
 /**
@@ -573,6 +528,50 @@ async function refreshRulesOnly(
 /* ------------------ Command ------------------ */
 
 /**
+ * The config's `$schema` pointer, which goes first; a pointer the user wrote
+ * stays where it is.
+ * @param {Record<string, unknown>} content The existing config content.
+ * @returns {{ $schema?: string }} The key to put first, or nothing.
+ */
+function configSchemaRef(content: Record<string, unknown>): {
+  $schema?: string;
+} {
+  return content.$schema === undefined
+    ? { $schema: `./${CONFIG_SCHEMA_FILE}` }
+    : {};
+}
+
+/**
+ * `init --rules-only`: refuse the flags that scaffold, else refresh the rules.
+ * @param {InitArgs} args The initial CLI arguments.
+ * @param {DetectedStack} detected The detected stack.
+ * @param {string} cwd The project root.
+ * @param {string | URL} rulesSource The agent rules file to copy.
+ * @param {boolean} isInteractive Whether a TTY can answer the prompt.
+ * @returns {Promise<number>} The exit code.
+ */
+async function runRulesOnly(
+  args: InitArgs,
+  detected: DetectedStack,
+  cwd: string,
+  rulesSource: string | URL,
+  isInteractive: boolean,
+): Promise<number> {
+  if (
+    args.skipRules === true ||
+    args.theme !== undefined ||
+    args.dark !== undefined
+  ) {
+    logger.error(
+      "--rules-only cannot be combined with --theme, --dark or --skip-rules.",
+    );
+    return 1;
+  }
+  await refreshRulesOnly(detected, cwd, rulesSource, isInteractive);
+  return 0;
+}
+
+/**
  * The scaffolding itself; failures throw, `initCommand` turns them into
  * exit codes.
  * @param {InitArgs} args The initial CLI arguments.
@@ -585,24 +584,14 @@ async function scaffold(
   cwd: string,
   rulesSource: string | URL,
 ): Promise<number> {
-  const isInteractive = process.stdin.isTTY;
+  // `--yes` answers every prompt with its default, so it never asks.
+  const isInteractive = args.yes !== true && process.stdin.isTTY;
 
   const detected = detectStack(cwd);
   const defaultTheme = defaultThemeLoc(detected, cwd);
 
   if (args.rulesOnly) {
-    if (
-      args.skipRules === true ||
-      args.theme !== undefined ||
-      args.dark !== undefined
-    ) {
-      logger.error(
-        "--rules-only cannot be combined with --theme, --dark or --skip-rules.",
-      );
-      return 1;
-    }
-    await refreshRulesOnly(detected, cwd, rulesSource, isInteractive);
-    return 0;
+    return runRulesOnly(args, detected, cwd, rulesSource, isInteractive);
   }
 
   let themeLoc = args.theme ?? defaultTheme;
@@ -625,9 +614,14 @@ async function scaffold(
     "theme.schema.json",
   );
   const schemaAbsPath = resolveProjectPath(cwd, schemaLoc, "schema output");
+  const configSchemaAbsPath = resolveProjectPath(
+    cwd,
+    CONFIG_SCHEMA_FILE,
+    "config schema output",
+  );
 
-  if (fs.existsSync(themeAbsPath) || fs.existsSync(schemaAbsPath)) {
-    const proceed = await confirmOverwrite(isInteractive);
+  if ([themeAbsPath, schemaAbsPath, configSchemaAbsPath].some(fs.existsSync)) {
+    const proceed = await confirmOverwrite(isInteractive, args.yes === true);
     if (proceed === "refused") return 1;
     // Keeping the theme still refreshes the rules: re-running init after an
     // upgrade is how they are updated.
@@ -653,8 +647,12 @@ async function scaffold(
 
   logger.success(`Created ${themeLoc}`);
 
-  // The theme template references "./theme.schema.json" via "$schema".
-  const schemaCode = schemaCommand({ out: schemaLoc }, cwd);
+  // The theme template references "./theme.schema.json" via "$schema", the
+  // config "./style-gen.config.schema.json".
+  const schemaCode = schemaCommand(
+    { out: schemaLoc, configOut: CONFIG_SCHEMA_FILE },
+    cwd,
+  );
   if (schemaCode !== 0) return schemaCode;
 
   /* ---------- Config file (merged into the existing one) ---------- */
@@ -665,7 +663,15 @@ async function scaffold(
   };
   writeFile(
     mergeBase.configPath,
-    JSON.stringify({ ...mergeBase.content, ...written }, null, 2),
+    JSON.stringify(
+      {
+        ...configSchemaRef(mergeBase.content),
+        ...mergeBase.content,
+        ...written,
+      },
+      null,
+      2,
+    ),
   );
   logger.success(
     `${mergeBase.source === "style-gen.config.json" ? "Updated" : "Created"} style-gen.config.json`,
@@ -675,7 +681,6 @@ async function scaffold(
       'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
     );
   }
-  logDroppedKeys(mergeBase);
 
   /* ---------- Agent rules ---------- */
 

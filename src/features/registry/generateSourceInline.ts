@@ -253,8 +253,8 @@ const buildStateLines = (
  *
  * Each category gets its OWN line (not one giant merged directive) so a
  * single category exceeding a reasonable brace-expansion size never
- * threatens the others; the `sp-*` line keeps DEV.2.5's brace-expansion
- * form rather than one directive per key.
+ * threatens the others; the `sp-*` line uses one brace-expansion directive
+ * rather than one directive per key.
  * @param {ThemeConfig} theme - Theme configuration
  * @param {ResolvedOptions} [options] - Resolved generator options
  * @returns {string} One `@source inline(...)` directive per line, empty when there is nothing to emit

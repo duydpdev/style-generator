@@ -47,7 +47,7 @@ const { DesignTokens } = createDesignTokens(theme, {
 | `colors`            | All color keys (flat, camelCase)                                                                                                           |
 | `typography`        | Keys of `typography`                                                                                                                       |
 | `shadows`           | Keys of `shadows`                                                                                                                          |
-| `backDropBlurs`     | Keys of `backDropBlurs`                                                                                                                    |
+| `backdropBlurs`     | Keys of `backdropBlurs`                                                                                                                    |
 | `fontFamily`        | Keys of `fontFamily`                                                                                                                       |
 | `borderWidth`       | Keys of `borderWidth` (falls back to `0, 1, 2, 4` when omitted or empty)                                                                   |
 | `borderRadius`      | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES` when omitted or empty)                                                      |
@@ -59,18 +59,7 @@ const { DesignTokens } = createDesignTokens(theme, {
 
 Each array is named after its `ThemeConfig` field (`DesignTokens.Web.colors` holds the keys of `theme.colors`); `spacingProperties`, `breakpoints` and `screens` come from the options. Every array is `readonly`, and the options are inferred as literals (`generate`, `createDesignTokens` and `defineOptions` take `const O`): `createDesignTokens(theme, { breakpoints: ["md", "xl"] }).DesignTokens.Web.breakpoints` is `readonly ("md" | "xl")[]`. Options annotated as `StyleGeneratorOptions` widen those to `readonly string[]`, and so does an explicit type argument for the theme only (`createDesignTokens<typeof theme>(theme, { breakpoints: ["xl"] })`): drop the type argument to keep the literals. Without `options` the defaults apply (`readonly ("md" | "lg")[]`). `aliasedColors` is computed at runtime from the base record and every override; its type keeps each key whose value is a `$…` literal or a plain `string`. The types are `DesignTokensWeb<TTheme, O>` and `DesignTokensResult<TTheme, O>`.
 
-**One options module.** The bundler plugin, `createDesignTokens` and the recipe types must see the same options, or the `@source inline` coverage and the token arrays drift apart. Keep them in a dependency-free module, typed with `as const satisfies` and a type-only import (`defineOptions` lives in the root entry, which pulls Zod into a browser bundle):
-
-```ts
-// style-gen.options.ts
-import type { StyleGeneratorOptions } from "@duydpdev/style-generator/types";
-
-export const options = {
-  breakpoints: ["md", "lg"],
-} as const satisfies StyleGeneratorOptions;
-```
-
-Import it in `vite.config.ts` / `next.config.ts` ([Vite](./vite.md), [Next](./next.md)) and in `createDesignTokens(theme, options)`; `style-gen.config.json` must repeat the same values if you also use the CLI. See [`examples/design-system`](../../examples/design-system/README.md).
+**One configuration file.** The bundler plugins, `style-gen generate` and the generated `theme.tokens.ts` read the same `style-gen.config.json` (or `package.json["style-gen"]`), so the `@source inline` coverage and the token arrays cannot drift apart. The plugins and `style-gen generate` write the browser-safe token keys to `theme.tokens.ts`; commit it and import `tokens` from it ([Vite](./vite.md), [Next](./next.md)). Call `createDesignTokens(theme, options)` only for a second theme built at runtime. See [`examples/design-system`](../../examples/design-system/README.md).
 
 ## `Breakpoint`, `defaultScreens`
 
@@ -104,27 +93,6 @@ Tailwind's default screen width per `Breakpoint` (`sm` 640px … `2xl` 1536px). 
 <!-- /signature -->
 
 The Tailwind breakpoint keys as a const object, and their default widths (`sm` 640px … `2xl` 1536px); `options.screens` is merged over them.
-
-## `COLOR_STATES`
-
-<!-- signature: COLOR_STATES -->
-
-```ts
-export declare const COLOR_STATES: readonly ["hover", "active"];
-```
-
-Interactive state suffixes a flat color token can opt into by declaring a
-sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`).
-
-Single source of truth for BOTH sides of the contract: the registry's
-`colorsCategory.states` (which drives the `@source inline` state lines) and
-consumers passing `{ states: COLOR_STATES }` to `createVariantMapper`.
-Kept in its own dependency-free module so the browser-safe `./tokens` and
-`./cva` subpaths can re-export it without pulling Zod or the registry.
-
-<!-- /signature -->
-
-The interactive state suffixes (`hover`, `active`) a color token can opt into; see [CVA helpers](./cva.md).
 
 ## `DEFAULT_BORDER_VALUES`, `DEFAULT_ROUNDED_VALUES`
 

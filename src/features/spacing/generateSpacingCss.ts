@@ -98,11 +98,11 @@ const buildPropertyBlocks = (
  * `.class {}` rule) so Tailwind's variant engine still applies
  * `hover:`/`md:` modifiers to it from raw CSS-text input.
  *
- * D8 fix (DEV.2.5): no global `*` rule / `@layer base` — each utility owns
- * its full breakpoint fallback chain inline — and every `--sg-sp-<key>[-<bp>]`
- * var is registered via `@property` so it participates correctly in the
- * cascade instead of leaking a parent's value into children via
- * unregistered custom-property inheritance.
+ * No global `*` rule / `@layer base`: each utility owns its full breakpoint
+ * fallback chain inline, and every `--sg-sp-<key>[-<bp>]` var is registered
+ * via `@property` so it takes part in the cascade instead of leaking a
+ * parent's value into children through unregistered custom-property
+ * inheritance.
  * @param {Pick<ResolvedOptions, "spacing" | "sortedBreakpoints">} [options] - Resolved generator options (`spacing`, ascending `sortedBreakpoints`)
  * @returns {string} CSS string, empty when spacing generation is disabled
  */

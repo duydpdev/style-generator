@@ -26,10 +26,12 @@ const root = () => {
   const { as: _as, columns, align, justify, flow, rows, ...own } = props;
   const split = splitLayout(
     { ...attrs, ...own },
-    layoutRecipe,
-    tokens.spacingProperties,
-    LAYOUT_VARIANT_KEYS,
-    LAYOUT_SIZE_KEYS,
+    {
+      recipe: layoutRecipe,
+      spacingKeys: tokens.spacingProperties,
+      variantKeys: LAYOUT_VARIANT_KEYS,
+      sizeKeys: LAYOUT_SIZE_KEYS,
+    },
   );
   const cols = columns === undefined ? undefined : gridColumns(columns);
   const { class: klass, style, ...rest } = split.rest;

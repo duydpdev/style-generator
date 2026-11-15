@@ -8,38 +8,41 @@ The `style-gen` command-line tool: `init`, `generate`, `schema`, `doctor`, `toke
 
 ### `style-gen init`
 
-> **Changed in 5.2.0:** `init` no longer scaffolds `plugins/theme-plugin.ts`, no longer asks for a generator-script location and rejects `--plugin` (unknown option, exit code 1); it prints the bundler wiring below instead and stops writing `plugin` into `style-gen.config.json`. Since 6.0.0 a config that still has `plugin` is rejected like any unknown key (`doctor` stops with `plugin → Unrecognized key: "plugin"`), and `init` drops the key while merging. To migrate, add the printed snippet to your bundler config (or run `style-gen generate`), then delete the script and the `plugin` key.
+Scaffold the theme JSON, its JSON Schema, `style-gen.config.json` and the config's JSON Schema, then print how to wire them into your stack. `init` never edits a bundler config.
 
-Scaffold the theme JSON, its JSON Schema and `style-gen.config.json`, then print how to wire them into your stack. `init` never edits a bundler config.
-
-The wizard asks for the theme file location and whether to include a dark-mode template. Non-interactive: `yarn style-gen init --dark`.
-It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`) and `style-gen.config.json`
-(merging `theme` and `output` into an existing one and keeping its other keys, but dropping a `plugin` key, which 6.0 no longer accepts, and the `extraSources` and `axes` keys, which 7.0 no longer accepts).
-For each dropped key it prints ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` or `7.0`), and for `extraSources` it also prints one `@source inline("<entry>");` line per entry to paste into the app's CSS.
-If the theme or its schema already exists, it asks before overwriting (non-interactive: exits with code 1).
+The wizard asks for the theme file location and whether to include a dark-mode template. Without a terminal, or to skip the wizard: `yarn style-gen init --dark`, `--theme`, or `--yes`.
+It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), `style-gen.config.json` and `style-gen.config.schema.json` (for the config's `"$schema"`, which `init` adds as the first key of the config)
+(merging `theme`, `output` and `$schema` into an existing config and keeping its other keys as they are, including a `$schema` it already has).
+If the theme or either schema file already exists, it asks before overwriting (non-interactive: exits with code 1; with `--yes`: keeps the files and exits 0).
 
 It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the CSS lines (two `@import` lines, plus `@source not "<path>/.claude";` when the [agent rules](#agent-rules) file exists):
 
-| Config file found | Printed wiring                                                                                                                 | `@import` lines printed for                                      |
-| :---------------- | :----------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| `nuxt.config.*`   | `styleGenVite({ themePath, outDir, options: {} })` in `vite.plugins` with absolute paths, and `css: ["~/assets/css/main.css"]` | `app/assets/css/main.css` (`assets/css/main.css` without `app/`) |
-| `next.config.*`   | `styleGenNext()(nextConfig)`                                                                                                   | `app/globals.css` (`src/app/globals.css` when `src/app/` exists) |
-| `vite.config.*`   | `styleGenVite()` before `tailwindcss()` in `plugins`                                                                           | `src/index.css` (`index.css` without `src/`)                     |
-| none              | `yarn style-gen generate` (`--watch` while you edit the theme)                                                                 | a CSS file next to the generated `theme.css`                     |
+| Config file found | Printed wiring                                                                                                         | `@import` lines printed for                                      |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| `nuxt.config.*`   | `styleGenVite({ root })` in `vite.plugins` with `root` set to the project folder, and `css: ["~/assets/css/main.css"]` | `app/assets/css/main.css` (`assets/css/main.css` without `app/`) |
+| `next.config.*`   | `styleGenNext()(nextConfig)`                                                                                           | `app/globals.css` (`src/app/globals.css` when `src/app/` exists) |
+| `vite.config.*`   | `styleGenVite()` before `tailwindcss()` in `plugins`                                                                   | `src/index.css` (`index.css` without `src/`)                     |
+| none              | `yarn style-gen generate` (`--watch` while you edit the theme)                                                         | a CSS file next to the generated `theme.css`                     |
 
-`*` is `.ts`, `.mts`, `.cts`, `.js`, `.mjs` or `.cjs`; only files directly in the project root count (symlinks are followed). A framework config wins over `vite.config.*` because Next.js and Nuxt apps often keep one for Vitest. `styleGenVite()` and `styleGenNext()` without arguments read `style-gen.config.json` from the Vite root and from `process.cwd()`, so the theme, the output and every option stay in that file. Nuxt 4 sets Vite's root to `app/`, and `styleGenVite` writes only inside the root, so the Nuxt snippet passes absolute paths and the Nuxt theme defaults to `app/assets/css/theme.json`; with an `app/` directory, a `--theme` outside it prints a warning (exit code 0) because the dev server would reject that `outDir`. With explicit paths the plugin does not read `style-gen.config.json`: put generator options in the snippet's `options: {}`; `style-gen.config.json` then serves only the CLI (`generate`, `doctor`, `tokens`). Every printed or stored path is relative to the project root with `/` separators (an absolute `--theme` inside the root is stored relative), and paths inside printed string literals are JSON-escaped. The snippets use ES module syntax; a CommonJS config (`.cjs`, or `.js` without `"type": "module"`) loads the same functions with `require()`. A JavaScript `next.config.*` gets a JSDoc `@type` comment instead of `import type`.
+`*` is `.ts`, `.mts`, `.cts`, `.js`, `.mjs` or `.cjs`; only files directly in the project root count (symlinks are followed). A framework config wins over `vite.config.*` because Next.js and Nuxt apps often keep one for Vitest. `styleGenVite()` and `styleGenNext()` take no options except `root`, the folder that holds `style-gen.config.json` (default: the Vite root and `process.cwd()`), so the theme, the output, the tokens file and every generator option stay in that one file; a change to the config file is picked up by the running dev server. Nuxt 4 sets Vite's root to `app/`, so the Nuxt snippet passes `root` (the project folder) and the Nuxt theme defaults to `app/assets/css/theme.json`. After wiring, run `yarn style-gen generate` once and commit the generated `theme.tokens.ts`; keep `theme.css` ignored. Every printed or stored path is relative to the project root with `/` separators (an absolute `--theme` inside the root is stored relative), and paths inside printed string literals are JSON-escaped. The snippets use ES module syntax; a CommonJS config (`.cjs`, or `.js` without `"type": "module"`) loads the same functions with `require()`. A JavaScript `next.config.*` gets a JSDoc `@type` comment instead of `import type`.
 
 ```bash
 yarn style-gen init            # Interactive mode
-yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
+yarn style-gen init --dark     # Without the wizard, with a themeAxes.theme.dark template
+yarn style-gen init --yes      # Defaults for every prompt, never overwrites (scripts, CI, coding agents)
 ```
 
-| Flag           | Type      | Default             | Description                                |
-| :------------- | :-------- | :------------------ | :----------------------------------------- |
-| `--theme`      | `string`  | `styles/theme.json` | Path to the theme file                     |
-| `--dark`       | `boolean` | `false`             | Include the dark-mode axis template        |
-| `--skip-rules` | `boolean` | `false`             | Do not write the agent rules file          |
-| `--rules-only` | `boolean` | `false`             | Only write or refresh the agent rules file |
+| Flag           | Type      | Default             | Description                                                               |
+| :------------- | :-------- | :------------------ | :------------------------------------------------------------------------ |
+| `--theme`      | `string`  | `styles/theme.json` | Path to the theme file                                                    |
+| `--dark`       | `boolean` | `false`             | Include the dark-mode axis template                                       |
+| `--skip-rules` | `boolean` | `false`             | Do not write the agent rules file                                         |
+| `--rules-only` | `boolean` | `false`             | Only write or refresh the agent rules file                                |
+| `-y`, `--yes`  | `boolean` | `false`             | Answer every prompt with its default and never overwrite an existing file |
+
+Exit codes: `0` ok, a kept existing file (`--yes`) or a cancelled prompt; `1` failure, including an existing file without a terminal and without `--yes`.
+
+`--yes` never opens the wizard or asks a question, also in a terminal: it uses `--theme` and `--dark` when given and the stack's defaults otherwise. When the theme or one of the two schema files already exists it keeps everything, prints `Existing files kept (--yes never overwrites).`, still refreshes the agent rules (an edited rules file is kept, as in any non-interactive run) and exits 0, where a run without a terminal and without `--yes` exits 1.
 
 The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The CSS is written next to the theme (`theme.css`).
 
@@ -86,7 +89,7 @@ export default styleGenNext()(nextConfig);
 
 #### Nuxt
 
-Nuxt 4 sets Vite's root to `app/`, so the theme goes to `app/assets/css/theme.json` and the plugin gets absolute paths. With explicit paths it does not read `style-gen.config.json` (that file then serves only the CLI): put generator options in `options`.
+Nuxt 4 sets Vite's root to `app/`, so the theme goes to `app/assets/css/theme.json` and the plugin gets `root`, the project folder that holds `style-gen.config.json`. Put the generator options in that file.
 
 ```ts
 // nuxt.config.ts
@@ -99,14 +102,8 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   vite: {
     plugins: [
-      // Absolute paths: Nuxt 4 sets Vite's root to app/.
-      styleGenVite({
-        themePath: fileURLToPath(
-          new URL("./app/assets/css/theme.json", import.meta.url),
-        ),
-        outDir: fileURLToPath(new URL("./app/assets/css", import.meta.url)),
-        options: {}, // style-gen.config.json is NOT read when paths are passed; put generate() options here
-      }),
+      // Nuxt 4 sets Vite's root to app/: root is the folder with style-gen.config.json.
+      styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) }),
       tailwindcss(),
     ],
   },
@@ -123,50 +120,71 @@ Create `app/assets/css/main.css` (`init` does not create it; `css` in `nuxt.conf
 
 ### `style-gen generate`
 
-Validate the theme and write the complete CSS (`@theme`, `:root` variables, axis overrides, `@theme inline`, `@utility` blocks, `@source inline`).
+Validate the theme and write the complete CSS (`@theme`, `:root` variables, axis overrides, `@theme inline`, `@utility` blocks, `@source inline`) and the typed `theme.tokens.ts` module next to it. The tokens file is written next to `theme.css`; commit it, keep `theme.css` ignored.
 
 ```bash
 yarn style-gen generate
 yarn style-gen generate --theme ./theme.json --out ./theme.css --watch
 ```
 
-| Flag            | Type      | Default             | Description                          |
-| :-------------- | :-------- | :------------------ | :----------------------------------- |
-| `--theme`       | `string`  | `styles/theme.json` | Path to the theme JSON file          |
-| `--out`         | `string`  | `styles/theme.css`  | Path to the output CSS file          |
-| `-w`, `--watch` | `boolean` | `false`             | Watch mode — auto-regenerate on save |
+| Flag            | Type      | Default             | Description                                                                                  |
+| :-------------- | :-------- | :------------------ | :------------------------------------------------------------------------------------------- |
+| `--theme`       | `string`  | `styles/theme.json` | Path to the theme JSON file                                                                  |
+| `--out`         | `string`  | `styles/theme.css`  | Path to the output CSS file                                                                  |
+| `-w`, `--watch` | `boolean` | `false`             | Watch mode — auto-regenerate on save                                                         |
+| `--check`       | `boolean` | `false`             | Write nothing; exit 1 when `theme.tokens.ts` is missing or differs from the theme and config |
 
-Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically and **only when its content changed** (a re-run on an unchanged theme does not touch the file, so file watchers stay quiet). `--theme` may point outside the project (a shared design-system package); `--out` and the config `output` must stay inside it (`output escapes project root: <path>`). An invalid theme (`Invalid theme (<path>):`), invalid options (`Invalid options:`) or theme × options pair (`Invalid theme/options:`), an invalid config file (`Invalid config (<file>):` followed by one `path → message` line per issue, for example `breakpoint` for a typo or `extraSources` for a key removed in 7.0) or a write error leaves the output untouched and exits with code 1. A malformed (not JSON) config file is warned about and the defaults are used.
+Exit codes: `0` ok (also for `--help`), `1` failure (invalid theme, options or config, a write error, `--check` finding the tokens file missing or different).
+
+Positional `style-gen generate <theme> <out>` also works; flags take precedence. The file is written atomically and **only when its content changed** (a re-run on an unchanged theme does not touch the file, so file watchers stay quiet). `--theme` may point outside the project (a shared design-system package); `--out` and the config `output` must stay inside it (`output escapes project root: <path>`). An invalid theme (`Invalid theme (<path>):`), invalid options (`Invalid options:`) or theme × options pair (`Invalid theme/options:`), an invalid config file (`Invalid config (<file>):` followed by one `path → message` line per issue, for example `breakpoint` for a typo) or a write error leaves the output untouched and exits with code 1. A malformed (not JSON) config file is warned about and the defaults are used.
 
 `--watch` re-runs on every change of the theme **and of the config file** (`style-gen.config.json`, or the `package.json` it came from). The config is re-read on each change, so a new `output`, `breakpoints`, `resetTailwindDefaults` … apply without a restart; an invalid config edit is reported and the **last valid config stays in effect** until the file is fixed. A theme that cannot be read at startup (missing file, a directory) or an invalid config at startup exits with code 1 before any watcher starts; once watching, a theme or write error is logged and watching continues.
 
+`--check` writes nothing and exits 1 when the tokens file is missing or differs from what the theme and config would generate (`<path> does not exist. Run: style-gen generate` / `<path> is out of date. Run: style-gen generate`); it exits 0 otherwise, even when `theme.css` does not exist, and it cannot be combined with `--watch` (exit code 1). The tokens file holds keys, not values: editing only a colour value leaves it current. Run it in CI to catch a theme edit that was committed without regenerating `theme.tokens.ts`.
+
 ### `style-gen schema`
 
-Write the theme's JSON Schema (from `z.toJSONSchema(ThemeSchema)`) so editors can autocomplete keys and flag unknown ones when the theme declares `"$schema"`. Without `--out` it writes `theme.schema.json` next to the configured `theme` (default `styles/theme.json`), where `"$schema": "./theme.schema.json"` looks for it; the config file is then read as `generate` reads it, so a schema-invalid config exits with code 1 and writes nothing.
+Write the JSON Schemas of the theme (from `z.toJSONSchema(ThemeSchema)`) and of `style-gen.config.json` so editors can autocomplete keys and flag unknown ones when the file declares `"$schema"`. Without `--out` the theme's schema goes to `theme.schema.json` next to the configured `theme` (default `styles/theme.json`), where `"$schema": "./theme.schema.json"` looks for it; the config file is then read as `generate` reads it, so a schema-invalid config exits with code 1 and writes nothing. The config's schema goes to `style-gen.config.schema.json` in the project root unless `--config-out` names another file; add `"$schema": "./style-gen.config.schema.json"` to `style-gen.config.json` for editor autocomplete.
+
+| Flag           | Type     | Default                                            | Description                                                     |
+| :------------- | :------- | :------------------------------------------------- | :-------------------------------------------------------------- |
+| `--out`        | `string` | `theme.schema.json` next to the theme              | File for the theme's JSON Schema; must stay inside the project  |
+| `--config-out` | `string` | `style-gen.config.schema.json` in the project root | File for the config's JSON Schema; must stay inside the project |
+
+Exit codes: `0` ok, `1` failure.
+
+Both paths are checked before anything is written (`--config-out escapes project root: <path>`, exit code 1). The JSON Schema of the config does not include the cross-field checks listed under [Configuration file](#configuration-file).
 
 ```bash
-yarn style-gen schema                            # → styles/theme.schema.json (next to the theme)
-yarn style-gen schema --out styles/theme.schema.json
+yarn style-gen schema                            # → styles/theme.schema.json (next to the theme) and style-gen.config.schema.json
+yarn style-gen schema --out styles/theme.schema.json --config-out style-gen.config.schema.json
 ```
 
 ### `style-gen doctor`
 
 Check the setup: config file (a malformed `style-gen.config.json` or `package.json["style-gen"]` is an error — `generate` warns and uses the defaults — and so is a schema-invalid one: config keys and option values are validated with the same schema as `generate()`, so both commands give the same verdict, and `doctor` prints `Config (<file>) ❌ Invalid` followed by the issues; **a config error stops `doctor` there**, because every later check would run against the wrong defaults), JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), **the theme × options pair** (`❌ Invalid theme/options`: `resetTailwindDefaults: ["radius"]` without `borderRadius`, …), and the output file. A theme outside the project is fine; a configured `output` that escapes the project root is an error. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, `colors` keys whose `ring-`/`outline-`/`divide-` class is a Tailwind static (`inset` → `ring-inset`, `solid` → `outline-solid`, `xReverse` → `divide-x-reverse`) or an integer width/offset (`3` → `ring-3`, `offset2` → `ring-offset-2`), or typography keys such as `textSm`, `h1` → `h-1`, `italic`), and an **alias hint** for every `themeAxes` override whose literal value repeats the value of a different base key of the same category (`Override theme.dark.colors.surface repeats base value #fff → use alias "$white"`): an alias follows the primitive when the base palette changes, a repeated literal does not.
 
-It also scans the source files under the current directory (`.css`, `.scss`, `.ts`, `.tsx`, `.vue`, `.svelte`, `.astro`, `.html`, …) and warns `file:line` about leftover pre-5.0 color variables; build folders, `node_modules`, the config `output` file and files over 1 MiB are skipped.
-
 ```bash
 yarn style-gen doctor
 ```
+
+Exit codes: `0` ok, `1` on any error (warnings keep `0`). `doctor` takes no flags.
 
 ### `style-gen tokens`
 
 Write the theme's design-token **keys** (`DesignTokens.Web`: one array of camelCased keys per category, plus `opacities` (the `coverage.colors.opacities` steps, ascending; `[]` without the option), `breakpoints`, `screens` and `spacingProperties`) as a TypeScript module, so a client bundle can import the key lists without shipping the `./tokens` runtime or the theme JSON (about 2.4 kB gzip together, versus roughly 0.6 kB for the generated keys).
 
 ```bash
-yarn style-gen tokens                                  # → styles/theme.tokens.ts (next to the theme)
+yarn style-gen tokens                                  # → styles/theme.tokens.ts (beside the configured output)
 yarn style-gen tokens --theme styles/theme.json --out src/theme.tokens.ts
 ```
+
+| Flag      | Type     | Default                                                               | Description                                                                          |
+| :-------- | :------- | :-------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
+| `--theme` | `string` | `theme` from `style-gen.config.json`, else `styles/theme.json`        | Path to the theme JSON file                                                          |
+| `--out`   | `string` | `tokensOutput` from the config, else `theme.tokens.ts` beside the CSS | File to write (`.ts`, `.mts` or `.cts`, not a `.d.ts`); must stay inside the project |
+
+Exit codes: `0` ok, `1` failure.
 
 <!-- snippet: no-check imports the module `style-gen tokens` generates -->
 
@@ -175,7 +193,7 @@ import { tokens } from "./theme.tokens";
 type ColorKey = (typeof tokens.colors)[number];
 ```
 
-The module is `export const tokens = {…} as const` plus `export type Tokens = typeof tokens`; it is built by the same code as `createDesignTokens()`, with the config's `breakpoints`/`screens`/`spacing`, so the two cannot drift. The theme and options are validated as in `generate`; the default output is next to the theme and must stay inside the project, so a theme outside it needs `--out`. Re-run it (or put it next to `generate` in your script) when the theme's keys change.
+The module is `export const tokens = {…} as const` plus `export type Tokens = typeof tokens`, and `export const themeAxes = {…} as const` (each axis with its variant names, the raw keys of the theme) plus `export type ThemeAxesState`; it is built by the same code as `createDesignTokens()`, with the config's `breakpoints`/`screens`/`spacing`, so the two cannot drift. The theme and options are validated as in `generate`; the default output is the config's `tokensOutput`, else `theme.tokens.ts` beside `output`, and must stay inside the project. `generate` and the bundler plugins write the same file together with the CSS; run `tokens` to write it alone or with `--out`.
 
 ### `style-gen budget`
 
@@ -185,7 +203,11 @@ Fail CI when the built CSS grows past a gzip budget: it sums the gzip size (`nod
 yarn style-gen budget .next/static/css --max-gzip 14925
 ```
 
-On success it prints an `OK: …` summary line; over budget it prints `OVER BUDGET: …` and exits 1. Exit codes: `0` within budget, `1` over budget, `2` usage error, unreadable target or no CSS found. `--max-gzip` is required. It replaces the `check-css-budget.mjs` script that consumers used to copy.
+| Flag                 | Type     | Default  | Description                                                                        |
+| :------------------- | :------- | :------- | :--------------------------------------------------------------------------------- |
+| `--max-gzip <bytes>` | `number` | required | Budget in bytes; the command exits 1 when the summed gzip size is larger than this |
+
+On success it prints an `OK: …` summary line; over budget it prints `OVER BUDGET: …` and exits 1. Exit codes: `0` within budget, `1` over budget, `2` usage error, unreadable target or no CSS found.
 
 ### `style-gen --version`
 
@@ -193,7 +215,7 @@ Print the installed CLI version.
 
 ### Help and exit codes
 
-`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` no longer silently falls back to the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget` uses `2` for usage errors, see above).
+`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` is rejected instead of silently using the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget` uses `2` for usage errors, see above).
 
 ## Configuration file
 
@@ -207,10 +229,12 @@ Print the installed CLI version.
 ```
 
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` and `resetTailwindDefaults` are forwarded to `generate()`.
-Any other key — a typo such as `breakpoint`, a legacy 3.x key such as `responsiveModules`, or a key removed in 7.0 (`extraSources`, `axes`; see the [migration guide](../migration/6.x-to-7.0.md)) — is rejected;
-only `$schema`, `theme` and `output` are accepted besides the forwarded keys.
-`plugin`, which `init` wrote before 5.2.0 to name the generator script it scaffolded, has been rejected since 6.0.0 (delete it, or run `style-gen init`, which drops it);
-`extraSources` and `axes` have been rejected since 7.0.0, and `style-gen init` drops them too (it prints each `extraSources` entry as an `@source inline("<entry>");` line to paste into the app's CSS).
+Any other key (a typo such as `breakpoint`) is rejected with its name; `style-gen schema` writes the file's JSON Schema.
+Only `$schema`, `theme`, `output` and `tokensOutput` are accepted besides the forwarded keys.
+`$schema` is the editor's pointer to the config's JSON Schema, not a setting: add `"$schema": "./style-gen.config.schema.json"` as the first key (`style-gen schema` and `init` write that file) and the editor suggests keys and flags unknown ones; the key is accepted in the file, dropped on read and never reaches `generate()`.
+The JSON Schema describes keys and value shapes only. It does not carry the checks that compare values with each other (a `breakpoints` entry must name a screen, `screens` must share one unit after merging with the defaults, `coverage.<category>.prefixes` must be real prefixes of that category), so an editor can accept a config that `generate` and `doctor` reject.
+`tokensOutput` is the path of the generated tokens module, relative to the project root and inside it (default: `theme.tokens.ts` beside `output`); it must name a `.ts`, `.mts` or `.cts` file, not a `.d.ts`.
+Classes built at runtime are declared with your own `@source inline(...)` next to the generated import (see [Options](./options.md#classes-built-at-runtime)).
 `styleGenVite()` and `styleGenNext()` called **without an argument** read this same file (see [Vite](./vite.md) / [Next](./next.md)). The CLI resolves configuration in this order, per key:
 
 1. command flags

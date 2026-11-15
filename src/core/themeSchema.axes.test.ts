@@ -7,7 +7,7 @@ const baseTheme = {
   colors: { primary: "#3B82F6" },
 };
 
-describe("ThemeSchema — an override that repeats a base collision does not report it twice (F7)", () => {
+describe("ThemeSchema — an override that repeats a base collision does not report it twice", () => {
   const issuePaths = (theme: unknown): string[] => {
     const result = ThemeSchema.safeParse(theme);
     return result.success
@@ -54,19 +54,6 @@ describe("ThemeSchema — an override that repeats a base collision does not rep
     expect(paths).toHaveLength(1);
     expect(paths[0]).toMatch(/^colors\./);
   });
-});
-
-it("rejects a theme still using the removed legacy axis-override key, naming the themeAxes rename", () => {
-  // Built via a computed key (not a literal property name) so this
-  // intentional rename-rejection input doesn't trip the repo-wide
-  // legacy-key migration grep (`! git grep ... -- src examples site`).
-  const legacyKey = ["t", "h", "e", "m", "e", "s"].join("");
-  const result = ThemeSchema.safeParse({
-    colors: {},
-    [legacyKey]: { dark: { colors: {} } },
-  });
-  expect(result.success).toBe(false);
-  expect(result.error?.issues[0]?.message).toMatch(/themeAxes/);
 });
 
 it.each([
@@ -249,7 +236,7 @@ describe("cross-axis alias cycles (axes apply to one element at once)", () => {
   });
 });
 
-describe("variant names within one axis (F10)", () => {
+describe("variant names within one axis", () => {
   it("rejects two variants that kebab-case to the same attribute value", () => {
     const result = ThemeSchema.safeParse({
       ...baseTheme,

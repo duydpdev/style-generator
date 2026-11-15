@@ -8,7 +8,7 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { createDesignTokens } from "../tokens/createDesignTokens";
 import {
-  backDropBlursCategory,
+  backdropBlursCategory,
   borderRadiusCategory,
   borderWidthCategory,
   shadowsCategory,
@@ -31,7 +31,7 @@ const theme = {
     heading1: { fontSize: "32px", lineHeight: "40px", fontWeight: 700 },
   },
   shadows: { card: "0 1px 2px #0003" },
-  backDropBlurs: { glass: "12px" },
+  backdropBlurs: { glass: "12px" },
   borderRadius: { pill: "9999px" },
   borderWidth: { thin: "0.5px" },
 } as const;
@@ -200,7 +200,7 @@ describe("createTailwindMergeExtension — shape", () => {
     const empty: TailwindMergeTokens = {
       typography: [],
       shadows: [],
-      backDropBlurs: [],
+      backdropBlurs: [],
       borderRadius: [],
       borderWidth: [],
     };
@@ -214,7 +214,7 @@ describe("createTailwindMergeExtension — shape", () => {
       createTailwindMergeExtension({
         typography: [],
         shadows: [],
-        backDropBlurs: [],
+        backdropBlurs: [],
         borderRadius: [],
         borderWidth: [],
       }),
@@ -230,7 +230,7 @@ describe("local prefix table is pinned to the registry", () => {
     const only: TailwindMergeTokens = {
       typography: [],
       shadows: [],
-      backDropBlurs: [],
+      backdropBlurs: [],
       borderRadius: [],
       borderWidth: [],
       [key]: ["probe"],
@@ -251,8 +251,8 @@ describe("local prefix table is pinned to the registry", () => {
 
   it("shadow and backdrop-blur prefixes equal their categories'", () => {
     expect(prefixesOf("shadows")).toEqual([...shadowsCategory.classPrefixes]);
-    expect(prefixesOf("backDropBlurs")).toEqual([
-      ...backDropBlursCategory.classPrefixes,
+    expect(prefixesOf("backdropBlurs")).toEqual([
+      ...backdropBlursCategory.classPrefixes,
     ]);
   });
 
@@ -268,7 +268,7 @@ describe("local prefix table is pinned to the registry", () => {
       createTailwindMergeExtension({
         typography: [],
         shadows: [],
-        backDropBlurs: [],
+        backdropBlurs: [],
         borderRadius: [],
         borderWidth: ["probe"],
       }).extend.classGroups,

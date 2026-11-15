@@ -3,7 +3,7 @@ import path from "node:path";
 import { watch as chokidarWatch } from "chokidar";
 
 import { errorMessage } from "./errorMessage";
-import { emitThemeCss } from "./themeEmitter";
+import { emitTheme } from "./themeEmitter";
 import type { EmitResult, EmitTarget } from "./themeEmitter";
 
 /** What {@link WatchThemeOptions.reloadTarget} returns for an unusable config. */
@@ -52,7 +52,7 @@ export interface ThemeWatchHandle {
 }
 
 /**
- * Re-run {@link emitThemeCss} whenever the theme file (or the config file)
+ * Re-run {@link emitTheme} whenever the theme file (or the config file)
  * changes. Does not emit on start: callers emit once themselves and hand the
  * watcher the follow-ups. Every emit — successful, unchanged or failed — and
  * every watcher error reaches `onResult`; nothing here throws or stops the
@@ -123,7 +123,7 @@ export function watchThemeFile(
     // An unusable config alone changes nothing: report it and leave the
     // output as the last valid config made it. A theme edit in the same
     // burst still emits (with that last valid target).
-    if (!nothingToEmit) onResult(emitThemeCss(current));
+    if (!nothingToEmit) onResult(emitTheme(current));
   };
 
   const schedule = (changedFile: string): void => {

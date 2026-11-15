@@ -6,7 +6,6 @@ import {
   contrastText,
   pick,
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
 } from "@duydpdev/style-generator/ui";
@@ -32,10 +31,7 @@ export interface ButtonPreset {
   readonly tint: Readonly<Record<string, Readonly<Record<ButtonTint, string>>>>;
 }
 
-export const buttonTables = (
-  t: RecipeTokens,
-  preset: ButtonPreset,
-): RecipeTables => {
+export const buttonTables = (t: RecipeTokens, preset: ButtonPreset) => {
   // `bg-primary hover:bg-primary-hover active:bg-primary-active` when the theme declares the state siblings.
   const bgStates = createVariantMapper("bg", t.colors, {
     states: COLOR_STATES,
@@ -96,10 +92,8 @@ export const buttonTables = (
       color: preset.intents[0],
       size: "md",
     },
-  };
+  } satisfies RecipeTables;
 };
 
-export const createButtonRecipe = (
-  t: RecipeTokens,
-  preset: ButtonPreset,
-): RecipeFn => recipeFromTables(buttonTables(t, preset));
+export const createButtonRecipe = (t: RecipeTokens, preset: ButtonPreset) =>
+  recipeFromTables(buttonTables(t, preset));

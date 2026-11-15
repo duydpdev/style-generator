@@ -11,14 +11,13 @@ import { ThemeSchema } from "../src/core/themeSchema";
 import { compileFixtureCss } from "../src/__integration__/compileFixtureCss";
 
 /**
- * Regression test for DEV.6 multi-axis (`themeAxes`) precedence: when two
+ * Regression test for multi-axis (`themeAxes`) precedence: when two
  * axes both override the same token, the last-declared axis in the config
  * must win (CSS source order, since both axis selectors are
  * `html[data-<axis>="<variant>"]` — same specificity). Runs on both
  * Chromium and Webkit (playwright.config.ts projects) because the
  * `--sg-*` custom-property cascade is engine-sensitive (see the
- * spacing-inheritance spec and the DEV.5 carry-forward note on `var()`
- * alias resolution).
+ * spacing-inheritance spec).
  *
  * `--color-primary` (the `@theme inline` mapped var) is NOT asserted here:
  * Tailwind v4 inlines `@theme inline` values directly into each utility

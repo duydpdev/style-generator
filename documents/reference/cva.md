@@ -113,9 +113,8 @@ import {
   COLOR_STATES,
 } from "@duydpdev/style-generator/cva";
 import theme from "./theme.json";
-import { options } from "./style-gen.options";
 
-const { DesignTokens } = createDesignTokens(theme, options);
+const { DesignTokens } = createDesignTokens(theme);
 
 const bg = createVariantMapper("bg", DesignTokens.Web.colors);
 // { primary: "bg-primary", sidebarForeground: "bg-sidebar-foreground", … }
@@ -184,8 +183,8 @@ sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`).
 Single source of truth for BOTH sides of the contract: the registry's
 `colorsCategory.states` (which drives the `@source inline` state lines) and
 consumers passing `{ states: COLOR_STATES }` to `createVariantMapper`.
-Kept in its own dependency-free module so the browser-safe `./tokens` and
-`./cva` subpaths can re-export it without pulling Zod or the registry.
+Kept in its own dependency-free module so the browser-safe `./cva`
+subpath can re-export it without pulling Zod or the registry.
 
 <!-- /signature -->
 

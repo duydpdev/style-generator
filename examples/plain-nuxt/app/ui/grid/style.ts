@@ -1,7 +1,6 @@
 import { createVariantMapper } from "@duydpdev/style-generator/cva";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -74,7 +73,7 @@ export const layoutTables = {
     roundedL: createVariantMapper("rounded-l", tokens.borderRadius),
     roundedR: createVariantMapper("rounded-r", tokens.borderRadius),
     shadow: createVariantMapper("shadow", tokens.shadows),
-    backdropBlur: createVariantMapper("backdrop-blur", tokens.backDropBlurs),
+    backdropBlur: createVariantMapper("backdrop-blur", tokens.backdropBlurs),
     position: {
       absolute: "absolute",
       relative: "relative",
@@ -174,7 +173,7 @@ export const layoutTables = {
   },
 } satisfies RecipeTables;
 
-export const layoutRecipe: RecipeFn = recipeFromTables(layoutTables);
+export const layoutRecipe = recipeFromTables(layoutTables);
 
 /**
  * Literal per-breakpoint column classes, so Tailwind's scanner sees them;
@@ -275,4 +274,4 @@ if (missing.length > 0) {
 }
 
 /** Grid recipe (`align`, `justify`, `flow`, `rows`); columns come from `gridColumns`. */
-export const gridRecipe: RecipeFn = recipeFromTables(gridTables);
+export const gridRecipe = recipeFromTables(gridTables);

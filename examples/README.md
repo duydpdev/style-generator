@@ -2,7 +2,7 @@
 
 Working consumer apps that link `@duydpdev/style-generator` through a Yarn `link:../..` dependency (see `documents/deploy.md` for why it is `link:`) and exercise the public API end-to-end. In every example, `v4` means **Tailwind CSS v4**, not the library's version: each app wires the library through a generated `theme.css` that it `@import`s next to `@import "tailwindcss"`, with no `@plugin` and no safelist file.
 
-Upgrading an existing project? See [`../documents/migration/6.x-to-7.0.md`](../documents/migration/6.x-to-7.0.md), [`../documents/migration/4.x-to-5.0.md`](../documents/migration/4.x-to-5.0.md) and [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md) (the move to the Tailwind v4 `theme.css` flow).
+Upgrading an existing project? See [`../documents/migration/7.x-to-8.0.md`](../documents/migration/7.x-to-8.0.md), [`../documents/migration/6.x-to-7.0.md`](../documents/migration/6.x-to-7.0.md), [`../documents/migration/4.x-to-5.0.md`](../documents/migration/4.x-to-5.0.md) and [`../documents/migration/3.x-to-4.0.md`](../documents/migration/3.x-to-4.0.md) (the move to the Tailwind v4 `theme.css` flow).
 
 ## Layout
 
@@ -21,7 +21,7 @@ The harness app (`harness`) shares one `theme.json` (with `"$schema"` and two `t
 
 ## Prerequisites
 
-**Node >= 22.18 for the harness app.** Its bundler config imports `design-system-example/style-gen.options`, a `.ts` file inside a workspace package, and Node loads it through its built-in type stripping. (The library itself runs on Node `^20.19.0 || >=22.12.0`; the floor above is for the examples only.) No example has a `postinstall` or `prepare` hook.
+No example has a `postinstall` or `prepare` hook.
 
 Build the local library and the CLI first (the examples consume the built `dist/` through the `link:../..` dependency). The examples are workspaces of the repo root, so the root install also installs them:
 

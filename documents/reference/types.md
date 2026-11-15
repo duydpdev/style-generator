@@ -143,7 +143,7 @@ export declare type BackdropBlurVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["backdropBlurKey"];
 ```
 
-Backdrop-blur variant union derived from theme.backDropBlurs keys.
+Backdrop-blur variant union derived from theme.backdropBlurs keys.
 
 <!-- /signature -->
 
@@ -326,7 +326,7 @@ breakpoint key is a type error — there is no `(string & {})` fallback.
 The breakpoint keys `options.breakpoints` names, the default pair, the custom screen keys, and the responsive value type.
 
 ```ts
-import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/types";
 
 // "base" is always allowed; every other key must be declared in `options.breakpoints`
 // and exist in `screens` (or `defaultScreens`), or it has no CSS behind it.
@@ -474,7 +474,7 @@ Distinct from `DesignTokensWeb` in `./inference` which describes the runtime
 token arrays returned by `createDesignTokens()`. Consumers can pluck individual
 variant unions via the semantic aliases below instead of writing
 `(typeof DesignTokens.Web.X)[number]` everywhere.
-Kept an interface (as in 4.1) so consumers can still augment it.
+Kept an interface so consumers can still augment it.
 
 <!-- /signature -->
 

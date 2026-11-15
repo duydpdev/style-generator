@@ -10,7 +10,7 @@ export const STATS = [
 export const MARQUEE_TOKENS = [
   "generate",
   "defineTheme",
-  "resolveSpacingProps",
+  "resolveSpacing",
   "createVariantMapper",
   "styleGenVite",
   "generateThemeCss",

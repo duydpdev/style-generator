@@ -60,6 +60,20 @@ export const splitSpacing = (props: object, keys: readonly string[]): Split => {
   };
 };
 
+/** Options of `splitLayout`. */
+export interface SplitLayoutOptions {
+  /** The box recipe: variant props in, one class string out. */
+  readonly recipe: RecipeFn;
+  /** Spacing property names (`tokens.spacingProperties`). */
+  readonly spacingKeys: readonly string[];
+  /** Prop names that are recipe variants. */
+  readonly variantKeys: readonly string[];
+  /** Prop names that are inline sizes (`width`, `minHeight`, …). */
+  readonly sizeKeys: readonly string[];
+  /** Variants set by the component itself; they win over props. */
+  readonly extra?: Readonly<Record<string, string | boolean>>;
+}
+
 /**
  * Layout props → box-recipe classes, size style and spacing; the rest
  * passes through. A key in `variantKeys` is a recipe variant (a string or a
@@ -68,21 +82,14 @@ export const splitSpacing = (props: object, keys: readonly string[]): Split => {
  * (`0` becomes `"0"`), anything else is dropped. `extra` variants win
  * over props.
  * @param {object} props - Component props
- * @param {RecipeFn} box - The box recipe
- * @param {readonly string[]} spacingKeys - Spacing property names (`tokens.spacingProperties`)
- * @param {readonly string[]} variantKeys - Prop names that are box-recipe variants
- * @param {readonly string[]} sizeKeys - Prop names that are inline sizes (`width`, `minHeight`, …)
- * @param {Readonly<Record<string, string | boolean>>} extra - Variants set by the component itself
- * @returns {Split} Classes, style, the variants passed to `box`, and the remaining props
+ * @param {SplitLayoutOptions} options - The recipe, the prop-name lists and the component's own `extra` variants
+ * @returns {Split} Classes, style, the variants passed to `recipe`, and the remaining props
  */
 export const splitLayout = (
   props: object,
-  box: RecipeFn,
-  spacingKeys: readonly string[],
-  variantKeys: readonly string[],
-  sizeKeys: readonly string[],
-  extra: Readonly<Record<string, string | boolean>> = {},
+  options: SplitLayoutOptions,
 ): Split => {
+  const { recipe, spacingKeys, variantKeys, sizeKeys, extra = {} } = options;
   const variants: Record<string, string | number | boolean | undefined> = {};
   const size: Record<string, string> = {};
   const remaining: Record<string, unknown> = {};
@@ -104,7 +111,7 @@ export const splitLayout = (
   Object.assign(variants, extra);
   const spacing = splitSpacing(remaining, spacingKeys);
   return {
-    className: [box(variants), spacing.className]
+    className: [recipe(variants), spacing.className]
       .filter((c) => c !== "")
       .join(" "),
     style: { ...size, ...spacing.style },

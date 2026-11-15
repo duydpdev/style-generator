@@ -37,7 +37,7 @@ const FEATS: Feat[] = [
   {
     part: "s-feat-narrow",
     tag: "/spacing",
-    title: "resolveSpacingProps()",
+    title: "resolveSpacing()",
     body: (
       <>
         Maps <code>p={"{...}"}</code> to CSS custom properties.

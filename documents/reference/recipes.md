@@ -12,12 +12,10 @@ import {
   themeAxisAttributes,
   type SpacingProps,
 } from "@duydpdev/style-generator/recipes";
-import type { BreakpointKeys } from "@duydpdev/style-generator/types";
 
-// `theme` is your theme JSON, `options` the const object shared with the bundler
-// plugin, `tokens` = createDesignTokens(theme, options).DesignTokens.Web
-import { options } from "./style-gen.options";
-import { theme, tokens } from "./tokens";
+// `tokens` is the generated `theme.tokens.ts` (the bundler plugin and
+// `style-gen generate` write it from your theme and `style-gen.config.json`)
+import { tokens } from "./theme.tokens";
 
 // 1. `twMerge` that knows your custom tokens (`border-thin` is a width, not a color)
 export const twMerge = extendTailwindMerge(
@@ -25,19 +23,19 @@ export const twMerge = extendTailwindMerge(
 );
 
 // 2. Typed spacing props → `sp-*` class + inline `--sg-sp-*` style
-type BoxProps = SpacingProps<BreakpointKeys<typeof options>> & { id?: string };
+type BoxProps = SpacingProps<(typeof tokens)["breakpoints"][number]> & {
+  id?: string;
+};
 export const Box = (props: BoxProps) => {
   const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
   return <div {...rest} className={spacing.className} style={spacing.style} />;
 };
 
 // 3. DOM attributes of the active theme axes
-export const Root = () => (
-  <html {...themeAxisAttributes<typeof theme>({ theme: "dark" })} />
-);
+export const Root = () => <html {...themeAxisAttributes({ theme: "dark" })} />;
 ```
 
-A complete, tested version (`cn`, `axisAttributes`, the headless recipes of the six sample components, shared CSS) lives in [`examples/design-system`](../../examples/design-system/README.md). [Components](../components.md) shows how the sample components of `examples/harness` wrap these recipes; [`guide.md`](../guide.md#build-components) walks through it step by step. [`createCn`](./ui.md#createcn-cn) in `./ui` wraps this extension with `clsx`.
+A complete, tested version (`cn`, `axisAttributes`, the headless recipes of the six sample components, shared CSS) lives in [`examples/design-system`](../../examples/design-system/README.md). [Components](../components.md) shows how the sample components of `examples/harness` wrap these recipes; [Build components](../getting-started/build-components.md) walks through it step by step. [`createCn`](./ui.md#createcn-cn) in `./ui` wraps this extension with `clsx`.
 
 ## `createTailwindMergeExtension`, `TailwindMergeExtension`, `TailwindMergeTokens`
 
@@ -62,7 +60,7 @@ declare const tokens: Parameters<typeof createTailwindMergeExtension>[0];
 const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
 ```
 
-- `shadows`, `backDropBlurs` and `borderWidth` (incl. side, logical and
+- `shadows`, `backdropBlurs` and `borderWidth` (incl. side, logical and
   `divide-*` prefixes) extend the matching `tailwind-merge` groups; the
   group ids are `tailwind-merge`'s own (`border-w`, `border-w-x`, …).
 - `borderRadius` extends `tailwind-merge`'s `radius` theme scale, which
@@ -113,7 +111,7 @@ argument. Declared here, not imported, so `dist/recipes.d.ts` never names
 export declare interface TailwindMergeTokens {
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
 }
@@ -125,7 +123,7 @@ and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
 
 <!-- /signature -->
 
-- `createTailwindMergeExtension` covers `typography`, `shadows`, `backDropBlurs`, `borderRadius` and `borderWidth` tokens; colors and font families already match tailwind-merge's default `color`/`font-family` groups. `borderRadius` extends tailwind-merge's `radius` theme scale, so side, logical and corner utilities (`rounded-tl-pill`, `rounded-s-pill`) merge with their `rounded-*` siblings. A later typography class removes earlier `font-size`/`font-weight`/`leading`/`tracking` classes; a later single-property utility refines it.
+- `createTailwindMergeExtension` covers `typography`, `shadows`, `backdropBlurs`, `borderRadius` and `borderWidth` tokens; colors and font families already match tailwind-merge's default `color`/`font-family` groups. `borderRadius` extends tailwind-merge's `radius` theme scale, so side, logical and corner utilities (`rounded-tl-pill`, `rounded-s-pill`) merge with their `rounded-*` siblings. A later typography class removes earlier `font-size`/`font-weight`/`leading`/`tracking` classes; a later single-property utility refines it.
 
 ## `splitSpacingProps`, `SpacingProps`
 
@@ -196,21 +194,23 @@ explicit literal keys give the narrowest result.
 <!-- signature: themeAxisAttributes -->
 
 ```ts
-export declare const themeAxisAttributes: <T extends ThemeConfig>(
-  state: ThemeAxesState<T>,
+export declare const themeAxisAttributes: (
+  state: Readonly<Record<string, string | undefined>>,
 ) => Readonly<Record<string, string>>;
 ```
 
 The DOM attributes that activate a theme's axis variants, mirroring the
 `html[data-<axis>="<variant>"]` selectors `generate()` emits. Spread the
-result on `<html>`, the element the selectors target:
+result on `<html>`, the element the selectors target. Type the state with
+`ThemeAxesState` from the generated `theme.tokens.ts`:
 
 ```tsx
 import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
 
-const root = (
-  <html {...themeAxisAttributes({ theme: "dark", palette: "base" })} />
-);
+import type { ThemeAxesState } from "~/theme/theme.tokens";
+
+const state: ThemeAxesState = { theme: "dark", palette: "base" };
+const root = <html {...themeAxisAttributes(state)} />;
 // → data-theme="dark" (palette emits nothing)
 ```
 

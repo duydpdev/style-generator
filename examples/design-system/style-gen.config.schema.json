@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "breakpoints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      }
+    },
+    "screens": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+      }
+    },
+    "enableResponsive": {
+      "type": "boolean"
+    },
+    "typography": {
+      "type": "object",
+      "properties": {
+        "cssVarDriven": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "spacing": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "properties": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-{0,2}[a-z][a-z0-9-]*$"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "colors",
+          "typography",
+          "shadows",
+          "backdropBlurs",
+          "borderRadius",
+          "fontFamily",
+          "borderWidth"
+        ]
+      },
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "prefixes": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "keys": {
+                "type": "string",
+                "enum": [
+                  "aliased",
+                  "all"
+                ]
+              },
+              "opacities": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "resetTailwindDefaults": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "colors",
+          "radius",
+          "shadow"
+        ]
+      }
+    },
+    "theme": {
+      "type": "string",
+      "minLength": 1
+    },
+    "output": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tokensOutput": {
+      "type": "string",
+      "minLength": 1
+    },
+    "$schema": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

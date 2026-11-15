@@ -18,12 +18,15 @@ import { isPlainObject } from "./isPlainObject";
  * as `generate()` itself.
  */
 const cliKeys = {
-  /** Editors add it for autocompletion; a strict object would reject it. */
-  $schema: z.string().optional(),
   /** Theme JSON path, relative to the project root. */
   theme: z.string().min(1),
   /** Generated CSS path, relative to the project root. */
   output: z.string().min(1),
+  /**
+   * Generated tokens module path, relative to the project root; default:
+   * `theme.tokens.ts` beside `output`.
+   */
+  tokensOutput: z.string().min(1).optional(),
 };
 
 /**
@@ -40,10 +43,13 @@ export type StyleGenConfig = z.infer<typeof StyleGenConfigSchema>;
 
 /**
  * The file form of {@link StyleGenConfigSchema}: `theme`/`output` may be
- * omitted (the defaults apply).
+ * omitted (the defaults apply) and `$schema`, the editor's pointer to the
+ * config's JSON Schema, is accepted. `$schema` belongs to the file only: it
+ * is not a key of the resolved {@link StyleGenConfig}.
  */
-const StyleGenConfigFileSchema = StyleGeneratorOptionsShape.extend({
+export const StyleGenConfigFileSchema = StyleGeneratorOptionsShape.extend({
   ...cliKeys,
+  $schema: z.string().optional(),
   theme: cliKeys.theme.optional(),
   output: cliKeys.output.optional(),
 }).superRefine(refineStyleGeneratorOptions);
@@ -81,7 +87,10 @@ function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   return sanitized as Partial<StyleGenConfig>;
 }
 
-/** `style-gen.config.json` contents: every key optional (defaults apply). */
+/**
+ * `style-gen.config.json` contents: every key optional (defaults apply). The
+ * editor's `$schema` key is accepted in the file and dropped on read.
+ */
 export type StyleGenFileConfig = z.infer<typeof StyleGenConfigFileSchema>;
 
 /** File-based configuration and where it came from. */
@@ -109,9 +118,13 @@ const validateFileConfig = (
   source: string,
 ): ConfigFile => {
   const result = StyleGenConfigFileSchema.safeParse(value);
-  return result.success
-    ? { config: result.data, source }
-    : { config: {}, source, issues: formatZodError(result.error) };
+  if (!result.success) {
+    return { config: {}, source, issues: formatZodError(result.error) };
+  }
+  // `$schema` points an editor at the JSON Schema; it is not a config value.
+  const config: StyleGenFileConfig = { ...result.data };
+  delete config.$schema;
+  return { config, source };
 };
 
 /**
@@ -176,7 +189,7 @@ const GENERATOR_OPTION_KEYS = StyleGeneratorOptionsShape.keyof().options;
 
 /**
  * Pick the `generate()` options out of a resolved config, dropping the
- * config-only keys (`theme`, `output`, `$schema`) that the strict
+ * config-only keys (`theme`, `output`, `tokensOutput`) that the strict
  * options schema would reject. The key list comes from
  * `StyleGeneratorOptionsShape`, so a new option is forwarded automatically.
  * The only way config options reach `generate()` and the runner.

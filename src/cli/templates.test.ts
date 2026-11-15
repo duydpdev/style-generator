@@ -29,10 +29,7 @@ describe("getBundlerSnippet matches the documented quickstarts", () => {
       { stack: "nuxt", configFile: "nuxt.config.ts" },
     ],
   ] as const)("%s shows the %o snippet byte for byte", (doc, detected) => {
-    const snippet = getBundlerSnippet(detected, {
-      theme: "app/assets/css/theme.json",
-      outDir: "app/assets/css",
-    });
+    const snippet = getBundlerSnippet(detected);
     expect(tsBlocks(doc)).toContain(snippet);
   });
 });

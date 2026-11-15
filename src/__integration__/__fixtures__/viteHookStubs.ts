@@ -122,7 +122,7 @@ export const minimalTheme = {
  * The closures every `styleGenVite` suite shares, bound to the suite's
  * temp folder.
  * @param {() => string} tmp - Reads the suite's current temp folder (set in `beforeEach`)
- * @returns {object} `writeTheme` (a theme file below the folder), `serveConfig` (a `serve` config stub) and `start` (`configResolved` then `buildStart`)
+ * @returns {object} `writeTheme` (a theme file below the folder), `writeConfig` (the folder's `style-gen.config.json`), `serveConfig` (a `serve` config stub) and `start` (`configResolved` then `buildStart`)
  */
 export const viteHarness = (tmp: () => string) => {
   const writeTheme = (
@@ -151,5 +151,18 @@ export const viteHarness = (tmp: () => string) => {
     return callBuildStart(plugin);
   };
 
-  return { writeTheme, serveConfig, start };
+  /**
+   * Write the folder's `style-gen.config.json`: the `writeTheme()` default
+   * theme and its `theme.css` next to it, plus `extra`.
+   * @param {object} extra - Config keys that override or add to that default
+   * @returns {string} Absolute path of the config file
+   */
+  const writeConfig = (extra: object = {}): string =>
+    writeTmpFile(tmp(), "style-gen.config.json", {
+      theme: "src/theme/theme.json",
+      output: "src/theme/theme.css",
+      ...extra,
+    });
+
+  return { writeTheme, writeConfig, serveConfig, start };
 };

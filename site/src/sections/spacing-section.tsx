@@ -2,14 +2,17 @@ import { ChapterHead } from "../components/chapter-head";
 import { Box, Grid, Stack, Text } from "../ui";
 import { CodeCard } from "../components/code-card";
 
-const SPACING_CODE = `import { resolveSpacingProps } from
-  "@duydpdev/style-generator/spacing";
+const SPACING_CODE = `import { splitSpacingProps } from
+  "@duydpdev/style-generator/recipes";
+import { tokens } from "./theme.tokens";
 
-function Box({ p, m, gap, children }) {
-  const s = resolveSpacingProps({ p, m, gap });
+function Box({ children, ...props }) {
+  const { spacing, rest } = splitSpacingProps(
+    props, tokens.spacingProperties);
   return (
-    <div className={s.classNames}
-         style={s.style}>
+    <div {...rest}
+         className={spacing.className}
+         style={spacing.style}>
       {children}
     </div>
   );

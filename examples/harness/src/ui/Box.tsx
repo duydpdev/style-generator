@@ -58,17 +58,16 @@ export const createBox = <W extends RecipeTokens>(
     const Component: ElementType = as ?? "div";
     const framed = innerBorder === true;
     const pos = position ?? (framed ? "relative" : undefined);
-    const split = splitLayout(
-      props,
-      box,
+    const split = splitLayout(props, {
+      recipe: box,
       spacingKeys,
-      BOX_VARIANT_KEYS,
-      LAYOUT_SIZE_KEYS,
-      {
+      variantKeys: BOX_VARIANT_KEYS,
+      sizeKeys: LAYOUT_SIZE_KEYS,
+      extra: {
         ...(pos === undefined ? {} : { position: pos }),
         ...(framed ? { innerBorder: true } : {}),
       },
-    );
+    });
     const overlay = Object.fromEntries(
       OVERLAY_KEYS.map((key) => [key, split.variants[key]]),
     );

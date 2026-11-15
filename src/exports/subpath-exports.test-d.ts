@@ -8,10 +8,7 @@ import type * as root from "../index";
 import type { ThemeConfig } from "../core/themeSchema";
 import type { createVariantMapper } from "../features/cva/createVariantMapper";
 import type { createDesignTokens } from "../features/tokens/createDesignTokens";
-import type {
-  resolveSpacing,
-  resolveSpacingProps,
-} from "../features/spacing/spacingHelpers";
+import type { resolveSpacing } from "../features/spacing/spacingHelpers";
 import type { DEFAULT_SPACING_PROPERTIES } from "../shared/defaultOption";
 import type { createTailwindMergeExtension } from "../features/recipes/extendTailwindMerge";
 import type {
@@ -57,13 +54,6 @@ describe("subpath exports — symbols match their implementations", () => {
     >();
   });
 
-  it("COLOR_STATES is one shared const across tokens and cva", () => {
-    expectTypeOf(tokens.COLOR_STATES).toEqualTypeOf<
-      readonly ["hover", "active"]
-    >();
-    expectTypeOf(cva.COLOR_STATES).toEqualTypeOf<typeof tokens.COLOR_STATES>();
-  });
-
   it("toKebabCase is a cva export", () => {
     expectTypeOf(cva.toKebabCase).toEqualTypeOf<(str: string) => string>();
   });
@@ -78,24 +68,59 @@ describe("subpath exports — symbols match their implementations", () => {
     >();
   });
 
-  it("symbols moved off the root in 6.0 are gone from it", () => {
-    // @ts-expect-error removed from the root in 6.0: import from `/tokens`
+  it("Breakpoint, defaultScreens, createVariantMapper and resolveSpacing are not exported from the root", () => {
+    // @ts-expect-error not on the root: import from `/tokens`
     type Breakpoint = root.Breakpoint;
-    // @ts-expect-error removed from the root in 6.0: import from `/tokens`
+    // @ts-expect-error not on the root: import from `/tokens`
     type DefaultScreens = typeof root.defaultScreens;
-    // @ts-expect-error removed from the root in 6.0: import from `/cva`
+    // @ts-expect-error not on the root: import from `/cva`
     type CreateVariantMapper = typeof root.createVariantMapper;
-    // @ts-expect-error removed from the root in 6.0: import from `/spacing`
+    // @ts-expect-error not on the root: import from `/spacing`
     type ResolveSpacing = typeof root.resolveSpacing;
     expectTypeOf<
       [Breakpoint, DefaultScreens, CreateVariantMapper, ResolveSpacing]
     >().not.toBeAny();
   });
 
+  it("each of COLOR_STATES, DefaultBreakpointKeys, ResponsiveValueStrict and SpacingKey has one export site", () => {
+    // @ts-expect-error `COLOR_STATES` lives in `/cva` only
+    type TokensColorStates = typeof tokens.COLOR_STATES;
+    // @ts-expect-error `DefaultBreakpointKeys` lives in `/types` only
+    type RootBreakpointKeys = root.DefaultBreakpointKeys;
+    // @ts-expect-error `ResponsiveValueStrict` lives in `/types` only
+    type RootResponsive = root.ResponsiveValueStrict<number>;
+    // @ts-expect-error `DefaultBreakpointKeys` lives in `/types` only
+    type SpacingBreakpointKeys = spacing.DefaultBreakpointKeys;
+    // @ts-expect-error `ResponsiveValueStrict` lives in `/types` only
+    type SpacingResponsive = spacing.ResponsiveValueStrict<number>;
+    // @ts-expect-error `SpacingKey` lives in `/types` only
+    type SpacingSpacingKey = spacing.SpacingKey;
+    // @ts-expect-error not exported: use `splitSpacingProps` or `splitSpacing`
+    type ResolveSpacingProps = typeof spacing.resolveSpacingProps;
+    expectTypeOf<
+      [
+        TokensColorStates,
+        RootBreakpointKeys,
+        RootResponsive,
+        SpacingBreakpointKeys,
+        SpacingResponsive,
+        SpacingSpacingKey,
+        ResolveSpacingProps,
+      ]
+    >().not.toBeAny();
+    expectTypeOf(cva.COLOR_STATES).toEqualTypeOf<
+      readonly ["hover", "active"]
+    >();
+    expectTypeOf<types.DefaultBreakpointKeys>().toEqualTypeOf<"md" | "lg">();
+    expectTypeOf<types.ResponsiveValueStrict<number, "md">>().toEqualTypeOf<
+      number | Partial<Record<"md" | "base", number | undefined>>
+    >();
+    expectTypeOf<types.SpacingKey>().toBeString();
+  });
+
   it("tokens subpath runtime exports are exactly the documented list", () => {
     expectTypeOf<keyof typeof tokens>().toEqualTypeOf<
       | "Breakpoint"
-      | "COLOR_STATES"
       | "DEFAULT_BORDER_VALUES"
       | "DEFAULT_ROUNDED_VALUES"
       | "borderProperties"
@@ -153,7 +178,7 @@ describe("subpath exports — symbols match their implementations", () => {
     expectTypeOf<Extract<keyof typeof root, keyof typeof ui>>().toBeNever();
   });
 
-  it("ui subpath exports the nine documented types", () => {
+  it("ui subpath exports the ten documented types", () => {
     interface TinyTokens extends ui.RecipeTokens {
       readonly spacingProperties: readonly ["p", "gap-x"];
       readonly breakpoints: readonly ["md"];
@@ -163,7 +188,7 @@ describe("subpath exports — symbols match their implementations", () => {
       | "colors"
       | "typography"
       | "shadows"
-      | "backDropBlurs"
+      | "backdropBlurs"
       | "borderRadius"
       | "borderWidth"
       | "spacingProperties"
@@ -196,6 +221,10 @@ describe("subpath exports — symbols match their implementations", () => {
     expectTypeOf<ui.StyleRecord>().toEqualTypeOf<
       Readonly<Record<string, string | number>>
     >();
+    expectTypeOf<ui.SplitLayoutOptions>().not.toBeNever();
+    expectTypeOf<keyof ui.SplitLayoutOptions>().toEqualTypeOf<
+      "recipe" | "spacingKeys" | "variantKeys" | "sizeKeys" | "extra"
+    >();
     expectTypeOf<ui.Split>().not.toBeNever();
     expectTypeOf<keyof ui.Split>().toEqualTypeOf<
       "className" | "style" | "variants" | "rest"
@@ -213,12 +242,12 @@ describe("subpath exports — symbols match their implementations", () => {
     >().toEqualTypeOf<"loud">();
   });
 
-  it("removed 4.x helper VariantMapperStatesOptions is gone from every subpath", () => {
-    // @ts-expect-error removed in 5.0: `{ states }` is passed inline
+  it("VariantMapperStatesOptions is exported from no subpath", () => {
+    // @ts-expect-error not exported: `{ states }` is passed inline
     type FromCva = cva.VariantMapperStatesOptions;
-    // @ts-expect-error removed in 5.0
+    // @ts-expect-error not exported
     type FromRoot = root.VariantMapperStatesOptions;
-    // @ts-expect-error removed in 5.0
+    // @ts-expect-error not exported
     type FromTypes = types.VariantMapperStatesOptions;
     expectTypeOf<[FromCva, FromRoot, FromTypes]>().not.toBeAny();
   });
@@ -250,7 +279,6 @@ describe("subpath exports — symbols match their implementations", () => {
       root.ThemeAxesState<AxesTheme>
     >();
     expectTypeOf<types.SpacingPropertyMap>().toEqualTypeOf<root.SpacingPropertyMap>();
-    expectTypeOf<types.DefaultBreakpointKeys>().toEqualTypeOf<root.DefaultBreakpointKeys>();
     expectTypeOf<types.InferRoundedOptions<ThemeConfig>>().toEqualTypeOf<
       root.InferRoundedOptions<ThemeConfig>
     >();
@@ -262,9 +290,6 @@ describe("subpath exports — symbols match their implementations", () => {
 
   it("spacing subpath", () => {
     expectTypeOf(spacing.resolveSpacing).toEqualTypeOf<typeof resolveSpacing>();
-    expectTypeOf(spacing.resolveSpacingProps).toEqualTypeOf<
-      typeof resolveSpacingProps
-    >();
     expectTypeOf(spacing.DEFAULT_SPACING_PROPERTIES).toEqualTypeOf<
       typeof DEFAULT_SPACING_PROPERTIES
     >();

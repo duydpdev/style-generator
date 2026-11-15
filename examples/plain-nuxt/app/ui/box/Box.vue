@@ -30,13 +30,15 @@ const layout = () => {
   const pos = position ?? (framed ? "relative" : undefined);
   return splitLayout(
     { ...attrs, ...own },
-    boxRecipe,
-    tokens.spacingProperties,
-    BOX_VARIANT_KEYS,
-    BOX_SIZE_KEYS,
     {
-      ...(pos === undefined ? {} : { position: pos }),
-      ...(framed ? { innerBorder: true } : {}),
+      recipe: boxRecipe,
+      spacingKeys: tokens.spacingProperties,
+      variantKeys: BOX_VARIANT_KEYS,
+      sizeKeys: BOX_SIZE_KEYS,
+      extra: {
+        ...(pos === undefined ? {} : { position: pos }),
+        ...(framed ? { innerBorder: true } : {}),
+      },
     },
   );
 };

@@ -36,7 +36,7 @@ describe("DesignTokenKeys semantic aliases", () => {
       };
     };
     shadows: { sm: string };
-    backDropBlurs: { md: string };
+    backdropBlurs: { md: string };
     borderRadius: { pill: string };
     borderWidth: { thin: string };
     fontFamily: { sans: string };
@@ -113,7 +113,7 @@ describe("*Variant aliases handle kebab-case keys in every category", () => {
       };
     };
     shadows: { "soft-lg": string };
-    backDropBlurs: { "blur-md": string };
+    backdropBlurs: { "blur-md": string };
     borderRadius: { "pill-lg": string };
     borderWidth: { "thin-line": string };
     fontFamily: { "sans-serif": string };

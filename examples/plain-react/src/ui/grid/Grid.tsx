@@ -25,13 +25,12 @@ export function Grid<T extends ElementType = "div">({
   ...props
 }: GridProps<T>): JSX.Element {
   const Component: ElementType = as ?? "div";
-  const split = splitLayout(
-    props,
-    layoutRecipe,
-    tokens.spacingProperties,
-    LAYOUT_VARIANT_KEYS,
-    LAYOUT_SIZE_KEYS,
-  );
+  const split = splitLayout(props, {
+    recipe: layoutRecipe,
+    spacingKeys: tokens.spacingProperties,
+    variantKeys: LAYOUT_VARIANT_KEYS,
+    sizeKeys: LAYOUT_SIZE_KEYS,
+  });
   const cols = columns === undefined ? undefined : gridColumns(columns);
   return (
     <Component

@@ -6,16 +6,15 @@ import { compileFixtureCss } from "../src/__integration__/compileFixtureCss";
 import { resolveSpacing } from "../src/features/spacing/spacingHelpers";
 
 /**
- * Regression test for the DEV.2 `--tw-sp-*` custom-property inheritance bug
- * (D8 fix): a parent's breakpoint override must NOT leak into a child that
+ * Regression test for the `--sg-sp-*` custom-property inheritance bug:
+ * a parent's breakpoint override must NOT leak into a child that
  * only sets the base value. `@property --sg-sp-*` with `inherits: false`
  * scopes each custom property to the element it's declared on, so the
  * child's `@media (width >= 768px)` fallback chain resolves to the child's
  * own `--sg-sp-p` instead of the parent's inherited `--sg-sp-p-md`.
  *
  * Runs on both Chromium and Webkit (playwright.config.ts projects) because
- * `@property` inheritance semantics are engine-sensitive — the original
- * PoC only ran on WebKit.
+ * `@property` inheritance semantics are engine-sensitive.
  */
 test.describe("spacing custom-property inheritance", () => {
   // Parent: base 2 (8px), md 8 (32px), no lg → lg falls back to md.

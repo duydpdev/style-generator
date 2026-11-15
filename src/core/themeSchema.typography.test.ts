@@ -88,7 +88,7 @@ it("rejects an alias cycle", () => {
   expect(result.error?.issues[0]?.message).toMatch(/cycle detected/);
 });
 
-it("rejects a $-alias in borderWidth/fontFamily targeting an unknown key (AC4: ALIAS_CATEGORIES tracks every ThemeCssVarShape category)", () => {
+it("rejects a $-alias in borderWidth/fontFamily targeting an unknown key (ALIAS_CATEGORIES tracks every ThemeCssVarShape category)", () => {
   const borderWidthResult = ThemeSchema.safeParse({
     colors: { primary: "#fff" },
     borderWidth: { a: "$nope" },
@@ -241,7 +241,7 @@ it("rejects keys in the same record that kebab-case to the same value", () => {
   expect(result.error?.issues[0]?.message).toMatch(/kebab-case to/);
 });
 
-describe("typography keys vs other categories' classes (F9)", () => {
+describe("typography keys vs other categories' classes", () => {
   const style = {
     fontSize: "16px",
     lineHeight: "24px",
@@ -267,8 +267,8 @@ describe("typography keys vs other categories' classes (F9)", () => {
       "roundedLg",
     ],
     [
-      "backDropBlurs",
-      { colors: { primary: "#fff" }, backDropBlurs: { md: "12px" } },
+      "backdropBlurs",
+      { colors: { primary: "#fff" }, backdropBlurs: { md: "12px" } },
       "backdropBlurMd",
     ],
   ])("rejects a typography key equal to a %s class", (_label, theme, key) => {

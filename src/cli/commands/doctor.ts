@@ -16,7 +16,6 @@ import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { logger } from "../logger";
 
 import { findAliasHints } from "./aliasHints";
-import { findLegacyColorVarRefs } from "./legacyColorVars";
 import { findUtilityCollisions } from "./utilityCollisions";
 
 const padStr = (str: string) => {
@@ -88,11 +87,10 @@ function checkTheme(cwd: string, config: StyleGenConfig): boolean {
   }
 
   logger.log(`${heading} ✅ Valid JSON, schema OK`);
-  // Warnings only (utility collisions, pre-5.0 color variables, override
-  // literals that could be aliases): never change the exit code.
+  // Warnings only (utility collisions, override literals that could be
+  // aliases): never change the exit code.
   for (const warning of [
     ...findUtilityCollisions(result.data),
-    ...findLegacyColorVarRefs(cwd, result.data, { output: config.output }),
     ...findAliasHints(result.data),
   ]) {
     logger.log(`  Theme   ⚠️  ${warning}`);

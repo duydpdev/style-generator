@@ -86,14 +86,6 @@ export const themeTemplateDark = `{
 }
 `;
 
-/** Project-relative POSIX paths `init` wrote into style-gen.config.json. */
-export interface WiringPaths {
-  /** The theme JSON, e.g. `app/assets/css/theme.json`. */
-  theme: string;
-  /** The directory of the generated `theme.css`, e.g. `app/assets/css`. */
-  outDir: string;
-}
-
 const NO_ARGUMENT_NOTE =
   "// No arguments: reads style-gen.config.json (theme, output, options).";
 
@@ -101,16 +93,14 @@ const NO_ARGUMENT_NOTE =
  * The bundler config `init` prints for a detected stack; `init` never
  * edits the file. Vite and Next.js read style-gen.config.json themselves
  * (no arguments). Nuxt 4 sets Vite's root to `app/`, so the Nuxt snippet
- * passes absolute paths. The text is Prettier-formatted for the default
- * paths: the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt)
- * show these blocks byte for byte (`templates.test.ts`).
+ * passes `root`, the project folder that holds the config file. The text is
+ * Prettier-formatted: the README (Vite) and `documents/reference/cli.md`
+ * (Next.js, Nuxt) show these blocks byte for byte (`templates.test.ts`).
  * @param {Extract<DetectedStack, { configFile: string }>} detected - The detected stack and its config file
- * @param {WiringPaths} paths - Where `init` put the theme and the CSS
  * @returns {string} The snippet, first line `// <config file>`
  */
 export const getBundlerSnippet = (
   detected: Extract<DetectedStack, { configFile: string }>,
-  paths: WiringPaths,
 ): string => {
   const { stack, configFile } = detected;
   if (stack === "vite") {
@@ -143,8 +133,6 @@ ${head}
 ${NO_ARGUMENT_NOTE}
 export default styleGenNext()(nextConfig);`;
   }
-  const themeUrl = JSON.stringify(`./${paths.theme}`);
-  const outDirUrl = JSON.stringify(`./${paths.outDir}`);
   return `// ${configFile}
 import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
@@ -155,14 +143,8 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   vite: {
     plugins: [
-      // Absolute paths: Nuxt 4 sets Vite's root to app/.
-      styleGenVite({
-        themePath: fileURLToPath(
-          new URL(${themeUrl}, import.meta.url),
-        ),
-        outDir: fileURLToPath(new URL(${outDirUrl}, import.meta.url)),
-        options: {}, // style-gen.config.json is NOT read when paths are passed; put generate() options here
-      }),
+      // Nuxt 4 sets Vite's root to app/: root is the folder with style-gen.config.json.
+      styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) }),
       tailwindcss(),
     ],
   },

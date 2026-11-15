@@ -1,17 +1,17 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type {
-  BreakpointKeys,
-  ColorVariant,
-} from "@duydpdev/style-generator/types";
+import type { ColorVariant } from "@duydpdev/style-generator/types";
 
 import {
   axisAttributes,
   intents,
+  type tokens,
   type BoxSpacingProps,
   type Intent,
   type Theme,
-  type options,
 } from "../src";
+import { buttonPreset } from "../src/recipes/button";
+import { createButtonRecipe } from "../src/recipes/factories/button";
+import { tokens as themeTokens } from "../src/tokens";
 import type { AltTheme } from "../src/alt";
 
 type AltColor = ColorVariant<AltTheme>;
@@ -41,15 +41,17 @@ describe("design-system types", () => {
     expectTypeOf(bad).toEqualTypeOf<readonly ["primary"]>();
   });
 
-  it("the breakpoint keys are the shared options' literal tuple", () => {
-    expectTypeOf<BreakpointKeys<typeof options>>().toEqualTypeOf<"md" | "lg">();
+  it("the breakpoint keys are the generated tokens' literal tuple", () => {
+    expectTypeOf<(typeof tokens)["breakpoints"][number]>().toEqualTypeOf<
+      "md" | "lg"
+    >();
   });
 
   it("Box spacing accepts md/lg and rejects any other breakpoint", () => {
     const valid: BoxSpacingProps = { p: 4, gapX: { base: 2, md: 4, lg: 6 } };
     expectTypeOf(valid).toExtend<BoxSpacingProps>();
 
-    // @ts-expect-error `xl` is not in options.breakpoints
+    // @ts-expect-error `xl` is not in tokens.breakpoints
     const invalid: BoxSpacingProps = { p: { xl: 4 } };
     expectTypeOf(invalid).toExtend<BoxSpacingProps>();
   });
@@ -65,5 +67,12 @@ describe("design-system types", () => {
     axisAttributes({ theme: "neon" });
     // @ts-expect-error "contrast" is not an axis of this theme
     axisAttributes({ contrast: "high" });
+  });
+
+  it("a recipe built from the tables rejects a misspelled variant name", () => {
+    const button = createButtonRecipe(themeTokens, buttonPreset);
+    expectTypeOf(button({ color: "primary", size: "lg" })).toBeString();
+    // @ts-expect-error `intnet` is not a variant of the button tables
+    expectTypeOf(button({ intnet: "primary" })).toBeString();
   });
 });

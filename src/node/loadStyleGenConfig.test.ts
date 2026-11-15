@@ -5,6 +5,8 @@ import os from "node:os";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import {
+  StyleGenConfigFileSchema,
+  StyleGenConfigSchema,
   loadStyleGenConfig,
   readConfigFile,
   resolveConfig,
@@ -49,7 +51,7 @@ describe("loadStyleGenConfig", () => {
     expect(loaded.source).toBeUndefined();
   });
 
-  it("rejects the `plugin` key removed in 6.0 and merges nothing from the file", () => {
+  it("rejects the `plugin` key and merges nothing from the file", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
       JSON.stringify({
@@ -121,6 +123,30 @@ describe("loadStyleGenConfig", () => {
     expect(loadStyleGenConfig(tmp).issues).toMatch(
       /^resetTailwindDefaults\.0 → /m,
     );
+  });
+
+  it("accepts tokensOutput, keeps it in the config and does not forward it to generate()", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ tokensOutput: "gen/t.ts", breakpoints: ["sm"] }),
+    );
+
+    const loaded = loadStyleGenConfig(tmp);
+
+    expect(loaded.issues).toBeUndefined();
+    expect(loaded.config.tokensOutput).toBe("gen/t.ts");
+    expect(toGeneratorOptions(loaded.config)).toEqual({ breakpoints: ["sm"] });
+    expect(toGeneratorOptions(loaded.config)).not.toHaveProperty(
+      "tokensOutput",
+    );
+  });
+
+  it("rejects an empty tokensOutput", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ tokensOutput: "" }),
+    );
+    expect(loadStyleGenConfig(tmp).issues).toMatch(/^tokensOutput → /m);
   });
 });
 
@@ -402,8 +428,36 @@ describe("readConfigFile schema validation (X-04)", () => {
     expect(file.config).toEqual(cfg);
   });
 
-  it("accepts the editor $schema key", () => {
-    writeConfig({ $schema: "./node_modules/x.json", breakpoints: ["md"] });
-    expect(readConfigFile(tmp).issues).toBeUndefined();
+  it("accepts the editor $schema key and drops it from the loaded config", () => {
+    writeConfig({ $schema: "./x.json", breakpoints: ["md"] });
+    const file = readConfigFile(tmp);
+    expect(file.issues).toBeUndefined();
+    expect(file.config).toEqual({ breakpoints: ["md"] });
+    expect(file.config).not.toHaveProperty("$schema");
+    const config = resolveConfig({}, file);
+    expect(config).not.toHaveProperty("$schema");
+  });
+
+  it('accepts $schema in package.json["style-gen"] and drops it', () => {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({
+        name: "x",
+        "style-gen": { $schema: "./x.json", output: "x.css" },
+      }),
+    );
+    const file = readConfigFile(tmp);
+    expect(file.issues).toBeUndefined();
+    expect(file.config).toEqual({ output: "x.css" });
+  });
+
+  it("still reports an unknown key next to $schema", () => {
+    writeConfig({ $schema: "./x.json", outptu: "x.css" });
+    expect(readConfigFile(tmp).issues).toMatch(/Unrecognized key/);
+  });
+
+  it("keeps $schema out of the resolved config's key list", () => {
+    expect(StyleGenConfigSchema.keyof().options).not.toContain("$schema");
+    expect(StyleGenConfigFileSchema.keyof().options).toContain("$schema");
   });
 });

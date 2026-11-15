@@ -35,7 +35,7 @@ export type LayoutProps = ThemeSpacingProps<Tokens> & {
   readonly roundedL?: Tokens["borderRadius"][number] | undefined;
   readonly roundedR?: Tokens["borderRadius"][number] | undefined;
   readonly shadow?: Tokens["shadows"][number] | undefined;
-  readonly backdropBlur?: Tokens["backDropBlurs"][number] | undefined;
+  readonly backdropBlur?: Tokens["backdropBlurs"][number] | undefined;
   readonly position?: "absolute" | "relative" | "fixed" | "sticky" | undefined;
   readonly display?:
     | "block"

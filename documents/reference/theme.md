@@ -16,6 +16,36 @@ const { css } = generate({
 });
 ```
 
+## A theme with every category
+
+A theme that uses every category (`$schema` is the editor's pointer, see [Editor autocomplete](#editor-autocomplete)):
+
+```json
+{
+  "$schema": "./theme.schema.json",
+  "colors": {
+    "blue500": "#3B82F6",
+    "primary": "$blue500",
+    "primaryForeground": "#FFFFFF",
+    "background": "#FFFFFF",
+    "muted": "#8E8E93"
+  },
+  "typography": {
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    }
+  },
+  "shadows": { "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)" },
+  "backdropBlurs": { "sm": "4px" },
+  "borderRadius": { "md": "8px" },
+  "fontFamily": { "sans": "\"Inter\", system-ui, sans-serif" },
+  "borderWidth": { "thin": "1px" }
+}
+```
+
 ## Key grammar
 
 Every token name, axis name and variant name must start with a letter or digit and then contain only letters, digits or `-`. In particular **`_` is rejected** — use camelCase such as `primaryActive` or kebab-case such as `primary-active` — because `_` would make the class name and the typed token disagree. The CLI, `styleGenVite` and `styleGenNext` print that hint on the offending path (`colors.primary_active → … use camelCase … or kebab-case …`). Two keys in one record that kebab-case to the same name (`blue500` and `blue-500`) are rejected too. Each category owns a distinct `--sg-<category>-` variable namespace (`--sg-color-*`, `--sg-shadow-*`, `--sg-sp-*`, …), so keys in different categories never collide (`colors.shadowPrimary` → `--sg-color-shadow-primary`, `shadows.primary` → `--sg-shadow-primary`). A `typography` key may not kebab-case to `sp-*` or `font-*`, and `fontWeight` must be a number from 1 to 1000. Values may not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, quotes must be balanced, and so must parentheses and brackets (`rgb(0 0 0` is rejected at its path).
@@ -106,6 +136,14 @@ Declare flat sibling keys next to a color and the registry emits the state utili
 ```
 
 `primary` now opts into `hover:bg-primary-hover` and `active:bg-primary-active` (and the `text-`/`border-` forms). The state list is the exported constant `COLOR_STATES` (`["hover", "active"]`); feed it to `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` to get the class string, see [section 7](./cva.md). State names are kebab-cased (`focusVisible` → `focus-visible:`).
+
+## Editor autocomplete
+
+```bash
+yarn style-gen schema
+```
+
+`style-gen schema` writes `theme.schema.json` next to the theme file and `style-gen.config.schema.json` in the project root. Add `"$schema": "./theme.schema.json"` to the theme and `"$schema": "./style-gen.config.schema.json"` to `style-gen.config.json`, and the editor suggests keys and flags unknown ones. The schemas describe keys and value shapes; the checks that compare values with each other (aliases, collisions, `breakpoints` against `screens`) run in `generate`, the plugins and `style-gen doctor`.
 
 ## Multi-axis theming (`themeAxes`)
 

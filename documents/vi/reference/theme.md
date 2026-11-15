@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: 98f3ab5939bd -->
+<!-- source: documents/reference/theme.md sha256: 0234b7a9ec2a -->
 
 # Cấu hình theme
 
@@ -16,6 +16,36 @@ import { generate } from "@duydpdev/style-generator";
 const { css } = generate({
   colors: { primary: "#3B82F6", background: "#FFFFFF" },
 });
+```
+
+## Một theme dùng đủ mọi nhóm token
+
+Một theme dùng mọi nhóm token (`$schema` là con trỏ cho editor, xem [Tự hoàn thành trong editor](#tự-hoàn-thành-trong-editor)):
+
+```json
+{
+  "$schema": "./theme.schema.json",
+  "colors": {
+    "blue500": "#3B82F6",
+    "primary": "$blue500",
+    "primaryForeground": "#FFFFFF",
+    "background": "#FFFFFF",
+    "muted": "#8E8E93"
+  },
+  "typography": {
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    }
+  },
+  "shadows": { "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)" },
+  "backdropBlurs": { "sm": "4px" },
+  "borderRadius": { "md": "8px" },
+  "fontFamily": { "sans": "\"Inter\", system-ui, sans-serif" },
+  "borderWidth": { "thin": "1px" }
+}
 ```
 
 ## Ngữ pháp của key
@@ -108,6 +138,14 @@ Khai báo các key ngang hàng cạnh một màu và registry sẽ phát ra các
 ```
 
 `primary` giờ đây có thêm `hover:bg-primary-hover` và `active:bg-primary-active` (cùng các dạng `text-`/`border-`). Danh sách trạng thái là hằng số được export `COLOR_STATES` (`["hover", "active"]`); truyền nó vào `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` để nhận chuỗi class, xem [mục 7](./cva.md). Tên trạng thái ở dạng kebab-case (`focusVisible` → `focus-visible:`).
+
+## Tự hoàn thành trong editor
+
+```bash
+yarn style-gen schema
+```
+
+`style-gen schema` ghi `theme.schema.json` cạnh file theme và `style-gen.config.schema.json` ở thư mục gốc dự án. Hãy thêm `"$schema": "./theme.schema.json"` vào theme và `"$schema": "./style-gen.config.schema.json"` vào `style-gen.config.json`, và editor sẽ gợi ý các key và đánh dấu key lạ. Các schema mô tả key và hình dạng giá trị; những phép kiểm tra so sánh các giá trị với nhau (alias, trùng tên, `breakpoints` so với `screens`) chạy trong `generate`, các plugin và `style-gen doctor`.
 
 ## Theme nhiều trục (`themeAxes`)
 

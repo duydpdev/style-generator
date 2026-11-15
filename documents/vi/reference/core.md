@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: e47569f5086b -->
+<!-- source: documents/reference/core.md sha256: b7ddb9a92b7e -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -133,6 +133,24 @@ With `options`, their literal `breakpoints`, `screens` and
 <!-- /signature -->
 
 Biên dịch một theme đã được kiểm tra hợp lệ thành `{ css, tokens, schema }`. Theme được mô tả trong [Cấu hình theme](./theme.md) và tham số thứ hai nằm trong [Tùy chọn](./options.md).
+
+`css` là một file để `@import` cạnh `@import "tailwindcss"`: không cần `@plugin`, không cần file safelist. `tokens` là các danh sách key `DesignTokens.Web` có kiểu ([Design token](./tokens.md)); `schema` là JSON Schema của theme. Bản thân `generate()` không ghi gì: `style-gen generate` và các plugin bundler gọi nó rồi ghi `theme.css` cùng module `theme.tokens.ts` có kiểu, file mà bạn commit và import `tokens` từ đó. Một script bỏ qua cả hai sẽ tự ghi `css`:
+
+```ts
+import { writeFileSync } from "node:fs";
+import {
+  generate,
+  defineTheme,
+  defineOptions,
+} from "@duydpdev/style-generator";
+import themeJson from "./theme.json";
+
+const theme = defineTheme(themeJson); // type-checked and validated at runtime
+const options = defineOptions({ breakpoints: ["md", "lg"] });
+
+const { css, tokens, schema } = generate(theme, options);
+writeFileSync("styles/theme.css", css, "utf8");
+```
 
 ## `generateThemeCss`
 

@@ -287,7 +287,7 @@ including the AgentKit `ak:docs` skill (also set in `.agentkit/config.yaml` → 
 ```text
 documents/
 ├── README.md                     # index of everything below
-├── architecture.md guide.md testing.md deploy.md components.md cookbook.md   # rendered by the site
+├── architecture.md guide.md troubleshooting.md testing.md deploy.md components.md cookbook.md   # rendered by the site
 ├── getting-started/  reference/  # rendered by the site (site/src/lib/docs-meta.json)
 ├── vi/                           # Vietnamese twin of every rendered doc (yarn check:docs-i18n)
 ├── migration/                    # upgrade guides + v4 measurement proofs

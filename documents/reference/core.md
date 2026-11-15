@@ -132,6 +132,24 @@ With `options`, their literal `breakpoints`, `screens` and
 
 Compiles a validated theme into `{ css, tokens, schema }`. The theme is described in [Theme config](./theme.md) and the second argument in [Options](./options.md).
 
+`css` is one file to `@import` next to `@import "tailwindcss"`: no `@plugin`, no safelist file. `tokens` is the typed `DesignTokens.Web` key lists ([Design tokens](./tokens.md)); `schema` is the theme's JSON Schema. `generate()` writes nothing itself: `style-gen generate` and the bundler plugins call it and write `theme.css` and the typed `theme.tokens.ts` module, which you commit and import `tokens` from. A script that skips both writes `css` on its own:
+
+```ts
+import { writeFileSync } from "node:fs";
+import {
+  generate,
+  defineTheme,
+  defineOptions,
+} from "@duydpdev/style-generator";
+import themeJson from "./theme.json";
+
+const theme = defineTheme(themeJson); // type-checked and validated at runtime
+const options = defineOptions({ breakpoints: ["md", "lg"] });
+
+const { css, tokens, schema } = generate(theme, options);
+writeFileSync("styles/theme.css", css, "utf8");
+```
+
 ## `generateThemeCss`
 
 <!-- signature: generateThemeCss -->

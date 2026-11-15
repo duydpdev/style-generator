@@ -26,6 +26,10 @@ const themeJson = join(root, "examples/design-system/src/theme.json");
 const themeCss = join(exampleDir, "src/theme/theme.css");
 const MARKER = "#0a1b2c";
 const TIMEOUT_MS = 15_000;
+const RETRY_MS = 1_000;
+// The harness takes its config from `package.json#style-gen`; a
+// `style-gen.config.json` created while the server runs takes precedence.
+const configJson = join(exampleDir, "style-gen.config.json");
 
 /**
  * Print the reason and exit 1.
@@ -44,6 +48,7 @@ const originalCss = existsSync(themeCss)
 const restore = () => {
   writeFileSync(themeJson, originalJson);
   if (originalCss !== null) writeFileSync(themeCss, originalCss);
+  rmSync(configJson, { force: true });
 };
 process.on("exit", restore);
 
@@ -134,11 +139,13 @@ if (
   fail("buildStart did not write theme.css");
 }
 
-// Wait until the watcher actually watches theme.json; an edit before that
-// produces no `change`. Do not gate on `ready`: chokidar counts only the
-// top-level paths Vite passes to `watch()`, so on Linux (fs.watch) `ready`
-// fires once the root has been read, before nested dirs like `src/theme` are
-// registered. macOS (fsevents) watches recursively, which hid this locally.
+// Wait until the watcher lists theme.json. This is only a coarse gate: on
+// macOS (FSEvents) `getWatched()` reports the file before its event stream
+// exists, so an edit right after it can still be lost; `settle()` below
+// therefore repeats every edit until its effect shows up. Do not gate on
+// `ready` either: chokidar counts only the top-level paths Vite passes to
+// `watch()`, so on Linux (fs.watch) `ready` fires once the root has been
+// read, before nested dirs like `src/theme` are registered.
 const WATCH_TIMEOUT_MS = 10_000;
 const themeDir = dirname(themeJson);
 const watchStarted = Date.now();
@@ -160,25 +167,69 @@ const [firstColor] = Object.keys(theme.colors);
 if (firstColor === undefined)
   fail("examples/design-system theme has no colors");
 theme.colors[firstColor] = MARKER;
-writeFileSync(themeJson, `${JSON.stringify(theme, null, 2)}\n`);
+const editedTheme = `${JSON.stringify(theme, null, 2)}\n`;
 
-const started = Date.now();
-while (
-  !(
-    readFileSync(themeCss, "utf8").includes(MARKER) &&
-    sent.includes("full-reload")
-  )
-) {
-  if (Date.now() - started > TIMEOUT_MS) {
-    await server.close();
-    fail(
-      `no re-emit within ${TIMEOUT_MS} ms (theme.css has marker: ${String(
-        readFileSync(themeCss, "utf8").includes(MARKER),
-      )}, ws messages: [${sent.join(", ")}])`,
-    );
+/**
+ * Run `edit`, then repeat it every `RETRY_MS` until `done()` holds. The
+ * edits here are idempotent (the plugin emits write-if-changed), so a repeat
+ * only gives a lost watcher event another chance to arrive.
+ * @param {() => void} edit - The filesystem change under test
+ * @param {() => boolean} done - Whether its effect is visible
+ * @param {string} what - Failure message when the effect never shows up
+ * @returns {Promise<void>} Resolves once `done()` holds
+ */
+const settle = async (edit, done, what) => {
+  const begun = Date.now();
+  let lastEdit = 0;
+  while (!done()) {
+    if (Date.now() - begun > TIMEOUT_MS) {
+      await server.close();
+      fail(`${what} within ${TIMEOUT_MS} ms`);
+    }
+    if (Date.now() - lastEdit >= RETRY_MS) {
+      edit();
+      lastEdit = Date.now();
+    }
+    await new Promise((r) => setTimeout(r, 100));
   }
-  await new Promise((r) => setTimeout(r, 100));
-}
+};
+
+await settle(
+  () => {
+    writeFileSync(themeJson, editedTheme);
+  },
+  () =>
+    readFileSync(themeCss, "utf8").includes(MARKER) &&
+    sent.includes("full-reload"),
+  `no re-emit (ws messages: [${sent.join(", ")}])`,
+);
+
+// Scenario 3: the config moves from `package.json#style-gen` to a
+// `style-gen.config.json` created while the server runs (N-L1).
+const pkg = JSON.parse(readFileSync(join(exampleDir, "package.json"), "utf8"));
+const reloadsBefore = sent.filter((t) => t === "full-reload").length;
+const createdConfig = `${JSON.stringify({ ...pkg["style-gen"], resetTailwindDefaults: ["colors"] }, null, 2)}\n`;
+await settle(
+  () => {
+    writeFileSync(configJson, createdConfig);
+  },
+  () =>
+    readFileSync(themeCss, "utf8").includes("--color-*: initial;") &&
+    sent.filter((t) => t === "full-reload").length > reloadsBefore,
+  "creating style-gen.config.json next to package.json#style-gen was not picked up",
+);
+
+// Removing it falls back to `package.json#style-gen`. A removal that went
+// unnoticed cannot be repeated on a missing file, so the repeat creates and
+// removes it again (the last event is an unlink either way).
+await settle(
+  () => {
+    if (!existsSync(configJson)) writeFileSync(configJson, createdConfig);
+    rmSync(configJson, { force: true });
+  },
+  () => !readFileSync(themeCss, "utf8").includes("--color-*: initial;"),
+  "removing style-gen.config.json did not fall back to package.json#style-gen",
+);
 
 await server.restart();
 const duplicate = warnings.find((w) => w.includes("Multiple plugin instances"));

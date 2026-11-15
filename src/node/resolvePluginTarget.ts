@@ -1,9 +1,8 @@
-import { resolve } from "node:path";
-
 import { z } from "zod";
 
 import { formatZodError } from "../core/themeSchema";
 
+import { configCandidates } from "./configSource";
 import { loadStyleGenConfig } from "./loadStyleGenConfig";
 import { resolveEmitTarget } from "./resolveEmitTarget";
 import type { EmitTarget } from "./themeEmitter";
@@ -54,8 +53,11 @@ export function parsePluginRootOptions(
 export interface PluginTarget {
   /** Absolute theme, output and tokens files plus the generator options. */
   target: EmitTarget;
-  /** Absolute path of the config file to watch (it may not exist yet). */
-  configFile: string;
+  /**
+   * Absolute paths of every file the config can live in, highest precedence
+   * first (`style-gen.config.json`, `package.json`); they may not exist yet.
+   */
+  configFiles: string[];
   /** `false` when `root` holds no config file and every default applies. */
   configFound: boolean;
 }
@@ -84,7 +86,7 @@ export function resolvePluginTarget(root: string, label: string): PluginTarget {
   }
   return {
     target: resolveEmitTarget(root, loaded.config, `[${label}] `),
-    configFile: resolve(root, loaded.source ?? "style-gen.config.json"),
+    configFiles: configCandidates(root),
     configFound: loaded.source !== undefined,
   };
 }

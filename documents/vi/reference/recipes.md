@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: 7c7209adfe8e -->
+<!-- source: documents/reference/recipes.md sha256: 4a3e8b44c26b -->
 
 # Recipe (./recipes)
 
@@ -62,7 +62,7 @@ declare const tokens: Parameters<typeof createTailwindMergeExtension>[0];
 const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
 ```
 
-- `shadows`, `backDropBlurs` and `borderWidth` (incl. side, logical and
+- `shadows`, `backdropBlurs` and `borderWidth` (incl. side, logical and
   `divide-*` prefixes) extend the matching `tailwind-merge` groups; the
   group ids are `tailwind-merge`'s own (`border-w`, `border-w-x`, …).
 - `borderRadius` extends `tailwind-merge`'s `radius` theme scale, which
@@ -113,7 +113,7 @@ argument. Declared here, not imported, so `dist/recipes.d.ts` never names
 export declare interface TailwindMergeTokens {
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
 }
@@ -125,7 +125,7 @@ and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
 
 <!-- /signature -->
 
-- `createTailwindMergeExtension` bao quát các token `typography`, `shadows`, `backDropBlurs`, `borderRadius` và `borderWidth`; màu sắc và font family vốn đã khớp với các group `color`/`font-family` mặc định của tailwind-merge. `borderRadius` mở rộng scale theme `radius` của tailwind-merge, nhờ đó các utility theo phía, theo logic và góc (`rounded-tl-pill`, `rounded-s-pill`) sẽ merge với các sibling `rounded-*` của chúng. Một class typography đứng sau sẽ loại bỏ các class `font-size`/`font-weight`/`leading`/`tracking` đứng trước; một utility đơn thuộc tính đứng sau sẽ tinh chỉnh lại nó.
+- `createTailwindMergeExtension` bao quát các token `typography`, `shadows`, `backdropBlurs`, `borderRadius` và `borderWidth`; màu sắc và font family vốn đã khớp với các group `color`/`font-family` mặc định của tailwind-merge. `borderRadius` mở rộng scale theme `radius` của tailwind-merge, nhờ đó các utility theo phía, theo logic và góc (`rounded-tl-pill`, `rounded-s-pill`) sẽ merge với các sibling `rounded-*` của chúng. Một class typography đứng sau sẽ loại bỏ các class `font-size`/`font-weight`/`leading`/`tracking` đứng trước; một utility đơn thuộc tính đứng sau sẽ tinh chỉnh lại nó.
 
 ## `splitSpacingProps`, `SpacingProps`
 

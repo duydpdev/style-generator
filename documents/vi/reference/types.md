@@ -1,4 +1,4 @@
-<!-- source: documents/reference/types.md sha256: e958df8a9dc1 -->
+<!-- source: documents/reference/types.md sha256: 1a1625927048 -->
 
 # Kiểu (./types)
 
@@ -145,7 +145,7 @@ export declare type BackdropBlurVariant<T extends ThemeConfig> =
   DesignTokenKeys<T>["backdropBlurKey"];
 ```
 
-Backdrop-blur variant union derived from theme.backDropBlurs keys.
+Backdrop-blur variant union derived from theme.backdropBlurs keys.
 
 <!-- /signature -->
 

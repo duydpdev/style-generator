@@ -267,8 +267,8 @@ describe("typography keys vs other categories' classes (F9)", () => {
       "roundedLg",
     ],
     [
-      "backDropBlurs",
-      { colors: { primary: "#fff" }, backDropBlurs: { md: "12px" } },
+      "backdropBlurs",
+      { colors: { primary: "#fff" }, backdropBlurs: { md: "12px" } },
       "backdropBlurMd",
     ],
   ])("rejects a typography key equal to a %s class", (_label, theme, key) => {

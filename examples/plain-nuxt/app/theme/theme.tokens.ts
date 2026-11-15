@@ -29,7 +29,7 @@ export const tokens = {
     "md",
     "lg"
   ],
-  "backDropBlurs": [
+  "backdropBlurs": [
     "sm",
     "md",
     "lg"

@@ -74,7 +74,7 @@ export const layoutTables = {
     roundedL: createVariantMapper("rounded-l", tokens.borderRadius),
     roundedR: createVariantMapper("rounded-r", tokens.borderRadius),
     shadow: createVariantMapper("shadow", tokens.shadows),
-    backdropBlur: createVariantMapper("backdrop-blur", tokens.backDropBlurs),
+    backdropBlur: createVariantMapper("backdrop-blur", tokens.backdropBlurs),
     position: {
       absolute: "absolute",
       relative: "relative",

@@ -60,7 +60,7 @@ declare const tokens: Parameters<typeof createTailwindMergeExtension>[0];
 const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
 ```
 
-- `shadows`, `backDropBlurs` and `borderWidth` (incl. side, logical and
+- `shadows`, `backdropBlurs` and `borderWidth` (incl. side, logical and
   `divide-*` prefixes) extend the matching `tailwind-merge` groups; the
   group ids are `tailwind-merge`'s own (`border-w`, `border-w-x`, …).
 - `borderRadius` extends `tailwind-merge`'s `radius` theme scale, which
@@ -111,7 +111,7 @@ argument. Declared here, not imported, so `dist/recipes.d.ts` never names
 export declare interface TailwindMergeTokens {
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
-  readonly backDropBlurs: readonly string[];
+  readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
 }
@@ -123,7 +123,7 @@ and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
 
 <!-- /signature -->
 
-- `createTailwindMergeExtension` covers `typography`, `shadows`, `backDropBlurs`, `borderRadius` and `borderWidth` tokens; colors and font families already match tailwind-merge's default `color`/`font-family` groups. `borderRadius` extends tailwind-merge's `radius` theme scale, so side, logical and corner utilities (`rounded-tl-pill`, `rounded-s-pill`) merge with their `rounded-*` siblings. A later typography class removes earlier `font-size`/`font-weight`/`leading`/`tracking` classes; a later single-property utility refines it.
+- `createTailwindMergeExtension` covers `typography`, `shadows`, `backdropBlurs`, `borderRadius` and `borderWidth` tokens; colors and font families already match tailwind-merge's default `color`/`font-family` groups. `borderRadius` extends tailwind-merge's `radius` theme scale, so side, logical and corner utilities (`rounded-tl-pill`, `rounded-s-pill`) merge with their `rounded-*` siblings. A later typography class removes earlier `font-size`/`font-weight`/`leading`/`tracking` classes; a later single-property utility refines it.
 
 ## `splitSpacingProps`, `SpacingProps`
 

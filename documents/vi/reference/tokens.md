@@ -1,4 +1,4 @@
-<!-- source: documents/reference/tokens.md sha256: 6f6bc10c93f5 -->
+<!-- source: documents/reference/tokens.md sha256: db7cb74dc5fd -->
 
 # Design token (./tokens)
 
@@ -49,7 +49,7 @@ const { DesignTokens } = createDesignTokens(theme, {
 | `colors`            | Mọi key màu (phẳng, camelCase)                                                                                                                       |
 | `typography`        | Các key của `typography`                                                                                                                             |
 | `shadows`           | Các key của `shadows`                                                                                                                                |
-| `backDropBlurs`     | Các key của `backDropBlurs`                                                                                                                          |
+| `backdropBlurs`     | Các key của `backdropBlurs`                                                                                                                          |
 | `fontFamily`        | Các key của `fontFamily`                                                                                                                             |
 | `borderWidth`       | Các key của `borderWidth` (dùng giá trị dự phòng `0, 1, 2, 4` khi bị bỏ qua hoặc để trống)                                                           |
 | `borderRadius`      | Các key của `borderRadius` (dùng giá trị dự phòng `DEFAULT_ROUNDED_VALUES` khi bị bỏ qua hoặc để trống)                                              |

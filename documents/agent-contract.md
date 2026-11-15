@@ -13,7 +13,7 @@ Name the keys after the app's own roles. The library derives every type and clas
 - An intent may declare an `on<Intent>` text colour (`brand` → `onBrand`). `contrastText(tokens.colors, intent, fallback)` returns `text-on-brand` when it exists, else `text-<fallback>`.
 - A value `"$<key>"` aliases another key **of the same category** (`"brandHover": "$brandActive"` in `colors`). Not in `typography`. Unknown targets and cycles are schema errors.
 - Dark mode and palettes go in `themeAxes.<axis>.<variant>`; an override may only redefine keys that exist in the base category. Activation is `html[data-<axis>="<variant>"]` (use `themeAxisAttributes` from `@duydpdev/style-generator/recipes`). `base` is reserved as a variant name.
-- Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backDropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
+- Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
 - Avoid keys whose class equals a Tailwind utility (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` warns; rename to `clear`, `flat`, `heading1`.
 - `style-gen init` writes a starter theme. Rename its keys to the app's roles and set every value for this app; a starter key left with its starter value is a copy, not a choice.
 

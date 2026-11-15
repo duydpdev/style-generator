@@ -97,7 +97,7 @@ also `createDesignTokens()` from `./tokens`) and `schema` (`z.toJSONSchema(Theme
 
 Pipelines, all driven by the category registry:
 
-1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backDropBlurs`,
+1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backdropBlurs`,
    `borderRadius`, `fontFamily`, `borderWidth`; `colors` feeds `bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`);
    `generateSourceInline.ts` emits one `@source inline(...)` per category.
 2. **theme-css** (`src/features/theme-css/`) — `:root` `--sg-*` vars, `html[data-<axis>="<variant>"]` overrides,
@@ -149,7 +149,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
 
 ## Theme / Color Rules (current v4 API)
 
-- `colors` is the only **required** field in `ThemeConfig`; all others (`typography`, `shadows`, `backDropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`) are optional.
+- `colors` is the only **required** field in `ThemeConfig`; all others (`typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`) are optional.
 - Colors are a **flat camelCase** object. Nested color objects and `DEFAULT` key are unsupported.
 - Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`).
   Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` and a leading uppercase run of two or more letters (`CTA`, `ABtn`,

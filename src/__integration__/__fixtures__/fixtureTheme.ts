@@ -30,7 +30,7 @@ export const fixtureTheme = defineTheme({
     sm: "0 1px 2px rgba(0,0,0,0.05)",
     flat: "none",
   },
-  backDropBlurs: {
+  backdropBlurs: {
     sm: "4px",
     soft: "2px",
   },

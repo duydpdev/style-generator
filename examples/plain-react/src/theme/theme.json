@@ -57,7 +57,7 @@
     "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
     "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)"
   },
-  "backDropBlurs": {
+  "backdropBlurs": {
     "sm": "4px",
     "md": "8px",
     "lg": "14px"

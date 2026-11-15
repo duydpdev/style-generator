@@ -110,6 +110,10 @@ Pipelines, all driven by the category registry:
    `ui-peer-floor` tests their floors). `borderRadius` goes through tailwind-merge's `radius` theme scale (every `rounded-*` group reads it);
    its local prefix table for `border`/`divide-*`/`shadow`/`backdrop-blur` is pinned to the registry descriptors by `extendTailwindMerge.test.ts`;
    do not import `builtInCategories.ts`/`classPrefixes.ts` from it (that would split a shared chunk and grow `./tokens`).
+   `recipeFromTables(tables)` returns `RecipeFn<typeof tables>` (props typed by the tables' variant names; a bare `RecipeFn` is the loose `(props?: RecipeProps) => string` and opts out of the check);
+   `splitLayout(props, { recipe, spacingKeys, variantKeys, sizeKeys, extra? })` takes one options object (`SplitLayoutOptions`).
+   Every public symbol has ONE import path (8.0): `COLOR_STATES` from `./cva` only; `ResponsiveValueStrict`, `DefaultBreakpointKeys`, `SpacingKey` from `./types` only; `./spacing` exports `resolveSpacing`
+   and `DEFAULT_SPACING_PROPERTIES` (`resolveSpacingProps` is gone).
 
 `DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants,
 spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only:
@@ -177,7 +181,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`. The emitted `--sg-*` variables (`--sg-color-<key>`, `--sg-shadow-<key>`,
   …) are a public contract (consumers read them); renaming one is breaking (5.0 renamed `--sg-<color>` → `--sg-color-<key>`; `style-gen doctor` warns on leftovers;
   see `documents/migration/4.x-to-5.0.md`).
-- `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`) is the single state list for the registry's `@source inline` state lines and
+- `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`, exported from `./cva` only) is the single state list for the registry's `@source inline` state lines and
   `createVariantMapper(prefix, tokens, { states: COLOR_STATES })`. Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`);
   states emit kebab-cased (`focusVisible` → `focus-visible:`).
 - A theme key whose class equals a Tailwind _static_ utility (`bg-none`, typography `text-sm`, …) is not rejected, but Tailwind picks the winner — rename it (`clear`, `flat`,

@@ -5,7 +5,6 @@ import type {
 } from "@duydpdev/style-generator/types";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -65,4 +64,4 @@ export const textTables = {
   defaultVariants: { type: defaultType, color: defaultColor },
 } satisfies RecipeTables;
 
-export const textRecipe: RecipeFn = recipeFromTables(textTables);
+export const textRecipe = recipeFromTables(textTables);

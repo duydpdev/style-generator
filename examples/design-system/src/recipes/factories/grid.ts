@@ -1,6 +1,5 @@
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
   type RecipeTokens,
 } from "@duydpdev/style-generator/ui";
@@ -67,40 +66,41 @@ export const gridColumns = (value: GridColumnsValue): GridColumns => {
 /** `rows` values: a row count (`grid-rows-N`) or `none`. */
 export type GridRows = 1 | 2 | 3 | 4 | 5 | 6 | "none";
 
-export const gridTables = (): RecipeTables => ({
-  base: "grid",
-  variants: {
-    align: {
-      start: "items-start",
-      center: "items-center",
-      end: "items-end",
-      stretch: "items-stretch",
+export const gridTables = () =>
+  ({
+    base: "grid",
+    variants: {
+      align: {
+        start: "items-start",
+        center: "items-center",
+        end: "items-end",
+        stretch: "items-stretch",
+      },
+      justify: {
+        start: "justify-start",
+        center: "justify-center",
+        end: "justify-end",
+        between: "justify-between",
+      },
+      flow: {
+        row: "grid-flow-row",
+        column: "grid-flow-col",
+        dense: "grid-flow-dense",
+      },
+      rows: {
+        1: "grid-rows-1",
+        2: "grid-rows-2",
+        3: "grid-rows-3",
+        4: "grid-rows-4",
+        5: "grid-rows-5",
+        6: "grid-rows-6",
+        none: "grid-rows-none",
+      } satisfies Record<GridRows, string>,
     },
-    justify: {
-      start: "justify-start",
-      center: "justify-center",
-      end: "justify-end",
-      between: "justify-between",
-    },
-    flow: {
-      row: "grid-flow-row",
-      column: "grid-flow-col",
-      dense: "grid-flow-dense",
-    },
-    rows: {
-      1: "grid-rows-1",
-      2: "grid-rows-2",
-      3: "grid-rows-3",
-      4: "grid-rows-4",
-      5: "grid-rows-5",
-      6: "grid-rows-6",
-      none: "grid-rows-none",
-    } satisfies Record<GridRows, string>,
-  },
-});
+  }) satisfies RecipeTables;
 
 /** Grid recipe; throws when the theme has a breakpoint `GRID_COLUMN_CLASSES` does not list. */
-export const createGridRecipe = (t: RecipeTokens): RecipeFn => {
+export const createGridRecipe = (t: RecipeTokens) => {
   const missing = t.breakpoints.filter((bp) => known[bp] === undefined);
   if (missing.length > 0) {
     throw new Error(

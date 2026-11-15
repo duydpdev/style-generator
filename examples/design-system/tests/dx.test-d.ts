@@ -9,6 +9,9 @@ import {
   type Intent,
   type Theme,
 } from "../src";
+import { buttonPreset } from "../src/recipes/button";
+import { createButtonRecipe } from "../src/recipes/factories/button";
+import { tokens as themeTokens } from "../src/tokens";
 import type { AltTheme } from "../src/alt";
 
 type AltColor = ColorVariant<AltTheme>;
@@ -64,5 +67,12 @@ describe("design-system types", () => {
     axisAttributes({ theme: "neon" });
     // @ts-expect-error "contrast" is not an axis of this theme
     axisAttributes({ contrast: "high" });
+  });
+
+  it("a recipe built from the tables rejects a misspelled variant name", () => {
+    const button = createButtonRecipe(themeTokens, buttonPreset);
+    expectTypeOf(button({ color: "primary", size: "lg" })).toBeString();
+    // @ts-expect-error `intnet` is not a variant of the button tables
+    expectTypeOf(button({ intnet: "primary" })).toBeString();
   });
 });

@@ -22,29 +22,23 @@ Default keys: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `m
 
 ```tsx
 import {
-  resolveSpacingProps,
-  type ResponsiveValueStrict,
-} from "@duydpdev/style-generator/spacing";
-import type { CSSProperties, ReactNode } from "react";
+  splitSpacingProps,
+  type SpacingProps,
+} from "@duydpdev/style-generator/recipes";
+import type { ComponentPropsWithoutRef } from "react";
 
-interface BoxProps {
-  p?: ResponsiveValueStrict<number>;
-  px?: ResponsiveValueStrict<number>;
-  m?: ResponsiveValueStrict<number>;
-  className?: string;
-  style?: CSSProperties;
-  children?: ReactNode;
-}
+import { tokens } from "./theme/theme.tokens";
 
-const Box = ({ p, px, m, className, style, children }: BoxProps) => {
-  const spacing = resolveSpacingProps({ p, px, m });
+type BoxProps = ComponentPropsWithoutRef<"div"> & SpacingProps;
+
+const Box = ({ className, style, ...props }: BoxProps) => {
+  const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
   return (
     <div
-      className={[spacing.classNames, className].filter(Boolean).join(" ")}
+      {...rest}
+      className={[spacing.className, className].filter(Boolean).join(" ")}
       style={{ ...spacing.style, ...style }}
-    >
-      {children}
-    </div>
+    />
   );
 };
 
@@ -55,11 +49,20 @@ const Box = ({ p, px, m, className, style, children }: BoxProps) => {
 // → class="sp-p" style="--sg-sp-p: 0.5rem; --sg-sp-p-md: 1rem; --sg-sp-p-lg: 2rem"
 ```
 
-- `classNames` is a **string** (space-joined), not an array.
+## Which layer to use
+
+| Layer               | Subpath     | Use it for                                                                                        |
+| :------------------ | :---------- | :------------------------------------------------------------------------------------------------ |
+| `resolveSpacing`    | `./spacing` | One prop and value → `{ className, style }`. The primitive the other layers call.                 |
+| `splitSpacingProps` | `./recipes` | A component's props → `{ spacing, rest }`; typed by `SpacingProps`, framework-free.               |
+| `splitSpacing`      | `./ui`      | The same split returning `{ className, style, rest }`, for the UI kit's components.               |
+| `splitLayout`       | `./ui`      | Layout components: spacing, recipe variants and inline sizes in one pass (see [UI kit](./ui.md)). |
+
+- `spacing.className` is a **string** (space-joined), not an array.
 - **Same-element rule:** the variables do not inherit, so the class and the `style` variables must be on the **same element**; a parent's `--sg-sp-p` never leaks into a child.
 - Only breakpoints listed in `options.breakpoints` (default `["md","lg"]`) have a fallback chain; a variable for any other breakpoint has no effect.
 - `resolveSpacing(prop, value, unit?)` resolves a single prop; `unit` defaults to `0.25` (rem per step).
-- Responsive values use `ResponsiveValueStrict<T, B>`: a typo like `{ typo: 4 }` is a type error, and `base` is always allowed. `B` defaults to `md | lg`, the breakpoints the default spacing CSS covers; with custom `options.breakpoints`, pass the same keys as the type argument (`resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`).
+- Responsive values use `ResponsiveValueStrict<T, B>` (from `./types`): a typo like `{ typo: 4 }` is a type error, and `base` is always allowed. `B` defaults to `md | lg`, the breakpoints the default spacing CSS covers; with custom `options.breakpoints`, pass the same keys as the type argument (`resolveSpacing<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`).
 
 ## `resolveSpacing`
 
@@ -86,32 +89,6 @@ from the value ({@link NoInferBKeys}), so a typo such as `{ tablet: 4 }` stays a
 <!-- /signature -->
 
 Resolves one spacing prop into a `className` and its inline `style` variables.
-
-## `resolveSpacingProps`
-
-<!-- signature: resolveSpacingProps -->
-
-```ts
-export declare const resolveSpacingProps: <
-  BKeys extends string = DefaultBreakpointKeys,
->(
-  props: Partial<
-    Record<
-      SpacingKey,
-      ResponsiveValueStrict<number, NoInferBKeys<BKeys>> | undefined
-    >
-  >,
-) => {
-  classNames: string;
-  style: Record<string, string>;
-};
-```
-
-Resolve multiple spacing props at once.
-
-<!-- /signature -->
-
-Resolves several spacing props at once into one space-joined `classNames` string and one `style` object.
 
 ## `DEFAULT_SPACING_PROPERTIES`
 
@@ -151,53 +128,3 @@ whose declarations read `var(--sg-sp-<key>)`. Passing
 <!-- /signature -->
 
 The default spacing keys and the CSS properties each `sp-<key>` utility sets.
-
-## `SpacingKey`
-
-<!-- signature: SpacingKey -->
-
-```ts
-export declare type SpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
-```
-
-Literal union of every default spacing property key (e.g. `"p" | "px" |
-... | "left"`). The single spacing-key type used repo-wide — inferred
-from `DEFAULT_SPACING_PROPERTIES` via `as const satisfies` so it stays a
-literal union instead of widening to `string`.
-
-<!-- /signature -->
-
-The literal union of every default spacing key.
-
-## `ResponsiveValueStrict`, `DefaultBreakpointKeys`
-
-<!-- signature: ResponsiveValueStrict -->
-
-```ts
-export declare type ResponsiveValueStrict<
-  T,
-  BKeys extends string = DefaultBreakpointKeys,
-> = T | Partial<Record<BKeys | "base", T | undefined>>;
-```
-
-Responsive value type: simple value or per-breakpoint object.
-The generic `BKeys` lets a project customize the breakpoints when wrapping the type.
-`base` is always available by default, independent of `BKeys`. A typo in a
-breakpoint key is a type error — there is no `(string & {})` fallback.
-
-<!-- /signature -->
-
-<!-- signature: DefaultBreakpointKeys -->
-
-```ts
-export declare type DefaultBreakpointKeys =
-  (typeof DEFAULT_BREAKPOINTS)[number];
-```
-
-Breakpoint keys the spacing CSS covers by default (`DEFAULT_BREAKPOINTS`,
-`md`/`lg`). A project that sets `options.breakpoints` passes its own keys
-as `BKeys`, e.g. `ResponsiveValueStrict<number, "sm" | "md" | "xl">`.
-
-<!-- /signature -->
-
-The per-breakpoint value type and the breakpoint keys the spacing CSS covers by default (`md`, `lg`).

@@ -100,7 +100,10 @@ const axisAttributes = themeAxisAttributes({ theme: "dark" });
 const uiCn = createCn(web);
 const uiRecipe = recipeFromTables({ base: "flex", variants: {} });
 const uiStyle = mergeStyle<StyleRecord>({ width: 1 });
-const uiSplit = splitLayout({}, uiRecipe, [], [], []);
+const uiSplit = splitLayout(
+  {},
+  { recipe: uiRecipe, spacingKeys: [], variantKeys: [], sizeKeys: [] },
+);
 
 const states = createVariantMapper(
   "bg",
@@ -166,7 +169,8 @@ export type DistTypeChecks = [
   Assert<Eq<typeof numeric.aliasedColors, readonly "500"[]>>,
   // UI kit: the tokens feed `cn`; the splitters return their documented shapes; `./ui-react` adds `Polymorphic`.
   Assert<Eq<ReturnType<typeof uiCn>, string>>,
-  Assert<Eq<typeof uiRecipe, RecipeFn>>,
+  Assert<Eq<typeof uiRecipe, RecipeFn<{ base: string; variants: {} }>>>,
+  Assert<Eq<typeof uiRecipe extends RecipeFn ? true : false, true>>,
   Assert<Eq<typeof uiStyle, StyleRecord | undefined>>,
   Assert<Eq<typeof uiSplit, Split>>,
   Assert<Eq<Polymorphic<"a", { readonly tone: "loud" }>["tone"], "loud">>,

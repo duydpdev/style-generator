@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: 25d0eda5187b -->
+<!-- source: documents/guide.md sha256: d507f991ee76 -->
 
 # Hướng dẫn sử dụng
 
@@ -456,47 +456,28 @@ Phiên bản 5.0 đã đổi tên các biến màu từ `--sg-<color>` sang `--s
 ## Spacing helper
 
 Thư viện sinh sẵn các utility `.sp-*` (một `@utility` cho mỗi key, với chuỗi giá trị dự phòng theo breakpoint nằm ngay trong utility) — không cần safelist theo từng giá trị.
-Các component chỉ đặt các biến `--sg-sp-*` inline bằng `resolveSpacingProps`:
+Các component chỉ đặt các biến `--sg-sp-*` inline bằng `splitSpacingProps` từ `./recipes`:
 
 ```tsx
 import {
-  resolveSpacingProps,
-  type ResponsiveValueStrict,
-} from "@duydpdev/style-generator/spacing";
-import type { CSSProperties, ReactNode } from "react";
+  splitSpacingProps,
+  type SpacingProps,
+} from "@duydpdev/style-generator/recipes";
+import type { ComponentPropsWithoutRef } from "react";
 
-interface BoxProps {
-  p?: ResponsiveValueStrict<number>;
-  px?: ResponsiveValueStrict<number>;
-  py?: ResponsiveValueStrict<number>;
-  m?: ResponsiveValueStrict<number>;
-  mx?: ResponsiveValueStrict<number>;
-  my?: ResponsiveValueStrict<number>;
-  className?: string;
-  style?: CSSProperties;
-  children?: ReactNode;
-}
+import { tokens } from "./theme/theme.tokens";
 
-const Box = ({
-  p,
-  px,
-  py,
-  m,
-  mx,
-  my,
-  className,
-  style,
-  children,
-}: BoxProps) => {
-  const spacing = resolveSpacingProps({ p, px, py, m, mx, my });
+type BoxProps = ComponentPropsWithoutRef<"div"> & SpacingProps;
+
+const Box = ({ className, style, ...props }: BoxProps) => {
+  const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
 
   return (
     <div
-      className={[spacing.classNames, className].filter(Boolean).join(" ")}
+      {...rest}
+      className={[spacing.className, className].filter(Boolean).join(" ")}
       style={{ ...spacing.style, ...style }}
-    >
-      {children}
-    </div>
+    />
   );
 };
 ```
@@ -514,17 +495,17 @@ const Box = ({
 // → class="sp-p" style="--sg-sp-p: 3.375rem"
 
 <Box gap={{ base: 4, md: 8 }} gapX={2} />
-// resolveSpacingProps({ gap: …, "gap-x": 2 }) → class="sp-gap sp-gap-x"
+// → class="sp-gap sp-gap-x"
 ```
 
-- `classNames` là một **chuỗi** (nối bằng dấu cách), không phải một mảng.
+- `spacing.className` là một **chuỗi** (nối bằng dấu cách), không phải một mảng.
 - **Quy tắc cùng phần tử:** các biến `--sg-sp-*` được đăng ký với `inherits: false`, nên một class `sp-*` chỉ đọc các biến được khai báo ngay trên chính phần tử đó;
   giá trị của phần tử cha không lan xuống phần tử con.
 - Các prop hợp lệ là `SpacingKey`: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`.
   `resolveSpacing(prop, value, unit?)` xử lý một prop đơn lẻ; `unit` mặc định là `0.25` rem.
 - Chỉ các breakpoint trong `options.breakpoints` (mặc định `["md", "lg"]`) mới có chuỗi giá trị dự phòng.
-  Các kiểu mặc định cũng chỉ chấp nhận `md`/`lg` (`DefaultBreakpointKeys`); khi bạn đặt `options.breakpoints` khác, hãy truyền cùng các key đó làm đối số kiểu:
-  `resolveSpacingProps<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`.
+  Các kiểu mặc định cũng chỉ chấp nhận `md`/`lg` (`DefaultBreakpointKeys`, từ `./types`); khi bạn đặt `options.breakpoints` khác, hãy truyền cùng các key đó làm đối số kiểu:
+  `resolveSpacing<"md" | "lg" | "xl">(…)`, `ResponsiveValueStrict<number, "md" | "lg" | "xl">`.
 - Tắt bằng `spacing: { enabled: false }`; tùy biến bằng `spacing: { properties: { inset: ["top", "bottom"] } }` (spacing key → danh sách các thuộc tính CSS mà nó đặt;
   giá trị luôn là `var(--sg-sp-<key>)`, nên không cần khai báo).
 - `generate()` kiểm tra mọi tùy chọn bằng một schema chặt chẽ và ném `ZodError` kèm path: các key lạ bị từ chối (kể cả bên trong `spacing` và `typography`); `enableResponsive`,
@@ -791,7 +772,7 @@ Các alias có sẵn: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropB
 `ResponsiveValueStrict` là kiểu responsive duy nhất; một breakpoint gõ sai (`{ typo: 4 }`) là lỗi kiểu, và `base` luôn được phép:
 
 ```typescript
-import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/types";
 
 // "base" is always valid; every other key must be declared in `options.breakpoints`
 // and present in `screens` (or `defaultScreens`), otherwise there is no matching CSS.

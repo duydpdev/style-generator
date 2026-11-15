@@ -94,27 +94,6 @@ Tailwind's default screen width per `Breakpoint` (`sm` 640px … `2xl` 1536px). 
 
 The Tailwind breakpoint keys as a const object, and their default widths (`sm` 640px … `2xl` 1536px); `options.screens` is merged over them.
 
-## `COLOR_STATES`
-
-<!-- signature: COLOR_STATES -->
-
-```ts
-export declare const COLOR_STATES: readonly ["hover", "active"];
-```
-
-Interactive state suffixes a flat color token can opt into by declaring a
-sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`).
-
-Single source of truth for BOTH sides of the contract: the registry's
-`colorsCategory.states` (which drives the `@source inline` state lines) and
-consumers passing `{ states: COLOR_STATES }` to `createVariantMapper`.
-Kept in its own dependency-free module so the browser-safe `./tokens` and
-`./cva` subpaths can re-export it without pulling Zod or the registry.
-
-<!-- /signature -->
-
-The interactive state suffixes (`hover`, `active`) a color token can opt into; see [CVA helpers](./cva.md).
-
 ## `DEFAULT_BORDER_VALUES`, `DEFAULT_ROUNDED_VALUES`
 
 <!-- signature: DEFAULT_BORDER_VALUES -->

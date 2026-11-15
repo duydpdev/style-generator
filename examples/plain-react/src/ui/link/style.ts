@@ -5,7 +5,6 @@ import {
 import type { ColorVariant } from "@duydpdev/style-generator/types";
 import {
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -42,4 +41,4 @@ export const linkTables = {
 } satisfies RecipeTables;
 
 /** `linkRecipe({ tone, underline })` → class string. */
-export const linkRecipe: RecipeFn = recipeFromTables(linkTables);
+export const linkRecipe = recipeFromTables(linkTables);

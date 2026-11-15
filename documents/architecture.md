@@ -256,7 +256,7 @@ the app declares `tailwind-merge` 3.x itself — the extension uses v3 group ids
 
 The styleless kit the example components are built on, in `src/features/ui/`: `recipeFromTables(tables)` (cva over plain class tables), `pick`/`contrastText` (token → class,
 throwing on a missing token), `createCn(tokens)` (`clsx` + `tailwind-merge` with `createTailwindMergeExtension`), and `splitSpacing`/`splitLayout`/`mergeStyle` (props → classes,
-inline style and the rest). `splitLayout` takes the recipe's variant prop names and the size prop names as arguments, so the kit knows no design system and no layout prop type;
+inline style and the rest). `splitLayout` takes the recipe, the spacing keys, the variant prop names and the size prop names in one options object, so the kit knows no design system and no layout prop type;
 it turns a numeric size into px (`320` → `"320px"`, `0` → `"0"`, strings kept). `class-variance-authority`, `clsx` and `tailwind-merge` are optional peer dependencies:
 only `./ui` imports them, guarded by `check:externals`. `./ui-react` is type-only (`Polymorphic`) so `./ui` stays free of React types. Neither is re-exported from `.`.
 
@@ -360,11 +360,12 @@ otherwise a parent's responsive value leaks down to a child that has not set the
 The `--sg-sp-*` namespace also avoids occupying Tailwind's internal `--tw-*` namespace. The regression is tested on Chromium and WebKit (`e2e/spacing-inheritance.spec.ts`).
 
 ```tsx
-import { resolveSpacingProps } from "@duydpdev/style-generator/spacing";
+import { resolveSpacing } from "@duydpdev/style-generator/spacing";
 
-const spacing = resolveSpacingProps({ p: 4, mx: { base: 2, md: 4 } });
-// classNames: "sp-p sp-mx"                       (a string, not an array)
-// style: { "--sg-sp-p": "1rem", "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" }
+const p = resolveSpacing("p", 4);
+// { className: "sp-p", style: { "--sg-sp-p": "1rem" } }
+const mx = resolveSpacing("mx", { base: 2, md: 4 });
+// { className: "sp-mx", style: { "--sg-sp-mx": "0.5rem", "--sg-sp-mx-md": "1rem" } }
 ```
 
 Turn it off with `options.spacing.enabled = false`; customize it with `options.spacing.properties` (spacing key → array of CSS properties,

@@ -12,6 +12,7 @@ export { contrastText, pick, recipeFromTables } from "../features/ui/recipe";
 export type {
   RecipeFn,
   RecipeProps,
+  RecipeVariantProps,
   RecipeTables,
   RecipeTokens,
   VariantTable,
@@ -20,6 +21,7 @@ export { createCn } from "../features/ui/cn";
 export type { Cn } from "../features/ui/cn";
 export { mergeStyle, splitLayout, splitSpacing } from "../features/ui/layout";
 export type {
+  SplitLayoutOptions,
   Split,
   StyleRecord,
   ThemeSpacingProps,

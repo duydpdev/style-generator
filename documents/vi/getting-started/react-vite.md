@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: df0d43d627e1 -->
+<!-- source: documents/getting-started/react-vite.md sha256: e6202ed0ffe3 -->
 
 # Bắt đầu: React + Vite
 
@@ -91,7 +91,6 @@ import {
   contrastText,
   pick,
   recipeFromTables,
-  type RecipeFn,
   type RecipeTables,
 } from "@duydpdev/style-generator/ui";
 
@@ -219,7 +218,7 @@ export const buttonTables = {
   },
 } satisfies RecipeTables;
 
-export const buttonRecipe: RecipeFn = recipeFromTables(buttonTables);
+export const buttonRecipe = recipeFromTables(buttonTables);
 ```
 
 <!-- embed: examples/plain-react/src/ui/button/Button.tsx -->

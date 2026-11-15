@@ -3,7 +3,3 @@
 export * from "./core";
 export * from "./core/generate";
 export { generateThemeCss } from "./features/theme-css/generateThemeCss";
-export type {
-  DefaultBreakpointKeys,
-  ResponsiveValueStrict,
-} from "./features/spacing/spacingHelpers";

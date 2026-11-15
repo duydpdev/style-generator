@@ -2,7 +2,7 @@ import { describe, it, expectTypeOf } from "vitest";
 
 import type { SpacingKey } from "../../shared/defaultOption";
 
-import { resolveSpacing, resolveSpacingProps } from "./spacingHelpers";
+import { resolveSpacing } from "./spacingHelpers";
 import type { ResponsiveValueStrict } from "./spacingHelpers";
 
 describe("ResponsiveValueStrict<T, BKeys>", () => {
@@ -53,31 +53,6 @@ describe("SpacingKey", () => {
   });
 });
 
-describe("resolveSpacingProps", () => {
-  it("returns { classNames: string; style: Record<string, string> } (already joined)", () => {
-    expectTypeOf(resolveSpacingProps).returns.toEqualTypeOf<{
-      classNames: string;
-      style: Record<string, string>;
-    }>();
-  });
-
-  it("rejects an unknown SpacingKey and an unknown breakpoint key (compile-time only)", () => {
-    expectTypeOf(resolveSpacingProps)
-      .parameter(0)
-      .toExtend<
-        Partial<
-          Record<string, ResponsiveValueStrict<number> | number | undefined>
-        >
-      >();
-
-    // @ts-expect-error "pp" is not a valid SpacingKey
-    resolveSpacingProps({ pp: 4 });
-
-    // @ts-expect-error "tablet" is not a valid default breakpoint key
-    resolveSpacingProps({ p: { tablet: 4 } });
-  });
-});
-
 describe("resolveSpacing prop parameter", () => {
   it("accepts a custom spacing.properties key without a cast, keeping SpacingKey in the union", () => {
     expectTypeOf(resolveSpacing("inset", 4)).toHaveProperty("className");
@@ -102,7 +77,7 @@ describe("default breakpoint keys match the CSS (md/lg)", () => {
     // @ts-expect-error the default spacing CSS has no xl rule
     resolveSpacing("p", { base: 4, xl: 16 });
     // @ts-expect-error the default spacing CSS has no sm rule
-    resolveSpacingProps({ p: { sm: 4 } });
+    resolveSpacing("p", { sm: 4 });
   });
 
   it("accepts custom keys through an explicit BKeys, and still rejects others", () => {
@@ -110,6 +85,6 @@ describe("default breakpoint keys match the CSS (md/lg)", () => {
       resolveSpacing<"md" | "lg" | "xl">("p", { base: 4, xl: 16 }),
     ).toHaveProperty("className");
     // @ts-expect-error "lg" is not in the explicit BKeys
-    resolveSpacingProps<"md" | "xl">({ p: { lg: 4 } });
+    resolveSpacing<"md" | "xl">("p", { lg: 4 });
   });
 });

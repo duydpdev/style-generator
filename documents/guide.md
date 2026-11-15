@@ -448,47 +448,28 @@ Version 5.0 renamed the color variables from `--sg-<color>` to `--sg-color-<key>
 ## Spacing Helpers
 
 The library pre-generates the `.sp-*` utilities (one `@utility` per key, with the breakpoint fallback chain inside the utility itself) — no per-value safelist needed.
-Components only set the inline `--sg-sp-*` variables with `resolveSpacingProps`:
+Components only set the inline `--sg-sp-*` variables, with `splitSpacingProps` from `./recipes`:
 
 ```tsx
 import {
-  resolveSpacingProps,
-  type ResponsiveValueStrict,
-} from "@duydpdev/style-generator/spacing";
-import type { CSSProperties, ReactNode } from "react";
+  splitSpacingProps,
+  type SpacingProps,
+} from "@duydpdev/style-generator/recipes";
+import type { ComponentPropsWithoutRef } from "react";
 
-interface BoxProps {
-  p?: ResponsiveValueStrict<number>;
-  px?: ResponsiveValueStrict<number>;
-  py?: ResponsiveValueStrict<number>;
-  m?: ResponsiveValueStrict<number>;
-  mx?: ResponsiveValueStrict<number>;
-  my?: ResponsiveValueStrict<number>;
-  className?: string;
-  style?: CSSProperties;
-  children?: ReactNode;
-}
+import { tokens } from "./theme/theme.tokens";
 
-const Box = ({
-  p,
-  px,
-  py,
-  m,
-  mx,
-  my,
-  className,
-  style,
-  children,
-}: BoxProps) => {
-  const spacing = resolveSpacingProps({ p, px, py, m, mx, my });
+type BoxProps = ComponentPropsWithoutRef<"div"> & SpacingProps;
+
+const Box = ({ className, style, ...props }: BoxProps) => {
+  const { spacing, rest } = splitSpacingProps(props, tokens.spacingProperties);
 
   return (
     <div
-      className={[spacing.classNames, className].filter(Boolean).join(" ")}
+      {...rest}
+      className={[spacing.className, className].filter(Boolean).join(" ")}
       style={{ ...spacing.style, ...style }}
-    >
-      {children}
-    </div>
+    />
   );
 };
 ```
@@ -506,16 +487,16 @@ const Box = ({
 // → class="sp-p" style="--sg-sp-p: 3.375rem"
 
 <Box gap={{ base: 4, md: 8 }} gapX={2} />
-// resolveSpacingProps({ gap: …, "gap-x": 2 }) → class="sp-gap sp-gap-x"
+// → class="sp-gap sp-gap-x"
 ```
 
-- `classNames` is a **string** (joined with spaces), not an array.
+- `spacing.className` is a **string** (joined with spaces), not an array.
 - **Same-element rule:** the `--sg-sp-*` variables are registered with `inherits: false`, so an `sp-*` class only reads variables declared on that very element;
   a parent's values do not leak down to children.
 - Valid props are `SpacingKey`: `p`, `px`, `py`, `pt`, `pb`, `pl`, `pr`, `m`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `gap`, `gap-x`, `gap-y`, `top`, `right`, `bottom`, `left`.
   `resolveSpacing(prop, value, unit?)` handles a single prop; `unit` defaults to `0.25` rem.
-- Only the breakpoints in `options.breakpoints` (default `["md", "lg"]`) get a fallback chain. The default types also accept only `md`/`lg` (`DefaultBreakpointKeys`);
-  when you set a different `options.breakpoints`, pass the same keys as the type argument: `resolveSpacingProps<"md" | "lg" | "xl">(…)`,
+- Only the breakpoints in `options.breakpoints` (default `["md", "lg"]`) get a fallback chain. The default types also accept only `md`/`lg` (`DefaultBreakpointKeys`, from `./types`);
+  when you set a different `options.breakpoints`, pass the same keys as the type argument: `resolveSpacing<"md" | "lg" | "xl">(…)`,
   `ResponsiveValueStrict<number, "md" | "lg" | "xl">`.
 - Disable with `spacing: { enabled: false }`; customize with `spacing: { properties: { inset: ["top", "bottom"] } }` (spacing key → the list of CSS properties it sets;
   the value is always `var(--sg-sp-<key>)`, so it needs no declaration).
@@ -783,7 +764,7 @@ Available aliases: `ColorVariant`, `TextVariant`, `ShadowVariant`, `BackdropBlur
 `ResponsiveValueStrict` is the only responsive type; a mistyped breakpoint (`{ typo: 4 }`) is a type error, and `base` is always allowed:
 
 ```typescript
-import type { ResponsiveValueStrict } from "@duydpdev/style-generator/spacing";
+import type { ResponsiveValueStrict } from "@duydpdev/style-generator/types";
 
 // "base" is always valid; every other key must be declared in `options.breakpoints`
 // and present in `screens` (or `defaultScreens`), otherwise there is no matching CSS.

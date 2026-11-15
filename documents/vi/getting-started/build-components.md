@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/build-components.md sha256: 4dfbaeb99298 -->
+<!-- source: documents/getting-started/build-components.md sha256: 0b356e2f453b -->
 
 # Xây dựng component từ theme
 
@@ -35,7 +35,7 @@ Mảng `breakpoints` viết dạng literal thu hẹp `(typeof tokens)["breakpoin
 
 ## 2. Token
 
-Plugin và `style-gen generate` ghi các key token an toàn cho trình duyệt cạnh file CSS dưới dạng `theme.tokens.ts`. Hãy commit file đó và import `tokens` từ nó; `style-gen generate --check` thất bại trong CI khi file bị thiếu hoặc lỗi thời. Import theme JSON như một module (`resolveJsonModule`) để giữ kiểu literal của từng key, và export cả hai từ một nơi:
+Plugin và `style-gen generate` ghi các key token an toàn cho trình duyệt cạnh file CSS dưới dạng `theme.tokens.ts`. Hãy commit file đó và import `tokens` từ nó; `style-gen generate --check` thất bại trong CI khi file bị thiếu hoặc lỗi thời. Hãy để file này cho Prettier: nó có một dòng `// prettier-ignore` trước mỗi export và không có gì khác, nên hãy loại nó khỏi mọi công cụ khác có thể ghi lại file (Biome, dprint, oxfmt, `--fix` stylistic của ESLint, một glob của lint-staged), nếu không `--check` sẽ báo nó lỗi thời ([Khắc phục sự cố](../troubleshooting.md#file-tokens-bị-thiếu-hoặc-lỗi-thời)). Import theme JSON như một module (`resolveJsonModule`) để giữ kiểu literal của từng key, và export cả hai từ một nơi:
 
 <!-- embed: examples/design-system/src/tokens.ts -->
 

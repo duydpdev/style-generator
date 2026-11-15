@@ -33,7 +33,7 @@ The literal `breakpoints` array narrows `(typeof tokens)["breakpoints"][number]`
 
 ## 2. Tokens
 
-The plugin and `style-gen generate` write the browser-safe token keys next to the CSS as `theme.tokens.ts`. Commit that file and import `tokens` from it; `style-gen generate --check` fails in CI when it is missing or stale. Import the theme JSON as a module (`resolveJsonModule`) to keep each key's literal type, and export both from one place:
+The plugin and `style-gen generate` write the browser-safe token keys next to the CSS as `theme.tokens.ts`. Commit that file and import `tokens` from it; `style-gen generate --check` fails in CI when it is missing or stale. Leave the file to Prettier: it carries a `// prettier-ignore` line before each export and nothing else, so exclude it from any other tool that rewrites files (Biome, dprint, oxfmt, ESLint stylistic `--fix`, a lint-staged glob), or `--check` reports it as stale ([Troubleshooting](../troubleshooting.md#tokens-file-missing-or-stale)). Import the theme JSON as a module (`resolveJsonModule`) to keep each key's literal type, and export both from one place:
 
 <!-- embed: examples/design-system/src/tokens.ts -->
 

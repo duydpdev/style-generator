@@ -167,3 +167,16 @@ generate(theme, {
   },
 });
 ```
+
+### JSON Schema limits
+
+`style-gen schema` writes the JSON Schema of `style-gen.config.json`, and an editor that reads it through `"$schema"` flags a wrong key or value as you type. The schema carries every value rule a JSON Schema can state: the accepted keys, the value shapes, and, for each `coverage` category, only its own `prefixes` (none for `typography`), `opacities` as distinct integers (only for `colors`) and `keys: "aliased"` only where `$` aliases exist.
+
+It cannot state a rule that compares two keys or reads another file, so an editor can accept a config that `generate`, `style-gen doctor` and the bundler plugins reject:
+
+- every `breakpoints` entry must name a screen in `defaultScreens` or `screens`;
+- `screens`, merged with the default screens, must use one unit;
+- each `resetTailwindDefaults` name needs its replacement category in the theme;
+- `output` and `tokensOutput` stay inside the project root, `tokensOutput` is a `.ts`, `.mts` or `.cts` file, and the theme, the CSS and the tokens module are three different files.
+
+The descriptions of `breakpoints` and `screens` in the schema say so. Run `yarn style-gen doctor` to get the full verdict.

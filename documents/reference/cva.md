@@ -167,7 +167,7 @@ const bg = createVariantMapper("bg", web.colors, {
 const half: "bg-primary/50" = bg["primary/50"];
 ```
 
-Pass the same `options` object to the bundler plugin or `style-gen.config.json` so the `@source inline` opacity line and `web.opacities` agree.
+Set the same `coverage.colors.opacities` in `style-gen.config.json` (the file the bundler plugin and the CLI read) so the `@source inline` opacity line and `web.opacities` agree; the generated `theme.tokens.ts` carries `opacities` from that file.
 
 ## `COLOR_STATES`
 

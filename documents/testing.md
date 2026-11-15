@@ -19,7 +19,8 @@ The checks have two layers:
      and `#anchor`s in the markdown that the site renders) → `yarn check:docs-embed` (tutorial code equals the example regions it embeds) → `yarn check:docs-i18n` (every rendered
      doc has a `documents/vi/` twin with the current source hash and the same headings, markers and code blocks) → `yarn check:doc-snippets` (every `ts`/`tsx` block in the docs
      type-checks against `dist/*.d.ts`) → `yarn check:doc-exports` (every export has a reference heading, a matching signature block and a non-empty TSDoc,
-     see [layer 9](#9-docs-embed-snippet-export)) → typecheck of every `*-example` workspace and of `site` (one `yarn workspaces foreach` call;
+     see [layer 9](#9-docs-embed-snippet-export)) → `yarn check:doc-reference` (every flag of a built `style-gen <command> --help` and every `style-gen.config.json` key is documented,
+     no rendered page tells version history) → typecheck of every `*-example` workspace and of `site` (one `yarn workspaces foreach` call;
      the root `tsconfig.json` does not include `site/`, so this is the only place a wrong prop type in `site/src` fails) — it also compiles the sample components' type-check files,
      see [layer 8](#8-checks-of-the-sample-components) → `yarn workspace design-system-example test` (DX test,
      see [layer 6](#6-dx-test-for-the-design-system-example)) → build the example apps (`plain-react`,
@@ -106,6 +107,7 @@ Every gate once. `yarn verify` = base gate + `src/**` gate (`build:all`, `check:
 | `yarn check:docs-i18n`                                                          | a Vietnamese twin that is missing, stale or structurally different                                                       | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                                                   |
 | `yarn check:doc-snippets`                                                       | a `ts`/`tsx` doc block that does not type-check, or opt-outs above 10%                                                   | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                                                   |
 | `yarn check:doc-exports`                                                        | a public export without a reference heading, signature block or TSDoc                                                    | `check`: Check reference coverage of exports                   | `src/**` exports, `documents/reference/**`                                    |
+| `yarn check:doc-reference`                                                      | a CLI flag, a config key or a version-history phrase that the reference pages get wrong                                  | `check`: Check CLI and config reference                        | `src/cli/**`, `documents/reference/**`, rendered pages                        |
 | `yarn check:plain-ui`                                                           | a plain-example component folder that breaks the layout or import rules                                                  | `check`: Check plain UI folders                                | `examples/plain-*`                                                            |
 | `yarn workspaces foreach -A --include '*-example' --include site run typecheck` | type errors in the example apps and the site against the built library                                                   | `check`: Typecheck examples                                    | `examples/**`, `site/**`, `src/**` types                                      |
 | `yarn workspace site typecheck`                                                 | type errors in `site/**` (also covered by the row above)                                                                 | `check`: Typecheck examples                                    | `site/**`                                                                     |
@@ -318,6 +320,7 @@ yarn check:docs-embed       # a block with <!-- embed: path#region --> must equa
 yarn check:docs-i18n        # every rendered doc has a documents/vi/ twin: current source hash, same headings, markers and code blocks
 yarn check:doc-snippets     # every ts/tsx block in README.md and documents/ (not plans, brainstorm, migration) must type-check
 yarn check:doc-exports      # every export of every subpath needs a heading in documents/reference/<subpath>.md, a signature block matching dist/*.d.ts and a non-empty TSDoc (fix with yarn docs:signatures)
+yarn check:doc-reference     # every flag of the built CLI's --help in its documents/reference/cli.md section, every config-schema key in options.md, no version history on rendered pages
 ```
 
 Why: tutorials never hold hand-copied code (so they cannot drift from the example that runs), and an example in the docs cannot silently break when the API changes.

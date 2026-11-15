@@ -51,7 +51,7 @@ yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (no
 yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
 yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
-yarn check:docs-embed && yarn check:docs-i18n && yarn check:doc-snippets && yarn check:doc-exports   # docs gates (after build:all; CI check job)
+yarn check:docs-embed && yarn check:docs-i18n && yarn check:doc-snippets && yarn check:doc-exports && yarn check:doc-reference   # docs gates (after build:all; CI check job); doc-reference: CLI flags + config keys documented, no version history on pages
 yarn check:plain-ui     # examples/plain-react/src/ui/<folder>/: style.ts, types.ts, <Name>.tsx, index.ts; relative imports only ./… and ../../theme; package allow-list (CI)
 ```
 

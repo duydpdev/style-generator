@@ -101,7 +101,12 @@ export function StartSection() {
           <KeyPoint
             badge="03"
             title={<code>style-gen doctor</code>}
-            body={<>Validates schema, checks wiring, warns on legacy shapes.</>}
+            body={
+              <>
+                Checks the config, the theme and the generated CSS. Warns on
+                class collisions and values that could be aliases.
+              </>
+            }
           />
         </Stack>
         <TerminalTypewriter lines={TERM_LINES} />

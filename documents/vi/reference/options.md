@@ -1,10 +1,10 @@
-<!-- source: documents/reference/options.md sha256: adf3bc4626b8 -->
+<!-- source: documents/reference/options.md sha256: ad0f48b41703 -->
 
 # Tùy chọn
 
-`StyleGeneratorOptions`: tham số thứ hai của `generate()`, trường `options` của các plugin Vite và Next, và (dưới dạng JSON) `style-gen.config.json`. File config cũng chấp nhận `"$schema": "./style-gen.config.schema.json"` (do `style-gen schema` ghi) để editor tự hoàn thành các key của nó; xem [CLI](./cli.md#file-cấu-hình).
+`StyleGeneratorOptions`: tham số thứ hai của `generate()` và, dưới dạng các key JSON, các tùy chọn bộ sinh của `style-gen.config.json`, file mà CLI và cả hai plugin bundler đọc. File config cũng chấp nhận `"$schema": "./style-gen.config.schema.json"` (do `style-gen schema` ghi) để editor tự hoàn thành các key của nó; xem [CLI](./cli.md#file-cấu-hình).
 
-`generate(theme, options)` và trường `options` của các plugin nhận `StyleGeneratorOptions`:
+`generate(theme, options)` nhận `StyleGeneratorOptions`; mọi key dưới đây cũng hợp lệ trong `style-gen.config.json`:
 
 | Tùy chọn                  | Kiểu                                                                                     | Mặc định                     | Mô tả                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | :------------------------ | :--------------------------------------------------------------------------------------- | :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -16,6 +16,19 @@
 | `typography.cssVarDriven` | `boolean`                                                                                | `false`                      | Phát ra các biến `--typography-<name>-<prop>` trong `:root` và tham chiếu đến chúng từ mỗi utility typography, nhờ đó một token đơn lẻ có thể được override trong CSS.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `coverage`                | `Partial<Record<CategoryKey, boolean \| CoverageRule>>` (`colors` cũng nhận `opacities`) | phủ đầy đủ mọi nhóm token    | Cắt tỉa các dòng `@source inline` của một nhóm token (`false`, `{ prefixes }`, `{ keys: "aliased" }`) hoặc thêm các class modifier độ mờ của màu sắc (`{ opacities }`). Xem [`coverage`](#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `resetTailwindDefaults`   | `readonly ("colors" \| "radius" \| "shadow")[]`                                          | `[]`                         | Xóa sạch các namespace mặc định có sẵn của Tailwind để chỉ tồn tại các token của theme. Mỗi tên sẽ thêm `--color-*: initial;`, `--radius-*: initial;` hoặc `--shadow-*: initial;` làm những dòng **đầu tiên** của `@theme inline`. `"colors"` cũng xóa bỏ `--color-white`/`--color-black` (hãy khai báo chúng trong `colors` nếu bạn cần dùng); các utility tĩnh như `rounded-full`, `rounded-none`, `shadow-none` và các họ `inset-`/`drop-`/`text-shadow` vẫn được giữ nguyên. Mỗi tên cần có một phần thay thế không rỗng trong theme: `"colors"` yêu cầu `colors` (không rỗng), `"radius"` yêu cầu `borderRadius` và `"shadow"` yêu cầu `shadows` (ngược lại `generate()` ném `resetTailwindDefaults.<i>`: việc xóa mặc định mà không có phần thay thế sẽ khiến `bg-red-500`/`rounded-md`/`shadow-md` không biên dịch ra gì). Trùng lặp và thứ tự không làm thay đổi kết quả đầu ra. |
+
+### `resetTailwindDefaults`: chỉ giữ lại token của theme
+
+Tailwind giữ thang màu, `rounded-*` và `shadow-*` của riêng nó bên cạnh các token của theme. Hãy nêu tên một namespace trong `resetTailwindDefaults` để xóa nó:
+
+```ts
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+
+generate(theme, { resetTailwindDefaults: ["colors", "radius", "shadow"] });
+```
+
+Mỗi tên thêm dòng `initial` của nó vào đầu khối `@theme inline`. `style-gen doctor` báo cáo một tên không có phần thay thế trong theme, đó cũng chính là lỗi mà `generate()` ném ra.
 
 ### Class được tạo lúc runtime
 

@@ -47,6 +47,12 @@ const Box = ({ className, style, ...props }: BoxProps) => {
 
 <Box p={{ base: 2, md: 4, lg: 8 }} />;
 // → class="sp-p" style="--sg-sp-p: 0.5rem; --sg-sp-p-md: 1rem; --sg-sp-p-lg: 2rem"
+
+<Box p={13.5} />;
+// → class="sp-p" style="--sg-sp-p: 3.375rem"
+
+<Box gap={{ base: 4, md: 8 }} gapX={2} />;
+// → class="sp-gap sp-gap-x" (with the `--sg-sp-gap*` variables in `style`)
 ```
 
 ## Which layer to use

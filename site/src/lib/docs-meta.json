@@ -27,6 +27,13 @@
     "order": 4,
     "vi": { "title": "Nuxt + Vue" }
   },
+  "documents/getting-started/build-components.md": {
+    "slug": "getting-started-build-components",
+    "title": "Build components",
+    "group": "Start",
+    "order": 5,
+    "vi": { "title": "Xây dựng component" }
+  },
   "documents/components.md": {
     "slug": "components",
     "title": "Components",
@@ -54,6 +61,13 @@
     "group": "Guides",
     "order": 4,
     "vi": { "title": "Hướng dẫn tích hợp" }
+  },
+  "documents/troubleshooting.md": {
+    "slug": "troubleshooting",
+    "title": "Troubleshooting",
+    "group": "Guides",
+    "order": 5,
+    "vi": { "title": "Khắc phục sự cố" }
   },
   "documents/reference/core.md": {
     "slug": "reference-core",

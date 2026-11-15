@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: 4a3e8b44c26b -->
+<!-- source: documents/reference/recipes.md sha256: 8422e621a117 -->
 
 # Recipe (./recipes)
 
@@ -37,7 +37,7 @@ export const Box = (props: BoxProps) => {
 export const Root = () => <html {...themeAxisAttributes({ theme: "dark" })} />;
 ```
 
-Một phiên bản đầy đủ, đã được kiểm thử (`cn`, `axisAttributes`, các headless recipe của sáu component mẫu, CSS dùng chung) nằm trong [`examples/design-system`](../../../examples/design-system/README.md). [Component](../components.md) chỉ ra cách các component mẫu của `examples/harness` bọc các recipe này; [`guide.md`](../guide.md#xây-dựng-component) hướng dẫn từng bước qua quy trình đó. [`createCn`](./ui.md#createcn-cn) trong `./ui` bọc extension này cùng với `clsx`.
+Một phiên bản đầy đủ, đã được kiểm thử (`cn`, `axisAttributes`, các headless recipe của sáu component mẫu, CSS dùng chung) nằm trong [`examples/design-system`](../../../examples/design-system/README.md). [Component](../components.md) chỉ ra cách các component mẫu của `examples/harness` bọc các recipe này; [Xây dựng component](../getting-started/build-components.md) hướng dẫn từng bước qua quy trình đó. [`createCn`](./ui.md#createcn-cn) trong `./ui` bọc extension này cùng với `clsx`.
 
 ## `createTailwindMergeExtension`, `TailwindMergeExtension`, `TailwindMergeTokens`
 

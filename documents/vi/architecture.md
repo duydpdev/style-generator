@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 6fedd7b46fc9 -->
+<!-- source: documents/architecture.md sha256: a5b01da1d80f -->
 
 # Kiến trúc
 
@@ -412,7 +412,7 @@ và ở 5.0.0 trong [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
 - `/` — landing (cuộn kiểu editorial).
 - `/docs` — chuyển hướng tới `/docs/introduction` (`README.md` của repo).
 - `/docs/:slug` — render các file được liệt kê trong `site/src/lib/docs-meta.json` (`README.md` của repo, `documents/*.md`, `documents/getting-started/*.md`,
-  `documents/reference/*.md` và hai hướng dẫn nâng cấp; mỗi mục có slug, nhóm và thứ tự duy nhất) qua `react-markdown`.
+  `documents/reference/*.md` và các hướng dẫn nâng cấp; mỗi mục có slug, nhóm và thứ tự duy nhất) qua `react-markdown`.
   Các chú thích HTML mà các script docs dùng (`<!-- embed: … -->`, `<!-- signature: … -->`, `<!-- snippet: … -->`) bị loại bỏ trước khi render
   (`site/src/lib/strip-html-comments.ts`).
 - `/vi/docs`, `/vi/docs/:slug` — bản twin tiếng Việt của cùng trang đó (`documents/vi/<path>`; `README.md` của repo → `documents/vi/README.md`) dưới cùng slug,

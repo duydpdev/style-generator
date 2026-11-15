@@ -35,7 +35,7 @@ export const Box = (props: BoxProps) => {
 export const Root = () => <html {...themeAxisAttributes({ theme: "dark" })} />;
 ```
 
-A complete, tested version (`cn`, `axisAttributes`, the headless recipes of the six sample components, shared CSS) lives in [`examples/design-system`](../../examples/design-system/README.md). [Components](../components.md) shows how the sample components of `examples/harness` wrap these recipes; [`guide.md`](../guide.md#build-components) walks through it step by step. [`createCn`](./ui.md#createcn-cn) in `./ui` wraps this extension with `clsx`.
+A complete, tested version (`cn`, `axisAttributes`, the headless recipes of the six sample components, shared CSS) lives in [`examples/design-system`](../../examples/design-system/README.md). [Components](../components.md) shows how the sample components of `examples/harness` wrap these recipes; [Build components](../getting-started/build-components.md) walks through it step by step. [`createCn`](./ui.md#createcn-cn) in `./ui` wraps this extension with `clsx`.
 
 ## `createTailwindMergeExtension`, `TailwindMergeExtension`, `TailwindMergeTokens`
 

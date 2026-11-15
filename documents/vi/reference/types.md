@@ -1,4 +1,4 @@
-<!-- source: documents/reference/types.md sha256: 304c2904b373 -->
+<!-- source: documents/reference/types.md sha256: 266fe49b2c88 -->
 
 # Kiểu (./types)
 
@@ -476,7 +476,7 @@ Distinct from `DesignTokensWeb` in `./inference` which describes the runtime
 token arrays returned by `createDesignTokens()`. Consumers can pluck individual
 variant unions via the semantic aliases below instead of writing
 `(typeof DesignTokens.Web.X)[number]` everywhere.
-Kept an interface (as in 4.1) so consumers can still augment it.
+Kept an interface so consumers can still augment it.
 
 <!-- /signature -->
 

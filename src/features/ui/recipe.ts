@@ -17,7 +17,7 @@ export interface RecipeTokens {
   readonly borderWidth: readonly string[];
   readonly spacingProperties: readonly string[];
   readonly breakpoints: readonly string[];
-  /** `DesignTokens.Web.opacities`; optional so token objects built before 5.4 still fit. */
+  /** `DesignTokens.Web.opacities`; optional so a token object without it still fits. */
   readonly opacities?: readonly number[];
 }
 

@@ -38,7 +38,7 @@ describe("generate() options validation (X-03)", () => {
 
   it.each([
     ["an empty list", { p: [] }],
-    ["the 4.x object form", { p: { padding: "var(--sg-sp-p)" } }],
+    ["an object keyed by CSS property", { p: { padding: "var(--sg-sp-p)" } }],
   ])("rejects spacing.properties.p as %s", (_label, properties) => {
     expect(issuesOf({ spacing: { properties } }).map((i) => i.path)).toContain(
       "spacing.properties.p",

@@ -106,7 +106,7 @@ describe("integration: non-default options through the real Tailwind engine (X-1
     expect(ruleFor(root, ".sp-p")).toBeUndefined();
   });
 
-  describe("resetTailwindDefaults (V5-08)", () => {
+  describe("resetTailwindDefaults", () => {
     const resetTheme = defineTheme({
       colors: { primary: "#3B82F6" },
       borderRadius: { card: "8px" },

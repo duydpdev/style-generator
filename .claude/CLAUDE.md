@@ -117,8 +117,7 @@ Pipelines, all driven by the category registry:
 
 `DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants,
 spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only:
-the pre-v4 baseline emitted only `md:`/`lg:` and the consumer passes `[Breakpoint.MD, Breakpoint.LG]`;
-defaulting to every `screens` key advertised breakpoints no `@source inline` line covered. `src/shared/classPrefixes.ts` holds the `roundedProperties`/`borderProperties`
+defaulting to every `screens` key would advertise breakpoints no `@source inline` line covers. `src/shared/classPrefixes.ts` holds the `roundedProperties`/`borderProperties`
 class-prefix lists.
 
 Build outputs: `dist/{index,tokens,cva,spacing,recipes,types,ui,ui-react,vite,next}.{js,cjs,d.ts,d.cts}` (10 subpaths, Vite lib multi-entry;
@@ -179,8 +178,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
 - Alias `"$<key>"` resolves within the SAME category to `var(--<cssVarPrefix>-<kebab-key>)` using that category's `cssVarPrefix` (`src/features/registry/builtInCategories.ts`):
   `$blue500` in `colors` → `var(--sg-color-blue-500)`, `$base` in `shadows` → `var(--sg-shadow-base)`. Existence and acyclicity are validated at parse time.
   Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`. The emitted `--sg-*` variables (`--sg-color-<key>`, `--sg-shadow-<key>`,
-  …) are a public contract (consumers read them); renaming one is breaking (5.0 renamed `--sg-<color>` → `--sg-color-<key>`; `style-gen doctor` warns on leftovers;
-  see `documents/migration/4.x-to-5.0.md`).
+  …) are a public contract (consumers read them); renaming one is breaking.
 - `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`, exported from `./cva` only) is the single state list for the registry's `@source inline` state lines and
   `createVariantMapper(prefix, tokens, { states: COLOR_STATES })`. Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`);
   states emit kebab-cased (`focusVisible` → `focus-visible:`).
@@ -197,7 +195,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `screens` values are one px/rem/em length and the map merged with `defaultScreens` uses one unit; `breakpoints` must name a screen.
   `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`);
   the file-level `StyleGenConfigFileSchema` adds the `$schema` editor pointer (dropped on read, never reaches `generate()`) and is what the config JSON Schema is generated from.
-  The 7.0 removals (`extraSources`, `axes`) are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
+  `extraSources` and `axes` are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
 - `options.coverage` (`Partial<Record<CategoryKey, boolean | { prefixes?, keys?: "aliased" | "all", opacities? }>>`) only changes the registry's `@source inline` lines:
   `false` drops a category's lines (state lines included), `prefixes` must be a **non-empty** list of real `classPrefixes` of that category (typography has none),
   `keys: "aliased"` keeps the alias **holders** — declared keys whose value is a `$alias` in the base record or any `themeAxes` override of the same category;
@@ -235,10 +233,9 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
   shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
-  it never edits a bundler config and has scaffolded no generator script since 5.2.0; `init` drops the config keys a major removed while merging
-  (`plugin` since 6.0.0, `extraSources`/`axes` since 7.0.0, the `extraSources` entries printed as `@source inline(...)` lines;
-  `doctor` has no `Script` check). `budget` is the in-repo replacement for the removed `scripts/check-css-budget.mjs` (its `OK: …`/`OVER BUDGET: …` lines are a contract
-  consumers grep).
+  it never edits a bundler config and scaffolds no generator script; `init` merges `theme`/`output`/`$schema` into an existing config (or `package.json["style-gen"]`) as written,
+  so a key the schema rejects (`plugin`, `extraSources`, `axes`) stays and `generate` reports it as an unknown key. `budget` writes `OK: …`/`OVER BUDGET: …` lines that are a contract
+  consumers grep.
 
 ## Testing
 

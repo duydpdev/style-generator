@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 3395b25eded7 -->
+<!-- source: documents/reference/cli.md sha256: 3324f28ef2e5 -->
 
 # CLI
 
@@ -10,14 +10,11 @@ Công cụ dòng lệnh `style-gen`: `init`, `generate`, `schema`, `doctor`, `to
 
 ### `style-gen init`
 
-> **Thay đổi trong 5.2.0:** `init` không còn tạo sẵn file `plugins/theme-plugin.ts`, không còn hỏi vị trí generator script và từ chối cờ `--plugin` (tùy chọn không nhận diện, mã thoát 1); thay vào đó nó in ra cách nối dây bundler bên dưới và ngừng ghi `plugin` vào `style-gen.config.json`. Từ 6.0.0, một file config vẫn còn `plugin` bị từ chối như mọi key lạ khác (`doctor` dừng với `plugin → Unrecognized key: "plugin"`), và `init` bỏ key đó khi gộp. Để nâng cấp, hãy thêm đoạn mã được in ra vào cấu hình bundler của bạn (hoặc chạy `style-gen generate`), sau đó xóa file script và key `plugin`.
-
 Tạo sẵn file theme JSON, JSON Schema của nó, `style-gen.config.json` và JSON Schema của config, sau đó in ra cách nối dây chúng vào stack của bạn. `init` không bao giờ tự sửa file cấu hình của bundler.
 
 Trình hướng dẫn sẽ hỏi vị trí file theme và có muốn kèm theo template dark mode hay không. Khi không có terminal, hoặc để bỏ qua trình hướng dẫn: `yarn style-gen init --dark`, `--theme` hoặc `--yes`.
 Lệnh sẽ ghi theme, file `theme.schema.json` của nó (cho trường `"$schema"` của theme), `style-gen.config.json` và `style-gen.config.schema.json` (cho trường `"$schema"` của config, mà `init` thêm làm key đầu tiên của config)
-(hợp nhất `theme`, `output` và `$schema` vào config hiện có và giữ nguyên các key khác, kể cả `$schema` mà nó đã có, nhưng bỏ key `plugin`, vì 6.0 không còn chấp nhận nó, cùng các key `extraSources` và `axes`, vì 7.0 không còn chấp nhận chúng).
-Với mỗi key bị bỏ, lệnh in ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` hoặc `7.0`), và với `extraSources` nó còn in mỗi entry thành một dòng `@source inline("<entry>");` để dán vào CSS của app.
+(hợp nhất `theme`, `output` và `$schema` vào config hiện có và giữ nguyên các key khác như đang có, kể cả `$schema` mà nó đã có).
 Nếu theme hoặc một trong hai file schema đã tồn tại, nó sẽ hỏi trước khi ghi đè (không tương tác: thoát với mã 1; với `--yes`: giữ nguyên các file và thoát với mã 0).
 
 Sau đó nó sẽ tìm file cấu hình bundler trong thư mục gốc của dự án theo thứ tự sau, rồi in ra đoạn mã cần thêm vào đó cùng các dòng CSS (hai dòng `@import`, thêm `@source not "<path>/.claude";` khi file [rules cho agent](#rules-cho-agent) tồn tại):
@@ -163,8 +160,6 @@ yarn style-gen schema --out styles/theme.schema.json --config-out style-gen.conf
 
 Kiểm tra thiết lập: file config (một `style-gen.config.json` hoặc `package.json["style-gen"]` sai định dạng là một lỗi — `generate` cảnh báo và dùng mặc định — và file không hợp lệ schema cũng vậy: các key của config và giá trị tùy chọn được kiểm tra bằng cùng schema như `generate()`, nên cả hai lệnh đều đưa ra cùng kết luận, và `doctor` in ra `Config (<file>) ❌ Invalid` kèm danh sách lỗi; **lỗi config sẽ dừng `doctor` ngay tại đó**, vì mọi bước kiểm tra sau đó đều sẽ chạy trên các mặc định sai), cú pháp JSON, kiểm tra hợp lệ `ThemeSchema` (mỗi vấn đề in ra dạng `path → message`), **cặp theme × options** (`❌ Invalid theme/options`: `resetTailwindDefaults: ["radius"]` mà không có `borderRadius`, …), và file output. Theme nằm ngoài dự án vẫn hợp lệ; `output` đã cấu hình mà vượt ra ngoài thư mục gốc của dự án là một lỗi. Lệnh này cũng in ra các cảnh báo — không bao giờ là lỗi — đối với các key hợp lệ schema nhưng xung đột với utility của Tailwind (ví dụ `none` trong `colors`/`shadows`/`borderRadius`, các key `borderWidth` chỉ gồm số, các key `colors` có class `ring-`/`outline-`/`divide-` là một static của Tailwind (`inset` → `ring-inset`, `solid` → `outline-solid`, `xReverse` → `divide-x-reverse`) hoặc một độ rộng/offset số nguyên (`3` → `ring-3`, `offset2` → `ring-offset-2`), hoặc các key typography như `textSm`, `h1` → `h-1`, `italic`), và một **gợi ý alias** cho mỗi override `themeAxes` có giá trị literal lặp lại giá trị của một base key khác trong cùng nhóm token (`Override theme.dark.colors.surface repeats base value #fff → use alias "$white"`): một alias sẽ tự thay đổi theo primitive khi bảng màu base thay đổi, còn literal lặp lại thì không.
 
-Lệnh cũng quét các file mã nguồn trong thư mục hiện tại (`.css`, `.scss`, `.ts`, `.tsx`, `.vue`, `.svelte`, `.astro`, `.html`, …) và cảnh báo `file:line` về các biến màu trước bản 5.0 còn sót lại; các thư mục build, `node_modules`, file `output` trong config và các file trên 1 MiB sẽ được bỏ qua.
-
 ```bash
 yarn style-gen doctor
 ```
@@ -217,14 +212,12 @@ In ra phiên bản CLI đã cài đặt.
 ```
 
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` và `resetTailwindDefaults` được chuyển tiếp đến `generate()`.
-Bất kỳ key nào khác — một lỗi gõ nhầm như `breakpoint`, hoặc key 3.x cũ như `responsiveModules` — đều bị từ chối;
+Bất kỳ key nào khác — một lỗi gõ nhầm như `breakpoint`, hoặc key mà một bản major trước đã gỡ (`plugin`, `extraSources`, `axes`) — đều bị từ chối;
 chỉ `$schema`, `theme`, `output` và `tokensOutput` được chấp nhận ngoài các key chuyển tiếp.
 `$schema` là con trỏ để editor tìm đến JSON Schema của config, không phải một thiết lập: hãy thêm `"$schema": "./style-gen.config.schema.json"` làm key đầu tiên (`style-gen schema` và `init` ghi file đó) thì editor sẽ gợi ý key và đánh dấu key lạ; key này được chấp nhận trong file, bị bỏ khi đọc và không bao giờ đến `generate()`.
 JSON Schema chỉ mô tả key và hình dạng giá trị. Nó không mang các kiểm tra so sánh giá trị với nhau (một entry của `breakpoints` phải trỏ tới một screen, `screens` phải dùng cùng một đơn vị sau khi gộp với mặc định, `coverage.<category>.prefixes` phải là tiền tố thật của nhóm đó), nên editor có thể chấp nhận một config mà `generate` và `doctor` từ chối.
 `tokensOutput` là đường dẫn của module tokens được sinh ra, tương đối so với thư mục gốc dự án và nằm bên trong đó (mặc định: `theme.tokens.ts` cạnh `output`); nó phải là file `.ts`, `.mts` hoặc `.cts`, không phải `.d.ts`.
-`plugin`, key mà `init` từng ghi trước bản 5.2.0 để đặt tên cho generator script mà nó tạo sẵn, bị từ chối từ 6.0.0 (hãy xóa nó, hoặc chạy `style-gen init`, lệnh này sẽ bỏ nó);
-`extraSources` và `axes` bị từ chối từ 7.0.0 (xem [hướng dẫn nâng cấp](../migration/6.x-to-7.0.md)), và `style-gen init` cũng bỏ chúng
-(lệnh in mỗi entry của `extraSources` thành một dòng `@source inline("<entry>");` để dán vào CSS của app).
+Một config vẫn còn `plugin`, `extraSources` hoặc `axes` bị từ chối như mọi key lạ khác (`<key> → Unrecognized key`): hãy tự xóa key đó. `style-gen init` gộp vào file như đang có và không bỏ hay báo key đó. Hãy khai báo các class tạo lúc runtime bằng `@source inline(...)` của riêng bạn cạnh dòng import file được sinh.
 `styleGenVite()` và `styleGenNext()` khi gọi **không có đối số** sẽ đọc chính file này (xem [Vite](./vite.md) / [Next](./next.md)). CLI phân giải cấu hình theo thứ tự sau, cho từng key:
 
 1. các cờ của lệnh

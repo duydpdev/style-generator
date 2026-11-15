@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: 0da324eb3371 -->
+<!-- source: documents/reference/theme.md sha256: 98f3ab5939bd -->
 
 # Cấu hình theme
 
@@ -172,8 +172,6 @@ Quy tắc:
 | hợp chất `[data-theme="dark"][data-palette="…"]`     | override chéo trục (dark × một palette cụ thể)                                           | CSS tự viết tay: độ đặc hiệu `(0,2,0)` của nó thắng bất kỳ quy tắc `html[data-…]` đơn trục nào `(0,1,1)` bất kể thứ tự trong nguồn                                                                   |
 | `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, cùng một quy tắc con lồng `.x-sg-glass-target` | CSS tự viết tay: các biến ngoài `--sg-*` và các selector con lồng nhau không thể biểu diễn bằng theme override (xem [`examples/design-system/README.md`](../../../examples/design-system/README.md)) |
 
-Key đơn trục cũ đã được đổi tên; một theme vẫn dùng nó sẽ bị từ chối kèm thông báo trỏ tới `themeAxes`. Xem [hướng dẫn nâng cấp](../migration/3.x-to-4.0.md) để biết thông điệp chính xác và cách viết lại.
-
 ## Các biến trung gian `--sg-*`
 
 `--sg-*` là một lớp trung gian: nó tồn tại để phá vỡ tham chiếu vòng tròn xuất hiện khi một theme chuyển đổi một biến mà `@theme inline` cũng định nghĩa.
@@ -208,7 +206,7 @@ Nên ưu tiên dùng các class Tailwind tiêu chuẩn và các biến `--color-
 }
 ```
 
-**Hợp đồng công khai.** Các biến mà generator phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, và các biến spacing nội dòng `--sg-sp-*`) là một phần của output công khai: alias phân giải về chúng, và CSS viết tay có thể đọc hoặc override chúng. Đổi tên một biến là thay đổi phá vỡ tương thích (breaking change) — bản 5.0 đã đổi tên các biến màu từ `--sg-<color>` thành `--sg-color-<key>`. `style-gen doctor` cảnh báo (`file:line`) về các tham chiếu `var(--sg-<colorKey>)` hoặc khai báo `--sg-<colorKey>:` còn sót lại; xem [hướng dẫn 4.x → 5.0](../migration/4.x-to-5.0.md).
+**Hợp đồng công khai.** Các biến mà generator phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, và các biến spacing nội dòng `--sg-sp-*`) là một phần của output công khai: alias phân giải về chúng, và CSS viết tay có thể đọc hoặc override chúng. Đổi tên một biến là thay đổi phá vỡ tương thích (breaking change).
 
 ## Trùng tên với utility tích hợp sẵn
 

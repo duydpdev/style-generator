@@ -15,10 +15,10 @@ type CategoryTokenKeyMap<T extends ThemeConfig> = {
  * token arrays returned by `createDesignTokens()`. Consumers can pluck individual
  * variant unions via the semantic aliases below instead of writing
  * `(typeof DesignTokens.Web.X)[number]` everywhere.
- * Kept an interface (as in 4.1) so consumers can still augment it.
+ * Kept an interface so consumers can still augment it.
  * @template T - ThemeConfig type (typically `typeof themeJson`)
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- an interface (not an alias) keeps 4.1 declaration merging
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- an interface (not an alias) keeps declaration merging
 export interface DesignTokenKeys<
   T extends ThemeConfig,
 > extends CategoryTokenKeyMap<T> {}

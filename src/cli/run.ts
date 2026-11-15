@@ -181,8 +181,8 @@ const doctorCli: CliCommand = {
   usage: `Usage: style-gen doctor
 
 Check style-gen.config.json, the theme (schema and theme × options) and the
-generated CSS; warn about utility collisions, pre-5.0 --sg-<color> variables and
-override literals that could be $aliases. Exits 1 on any error.`,
+generated CSS; warn about utility collisions and override literals that could
+be $aliases. Exits 1 on any error.`,
   options: {},
   allowPositionals: false,
   run: (_values, _positionals, ctx) => doctorCommand(ctx.cwd),

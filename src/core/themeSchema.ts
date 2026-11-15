@@ -216,7 +216,7 @@ const reservedVariantMessage = () =>
   `themeAxes variant name "${RESERVED_VARIANT_NAME}" is reserved: ThemeAxesState and themeAxisAttributes() read "${RESERVED_VARIANT_NAME}" as "no override" on the axis, so this variant could never be switched on — rename it (e.g. "default" or "standard"). The base theme already is what an axis shows without an override.`;
 
 /**
- * `themeAxes` — replaces the single-axis `themes` field. Outer key is the
+ * `themeAxes` — independent axes of variants. Outer key is the
  * axis name (e.g. `"theme"`, `"palette"`), inner key is the variant name
  * within that axis (e.g. `"dark"`, `"forest"`) — both use the
  * {@link TokenKey} grammar, so neither can inject an unsafe
@@ -264,35 +264,6 @@ const ThemeAxesSchema = z
   });
 
 /**
- * Detect the removed `themes` key (single-axis, pre-DEV.6) on the RAW
- * input, before the strict object shape check runs, and replace the
- * generic `unrecognized_keys` issue it would otherwise produce with a
- * rename hint. Runs as a `z.preprocess` step ahead of `ThemeSchemaShape` —
- * `ZodPipe` skips the right-hand schema once the left-hand transform has
- * added an issue, so a `themes` key never *also* triggers
- * `unrecognized_keys` for itself.
- *
- * Side effect: while `themes` is present this SUPPRESSES every other
- * validation issue (missing `colors`, typos, bad values, ...) — none of
- * them surface until the key is renamed, so expect a second wave of
- * errors after the rename.
- * @param {unknown} raw - Raw (pre-Zod) input
- * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
- * @returns {unknown} `raw`, unchanged
- */
-const rejectLegacyThemesKey = (raw: unknown, ctx: z.RefinementCtx): unknown => {
-  if (raw !== null && typeof raw === "object" && "themes" in raw) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["themes"],
-      message:
-        '"themes" was renamed to "themeAxes"; move themes.<name> to themeAxes.theme.<name>',
-    });
-  }
-  return raw;
-};
-
-/**
  * Deepest nesting level whose object can hold a token name:
  * root (0) → `themeAxes` (1) → axis (2) → variant (3) → category (4).
  * Bounds the walk, so a cyclic object handed to `defineTheme` cannot
@@ -308,9 +279,9 @@ const MAX_KEY_SCAN_DEPTH = 4;
  * variant or override key would be dropped with no error, while `a_b` is
  * rejected. Only a parsed JSON document can carry it as an own key: the
  * literal `{ __proto__: x }` sets the prototype instead and has no key to
- * lose. Detecting it needs the raw input, so this runs in the same
- * `z.preprocess` step as {@link rejectLegacyThemesKey} and shares its side
- * effect: the issue suppresses every other one until the key is removed.
+ * lose. Detecting it needs the raw input, so this runs in the `z.preprocess`
+ * step; `z.preprocess` skips the right-hand schema once this step has added
+ * an issue, so the issue suppresses every other one until the key is removed.
  * @param {unknown} node - Raw value at `path`
  * @param {(string | number)[]} path - Path of `node` from the theme root
  * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
@@ -346,7 +317,6 @@ const rejectProtoKeys = (
  * @returns {unknown} `raw`, unchanged
  */
 const checkRawTheme = (raw: unknown, ctx: z.RefinementCtx): unknown => {
-  rejectLegacyThemesKey(raw, ctx);
   rejectProtoKeys(raw, [], ctx);
   return raw;
 };
@@ -403,10 +373,8 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
 
 /**
  * Wraps {@link ThemeSchemaShape} in `z.preprocess` ({@link checkRawTheme}):
- * a theme still using the removed `themes` key gets a rename hint instead of
- * a generic unrecognized-key error, and a `__proto__` key gets an error
- * instead of vanishing — see {@link rejectLegacyThemesKey} and
- * {@link rejectProtoKeys} for why either issue also suppresses every other
+ * a `__proto__` key gets an error instead of vanishing — see
+ * {@link rejectProtoKeys} for why that issue also suppresses every other
  * issue on the same input while it is present.
  */
 export const ThemeSchema = z.preprocess(checkRawTheme, ThemeSchemaShape);

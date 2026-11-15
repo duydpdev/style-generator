@@ -92,7 +92,7 @@ describe("resolveProjectPath", () => {
     });
   });
 
-  it("does not rewrite a leading slash into a relative path (4.x did)", () => {
+  it("does not rewrite a leading slash into a relative path", () => {
     // `/styles/theme.json` is the absolute filesystem path it says it is:
     // outside the root, so rejected; with `allowOutsideRoot` it is returned as is.
     expect(() =>

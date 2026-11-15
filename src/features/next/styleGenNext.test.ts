@@ -128,7 +128,7 @@ describe("styleGenNext", () => {
     }).toThrow(/\[style-gen-next\] output escapes project root/);
   });
 
-  it("rejects the removed 7.x options when the wrapper is created, naming the key and the migration guide", () => {
+  it("rejects the former plugin options when the wrapper is created, naming the key and the migration guide", () => {
     for (const removed of ["themePath", "outDir", "options"]) {
       expect(() => styleGenNext({ [removed]: "x" } as never)).toThrow(
         new RegExp(

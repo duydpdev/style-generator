@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: e0168c797388 -->
+<!-- source: documents/architecture.md sha256: 6f63e6f78f33 -->
 
 # Kiến trúc
 

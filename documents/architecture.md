@@ -256,7 +256,7 @@ the app declares `tailwind-merge` 3.x itself — the extension uses v3 group ids
 
 The styleless kit the example components are built on, in `src/features/ui/`: `recipeFromTables(tables)` (cva over plain class tables), `pick`/`contrastText` (token → class,
 throwing on a missing token), `createCn(tokens)` (`clsx` + `tailwind-merge` with `createTailwindMergeExtension`), and `splitSpacing`/`splitLayout`/`mergeStyle` (props → classes,
-`splitLayout` takes the recipe, the spacing keys, the variant prop names and the size prop names in one options object, so the kit knows no design system and no layout prop type;
+inline style and the rest). `splitLayout` takes the recipe, the spacing keys, the variant prop names and the size prop names in one options object, so the kit knows no design system and no layout prop type;
 it turns a numeric size into px (`320` → `"320px"`, `0` → `"0"`, strings kept). `class-variance-authority`, `clsx` and `tailwind-merge` are optional peer dependencies:
 only `./ui` imports them, guarded by `check:externals`. `./ui-react` is type-only (`Polymorphic`) so `./ui` stays free of React types. Neither is re-exported from `.`.
 

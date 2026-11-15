@@ -128,6 +128,7 @@
     "build:all": "yarn build && yarn build:cli",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",
     "check:doc-exports": "node scripts/check-doc-exports.mjs",
+    "check:doc-reference": "node scripts/check-doc-reference.mjs",
     "check:doc-snippets": "node scripts/check-doc-snippets.mjs",
     "check:docs-embed": "node scripts/docs-embed.mjs --check",
     "check:docs-i18n": "node scripts/check-docs-i18n.mjs",

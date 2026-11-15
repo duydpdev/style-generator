@@ -88,7 +88,15 @@ const debounce = <Args extends unknown[]>(
  *   escapes after the filesystem resolves it.
  * @param {StyleGenViteOptions} [opts] - `{ root }`; omit it to read the config from Vite's root
  * @returns {Plugin} A Vite plugin instance
- * @throws {Error} At call time for an unknown option key (`themePath`, `outDir` and `options` live in `style-gen.config.json`)
+ * @throws {Error} At call time for an unknown option key such as `themePath` or `outDir`: the theme path, output and generator options belong in `style-gen.config.json`
+ * @example
+ * // vite.config.ts
+ * export default defineConfig({
+ *   plugins: [styleGenVite(), tailwindcss()],
+ * });
+ *
+ * // Nuxt: the Vite root is the project root, so `root` is the `rootDir`
+ * // vite: { plugins: [styleGenVite({ root: rootDir })] }
  */
 export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
   const { root: rootOption } = parsePluginRootOptions(opts, PLUGIN_NAME);

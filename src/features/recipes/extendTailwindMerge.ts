@@ -85,6 +85,10 @@ const BORDER_WIDTH_PREFIXES = [
  * group.
  * @param {TailwindMergeTokens} tokens - `generate().tokens.Web` or `createDesignTokens().DesignTokens.Web`
  * @returns {TailwindMergeExtension} Argument for `extendTailwindMerge`
+ * @example
+ * import { extendTailwindMerge } from "tailwind-merge";
+ *
+ * const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
  */
 export const createTailwindMergeExtension = (
   tokens: TailwindMergeTokens,

@@ -1,8 +1,8 @@
-<!-- source: documents/testing.md sha256: 43341931ee0b -->
+<!-- source: documents/testing.md sha256: a6e43bab6b59 -->
 
 # Hướng dẫn kiểm thử
 
-Tài liệu này mô tả cách `@duydpdev/style-generator` 4.x được kiểm thử. Mã test là nguồn chân lý cho _từng trường hợp_; tài liệu này chỉ giữ lại các _lớp kiểm thử_,
+Tài liệu này mô tả cách `@duydpdev/style-generator` được kiểm thử. Mã test là nguồn chân lý cho _từng trường hợp_; tài liệu này chỉ giữ lại các _lớp kiểm thử_,
 _vì sao_ mỗi lớp tồn tại và _chúng chạy ở đâu_.
 
 ## Pipeline CI/CD

@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the overall architecture of `@duydpdev/style-generator` 7.x (Tailwind CSS v4 only).
+This document describes the overall architecture of `@duydpdev/style-generator` (Tailwind CSS v4 only).
 The code is the source of truth for _how_ things work; this document only keeps _why_ and _where_.
 
 ## Table of contents
@@ -124,7 +124,7 @@ import { createDesignTokens } from "@duydpdev/style-generator/tokens";
 import theme from "./theme.json";
 
 const { DesignTokens } = createDesignTokens(theme);
-// Each array is named after the matching ThemeConfig field (since 5.0):
+// Each array is named after the matching ThemeConfig field:
 // DesignTokens.Web.colors        → ["primary", "primaryHover", ...]
 // DesignTokens.Web.typography    → ["text16Medium", ...]
 // DesignTokens.Web.fontFamily    → ["sans", ...]
@@ -155,7 +155,7 @@ export default defineConfig({
 ```
 
 - every generator option lives in `style-gen.config.json` (or `package.json["style-gen"]`) at the Vite root, the file `style-gen generate` reads: `theme`, `output`, `tokensOutput` and each `generate()` option; the plugin loads it through `loadStyleGenConfig` (`resolvePluginTarget`, `src/node/resolvePluginTarget.ts`, shared with Next). A broken config throws `[style-gen-vite] Invalid config (<source>):` instead of falling back to defaults
-- the only plugin option is `root` (`StyleGenViteOptions`): the directory that holds the config, relative to Vite's root. Nuxt 4 sets Vite's root to `app/`, so `nuxt.config.ts` passes the project folder. Any other key (`themePath`, `outDir`, `options`, removed in 8.0) throws at call time and names the migration guide (`parsePluginRootOptions`)
+- the only plugin option is `root` (`StyleGenViteOptions`): the directory that holds the config, relative to Vite's root. Nuxt 4 sets Vite's root to `app/`, so `nuxt.config.ts` passes the project folder. Any other key throws at call time and names the migration guide (`parsePluginRootOptions`)
 
 **Lifecycle:** `configResolved` only resolves paths/config (it needs `config.root`) and registers `outFile` to warn about duplicate targets (this registration is released when the
 dev server closes — `server.close` is wrapped; `closeBundle`/`buildEnd` are not used); `buildStart` emits `theme.css` and `theme.tokens.ts` through `emitTheme` (Vite runs `buildStart` on `listen()`,
@@ -171,7 +171,7 @@ The examples place `styleGenVite` before `tailwindcss()`.
 
 **Security:** `resolveProjectPath(root, input, label, { allowOutsideRoot })` (`src/node/resolveProjectPath.ts`) normalizes every path with `resolve(root, input)` (absolute paths
 too: `..`, `.` and doubled separators are collapsed; no trimming) and then keeps `output`/`tokensOutput` inside the project root (it compares the normalized paths, with no `realpath`;
-error `<label> escapes project root: <input>`); `theme` may be outside the root. A leading `/` is no longer rewritten into a relative path.
+error `<label> escapes project root: <input>`); `theme` may be outside the root. A leading `/` is not rewritten into a relative path.
 It warns when several instances write the same **output file** (`outFile`) within one process (monorepo).
 
 ### Next.js Plugin (emit-only)
@@ -225,7 +225,7 @@ nothing written) and then writes `theme.schema.json` into the directory of the r
 the written file may not) and `style-gen.config.schema.json` (`z.toJSONSchema(StyleGenConfigFileSchema)`, which carries no cross-field refinements) into the project root, or where `--config-out` says. `tokens` (`src/cli/commands/tokens.ts`) runs `readAndPrepareTheme` and then serializes exactly the `DesignTokens.Web` object from `buildDesignTokens`
 into `export const tokens = {…} as const` — keys only, so a client bundle does not need to ship the `./tokens` runtime and the theme JSON.
 `budget` (`src/cli/commands/budget.ts`) sums the gzip size (`node:zlib` defaults) of every `.css` under the target file/directory and compares it with `--max-gzip`;
-the two summary lines `OK: …`/`OVER BUDGET: …` are a stable contract for consumers' CI, replacing the `check-css-budget.mjs` script that used to be copied by hand.
+the two summary lines `OK: …`/`OVER BUDGET: …` are a stable contract for consumers' CI.
 `doctor` reads the config (invalid → stop, exit code 1), validates the theme with `ThemeSchema`, then runs `prepareGenerate` with the config's options to catch theme × options
 errors (`❌ Invalid theme/options`), treats an `output` that escapes the root as an error, and prints warnings (without changing the exit code) when a key collides with a Tailwind
 utility (`src/cli/commands/utilityCollisions.ts`, the list is verified against the real compiler in `src/__integration__/utility-collisions.test.ts`) or when a `themeAxes` override
@@ -259,8 +259,8 @@ only `./ui` imports them, guarded by `check:externals`. `./ui-react` is type-onl
 
 ## Registry & `@source inline`
 
-**Why a registry:** before 4.0.0 each category had key/prefix lists repeated in the plugin, the safelist and the tokens.
-Now a single `TokenCategoryDescriptor` (`src/features/registry/builtInCategories.ts`) declares `cssVarPrefix`, `themeNamespace`, `classPrefixes`, `responsive`,
+**Why a registry:** key and prefix lists would otherwise repeat in the plugin, the safelist and the tokens.
+A single `TokenCategoryDescriptor` (`src/features/registry/builtInCategories.ts`) declares `cssVarPrefix`, `themeNamespace`, `classPrefixes`, `responsive`,
 `states` and default values; adding a category = 1 line in `ThemeSchema` + 1 descriptor + 1 test. Category data is read with `theme[descriptor.key]`;
 the unions `CategoryKey`/`CssVarCategoryKey`/`RegistryPrefix` and `CategoryTokenKey<T, K>` (the token key type) are inferred from the `builtInCategories` array itself.
 Default values (`defaultValues` of `borderRadius`/`borderWidth`) live in `categoryTokenMeta.ts` — a separate, small file that does not drag in the descriptor's CSS part;
@@ -351,7 +351,7 @@ together with `@property --sg-sp-<key>[-<bp>] { syntax: "*"; inherits: false }` 
 ```
 
 **Why `inherits: false`:** variables do not inherit, so an `sp-*` class only reads variables declared on the **same element**;
-otherwise a parent's responsive value leaks down to a child that has not set the variable itself (a bug in 3.x).
+otherwise a parent's responsive value leaks down to a child that has not set the variable itself.
 The `--sg-sp-*` namespace also avoids occupying Tailwind's internal `--tw-*` namespace. The regression is tested on Chromium and WebKit (`e2e/spacing-inheritance.spec.ts`).
 
 ```tsx
@@ -371,8 +371,7 @@ for example `{ inset: ["top", "bottom"] }`; the value is always `var(--sg-sp-<ke
 ## Exports API
 
 The export list per subpath, with signatures and examples, lives in [`reference/`](./reference/core.md#all-exports-by-subpath);
-`yarn check:doc-exports` guarantees that every export has a heading there. What was removed in 4.0.0 is in [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md),
-and in 5.0.0 in [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md).
+`yarn check:doc-exports` guarantees that every export has a heading there. Breaking changes between majors are in the guides under `migration/` (the latest is [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
 
 ---
 

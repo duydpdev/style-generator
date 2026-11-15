@@ -1,6 +1,6 @@
 # Testing Guide
 
-This document describes how `@duydpdev/style-generator` 4.x is tested. The test code is the source of truth for _each case_; this document only keeps the _test layers_,
+This document describes how `@duydpdev/style-generator` is tested. The test code is the source of truth for _each case_; this document only keeps the _test layers_,
 _why_ each layer exists and _where it runs_.
 
 ## CI/CD Pipeline

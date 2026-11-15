@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: 0234b7a9ec2a -->
+<!-- source: documents/reference/theme.md sha256: c09e4a267cf6 -->
 
 # Cấu hình theme
 
@@ -70,9 +70,23 @@ Tất cả những gì schema từ chối đối với một cái tên, được
 | Key `fontFamily` không được trùng với `weight` / `size` hoặc bắt đầu bằng `weight-` / `size-` khi chuyển sang kebab-case (Tailwind bỏ qua `--font-weight-*` / `--font-size-*` khi coi là font family, nên key sẽ ghi đè thang weight và size) | `fontFamily`                                                                            | `weightBold`, `size-xl`                                                 | `weighty`, `sizeable`              |
 | Key `typography` không được trùng với class do nhóm khác phát ra khi chuyển sang kebab-case (`<prefix>-<key>`)                                                                                                                                | `typography` so với `colors`, `borderWidth`, `shadows`, `borderRadius`, `backdropBlurs` | `textPrimary` cạnh `colors.primary`                                     | `text12Mono`, `heading`            |
 | Các variant của cùng một trục không được trùng tên khi chuyển sang kebab-case (chúng sẽ dùng chung một selector)                                                                                                                              | `themeAxes.<axis>`                                                                      | `darkMode` + `dark-mode`                                                | `dark`, `highContrast`             |
+| Key `__proto__` không bao giờ được phép (nó chỉ có thể đến từ JSON đã parse)                                                                                                                                                                  | mọi tên token, trục và variant, ở mọi độ sâu                                            | `__proto__`                                                             | mọi tên khác                       |
 | Tên trục và variant không được là số nguyên chuẩn                                                                                                                                                                                             | `themeAxes`                                                                             | `100`, `2024`                                                           | `contrast100`, `007`               |
 
 CLI, `styleGenVite` và `styleGenNext` in gợi ý đổi tên ngay trên path vi phạm (ví dụ `colors.CTA → Key "CTA" yields class "cta" in the CSS but "c-ta" through the typed tokens; rename it to "cta" …`).
+
+Một key `__proto__` bị từ chối đúng tại path của nó ở bất cứ chỗ nào xuất hiện trong theme. Key này chỉ có thể đến từ một tài liệu JSON đã parse, và nếu không có bước kiểm tra này thì token sẽ bị bỏ qua một cách âm thầm:
+
+```json
+{
+  "colors": { "primary": "#3B82F6", "__proto__": "#000000" }
+}
+```
+
+```text
+Invalid theme (styles/theme.json):
+colors.__proto__ → "__proto__" is not a valid token name
+```
 
 ## Các nhóm token
 
@@ -84,7 +98,7 @@ CLI, `styleGenVite` và `styleGenNext` in gợi ý đổi tên ngay trên path v
 | `backdropBlurs` | `backdrop-blur-*`                                                                                                               |                                                                                                                                                                                  |
 | `borderRadius`  | `rounded-*` (+ các variant `md:`/`lg:` cho các breakpoint đang hoạt động)                                                       | Dự phòng về `DEFAULT_ROUNDED_VALUES`.                                                                                                                                            |
 | `fontFamily`    | `font-*` qua namespace `--font-*` của Tailwind                                                                                  | Key không được là tên font-weight của Tailwind (`bold`, `medium`, …).                                                                                                            |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` qua namespace `--border-width-*` của Tailwind (dựa trên `--sg-border-width-*`) | Dự phòng về thang `0/1/2/4` của Tailwind khi bỏ qua hoặc rỗng (`{}`). Thay thế key `border` ở bản 3.x.                                                                           |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` qua namespace `--border-width-*` của Tailwind (dựa trên `--sg-border-width-*`) | Dự phòng về thang `0/1/2/4` của Tailwind khi bỏ qua hoặc rỗng (`{}`). Thay thế thang độ rộng `border` của Tailwind.                                                              |
 
 ## Màu sắc — key dạng camelCase
 
@@ -210,6 +224,33 @@ Quy tắc:
 | hợp chất `[data-theme="dark"][data-palette="…"]`     | override chéo trục (dark × một palette cụ thể)                                           | CSS tự viết tay: độ đặc hiệu `(0,2,0)` của nó thắng bất kỳ quy tắc `html[data-…]` đơn trục nào `(0,1,1)` bất kể thứ tự trong nguồn                                                                   |
 | `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, cùng một quy tắc con lồng `.x-sg-glass-target` | CSS tự viết tay: các biến ngoài `--sg-*` và các selector con lồng nhau không thể biểu diễn bằng theme override (xem [`examples/design-system/README.md`](../../../examples/design-system/README.md)) |
 
+### Vòng lặp alias giữa các trục
+
+Mọi trục đều áp dụng lên cùng một phần tử `html`, nên một alias ở trục này có thể nối tiếp vào một alias ở trục khác. Theme bị từ chối khi một tổ hợp gồm nhiều nhất một variant cho mỗi trục khép thành một vòng, dù từng trục riêng lẻ không có vòng:
+
+```json
+{
+  "colors": { "a": "#111111", "b": "#222222" },
+  "themeAxes": {
+    "theme": {
+      "dark": { "colors": { "a": "$b" } }
+    },
+    "palette": {
+      "forest": { "colors": { "b": "$a" } }
+    }
+  }
+}
+```
+
+`theme.dark` trỏ `a` vào `b` và `palette.forest` trỏ `b` vào `a`; khi cả hai cùng bật thì `a → b → a`. Lỗi nêu tên trục khai báo sau:
+
+```text
+Invalid theme (styles/theme.json):
+themeAxes.palette.forest.colors.b → Alias cycle detected when themeAxes.theme.dark and themeAxes.palette.forest are active together: a → b → a — axes apply to the same element, so these aliases chain across axes; point one of them at a literal value.
+```
+
+Hãy trỏ một trong hai key vào một giá trị cố định để phá vòng lặp.
+
 ## Các biến trung gian `--sg-*`
 
 `--sg-*` là một lớp trung gian: nó tồn tại để phá vỡ tham chiếu vòng tròn xuất hiện khi một theme chuyển đổi một biến mà `@theme inline` cũng định nghĩa.
@@ -248,4 +289,4 @@ Nên ưu tiên dùng các class Tailwind tiêu chuẩn và các biến `--color-
 
 ## Trùng tên với utility tích hợp sẵn
 
-Một key của theme có class trùng với một utility của Tailwind (`bg-none`, `shadow-none`, `rounded-none`, một key typography trở thành `text-sm`, `h-1` từ `h1`, hoặc `italic`, các màu có tên `transparent`/`current`/`inherit`, các màu có class `ring-`/`outline-`/`divide-` là một static của Tailwind như `solid` → `outline-solid` hoặc một độ rộng số nguyên như `3` → `ring-3`) thì không bị từ chối, nhưng quy tắc nào thắng sẽ tùy thuộc vào cách hiện thực utility đó của Tailwind. Hãy chọn một cái tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các xung đột mà nó nhận diện được. Key `borderWidth` chỉ gồm chữ số (`2`) lại khác: từ bản 5.0, giá trị theme sẽ thay thế các class tích hợp sẵn `border-2`, `border-x-2` và `divide-x-2` của Tailwind (Tailwind tra cứu theme trước thang mặc định); `doctor` vẫn báo cáo nó để bạn xác nhận rằng việc override là có chủ đích.
+Một key của theme có class trùng với một utility của Tailwind (`bg-none`, `shadow-none`, `rounded-none`, một key typography trở thành `text-sm`, `h-1` từ `h1`, hoặc `italic`, các màu có tên `transparent`/`current`/`inherit`, các màu có class `ring-`/`outline-`/`divide-` là một static của Tailwind như `solid` → `outline-solid` hoặc một độ rộng số nguyên như `3` → `ring-3`) thì không bị từ chối, nhưng quy tắc nào thắng sẽ tùy thuộc vào cách hiện thực utility đó của Tailwind. Hãy chọn một cái tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các xung đột mà nó nhận diện được. Key `borderWidth` chỉ gồm chữ số (`2`) lại khác: giá trị theme thay thế các class tích hợp sẵn `border-2`, `border-x-2` và `divide-x-2` của Tailwind (Tailwind tra cứu theme trước thang mặc định); `doctor` vẫn báo cáo nó để bạn xác nhận rằng việc override là có chủ đích.

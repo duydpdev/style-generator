@@ -4,7 +4,11 @@ import path from "node:path";
 import * as p from "@clack/prompts";
 
 import { isPlainObject } from "../../node/isPlainObject";
-import { readConfigFile, resolveConfig } from "../../node/loadStyleGenConfig";
+import {
+  defaultConfig,
+  readConfigFile,
+  resolveConfig,
+} from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { logger } from "../logger";
 import {
@@ -222,6 +226,26 @@ function defaultThemeLoc(detected: DetectedStack, cwd: string): string {
       : "assets/css/theme.json";
   }
   return projectHas(cwd, "src") ? "src/styles/theme.json" : "styles/theme.json";
+}
+
+/**
+ * Where the first config points the theme: a theme already at the location
+ * `generate` reads without a config (`defaultConfig.theme`) stays the theme,
+ * so `init` never orphans it behind a second one in the stack's own
+ * directory; otherwise the stack's default.
+ * @param {DetectedStack} detected - The detected stack
+ * @param {string} cwd - The project root
+ * @param {ConfigLayout | undefined} config - The valid existing config, which names its own theme
+ * @returns {string} Project-relative theme path
+ */
+function firstConfigTheme(
+  detected: DetectedStack,
+  cwd: string,
+  config: ConfigLayout | undefined,
+): string {
+  return config === undefined && projectHas(cwd, defaultConfig.theme)
+    ? defaultConfig.theme
+    : defaultThemeLoc(detected, cwd);
 }
 
 /**
@@ -836,7 +860,6 @@ async function scaffold(
   const isInteractive = !yes && process.stdin.isTTY;
 
   const detected = detectStack(cwd);
-  const defaultTheme = defaultThemeLoc(detected, cwd);
 
   if (args.rulesOnly) {
     return runRulesOnly(args, detected, cwd, rulesSource, isInteractive);
@@ -846,6 +869,7 @@ async function scaffold(
   // file created.
   const mergeBase = loadMergeBase(cwd);
   const config = usableConfig(args, cwd);
+  const defaultTheme = firstConfigTheme(detected, cwd, config);
   const choice = await chooseTheme(args, config, defaultTheme, isInteractive);
 
   const resolved = resolveThemePath(cwd, choice.themeLoc, config);

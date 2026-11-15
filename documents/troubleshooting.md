@@ -77,7 +77,7 @@ The migration page lists every rename and each before and after: [Upgrading from
 
 ## No config found
 
-`No style-gen.config.json or package.json#style-gen found in <directory>; using the defaults.` is an info line, not an error. `styleGenVite()` and `styleGenNext()` print it once at startup (with the `[style-gen-vite]` or `[style-gen-next]` prefix), and `style-gen generate` prints it before `Run: yarn style-gen init` when the theme is missing. The directory is where the config was looked for: the Vite root, `process.cwd()` for Next.js, or the plugin's `root`. A wrong directory (Nuxt 4 sets Vite's root to `app/`) looks exactly like a project without a config: pass `root` ([Only { root } is accepted](#only--root--is-accepted)), or run `yarn style-gen init` to write the config.
+`No style-gen.config.json or package.json#style-gen found in <directory>; using the defaults.` is an info line, not an error. `styleGenVite()` and `styleGenNext()` print it once per dev server or build process (with the `[style-gen-vite]` or `[style-gen-next]` prefix; Next.js evaluates its config in several worker processes, and each one prints it once), and `style-gen generate` prints it before `Run: yarn style-gen init` when the theme is missing. The directory is where the config was looked for: the Vite root, `process.cwd()` for Next.js, or the plugin's `root`. A wrong directory (Nuxt 4 sets Vite's root to `app/`) looks exactly like a project without a config: pass `root` ([Only { root } is accepted](#only--root--is-accepted)), or run `yarn style-gen init` to write the config.
 
 ## must be a .ts, .mts or .cts file
 

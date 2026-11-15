@@ -475,6 +475,26 @@ describe("styleGenNext", () => {
       );
     });
 
+    it("FR-2: says so once per root and process, however often Next evaluates the config", () => {
+      writeTheme("styles/theme.json");
+      const info = vi.spyOn(console, "info").mockReturnValue(undefined);
+
+      styleGenNext()({})("phase-production-build");
+      styleGenNext()({})("phase-production-build");
+      styleGenNext()({})("phase-development-server");
+
+      expect(info).toHaveBeenCalledTimes(1);
+
+      mkdirSync(join(tmp, "app/styles"), { recursive: true });
+      writeTheme("app/styles/theme.json");
+      styleGenNext({ root: "app" })({})("phase-production-build");
+
+      expect(info).toHaveBeenCalledTimes(2);
+      expect(info).toHaveBeenLastCalledWith(
+        `[style-gen-next] No style-gen.config.json or package.json#style-gen found in ${join(tmp, "app")}; using the defaults.`,
+      );
+    });
+
     it("stays quiet about the config when one exists", () => {
       writeTheme("styles/theme.json");
       writeRawConfig({});

@@ -34,6 +34,28 @@ function writeJsonSchema(filePath: string, jsonSchema: unknown): void {
 }
 
 /**
+ * Write `ThemeSchema`'s JSON Schema and report it.
+ * @param {string} cwd - Project root, for the printed path
+ * @param {string} absPath - Absolute target path
+ */
+export function writeThemeSchema(cwd: string, absPath: string): void {
+  writeJsonSchema(absPath, z.toJSONSchema(ThemeSchema));
+  logger.success(`Theme JSON Schema written to ${path.relative(cwd, absPath)}`);
+}
+
+/**
+ * Write the config's JSON Schema and report it.
+ * @param {string} cwd - Project root, for the printed path
+ * @param {string} absPath - Absolute target path
+ */
+export function writeConfigSchema(cwd: string, absPath: string): void {
+  writeJsonSchema(absPath, buildConfigJsonSchema());
+  logger.success(
+    `Config JSON Schema written to ${path.relative(cwd, absPath)}`,
+  );
+}
+
+/**
  * Names the first file two roles share among the theme file and the two
  * schema targets, which a write would clobber.
  * @param {string} cwd - Project root, to print paths relative to it
@@ -93,7 +115,7 @@ export function schemaCommand(
   // (a warning), one with schema issues fails after the config schema is
   // written. With `--out` the config is only consulted for the theme file's
   // path, to refuse overwriting it; whatever is wrong with it is not
-  // reported here (`init` calls this with a config it merges afterwards).
+  // reported here.
   const file = readConfigFile(cwd);
   if (file.error && !args.out) {
     logger.warn(`Ignoring ${file.error}; using defaults`);
@@ -142,10 +164,7 @@ export function schemaCommand(
     return 1;
   }
 
-  writeJsonSchema(configOutPath, buildConfigJsonSchema());
-  logger.success(
-    `Config JSON Schema written to ${path.relative(cwd, configOutPath)}`,
-  );
+  writeConfigSchema(cwd, configOutPath);
   if (outPath === undefined) {
     // Only a config with issues leaves the theme schema without a target.
     logger.error(
@@ -153,7 +172,6 @@ export function schemaCommand(
     );
     return 1;
   }
-  writeJsonSchema(outPath, z.toJSONSchema(ThemeSchema));
-  logger.success(`Theme JSON Schema written to ${path.relative(cwd, outPath)}`);
+  writeThemeSchema(cwd, outPath);
   return 0;
 }

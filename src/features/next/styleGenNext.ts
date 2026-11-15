@@ -175,6 +175,9 @@ const startDevWatcher = (
  *   A function that takes the consumer's Next config and returns the
  *   phase-aware config function Next.js expects from `next.config.*`.
  * @throws {Error} At call time for an unknown option key (`themePath`, `outDir` and `options` live in `style-gen.config.json`)
+ * @example
+ * // next.config.ts
+ * export default styleGenNext()(nextConfig);
  */
 export const styleGenNext = (opts?: StyleGenNextOptions) => {
   const { root: rootOption } = parsePluginRootOptions(opts, PLUGIN_NAME);

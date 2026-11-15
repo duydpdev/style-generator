@@ -1,4 +1,4 @@
-<!-- source: documents/reference/vite.md sha256: 14cb652bb2bc -->
+<!-- source: documents/reference/vite.md sha256: 1c4732a23790 -->
 
 # Vite và Nuxt (./vite)
 
@@ -86,7 +86,7 @@ Nuxt chạy trên Vite: hãy đăng ký cùng plugin này trong `nuxt.config.ts`
 
 **Lưu ý về dev-server.** Trên Vite 5, `buildStart` của một dev server chạy khi gọi `server.listen()` (hoặc trong `middlewareMode`), vì vậy một `createServer()` không bao giờ gọi `listen()` sẽ không ghi ra `theme.css`; từ Vite 6 trở đi plugin thiết lập `perEnvironmentStartEndDuringDev` và `buildStart` cũng chạy cho cả `createServer()` + `ssrLoadModule`. Plugin cũng theo dõi file config: một lần sửa sẽ nạp lại nó tại chỗ (đích được phân giải lại, các file được sinh lại và trang tải lại) mà không khởi động lại server; một lần sửa không hợp lệ được ghi log và config hợp lệ gần nhất vẫn có hiệu lực.
 
-**Cấu hình.** `styleGenVite()` (và `styleGenNext()`) đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) từ Vite root (Next: `process.cwd()`): các trường `theme`, `output` (file CSS cần ghi, mặc định là `styles/theme.css`), `tokensOutput` và mọi tùy chọn `generate()` có trong đó, nhờ đó CLI và bundler dùng chung một nguồn chân lý duy nhất. Một config không hợp lệ hoặc sai cú pháp sẽ ném ra lỗi `[style-gen-vite] Invalid config (<file>):` kèm danh sách sự cố — không bao giờ âm thầm fallback về giá trị mặc định. Các tùy chọn 7.x `themePath`, `outDir` và `options` đã bị gỡ ở 8.0 và ném lỗi ngay lúc gọi.
+**Cấu hình.** `styleGenVite()` (và `styleGenNext()`) đọc `style-gen.config.json` (hoặc `package.json["style-gen"]`) từ Vite root (Next: `process.cwd()`): các trường `theme`, `output` (file CSS cần ghi, mặc định là `styles/theme.css`), `tokensOutput` và mọi tùy chọn `generate()` có trong đó, nhờ đó CLI và bundler dùng chung một nguồn chân lý duy nhất. Một config không hợp lệ hoặc sai cú pháp sẽ ném ra lỗi `[style-gen-vite] Invalid config (<file>):` kèm danh sách sự cố — không bao giờ âm thầm fallback về giá trị mặc định. Mọi tùy chọn plugin ngoài `root` đều ném lỗi ngay lúc gọi.
 
 ## `StyleGenViteOptions`
 

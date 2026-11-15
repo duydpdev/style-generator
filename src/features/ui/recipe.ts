@@ -68,6 +68,12 @@ export type RecipeFn<T extends RecipeTables = RecipeTables> = (
  * @template T - The tables type; its variant names type the recipe's props
  * @param {T} tables - Base classes, variants, compound and default variants
  * @returns {RecipeFn<T>} The recipe
+ * @example
+ * const box = recipeFromTables({
+ *   base: "flex",
+ *   variants: { rounded: createVariantMapper("rounded", tokens.borderRadius) },
+ * });
+ * box({ rounded: "pill" });
  */
 export const recipeFromTables = <T extends RecipeTables>(
   tables: T,

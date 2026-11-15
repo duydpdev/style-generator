@@ -45,10 +45,29 @@ export interface GenerateResult<
  * @param {ThemeConfig} theme - Theme configuration (the optional second argument is the `StyleGeneratorOptions`)
  * @returns {GenerateResult<ThemeConfig, O>} `{ css, tokens, schema }` — generated CSS string, typed
  *   design tokens, and the theme's JSON Schema (`z.toJSONSchema(ThemeSchema)`)
+ * @example
+ * import { generate } from "@duydpdev/style-generator";
+ *
+ * const { css, tokens, schema } = generate({
+ *   colors: { primary: "#3B82F6", primaryHover: "#2563EB" },
+ * });
  */
 export function generate<const TTheme extends ThemeConfig>(
   theme: TTheme,
 ): GenerateResult<TTheme>;
+/**
+ * `generate()` with `options`.
+ * @template TTheme
+ * @template O
+ * @param {ThemeConfig} theme - Theme configuration
+ * @param {StyleGeneratorOptions | undefined} options - Validated first; their literal `breakpoints`, `screens` and `spacing.properties` keys type `tokens`
+ * @returns {GenerateResult<ThemeConfig, O>} `{ css, tokens, schema }`
+ * @example
+ * const { css } = generate(
+ *   { colors: { primary: "#3B82F6" } },
+ *   { breakpoints: ["md"] },
+ * );
+ */
 export function generate<
   const TTheme extends ThemeConfig,
   const O extends StyleGeneratorOptions = StyleGeneratorOptions,

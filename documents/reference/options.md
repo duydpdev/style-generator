@@ -15,6 +15,91 @@
 | `coverage`                | `Partial<Record<CategoryKey, boolean \| CoverageRule>>` (`colors` also takes `opacities`) | all categories fully covered | Trim a category's `@source inline` lines (`false`, `{ prefixes }`, `{ keys: "aliased" }`) or add the opacity-modifier classes of colors (`{ opacities }`). See [`coverage`](#coverage-trim-the-source-inline-lines-per-category).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `resetTailwindDefaults`   | `readonly ("colors" \| "radius" \| "shadow")[]`                                           | `[]`                         | Clear Tailwind's built-in default namespaces so only the theme's tokens exist. Each name adds `--color-*: initial;`, `--radius-*: initial;` or `--shadow-*: initial;` as the **first** lines of `@theme inline`. `"colors"` also removes `--color-white`/`--color-black` (declare them in `colors` if you use them); static utilities such as `rounded-full`, `rounded-none`, `shadow-none` and the `inset-`/`drop-`/`text-shadow` families are untouched. Each name needs a non-empty replacement in the theme: `"colors"` requires `colors` (non-empty), `"radius"` a `borderRadius` and `"shadow"` `shadows` (`generate()` throws `resetTailwindDefaults.<i>` otherwise: clearing the defaults with no replacement would make `bg-red-500`/`rounded-md`/`shadow-md` compile to nothing). Duplicates and order do not change the output. |
 
+### Config-only keys
+
+These keys exist in `style-gen.config.json` only; `generate()` rejects them in its options argument.
+
+| Key            | Type     | Default                           | Description                                                                                                          |
+| :------------- | :------- | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| `theme`        | `string` | `styles/theme.json`               | Theme JSON path, relative to the project root. It may point outside the project (a shared design-system package).    |
+| `output`       | `string` | `styles/theme.css`                | Generated CSS path, relative to the project root; must stay inside it.                                               |
+| `tokensOutput` | `string` | `theme.tokens.ts` beside `output` | Generated tokens module (`.ts`, `.mts` or `.cts`, not a `.d.ts`), relative to the project root; must stay inside it. |
+| `$schema`      | `string` | none                              | Editor pointer to `style-gen.config.schema.json`; accepted in the file, dropped on read, never reaches `generate()`. |
+
+### Default screens
+
+`screens` is merged over Tailwind's default screens; these are the values when `screens` is unset (`defaultScreens`, exported from `./tokens`):
+
+| Key   | Width    |
+| :---- | :------- |
+| `sm`  | `640px`  |
+| `md`  | `768px`  |
+| `lg`  | `1024px` |
+| `xl`  | `1280px` |
+| `2xl` | `1536px` |
+
+### One example per key
+
+Each fragment is a valid `style-gen.config.json` on its own.
+
+`breakpoints`: responsive variants to cover (`md`, `lg` when unset):
+
+```json
+{ "breakpoints": ["md", "lg", "xl"] }
+```
+
+`screens`: change a width or add a screen (all values must share one unit with the defaults):
+
+```json
+{ "screens": { "md": "800px", "3xl": "1920px" }, "breakpoints": ["md", "3xl"] }
+```
+
+`enableResponsive`: skip the responsive spacing fallback chains:
+
+```json
+{ "enableResponsive": false }
+```
+
+`spacing`: replace the key → CSS properties map (`spacing.enabled: false` turns the `.sp-*` utilities off):
+
+```json
+{ "spacing": { "properties": { "p": ["padding"], "gap": ["gap"] } } }
+```
+
+`typography`: reference `--typography-<name>-<prop>` variables from each typography utility:
+
+```json
+{ "typography": { "cssVarDriven": true } }
+```
+
+`coverage`: trim the `@source inline` lines (see [`coverage`](#coverage-trim-the-source-inline-lines-per-category)):
+
+```json
+{
+  "coverage": {
+    "colors": { "prefixes": ["bg", "text"], "keys": "aliased" },
+    "shadows": false
+  }
+}
+```
+
+`resetTailwindDefaults`: clear Tailwind's built-in namespaces:
+
+```json
+{ "resetTailwindDefaults": ["colors", "radius", "shadow"] }
+```
+
+`theme`, `output`, `tokensOutput` and `$schema`:
+
+```json
+{
+  "$schema": "./style-gen.config.schema.json",
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "tokensOutput": "src/theme/theme.tokens.ts"
+}
+```
+
 ### `resetTailwindDefaults`: keep only the theme's tokens
 
 Tailwind keeps its own color scale, `rounded-*` and `shadow-*` next to the theme's tokens. Name a namespace in `resetTailwindDefaults` to clear it:
@@ -38,7 +123,7 @@ Class names built at runtime (a template literal such as `` `bg-${variant}` ``) 
 @source inline("hover:bg-{primary,secondary}");
 ```
 
-Other keys, including the removed `extraSources` and `axes`, are unknown and make `generate()` throw a `ZodError` (`unrecognized_keys`).
+Any other key is unknown and makes `generate()` throw a `ZodError` (`unrecognized_keys`).
 
 `generate()` validates every option that reaches the CSS and throws a `ZodError` naming its path: unknown option keys (also inside `spacing` and `typography`) are rejected; `enableResponsive`, `spacing.enabled` and `typography.cssVarDriven` must be booleans; `breakpoints` entries, `screens` and `spacing.properties` keys follow the theme key grammar (letters, digits, `-`); `screens` values must be one length in px, rem or em, and the map merged with the px `defaultScreens` must use a single unit (reported at `screens`); every `breakpoints` entry must name a screen in `defaultScreens` or `screens` (reported at `breakpoints.<i>`); the CSS property names inside `spacing.properties` must be lowercase (`padding`, `column-gap`, `--custom`).
 
@@ -70,7 +155,7 @@ generate(theme, {
 });
 ```
 
-`@source inline` forces every listed class into the build whether or not it is used, so `coverage.colors.opacities` grows **your** stylesheet by `prefixes × keys × steps` classes, about 12 B gzip each. Measured with `style-gen budget` on a Tailwind build of the repository's example theme (every color, the three prefixes `bg`, `text`, `border` of 5.3): `opacities: [10, 20]` added 78 classes, 5545 B → 6499 B gzip (+954 B). Keep it small with `prefixes: ["bg"]` and `keys: "aliased"`, and track your own CSS with [`style-gen budget`](./cli.md#style-gen-budget). Since 5.4 the default covers seven color prefixes (`bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`), so the cost scales with `prefixes`: trim it to what you use. A class with an opacity that is not in the list still works when it appears literally in a scanned source file.
+`@source inline` forces every listed class into the build whether or not it is used, so `coverage.colors.opacities` grows **your** stylesheet by `prefixes × keys × steps` classes. The default covers seven color prefixes (`bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`), so the cost scales with `prefixes`: trim it to what you use, for example `prefixes: ["bg"]` with `keys: "aliased"`, and track your own CSS with [`style-gen budget`](./cli.md#style-gen-budget). A class with an opacity that is not in the list still works when it appears literally in a scanned source file.
 
 ```ts
 import { generate } from "@duydpdev/style-generator";

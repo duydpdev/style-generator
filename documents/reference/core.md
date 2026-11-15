@@ -1,6 +1,6 @@
 # Core API (@duydpdev/style-generator)
 
-The root barrel `@duydpdev/style-generator`: `generate()`, the theme and options helpers, `formatZodError` and the types. The typed tokens, CVA and spacing helpers live on `./tokens`, `./cva` and `./spacing` (moved off the root in 6.0, see [the migration guide](../migration/5.x-to-6.0.md)). It pulls in Zod, so use a subpath in browser code.
+The root barrel `@duydpdev/style-generator`: `generate()`, the theme and options helpers, `formatZodError` and the types. The typed tokens, CVA and spacing helpers live on `./tokens`, `./cva` and `./spacing`, not on the root. It pulls in Zod, so use a subpath in browser code.
 
 ## Subpath exports
 
@@ -42,7 +42,7 @@ import { styleGenVite } from "@duydpdev/style-generator/vite";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 ```
 
-Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node16"`, or `"nodenext"`; **`"node10"` (the legacy `"node"`) is unsupported**: the package has no `typesVersions`, so the subpaths do not resolve there. The ESM and CJS builds each ship their own declaration file (`.d.ts` for `import`, `.d.cts` for `require`), so a CommonJS consumer under `node16`/`nodenext` resolves types instead of hitting the "masquerading as ESM" mismatch (`yarn check:types-pack` verifies it with `@arethetypeswrong/cli`). `dist/*.d.cts` is its `.d.ts` with one rewrite: the `vite` import becomes a type-only `import type { Plugin } from 'vite' assert { 'resolution-mode': 'import' }`, because Vite has no usable CommonJS types (5/6 ship an `export = any` stub, 7/8 are ESM-only). `yarn typecheck:dist` type-checks the `.d.cts` as a CommonJS consumer (`module: node16`, `skipLibCheck: false`). On TypeScript 5.0–5.2 that one `assert` line is reported (`TS4125`) when a CommonJS consumer sets `skipLibCheck: false`; `skipLibCheck: true`, the default in most setups, and TypeScript >= 5.3 are unaffected. See [`documents/migration/3.x-subpath-exports.md`](../migration/3.x-subpath-exports.md) for the background and [`documents/migration/3.x-to-4.0.md`](../migration/3.x-to-4.0.md) for what changed in 4.0.0.
+Requires `tsconfig.json#compilerOptions.moduleResolution` = `"bundler"`, `"node16"`, or `"nodenext"`; **`"node10"` (the legacy `"node"`) is unsupported**: the package has no `typesVersions`, so the subpaths do not resolve there. The ESM and CJS builds each ship their own declaration file (`.d.ts` for `import`, `.d.cts` for `require`), so a CommonJS consumer under `node16`/`nodenext` resolves types instead of hitting the "masquerading as ESM" mismatch (`yarn check:types-pack` verifies it with `@arethetypeswrong/cli`). `dist/*.d.cts` is its `.d.ts` with one rewrite: the `vite` import becomes a type-only `import type { Plugin } from 'vite' assert { 'resolution-mode': 'import' }`, because Vite has no usable CommonJS types (5/6 ship an `export = any` stub, 7/8 are ESM-only). `yarn typecheck:dist` type-checks the `.d.cts` as a CommonJS consumer (`module: node16`, `skipLibCheck: false`). On TypeScript 5.0–5.2 that one `assert` line is reported (`TS4125`) when a CommonJS consumer sets `skipLibCheck: false`; `skipLibCheck: true`, the default in most setups, and TypeScript >= 5.3 are unaffected. See [`documents/migration/3.x-subpath-exports.md`](../migration/3.x-subpath-exports.md) for the background.
 
 ## All exports by subpath
 
@@ -127,6 +127,7 @@ With `options`, their literal `breakpoints`, `screens` and
 `StyleGeneratorOptions`, or an explicit `<typeof theme>` type argument
 (which leaves `O` at its default), widen them to `string`. Without
 `options` the tokens carry the library defaults.
+`generate()` with `options`.
 
 <!-- /signature -->
 

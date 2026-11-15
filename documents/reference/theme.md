@@ -68,9 +68,23 @@ Everything the schema rejects about a name, in one place (every rule is reported
 | A `fontFamily` key may not kebab-case to `weight` / `size` or start with `weight-` / `size-` (Tailwind ignores `--font-weight-*` / `--font-size-*` as font families, so the key would overwrite the weight and size scales) | `fontFamily`                                                                        | `weightBold`, `size-xl`                                             | `weighty`, `sizeable`              |
 | A `typography` key may not kebab-case to a class another category emits (`<prefix>-<key>`)                                                                                                                                  | `typography` vs `colors`, `borderWidth`, `shadows`, `borderRadius`, `backdropBlurs` | `textPrimary` next to `colors.primary`                              | `text12Mono`, `heading`            |
 | Variants of one axis may not kebab-case to the same name (they would share one selector)                                                                                                                                    | `themeAxes.<axis>`                                                                  | `darkMode` + `dark-mode`                                            | `dark`, `highContrast`             |
+| A `__proto__` key is never allowed (it can only come from parsed JSON)                                                                                                                                                      | every token, axis and variant name, at any depth                                    | `__proto__`                                                         | any other name                     |
 | Axis and variant names may not be canonical integers                                                                                                                                                                        | `themeAxes`                                                                         | `100`, `2024`                                                       | `contrast100`, `007`               |
 
 The CLI, `styleGenVite` and `styleGenNext` print the rename hint on the offending path (for example `colors.CTA → Key "CTA" yields class "cta" in the CSS but "c-ta" through the typed tokens; rename it to "cta" …`).
+
+A `__proto__` key is rejected at its exact path wherever it appears in a theme. It can only come from a parsed JSON document, and without the check the token would be dropped silently:
+
+```json
+{
+  "colors": { "primary": "#3B82F6", "__proto__": "#000000" }
+}
+```
+
+```text
+Invalid theme (styles/theme.json):
+colors.__proto__ → "__proto__" is not a valid token name
+```
 
 ## Categories
 
@@ -82,7 +96,7 @@ The CLI, `styleGenVite` and `styleGenNext` print the rename hint on the offendin
 | `backdropBlurs` | `backdrop-blur-*`                                                                                                              |                                                                                                                                                                                |
 | `borderRadius`  | `rounded-*` (+ `md:`/`lg:` variants for the active breakpoints)                                                                | Falls back to `DEFAULT_ROUNDED_VALUES`.                                                                                                                                        |
 | `fontFamily`    | `font-*` via Tailwind's `--font-*` namespace                                                                                   | Keys may not be Tailwind font-weight names (`bold`, `medium`, …).                                                                                                              |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` via Tailwind's `--border-width-*` namespace (backed by `--sg-border-width-*`) | Falls back to Tailwind's own `0/1/2/4` scale when omitted or empty (`{}`). Replaces the 3.x `border` key.                                                                      |
+| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` via Tailwind's `--border-width-*` namespace (backed by `--sg-border-width-*`) | Falls back to Tailwind's own `0/1/2/4` scale when omitted or empty (`{}`). Replaces Tailwind's `border` width scale.                                                           |
 
 ## Colors — camelCase keys
 
@@ -208,6 +222,33 @@ Rules:
 | compound `[data-theme="dark"][data-palette="…"]`     | cross-axis override (dark × a specific palette)                                        | Hand-written CSS: its `(0,2,0)` specificity beats either single-axis `html[data-…]` rule `(0,1,1)` regardless of source order                                                                        |
 | `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, and a nested `.x-sg-glass-target` child rule | Hand-written CSS: variables outside `--sg-*` and nested-child selectors are not representable by a theme override (see [`examples/design-system/README.md`](../../examples/design-system/README.md)) |
 
+### Cross-axis alias cycles
+
+Every axis applies to the same `html` element, so an alias in one axis can chain into an alias in another. The theme is rejected when a combination of at most one variant per axis closes a cycle, even though each axis is acyclic on its own:
+
+```json
+{
+  "colors": { "a": "#111111", "b": "#222222" },
+  "themeAxes": {
+    "theme": {
+      "dark": { "colors": { "a": "$b" } }
+    },
+    "palette": {
+      "forest": { "colors": { "b": "$a" } }
+    }
+  }
+}
+```
+
+`theme.dark` points `a` at `b` and `palette.forest` points `b` at `a`; with both active `a → b → a`. The error names the later axis:
+
+```text
+Invalid theme (styles/theme.json):
+themeAxes.palette.forest.colors.b → Alias cycle detected when themeAxes.theme.dark and themeAxes.palette.forest are active together: a → b → a — axes apply to the same element, so these aliases chain across axes; point one of them at a literal value.
+```
+
+Point one of the two keys at a literal value to break the cycle.
+
 ## The `--sg-*` intermediate variables
 
 `--sg-*` is an intermediate layer: it exists to break the circular reference that appears when a theme switches a variable that `@theme inline` also defines.
@@ -246,4 +287,4 @@ Prefer standard Tailwind classes and the `--color-*` variables in application co
 
 ## Built-in utility name clashes
 
-A theme key whose class equals a Tailwind utility (`bg-none`, `shadow-none`, `rounded-none`, a typography key that becomes `text-sm`, `h-1` from `h1`, or `italic`, colors named `transparent`/`current`/`inherit`, colors whose `ring-`/`outline-`/`divide-` class is a Tailwind static such as `solid` → `outline-solid` or an integer width such as `3` → `ring-3`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the clashes it recognises. A digit-only `borderWidth` key (`2`) is different: since 5.0 the theme value replaces Tailwind's built-in `border-2`, `border-x-2` and `divide-x-2` (Tailwind looks up the theme before its default scale); `doctor` still reports it so you confirm the override is intended.
+A theme key whose class equals a Tailwind utility (`bg-none`, `shadow-none`, `rounded-none`, a typography key that becomes `text-sm`, `h-1` from `h1`, or `italic`, colors named `transparent`/`current`/`inherit`, colors whose `ring-`/`outline-`/`divide-` class is a Tailwind static such as `solid` → `outline-solid` or an integer width such as `3` → `ring-3`) is not rejected, but which rule wins is up to Tailwind's implementation of that utility. Pick a different name (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` lists the clashes it recognises. A digit-only `borderWidth` key (`2`) is different: its theme value replaces Tailwind's built-in `border-2`, `border-x-2` and `divide-x-2` (Tailwind looks up the theme before its default scale); `doctor` still reports it so you confirm the override is intended.

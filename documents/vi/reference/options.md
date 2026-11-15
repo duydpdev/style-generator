@@ -1,4 +1,4 @@
-<!-- source: documents/reference/options.md sha256: ad0f48b41703 -->
+<!-- source: documents/reference/options.md sha256: 492c2afcef4b -->
 
 # Tùy chọn
 
@@ -16,6 +16,91 @@
 | `typography.cssVarDriven` | `boolean`                                                                                | `false`                      | Phát ra các biến `--typography-<name>-<prop>` trong `:root` và tham chiếu đến chúng từ mỗi utility typography, nhờ đó một token đơn lẻ có thể được override trong CSS.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `coverage`                | `Partial<Record<CategoryKey, boolean \| CoverageRule>>` (`colors` cũng nhận `opacities`) | phủ đầy đủ mọi nhóm token    | Cắt tỉa các dòng `@source inline` của một nhóm token (`false`, `{ prefixes }`, `{ keys: "aliased" }`) hoặc thêm các class modifier độ mờ của màu sắc (`{ opacities }`). Xem [`coverage`](#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `resetTailwindDefaults`   | `readonly ("colors" \| "radius" \| "shadow")[]`                                          | `[]`                         | Xóa sạch các namespace mặc định có sẵn của Tailwind để chỉ tồn tại các token của theme. Mỗi tên sẽ thêm `--color-*: initial;`, `--radius-*: initial;` hoặc `--shadow-*: initial;` làm những dòng **đầu tiên** của `@theme inline`. `"colors"` cũng xóa bỏ `--color-white`/`--color-black` (hãy khai báo chúng trong `colors` nếu bạn cần dùng); các utility tĩnh như `rounded-full`, `rounded-none`, `shadow-none` và các họ `inset-`/`drop-`/`text-shadow` vẫn được giữ nguyên. Mỗi tên cần có một phần thay thế không rỗng trong theme: `"colors"` yêu cầu `colors` (không rỗng), `"radius"` yêu cầu `borderRadius` và `"shadow"` yêu cầu `shadows` (ngược lại `generate()` ném `resetTailwindDefaults.<i>`: việc xóa mặc định mà không có phần thay thế sẽ khiến `bg-red-500`/`rounded-md`/`shadow-md` không biên dịch ra gì). Trùng lặp và thứ tự không làm thay đổi kết quả đầu ra. |
+
+### Các key chỉ có trong config
+
+Các key này chỉ tồn tại trong `style-gen.config.json`; `generate()` từ chối chúng trong tham số options.
+
+| Key            | Kiểu     | Mặc định                        | Mô tả                                                                                                                                     |
+| :------------- | :------- | :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| `theme`        | `string` | `styles/theme.json`             | Đường dẫn file theme JSON, tính từ thư mục gốc của dự án. Có thể trỏ ra ngoài dự án (một package design system dùng chung).               |
+| `output`       | `string` | `styles/theme.css`              | Đường dẫn file CSS được sinh ra, tính từ thư mục gốc của dự án; phải nằm bên trong thư mục đó.                                            |
+| `tokensOutput` | `string` | `theme.tokens.ts` cạnh `output` | Module tokens được sinh ra (`.ts`, `.mts` hoặc `.cts`, không phải `.d.ts`), tính từ thư mục gốc của dự án; phải nằm bên trong thư mục đó. |
+| `$schema`      | `string` | không có                        | Con trỏ cho editor tới `style-gen.config.schema.json`; được chấp nhận trong file, bị bỏ khi đọc, không bao giờ tới `generate()`.          |
+
+### Screens mặc định
+
+`screens` được gộp lên trên các screen mặc định của Tailwind; đây là các giá trị khi `screens` chưa đặt (`defaultScreens`, export từ `./tokens`):
+
+| Key   | Độ rộng  |
+| :---- | :------- |
+| `sm`  | `640px`  |
+| `md`  | `768px`  |
+| `lg`  | `1024px` |
+| `xl`  | `1280px` |
+| `2xl` | `1536px` |
+
+### Một ví dụ cho mỗi key
+
+Mỗi đoạn dưới đây tự nó là một `style-gen.config.json` hợp lệ.
+
+`breakpoints`: các variant responsive cần bao phủ (`md`, `lg` khi chưa đặt):
+
+```json
+{ "breakpoints": ["md", "lg", "xl"] }
+```
+
+`screens`: đổi một độ rộng hoặc thêm một screen (mọi giá trị phải cùng đơn vị với các giá trị mặc định):
+
+```json
+{ "screens": { "md": "800px", "3xl": "1920px" }, "breakpoints": ["md", "3xl"] }
+```
+
+`enableResponsive`: bỏ các chuỗi fallback spacing responsive:
+
+```json
+{ "enableResponsive": false }
+```
+
+`spacing`: thay bản đồ key → thuộc tính CSS (`spacing.enabled: false` tắt các utility `.sp-*`):
+
+```json
+{ "spacing": { "properties": { "p": ["padding"], "gap": ["gap"] } } }
+```
+
+`typography`: tham chiếu các biến `--typography-<name>-<prop>` từ mỗi utility typography:
+
+```json
+{ "typography": { "cssVarDriven": true } }
+```
+
+`coverage`: cắt tỉa các dòng `@source inline` (xem [`coverage`](#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token)):
+
+```json
+{
+  "coverage": {
+    "colors": { "prefixes": ["bg", "text"], "keys": "aliased" },
+    "shadows": false
+  }
+}
+```
+
+`resetTailwindDefaults`: xóa các namespace dựng sẵn của Tailwind:
+
+```json
+{ "resetTailwindDefaults": ["colors", "radius", "shadow"] }
+```
+
+`theme`, `output`, `tokensOutput` và `$schema`:
+
+```json
+{
+  "$schema": "./style-gen.config.schema.json",
+  "theme": "src/theme/theme.json",
+  "output": "src/theme/theme.css",
+  "tokensOutput": "src/theme/theme.tokens.ts"
+}
+```
 
 ### `resetTailwindDefaults`: chỉ giữ lại token của theme
 
@@ -40,7 +125,7 @@ Các tên class được tạo lúc runtime (template literal như `` `bg-${vari
 @source inline("hover:bg-{primary,secondary}");
 ```
 
-Các key khác, kể cả `extraSources` và `axes` đã bị gỡ bỏ, đều là key lạ và khiến `generate()` ném `ZodError` (`unrecognized_keys`).
+Mọi key khác đều là key lạ và khiến `generate()` ném `ZodError` (`unrecognized_keys`).
 
 `generate()` kiểm tra hợp lệ mọi tùy chọn chạm tới CSS và ném `ZodError` chỉ rõ path: các key tùy chọn lạ (cả bên trong `spacing` và `typography`) đều bị từ chối; `enableResponsive`, `spacing.enabled` và `typography.cssVarDriven` phải là boolean; các mục nhập trong `breakpoints`, các key của `screens` và `spacing.properties` phải tuân theo ngữ pháp đặt key của theme (chữ cái, chữ số, `-`); các giá trị của `screens` phải là một độ dài tính theo px, rem hoặc em, và map sau khi merge với `defaultScreens` (vốn dùng px) phải sử dụng một đơn vị duy nhất (được báo cáo tại `screens`); mỗi mục trong `breakpoints` phải gọi tên một màn hình trong `defaultScreens` hoặc `screens` (được báo cáo tại `breakpoints.<i>`); các tên thuộc tính CSS bên trong `spacing.properties` phải viết thường (`padding`, `column-gap`, `--custom`).
 
@@ -72,7 +157,7 @@ generate(theme, {
 });
 ```
 
-`@source inline` buộc mọi class được liệt kê phải vào bản build bất kể nó có được dùng hay không, vì vậy `coverage.colors.opacities` làm tăng kích thước stylesheet của **bạn** thêm `prefixes × keys × steps` class, mỗi class khoảng 12 B gzip. Được đo lường bằng `style-gen budget` trên một bản build Tailwind của theme ví dụ trong repository (mọi màu, ba tiền tố `bg`, `text`, `border` của 5.3): `opacities: [10, 20]` đã thêm 78 class, từ 5545 B → 6499 B gzip (+954 B). Hãy giữ cho nó gọn nhẹ bằng `prefixes: ["bg"]` và `keys: "aliased"`, đồng thời theo dõi CSS của bạn bằng [`style-gen budget`](./cli.md#style-gen-budget). Từ 5.4, mặc định bao phủ bảy tiền tố màu (`bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`), nên chi phí tăng theo `prefixes`: hãy rút gọn nó về những gì bạn dùng. Một class có độ mờ không nằm trong danh sách vẫn hoạt động bình thường khi nó xuất hiện nguyên văn trong một file mã nguồn được quét.
+`@source inline` buộc mọi class được liệt kê phải vào bản build bất kể nó có được dùng hay không, vì vậy `coverage.colors.opacities` làm tăng kích thước stylesheet của **bạn** thêm `prefixes × keys × steps` class. Mặc định bao phủ bảy tiền tố màu (`bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`), nên chi phí tăng theo `prefixes`: hãy rút gọn nó về những gì bạn dùng, ví dụ `prefixes: ["bg"]` cùng `keys: "aliased"`, đồng thời theo dõi CSS của bạn bằng [`style-gen budget`](./cli.md#style-gen-budget). Một class có độ mờ không nằm trong danh sách vẫn hoạt động bình thường khi nó xuất hiện nguyên văn trong một file mã nguồn được quét.
 
 ```ts
 import { generate } from "@duydpdev/style-generator";

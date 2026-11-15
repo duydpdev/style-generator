@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 3324f28ef2e5 -->
+<!-- source: documents/reference/cli.md sha256: 5faf80515afc -->
 
 # CLI
 
@@ -41,6 +41,8 @@ yarn style-gen init --yes      # Defaults for every prompt, never overwrites (sc
 | `--skip-rules` | `boolean` | `false`             | Không ghi file rules cho agent                                        |
 | `--rules-only` | `boolean` | `false`             | Chỉ ghi hoặc làm mới file rules cho agent                             |
 | `-y`, `--yes`  | `boolean` | `false`             | Trả lời mọi prompt bằng giá trị mặc định và không bao giờ ghi đè file |
+
+Mã thoát: `0` thành công, giữ nguyên file đã có (`--yes`) hoặc hủy prompt; `1` thất bại, gồm cả trường hợp file đã có mà không có terminal và không có `--yes`.
 
 `--yes` không bao giờ mở trình hướng dẫn hay đặt câu hỏi, kể cả trong terminal: nó dùng `--theme` và `--dark` khi có, và các mặc định của stack khi không. Khi theme hoặc một trong hai file schema đã tồn tại, nó giữ nguyên tất cả, in `Existing files kept (--yes never overwrites).`, vẫn làm mới rules cho agent (file rules đã sửa được giữ lại, như mọi lần chạy không tương tác) và thoát với mã 0, trong khi một lần chạy không có terminal và không có `--yes` thoát với mã 1.
 
@@ -134,7 +136,9 @@ yarn style-gen generate --theme ./theme.json --out ./theme.css --watch
 | `-w`, `--watch` | `boolean` | `false`             | Chế độ watch — tự động sinh lại mỗi khi lưu                                                            |
 | `--check`       | `boolean` | `false`             | Không ghi gì; thoát với mã 1 khi `theme.tokens.ts` thiếu hoặc khác với kết quả sinh từ theme và config |
 
-Dạng truyền vị trí `style-gen generate <theme> <out>` cũng hoạt động; các cờ được ưu tiên hơn. File được ghi một cách nguyên tử và **chỉ khi nội dung của nó có sự thay đổi** (chạy lại trên một theme chưa đổi sẽ không chạm vào file, giúp các file watcher không bị kích hoạt). `--theme` có thể trỏ ra ngoài dự án (một package design-system dùng chung); `--out` và `output` trong config phải nằm bên trong dự án (`output escapes project root: <path>`). Một theme không hợp lệ (`Invalid theme (<path>):`), tùy chọn không hợp lệ (`Invalid options:`) hoặc cặp theme × options không hợp lệ (`Invalid theme/options:`), file config không hợp lệ (`Invalid config (<file>):` theo sau là từng dòng `path → message` cho mỗi lỗi, ví dụ `breakpoint` do gõ nhầm hoặc `extraSources` cho một key đã bị loại bỏ ở 7.0) hoặc lỗi ghi file sẽ giữ nguyên file output và thoát với mã 1. File config sai định dạng (không phải JSON) sẽ bị cảnh báo và các giá trị mặc định sẽ được dùng.
+Mã thoát: `0` thành công (cả với `--help`), `1` thất bại (theme, tùy chọn hoặc config không hợp lệ, lỗi ghi file, `--check` thấy file tokens thiếu hoặc khác).
+
+Dạng truyền vị trí `style-gen generate <theme> <out>` cũng hoạt động; các cờ được ưu tiên hơn. File được ghi một cách nguyên tử và **chỉ khi nội dung của nó có sự thay đổi** (chạy lại trên một theme chưa đổi sẽ không chạm vào file, giúp các file watcher không bị kích hoạt). `--theme` có thể trỏ ra ngoài dự án (một package design-system dùng chung); `--out` và `output` trong config phải nằm bên trong dự án (`output escapes project root: <path>`). Một theme không hợp lệ (`Invalid theme (<path>):`), tùy chọn không hợp lệ (`Invalid options:`) hoặc cặp theme × options không hợp lệ (`Invalid theme/options:`), file config không hợp lệ (`Invalid config (<file>):` theo sau là từng dòng `path → message` cho mỗi lỗi, ví dụ `breakpoint` do gõ nhầm) hoặc lỗi ghi file sẽ giữ nguyên file output và thoát với mã 1. File config sai định dạng (không phải JSON) sẽ bị cảnh báo và các giá trị mặc định sẽ được dùng.
 
 `--watch` sẽ chạy lại mỗi khi có thay đổi trong theme **và trong file config** (`style-gen.config.json`, hoặc `package.json` chứa nó). Config được đọc lại sau mỗi lần thay đổi, nhờ đó `output`, `breakpoints`, `resetTailwindDefaults` mới … được áp dụng mà không cần khởi động lại; chỉnh sửa config không hợp lệ sẽ được báo cáo và **config hợp lệ gần nhất vẫn giữ hiệu lực** cho đến khi file được sửa lại đúng. Một theme không thể đọc khi khởi động (file không tồn tại, là thư mục) hoặc config không hợp lệ khi khởi động sẽ thoát với mã 1 trước khi bất kỳ watcher nào bắt đầu; khi đang watch, lỗi theme hoặc lỗi ghi file sẽ được ghi log và quá trình watch vẫn tiếp tục.
 
@@ -148,6 +152,8 @@ Ghi JSON Schema của theme (từ `z.toJSONSchema(ThemeSchema)`) và của `styl
 | :------------- | :------- | :------------------------------------------------- | :---------------------------------------------------- |
 | `--out`        | `string` | `theme.schema.json` cạnh theme                     | File cho JSON Schema của theme; phải nằm trong dự án  |
 | `--config-out` | `string` | `style-gen.config.schema.json` ở thư mục gốc dự án | File cho JSON Schema của config; phải nằm trong dự án |
+
+Mã thoát: `0` thành công, `1` thất bại.
 
 Cả hai đường dẫn được kiểm tra trước khi ghi bất cứ thứ gì (`--config-out escapes project root: <path>`, mã thoát 1). JSON Schema của config không gồm các kiểm tra chéo giữa các giá trị được liệt kê ở mục [File cấu hình](#file-cấu-hình).
 
@@ -164,6 +170,8 @@ Kiểm tra thiết lập: file config (một `style-gen.config.json` hoặc `pac
 yarn style-gen doctor
 ```
 
+Mã thoát: `0` thành công, `1` khi có bất kỳ lỗi nào (cảnh báo vẫn giữ `0`). `doctor` không nhận cờ nào.
+
 ### `style-gen tokens`
 
 Ghi các **key** design token của theme (`DesignTokens.Web`: một mảng các camelCase key cho mỗi nhóm token, cộng thêm `opacities` (các bước của `coverage.colors.opacities`, tăng dần; `[]` khi không có tùy chọn), `breakpoints`, `screens` và `spacingProperties`) dưới dạng một module TypeScript, nhờ đó client bundle có thể import danh sách key mà không cần kèm theo runtime `./tokens` hay file theme JSON (khoảng 2.4 kB gzip khi đi chung, so với khoảng 0.6 kB cho các key được sinh ra).
@@ -172,6 +180,13 @@ Ghi các **key** design token của theme (`DesignTokens.Web`: một mảng các
 yarn style-gen tokens                                  # → styles/theme.tokens.ts (beside the configured output)
 yarn style-gen tokens --theme styles/theme.json --out src/theme.tokens.ts
 ```
+
+| Cờ        | Kiểu     | Mặc định                                                                     | Mô tả                                                                              |
+| :-------- | :------- | :--------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| `--theme` | `string` | `theme` trong `style-gen.config.json`, nếu không thì `styles/theme.json`     | Đường dẫn đến file theme JSON                                                      |
+| `--out`   | `string` | `tokensOutput` trong config, nếu không thì `theme.tokens.ts` cạnh CSS đầu ra | File cần ghi (`.ts`, `.mts` hoặc `.cts`, không phải `.d.ts`); phải nằm trong dự án |
+
+Mã thoát: `0` thành công, `1` thất bại.
 
 <!-- snippet: no-check imports the module `style-gen tokens` generates -->
 
@@ -190,7 +205,11 @@ Làm thất bại CI khi CSS sau khi build vượt quá ngân sách dung lượn
 yarn style-gen budget .next/static/css --max-gzip 14925
 ```
 
-Khi thành công nó in ra dòng tóm tắt `OK: …`; khi vượt ngân sách nó in `OVER BUDGET: …` và thoát với mã 1. Các mã thoát: `0` trong ngân sách, `1` vượt ngân sách, `2` lỗi cách dùng, target không đọc được hoặc không tìm thấy CSS. Cờ `--max-gzip` là bắt buộc. Lệnh này thay thế script `check-css-budget.mjs` mà trước đây consumer thường phải sao chép.
+| Cờ                   | Kiểu     | Mặc định | Mô tả                                                                                  |
+| :------------------- | :------- | :------- | :------------------------------------------------------------------------------------- |
+| `--max-gzip <bytes>` | `number` | bắt buộc | Ngân sách tính bằng byte; lệnh thoát với mã 1 khi tổng dung lượng gzip lớn hơn mức này |
+
+Khi thành công nó in ra dòng tóm tắt `OK: …`; khi vượt ngân sách nó in `OVER BUDGET: …` và thoát với mã 1. Các mã thoát: `0` trong ngân sách, `1` vượt ngân sách, `2` lỗi cách dùng, target không đọc được hoặc không tìm thấy CSS.
 
 ### `style-gen --version`
 
@@ -198,7 +217,7 @@ In ra phiên bản CLI đã cài đặt.
 
 ### Trợ giúp và mã thoát
 
-`style-gen --help` liệt kê các lệnh; `style-gen <command> --help` in ra các tùy chọn của lệnh đó. Các cờ được phân tích nghiêm ngặt: **cờ lạ là một lỗi** (`--them` không còn âm thầm quay về theme mặc định), và lệnh lạ cũng vậy. Mọi lệnh đều thoát với mã `0` khi thành công, khi gọi `--help`, `--version` hoặc khi hủy prompt, và thoát với mã `1` khi thất bại (`budget` dùng `2` cho lỗi sử dụng, xem ở trên).
+`style-gen --help` liệt kê các lệnh; `style-gen <command> --help` in ra các tùy chọn của lệnh đó. Các cờ được phân tích nghiêm ngặt: **cờ lạ là một lỗi** (`--them` bị từ chối thay vì âm thầm dùng theme mặc định), và lệnh lạ cũng vậy. Mọi lệnh đều thoát với mã `0` khi thành công, khi gọi `--help`, `--version` hoặc khi hủy prompt, và thoát với mã `1` khi thất bại (`budget` dùng `2` cho lỗi sử dụng, xem ở trên).
 
 ## File cấu hình
 
@@ -212,12 +231,12 @@ In ra phiên bản CLI đã cài đặt.
 ```
 
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` và `resetTailwindDefaults` được chuyển tiếp đến `generate()`.
-Bất kỳ key nào khác — một lỗi gõ nhầm như `breakpoint`, hoặc key mà một bản major trước đã gỡ (`plugin`, `extraSources`, `axes`) — đều bị từ chối;
-chỉ `$schema`, `theme`, `output` và `tokensOutput` được chấp nhận ngoài các key chuyển tiếp.
+Bất kỳ key nào khác (một lỗi gõ nhầm như `breakpoint`) đều bị từ chối kèm tên key; `style-gen schema` ghi JSON Schema của file này.
+Chỉ `$schema`, `theme`, `output` và `tokensOutput` được chấp nhận ngoài các key chuyển tiếp.
 `$schema` là con trỏ để editor tìm đến JSON Schema của config, không phải một thiết lập: hãy thêm `"$schema": "./style-gen.config.schema.json"` làm key đầu tiên (`style-gen schema` và `init` ghi file đó) thì editor sẽ gợi ý key và đánh dấu key lạ; key này được chấp nhận trong file, bị bỏ khi đọc và không bao giờ đến `generate()`.
 JSON Schema chỉ mô tả key và hình dạng giá trị. Nó không mang các kiểm tra so sánh giá trị với nhau (một entry của `breakpoints` phải trỏ tới một screen, `screens` phải dùng cùng một đơn vị sau khi gộp với mặc định, `coverage.<category>.prefixes` phải là tiền tố thật của nhóm đó), nên editor có thể chấp nhận một config mà `generate` và `doctor` từ chối.
 `tokensOutput` là đường dẫn của module tokens được sinh ra, tương đối so với thư mục gốc dự án và nằm bên trong đó (mặc định: `theme.tokens.ts` cạnh `output`); nó phải là file `.ts`, `.mts` hoặc `.cts`, không phải `.d.ts`.
-Một config vẫn còn `plugin`, `extraSources` hoặc `axes` bị từ chối như mọi key lạ khác (`<key> → Unrecognized key`): hãy tự xóa key đó. `style-gen init` gộp vào file như đang có và không bỏ hay báo key đó. Hãy khai báo các class tạo lúc runtime bằng `@source inline(...)` của riêng bạn cạnh dòng import file được sinh.
+Các class tạo lúc runtime được khai báo bằng `@source inline(...)` của riêng bạn cạnh dòng import file được sinh (xem [Tùy chọn](./options.md#class-được-tạo-lúc-runtime)).
 `styleGenVite()` và `styleGenNext()` khi gọi **không có đối số** sẽ đọc chính file này (xem [Vite](./vite.md) / [Next](./next.md)). CLI phân giải cấu hình theo thứ tự sau, cho từng key:
 
 1. các cờ của lệnh

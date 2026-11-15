@@ -3,9 +3,8 @@ import path from "node:path";
 import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { z } from "zod";
 
-import { StyleGenConfigFileSchema } from "../../node/loadStyleGenConfig";
+import { buildConfigJsonSchema } from "../configJsonSchema";
 import { logger } from "../logger";
 
 import { schemaCommand } from "./schema";
@@ -50,10 +49,11 @@ describe("schemaCommand", () => {
     );
   });
 
-  it("returns 1 and writes nothing when the config file has schema issues", () => {
+  // C-L6: an invalid config is when an upgrader needs the config schema most.
+  it("returns 1 and writes the config schema but no theme schema when the config file has schema issues", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
-      JSON.stringify({ theme: "custom/theme.json", breakpoint: ["xl"] }),
+      JSON.stringify({ theme: "custom/theme.json", extraSources: ["x"] }),
     );
     const errorSpy = vi
       .spyOn(logger, "error")
@@ -64,8 +64,50 @@ describe("schemaCommand", () => {
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringMatching(/^Invalid config \(style-gen\.config\.json\):/),
     );
+    expect(
+      JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.schema.json"), "utf8"),
+      ),
+    ).toEqual(buildConfigJsonSchema());
     expect(fs.existsSync(path.join(tmp, "custom"))).toBe(false);
     expect(fs.existsSync(path.join(tmp, "styles"))).toBe(false);
+  });
+
+  it("writes the config schema and warns when the config file is not valid JSON", () => {
+    fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "{ not json");
+    const warnSpy = vi
+      .spyOn(logger, "warn")
+      .mockImplementation(() => undefined);
+
+    expect(schemaCommand({}, tmp)).toBe(0);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^Ignoring style-gen\.config\.json is not valid JSON/,
+      ),
+    );
+    expect(fs.existsSync(path.join(tmp, "styles/theme.schema.json"))).toBe(
+      true,
+    );
+    expect(fs.existsSync(path.join(tmp, "style-gen.config.schema.json"))).toBe(
+      true,
+    );
+  });
+
+  it("writes both schemas with --out even when the config has a removed key (init merges it afterwards)", () => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify({ plugin: "plugins/theme-plugin.ts" }),
+    );
+
+    expect(schemaCommand({ out: "styles/theme.schema.json" }, tmp)).toBe(0);
+
+    expect(fs.existsSync(path.join(tmp, "styles/theme.schema.json"))).toBe(
+      true,
+    );
+    expect(fs.existsSync(path.join(tmp, "style-gen.config.schema.json"))).toBe(
+      true,
+    );
   });
 
   it("returns 1 when --out escapes the project root", () => {
@@ -109,7 +151,7 @@ describe("schemaCommand", () => {
       const written: unknown = JSON.parse(
         fs.readFileSync(path.join(tmp, "style-gen.config.schema.json"), "utf8"),
       );
-      expect(written).toEqual(z.toJSONSchema(StyleGenConfigFileSchema));
+      expect(written).toEqual(buildConfigJsonSchema());
       expect(written).toMatchObject({
         type: "object",
         additionalProperties: false,
@@ -145,6 +187,70 @@ describe("schemaCommand", () => {
       );
       expect(fs.existsSync(path.join(tmp, "t.schema.json"))).toBe(false);
       expect(fs.existsSync(path.join(tmp, "..", "x.json"))).toBe(false);
+    });
+  });
+
+  // C-L7: a target that is another target, or the theme file itself, would
+  // overwrite one document with the other.
+  describe("target collisions", () => {
+    it("returns 1 and writes nothing when --out and --config-out are the same file", () => {
+      const errorSpy = vi
+        .spyOn(logger, "error")
+        .mockImplementation(() => undefined);
+
+      expect(
+        schemaCommand(
+          { out: "gen/x.json", configOut: "./gen/../gen/x.json" },
+          tmp,
+        ),
+      ).toBe(1);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("--out and --config-out"),
+      );
+      expect(fs.existsSync(path.join(tmp, "gen"))).toBe(false);
+    });
+
+    it.each([
+      ["--out", { out: "styles/theme.json" }],
+      [
+        "--config-out",
+        { out: "t.schema.json", configOut: "styles/theme.json" },
+      ],
+    ])("returns 1 and keeps the theme file when %s names it", (flag, args) => {
+      fs.mkdirSync(path.join(tmp, "styles"));
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), '{"colors":{}}');
+      const errorSpy = vi
+        .spyOn(logger, "error")
+        .mockImplementation(() => undefined);
+
+      expect(schemaCommand(args, tmp)).toBe(1);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`${flag} would overwrite the theme file`),
+      );
+      expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
+        '{"colors":{}}',
+      );
+      expect(fs.existsSync(path.join(tmp, "t.schema.json"))).toBe(false);
+      expect(
+        fs.existsSync(path.join(tmp, "style-gen.config.schema.json")),
+      ).toBe(false);
+    });
+
+    it("returns 1 when a theme named theme.schema.json would receive its own schema", () => {
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({ theme: "theme.schema.json" }),
+      );
+      fs.writeFileSync(path.join(tmp, "theme.schema.json"), '{"colors":{}}');
+      vi.spyOn(logger, "error").mockImplementation(() => undefined);
+
+      expect(schemaCommand({}, tmp)).toBe(1);
+
+      expect(fs.readFileSync(path.join(tmp, "theme.schema.json"), "utf8")).toBe(
+        '{"colors":{}}',
+      );
     });
   });
 });

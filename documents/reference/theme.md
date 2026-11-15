@@ -170,8 +170,6 @@ Rules:
 | compound `[data-theme="dark"][data-palette="…"]`     | cross-axis override (dark × a specific palette)                                        | Hand-written CSS: its `(0,2,0)` specificity beats either single-axis `html[data-…]` rule `(0,1,1)` regardless of source order                                                                        |
 | `voice`, `geometry`, `surface` (`style-guide.css`)   | `--f-sans`, `--radius-sm`, `--shadow-sm`, and a nested `.x-sg-glass-target` child rule | Hand-written CSS: variables outside `--sg-*` and nested-child selectors are not representable by a theme override (see [`examples/design-system/README.md`](../../examples/design-system/README.md)) |
 
-The old single-axis key was renamed; a theme still using it is rejected with a message pointing at `themeAxes`. See the [migration guide](../migration/3.x-to-4.0.md) for the exact message and the rewrite.
-
 ## The `--sg-*` intermediate variables
 
 `--sg-*` is an intermediate layer: it exists to break the circular reference that appears when a theme switches a variable that `@theme inline` also defines.
@@ -206,7 +204,7 @@ Prefer standard Tailwind classes and the `--color-*` variables in application co
 }
 ```
 
-**Public contract.** The variables the generator emits (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, and the inline `--sg-sp-*` spacing variables) are part of the public output: aliases resolve to them, and hand-written CSS may read or override them. Renaming one is a breaking change — 5.0 renamed the color variables from `--sg-<color>` to `--sg-color-<key>`. `style-gen doctor` warns (`file:line`) about leftover `var(--sg-<colorKey>)` references or `--sg-<colorKey>:` declarations; see the [4.x → 5.0 guide](../migration/4.x-to-5.0.md).
+**Public contract.** The variables the generator emits (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, and the inline `--sg-sp-*` spacing variables) are part of the public output: aliases resolve to them, and hand-written CSS may read or override them. Renaming one is a breaking change.
 
 ## Built-in utility name clashes
 

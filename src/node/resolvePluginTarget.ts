@@ -20,9 +20,9 @@ const PluginRootOptionsSchema = z.strictObject({
 
 /**
  * Validate the options object of `styleGenVite()` / `styleGenNext()`. Only
- * `root` exists since 8.0; a JS caller (`next.config.mjs` has no type check)
- * that still passes `themePath`, `outDir` or `options` gets an error that
- * names the key and points at the migration guide.
+ * `root` exists; a JS caller (`next.config.mjs` has no type check) that
+ * passes `themePath`, `outDir` or `options` gets an error that names the key
+ * and points at the migration guide.
  * @param {unknown} opts - What the caller passed
  * @param {string} label - Integration name for messages (`"style-gen-vite"`)
  * @returns {PluginRootOptions} The validated options

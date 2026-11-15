@@ -160,7 +160,7 @@ describe("styleGenVite plugin", () => {
     });
   });
 
-  it("rejects the removed 7.x options when the plugin is created, naming the key and the migration guide", () => {
+  it("rejects the former plugin options when the plugin is created, naming the key and the migration guide", () => {
     for (const removed of ["themePath", "outDir", "options"]) {
       expect(() => styleGenVite({ [removed]: "x" } as never)).toThrow(
         new RegExp(

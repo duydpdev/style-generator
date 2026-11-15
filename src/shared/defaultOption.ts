@@ -49,10 +49,10 @@ export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
 /**
  * Breakpoint keys used when `options.breakpoints` is not set — the single
  * default shared by the `@source inline` responsive variants, the spacing
- * `@media` chains, and `DesignTokens.Web.breakpoints`. `md`/`lg` match the
- * only responsive variants the pre-v4 baseline emitted
- * (89 `md:` + 89 `lg:`
- * classes, no `sm:`/`xl:`/`2xl:`).
+ * `@media` chains, and `DesignTokens.Web.breakpoints`. `md`/`lg` are the
+ * only responsive variants the `@source inline` lines emit (no
+ * `sm:`/`xl:`/`2xl:`); defaulting to every `screens` key would advertise
+ * breakpoints no line covers.
  */
 export const DEFAULT_BREAKPOINTS = ["md", "lg"] as const;
 

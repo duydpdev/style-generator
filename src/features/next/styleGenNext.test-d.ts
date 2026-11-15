@@ -29,7 +29,7 @@ describe("styleGenNext resolved config type", () => {
     ).toEqualTypeOf<{
       reactStrictMode: boolean;
     }>();
-    // @ts-expect-error `themePath` was removed in 8.0: it lives in style-gen.config.json
+    // @ts-expect-error `themePath` is not an option: it lives in style-gen.config.json
     styleGenNext({ themePath: "theme.json" });
   });
 });

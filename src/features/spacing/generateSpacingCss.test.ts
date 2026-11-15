@@ -77,7 +77,7 @@ const parseProperties = (
 };
 
 describe("generateSpacingCss", () => {
-  it("contains no `*` selector and no @layer base (D8 fix)", () => {
+  it("contains no `*` selector and no @layer base", () => {
     const css = generateSpacingCss(fixtureOptions);
     expect(css).not.toMatch(/(^|[\s,{}])\*\s*[,{]/);
     expect(css).not.toMatch(/@layer base/);

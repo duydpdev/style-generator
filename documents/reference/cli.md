@@ -8,14 +8,11 @@ The `style-gen` command-line tool: `init`, `generate`, `schema`, `doctor`, `toke
 
 ### `style-gen init`
 
-> **Changed in 5.2.0:** `init` no longer scaffolds `plugins/theme-plugin.ts`, no longer asks for a generator-script location and rejects `--plugin` (unknown option, exit code 1); it prints the bundler wiring below instead and stops writing `plugin` into `style-gen.config.json`. Since 6.0.0 a config that still has `plugin` is rejected like any unknown key (`doctor` stops with `plugin → Unrecognized key: "plugin"`), and `init` drops the key while merging. To migrate, add the printed snippet to your bundler config (or run `style-gen generate`), then delete the script and the `plugin` key.
-
 Scaffold the theme JSON, its JSON Schema, `style-gen.config.json` and the config's JSON Schema, then print how to wire them into your stack. `init` never edits a bundler config.
 
 The wizard asks for the theme file location and whether to include a dark-mode template. Without a terminal, or to skip the wizard: `yarn style-gen init --dark`, `--theme`, or `--yes`.
 It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), `style-gen.config.json` and `style-gen.config.schema.json` (for the config's `"$schema"`, which `init` adds as the first key of the config)
-(merging `theme`, `output` and `$schema` into an existing config and keeping its other keys, including a `$schema` it already has, but dropping a `plugin` key, which 6.0 no longer accepts, and the `extraSources` and `axes` keys, which 7.0 no longer accepts).
-For each dropped key it prints ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` or `7.0`), and for `extraSources` it also prints one `@source inline("<entry>");` line per entry to paste into the app's CSS.
+(merging `theme`, `output` and `$schema` into an existing config and keeping its other keys as they are, including a `$schema` it already has).
 If the theme or either schema file already exists, it asks before overwriting (non-interactive: exits with code 1; with `--yes`: keeps the files and exits 0).
 
 It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the CSS lines (two `@import` lines, plus `@source not "<path>/.claude";` when the [agent rules](#agent-rules) file exists):
@@ -161,8 +158,6 @@ yarn style-gen schema --out styles/theme.schema.json --config-out style-gen.conf
 
 Check the setup: config file (a malformed `style-gen.config.json` or `package.json["style-gen"]` is an error — `generate` warns and uses the defaults — and so is a schema-invalid one: config keys and option values are validated with the same schema as `generate()`, so both commands give the same verdict, and `doctor` prints `Config (<file>) ❌ Invalid` followed by the issues; **a config error stops `doctor` there**, because every later check would run against the wrong defaults), JSON syntax, `ThemeSchema` validation (each issue printed as `path → message`), **the theme × options pair** (`❌ Invalid theme/options`: `resetTailwindDefaults: ["radius"]` without `borderRadius`, …), and the output file. A theme outside the project is fine; a configured `output` that escapes the project root is an error. It also prints warnings — never errors — for schema-valid keys that collide with a Tailwind utility (for example `none` in `colors`/`shadows`/`borderRadius`, digit-only `borderWidth` keys, `colors` keys whose `ring-`/`outline-`/`divide-` class is a Tailwind static (`inset` → `ring-inset`, `solid` → `outline-solid`, `xReverse` → `divide-x-reverse`) or an integer width/offset (`3` → `ring-3`, `offset2` → `ring-offset-2`), or typography keys such as `textSm`, `h1` → `h-1`, `italic`), and an **alias hint** for every `themeAxes` override whose literal value repeats the value of a different base key of the same category (`Override theme.dark.colors.surface repeats base value #fff → use alias "$white"`): an alias follows the primitive when the base palette changes, a repeated literal does not.
 
-It also scans the source files under the current directory (`.css`, `.scss`, `.ts`, `.tsx`, `.vue`, `.svelte`, `.astro`, `.html`, …) and warns `file:line` about leftover pre-5.0 color variables; build folders, `node_modules`, the config `output` file and files over 1 MiB are skipped.
-
 ```bash
 yarn style-gen doctor
 ```
@@ -215,13 +210,12 @@ Print the installed CLI version.
 ```
 
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` and `resetTailwindDefaults` are forwarded to `generate()`.
-Any other key — a typo such as `breakpoint`, a legacy 3.x key such as `responsiveModules`, or a key removed in 7.0 (`extraSources`, `axes`; see the [migration guide](../migration/6.x-to-7.0.md)) — is rejected;
+Any other key — a typo such as `breakpoint`, or one an earlier major removed (`plugin`, `extraSources`, `axes`) — is rejected;
 only `$schema`, `theme`, `output` and `tokensOutput` are accepted besides the forwarded keys.
 `$schema` is the editor's pointer to the config's JSON Schema, not a setting: add `"$schema": "./style-gen.config.schema.json"` as the first key (`style-gen schema` and `init` write that file) and the editor suggests keys and flags unknown ones; the key is accepted in the file, dropped on read and never reaches `generate()`.
 The JSON Schema describes keys and value shapes only. It does not carry the checks that compare values with each other (a `breakpoints` entry must name a screen, `screens` must share one unit after merging with the defaults, `coverage.<category>.prefixes` must be real prefixes of that category), so an editor can accept a config that `generate` and `doctor` reject.
 `tokensOutput` is the path of the generated tokens module, relative to the project root and inside it (default: `theme.tokens.ts` beside `output`); it must name a `.ts`, `.mts` or `.cts` file, not a `.d.ts`.
-`plugin`, which `init` wrote before 5.2.0 to name the generator script it scaffolded, has been rejected since 6.0.0 (delete it, or run `style-gen init`, which drops it);
-`extraSources` and `axes` have been rejected since 7.0.0, and `style-gen init` drops them too (it prints each `extraSources` entry as an `@source inline("<entry>");` line to paste into the app's CSS).
+A config that still has `plugin`, `extraSources` or `axes` is rejected like any unknown key (`<key> → Unrecognized key`): delete the key by hand. `style-gen init` merges into the file as written and neither drops nor reports it. Declare classes built at runtime with your own `@source inline(...)` next to the generated import.
 `styleGenVite()` and `styleGenNext()` called **without an argument** read this same file (see [Vite](./vite.md) / [Next](./next.md)). The CLI resolves configuration in this order, per key:
 
 1. command flags

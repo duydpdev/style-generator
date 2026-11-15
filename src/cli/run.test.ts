@@ -126,7 +126,7 @@ describe("runCli", () => {
       expect(generateCommand).not.toHaveBeenCalled();
     });
 
-    it("rejects init's removed --plugin flag and no longer lists it", async () => {
+    it("rejects init's unknown --plugin flag and does not list it", async () => {
       expect(await runCli(["init", "--plugin", "p.ts"], CWD)).toBe(1);
       expect(initCommand).not.toHaveBeenCalled();
       expect(vi.mocked(logger.error).mock.calls[0]?.[0]).toContain("--plugin");

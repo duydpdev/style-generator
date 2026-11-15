@@ -51,7 +51,7 @@ describe("loadStyleGenConfig", () => {
     expect(loaded.source).toBeUndefined();
   });
 
-  it("rejects the `plugin` key removed in 6.0 and merges nothing from the file", () => {
+  it("rejects the `plugin` key and merges nothing from the file", () => {
     fs.writeFileSync(
       path.join(tmp, "style-gen.config.json"),
       JSON.stringify({

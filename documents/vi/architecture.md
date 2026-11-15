@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 6f63e6f78f33 -->
+<!-- source: documents/architecture.md sha256: 6fedd7b46fc9 -->
 
 # Kiến trúc
 
@@ -218,9 +218,9 @@ và một config không hợp lệ chỉ bị báo (giai đoạn `config`) trong
 `init` (`src/cli/commands/init.ts`) ghi theme, `theme.schema.json` cạnh nó và JSON Schema của config, nhận diện stack bằng `detectStack` (`src/cli/commands/detectStack.ts`:
 file đầu tiên trong số `nuxt.config.*`, `next.config.*`, `vite.config.*` ở thư mục gốc của dự án, theo thứ tự đó) và in đoạn mã bundler từ `src/cli/templates.ts`
 (`getBundlerSnippet`: `styleGenVite()`/`styleGenNext()` không đối số, đường dẫn tuyệt đối và `options` cho Nuxt) cùng các dòng CSS `@import`,
-hoặc phương án dự phòng `style-gen generate`; mọi đường dẫn được in hay lưu đều là POSIX tương đối so với repo; nó không bao giờ sửa config của bundler và, từ 5.2.0,
+hoặc phương án dự phòng `style-gen generate`; mọi đường dẫn được in hay lưu đều là POSIX tương đối so với repo; nó không bao giờ sửa config của bundler và
 không tạo sẵn script generator; nó gộp `theme`/`output` vào một `style-gen.config.json` có sẵn, hoặc vào một bản sao của `package.json["style-gen"]` khi file đó chưa tồn tại (một
-file mới được ưu tiên hơn phần đó), giữ lại các key khác (key `plugin` bị bỏ: 6.0 từ chối nó) và đọc config trước khi ghi bất cứ thứ gì;
+file mới được ưu tiên hơn phần đó), giữ nguyên các key khác và đọc config trước khi ghi bất cứ thứ gì;
 một `theme.schema.json` hoặc `style-gen.config.schema.json` có sẵn được coi như một file có sẵn (nó hỏi trước khi ghi đè; ở chế độ không tương tác thì thoát với mã 1; `--yes` giữ nguyên mọi file có sẵn và thoát với mã 0 mà không hỏi);
 config nó ghi có `"$schema": "./style-gen.config.schema.json"` làm key đầu tiên, trừ khi nó đã có sẵn một key `$schema`.
 `schema` không có `--out` đọc config giống `generate` (một config vi phạm schema → mã thoát 1, không ghi gì) rồi ghi `theme.schema.json` vào thư mục của `theme` đã phân giải (qua
@@ -232,10 +232,6 @@ hai dòng tóm tắt `OK: …`/`OVER BUDGET: …` là một hợp đồng ổn �
 (`❌ Invalid theme/options`), coi một `output` thoát ra ngoài thư mục gốc là lỗi, và in cảnh báo (không đổi mã thoát) khi một key trùng với một utility của Tailwind
 (`src/cli/commands/utilityCollisions.ts`, danh sách được đối chiếu với trình biên dịch thật trong `src/__integration__/utility-collisions.test.ts`) hoặc khi một override của
 `themeAxes` lặp lại literal của một key khác trong base (gợi ý dùng `$alias`, `src/cli/commands/aliasHints.ts`).
-
-Ngoài việc kiểm tra config/theme, `doctor` còn quét các file nguồn (`.css/.scss/.ts/.tsx/.vue/.svelte/.astro/.html`,
-…) dưới thư mục hiện tại để cảnh báo kèm `file:line` về các biến `--sg-<color>` kiểu 4.x còn sót lại (`src/cli/commands/legacyColorVars.ts`): nó bỏ qua `node_modules`, `.git`,
-các thư mục build (`dist`, `build`, `out`, `.next`, `.nuxt`, `.output`, …), file output của config và các file > 1 MiB; nó không đi theo symlink; nó không đổi mã thoát.
 
 ### Recipe (`./recipes`)
 

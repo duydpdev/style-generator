@@ -215,9 +215,9 @@ and an invalid config is only reported (stage `config`) while **the last valid c
 `init` (`src/cli/commands/init.ts`) writes the theme, `theme.schema.json` next to it and the config's JSON Schema, detects the stack with `detectStack` (`src/cli/commands/detectStack.ts`:
 the first file `nuxt.config.*`, `next.config.*`, `vite.config.*` in the project root, in that order) and prints the bundler snippet from `src/cli/templates.ts`
 (`getBundlerSnippet`: no-argument `styleGenVite()`/`styleGenNext()`, absolute paths and `options` for Nuxt) plus the CSS `@import` lines, or the `style-gen generate` fallback;
-every printed or stored path is repo-relative POSIX; it never edits a bundler config and, since 5.2.0, scaffolds no generator script;
+every printed or stored path is repo-relative POSIX; it never edits a bundler config and scaffolds no generator script;
 it merges `theme`/`output` into an existing `style-gen.config.json`, or into a copy of `package.json["style-gen"]` when that file does not exist (a new file takes precedence over
-that section), keeps the other keys (a `plugin` key is dropped: 6.0 rejects it) and reads the config before writing anything;
+that section), keeps the other keys as they are and reads the config before writing anything;
 an existing `theme.schema.json` or `style-gen.config.schema.json` is treated as an existing file (it asks before overwriting; non-interactive exits with code 1; `--yes` keeps every existing file and exits 0 without prompting);
 the config it writes gets `"$schema": "./style-gen.config.schema.json"` as its first key unless it already has one.
 `schema` without `--out` reads the config like `generate` (a config that violates the schema → exit code 1,
@@ -230,11 +230,6 @@ the two summary lines `OK: …`/`OVER BUDGET: …` are a stable contract for con
 errors (`❌ Invalid theme/options`), treats an `output` that escapes the root as an error, and prints warnings (without changing the exit code) when a key collides with a Tailwind
 utility (`src/cli/commands/utilityCollisions.ts`, the list is verified against the real compiler in `src/__integration__/utility-collisions.test.ts`) or when a `themeAxes` override
 repeats the literal of another key in the base (suggesting `$alias`, `src/cli/commands/aliasHints.ts`).
-
-Besides checking the config/theme, `doctor` also scans source files (`.css/.scss/.ts/.tsx/.vue/.svelte/.astro/.html`,
-…) under the current directory to warn with `file:line` about leftover 4.x-style `--sg-<color>` variables (`src/cli/commands/legacyColorVars.ts`): it skips `node_modules`, `.git`,
-build directories (`dist`, `build`, `out`, `.next`, `.nuxt`, `.output`, …), the config's output file and files > 1 MiB; it does not follow symlinks;
-it does not change the exit code.
 
 ### Recipes (`./recipes`)
 

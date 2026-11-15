@@ -243,7 +243,7 @@ yarn style-gen init                 # scaffold theme + theme.schema.json + style
 yarn style-gen init --yes           # same without prompts (CI, coding agents); never overwrites an existing file
 yarn style-gen generate             # writes styles/theme.css
 yarn style-gen generate --watch     # regenerates when theme or style-gen.config.json is saved
-yarn style-gen doctor               # checks config, schema, theme × options; warns about utility collisions, suggests $alias and flags leftover 4.x-style --sg-<color> variables (scans source files under the current directory)
+yarn style-gen doctor               # checks config, schema, theme × options; warns about utility collisions and suggests $alias
 yarn style-gen schema               # writes theme.schema.json next to the theme and style-gen.config.schema.json in the project root
 yarn style-gen tokens               # writes theme.tokens.ts: only the DesignTokens.Web keys, for client bundles
 yarn style-gen budget .next/static/css --max-gzip 14925   # CI: fail when built CSS exceeds the gzip budget
@@ -440,8 +440,6 @@ Rules to remember:
 `--sg-*` is an intermediate variable layer that avoids reference cycles when switching themes. In application code,
 prefer standard Tailwind classes (`bg-primary`) or `var(--color-primary)`. The variables the library emits (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …,
 and spacing's `--sg-sp-*`) are public output: aliases point into them and hand-written CSS may read or override them; renaming one is a breaking change.
-Version 5.0 renamed the color variables from `--sg-<color>` to `--sg-color-<key>`; `style-gen doctor` warns with `file:line` for every leftover `var(--sg-<colorKey>)` or
-`--sg-<colorKey>:` declaration (see [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)).
 
 ---
 
@@ -784,5 +782,4 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 - **3.x → 4.0.0** (breaking: Tailwind v4 only, `generate()` replaces the plugin + safelist, strict schema, `themeAxes`, `borderWidth`, `--sg-sp-*`):
   [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), including a before/after table and a rollback runbook.
 - The 3.x subpath exports rollout (historical, still carries the `moduleResolution` requirement): [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md).
-- The single-axis `themes` key was renamed to `themeAxes`; a theme that still uses the old name is rejected with a message explaining the rename (verbatim in the migration guide).
 - Older majors: 2 → 3 removed nested color objects and the `DEFAULT` key (only flat camelCase keys remain); 1 → 2 flattened the `base`/`text`/`common` color groups.

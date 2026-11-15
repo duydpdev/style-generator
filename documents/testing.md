@@ -141,10 +141,9 @@ Tests sit next to the code (`*.test.ts`). The main groups:
   an invalid config keeps the last valid one), `resolvePluginTarget`, `writeFileAtomic`, `errorMessage`, `isPlainObject`.
 - `src/cli/*` — `run.test.ts` calls `runCli(args, cwd)` directly (registry, per-command `--help`, unknown flag → code 1,
   `budget` invalid flag → code 2) because commands return an exit code rather than calling `process.exit`; `index.test.ts` only checks `process.exitCode`; `init`,
-  `generate` (including `--watch` with a real chokidar and a test that edits the config while watching, V5-06), `schema`,
+  `generate` (including `--watch` with a real chokidar and a test that edits the config while watching), `schema`,
   `tokens` (the generated module is re-imported and compared with `createDesignTokens`), `budget` (measures gzip on temporary files/directories, three exit codes,
-  the two `OK:`/`OVER BUDGET:` lines), `doctor` (utility collision warnings, `aliasHints`, theme × options errors, an invalid config stops early;
-  `legacyColorVars` scans for 4.x-style `--sg-<color>` variables in a temporary directory).
+  the two `OK:`/`OVER BUDGET:` lines), `doctor` (utility collision warnings, `aliasHints`, theme × options errors, an invalid config stops early).
 - `src/shared/*` — `helpers` (kebab/camel), `axisAttributeName`, `cssBlock`.
 
 Coverage uses the v8 provider with `include: ["src/**/*.ts"]`, so a file that no test imports (e.g. `src/cli/index.ts`) still shows up at 0 % instead of being skipped.

@@ -68,14 +68,14 @@ describe("subpath exports — symbols match their implementations", () => {
     >();
   });
 
-  it("symbols moved off the root in 6.0 are gone from it", () => {
-    // @ts-expect-error removed from the root in 6.0: import from `/tokens`
+  it("Breakpoint, defaultScreens, createVariantMapper and resolveSpacing are not exported from the root", () => {
+    // @ts-expect-error not on the root: import from `/tokens`
     type Breakpoint = root.Breakpoint;
-    // @ts-expect-error removed from the root in 6.0: import from `/tokens`
+    // @ts-expect-error not on the root: import from `/tokens`
     type DefaultScreens = typeof root.defaultScreens;
-    // @ts-expect-error removed from the root in 6.0: import from `/cva`
+    // @ts-expect-error not on the root: import from `/cva`
     type CreateVariantMapper = typeof root.createVariantMapper;
-    // @ts-expect-error removed from the root in 6.0: import from `/spacing`
+    // @ts-expect-error not on the root: import from `/spacing`
     type ResolveSpacing = typeof root.resolveSpacing;
     expectTypeOf<
       [Breakpoint, DefaultScreens, CreateVariantMapper, ResolveSpacing]
@@ -95,7 +95,7 @@ describe("subpath exports — symbols match their implementations", () => {
     type SpacingResponsive = spacing.ResponsiveValueStrict<number>;
     // @ts-expect-error `SpacingKey` lives in `/types` only
     type SpacingSpacingKey = spacing.SpacingKey;
-    // @ts-expect-error removed in 8.0: use `splitSpacingProps` or `splitSpacing`
+    // @ts-expect-error not exported: use `splitSpacingProps` or `splitSpacing`
     type ResolveSpacingProps = typeof spacing.resolveSpacingProps;
     expectTypeOf<
       [
@@ -242,12 +242,12 @@ describe("subpath exports — symbols match their implementations", () => {
     >().toEqualTypeOf<"loud">();
   });
 
-  it("removed 4.x helper VariantMapperStatesOptions is gone from every subpath", () => {
-    // @ts-expect-error removed in 5.0: `{ states }` is passed inline
+  it("VariantMapperStatesOptions is exported from no subpath", () => {
+    // @ts-expect-error not exported: `{ states }` is passed inline
     type FromCva = cva.VariantMapperStatesOptions;
-    // @ts-expect-error removed in 5.0
+    // @ts-expect-error not exported
     type FromRoot = root.VariantMapperStatesOptions;
-    // @ts-expect-error removed in 5.0
+    // @ts-expect-error not exported
     type FromTypes = types.VariantMapperStatesOptions;
     expectTypeOf<[FromCva, FromRoot, FromTypes]>().not.toBeAny();
   });

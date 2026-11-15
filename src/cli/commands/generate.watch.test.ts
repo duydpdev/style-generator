@@ -168,7 +168,7 @@ describe("generateCommand", () => {
     );
 
     it(
-      "watch mode keeps running and keeps the last valid config when the config file becomes invalid (V5-06)",
+      "watch mode keeps running and keeps the last valid config when the config file becomes invalid",
       { timeout: 15_000 },
       async () => {
         write("styles/theme.json", sampleTheme);

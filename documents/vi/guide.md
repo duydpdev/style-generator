@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: d507f991ee76 -->
+<!-- source: documents/guide.md sha256: 1b8789ac76d3 -->
 
 # Hướng dẫn sử dụng
 
@@ -249,7 +249,7 @@ yarn style-gen init                 # scaffold theme + theme.schema.json + style
 yarn style-gen init --yes           # same without prompts (CI, coding agents); never overwrites an existing file
 yarn style-gen generate             # writes styles/theme.css
 yarn style-gen generate --watch     # regenerates when theme or style-gen.config.json is saved
-yarn style-gen doctor               # checks config, schema, theme × options; warns about utility collisions, suggests $alias and flags leftover 4.x-style --sg-<color> variables (scans source files under the current directory)
+yarn style-gen doctor               # checks config, schema, theme × options; warns about utility collisions and suggests $alias
 yarn style-gen schema               # writes theme.schema.json next to the theme and style-gen.config.schema.json in the project root
 yarn style-gen tokens               # writes theme.tokens.ts: only the DesignTokens.Web keys, for client bundles
 yarn style-gen budget .next/static/css --max-gzip 14925   # CI: fail when built CSS exceeds the gzip budget
@@ -448,8 +448,6 @@ Các quy tắc cần nhớ:
 `--sg-*` là một lớp biến trung gian giúp tránh tham chiếu vòng khi chuyển theme. Trong mã ứng dụng, hãy ưu tiên các class Tailwind chuẩn (`bg-primary`) hoặc `var(--color-primary)`.
 Các biến mà thư viện phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, …, và `--sg-sp-*` của spacing) là đầu ra công khai:
 alias trỏ vào chúng và CSS viết tay có thể đọc hoặc override chúng; đổi tên một biến là thay đổi phá vỡ tương thích (breaking change).
-Phiên bản 5.0 đã đổi tên các biến màu từ `--sg-<color>` sang `--sg-color-<key>`; `style-gen doctor` cảnh báo kèm `file:line` cho mọi `var(--sg-<colorKey>)` hoặc khai báo
-`--sg-<colorKey>:` còn sót lại (xem [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)).
 
 ---
 
@@ -792,5 +790,4 @@ export type ResponsiveValue<T> = ResponsiveValueStrict<T, AppBreakpoints>;
 - **3.x → 4.0.0** (thay đổi phá vỡ tương thích (breaking change): chỉ Tailwind v4, `generate()` thay thế plugin + safelist, schema chặt chẽ, `themeAxes`, `borderWidth`,
   `--sg-sp-*`): [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md), gồm một bảng trước/sau và một runbook rollback.
 - Đợt triển khai subpath export của 3.x (mang tính lịch sử, vẫn mang yêu cầu về `moduleResolution`): [`migration/3.x-subpath-exports.md`](../migration/3.x-subpath-exports.md).
-- Key `themes` một trục đã được đổi tên thành `themeAxes`; một theme vẫn dùng tên cũ bị từ chối kèm một thông báo giải thích việc đổi tên (nguyên văn trong hướng dẫn nâng cấp).
 - Các phiên bản major cũ hơn: 2 → 3 loại bỏ các object color lồng nhau và key `DEFAULT` (chỉ còn các key camelCase phẳng); 1 → 2 làm phẳng các nhóm color `base`/`text`/`common`.

@@ -32,7 +32,7 @@ const declsOf = (css: string, selector: string): Map<string, string> => {
  *   - data-theme override block emits when `themeAxes` set (html-pinned)
  *   - bg-/text- color utilities resolve to var() refs
  *   - generated CSS contains no raw error markers
- *   - no `*` selector rule redeclares a spacing var (D8 fix regression guard)
+ *   - no `*` selector rule redeclares a spacing var
  *   - `@source inline` makes every `sp-*` utility appear with an empty
  *     candidate list, and disappear again without it (negative control)
  *
@@ -75,15 +75,15 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     expect(css).not.toMatch(/error|undefined/i);
   });
 
-  it("compiled CSS never redeclares a spacing var inside a `*` selector rule (D8 fix, AC12)", async () => {
+  it("compiled CSS never redeclares a spacing var inside a `*` selector rule", async () => {
     // Tailwind's own Preflight (`*, ::after, ::before, ... { box-sizing: ... }`)
     // and its `@property` browser-compat polyfill (`@layer properties { ...
     // *, ::before, ::after, ::backdrop { --x: initial } ... }`) are expected
     // framework `*` rules, unrelated to spacing — the polyfill is excluded
     // below since it is nested inside `@layer properties` specifically. The
-    // D8 bug this guards against is a `*` rule declaring an old `tw-sp-*`,
-    // `sp-*`, or new `sg-sp-*` spacing custom property anywhere else — that
-    // pattern must never reappear under any other selector, in any layer.
+    // regression this guards against is a `*` rule declaring a `tw-sp-*`,
+    // `sp-*`, or `sg-sp-*` spacing custom property anywhere else — that
+    // pattern must never appear under any other selector, in any layer.
     const css = await buildCss();
     const root = postcss.parse(css);
 

@@ -1,4 +1,4 @@
-<!-- source: documents/troubleshooting.md sha256: 5b27d1b1285a -->
+<!-- source: documents/troubleshooting.md sha256: 15c6d139b9d5 -->
 
 # Khắc phục sự cố
 
@@ -79,7 +79,7 @@ Trang nâng cấp liệt kê mọi lần đổi tên cùng ví dụ trước và
 
 ## Không tìm thấy config
 
-`No style-gen.config.json or package.json#style-gen found in <directory>; using the defaults.` là một dòng thông tin, không phải lỗi. `styleGenVite()` và `styleGenNext()` in nó một lần lúc khởi động (kèm tiền tố `[style-gen-vite]` hoặc `[style-gen-next]`), còn `style-gen generate` in nó trước `Run: yarn style-gen init` khi theme bị thiếu. Thư mục đó là nơi config được tìm: root của Vite, `process.cwd()` với Next.js, hoặc `root` của plugin. Một thư mục sai (Nuxt 4 đặt root của Vite là `app/`) trông y hệt một dự án không có config: hãy truyền `root` ([Only { root } is accepted](#only--root--is-accepted)), hoặc chạy `yarn style-gen init` để ghi config.
+`No style-gen.config.json or package.json#style-gen found in <directory>; using the defaults.` là một dòng thông tin, không phải lỗi. `styleGenVite()` và `styleGenNext()` in nó một lần cho mỗi dev server hoặc tiến trình build (kèm tiền tố `[style-gen-vite]` hoặc `[style-gen-next]`; Next.js đánh giá config trong nhiều tiến trình worker, và mỗi tiến trình in nó một lần), còn `style-gen generate` in nó trước `Run: yarn style-gen init` khi theme bị thiếu. Thư mục đó là nơi config được tìm: root của Vite, `process.cwd()` với Next.js, hoặc `root` của plugin. Một thư mục sai (Nuxt 4 đặt root của Vite là `app/`) trông y hệt một dự án không có config: hãy truyền `root` ([Only { root } is accepted](#only--root--is-accepted)), hoặc chạy `yarn style-gen init` để ghi config.
 
 ## must be a .ts, .mts or .cts file
 

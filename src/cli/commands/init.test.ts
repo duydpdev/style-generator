@@ -646,6 +646,48 @@ describe("initCommand", () => {
       expect(fs.existsSync(path.join(tmp, "styles/theme.css"))).toBe(true);
     });
 
+    it("FR-1: keeps a theme at the generate default when `src/` exists, so `generate` still reads it", async () => {
+      fs.mkdirSync(path.join(tmp, "src"));
+      fs.mkdirSync(path.join(tmp, "styles"));
+      const theme = JSON.stringify({ colors: { zebraStripe: "#123456" } });
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), theme);
+
+      expect(await run({ yes: true }, tmp)).toBe(0);
+
+      expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
+        theme,
+      );
+      expect(fs.existsSync(path.join(tmp, "src/styles"))).toBe(false);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ),
+      ).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
+        theme: "styles/theme.json",
+        output: "styles/theme.css",
+      });
+
+      expect(await runCli(["generate"], tmp)).toBe(0);
+      expect(
+        fs.readFileSync(path.join(tmp, "styles/theme.css"), "utf8"),
+      ).toContain("zebra-stripe");
+    });
+
+    it("FR-1: an explicit --theme still wins over a theme at the generate default", async () => {
+      fs.mkdirSync(path.join(tmp, "styles"));
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), "{}");
+
+      expect(await run({ yes: true, theme: "a/theme.json" }, tmp)).toBe(0);
+
+      expect(fs.existsSync(path.join(tmp, "a/theme.json"))).toBe(true);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ),
+      ).toMatchObject({ theme: "a/theme.json", output: "a/theme.css" });
+    });
+
     describe("an existing config (C-H1)", () => {
       const CONFIG = "style-gen.config.json";
       const read = (file: string): string =>
@@ -877,6 +919,21 @@ describe("initCommand", () => {
         expect(
           fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
         ).toBe(config);
+        expect(fs.existsSync(path.join(tmp, "src/styles"))).toBe(false);
+      });
+
+      it("FR-1: the wizard offers a theme at the generate default when no config exists", async () => {
+        vi.mocked(p.text).mockResolvedValueOnce("styles/theme.json");
+        vi.mocked(p.confirm).mockResolvedValueOnce(false); // dark mode
+        fs.mkdirSync(path.join(tmp, "src"));
+        fs.mkdirSync(path.join(tmp, "styles"));
+        fs.writeFileSync(path.join(tmp, "styles/theme.json"), "{}");
+
+        expect(await run({}, tmp)).toBe(0);
+
+        expect(p.text).toHaveBeenCalledWith(
+          expect.objectContaining({ initialValue: "styles/theme.json" }),
+        );
         expect(fs.existsSync(path.join(tmp, "src/styles"))).toBe(false);
       });
     });

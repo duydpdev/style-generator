@@ -59,6 +59,13 @@ let devWatcher: ThemeWatchHandle | null = null;
 let devWatcherKey: string | null = null;
 
 /**
+ * Roots whose "no config found" line was already printed. Next evaluates
+ * `next.config.*` several times per process, so the line is said once per
+ * root and process (Next's workers each print it once).
+ */
+const noConfigReported = new Set<string>();
+
+/**
  * Close a watcher without letting its rejection escape: nothing can react to
  * a failed close during a swap or teardown.
  * @param {ThemeWatchHandle} watcher - The watcher to close
@@ -217,7 +224,8 @@ export const styleGenNext = (opts?: StyleGenNextOptions) => {
         root,
         PLUGIN_NAME,
       );
-      if (!configFound) {
+      if (!configFound && !noConfigReported.has(root)) {
+        noConfigReported.add(root);
         console.info(`[${PLUGIN_NAME}] ${noConfigMessage(root)}`);
       }
 
@@ -239,6 +247,7 @@ export const styleGenNext = (opts?: StyleGenNextOptions) => {
 /** Test-only: reset module-level state. Not part of public API. */
 export const __resetForTests = (): void => {
   if (devWatcher) closeQuietly(devWatcher);
+  noConfigReported.clear();
   devWatcher = null;
   devWatcherKey = null;
 };

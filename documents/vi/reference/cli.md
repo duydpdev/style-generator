@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 154271fb6452 -->
+<!-- source: documents/reference/cli.md sha256: b4e4d7f45b1a -->
 
 # CLI
 
@@ -14,7 +14,7 @@ Tạo sẵn file theme JSON, JSON Schema của nó, `style-gen.config.json` và 
 
 Trình hướng dẫn sẽ hỏi vị trí file theme và có muốn kèm theo template dark mode hay không. Khi không có terminal, hoặc để bỏ qua trình hướng dẫn: `yarn style-gen init --dark`, `--theme` hoặc `--yes`.
 Lệnh sẽ ghi theme, file `theme.schema.json` của nó (cho trường `"$schema"` của theme), `style-gen.config.json` và `style-gen.config.schema.json` (cho trường `"$schema"` của config, mà `init` thêm làm key đầu tiên của config)
-(hợp nhất `theme`, `output` và `$schema` vào config hiện có và giữ nguyên các key khác như đang có, kể cả `$schema` mà nó đã có).
+Một config hợp lệ đã nêu đúng theme mà `init` làm việc được giữ nguyên, kể cả `output` (`package.json#style-gen` cũng là một config như vậy: không có `style-gen.config.json` nào được tạo bên cạnh nó). Ngược lại (chọn theme khác trong trình hướng dẫn hoặc bằng `--theme`, hoặc config không hợp lệ), `init` hợp nhất `theme`, `output` và `$schema` vào config hiện có và giữ nguyên các key khác như đang có, kể cả `$schema` mà nó đã có; một mục `package.json#style-gen` khi đó được chép vào một `style-gen.config.json` mới.
 Nếu theme hoặc một trong hai file schema đã tồn tại, nó sẽ hỏi trước khi ghi đè (không tương tác: thoát với mã 1; với `--yes`: giữ nguyên các file và thoát với mã 0). Một config đã có không bao giờ bị ghi lại khi dùng `--yes`: xem [`init --yes`](#init---yes).
 
 Sau đó nó sẽ tìm file cấu hình bundler trong thư mục gốc của dự án theo thứ tự sau, rồi in ra đoạn mã cần thêm vào đó cùng các dòng CSS (hai dòng `@import`, thêm `@source not "<path>/.claude";` khi file [rules cho agent](#rules-cho-agent) tồn tại):
@@ -55,7 +55,7 @@ Một `style-gen.config.json` (hoặc `package.json#style-gen`) đã có đượ
 
 Khi theme của config nằm ngoài thư mục gốc dự án (một theme dùng chung), `init` in `The theme of <file> (<path>) is outside the project root: init writes no theme or theme schema for it.`, ghi schema của config cùng các quy tắc, và thoát với mã 0.
 
-Mặc định của `--theme` trở thành `src/styles/theme.json` khi có thư mục `src/`, và `app/assets/css/theme.json` (`assets/css/theme.json` nếu không có `app/`) khi tìm thấy `nuxt.config.*`. CSS được ghi ngay cạnh theme (`theme.css`).
+Mặc định của `--theme` trở thành `src/styles/theme.json` khi có thư mục `src/`, và `app/assets/css/theme.json` (`assets/css/theme.json` nếu không có `app/`) khi tìm thấy `nuxt.config.*`. Ngoại lệ là một dự án chưa có config mà đã có theme ở `styles/theme.json`, nơi `generate` đọc khi không có config: theme đó vẫn là mặc định (trình hướng dẫn đề xuất nó, `--yes` dùng nó), nên `init` không bao giờ tạo theme thứ hai bên cạnh. CSS được ghi ngay cạnh theme (`theme.css`).
 
 #### Rules cho agent
 

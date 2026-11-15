@@ -12,7 +12,7 @@ Scaffold the theme JSON, its JSON Schema, `style-gen.config.json` and the config
 
 The wizard asks for the theme file location and whether to include a dark-mode template. Without a terminal, or to skip the wizard: `yarn style-gen init --dark`, `--theme`, or `--yes`.
 It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), `style-gen.config.json` and `style-gen.config.schema.json` (for the config's `"$schema"`, which `init` adds as the first key of the config)
-(merging `theme`, `output` and `$schema` into an existing config and keeping its other keys as they are, including a `$schema` it already has).
+A valid config that already names the theme `init` works on is left as it is, `output` included (`package.json#style-gen` is such a config too: no `style-gen.config.json` is created next to it). Otherwise (another theme chosen in the wizard or with `--theme`, or a config that is invalid) `init` merges `theme`, `output` and `$schema` into the existing config and keeps its other keys as they are, including a `$schema` it already has; a `package.json#style-gen` section is then copied into a new `style-gen.config.json`.
 If the theme or either schema file already exists, it asks before overwriting (non-interactive: exits with code 1; with `--yes`: keeps the files and exits 0). An existing config is never rewritten under `--yes`: see [`init --yes`](#init---yes).
 
 It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the CSS lines (two `@import` lines, plus `@source not "<path>/.claude";` when the [agent rules](#agent-rules) file exists):
@@ -53,7 +53,7 @@ An existing `style-gen.config.json` (or `package.json#style-gen`) is kept as it 
 
 When the config's theme lies outside the project root (a shared theme), `init` prints `The theme of <file> (<path>) is outside the project root: init writes no theme or theme schema for it.`, writes the config schema and the rules, and exits 0.
 
-The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The CSS is written next to the theme (`theme.css`).
+The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The exception is a project without a config that already has a theme at `styles/theme.json`, the place `generate` reads when no config exists: that theme stays the default (the wizard offers it, `--yes` uses it), so `init` never creates a second theme beside it. The CSS is written next to the theme (`theme.css`).
 
 #### Agent rules
 

@@ -1,18 +1,132 @@
 # Getting started: Next.js
 
-This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopack) and builds a landing page from copy-paste components. The theme, `Button` style, `Button` component and theme switch are embedded from [`examples/plain-react`](../../examples/plain-react/README.md), whose copies are identical; the Next.js specific file (the config) is shown as a standalone snippet, and there is no runnable Next.js example folder.
+This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopack) and renders a themed `Button` built from a copy-paste component. The theme, `Button` files and theme switch are embedded from [`examples/plain-react`](../../examples/plain-react/README.md), whose copies are identical; the Next.js specific files (the config and the page) are shown as standalone snippets, and there is no runnable Next.js example folder.
 
 ## Install
 
-Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`.
+Start from a Next.js app created with Tailwind (`yarn create next-app my-app --ts --tailwind --src-dir --app`), which installs `tailwindcss` and its bundler integration. Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`.
 
 ```bash
 yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
 ```
 
+## Create the theme
+
+Create `src/theme/theme.json`. The `Button` below reads the colors `primary`, `secondary`, `success`, `danger`, `background` and `foreground`, the `md` radius and the `text16Medium` and `text20Semibold` type styles, so start from this complete theme (it is `examples/plain-react/src/theme/theme.json`):
+
+<!-- embed: examples/plain-react/src/theme/theme.json -->
+
+```json
+{
+  "colors": {
+    "primary": "#2647D9",
+    "primaryHover": "#1F3BB8",
+    "primaryActive": "#19319A",
+    "onPrimary": "$surface",
+    "secondary": "#6E5BFF",
+    "accent": "$secondary",
+    "success": "#2E7D5B",
+    "danger": "#C8462C",
+    "background": "#FAF7F2",
+    "surface": "#FFFFFF",
+    "foreground": "#0F1530",
+    "muted": "#6B6D7A",
+    "line": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)"
+  },
+  "typography": {
+    "text12Mono": {
+      "fontSize": "12px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text14Regular": {
+      "fontSize": "14px",
+      "fontWeight": 400,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text16Medium": {
+      "fontSize": "16px",
+      "fontWeight": 500,
+      "lineHeight": "150%",
+      "letterSpacing": "0px"
+    },
+    "text20Semibold": {
+      "fontSize": "20px",
+      "fontWeight": 600,
+      "lineHeight": "140%",
+      "letterSpacing": "-0.01em"
+    },
+    "text32Bold": {
+      "fontSize": "32px",
+      "fontWeight": 700,
+      "lineHeight": "120%",
+      "letterSpacing": "-0.02em"
+    },
+    "display56Serif": {
+      "fontSize": "56px",
+      "fontWeight": 400,
+      "lineHeight": "100%",
+      "letterSpacing": "-0.025em"
+    }
+  },
+  "shadows": {
+    "sm": "0px 1px 2px rgba(15, 21, 48, 0.06), 0px 1px 1px rgba(15, 21, 48, 0.04)",
+    "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
+    "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)"
+  },
+  "backdropBlurs": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "14px"
+  },
+  "borderRadius": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "16px",
+    "pill": "999px"
+  },
+  "fontFamily": {
+    "sans": "\"Geist\", ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "serif": "\"Instrument Serif\", \"Geist\", serif",
+    "mono": "\"JetBrains Mono\", ui-monospace, \"SFMono-Regular\", monospace"
+  },
+  "borderWidth": {
+    "thin": "1px",
+    "thick": "2px"
+  },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "primary": "#8FA6FF",
+          "primaryHover": "#A9BBFF",
+          "primaryActive": "#C2CEFF",
+          "secondary": "#A89AFF",
+          "success": "#6BBF93",
+          "danger": "#F08369",
+          "background": "#0B0E1D",
+          "surface": "#161A2D",
+          "foreground": "#F2EFE9",
+          "muted": "#8A8FA8"
+        },
+        "shadows": {
+          "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)",
+          "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+          "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)"
+        }
+      }
+    }
+  }
+}
+```
+
+`yarn style-gen init` (the [Quickstart](../../README.md#quickstart)) writes a smaller starter theme to `src/styles/theme.json` and a `style-gen.config.json` that points there. This tutorial keeps the theme in `src/theme/` instead: either skip `init`, or delete the `src/styles/` folder it wrote and replace `style-gen.config.json` with the file shown below.
+
 ## Own the theme
 
-The theme JSON is `src/theme/theme.json` (not shown here). `src/theme.ts` turns it into the `theme` type and the `cn` helper, and re-exports the typed `tokens` that `style-gen generate` (and `styleGenNext` on `next dev`/`next build`) writes to `src/theme/theme.tokens.ts`. Run `yarn style-gen generate` once and commit that file; `style-gen generate --check` fails in CI when it is stale:
+`src/theme.ts` turns the JSON into the `theme` type and the `cn` helper, and re-exports the typed `tokens` that `style-gen generate` (and `styleGenNext` on `next dev`/`next build`) writes to `src/theme/theme.tokens.ts`. Run `yarn style-gen generate` once and commit that file; `style-gen generate --check` fails in CI when it is stale:
 
 <!-- embed: examples/plain-react/src/theme.ts -->
 
@@ -34,20 +148,38 @@ export const cn = createCn(tokens);
 
 ## Generate theme.css with the Next.js wrapper
 
-`styleGenNext()` takes no generator options: it reads `style-gen.config.json` (or `package.json["style-gen"]`) from the project root, the same file `style-gen generate` reads. It writes `src/theme/theme.css` and `src/theme/theme.tokens.ts` when `next dev` or `next build` loads the config; a theme inside the app needs no `transpilePackages`.
+`styleGenNext()` takes no generator options: it reads `style-gen.config.json` (or `package.json["style-gen"]`) from the project root, the same file `style-gen generate` reads. It writes `src/theme/theme.css` and `src/theme/theme.tokens.ts` when `next dev` or `next build` loads the config; a theme inside the app needs no `transpilePackages`. Save this as `style-gen.config.json`:
+
+<!-- embed: examples/plain-react/style-gen.config.json -->
 
 ```json
 {
   "theme": "src/theme/theme.json",
-  "output": "src/theme/theme.css"
+  "output": "src/theme/theme.css",
+  "coverage": { "colors": { "opacities": [10, 20, 50, 80] } }
 }
 ```
+
+Then wrap the `next.config.ts` that `create-next-app` generated; do not replace it with an empty object. Keep every option it wrote, in particular `turbopack.rules`:
 
 ```ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  /* config options here */
+  cacheComponents: true,
+  partialPrefetching: true,
+  // Runs Tailwind on your CSS under Turbopack; written by `create-next-app --tailwind`.
+  turbopack: {
+    rules: {
+      "*.css": {
+        loaders: ["@tailwindcss/turbopack"],
+        as: "*.css",
+      },
+    },
+  },
+};
 
 // Next.js runs on Turbopack/webpack (no Vite), so the Vite-only `styleGenVite`
 // plugin does not apply. `styleGenNext` does not import `next`, so it works
@@ -57,16 +189,23 @@ const nextConfig: NextConfig = {};
 export default styleGenNext()(nextConfig);
 ```
 
+Without the Tailwind loader, `next build` still succeeds but ships raw `@theme`/`@source` rules and no utilities, and `next dev` only prints `Unknown at rule` warnings. If your config has no Tailwind block (the app was created without `--tailwind`, or it builds with webpack), run `yarn add tailwindcss @tailwindcss/postcss` and add `postcss.config.mjs`:
+
+```js
+// postcss.config.mjs
+export default { plugins: { "@tailwindcss/postcss": {} } };
+```
+
 ## Import the CSS
 
-Import the generated file next to Tailwind. No `@source` line is needed: Tailwind scans `src/`, and `theme.css` lists every token utility in `@source inline(...)`.
+Replace the contents of `src/app/globals.css` with the generated file next to Tailwind (the scaffold's own `:root` and `@theme inline` blocks define a `--color-background` that would clash with the theme's `background` color). No `@source` line is needed: Tailwind scans `src/`, and `theme.css` lists every token utility in `@source inline(...)`.
 
 ```css
 @import "tailwindcss";
 @import "../theme/theme.css";
 ```
 
-If `style-gen init` wrote `.claude/rules/style-generator.md`, also add the `@source not "<path>/.claude";` line it printed: that file holds example classes Tailwind would otherwise pick up ([`style-gen init`](../reference/cli.md#agent-rules)).
+If you ran `style-gen init`, it also wrote `.claude/rules/style-generator.md`; add `@source not "../../.claude";` as the last line of `src/app/globals.css`: that file holds example classes Tailwind would otherwise pick up ([`style-gen init`](../reference/cli.md#agent-rules)).
 
 ## Build a component
 
@@ -214,6 +353,39 @@ export const buttonTables = {
 export const buttonRecipe = recipeFromTables(buttonTables);
 ```
 
+`types.ts` holds the prop types:
+
+<!-- embed: examples/plain-react/src/ui/button/types.ts -->
+
+```ts
+import type { ThemeSpacingProps } from "@duydpdev/style-generator/ui";
+import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
+
+import type { tokens } from "../../theme";
+
+import type { ButtonIntent } from "./style";
+
+export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
+  readonly variant?: "fill" | "outline" | "soft" | "ghost" | "link" | undefined;
+  /** One of `buttonIntents`. */
+  readonly color?: ButtonIntent | undefined;
+  readonly size?: "sm" | "md" | "lg" | undefined;
+  readonly prefix?: ReactNode;
+  readonly suffix?: ReactNode;
+  readonly children?: ReactNode;
+  readonly className?: string | undefined;
+  readonly style?: CSSProperties | undefined;
+};
+
+export type ButtonProps<T extends ElementType = "button"> = Polymorphic<
+  T,
+  ButtonOwnProps
+>;
+```
+
+`Button.tsx` is the component:
+
 <!-- embed: examples/plain-react/src/ui/button/Button.tsx -->
 
 ```tsx
@@ -292,9 +464,35 @@ export function Button<T extends ElementType = "button">({
 }
 ```
 
+`index.ts` is the folder's public entry:
+
+<!-- embed: examples/plain-react/src/ui/button/index.ts -->
+
+```ts
+export { Button } from "./Button";
+export type { ButtonOwnProps, ButtonProps } from "./types";
+```
+
 ## Compose the page
 
-`src/app/page.tsx` is a server component that returns `<App />` from `src/App.tsx` (the same file as [`examples/plain-react/src/App.tsx`](../../examples/plain-react/src/App.tsx)); only `ThemeSwitch` is a client component.
+This tutorial builds only `Button`; the landing-page sections of the example are not included. Replace `src/app/page.tsx` with a server component that uses it (`Button` has no hook, so no `"use client"` is needed):
+
+<!-- snippet: no-check imports ../ui/button from the app being built -->
+
+```tsx
+import { Button } from "../ui/button";
+
+export default function Page() {
+  return (
+    <main className="flex min-h-screen items-center justify-center gap-3 bg-background text-foreground">
+      <Button>Get started</Button>
+      <Button variant="soft" color="danger">
+        Delete
+      </Button>
+    </main>
+  );
+}
+```
 
 ## Switch to dark
 
@@ -341,6 +539,8 @@ export function ThemeSwitch(): JSX.Element {
   );
 }
 ```
+
+Save it as `src/ThemeSwitch.tsx` with `"use client";` as its first line (the `themeAxes.theme.dark` override it toggles is in the theme above), import it in `src/app/page.tsx` with `import { ThemeSwitch } from "../ThemeSwitch";` and render `<ThemeSwitch />` next to the buttons.
 
 ## Next steps
 

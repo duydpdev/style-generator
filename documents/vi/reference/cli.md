@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: cddbb4b49bb2 -->
+<!-- source: documents/reference/cli.md sha256: 3395b25eded7 -->
 
 # CLI
 
@@ -12,13 +12,13 @@ Công cụ dòng lệnh `style-gen`: `init`, `generate`, `schema`, `doctor`, `to
 
 > **Thay đổi trong 5.2.0:** `init` không còn tạo sẵn file `plugins/theme-plugin.ts`, không còn hỏi vị trí generator script và từ chối cờ `--plugin` (tùy chọn không nhận diện, mã thoát 1); thay vào đó nó in ra cách nối dây bundler bên dưới và ngừng ghi `plugin` vào `style-gen.config.json`. Từ 6.0.0, một file config vẫn còn `plugin` bị từ chối như mọi key lạ khác (`doctor` dừng với `plugin → Unrecognized key: "plugin"`), và `init` bỏ key đó khi gộp. Để nâng cấp, hãy thêm đoạn mã được in ra vào cấu hình bundler của bạn (hoặc chạy `style-gen generate`), sau đó xóa file script và key `plugin`.
 
-Tạo sẵn file theme JSON, JSON Schema của nó và `style-gen.config.json`, sau đó in ra cách nối dây chúng vào stack của bạn. `init` không bao giờ tự sửa file cấu hình của bundler.
+Tạo sẵn file theme JSON, JSON Schema của nó, `style-gen.config.json` và JSON Schema của config, sau đó in ra cách nối dây chúng vào stack của bạn. `init` không bao giờ tự sửa file cấu hình của bundler.
 
-Trình hướng dẫn sẽ hỏi vị trí file theme và có muốn kèm theo template dark mode hay không. Chế độ không tương tác: `yarn style-gen init --dark`.
-Lệnh sẽ ghi theme, file `theme.schema.json` của nó (cho trường `"$schema"` của theme) và `style-gen.config.json`
-(hợp nhất `theme` và `output` vào file hiện có và giữ nguyên các key khác, nhưng bỏ key `plugin`, vì 6.0 không còn chấp nhận nó, cùng các key `extraSources` và `axes`, vì 7.0 không còn chấp nhận chúng).
+Trình hướng dẫn sẽ hỏi vị trí file theme và có muốn kèm theo template dark mode hay không. Khi không có terminal, hoặc để bỏ qua trình hướng dẫn: `yarn style-gen init --dark`, `--theme` hoặc `--yes`.
+Lệnh sẽ ghi theme, file `theme.schema.json` của nó (cho trường `"$schema"` của theme), `style-gen.config.json` và `style-gen.config.schema.json` (cho trường `"$schema"` của config, mà `init` thêm làm key đầu tiên của config)
+(hợp nhất `theme`, `output` và `$schema` vào config hiện có và giữ nguyên các key khác, kể cả `$schema` mà nó đã có, nhưng bỏ key `plugin`, vì 6.0 không còn chấp nhận nó, cùng các key `extraSources` và `axes`, vì 7.0 không còn chấp nhận chúng).
 Với mỗi key bị bỏ, lệnh in ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` hoặc `7.0`), và với `extraSources` nó còn in mỗi entry thành một dòng `@source inline("<entry>");` để dán vào CSS của app.
-Nếu theme hoặc schema đã tồn tại, nó sẽ hỏi trước khi ghi đè (không tương tác: thoát với mã 1).
+Nếu theme hoặc một trong hai file schema đã tồn tại, nó sẽ hỏi trước khi ghi đè (không tương tác: thoát với mã 1; với `--yes`: giữ nguyên các file và thoát với mã 0).
 
 Sau đó nó sẽ tìm file cấu hình bundler trong thư mục gốc của dự án theo thứ tự sau, rồi in ra đoạn mã cần thêm vào đó cùng các dòng CSS (hai dòng `@import`, thêm `@source not "<path>/.claude";` khi file [rules cho agent](#rules-cho-agent) tồn tại):
 
@@ -33,15 +33,19 @@ Sau đó nó sẽ tìm file cấu hình bundler trong thư mục gốc của d�
 
 ```bash
 yarn style-gen init            # Interactive mode
-yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
+yarn style-gen init --dark     # Without the wizard, with a themeAxes.theme.dark template
+yarn style-gen init --yes      # Defaults for every prompt, never overwrites (scripts, CI, coding agents)
 ```
 
-| Cờ             | Kiểu      | Mặc định            | Mô tả                                     |
-| :------------- | :-------- | :------------------ | :---------------------------------------- |
-| `--theme`      | `string`  | `styles/theme.json` | Đường dẫn đến file theme                  |
-| `--dark`       | `boolean` | `false`             | Kèm theo template trục dark-mode          |
-| `--skip-rules` | `boolean` | `false`             | Không ghi file rules cho agent            |
-| `--rules-only` | `boolean` | `false`             | Chỉ ghi hoặc làm mới file rules cho agent |
+| Cờ             | Kiểu      | Mặc định            | Mô tả                                                                 |
+| :------------- | :-------- | :------------------ | :-------------------------------------------------------------------- |
+| `--theme`      | `string`  | `styles/theme.json` | Đường dẫn đến file theme                                              |
+| `--dark`       | `boolean` | `false`             | Kèm theo template trục dark-mode                                      |
+| `--skip-rules` | `boolean` | `false`             | Không ghi file rules cho agent                                        |
+| `--rules-only` | `boolean` | `false`             | Chỉ ghi hoặc làm mới file rules cho agent                             |
+| `-y`, `--yes`  | `boolean` | `false`             | Trả lời mọi prompt bằng giá trị mặc định và không bao giờ ghi đè file |
+
+`--yes` không bao giờ mở trình hướng dẫn hay đặt câu hỏi, kể cả trong terminal: nó dùng `--theme` và `--dark` khi có, và các mặc định của stack khi không. Khi theme hoặc một trong hai file schema đã tồn tại, nó giữ nguyên tất cả, in `Existing files kept (--yes never overwrites).`, vẫn làm mới rules cho agent (file rules đã sửa được giữ lại, như mọi lần chạy không tương tác) và thoát với mã 0, trong khi một lần chạy không có terminal và không có `--yes` thoát với mã 1.
 
 Mặc định của `--theme` trở thành `src/styles/theme.json` khi có thư mục `src/`, và `app/assets/css/theme.json` (`assets/css/theme.json` nếu không có `app/`) khi tìm thấy `nuxt.config.*`. CSS được ghi ngay cạnh theme (`theme.css`).
 
@@ -141,11 +145,18 @@ Dạng truyền vị trí `style-gen generate <theme> <out>` cũng hoạt độn
 
 ### `style-gen schema`
 
-Ghi JSON Schema của theme (từ `z.toJSONSchema(ThemeSchema)`) để editor có thể tự hoàn thành các key và đánh dấu key lạ khi theme khai báo `"$schema"`. Khi không có `--out`, nó sẽ ghi `theme.schema.json` cạnh `theme` đã cấu hình (mặc định `styles/theme.json`), nơi `"$schema": "./theme.schema.json"` tìm đến; file config khi đó được đọc tương tự cách `generate` đọc, vì vậy config không hợp lệ schema sẽ thoát với mã 1 và không ghi gì cả.
+Ghi JSON Schema của theme (từ `z.toJSONSchema(ThemeSchema)`) và của `style-gen.config.json` để editor có thể tự hoàn thành các key và đánh dấu key lạ khi file khai báo `"$schema"`. Khi không có `--out`, schema của theme được ghi vào `theme.schema.json` cạnh `theme` đã cấu hình (mặc định `styles/theme.json`), nơi `"$schema": "./theme.schema.json"` tìm đến; file config khi đó được đọc tương tự cách `generate` đọc, vì vậy config không hợp lệ schema sẽ thoát với mã 1 và không ghi gì cả. Schema của config được ghi vào `style-gen.config.schema.json` ở thư mục gốc dự án, trừ khi `--config-out` chỉ định file khác; hãy thêm `"$schema": "./style-gen.config.schema.json"` vào `style-gen.config.json` để editor tự hoàn thành.
+
+| Cờ             | Kiểu     | Mặc định                                           | Mô tả                                                 |
+| :------------- | :------- | :------------------------------------------------- | :---------------------------------------------------- |
+| `--out`        | `string` | `theme.schema.json` cạnh theme                     | File cho JSON Schema của theme; phải nằm trong dự án  |
+| `--config-out` | `string` | `style-gen.config.schema.json` ở thư mục gốc dự án | File cho JSON Schema của config; phải nằm trong dự án |
+
+Cả hai đường dẫn được kiểm tra trước khi ghi bất cứ thứ gì (`--config-out escapes project root: <path>`, mã thoát 1). JSON Schema của config không gồm các kiểm tra chéo giữa các giá trị được liệt kê ở mục [File cấu hình](#file-cấu-hình).
 
 ```bash
-yarn style-gen schema                            # → styles/theme.schema.json (next to the theme)
-yarn style-gen schema --out styles/theme.schema.json
+yarn style-gen schema                            # → styles/theme.schema.json (next to the theme) and style-gen.config.schema.json
+yarn style-gen schema --out styles/theme.schema.json --config-out style-gen.config.schema.json
 ```
 
 ### `style-gen doctor`
@@ -208,6 +219,8 @@ In ra phiên bản CLI đã cài đặt.
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` và `resetTailwindDefaults` được chuyển tiếp đến `generate()`.
 Bất kỳ key nào khác — một lỗi gõ nhầm như `breakpoint`, hoặc key 3.x cũ như `responsiveModules` — đều bị từ chối;
 chỉ `$schema`, `theme`, `output` và `tokensOutput` được chấp nhận ngoài các key chuyển tiếp.
+`$schema` là con trỏ để editor tìm đến JSON Schema của config, không phải một thiết lập: hãy thêm `"$schema": "./style-gen.config.schema.json"` làm key đầu tiên (`style-gen schema` và `init` ghi file đó) thì editor sẽ gợi ý key và đánh dấu key lạ; key này được chấp nhận trong file, bị bỏ khi đọc và không bao giờ đến `generate()`.
+JSON Schema chỉ mô tả key và hình dạng giá trị. Nó không mang các kiểm tra so sánh giá trị với nhau (một entry của `breakpoints` phải trỏ tới một screen, `screens` phải dùng cùng một đơn vị sau khi gộp với mặc định, `coverage.<category>.prefixes` phải là tiền tố thật của nhóm đó), nên editor có thể chấp nhận một config mà `generate` và `doctor` từ chối.
 `tokensOutput` là đường dẫn của module tokens được sinh ra, tương đối so với thư mục gốc dự án và nằm bên trong đó (mặc định: `theme.tokens.ts` cạnh `output`); nó phải là file `.ts`, `.mts` hoặc `.cts`, không phải `.d.ts`.
 `plugin`, key mà `init` từng ghi trước bản 5.2.0 để đặt tên cho generator script mà nó tạo sẵn, bị từ chối từ 6.0.0 (hãy xóa nó, hoặc chạy `style-gen init`, lệnh này sẽ bỏ nó);
 `extraSources` và `axes` bị từ chối từ 7.0.0 (xem [hướng dẫn nâng cấp](../migration/6.x-to-7.0.md)), và `style-gen init` cũng bỏ chúng

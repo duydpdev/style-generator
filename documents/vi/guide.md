@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: 9484e513a0dd -->
+<!-- source: documents/guide.md sha256: cdc198aaf9f3 -->
 
 # Hướng dẫn sử dụng
 
@@ -134,10 +134,10 @@ Tên trạng thái được chuyển sang kebab-case (`focusVisible` → `focus-
 ### Tự gợi ý trong editor
 
 ```bash
-yarn style-gen schema        # writes theme.schema.json next to the theme file
+yarn style-gen schema        # writes theme.schema.json next to the theme file and style-gen.config.schema.json in the project root
 ```
 
-Thêm `"$schema": "./theme.schema.json"` vào theme để editor gợi ý các key và cảnh báo về key lạ.
+Thêm `"$schema": "./theme.schema.json"` vào theme và `"$schema": "./style-gen.config.schema.json"` vào `style-gen.config.json` để editor gợi ý các key và cảnh báo về key lạ.
 
 ---
 
@@ -245,11 +245,12 @@ Khi theme nằm trong một workspace package (như `examples/design-system`), h
 ### Cách 3: CLI
 
 ```bash
-yarn style-gen init                 # scaffold theme + theme.schema.json + style-gen.config.json, print the bundler snippet for your stack
+yarn style-gen init                 # scaffold theme + theme.schema.json + style-gen.config.json + style-gen.config.schema.json, print the bundler snippet for your stack
+yarn style-gen init --yes           # same without prompts (CI, coding agents); never overwrites an existing file
 yarn style-gen generate             # writes styles/theme.css
 yarn style-gen generate --watch     # regenerates when theme or style-gen.config.json is saved
 yarn style-gen doctor               # checks config, schema, theme × options; warns about utility collisions, suggests $alias and flags leftover 4.x-style --sg-<color> variables (scans source files under the current directory)
-yarn style-gen schema               # writes theme.schema.json next to the theme
+yarn style-gen schema               # writes theme.schema.json next to the theme and style-gen.config.schema.json in the project root
 yarn style-gen tokens               # writes theme.tokens.ts: only the DesignTokens.Web keys, for client bundles
 yarn style-gen budget .next/static/css --max-gzip 14925   # CI: fail when built CSS exceeds the gzip budget
 ```

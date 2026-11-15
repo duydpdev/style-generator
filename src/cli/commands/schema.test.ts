@@ -3,7 +3,9 @@ import path from "node:path";
 import os from "node:os";
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { z } from "zod";
 
+import { StyleGenConfigFileSchema } from "../../node/loadStyleGenConfig";
 import { logger } from "../logger";
 
 import { schemaCommand } from "./schema";
@@ -98,5 +100,51 @@ describe("schemaCommand", () => {
       ),
     );
     expect(fs.existsSync(path.join(tmp, "custom"))).toBe(false);
+  });
+
+  describe("config schema", () => {
+    it("writes style-gen.config.schema.json in the project root by default", () => {
+      expect(schemaCommand({ out: "custom/theme.schema.json" }, tmp)).toBe(0);
+
+      const written: unknown = JSON.parse(
+        fs.readFileSync(path.join(tmp, "style-gen.config.schema.json"), "utf8"),
+      );
+      expect(written).toEqual(z.toJSONSchema(StyleGenConfigFileSchema));
+      expect(written).toMatchObject({
+        type: "object",
+        additionalProperties: false,
+      });
+      expect(written).toHaveProperty("properties.$schema");
+    });
+
+    it("writes the config schema to --config-out, creating parent directories", () => {
+      expect(
+        schemaCommand(
+          { out: "t.schema.json", configOut: "custom/c.json" },
+          tmp,
+        ),
+      ).toBe(0);
+
+      expect(fs.existsSync(path.join(tmp, "custom/c.json"))).toBe(true);
+      expect(
+        fs.existsSync(path.join(tmp, "style-gen.config.schema.json")),
+      ).toBe(false);
+    });
+
+    it("returns 1 and writes nothing when --config-out escapes the project root", () => {
+      const errorSpy = vi
+        .spyOn(logger, "error")
+        .mockImplementation(() => undefined);
+
+      expect(
+        schemaCommand({ out: "t.schema.json", configOut: "../x.json" }, tmp),
+      ).toBe(1);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "--config-out escapes project root: ../x.json",
+      );
+      expect(fs.existsSync(path.join(tmp, "t.schema.json"))).toBe(false);
+      expect(fs.existsSync(path.join(tmp, "..", "x.json"))).toBe(false);
+    });
   });
 });

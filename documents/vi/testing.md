@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 16c428a20b5a -->
+<!-- source: documents/testing.md sha256: 2399c1d92fdc -->
 
 # Hướng dẫn kiểm thử
 
@@ -191,7 +191,7 @@ Những mối quan tâm được khóa chặt ở đây:
 - Sự tương đương của `toKebabCase` giữa runtime và kiểu (`kebab-parity`).
 - `themeAxes` nhiều trục trên theme thật của `examples/design-system` (`multi-axis.test.ts`; trục `theme` được khai báo trước `palette`).
 - Mọi `theme.json` trong `examples/`/`site/` đều qua `ThemeSchema` nghiêm ngặt, và các file `theme.schema.json` đã commit (`examples/`, `examples/design-system/src/`,
-  `site/src/theme/`) khớp với `z.toJSONSchema(ThemeSchema)`.
+  `site/src/theme/`) khớp với `z.toJSONSchema(ThemeSchema)`; các file `style-gen.config.schema.json` đã commit (`examples/`, `examples/design-system/`, `site/`) khớp với `z.toJSONSchema(StyleGenConfigFileSchema)`.
 - Các ứng dụng plain chia sẻ file có chủ đích; `yarn check:plain-ui` kiểm tra chúng. Code mà harness và một ứng dụng plain cùng cần nằm trong `examples/design-system` hoặc được sao chép có chủ đích.
 - Các mẫu `THEME_JSON`/`THEME_CSS` trên landing site (`site-build-sample.test.ts`) là một theme hợp lệ và một đoạn trích, đúng thứ tự, của `generate().css` thật.
 - Các tùy chọn không mặc định (`custom-options.test.ts`): `screens`/`breakpoints` tùy biến, `spacing.properties`, `cssVarDriven`, `enableResponsive: false`, `spacing.enabled: false`.

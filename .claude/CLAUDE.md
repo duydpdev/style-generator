@@ -191,7 +191,8 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `divide-<key>` would be a Tailwind divider width).
 - `generate()` validates options with a strict schema (`src/core/optionsSchema.ts`, internal): unknown keys rejected (also in `spacing`/`typography`); flags are booleans;
   `screens` values are one px/rem/em length and the map merged with `defaultScreens` uses one unit; `breakpoints` must name a screen.
-  `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`).
+  `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`);
+  the file-level `StyleGenConfigFileSchema` adds the `$schema` editor pointer (dropped on read, never reaches `generate()`) and is what the config JSON Schema is generated from.
   The 7.0 removals (`extraSources`, `axes`) are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
 - `options.coverage` (`Partial<Record<CategoryKey, boolean | { prefixes?, keys?: "aliased" | "all", opacities? }>>`) only changes the registry's `@source inline` lines:
   `false` drops a category's lines (state lines included), `prefixes` must be a **non-empty** list of real `classPrefixes` of that category (typography has none),
@@ -224,6 +225,9 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `runCli(args, cwd)` returns the exit code (0 ok/help/version/cancel, 1 failure, `budget` 2 for usage) and parses flags strictly per command;
   **commands never call `process.exit`** (only `src/cli/index.ts` assigns `process.exitCode`), so tests drive `runCli`/the command functions directly.
   `generate --watch` watches the theme AND the config file and keeps the last valid config when an edit is invalid.
+  `schema` writes `theme.schema.json` (next to the theme, `--out`) and `style-gen.config.schema.json` (project root, `--config-out`) from `z.toJSONSchema(StyleGenConfigFileSchema)`,
+  which has no cross-field refinements; the three committed copies (`examples/`, `examples/design-system/`, `site/`) are pinned by `committed-schema.test.ts`.
+  `init --yes`/`-y` never prompts and never overwrites (existing files kept, exit 0); `init` writes `"$schema": "./style-gen.config.schema.json"` as the config's first key.
   `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
   shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);

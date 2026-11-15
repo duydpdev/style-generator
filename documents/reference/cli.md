@@ -10,13 +10,13 @@ The `style-gen` command-line tool: `init`, `generate`, `schema`, `doctor`, `toke
 
 > **Changed in 5.2.0:** `init` no longer scaffolds `plugins/theme-plugin.ts`, no longer asks for a generator-script location and rejects `--plugin` (unknown option, exit code 1); it prints the bundler wiring below instead and stops writing `plugin` into `style-gen.config.json`. Since 6.0.0 a config that still has `plugin` is rejected like any unknown key (`doctor` stops with `plugin → Unrecognized key: "plugin"`), and `init` drops the key while merging. To migrate, add the printed snippet to your bundler config (or run `style-gen generate`), then delete the script and the `plugin` key.
 
-Scaffold the theme JSON, its JSON Schema and `style-gen.config.json`, then print how to wire them into your stack. `init` never edits a bundler config.
+Scaffold the theme JSON, its JSON Schema, `style-gen.config.json` and the config's JSON Schema, then print how to wire them into your stack. `init` never edits a bundler config.
 
-The wizard asks for the theme file location and whether to include a dark-mode template. Non-interactive: `yarn style-gen init --dark`.
-It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`) and `style-gen.config.json`
-(merging `theme` and `output` into an existing one and keeping its other keys, but dropping a `plugin` key, which 6.0 no longer accepts, and the `extraSources` and `axes` keys, which 7.0 no longer accepts).
+The wizard asks for the theme file location and whether to include a dark-mode template. Without a terminal, or to skip the wizard: `yarn style-gen init --dark`, `--theme`, or `--yes`.
+It writes the theme, its `theme.schema.json` (for the theme's `"$schema"`), `style-gen.config.json` and `style-gen.config.schema.json` (for the config's `"$schema"`, which `init` adds as the first key of the config)
+(merging `theme`, `output` and `$schema` into an existing config and keeping its other keys, including a `$schema` it already has, but dropping a `plugin` key, which 6.0 no longer accepts, and the `extraSources` and `axes` keys, which 7.0 no longer accepts).
 For each dropped key it prints ``Removed the `<key>` key from style-gen.config.json: <major> no longer accepts it.`` (`6.0` or `7.0`), and for `extraSources` it also prints one `@source inline("<entry>");` line per entry to paste into the app's CSS.
-If the theme or its schema already exists, it asks before overwriting (non-interactive: exits with code 1).
+If the theme or either schema file already exists, it asks before overwriting (non-interactive: exits with code 1; with `--yes`: keeps the files and exits 0).
 
 It then looks for a bundler config in the project root, in this order, and prints the snippet to add to it and the CSS lines (two `@import` lines, plus `@source not "<path>/.claude";` when the [agent rules](#agent-rules) file exists):
 
@@ -31,15 +31,19 @@ It then looks for a bundler config in the project root, in this order, and print
 
 ```bash
 yarn style-gen init            # Interactive mode
-yarn style-gen init --dark     # Non-interactive, with a themeAxes.theme.dark template
+yarn style-gen init --dark     # Without the wizard, with a themeAxes.theme.dark template
+yarn style-gen init --yes      # Defaults for every prompt, never overwrites (scripts, CI, coding agents)
 ```
 
-| Flag           | Type      | Default             | Description                                |
-| :------------- | :-------- | :------------------ | :----------------------------------------- |
-| `--theme`      | `string`  | `styles/theme.json` | Path to the theme file                     |
-| `--dark`       | `boolean` | `false`             | Include the dark-mode axis template        |
-| `--skip-rules` | `boolean` | `false`             | Do not write the agent rules file          |
-| `--rules-only` | `boolean` | `false`             | Only write or refresh the agent rules file |
+| Flag           | Type      | Default             | Description                                                               |
+| :------------- | :-------- | :------------------ | :------------------------------------------------------------------------ |
+| `--theme`      | `string`  | `styles/theme.json` | Path to the theme file                                                    |
+| `--dark`       | `boolean` | `false`             | Include the dark-mode axis template                                       |
+| `--skip-rules` | `boolean` | `false`             | Do not write the agent rules file                                         |
+| `--rules-only` | `boolean` | `false`             | Only write or refresh the agent rules file                                |
+| `-y`, `--yes`  | `boolean` | `false`             | Answer every prompt with its default and never overwrite an existing file |
+
+`--yes` never opens the wizard or asks a question, also in a terminal: it uses `--theme` and `--dark` when given and the stack's defaults otherwise. When the theme or one of the two schema files already exists it keeps everything, prints `Existing files kept (--yes never overwrites).`, still refreshes the agent rules (an edited rules file is kept, as in any non-interactive run) and exits 0, where a run without a terminal and without `--yes` exits 1.
 
 The `--theme` default becomes `src/styles/theme.json` when a `src/` directory exists, and `app/assets/css/theme.json` (`assets/css/theme.json` without `app/`) when `nuxt.config.*` is found. The CSS is written next to the theme (`theme.css`).
 
@@ -139,11 +143,18 @@ Positional `style-gen generate <theme> <out>` also works; flags take precedence.
 
 ### `style-gen schema`
 
-Write the theme's JSON Schema (from `z.toJSONSchema(ThemeSchema)`) so editors can autocomplete keys and flag unknown ones when the theme declares `"$schema"`. Without `--out` it writes `theme.schema.json` next to the configured `theme` (default `styles/theme.json`), where `"$schema": "./theme.schema.json"` looks for it; the config file is then read as `generate` reads it, so a schema-invalid config exits with code 1 and writes nothing.
+Write the JSON Schemas of the theme (from `z.toJSONSchema(ThemeSchema)`) and of `style-gen.config.json` so editors can autocomplete keys and flag unknown ones when the file declares `"$schema"`. Without `--out` the theme's schema goes to `theme.schema.json` next to the configured `theme` (default `styles/theme.json`), where `"$schema": "./theme.schema.json"` looks for it; the config file is then read as `generate` reads it, so a schema-invalid config exits with code 1 and writes nothing. The config's schema goes to `style-gen.config.schema.json` in the project root unless `--config-out` names another file; add `"$schema": "./style-gen.config.schema.json"` to `style-gen.config.json` for editor autocomplete.
+
+| Flag           | Type     | Default                                            | Description                                                     |
+| :------------- | :------- | :------------------------------------------------- | :-------------------------------------------------------------- |
+| `--out`        | `string` | `theme.schema.json` next to the theme              | File for the theme's JSON Schema; must stay inside the project  |
+| `--config-out` | `string` | `style-gen.config.schema.json` in the project root | File for the config's JSON Schema; must stay inside the project |
+
+Both paths are checked before anything is written (`--config-out escapes project root: <path>`, exit code 1). The JSON Schema of the config does not include the cross-field checks listed under [Configuration file](#configuration-file).
 
 ```bash
-yarn style-gen schema                            # → styles/theme.schema.json (next to the theme)
-yarn style-gen schema --out styles/theme.schema.json
+yarn style-gen schema                            # → styles/theme.schema.json (next to the theme) and style-gen.config.schema.json
+yarn style-gen schema --out styles/theme.schema.json --config-out style-gen.config.schema.json
 ```
 
 ### `style-gen doctor`
@@ -206,6 +217,8 @@ Print the installed CLI version.
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` and `resetTailwindDefaults` are forwarded to `generate()`.
 Any other key — a typo such as `breakpoint`, a legacy 3.x key such as `responsiveModules`, or a key removed in 7.0 (`extraSources`, `axes`; see the [migration guide](../migration/6.x-to-7.0.md)) — is rejected;
 only `$schema`, `theme`, `output` and `tokensOutput` are accepted besides the forwarded keys.
+`$schema` is the editor's pointer to the config's JSON Schema, not a setting: add `"$schema": "./style-gen.config.schema.json"` as the first key (`style-gen schema` and `init` write that file) and the editor suggests keys and flags unknown ones; the key is accepted in the file, dropped on read and never reaches `generate()`.
+The JSON Schema describes keys and value shapes only. It does not carry the checks that compare values with each other (a `breakpoints` entry must name a screen, `screens` must share one unit after merging with the defaults, `coverage.<category>.prefixes` must be real prefixes of that category), so an editor can accept a config that `generate` and `doctor` reject.
 `tokensOutput` is the path of the generated tokens module, relative to the project root and inside it (default: `theme.tokens.ts` beside `output`); it must name a `.ts`, `.mts` or `.cts` file, not a `.d.ts`.
 `plugin`, which `init` wrote before 5.2.0 to name the generator script it scaffolded, has been rejected since 6.0.0 (delete it, or run `style-gen init`, which drops it);
 `extraSources` and `axes` have been rejected since 7.0.0, and `style-gen init` drops them too (it prints each `extraSources` entry as an `@source inline("<entry>");` line to paste into the app's CSS).

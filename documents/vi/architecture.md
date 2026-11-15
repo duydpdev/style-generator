@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 995f36771c59 -->
+<!-- source: documents/architecture.md sha256: 980929c03ac7 -->
 
 # Kiến trúc
 
@@ -215,15 +215,16 @@ rồi dùng giá trị mặc định, `doctor` báo lỗi); các lỗi config kh
 `generate --watch` dùng `watchThemeFile` để theo dõi theme **và** file config: mỗi lần config thay đổi nó gọi `reloadTarget` để đọc lại,
 và một config không hợp lệ chỉ bị báo (giai đoạn `config`) trong khi **config hợp lệ gần nhất vẫn được dùng**; các lỗi theme/ghi file sau khi bắt đầu theo dõi chỉ được ghi log.
 `--version` đọc `package.json` qua `import.meta.url` (`src/cli/version.ts`), vì `__dirname` không tồn tại trong một bundle ESM.
-`init` (`src/cli/commands/init.ts`) ghi theme và `theme.schema.json` cạnh nó, nhận diện stack bằng `detectStack` (`src/cli/commands/detectStack.ts`:
+`init` (`src/cli/commands/init.ts`) ghi theme, `theme.schema.json` cạnh nó và JSON Schema của config, nhận diện stack bằng `detectStack` (`src/cli/commands/detectStack.ts`:
 file đầu tiên trong số `nuxt.config.*`, `next.config.*`, `vite.config.*` ở thư mục gốc của dự án, theo thứ tự đó) và in đoạn mã bundler từ `src/cli/templates.ts`
 (`getBundlerSnippet`: `styleGenVite()`/`styleGenNext()` không đối số, đường dẫn tuyệt đối và `options` cho Nuxt) cùng các dòng CSS `@import`,
 hoặc phương án dự phòng `style-gen generate`; mọi đường dẫn được in hay lưu đều là POSIX tương đối so với repo; nó không bao giờ sửa config của bundler và, từ 5.2.0,
 không tạo sẵn script generator; nó gộp `theme`/`output` vào một `style-gen.config.json` có sẵn, hoặc vào một bản sao của `package.json["style-gen"]` khi file đó chưa tồn tại (một
 file mới được ưu tiên hơn phần đó), giữ lại các key khác (key `plugin` bị bỏ: 6.0 từ chối nó) và đọc config trước khi ghi bất cứ thứ gì;
-một `theme.schema.json` có sẵn được coi như một file có sẵn (nó hỏi trước khi ghi đè; ở chế độ không tương tác thì thoát với mã 1).
+một `theme.schema.json` hoặc `style-gen.config.schema.json` có sẵn được coi như một file có sẵn (nó hỏi trước khi ghi đè; ở chế độ không tương tác thì thoát với mã 1; `--yes` giữ nguyên mọi file có sẵn và thoát với mã 0 mà không hỏi);
+config nó ghi có `"$schema": "./style-gen.config.schema.json"` làm key đầu tiên, trừ khi nó đã có sẵn một key `$schema`.
 `schema` không có `--out` đọc config giống `generate` (một config vi phạm schema → mã thoát 1, không ghi gì) rồi ghi `theme.schema.json` vào thư mục của `theme` đã phân giải (qua
-`resolveProjectPath`; theme có thể nằm ngoài dự án, file được ghi thì không). `tokens` (`src/cli/commands/tokens.ts`) chạy `readAndPrepareTheme` rồi serialize đúng object
+`resolveProjectPath`; theme có thể nằm ngoài dự án, file được ghi thì không) và `style-gen.config.schema.json` (`z.toJSONSchema(StyleGenConfigFileSchema)`, không mang các refinement chéo giữa các key) vào thư mục gốc dự án, hoặc vào nơi `--config-out` chỉ định. `tokens` (`src/cli/commands/tokens.ts`) chạy `readAndPrepareTheme` rồi serialize đúng object
 `DesignTokens.Web` từ `buildDesignTokens` thành `export const tokens = {…} as const` — chỉ có key, nên một client bundle không cần ship runtime `./tokens` cùng theme JSON.
 `budget` (`src/cli/commands/budget.ts`) cộng kích thước gzip (mặc định của `node:zlib`) của mọi `.css` dưới file/thư mục đích và so sánh với `--max-gzip`;
 hai dòng tóm tắt `OK: …`/`OVER BUDGET: …` là một hợp đồng ổn định cho CI của consumer, thay thế script `check-css-budget.mjs` từng phải chép tay.

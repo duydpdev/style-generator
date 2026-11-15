@@ -1,6 +1,6 @@
 # Options
 
-`StyleGeneratorOptions`: the second argument of `generate()`, the `options` field of the Vite and Next plugins, and (as JSON) `style-gen.config.json`.
+`StyleGeneratorOptions`: the second argument of `generate()`, the `options` field of the Vite and Next plugins, and (as JSON) `style-gen.config.json`. The config file also accepts `"$schema": "./style-gen.config.schema.json"` (written by `style-gen schema`) so editors autocomplete its keys; see [CLI](./cli.md#configuration-file).
 
 `generate(theme, options)` and the plugins' `options` field take `StyleGeneratorOptions`:
 

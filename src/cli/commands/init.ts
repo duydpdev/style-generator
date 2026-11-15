@@ -27,7 +27,15 @@ export interface InitArgs {
   skipRules?: boolean;
   /** Only write or refresh the agent rules file; scaffold nothing else. */
   rulesOnly?: boolean;
+  /**
+   * Answer every prompt with its default and never overwrite an existing
+   * file (scripts, CI, coding agents).
+   */
+  yes?: boolean;
 }
+
+/** The config's JSON Schema `init` writes in the project root. */
+const CONFIG_SCHEMA_FILE = "style-gen.config.schema.json";
 
 /** Agent configuration directory; it holds prose Tailwind must not scan. */
 const AGENT_DIR = ".claude";
@@ -417,11 +425,17 @@ async function getInteractiveConfig(
 /**
  * Decide whether existing scaffold files may be replaced.
  * @param {boolean} isInteractive - Whether a TTY can answer the prompt
+ * @param {boolean} yes - `--yes`: keep the files instead of asking or failing
  * @returns {Promise<"overwrite" | "kept" | "refused">} The outcome
  */
 async function confirmOverwrite(
   isInteractive: boolean,
+  yes: boolean,
 ): Promise<"overwrite" | "kept" | "refused"> {
+  if (yes) {
+    logger.info("Existing files kept (--yes never overwrites).");
+    return "kept";
+  }
   if (!isInteractive) {
     logger.error(
       "Files already exist. Run interactively to confirm overwrite.",
@@ -569,6 +583,50 @@ async function refreshRulesOnly(
 /* ------------------ Command ------------------ */
 
 /**
+ * The config's `$schema` pointer, which goes first; a pointer the user wrote
+ * stays where it is.
+ * @param {Record<string, unknown>} content The existing config content.
+ * @returns {{ $schema?: string }} The key to put first, or nothing.
+ */
+function configSchemaRef(content: Record<string, unknown>): {
+  $schema?: string;
+} {
+  return content.$schema === undefined
+    ? { $schema: `./${CONFIG_SCHEMA_FILE}` }
+    : {};
+}
+
+/**
+ * `init --rules-only`: refuse the flags that scaffold, else refresh the rules.
+ * @param {InitArgs} args The initial CLI arguments.
+ * @param {DetectedStack} detected The detected stack.
+ * @param {string} cwd The project root.
+ * @param {string | URL} rulesSource The agent rules file to copy.
+ * @param {boolean} isInteractive Whether a TTY can answer the prompt.
+ * @returns {Promise<number>} The exit code.
+ */
+async function runRulesOnly(
+  args: InitArgs,
+  detected: DetectedStack,
+  cwd: string,
+  rulesSource: string | URL,
+  isInteractive: boolean,
+): Promise<number> {
+  if (
+    args.skipRules === true ||
+    args.theme !== undefined ||
+    args.dark !== undefined
+  ) {
+    logger.error(
+      "--rules-only cannot be combined with --theme, --dark or --skip-rules.",
+    );
+    return 1;
+  }
+  await refreshRulesOnly(detected, cwd, rulesSource, isInteractive);
+  return 0;
+}
+
+/**
  * The scaffolding itself; failures throw, `initCommand` turns them into
  * exit codes.
  * @param {InitArgs} args The initial CLI arguments.
@@ -581,24 +639,14 @@ async function scaffold(
   cwd: string,
   rulesSource: string | URL,
 ): Promise<number> {
-  const isInteractive = process.stdin.isTTY;
+  // `--yes` answers every prompt with its default, so it never asks.
+  const isInteractive = args.yes !== true && process.stdin.isTTY;
 
   const detected = detectStack(cwd);
   const defaultTheme = defaultThemeLoc(detected, cwd);
 
   if (args.rulesOnly) {
-    if (
-      args.skipRules === true ||
-      args.theme !== undefined ||
-      args.dark !== undefined
-    ) {
-      logger.error(
-        "--rules-only cannot be combined with --theme, --dark or --skip-rules.",
-      );
-      return 1;
-    }
-    await refreshRulesOnly(detected, cwd, rulesSource, isInteractive);
-    return 0;
+    return runRulesOnly(args, detected, cwd, rulesSource, isInteractive);
   }
 
   let themeLoc = args.theme ?? defaultTheme;
@@ -621,9 +669,14 @@ async function scaffold(
     "theme.schema.json",
   );
   const schemaAbsPath = resolveProjectPath(cwd, schemaLoc, "schema output");
+  const configSchemaAbsPath = resolveProjectPath(
+    cwd,
+    CONFIG_SCHEMA_FILE,
+    "config schema output",
+  );
 
-  if (fs.existsSync(themeAbsPath) || fs.existsSync(schemaAbsPath)) {
-    const proceed = await confirmOverwrite(isInteractive);
+  if ([themeAbsPath, schemaAbsPath, configSchemaAbsPath].some(fs.existsSync)) {
+    const proceed = await confirmOverwrite(isInteractive, args.yes === true);
     if (proceed === "refused") return 1;
     // Keeping the theme still refreshes the rules: re-running init after an
     // upgrade is how they are updated.
@@ -649,8 +702,12 @@ async function scaffold(
 
   logger.success(`Created ${themeLoc}`);
 
-  // The theme template references "./theme.schema.json" via "$schema".
-  const schemaCode = schemaCommand({ out: schemaLoc }, cwd);
+  // The theme template references "./theme.schema.json" via "$schema", the
+  // config "./style-gen.config.schema.json".
+  const schemaCode = schemaCommand(
+    { out: schemaLoc, configOut: CONFIG_SCHEMA_FILE },
+    cwd,
+  );
   if (schemaCode !== 0) return schemaCode;
 
   /* ---------- Config file (merged into the existing one) ---------- */
@@ -661,7 +718,15 @@ async function scaffold(
   };
   writeFile(
     mergeBase.configPath,
-    JSON.stringify({ ...mergeBase.content, ...written }, null, 2),
+    JSON.stringify(
+      {
+        ...configSchemaRef(mergeBase.content),
+        ...mergeBase.content,
+        ...written,
+      },
+      null,
+      2,
+    ),
   );
   logger.success(
     `${mergeBase.source === "style-gen.config.json" ? "Updated" : "Created"} style-gen.config.json`,

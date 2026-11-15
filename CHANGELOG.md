@@ -1,3 +1,22 @@
+# [8.0.1](https://github.com/duydpdev/style-generator/compare/v8.0.0...v8.0.1) (2026-11-15)
+
+### Bug Fixes
+
+- accept only declared option values in typed recipes ([ea905e9](https://github.com/duydpdev/style-generator/commit/ea905e96e79169a466644799eb169c91539f1beb))
+- carry config refinements into the JSON Schema and always write it ([2664815](https://github.com/duydpdev/style-generator/commit/26648158f5d27b3b68dd6518fe1f15b219da0e38))
+- keep a theme at the generate default when init writes the first config ([70a3813](https://github.com/duydpdev/style-generator/commit/70a3813769bc7bd033cfe2e18142bd7eef1b0dbb))
+
+  FR-1: with no config and a theme at styles/theme.json, init keeps that theme (wizard default, --yes) instead of scaffolding a second one under src/.
+  FR-2: styleGenNext prints the no-config line once per root and process.
+  FR-3: cli reference describes when init leaves a valid config untouched versus merging into it.
+
+- keep the existing config's theme and output in init --yes ([f758bcc](https://github.com/duydpdev/style-generator/commit/f758bccdbef6ef61f162e766c298e739d589f23b))
+- reject colliding emit paths and check tokensOutput in doctor ([6649566](https://github.com/duydpdev/style-generator/commit/66495661e561f760bd9d3bbeed7d54764b4a1178))
+
+  N-M1, N-M3, C-M2, C-L5, N-L3, N-L4, N-L5, D-L2 (TSDoc), missing-config message
+
+- reload when the config moves between files and ignore CRLF on emit ([64a4cdc](https://github.com/duydpdev/style-generator/commit/64a4cdcf23d800ee60071599eaed0c15a8fa8c97))
+
 # [8.0.0](https://github.com/duydpdev/style-generator/compare/v7.2.1...v8.0.0) (2026-11-15)
 
 ### Release

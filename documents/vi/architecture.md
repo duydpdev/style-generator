@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 9c069279f019 -->
+<!-- source: documents/architecture.md sha256: eaa07c044473 -->
 
 # Kiến trúc
 
@@ -209,10 +209,10 @@ nên một flag lạ là lỗi) rồi trả về một **mã thoát** thay vì g
 nên mọi lệnh đều có thể được kiểm thử trực tiếp mà không cần giả lập `process`. Các mã: `0` thành công / `--help` / `--version` / người dùng hủy prompt, `1` thất bại (`budget`:
 `2` cho lỗi cách dùng). Thứ tự phân giải config: flag → `style-gen.config.json` → `package.json["style-gen"]` → giá trị mặc định;
 `loadStyleGenConfig`/`readConfigFile` (`src/node/loadStyleGenConfig.ts`, dùng chung với Vite/Next) kiểm tra hợp lệ file config bằng `StyleGenConfigSchema` (Shape và các refinement
-của nó dùng chung với `generate()` từ `src/core/optionsSchema.ts`), trả về `issues` khi schema bị vi phạm (không gộp gì cả) và `error` khi file là JSON hỏng (`generate` cảnh báo
-rồi dùng giá trị mặc định, `doctor` báo lỗi); các lỗi config khiến `generate` và `doctor` dừng với mã thoát 1 (`src/cli/loadCliConfig.ts` gói việc đọc và in lỗi).
-`generate` gọi `emitTheme` (`writeFileAtomic`, ghi `theme.css` và `theme.tokens.ts` chỉ khi nội dung thay đổi); một theme/tùy chọn không hợp lệ hoặc một lỗi ghi file trả về mã thoát 1. `generate --check` gọi `checkTokensModule` thay thế, không ghi gì và trả về mã 1 khi file tokens thiếu hoặc khác. `style-gen tokens` ghi cùng module đó qua `emitTokensModule`.
-`generate --watch` dùng `watchThemeFile` để theo dõi theme **và** file config: mỗi lần config thay đổi nó gọi `reloadTarget` để đọc lại,
+của nó dùng chung với `generate()` từ `src/core/optionsSchema.ts`), trả về `issues` khi schema bị vi phạm (không gộp gì cả) và `error` khi file là JSON hỏng (`generate`, `tokens` và `schema` cảnh báo `Ignoring … using defaults` rồi dùng giá trị mặc định; `generate --check`, `doctor` và các plugin thất bại);
+các lỗi config khiến `generate`, `tokens`, `schema` và `doctor` dừng với mã thoát 1 (`src/cli/loadCliConfig.ts` gói việc đọc và in lỗi).
+`generate` gọi `emitTheme` (`writeFileAtomic`, ghi `theme.css` và `theme.tokens.ts` chỉ khi nội dung thay đổi) trên đích mà `resolveEmitTarget` dựng từ config: `output`/`tokensOutput` nằm trong thư mục gốc, `tokensOutput` là file `.ts`/`.mts`/`.cts`, và theme, CSS cùng module tokens là ba file khác nhau (`doctor` chạy cùng hàm đó); một theme/tùy chọn không hợp lệ hoặc một lỗi ghi file trả về mã thoát 1. `generate --check` gọi `checkTokensModule` thay thế (CRLF được so sánh như LF), không ghi gì và trả về mã 1 khi file tokens thiếu hoặc khác, hoặc khi config bị hỏng. `style-gen tokens` ghi cùng module đó qua `emitTokensModule`.
+`generate --watch` dùng `watchThemeFile` để theo dõi theme **và** cả hai ứng viên config (`style-gen.config.json` và `package.json#style-gen`, được phân giải bởi `src/node/configSource.ts`; các sự kiện của `package.json` bị bỏ qua khi `style-gen.config.json` tồn tại): mỗi lần config thay đổi nó gọi `reloadTarget` để đọc lại,
 và một config không hợp lệ chỉ bị báo (giai đoạn `config`) trong khi **config hợp lệ gần nhất vẫn được dùng**; các lỗi theme/ghi file sau khi bắt đầu theo dõi chỉ được ghi log.
 `--version` đọc `package.json` qua `import.meta.url` (`src/cli/version.ts`), vì `__dirname` không tồn tại trong một bundle ESM.
 `init` (`src/cli/commands/init.ts`) ghi theme, `theme.schema.json` cạnh nó và JSON Schema của config, nhận diện stack bằng `detectStack` (`src/cli/commands/detectStack.ts`:
@@ -221,15 +221,17 @@ file đầu tiên trong số `nuxt.config.*`, `next.config.*`, `vite.config.*` �
 hoặc phương án dự phòng `style-gen generate`; mọi đường dẫn được in hay lưu đều là POSIX tương đối so với repo; nó không bao giờ sửa config của bundler và
 không tạo sẵn script generator; nó gộp `theme`/`output` vào một `style-gen.config.json` có sẵn, hoặc vào một bản sao của `package.json["style-gen"]` khi file đó chưa tồn tại (một
 file mới được ưu tiên hơn phần đó), giữ nguyên các key khác và đọc config trước khi ghi bất cứ thứ gì;
-một `theme.schema.json` hoặc `style-gen.config.schema.json` có sẵn được coi như một file có sẵn (nó hỏi trước khi ghi đè; ở chế độ không tương tác thì thoát với mã 1; `--yes` giữ nguyên mọi file có sẵn và thoát với mã 0 mà không hỏi);
+một `theme.schema.json` hoặc `style-gen.config.schema.json` có sẵn được coi như một file có sẵn (nó hỏi trước khi ghi đè; ở chế độ không tương tác thì thoát với mã 1; `--yes` giữ nguyên mọi file có sẵn và thoát với mã 0 mà không hỏi), và `--yes` cũng giữ nguyên một config có sẵn:
+nó đọc theme từ đó và thoát với mã 1 khi config không hợp lệ hoặc `--theme` nêu một theme khác;
 config nó ghi có `"$schema": "./style-gen.config.schema.json"` làm key đầu tiên, trừ khi nó đã có sẵn một key `$schema`.
-`schema` không có `--out` đọc config giống `generate` (một config vi phạm schema → mã thoát 1, không ghi gì) rồi ghi `theme.schema.json` vào thư mục của `theme` đã phân giải (qua
-`resolveProjectPath`; theme có thể nằm ngoài dự án, file được ghi thì không) và `style-gen.config.schema.json` (`z.toJSONSchema(StyleGenConfigFileSchema)`, không mang các refinement chéo giữa các key) vào thư mục gốc dự án, hoặc vào nơi `--config-out` chỉ định. `tokens` (`src/cli/commands/tokens.ts`) chạy `readAndPrepareTheme` rồi serialize đúng object
+`schema` không có `--out` đọc config giống `generate` (một file hỏng → cảnh báo và dùng mặc định; một config vi phạm schema → schema của config vẫn được ghi, rồi các vấn đề được báo, mã thoát 1 và không có schema của theme) rồi ghi `theme.schema.json` vào thư mục của `theme` đã phân giải (qua
+`resolveProjectPath`; theme có thể nằm ngoài dự án, file được ghi thì không) và `style-gen.config.schema.json` vào thư mục gốc dự án, hoặc vào nơi `--config-out` chỉ định; file theme và hai đích schema phải là ba file khác nhau. Schema của config là `z.toJSONSchema(StyleGenConfigFileSchema)` được thu hẹp bởi `buildConfigJsonSchema` (`src/cli/configJsonSchema.ts`) với mọi quy tắc giá trị mà một JSON Schema diễn đạt được (`prefixes` và `keys` của `coverage` theo từng nhóm, `opacities` khác nhau);
+các quy tắc so sánh hai key (`breakpoints` phải trỏ tới một screen, `screens` phải dùng cùng một đơn vị, `resetTailwindDefaults` cần nhóm thay thế trong theme) và các quy tắc đường dẫn vẫn nằm ở `generate`, `doctor` và các plugin. `tokens` (`src/cli/commands/tokens.ts`) chạy `readAndPrepareTheme` rồi serialize đúng object
 `DesignTokens.Web` từ `buildDesignTokens` thành `export const tokens = {…} as const` — chỉ có key, nên một client bundle không cần ship runtime `./tokens` cùng theme JSON.
 `budget` (`src/cli/commands/budget.ts`) cộng kích thước gzip (mặc định của `node:zlib`) của mọi `.css` dưới file/thư mục đích và so sánh với `--max-gzip`;
 hai dòng tóm tắt `OK: …`/`OVER BUDGET: …` là một hợp đồng ổn định cho CI của consumer.
-`doctor` đọc config (không hợp lệ → dừng, mã thoát 1), kiểm tra hợp lệ theme bằng `ThemeSchema`, rồi chạy `prepareGenerate` với các tùy chọn của config để bắt lỗi theme × options
-(`❌ Invalid theme/options`), coi một `output` thoát ra ngoài thư mục gốc là lỗi, và in cảnh báo (không đổi mã thoát) khi một key trùng với một utility của Tailwind
+`doctor` đọc config (hỏng hoặc không hợp lệ → dừng, mã thoát 1), kiểm tra hợp lệ theme bằng `ThemeSchema`, rồi chạy `prepareGenerate` với các tùy chọn của config để bắt lỗi theme × options
+(`❌ Invalid theme/options`), phân giải các đường dẫn đầu ra bằng `resolveEmitTarget` và báo một lần từ chối (một `output` hoặc `tokensOutput` thoát ra ngoài thư mục gốc, một `tokensOutput` không phải file `.ts`, hai vai trò dùng chung một file) dưới dạng `Output (…) ❌ Invalid emit paths`, và in cảnh báo (không đổi mã thoát) khi một key trùng với một utility của Tailwind
 (`src/cli/commands/utilityCollisions.ts`, danh sách được đối chiếu với trình biên dịch thật trong `src/__integration__/utility-collisions.test.ts`) hoặc khi một override của
 `themeAxes` lặp lại literal của một key khác trong base (gợi ý dùng `$alias`, `src/cli/commands/aliasHints.ts`).
 

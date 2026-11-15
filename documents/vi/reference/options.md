@@ -1,4 +1,4 @@
-<!-- source: documents/reference/options.md sha256: 492c2afcef4b -->
+<!-- source: documents/reference/options.md sha256: 42c7cc4afc54 -->
 
 # Tùy chọn
 
@@ -169,3 +169,16 @@ generate(theme, {
   },
 });
 ```
+
+### Giới hạn của JSON Schema
+
+`style-gen schema` ghi JSON Schema của `style-gen.config.json`, và một editor đọc nó qua `"$schema"` sẽ đánh dấu key hoặc giá trị sai ngay khi bạn gõ. Schema mang mọi quy tắc giá trị mà một JSON Schema có thể diễn đạt: các key được chấp nhận, hình dạng giá trị, và, với mỗi nhóm `coverage`, chỉ `prefixes` của riêng nhóm đó (không có cho `typography`), `opacities` là các số nguyên khác nhau (chỉ cho `colors`) và `keys: "aliased"` chỉ ở nơi có alias `$`.
+
+Nó không thể diễn đạt một quy tắc so sánh hai key hoặc đọc một file khác, nên editor có thể chấp nhận một config mà `generate`, `style-gen doctor` và các plugin bundler từ chối:
+
+- mỗi entry của `breakpoints` phải trỏ tới một screen trong `defaultScreens` hoặc `screens`;
+- `screens`, sau khi gộp với các screen mặc định, phải dùng cùng một đơn vị;
+- mỗi tên trong `resetTailwindDefaults` cần nhóm thay thế của nó trong theme;
+- `output` và `tokensOutput` nằm trong thư mục gốc dự án, `tokensOutput` là file `.ts`, `.mts` hoặc `.cts`, và theme, CSS cùng module tokens là ba file khác nhau.
+
+Phần mô tả của `breakpoints` và `screens` trong schema có nói điều này. Hãy chạy `yarn style-gen doctor` để có kết luận đầy đủ.

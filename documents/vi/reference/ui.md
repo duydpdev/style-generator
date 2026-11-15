@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: 9e9f393429da -->
+<!-- source: documents/reference/ui.md sha256: acbd6fe8d2ff -->
 
 # UI kit (./ui)
 
@@ -21,7 +21,7 @@ import {
   splitLayout,
 } from "@duydpdev/style-generator/ui";
 
-// `tokens` = createDesignTokens(theme, options).DesignTokens.Web
+// `tokens` = the `tokens` export of the generated `theme.tokens.ts`
 import { tokens } from "./tokens";
 
 // 1. One `cn` per theme: a later `rounded-pill` replaces `rounded-md`.

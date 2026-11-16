@@ -175,7 +175,7 @@ const editedTheme = `${JSON.stringify(theme, null, 2)}\n`;
  * only gives a lost watcher event another chance to arrive.
  * @param {() => void} edit - The filesystem change under test
  * @param {() => boolean} done - Whether its effect is visible
- * @param {string} what - Failure message when the effect never shows up
+ * @param {() => string} what - Builds the failure message when the effect never shows up; called at failure time, so it sees the state then
  * @returns {Promise<void>} Resolves once `done()` holds
  */
 const settle = async (edit, done, what) => {
@@ -184,7 +184,7 @@ const settle = async (edit, done, what) => {
   while (!done()) {
     if (Date.now() - begun > TIMEOUT_MS) {
       await server.close();
-      fail(`${what} within ${TIMEOUT_MS} ms`);
+      fail(`${what()} within ${TIMEOUT_MS} ms`);
     }
     if (Date.now() - lastEdit >= RETRY_MS) {
       edit();
@@ -201,7 +201,7 @@ await settle(
   () =>
     readFileSync(themeCss, "utf8").includes(MARKER) &&
     sent.includes("full-reload"),
-  `no re-emit (ws messages: [${sent.join(", ")}])`,
+  () => `no re-emit (ws messages: [${sent.join(", ")}])`,
 );
 
 // Scenario 3: the config moves from `package.json#style-gen` to a
@@ -216,7 +216,8 @@ await settle(
   () =>
     readFileSync(themeCss, "utf8").includes("--color-*: initial;") &&
     sent.filter((t) => t === "full-reload").length > reloadsBefore,
-  "creating style-gen.config.json next to package.json#style-gen was not picked up",
+  () =>
+    "creating style-gen.config.json next to package.json#style-gen was not picked up",
 );
 
 // Removing it falls back to `package.json#style-gen`. A removal that went
@@ -228,7 +229,8 @@ await settle(
     rmSync(configJson, { force: true });
   },
   () => !readFileSync(themeCss, "utf8").includes("--color-*: initial;"),
-  "removing style-gen.config.json did not fall back to package.json#style-gen",
+  () =>
+    "removing style-gen.config.json did not fall back to package.json#style-gen",
 );
 
 await server.restart();

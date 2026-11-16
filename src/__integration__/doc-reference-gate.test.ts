@@ -257,9 +257,47 @@ describe("integration: check-doc-reference rejects stale references", () => {
     expect(output).toContain("config key coverage.shadows is not documented");
   });
 
-  it("does not ask for every category x leaf pair", () => {
-    // The fixture names each leaf once; no `colors.prefixes`-style pair.
-    expect(runGate(dir).status).toBe(0);
+  it("does not ask for every category x leaf pair (L9)", () => {
+    // Its own fixture: three categories with different leaves, so the
+    // category x leaf product (9 pairs, only 4 of them in the schema) is far
+    // from the 6 names the page gives. Each category and each leaf is named
+    // once, in the section; no `colors.prefixes`-style pair exists.
+    const entry = (leaves: string[]) => ({
+      anyOf: [
+        { type: "boolean" },
+        {
+          type: "object",
+          properties: Object.fromEntries(leaves.map((leaf) => [leaf, {}])),
+        },
+      ],
+    });
+    writeFixture(dir, {
+      ...SCHEMA_PROPERTIES,
+      coverage: {
+        type: "object",
+        properties: {
+          colors: entry(["prefixes", "keys"]),
+          shadows: entry(["prefixes"]),
+          radius: entry(["opacities"]),
+        },
+      },
+    });
+    editPage(dir, "documents/reference/options.md", (p) =>
+      p
+        .replace(
+          "Categories: `colors`, `shadows`.",
+          "Categories: `colors`, `shadows`, `radius`.",
+        )
+        .replace(
+          '| `{ keys: "aliased" }` | Keep only the aliased keys. |\n',
+          '| `{ keys: "aliased" }` | Keep only the aliased keys. |\n| `{ opacities: [...] }` | Add opacity steps. |\n',
+        ),
+    );
+
+    const { status, output } = runGate(dir);
+    expect(output).toContain("OK:");
+    expect(output).not.toMatch(/coverage\.\w+\.\w+/);
+    expect(status).toBe(0);
   });
 
   it("fails when a per-category map has no section", () => {

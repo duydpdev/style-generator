@@ -19,6 +19,25 @@ import {
   minimalTheme,
   viteHarness,
 } from "../../__integration__/__fixtures__/viteHookStubs";
+import type * as ResolvePluginTargetModule from "../../node/resolvePluginTarget";
+import { resolvePluginTarget } from "../../node/resolvePluginTarget";
+import type * as ThemeEmitterModule from "../../node/themeEmitter";
+import { emitTheme } from "../../node/themeEmitter";
+
+// Passthrough spies: the config-candidate tests assert how often the plugin
+// resolves the target and emits, the only observable difference between
+// "skipped" and "reloaded to the same result" (the emit writes only on change).
+vi.mock("../../node/resolvePluginTarget", async (importOriginal) => {
+  const actual = await importOriginal<typeof ResolvePluginTargetModule>();
+  return {
+    ...actual,
+    resolvePluginTarget: vi.fn(actual.resolvePluginTarget),
+  };
+});
+vi.mock("../../node/themeEmitter", async (importOriginal) => {
+  const actual = await importOriginal<typeof ThemeEmitterModule>();
+  return { ...actual, emitTheme: vi.fn(actual.emitTheme) };
+});
 
 import { styleGenVite, __resetForTests } from "./styleGenVitePlugin";
 
@@ -420,26 +439,39 @@ describe("styleGenVite plugin", () => {
         expect(server.ws.send).toHaveBeenCalledOnce();
       });
 
-      it("ignores package.json events while style-gen.config.json exists", () => {
+      it("ignores package.json events while style-gen.config.json exists (M5: no target resolve)", () => {
         const { logger, server } = setup();
         const pkgAbs = join(tmp, "package.json");
         // Not even valid JSON: a reload would log it.
         writeFileSync(pkgAbs, "{ not json", "utf8");
+        vi.mocked(resolvePluginTarget).mockClear();
+        vi.mocked(emitTheme).mockClear();
         server.watcher.handlers.get("change")?.(pkgAbs);
         server.watcher.handlers.get("add")?.(pkgAbs);
         vi.advanceTimersByTime(200);
 
+        // `readConfigFile` never reads `package.json` while the config file
+        // exists, so a reload would be silent: only the call count shows it.
+        expect(resolvePluginTarget).not.toHaveBeenCalled();
+        expect(emitTheme).not.toHaveBeenCalled();
         expect(logger.error).not.toHaveBeenCalled();
         expect(server.ws.send).not.toHaveBeenCalled();
       });
 
-      it("neither reloads nor logs for a package.json change without a style-gen section", () => {
+      it("neither reloads nor logs for a package.json change without a style-gen section (M5: no re-emit)", () => {
         const { logger, server } = setupWithoutConfig();
 
         const pkgAbs = writePackage({ name: "app", dependencies: { a: "1" } });
+        vi.mocked(resolvePluginTarget).mockClear();
+        vi.mocked(emitTheme).mockClear();
         server.watcher.handlers.get("change")?.(pkgAbs);
         vi.advanceTimersByTime(200);
 
+        // The event is a live candidate, so the target is resolved once; the
+        // unchanged target must then skip the emit (which writes only on
+        // change, so the files alone cannot tell).
+        expect(resolvePluginTarget).toHaveBeenCalledOnce();
+        expect(emitTheme).not.toHaveBeenCalled();
         expect(logger.info).not.toHaveBeenCalled();
         expect(logger.error).not.toHaveBeenCalled();
         expect(server.ws.send).not.toHaveBeenCalled();

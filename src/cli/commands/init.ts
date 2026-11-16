@@ -3,11 +3,12 @@ import path from "node:path";
 
 import * as p from "@clack/prompts";
 
-import { isPlainObject } from "../../node/isPlainObject";
+import { configCandidates } from "../../node/configSource";
 import {
+  declaredLayout,
   defaultConfig,
   readConfigFile,
-  resolveConfig,
+  type ConfigFile,
 } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { logger } from "../logger";
@@ -87,100 +88,45 @@ function handleCancel(value: unknown): void {
 }
 
 /**
- * Ensure directory exists before writing a file.
- * @param {string} filePath The path to the file.
- */
-function ensureDir(filePath: string): void {
-  const dir = path.dirname(filePath);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-/**
  * Write file and create directory if needed.
  * @param {string} filePath The path where the file will be written.
  * @param {string} content The content to write into the file.
  */
 function writeFile(filePath: string, content: string): void {
-  ensureDir(filePath);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, content, "utf8");
-}
-
-/**
- * Read an existing `style-gen.config.json` so `init` can merge into it.
- * @param {string} configPath Absolute path to the config file.
- * @returns {Record<string, unknown>} The parsed config object.
- * @throws {Error} When the file cannot be read as a JSON object.
- */
-function readExistingConfig(configPath: string): Record<string, unknown> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(fs.readFileSync(configPath, "utf8"));
-  } catch (error) {
-    throw new Error(
-      "style-gen.config.json could not be read as JSON. Cannot merge; aborting.",
-      { cause: error },
-    );
-  }
-  if (!isPlainObject(parsed)) {
-    throw new Error(
-      "style-gen.config.json is not a JSON object. Cannot merge; aborting.",
-    );
-  }
-  return parsed;
-}
-
-/**
- * The `package.json["style-gen"]` section, when it is a JSON object. The
- * `style-gen.config.json` that `init` writes takes precedence over it, so
- * `init` starts from it instead of silently shadowing those settings.
- * @param {string} cwd The project root.
- * @returns {Record<string, unknown> | undefined} A copy of the section.
- */
-function readPackageJsonSection(
-  cwd: string,
-): Record<string, unknown> | undefined {
-  const pkgPath = path.resolve(cwd, "package.json");
-  if (!fs.existsSync(pkgPath)) return undefined;
-  let pkg: unknown;
-  try {
-    pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-  } catch {
-    return undefined;
-  }
-  if (!isPlainObject(pkg)) return undefined;
-  const section = pkg["style-gen"];
-  return isPlainObject(section) ? { ...section } : undefined;
 }
 
 interface MergeBase {
   /** Absolute path of `style-gen.config.json`. */
   configPath: string;
   /** Where `content` came from; `undefined` when `init` starts empty. */
-  source?: "style-gen.config.json" | "package.json";
+  source?: string | undefined;
   /** The existing config object, as it is: `init` merges `theme`/`output` into it. */
   content: Record<string, unknown>;
 }
 
 /**
- * The config `init` merges into: an existing `style-gen.config.json`, else
- * `package.json["style-gen"]`, else nothing. Read before anything is
- * written, so an unreadable config aborts with no file created.
+ * The config `init` merges into: the object `readConfigFile` parsed (an
+ * existing `style-gen.config.json`, else `package.json["style-gen"]`), else
+ * nothing. A `style-gen.config.json` that is not a JSON object aborts before
+ * anything is written; an unreadable `package.json` section is not merged.
  * @param {string} cwd The project root.
+ * @param {ConfigFile} file The project's config, as `readConfigFile` read it.
  * @returns {MergeBase} The config path, where the content came from and the content.
+ * @throws {Error} When `style-gen.config.json` is not a JSON object.
  */
-function loadMergeBase(cwd: string): MergeBase {
+function loadMergeBase(cwd: string, file: ConfigFile): MergeBase {
   const configPath = path.resolve(cwd, "style-gen.config.json");
-  const source = fs.existsSync(configPath)
-    ? ("style-gen.config.json" as const)
-    : undefined;
-  const existing = source
-    ? readExistingConfig(configPath)
-    : readPackageJsonSection(cwd);
-  if (!existing) return { configPath, content: {} };
-  return { configPath, source: source ?? "package.json", content: existing };
+  if (file.raw !== undefined) {
+    return { configPath, source: file.source, content: file.raw };
+  }
+  if (file.error !== undefined && file.source === "style-gen.config.json") {
+    throw new Error(
+      `${file.error}.\n💡 Fix it, or delete it and run init again.`,
+    );
+  }
+  return { configPath, content: {} };
 }
 
 /**
@@ -341,33 +287,43 @@ function cssEntryFor(
 }
 
 /**
- * The `theme`/`output` of a project's config, resolved the way `generate`
- * reads it: a config without a `theme` key means `styles/theme.json`.
+ * The `theme`/`output` of a project's config. A valid config is resolved the
+ * way `generate` reads it (a config without a `theme` key means
+ * `styles/theme.json`); an invalid one still declares them, and `init` keeps
+ * what it declares instead of redirecting it.
  */
 interface ConfigLayout {
   /** `style-gen.config.json` or `package.json`. */
   source: string;
   theme: string;
   output: string;
-  /** Why `generate` ignores the config (malformed, schema issues); `theme`/`output` are then the defaults. */
+  /** Why `generate` ignores the config (malformed, schema issues). */
   problem: string | undefined;
+  /**
+   * Whether `theme` is what the config declares (or the default when it has
+   * no `theme` key). `false` when the key is present but not a non-empty
+   * string, or the file cannot be parsed: `theme` is then only the default.
+   */
+  themeReadable: boolean;
 }
 
 /**
  * Read the existing config (`style-gen.config.json`, else
  * `package.json#style-gen`) with the defaults `generate` applies.
- * @param {string} cwd - The project root
+ * @param {ConfigFile} file - The project's config, as `readConfigFile` read it
  * @returns {ConfigLayout | undefined} The layout, or `undefined` without a config
  */
-function readConfigLayout(cwd: string): ConfigLayout | undefined {
-  const file = readConfigFile(cwd);
-  if (file.source === undefined) return undefined;
-  const { theme, output } = resolveConfig({}, file);
+function readConfigLayout(file: ConfigFile): ConfigLayout | undefined {
+  const declared = declaredLayout(file);
+  if (declared === undefined) return undefined;
   return {
-    source: file.source,
-    theme,
-    output,
+    source: declared.source,
+    theme: declared.theme ?? defaultConfig.theme,
+    output: declared.output ?? defaultConfig.output,
     problem: file.error ?? file.issues,
+    themeReadable:
+      file.raw !== undefined &&
+      (declared.theme !== undefined || !("theme" in file.raw)),
   };
 }
 
@@ -383,54 +339,71 @@ function samePath(cwd: string, a: string, b: string): boolean {
 }
 
 /**
- * The theme and generated CSS of a project `init` already set up: the
- * `theme`/`output` of a valid existing config, else the theme location and
- * the `theme.css` next to it (what a fresh `init` writes).
- * @param {string} cwd - The project root
+ * The generated CSS `init` writes beside a theme.
  * @param {string} themeLoc - Project-relative POSIX theme location
- * @returns {{ theme: string; output: string }} The layout to print
+ * @returns {string} Project-relative POSIX CSS location
  */
-function existingLayout(
-  cwd: string,
-  themeLoc: string,
-): { theme: string; output: string } {
-  const found = readConfigLayout(cwd);
-  if (found?.problem === undefined && found !== undefined) return found;
-  // An unreadable config only costs the printed paths their accuracy;
-  // `generate` reports it with the real error.
-  return {
-    theme: themeLoc,
-    output: path.posix.join(path.posix.dirname(themeLoc), "theme.css"),
-  };
+function besideTheme(themeLoc: string): string {
+  return path.posix.join(path.posix.dirname(themeLoc), "theme.css");
 }
 
 /**
- * The config `init` can build on: a valid existing one. `--yes` refuses a
- * config it cannot read the theme from, and a `--theme` that disagrees with
- * it: defaults would put a second theme next to the one the config names.
- * Without `--yes`, an explicit `--theme` or a wizard answer is the user's own
- * choice, and an invalid config is merged into as before.
+ * The generated CSS the printed Tailwind lines point at: the `output` of the
+ * project's config (the default when the config names none, also when the
+ * config is invalid), else the `theme.css` beside the theme a first config
+ * would name.
+ * @param {DetectedStack} detected - The detected stack
+ * @param {string} cwd - The project root
+ * @returns {string} Project-relative POSIX CSS location
+ */
+function rulesOutput(detected: DetectedStack, cwd: string): string {
+  return (
+    readConfigLayout(readConfigFile(cwd))?.output ??
+    besideTheme(firstConfigTheme(detected, cwd, undefined))
+  );
+}
+
+/**
+ * The config `init` can build on. A valid one, and an invalid one whose
+ * `theme` is readable, keep the theme they declare. `--yes` refuses an
+ * invalid config and a `--theme` that disagrees with the config: defaults
+ * would put a second theme next to the one the config names. Without
+ * `--yes`, an explicit `--theme` or a wizard answer is the user's own
+ * choice; an invalid config whose theme cannot be read needs one of them.
  * @param {InitArgs} args - The CLI arguments
  * @param {string} cwd - The project root
- * @returns {ConfigLayout | undefined} The config, or `undefined` when there is none to keep
- * @throws {Error} Under `--yes`, when the config is invalid or `--theme` names another theme
+ * @param {ConfigLayout | undefined} found - The existing config, when there is one
+ * @param {boolean} isInteractive - Whether a TTY can answer the prompts
+ * @returns {ConfigLayout | undefined} The config to keep, or `undefined` when there is none to build on
+ * @throws {Error} Under `--yes`, when the config is invalid or `--theme` names another theme; without a terminal, when the theme cannot be read and `--theme` is missing
  */
-function usableConfig(args: InitArgs, cwd: string): ConfigLayout | undefined {
-  const found = readConfigLayout(cwd);
-  if (found === undefined || args.yes !== true) {
-    return found?.problem === undefined ? found : undefined;
+function usableConfig(
+  args: InitArgs,
+  cwd: string,
+  found: ConfigLayout | undefined,
+  isInteractive: boolean,
+): ConfigLayout | undefined {
+  if (found === undefined) return undefined;
+  if (args.yes === true) {
+    if (found.problem !== undefined) {
+      throw new Error(
+        `${found.source} is invalid, so --yes cannot tell where its theme lives:\n${found.problem}\n💡 Fix it first: yarn style-gen doctor`,
+      );
+    }
+    if (args.theme !== undefined && !samePath(cwd, args.theme, found.theme)) {
+      throw new Error(
+        `--theme ${args.theme} differs from the theme of ${found.source} (${found.theme}); --yes never redirects an existing config.\n💡 Drop --theme, or run init without --yes to change it`,
+      );
+    }
+    return found;
   }
-  if (found.problem !== undefined) {
+  if (found.themeReadable) return found;
+  if (args.theme === undefined && !isInteractive) {
     throw new Error(
-      `${found.source} is invalid, so --yes cannot tell where its theme lives:\n${found.problem}\n💡 Fix it first: yarn style-gen doctor`,
+      `${found.source} is invalid and its "theme" cannot be read:\n${found.problem ?? ""}\n💡 Fix it first: yarn style-gen doctor, or pass --theme <path>`,
     );
   }
-  if (args.theme !== undefined && !samePath(cwd, args.theme, found.theme)) {
-    throw new Error(
-      `--theme ${args.theme} differs from the theme of ${found.source} (${found.theme}); --yes never redirects an existing config.\n💡 Drop --theme, or run init without --yes to change it`,
-    );
-  }
-  return found;
+  return undefined;
 }
 
 /**
@@ -568,11 +541,12 @@ function writeThemeFiles(
 /**
  * Settle the config: one that already names this theme stays as it is
  * (`package.json#style-gen` included, so no `style-gen.config.json` shadows
- * it); otherwise `theme` and `output` are merged into it, or a new one is
- * written.
+ * it, and an invalid config is not rewritten); otherwise `theme` is merged
+ * into it, and `output` only when it has none, or a new config is written.
+ * A custom `output` is never rewritten.
  * @param {string} cwd - The project root
  * @param {MergeBase} mergeBase - The existing config content, if any
- * @param {ConfigLayout | undefined} config - The valid existing config, if any
+ * @param {ConfigLayout | undefined} config - The existing config whose theme is readable, if any
  * @param {string} themeLoc - Repo-relative POSIX path of the theme
  * @returns {{ layout: { theme: string; output: string }; changed: boolean }} The theme and output in effect, and whether a config file was written
  */
@@ -586,17 +560,16 @@ function updateConfig(
     logger.info(`Kept ${config.source}: theme and output stay as configured.`);
     return { layout: config, changed: false };
   }
-  const written = {
-    theme: themeLoc,
-    output: path.posix.join(path.posix.dirname(themeLoc), "theme.css"),
-  };
+  const { content } = mergeBase;
+  const generated = besideTheme(themeLoc);
   writeFile(
     mergeBase.configPath,
     JSON.stringify(
       {
-        ...configSchemaRef(mergeBase.content),
-        ...mergeBase.content,
-        ...written,
+        ...configSchemaRef(content),
+        ...content,
+        theme: themeLoc,
+        ...("output" in content ? {} : { output: generated }),
       },
       null,
       2,
@@ -610,7 +583,13 @@ function updateConfig(
       'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
     );
   }
-  return { layout: written, changed: true };
+  return {
+    layout: {
+      theme: themeLoc,
+      output: typeof content.output === "string" ? content.output : generated,
+    },
+    changed: true,
+  };
 }
 
 /**
@@ -659,15 +638,17 @@ async function getInteractiveConfig(
 }
 
 /**
- * Decide whether existing scaffold files may be replaced.
+ * Decide whether existing scaffold files may be replaced. Declining is not a
+ * dead end: the files that exist stay and the missing ones, the config
+ * included, are written, as under `--yes`.
  * @param {boolean} isInteractive - Whether a TTY can answer the prompt
  * @param {boolean} yes - `--yes`: keep the files that exist and write only the missing ones, instead of asking or failing
- * @returns {Promise<"overwrite" | "fill" | "kept" | "refused">} The outcome
+ * @returns {Promise<"overwrite" | "fill" | "refused">} The outcome
  */
 async function confirmOverwrite(
   isInteractive: boolean,
   yes: boolean,
-): Promise<"overwrite" | "fill" | "kept" | "refused"> {
+): Promise<"overwrite" | "fill" | "refused"> {
   if (yes) {
     logger.info("Existing files kept (--yes never overwrites).");
     return "fill";
@@ -684,8 +665,8 @@ async function confirmOverwrite(
   });
   handleCancel(overwrite);
   if (overwrite) return "overwrite";
-  logger.info("Operation cancelled. Existing files kept.");
-  return "kept";
+  logger.info("Existing files kept; writing only what is missing.");
+  return "fill";
 }
 
 /**
@@ -772,30 +753,6 @@ async function applyAgentRules(
   return writeAgentRules(cwd, source, isInteractive);
 }
 
-/**
- * `init --rules-only`: write or refresh the rules and print the CSS lines
- * that keep Tailwind out of `.claude/`; the theme and config stay as they are.
- * @param {DetectedStack} detected - The detected stack
- * @param {string} cwd - The project root
- * @param {string | URL} source - The rules file shipped with this version
- * @param {boolean} isInteractive - Whether a TTY can answer the prompt
- */
-async function refreshRulesOnly(
-  detected: DetectedStack,
-  cwd: string,
-  source: string | URL,
-  isInteractive: boolean,
-): Promise<void> {
-  if (!(await writeAgentRules(cwd, source, isInteractive))) return;
-  const { output } = existingLayout(cwd, defaultThemeLoc(detected, cwd));
-  const entry = cssEntryFor(detected, output, cwd);
-  logger.info(
-    `Keep these lines in ${entry} (or the CSS file in ${path.posix.dirname(entry)}/ that imports Tailwind):`,
-  );
-  logger.log(getCssImport(cwd, entry, output, AGENT_DIR));
-  printRulesNote(true);
-}
-
 /* ------------------ Command ------------------ */
 
 /**
@@ -813,7 +770,9 @@ function configSchemaRef(content: Record<string, unknown>): {
 }
 
 /**
- * `init --rules-only`: refuse the flags that scaffold, else refresh the rules.
+ * `init --rules-only`: refuse the flags that scaffold, else write or refresh
+ * the rules and print the CSS lines that keep Tailwind out of `.claude/`; the
+ * theme and config stay as they are.
  * @param {InitArgs} args The initial CLI arguments.
  * @param {DetectedStack} detected The detected stack.
  * @param {string} cwd The project root.
@@ -838,8 +797,38 @@ async function runRulesOnly(
     );
     return 1;
   }
-  await refreshRulesOnly(detected, cwd, rulesSource, isInteractive);
+  if (!(await writeAgentRules(cwd, rulesSource, isInteractive))) return 0;
+  const output = rulesOutput(detected, cwd);
+  const entry = cssEntryFor(detected, output, cwd);
+  logger.info(
+    `Keep these lines in ${entry} (or the CSS file in ${path.posix.dirname(entry)}/ that imports Tailwind):`,
+  );
+  logger.log(getCssImport(cwd, entry, output, AGENT_DIR));
+  printRulesNote(true);
   return 0;
+}
+
+/**
+ * Refuse a theme path that is also a file `init` writes or merges into: the
+ * theme template would overwrite it (`--theme styles/theme.schema.json`,
+ * `--theme style-gen.config.schema.json`, `--theme package.json`).
+ * @param {string} cwd - The project root
+ * @param {ThemeTarget} target - Where the theme and its schemas go
+ * @throws {Error} When the theme path equals one of those files
+ */
+function assertThemeNotOverwritingFiles(
+  cwd: string,
+  target: ThemeTarget,
+): void {
+  if (
+    [target.schemaAbs, target.configSchemaAbs, ...configCandidates(cwd)].some(
+      (file) => samePath(cwd, target.abs, file),
+    )
+  ) {
+    throw new Error(
+      `init writes or merges into ${target.loc}: the theme would overwrite it.\n💡 Pass another --theme <path>`,
+    );
+  }
 }
 
 /**
@@ -867,8 +856,10 @@ async function scaffold(
 
   // Read before anything is written, so an unreadable config aborts with no
   // file created.
-  const mergeBase = loadMergeBase(cwd);
-  const config = usableConfig(args, cwd);
+  const file = readConfigFile(cwd);
+  const mergeBase = loadMergeBase(cwd, file);
+  const found = readConfigLayout(file);
+  const config = usableConfig(args, cwd, found, isInteractive);
   const defaultTheme = firstConfigTheme(detected, cwd, config);
   const choice = await chooseTheme(args, config, defaultTheme, isInteractive);
 
@@ -885,6 +876,7 @@ async function scaffold(
     return 0;
   }
   const target = themeTarget(cwd, resolved);
+  assertThemeNotOverwritingFiles(cwd, target);
 
   const proceed = [target.abs, target.schemaAbs, target.configSchemaAbs].some(
     fs.existsSync,
@@ -892,12 +884,20 @@ async function scaffold(
     ? await confirmOverwrite(isInteractive, yes)
     : "overwrite";
   if (proceed === "refused") return 1;
-  // Keeping the theme still refreshes the rules: re-running init after an
-  // upgrade is how they are updated. A declined overwrite keeps everything,
-  // the config included.
-  if (proceed === "kept") {
+  // Declining an overwrite still fills what is missing (the config included),
+  // so `generate` can build afterwards. An invalid config is the exception:
+  // declining leaves it, and everything else, as it is.
+  if (proceed === "fill" && found?.problem !== undefined) {
     const rules = await applyAgentRules(args, cwd, rulesSource, isInteractive);
-    printNextSteps(detected, existingLayout(cwd, target.loc), cwd, rules);
+    printNextSteps(
+      detected,
+      {
+        theme: target.loc,
+        output: config?.output ?? besideTheme(target.loc),
+      },
+      cwd,
+      rules,
+    );
     return 0;
   }
 

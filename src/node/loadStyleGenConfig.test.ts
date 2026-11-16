@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   StyleGenConfigFileSchema,
   StyleGenConfigSchema,
+  declaredLayout,
   loadStyleGenConfig,
   readConfigFile,
   resolveConfig,
@@ -459,5 +460,89 @@ describe("readConfigFile schema validation (X-04)", () => {
   it("keeps $schema out of the resolved config's key list", () => {
     expect(StyleGenConfigSchema.keyof().options).not.toContain("$schema");
     expect(StyleGenConfigFileSchema.keyof().options).toContain("$schema");
+  });
+});
+
+describe("declaredLayout", () => {
+  let tmp: string;
+
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-declared-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  const writeConfig = (cfg: unknown): void => {
+    fs.writeFileSync(
+      path.join(tmp, "style-gen.config.json"),
+      JSON.stringify(cfg, null, 2),
+    );
+  };
+
+  it("is undefined without a config", () => {
+    expect(declaredLayout(readConfigFile(tmp))).toBeUndefined();
+  });
+
+  it("reads theme and output from a valid config", () => {
+    writeConfig({ theme: "a/t.json", output: "a/t.css" });
+    expect(declaredLayout(readConfigFile(tmp))).toEqual({
+      source: "style-gen.config.json",
+      theme: "a/t.json",
+      output: "a/t.css",
+    });
+  });
+
+  it("reads them from a config with schema issues, which merges nothing", () => {
+    writeConfig({ theme: "a/t.json", output: "a/t.css", extraSources: ["x"] });
+    const file = readConfigFile(tmp);
+
+    expect(file.issues).toMatch(/extraSources/);
+    expect(file.config).toEqual({});
+    expect(file.raw).toEqual({
+      theme: "a/t.json",
+      output: "a/t.css",
+      extraSources: ["x"],
+    });
+    expect(declaredLayout(file)).toEqual({
+      source: "style-gen.config.json",
+      theme: "a/t.json",
+      output: "a/t.css",
+    });
+  });
+
+  it("keeps the parsed object of a valid config as it was, $schema included", () => {
+    writeConfig({ $schema: "./x.json", theme: "a/t.json" });
+    const file = readConfigFile(tmp);
+
+    expect(file.raw).toEqual({ $schema: "./x.json", theme: "a/t.json" });
+    expect(file.config).toEqual({ theme: "a/t.json" });
+  });
+
+  it("leaves out a key that is not a non-empty string", () => {
+    writeConfig({ theme: 5, output: "", bogus: true });
+    expect(declaredLayout(readConfigFile(tmp))).toEqual({
+      source: "style-gen.config.json",
+    });
+  });
+
+  it("reads package.json#style-gen when there is no config file", () => {
+    fs.writeFileSync(
+      path.join(tmp, "package.json"),
+      JSON.stringify({ "style-gen": { theme: "p/t.json", axes: {} } }),
+    );
+    expect(declaredLayout(readConfigFile(tmp))).toEqual({
+      source: "package.json",
+      theme: "p/t.json",
+    });
+  });
+
+  it("declares nothing for a malformed file, and names its source", () => {
+    fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "{ nope");
+    const file = readConfigFile(tmp);
+
+    expect(file.raw).toBeUndefined();
+    expect(declaredLayout(file)).toEqual({ source: "style-gen.config.json" });
   });
 });

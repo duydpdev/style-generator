@@ -830,6 +830,22 @@ describe("initCommand", () => {
         expect(exists("src")).toBe(false);
       });
 
+      // L3: `--yes --theme` agrees with the config when both name one file.
+      it("L3: accepts --theme that reaches the config's theme through a symlinked directory", async () => {
+        fs.mkdirSync(path.join(tmp, "src/theme"), { recursive: true });
+        fs.writeFileSync(path.join(tmp, "src/theme/theme.json"), "{}");
+        fs.symlinkSync(path.join(tmp, "src/theme"), path.join(tmp, "link"));
+        const config = writeConfig({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+
+        expect(await run({ yes: true, theme: "link/theme.json" }, tmp)).toBe(0);
+
+        expect(read(CONFIG)).toBe(config);
+        expect(read("src/theme/theme.json")).toBe("{}");
+      });
+
       it("C-H1: accepts --theme that names the config's theme", async () => {
         const config = writeConfig({
           theme: "src/theme/theme.json",
@@ -1051,6 +1067,47 @@ describe("initCommand", () => {
       expect(exists("src/t/theme.schema.json")).toBe(true);
       expect(read(CONFIG)).toBe(config);
       expect(exists("src/styles")).toBe(false);
+    });
+
+    it("A15: init warns when it keeps an invalid config as it is", async () => {
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      invalid();
+
+      expect(await run({ theme: THEME }, tmp)).toBe(0);
+
+      expect(logged(warn)).toContain(
+        "style-gen.config.json is invalid and init left it as it is",
+      );
+      expect(logged(warn)).toContain("extraSources");
+    });
+
+    it("A15: init warns when the user declines on an invalid config", async () => {
+      setTty(true);
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      invalid();
+      write(THEME, "{}");
+      vi.mocked(p.text).mockResolvedValueOnce(THEME);
+      vi.mocked(p.confirm)
+        .mockResolvedValueOnce(false) // dark mode
+        .mockResolvedValueOnce(false); // overwrite
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(logged(warn)).toContain(
+        "style-gen.config.json is invalid and init left it as it is",
+      );
+    });
+
+    it("A15: a valid config draws no warning", async () => {
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      write(
+        CONFIG,
+        JSON.stringify({ theme: THEME, output: "src/t/theme.css" }),
+      );
+
+      expect(await run({ theme: THEME }, tmp)).toBe(0);
+
+      expect(warn).not.toHaveBeenCalled();
     });
 
     it("H1: the wizard offers the declared theme, and declining changes nothing", async () => {

@@ -373,10 +373,12 @@ describe("watchThemeFile", () => {
       );
       const w = start({}, { configFiles: [configFile], reloadTarget });
 
+      fs.rmSync(themeFile);
       w.emit("unlink", themeFile);
       vi.advanceTimersByTime(50);
       expect(reloadTarget).not.toHaveBeenCalled();
       expect(results).toEqual([]);
+      fs.writeFileSync(themeFile, theme("#111"));
 
       w.emit("unlink", configFile);
       vi.advanceTimersByTime(50);
@@ -493,8 +495,9 @@ describe("watchThemeFile", () => {
     describe("re-arming a removed file (M3)", () => {
       const candidates = (): string[] => [configFile, packageFile];
 
-      it("re-arms the theme with unwatch then add, once, and emits only on its `add`", () => {
+      it("re-arms a theme removed for good with unwatch then add, once, and emits only on its `add`", () => {
         const w = start();
+        fs.rmSync(themeFile);
 
         w.emit("unlink", themeFile);
         vi.advanceTimersByTime(50);
@@ -502,10 +505,25 @@ describe("watchThemeFile", () => {
         expect(w.calls).toEqual([`unwatch ${themeFile}`, `add ${themeFile}`]);
         expect(results).toEqual([]);
 
+        fs.writeFileSync(themeFile, theme("#111"));
         w.emit("add", themeFile);
         vi.advanceTimersByTime(50);
 
         expect(w.calls).toHaveLength(2);
+        expect(results).toEqual([ok(true)]);
+      });
+
+      // A16: the re-arm `add()` is an initial add that `ignoreInitial`
+      // drops, so a theme already back when `unlink` arrives is emitted from
+      // the `unlink` itself, still once if its `add` follows.
+      it("emits for a theme that exists again at its `unlink`, once even when an `add` follows (A16)", () => {
+        const w = start();
+
+        w.emit("unlink", themeFile);
+        w.emit("add", themeFile);
+        vi.advanceTimersByTime(50);
+
+        expect(w.calls).toEqual([`unwatch ${themeFile}`, `add ${themeFile}`]);
         expect(results).toEqual([ok(true)]);
       });
 
@@ -864,6 +882,40 @@ describe("watchThemeFile with the real chokidar: removed and recreated files (M3
         },
         () => cssHas("#c00"),
       );
+    },
+  );
+
+  // A16: a theme recreated 20-60 ms after its removal yielded only `unlink`:
+  // the re-arm `add()` counts as an initial add and `ignoreInitial` drops it.
+  // One write only (no `settle` retries, which would hide the gap with a
+  // later `change`).
+  it(
+    "emits once for a theme recreated 20 ms after its removal (A16)",
+    { timeout: 60_000 },
+    async () => {
+      await startWatching();
+      await settle(
+        () => {
+          fs.writeFileSync(themeFile, theme("#a00"));
+        },
+        () => cssHas("#a00"),
+      );
+      await quiet();
+      const before = results.length;
+
+      fs.rmSync(themeFile);
+      await sleep(20);
+      fs.writeFileSync(themeFile, theme("#b00"));
+
+      await vi.waitFor(
+        () => {
+          expect(cssHas("#b00")).toBe(true);
+        },
+        { timeout: 5_000, interval: 50 },
+      );
+      await quiet();
+      expect(results.slice(before)).toHaveLength(1);
+      expect(results.slice(before).every((r) => r.ok)).toBe(true);
     },
   );
 

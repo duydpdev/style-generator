@@ -139,8 +139,8 @@ Tests sit next to the code (`*.test.ts`). The main groups:
 - `src/features/{tokens,cva}/*` — `createDesignTokens`, `createVariantMapper` (`{ states }`).
 - `src/features/{vite,next}/*` — plugins (emit in `buildStart`, `addWatchFile`, watcher, path guard, the no-argument plugin reading `style-gen.config.json`).
 - `src/node/*` — the shared Node runner: `loadStyleGenConfig` (tests moved from the old `config.test.ts`), `resolveProjectPath` (does not rewrite a leading `/`;
-  theme outside the root, `output`/`tokensOutput` inside the root), `themeEmitter` (per-stage labels, writes only when the content changed), `watchThemeFile` (re-reads the config;
-  an invalid config keeps the last valid one), `resolvePluginTarget`, `writeFileAtomic`, `errorMessage`, `isPlainObject`.
+  theme outside the root, `output`/`tokensOutput` inside the root), `sameFile` (case, symlink, hard link, one-sided existence), `configSource`, `resolveEmitTarget` (the five-role different-files rule, in every consumer), `themeEmitter` (per-stage labels, writes only when the content changed), `watchThemeFile` (re-reads the config;
+  an invalid config keeps the last valid one; a removed and recreated theme or config is watched again), `resolvePluginTarget`, `writeFileAtomic`, `errorMessage`, `isPlainObject`.
 - `src/cli/*` — `run.test.ts` calls `runCli(args, cwd)` directly (registry, per-command `--help`, unknown flag → code 1,
   `budget` invalid flag → code 2) because commands return an exit code rather than calling `process.exit`; `index.test.ts` only checks `process.exitCode`; `init`,
   `generate` (including `--watch` with a real chokidar and a test that edits the config while watching), `schema`,

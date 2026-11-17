@@ -170,13 +170,13 @@ generate(theme, {
 
 ### JSON Schema limits
 
-`style-gen schema` writes the JSON Schema of `style-gen.config.json`, and an editor that reads it through `"$schema"` flags a wrong key or value as you type. The schema carries every value rule a JSON Schema can state: the accepted keys, the value shapes, and, for each `coverage` category, only its own `prefixes` (none for `typography`), `opacities` as distinct integers (only for `colors`) and `keys: "aliased"` only where `$` aliases exist.
+`style-gen schema` writes the JSON Schema of `style-gen.config.json`, and an editor that reads it through `"$schema"` flags a wrong key or value as you type. The schema carries the key and value rules its generator maps into it: the accepted keys, the value shapes, and, for each `coverage` category, only its own `prefixes` (none for `typography`), `opacities` as distinct integers (only for `colors`) and `keys: "aliased"` only where `$` aliases exist. A committed schema file keeps the keys of the version that wrote it: run `yarn style-gen schema` after upgrading the package.
 
-It cannot state a rule that compares two keys or reads another file, so an editor can accept a config that `generate`, `style-gen doctor` and the bundler plugins reject:
+It cannot state a rule that compares two keys, reads another file or constrains a path, so an editor can accept a config that `generate`, `style-gen doctor` and the bundler plugins reject:
 
 - every `breakpoints` entry must name a screen in `defaultScreens` or `screens`;
 - `screens`, merged with the default screens, must use one unit;
 - each `resetTailwindDefaults` name needs its replacement category in the theme;
-- `output` and `tokensOutput` stay inside the project root, `tokensOutput` is a `.ts`, `.mts` or `.cts` file, and the theme, the CSS and the tokens module are three different files.
+- `output` and `tokensOutput` stay inside the project root, `tokensOutput` is a `.ts`, `.mts` or `.cts` file (the schema types it as a string and states no extension), and the theme, the CSS, the tokens module, `style-gen.config.json` and `package.json` are different files.
 
 The descriptions of `breakpoints` and `screens` in the schema say so. Run `yarn style-gen doctor` to get the full verdict.

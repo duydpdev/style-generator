@@ -13,9 +13,22 @@ import {
 } from "vitest";
 
 import { writeTmpFile } from "../../__integration__/__fixtures__/tmpProject";
+import { isCaseInsensitiveDir } from "../../node/sameFile";
 import { logger } from "../logger";
 
 import { generateCommand } from "./generate";
+
+/** The tmp filesystem ignores case: the real-filesystem case test runs only there. */
+const caseInsensitiveTmp = ((): boolean => {
+  const probe = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-generate-probe-")),
+  );
+  try {
+    return isCaseInsensitiveDir(probe);
+  } finally {
+    fs.rmSync(probe, { recursive: true, force: true });
+  }
+})();
 
 const sampleTheme = {
   colors: { primary: "#3B82F6", background: "#FFFFFF" },
@@ -520,5 +533,61 @@ describe("generateCommand", () => {
       expect(code).toBe(1);
       expect(exists("styles/theme.css")).toBe(false);
     });
+  });
+
+  // M1, L4: two paths, one file; a generated file never overwrites an input.
+  describe("one file behind two paths", () => {
+    it("refuses an output that reaches the theme through a symlinked directory (M1)", async () => {
+      write("styles/theme.json", sampleTheme);
+      fs.symlinkSync(file("styles"), file("link"));
+      const before = read("styles/theme.json");
+
+      const code = await generateCommand(
+        { theme: "styles/theme.json", out: "link/theme.json" },
+        tmp,
+      );
+
+      expect(code).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("theme and output must be different files"),
+      );
+      expect(read("styles/theme.json")).toBe(before);
+    });
+
+    it.skipIf(!caseInsensitiveTmp)(
+      "refuses an output that differs from the theme only in case, on a case-insensitive filesystem (M1)",
+      async () => {
+        write("styles/theme.json", sampleTheme);
+        const before = read("styles/theme.json");
+
+        const code = await generateCommand(
+          { theme: "styles/theme.json", out: "styles/Theme.json" },
+          tmp,
+        );
+
+        expect(code).toBe(1);
+        expect(read("styles/theme.json")).toBe(before);
+      },
+    );
+
+    it.each(["style-gen.config.json", "package.json"])(
+      "refuses --out %s and leaves the config as it is (L4)",
+      async (out) => {
+        write("styles/theme.json", sampleTheme);
+        write("style-gen.config.json", { theme: "styles/theme.json" });
+        write("package.json", { name: "app" });
+        const config = read("style-gen.config.json");
+        const pkg = read("package.json");
+
+        const code = await generateCommand({ out }, tmp);
+
+        expect(code).toBe(1);
+        expect(errorSpy).toHaveBeenCalledWith(
+          `output and ${out} must be different files, both resolve to ${file(out)}`,
+        );
+        expect(read("style-gen.config.json")).toBe(config);
+        expect(read("package.json")).toBe(pkg);
+      },
+    );
   });
 });

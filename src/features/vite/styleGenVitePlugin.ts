@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 import type { Logger, Plugin } from "vite";
@@ -202,6 +203,10 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
       server.watcher.add([...configFiles]);
 
       const reemit = debounce(() => {
+        // A theme removed for good (its `unlink` schedules this too) has
+        // nothing to emit; a re-created one reports `add`, or on Linux only a
+        // bare `unlink` of the file that already exists again.
+        if (!existsSync(requireTarget().themeFile)) return;
         const result = emitTheme(requireTarget());
         if (!result.ok) {
           server.config.logger.error(
@@ -261,14 +266,25 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
         if (index === 0) primaryPending = true;
         reloadConfig();
       };
-      server.watcher.on("change", (file) => {
+      const onWatched = (file: string): void => {
         if (file === requireTarget().themeFile) reemit();
         else onConfigFile(file);
-      });
+      };
+      server.watcher.on("change", onWatched);
       // `add`/`unlink` cover editors that save by replacing the file, and a
       // config created or removed while the server runs.
-      server.watcher.on("add", onConfigFile);
-      server.watcher.on("unlink", onConfigFile);
+      server.watcher.on("add", onWatched);
+      server.watcher.on("unlink", (file) => {
+        // chokidar 3 (bundled by every Vite) closes a file's watch on
+        // `unlink`: without a re-arm, its re-creation and later edits are
+        // never seen. Unwatching first clears the ignore entry, so `add`
+        // starts a fresh watch. Never `add()` a directory: that is recursive.
+        if (file === requireTarget().themeFile || configFiles.includes(file)) {
+          server.watcher.unwatch(file);
+          server.watcher.add(file);
+        }
+        onWatched(file);
+      });
       // Free this instance's `activeOutFiles` slot when the dev server
       // closes. Vite's `restartServer` resolves the NEW config (new
       // instance) before closing the old server, so `release()` deletes the

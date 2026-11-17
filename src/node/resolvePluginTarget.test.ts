@@ -143,6 +143,50 @@ describe("resolvePluginTarget", () => {
       "[my-plugin] tokensOutput escapes project root: ../t.ts",
     );
   });
+
+  // L4 through the plugins: a generated file may not overwrite the config.
+  it.each(["style-gen.config.json", "package.json"])(
+    "rejects an output that is %s, with the prefix once (L4, L5)",
+    (output) => {
+      writeFileSync(
+        join(root, "style-gen.config.json"),
+        JSON.stringify({ output }),
+      );
+      writeFileSync(join(root, "package.json"), "{}");
+
+      expect(() => resolvePluginTarget(root, "style-gen-vite")).toThrow(
+        `[style-gen-vite] output and ${output} must be different files, both resolve to ${join(root, output)}`,
+      );
+    },
+  );
+
+  it("rejects an output that is package.json when the config lives there (L4)", () => {
+    writeFileSync(
+      join(root, "package.json"),
+      JSON.stringify({ "style-gen": { output: "package.json" } }),
+    );
+
+    expect(() => resolvePluginTarget(root, "x")).toThrow(
+      "[x] output and package.json must be different files",
+    );
+  });
+
+  // A14: no false "same file" where the project has no config file, or its
+  // sources live in a Nuxt `app/` directory.
+  it("accepts a root without config files or package.json (A14)", () => {
+    expect(resolvePluginTarget(root, "x").configFound).toBe(false);
+  });
+
+  it("accepts a Nuxt-style app/ root with its own theme and output (A14)", () => {
+    mkdirSync(join(root, "app/styles"), { recursive: true });
+    writeFileSync(join(root, "package.json"), "{}");
+    const app = join(root, "app");
+
+    const { target } = resolvePluginTarget(app, "x");
+
+    expect(target.themeFile).toBe(join(app, "styles/theme.json"));
+    expect(target.outFile).toBe(join(app, "styles/theme.css"));
+  });
 });
 
 describe("parsePluginRootOptions", () => {

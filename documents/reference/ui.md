@@ -79,7 +79,7 @@ export declare interface RecipeTables {
     | readonly Readonly<Record<string, ClassValue>>[]
     | undefined;
   readonly defaultVariants?:
-    | Readonly<Record<string, string | boolean | undefined>>
+    | Readonly<Record<string, string | number | boolean | undefined>>
     | undefined;
 }
 ```

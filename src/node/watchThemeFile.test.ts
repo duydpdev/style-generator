@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
 
 import type { EmitResult, EmitTarget } from "./themeEmitter";
 import { watchThemeFile } from "./watchThemeFile";
@@ -14,6 +15,8 @@ class FakeWatcher extends EventEmitter {
   watched: string[];
   unwatched: string[] = [];
   added: string[] = [];
+  /** `unwatch`/`add` calls in order, as `unwatch <path>` / `add <path>`. */
+  calls: string[] = [];
   closed = false;
 
   constructor(
@@ -26,11 +29,13 @@ class FakeWatcher extends EventEmitter {
 
   unwatch(paths: string): this {
     this.unwatched.push(paths);
+    this.calls.push(`unwatch ${paths}`);
     return this;
   }
 
   add(paths: string): this {
     this.added.push(paths);
+    this.calls.push(`add ${paths}`);
     return this;
   }
 
@@ -368,10 +373,12 @@ describe("watchThemeFile", () => {
       );
       const w = start({}, { configFiles: [configFile], reloadTarget });
 
+      fs.rmSync(themeFile);
       w.emit("unlink", themeFile);
       vi.advanceTimersByTime(50);
       expect(reloadTarget).not.toHaveBeenCalled();
       expect(results).toEqual([]);
+      fs.writeFileSync(themeFile, theme("#111"));
 
       w.emit("unlink", configFile);
       vi.advanceTimersByTime(50);
@@ -479,6 +486,120 @@ describe("watchThemeFile", () => {
 
         expect(reloadTarget).toHaveBeenCalledTimes(1);
         expect(results).toEqual([ok(true)]);
+      });
+    });
+
+    // M3: chokidar drops the watch of a file that existed at start on
+    // `unlink`; the runner must re-arm it (unwatch, then add) or the
+    // re-created file and its later edits are never seen.
+    describe("re-arming a removed file (M3)", () => {
+      const candidates = (): string[] => [configFile, packageFile];
+
+      it("re-arms a theme removed for good with unwatch then add, once, and emits only on its `add`", () => {
+        const w = start();
+        fs.rmSync(themeFile);
+
+        w.emit("unlink", themeFile);
+        vi.advanceTimersByTime(50);
+
+        expect(w.calls).toEqual([`unwatch ${themeFile}`, `add ${themeFile}`]);
+        expect(results).toEqual([]);
+
+        fs.writeFileSync(themeFile, theme("#111"));
+        w.emit("add", themeFile);
+        vi.advanceTimersByTime(50);
+
+        expect(w.calls).toHaveLength(2);
+        expect(results).toEqual([ok(true)]);
+      });
+
+      // A16: the re-arm `add()` is an initial add that `ignoreInitial`
+      // drops, so a theme already back when `unlink` arrives is emitted from
+      // the `unlink` itself, still once if its `add` follows.
+      it("emits for a theme that exists again at its `unlink`, once even when an `add` follows (A16)", () => {
+        const w = start();
+
+        w.emit("unlink", themeFile);
+        w.emit("add", themeFile);
+        vi.advanceTimersByTime(50);
+
+        expect(w.calls).toEqual([`unwatch ${themeFile}`, `add ${themeFile}`]);
+        expect(results).toEqual([ok(true)]);
+      });
+
+      // Phase 03c: the existence check moved from the `unlink` to the moment
+      // the schedule fires, so a theme that changes state in between is
+      // judged by its final state.
+      it("emits for a theme removed at its `unlink` that is back when the schedule fires", () => {
+        const w = start();
+        fs.rmSync(themeFile);
+
+        w.emit("unlink", themeFile);
+        fs.writeFileSync(themeFile, theme("#111"));
+        vi.advanceTimersByTime(50);
+
+        expect(results).toEqual([ok(true)]);
+        expect(w.calls).toEqual([`unwatch ${themeFile}`, `add ${themeFile}`]);
+      });
+
+      it("emits nothing for a theme present at its `unlink` that is gone when the schedule fires", () => {
+        const w = start();
+
+        w.emit("unlink", themeFile);
+        fs.rmSync(themeFile);
+        vi.advanceTimersByTime(50);
+
+        expect(results).toEqual([]);
+      });
+
+      it.each([["style-gen.config.json"], ["package.json"]])(
+        "re-arms %s with unwatch then add and reloads once",
+        (name) => {
+          const file = path.join(dir, name);
+          const reloadTarget = vi.fn(
+            (): EmitTarget => ({
+              themeFile,
+              outFile,
+              tokensFile,
+              options: { resetTailwindDefaults: ["colors"] },
+            }),
+          );
+          const w = start({}, { configFiles: candidates(), reloadTarget });
+
+          w.emit("unlink", file);
+          vi.advanceTimersByTime(50);
+
+          expect(w.calls).toEqual([`unwatch ${file}`, `add ${file}`]);
+          expect(reloadTarget).toHaveBeenCalledTimes(1);
+          expect(results).toEqual([ok(true)]);
+        },
+      );
+
+      it("does not re-arm a file it does not watch", () => {
+        const w = start({}, { configFiles: candidates() });
+
+        w.emit("unlink", path.join(dir, "other.json"));
+        vi.advanceTimersByTime(50);
+
+        expect(w.calls).toEqual([]);
+      });
+
+      it("re-arms the new theme after a config moved it, not the old one", () => {
+        const moved = path.join(dir, "moved.json");
+        fs.writeFileSync(moved, theme("#222"));
+        const reloadTarget = vi.fn(
+          (): EmitTarget => ({ themeFile: moved, outFile, tokensFile }),
+        );
+        const w = start({}, { configFiles: candidates(), reloadTarget });
+        w.emit("change", configFile);
+        vi.advanceTimersByTime(50);
+        w.calls.length = 0;
+
+        w.emit("unlink", themeFile);
+        expect(w.calls).toEqual([]);
+        w.emit("unlink", moved);
+
+        expect(w.calls).toEqual([`unwatch ${moved}`, `add ${moved}`]);
       });
     });
   });
@@ -600,6 +721,288 @@ describe("watchThemeFile with the real chokidar", () => {
         await handle.close();
         fs.rmSync(dir, { recursive: true, force: true });
       }
+    },
+  );
+});
+
+// M3: chokidar 5 watches a file that exists at start through a watch on the
+// file itself and drops it on `unlink`, so a removed and re-created file
+// (`git checkout`, `git stash`) went unseen.
+describe("watchThemeFile with the real chokidar: removed and recreated files (M3)", () => {
+  let dir: string;
+  let themeFile: string;
+  let outFile: string;
+  let tokensFile: string;
+  let configFile: string;
+  let packageFile: string;
+  let handle: ThemeWatchHandle | undefined;
+  let results: EmitResult[];
+  let reloadTarget: Mock<() => EmitTarget>;
+  let counter: number;
+
+  const sleep = (ms: number): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Run `edit`, then repeat it every poll until `done` holds. On macOS
+  // (FSEvents) an event right after `ready` or a rename can be lost, so one
+  // attempt is not enough; every edit here is idempotent.
+  const settle = (edit: () => void, done: () => boolean): Promise<void> =>
+    vi.waitFor(
+      () => {
+        edit();
+        expect(done()).toBe(true);
+      },
+      { timeout: 10_000, interval: 150 },
+    );
+
+  // Let a finished step's trailing events land before the next one reads
+  // its baseline (the debounce is 20 ms).
+  const quiet = (): Promise<void> => sleep(500);
+
+  const unique = (): string => `#0${String(counter++).padStart(2, "0")}`;
+
+  // What an editor does on save: write a sibling, rename it over the file.
+  const replace = (file: string, content: string): void => {
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, content);
+    fs.renameSync(tmp, file);
+  };
+
+  const cssHas = (marker: string): boolean =>
+    fs.existsSync(outFile) && fs.readFileSync(outFile, "utf8").includes(marker);
+
+  const startWatching = async (): Promise<void> => {
+    handle = watchThemeFile(
+      { themeFile, outFile, tokensFile },
+      (r) => results.push(r),
+      {
+        debounceMs: 20,
+        configFiles: [configFile, packageFile],
+        reloadTarget,
+      },
+    );
+    await handle.ready;
+  };
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "style-gen-watch-rearm-"));
+    // The usual layout: the config at the root, the theme in `styles/`. It
+    // matters: with every file in one directory chokidar keeps seeing a
+    // re-created file, with this layout it does not (M3 reproduces).
+    fs.mkdirSync(path.join(dir, "styles"));
+    themeFile = path.join(dir, "styles", "theme.json");
+    outFile = path.join(dir, "styles", "theme.css");
+    tokensFile = path.join(dir, "styles", "theme.tokens.ts");
+    configFile = path.join(dir, "style-gen.config.json");
+    packageFile = path.join(dir, "package.json");
+    fs.writeFileSync(themeFile, theme("#111"));
+    fs.writeFileSync(configFile, "{}");
+    fs.writeFileSync(packageFile, JSON.stringify({ name: "x" }));
+    results = [];
+    counter = 0;
+    reloadTarget = vi.fn(
+      (): EmitTarget => ({ themeFile, outFile, tokensFile }),
+    );
+    handle = undefined;
+  });
+
+  afterEach(async () => {
+    await handle?.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it(
+    "keeps seeing the config after it is removed and recreated, and package.json after a second removal",
+    { timeout: 60_000 },
+    async () => {
+      await startWatching();
+      // Proves the watch is live before anything is removed.
+      await settle(
+        () => {
+          fs.writeFileSync(configFile, JSON.stringify({ n: unique() }));
+        },
+        () => reloadTarget.mock.calls.length > 0,
+      );
+      await quiet();
+
+      let mark = reloadTarget.mock.calls.length;
+      await settle(
+        () => {
+          fs.rmSync(configFile, { force: true });
+        },
+        () => reloadTarget.mock.calls.length > mark,
+      );
+      await quiet();
+
+      mark = reloadTarget.mock.calls.length;
+      await settle(
+        () => {
+          fs.writeFileSync(configFile, JSON.stringify({ n: unique() }));
+        },
+        () => reloadTarget.mock.calls.length > mark,
+      );
+      await quiet();
+
+      mark = reloadTarget.mock.calls.length;
+      await settle(
+        () => {
+          fs.writeFileSync(configFile, JSON.stringify({ n: unique() }));
+        },
+        () => reloadTarget.mock.calls.length > mark,
+      );
+      await quiet();
+
+      // Second removal: package.json is the source again, and its edits count.
+      mark = reloadTarget.mock.calls.length;
+      await settle(
+        () => {
+          fs.rmSync(configFile, { force: true });
+        },
+        () => reloadTarget.mock.calls.length > mark,
+      );
+      await quiet();
+
+      mark = reloadTarget.mock.calls.length;
+      await settle(
+        () => {
+          fs.writeFileSync(
+            packageFile,
+            JSON.stringify({ "style-gen": { n: unique() } }),
+          );
+        },
+        () => reloadTarget.mock.calls.length > mark,
+      );
+    },
+  );
+
+  it(
+    "keeps seeing the theme after it is removed and recreated",
+    { timeout: 60_000 },
+    async () => {
+      await startWatching();
+      await settle(
+        () => {
+          fs.writeFileSync(themeFile, theme("#a00"));
+        },
+        () => cssHas("#a00"),
+      );
+      await quiet();
+
+      fs.rmSync(themeFile);
+      await quiet();
+      // The removal alone emits nothing (there is no theme to read).
+      expect(results.every((r) => r.ok)).toBe(true);
+
+      await settle(
+        () => {
+          fs.writeFileSync(themeFile, theme("#b00"));
+        },
+        () => cssHas("#b00"),
+      );
+      await quiet();
+
+      await settle(
+        () => {
+          fs.writeFileSync(themeFile, theme("#c00"));
+        },
+        () => cssHas("#c00"),
+      );
+    },
+  );
+
+  // A16: a theme recreated 20-60 ms after its removal yielded only `unlink`:
+  // the re-arm `add()` counts as an initial add and `ignoreInitial` drops it.
+  // One write only (no `settle` retries, which would hide the gap with a
+  // later `change`).
+  it(
+    "emits once for a theme recreated 20 ms after its removal (A16)",
+    { timeout: 60_000 },
+    async () => {
+      await startWatching();
+      await settle(
+        () => {
+          fs.writeFileSync(themeFile, theme("#a00"));
+        },
+        () => cssHas("#a00"),
+      );
+      await quiet();
+      const before = results.length;
+
+      fs.rmSync(themeFile);
+      await sleep(20);
+      fs.writeFileSync(themeFile, theme("#b00"));
+
+      await vi.waitFor(
+        () => {
+          expect(cssHas("#b00")).toBe(true);
+        },
+        { timeout: 5_000, interval: 50 },
+      );
+      await quiet();
+      expect(results.slice(before)).toHaveLength(1);
+      expect(results.slice(before).every((r) => r.ok)).toBe(true);
+    },
+  );
+
+  it(
+    "keeps seeing the theme after an atomic rename-over save",
+    { timeout: 60_000 },
+    async () => {
+      await startWatching();
+      await settle(
+        () => {
+          fs.writeFileSync(themeFile, theme("#a00"));
+        },
+        () => cssHas("#a00"),
+      );
+      await quiet();
+
+      await settle(
+        () => {
+          replace(themeFile, theme("#b00"));
+        },
+        () => cssHas("#b00"),
+      );
+      await quiet();
+
+      await settle(
+        () => {
+          fs.writeFileSync(themeFile, theme("#c00"));
+        },
+        () => cssHas("#c00"),
+      );
+    },
+  );
+
+  it(
+    "keeps seeing the config after an atomic rename-over save",
+    { timeout: 60_000 },
+    async () => {
+      await startWatching();
+      await settle(
+        () => {
+          fs.writeFileSync(configFile, JSON.stringify({ n: unique() }));
+        },
+        () => reloadTarget.mock.calls.length > 0,
+      );
+      await quiet();
+
+      let mark = reloadTarget.mock.calls.length;
+      await settle(
+        () => {
+          replace(configFile, JSON.stringify({ n: unique() }));
+        },
+        () => reloadTarget.mock.calls.length > mark,
+      );
+      await quiet();
+
+      mark = reloadTarget.mock.calls.length;
+      await settle(
+        () => {
+          fs.writeFileSync(configFile, JSON.stringify({ n: unique() }));
+        },
+        () => reloadTarget.mock.calls.length > mark,
+      );
     },
   );
 });

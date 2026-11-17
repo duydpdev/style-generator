@@ -22,6 +22,7 @@ export interface StubServer {
   watcher: {
     on: (event: string, cb: (path: string) => void) => void;
     add: ReturnType<typeof vi.fn>;
+    unwatch: ReturnType<typeof vi.fn>;
     handlers: Map<string, (path: string) => void>;
   };
   ws: { send: ReturnType<typeof vi.fn> };
@@ -96,6 +97,7 @@ export const makeServer = (logger: StubLogger): StubServer => {
     watcher: {
       handlers,
       add: vi.fn(),
+      unwatch: vi.fn(),
       on: (event, cb) => {
         handlers.set(event, cb);
       },

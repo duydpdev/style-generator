@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 4bf8d10804c5 -->
+<!-- source: documents/testing.md sha256: 9bad32106510 -->
 
 # Hướng dẫn kiểm thử
 
@@ -141,8 +141,8 @@ Test nằm cạnh mã (`*.test.ts`). Các nhóm chính:
 - `src/features/{tokens,cva}/*` — `createDesignTokens`, `createVariantMapper` (`{ states }`).
 - `src/features/{vite,next}/*` — các plugin (emit trong `buildStart`, `addWatchFile`, watcher, bộ bảo vệ đường dẫn, plugin không đối số đọc `style-gen.config.json`).
 - `src/node/*` — Node runner dùng chung: `loadStyleGenConfig` (các test được chuyển từ `config.test.ts` cũ), `resolveProjectPath` (không viết lại dấu `/` đứng đầu;
-  theme nằm ngoài thư mục gốc, `output`/`tokensOutput` nằm trong thư mục gốc), `themeEmitter` (nhãn theo từng giai đoạn, chỉ ghi khi nội dung thay đổi), `watchThemeFile` (đọc lại config;
-  một config không hợp lệ giữ lại config hợp lệ gần nhất), `resolvePluginTarget`, `writeFileAtomic`, `errorMessage`, `isPlainObject`.
+  theme nằm ngoài thư mục gốc, `output`/`tokensOutput` nằm trong thư mục gốc), `sameFile` (chữ hoa/thường, symlink, hard link, chỉ một bên tồn tại), `configSource`, `resolveEmitTarget` (quy tắc năm vai trò khác file, ở mọi nơi dùng), `themeEmitter` (nhãn theo từng giai đoạn, chỉ ghi khi nội dung thay đổi), `watchThemeFile` (đọc lại config;
+  một config không hợp lệ giữ lại config hợp lệ gần nhất; một theme hoặc config bị xóa rồi tạo lại được theo dõi lại), `resolvePluginTarget`, `writeFileAtomic`, `errorMessage`, `isPlainObject`.
 - `src/cli/*` — `run.test.ts` gọi trực tiếp `runCli(args, cwd)` (registry, `--help` theo từng lệnh, flag lạ → mã 1,
   flag không hợp lệ của `budget` → mã 2) vì các lệnh trả về một mã thoát thay vì gọi `process.exit`; `index.test.ts` chỉ kiểm tra `process.exitCode`; `init`,
   `generate` (kể cả `--watch` với chokidar thật và một test sửa config trong khi đang theo dõi), `schema`,

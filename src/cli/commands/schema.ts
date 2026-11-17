@@ -108,10 +108,11 @@ function describeCollision(
  * schema goes to `--config-out`, else `style-gen.config.schema.json` in the
  * project root, where the config's `"$schema": "./style-gen.config.schema.json"`
  * expects it. The config is read like `generate` reads it: a malformed file
- * is warned about (also with `--out`) and read as the defaults; one with
+ * is warned about (also with `--out`) and read as the defaults. A config with
  * schema issues still gets its config schema written (the moment an upgrader
- * needs it), after which the issues are reported, the exit code is 1 and no
- * theme schema is written unless `--out` names one.
+ * needs it); without `--out` the issues are then reported, the exit code is 1
+ * and no theme schema is written, while with `--out` both schemas are written,
+ * nothing is reported and the exit code is 0.
  *
  * Both targets must stay inside the project root, so a theme outside it
  * (a monorepo's shared theme) needs an explicit `--out`. Nothing is written

@@ -7,7 +7,10 @@
  * rewrite `theme.css` and send a full-reload. A second scenario checks that
  * `createServer()` without `listen()` plus an SSR transform also writes
  * `theme.css` (`perEnvironmentStartEndDuringDev`; Vite >= 6 only, Vite 5 has
- * no lazy `buildStart` and the scenario is skipped there). Both files are restored on
+ * no lazy `buildStart` and the scenario is skipped there). The dev-server
+ * scenario also removes the theme and recreates it with another value 20 ms
+ * and 300 ms later (inside and past chokidar's atomic window), then edits it
+ * again: each must re-emit. Both files are restored on
  * exit.
  *
  * Usage: node scripts/vite-dev-smoke.mjs
@@ -25,6 +28,9 @@ const exampleDir = join(root, "examples/harness");
 const themeJson = join(root, "examples/design-system/src/theme.json");
 const themeCss = join(exampleDir, "src/theme/theme.css");
 const MARKER = "#0a1b2c";
+const MARKER_RECREATED = "#1b2c3d";
+const MARKER_RECREATED_LATE = "#3d4e5f";
+const MARKER_EDITED_AGAIN = "#2c3d4e";
 const TIMEOUT_MS = 15_000;
 const RETRY_MS = 1_000;
 // The harness takes its config from `package.json#style-gen`; a
@@ -166,14 +172,21 @@ const theme = JSON.parse(originalJson);
 const [firstColor] = Object.keys(theme.colors);
 if (firstColor === undefined)
   fail("examples/design-system theme has no colors");
-theme.colors[firstColor] = MARKER;
-const editedTheme = `${JSON.stringify(theme, null, 2)}\n`;
+
+/**
+ * The theme document with its first colour set to `color`.
+ * @param {string} color - New value of the first colour
+ * @returns {string} Theme JSON text
+ */
+const themeWith = (color) =>
+  `${JSON.stringify({ ...theme, colors: { ...theme.colors, [firstColor]: color } }, null, 2)}\n`;
+const editedTheme = themeWith(MARKER);
 
 /**
  * Run `edit`, then repeat it every `RETRY_MS` until `done()` holds. The
  * edits here are idempotent (the plugin emits write-if-changed), so a repeat
  * only gives a lost watcher event another chance to arrive.
- * @param {() => void} edit - The filesystem change under test
+ * @param {() => void | Promise<void>} edit - The filesystem change under test
  * @param {() => boolean} done - Whether its effect is visible
  * @param {() => string} what - Builds the failure message when the effect never shows up; called at failure time, so it sees the state then
  * @returns {Promise<void>} Resolves once `done()` holds
@@ -187,7 +200,7 @@ const settle = async (edit, done, what) => {
       fail(`${what()} within ${TIMEOUT_MS} ms`);
     }
     if (Date.now() - lastEdit >= RETRY_MS) {
-      edit();
+      await edit();
       lastEdit = Date.now();
     }
     await new Promise((r) => setTimeout(r, 100));
@@ -202,6 +215,45 @@ await settle(
     readFileSync(themeCss, "utf8").includes(MARKER) &&
     sent.includes("full-reload"),
   () => `no re-emit (ws messages: [${sent.join(", ")}])`,
+);
+
+// The theme is removed and recreated with another value, then edited once
+// more: the watcher must still see a file that went away and came back. Two
+// gaps: 20 ms stays inside chokidar's atomic window (it folds unlink + add
+// into one `change`), 300 ms is past it (a real `unlink` followed by `add`).
+// Every repeat removes the file again, so a lost event gets another chance.
+/** @type {string[]} */
+const themeEvents = [];
+for (const event of ["add", "change", "unlink"]) {
+  server.watcher.on(event, (file) => {
+    if (file === themeJson) themeEvents.push(event);
+  });
+}
+for (const [gapMs, marker] of /** @type {const} */ ([
+  [20, MARKER_RECREATED],
+  [300, MARKER_RECREATED_LATE],
+])) {
+  const recreatedTheme = themeWith(marker);
+  await settle(
+    async () => {
+      rmSync(themeJson, { force: true });
+      await new Promise((r) => setTimeout(r, gapMs));
+      writeFileSync(themeJson, recreatedTheme);
+    },
+    () => readFileSync(themeCss, "utf8").includes(marker),
+    () =>
+      `removing the theme and re-creating it ${gapMs} ms later did not re-emit (theme.css has ${marker}: ${readFileSync(themeCss, "utf8").includes(marker)}; theme watcher events: [${themeEvents.join(", ")}]; ws messages: [${sent.join(", ")}])`,
+  );
+}
+
+const editedAgainTheme = themeWith(MARKER_EDITED_AGAIN);
+await settle(
+  () => {
+    writeFileSync(themeJson, editedAgainTheme);
+  },
+  () => readFileSync(themeCss, "utf8").includes(MARKER_EDITED_AGAIN),
+  () =>
+    `editing the theme after its re-creation did not re-emit (ws messages: [${sent.join(", ")}])`,
 );
 
 // Scenario 3: the config moves from `package.json#style-gen` to a
@@ -244,5 +296,5 @@ if (duplicate !== undefined) {
 
 await server.close();
 console.log(
-  `✓ vite ${version} dev server: theme.json edit re-emitted theme.css and sent full-reload; server.restart() raised no duplicate-instance warning`,
+  `✓ vite ${version} dev server: theme.json edit, removal + re-creation and a later edit each re-emitted theme.css (full-reload sent); server.restart() raised no duplicate-instance warning`,
 );

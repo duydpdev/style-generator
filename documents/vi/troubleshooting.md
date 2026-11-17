@@ -1,4 +1,4 @@
-<!-- source: documents/troubleshooting.md sha256: 41873a4e0e4a -->
+<!-- source: documents/troubleshooting.md sha256: 74d97078d7c8 -->
 
 # Khắc phục sự cố
 
@@ -26,6 +26,7 @@ Tìm phần đầu của thông báo mà CLI, `styleGenVite()` hoặc `styleGenN
 | `--check and --watch cannot be combined`                                                                                                                                                                                                                                 | [--check and --watch cannot be combined](#--check-and---watch-cannot-be-combined)         |
 | `… is invalid, so --yes cannot tell`, `--theme … differs from`, `… is invalid and its "theme" cannot be read`, `… is not valid JSON (`, `init writes or merges into`, `Files already exist`, `… is invalid and init left it as it is`, `… only merged the theme into it` | [init dừng với mã thoát 1](#init-dừng-với-mã-thoát-1)                                     |
 | `--out and --config-out`, `… would overwrite the theme file`, `… would overwrite the config file`                                                                                                                                                                        | [schema từ chối hai file cùng một đường dẫn](#schema-từ-chối-hai-file-cùng-một-đường-dẫn) |
+| `No fs option provided to compileScript`                                                                                                                                                                                                                                 | [No fs option provided to compileScript](#no-fs-option-provided-to-compilescript)         |
 
 ## Invalid theme (
 
@@ -154,3 +155,7 @@ Dev server hoặc bản build chưa chạy bộ sinh. Với Vite, `styleGenVite(
 ## tailwind-merge giữ lại sai class
 
 Một `twMerge` thuần không biết `text-16-medium`, `rounded-pill` hay `shadow-card` của theme, nên nó có thể giữ lại class đứng trước. Hãy tạo một `cn` cho mỗi theme bằng `createCn(tokens)` ([Xây dựng component → `cn`](./getting-started/build-components.md#4-cn-gộp-class-có-tính-đến-các-class-của-theme)).
+
+## No fs option provided to compileScript
+
+`No fs option provided to compileScript` xuất hiện trong một ứng dụng Vue hoặc Nuxt (thường là một trang hoặc một story Storybook bị lỗi) chạy trên TypeScript 7. Nguyên nhân nằm ở `@vue/compiler-sfc`: nó đọc kiểu props của một component `<script setup lang="ts">` qua TypeScript compiler API, và TypeScript 7 (bản port native) không cung cấp API đó. Các khai báo của package này vẫn kiểm tra kiểu được trên TypeScript 7; lỗi nằm ở trình biên dịch Vue, không phải ở CSS hay tokens đã sinh. Hãy giữ `typescript` ở 5.x hoặc 6.x trong ứng dụng đó ([Nuxt và Vue](./getting-started/nuxt-vue.md)).

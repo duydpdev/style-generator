@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────
-# CI Matrix — heavy tier: Tailwind floor, Node floor, peer matrix, UI-kit floors
+# CI Matrix — heavy tier: Tailwind floor, Node floor, peer matrix, TypeScript peer, UI-kit floors
 #
 # Runs nightly on the default branch, on manual dispatch and on PRs into
 # main / release/** (not on PRs into develop). The per-PR tier (check,
@@ -123,9 +123,10 @@ jobs:
   # that major runs: the harness example built through `styleGenVite`, a dev
   # server re-emitting on a theme edit, the example and `dist/*.d.ts`
   # type-checked and, for TypeScript, the type tests. Every leg is a
-  # published major and must pass (TypeScript 7 has no leg: Yarn 4.10's
-  # compat patch cannot install it). ci.yml's `check` job covers the
-  # lockfile's Vite 7/TS 5.
+  # published major and must pass (TypeScript 7 has no leg here; `ts-peer`
+  # below covers the TypeScript majors in a scratch npm project, because
+  # Yarn 4.10's compat patch cannot install TypeScript 7). ci.yml's `check`
+  # job covers the lockfile's Vite 7/TS 5.
   peer-matrix:
     name: Peer matrix (${{ matrix.peer }} ${{ matrix.major }})
     runs-on: ubuntu-latest
@@ -193,6 +194,36 @@ jobs:
       - name: Type tests
         if: matrix.peer == 'typescript'
         run: yarn test:types
+
+  # The `typescript` peer range of package.json. Packs the built library and
+  # installs it with npm (Yarn 4.10 cannot install TypeScript 7) next to one
+  # TypeScript release per leg of scripts/ts-peer-smoke.mjs, then runs `tsc`
+  # under node16 on every subpath for both the `require` (.d.cts) and the
+  # `import` (.d.ts) condition.
+  ts-peer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Type-check the packed package with TypeScript 5.0 to 7
+        run: yarn check:ts-peer
 
   # The floors of the four optional UI-kit peer ranges (`./ui`,
   # `./ui-react`). `peer-matrix` tests latest majors of vite/typescript;

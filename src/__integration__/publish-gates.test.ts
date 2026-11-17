@@ -234,6 +234,44 @@ describe("integration: publish gates reject bad builds", () => {
       expect(output).toContain("dist/helpers-xyz.js has no sourcemap");
     });
 
+    it("accepts a map-less file that only re-exports (ESM and CJS), an empty entry and Rolldown's runtime shim", () => {
+      writeTmpFile(
+        dir,
+        "dist/reexport-abc.js",
+        'import { t as e } from "./spacingHelpers-Dc_4iIPC.js";\nimport { i as t } from "./defaultOption-Dczg4EBR.js";\nexport { t as DEFAULT_SPACING_PROPERTIES, e as resolveSpacing };\n',
+      );
+      writeTmpFile(
+        dir,
+        "dist/reexport-abc.cjs",
+        'Object.defineProperty(exports,Symbol.toStringTag,{value:`Module`});const e=require("./spacingHelpers-C68U17Kb.cjs"),t=require("./defaultOption-BOUP0f-z.cjs");exports.DEFAULT_SPACING_PROPERTIES=t.i,exports.resolveSpacing=e.t;',
+      );
+      writeTmpFile(dir, "dist/empty-abc.js", "\n");
+      writeTmpFile(
+        dir,
+        "dist/rolldown-runtime-BocRIvOZ.cjs",
+        "var e=Object.create;Object.defineProperty(exports,`t`,{enumerable:!0,get:function(){return e}});",
+      );
+
+      expect(runGate(dir, "check-externals").status).toBe(0);
+    });
+
+    it.each([
+      [
+        "real code next to a re-export",
+        'export { a } from "./a.js";\nexport const x = 1;\n',
+      ],
+      ["a call after an import", 'import "./a.js";\nconsole.log(1);\n'],
+      ["a bare-package import", 'import { z } from "zod";\n'],
+      ["inlined third-party code", "function noop(){};export { noop };\n"],
+    ])("still fails for a map-less file with %s", (_label, code) => {
+      writeTmpFile(dir, "dist/shim-abc.js", code);
+
+      const { status, output } = runGate(dir, "check-externals");
+
+      expect(status).toBe(1);
+      expect(output).toContain("dist/shim-abc.js has no sourcemap");
+    });
+
     it("fails when the CLI bundle is missing", () => {
       rmSync(join(dir, "dist/cli"), { recursive: true });
 

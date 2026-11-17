@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 4f7d2631ec8b -->
+<!-- source: documents/architecture.md sha256: a2a4f74e9313 -->
 
 # Kiến trúc
 
@@ -287,13 +287,14 @@ Với giá trị mặc định `strict`, Rollup phải tách ra một facade ch�
 `dist/tokens.d.ts` không đổi và là hợp đồng duy nhất, các alias này không phải API. Ngân sách của `./tokens` chỉ được nâng khi chính bề mặt token tăng lên (ví dụ `aliasedColors` ở
 phase 09), không bao giờ để hấp thụ sự ràng buộc chéo ngoài ý muốn.
 
-**Các chunk dùng chung và `manualChunks`:** thêm một entry (như `./recipes`, dùng `helpers` + `spacingHelpers` nhưng không dùng `colorStates`) làm thay đổi tập entry phụ thuộc vào
-mỗi module, nên Rollup tách `helpers`/`colorStates` và tách `spacingHelpers` ra khỏi entry `spacing`, đẩy chi phí import một chunk sang `./tokens`, `./cva`, `./spacing`.
-`vite.config.ts` ghim các module đó vào các chunk ổn định bằng `manualChunks`: `helpers` + `colorStates` → `helpers`,
-`exports/spacing` + `spacingHelpers` → `spacing` (tên chunk `spacing` BẮT BUỘC bằng tên entry, nếu không chúng không thể gộp), `defaultOption` → `defaultOption`.
+**Các chunk dùng chung và `codeSplitting.groups`:** thêm một entry (như `./recipes`, dùng `helpers` + `spacingHelpers` nhưng không dùng `colorStates`) làm thay đổi tập entry phụ thuộc vào
+mỗi module, nên bundler tách `helpers`/`colorStates` ra và đẩy chi phí import một chunk sang `./tokens`, `./cva`.
+`vite.config.ts` ghim các module đó vào các chunk ổn định bằng `output.codeSplitting.groups` của Rolldown: `helpers` + `colorStates` → `helpers`,
+`exports/cva` + `createVariantMapper` → `cva`, phần nội bộ của `./tokens` (`exports/tokens`, `createDesignTokens`, `Options`, `resolveTokenOptions`, `categoryTokenMeta`, `classPrefixes`) → `tokens`;
+`includeDependenciesRecursively` là `false`, nên một group chỉ lấy các module nó nêu tên.
 Khi thêm một module dùng chung hay một entry mới, hãy chạy lại `yarn build:all && yarn check:sizes`;
 `tokens`/`cva`/`spacing`/`index` không được phình lên — hãy ghim module hoặc tái cấu trúc các import, đừng nâng ngân sách.
-Vite 8 / Rolldown đánh dấu `manualChunks` là deprecated để chuyển sang `advancedChunks`: hãy xem lại khi nâng cấp.
+`check:sizes` còn chạy `scripts/check-dist-reachable.mjs`: nó báo lỗi khi một file JavaScript trong `dist` không với tới được từ entry đã publish (file đó sẽ không được tính vào ngân sách kích thước).
 
 **Vì sao dùng `@source inline` thay vì safelist:** Tailwind v4 không quét các class được dựng lúc runtime.
 `generateSourceInline` emit một dòng `@source inline("…")` cho mỗi nhóm token (và cho mỗi trạng thái có sibling, ví dụ `hover:bg-primary-hover`),

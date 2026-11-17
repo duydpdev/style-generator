@@ -126,7 +126,7 @@ jobs:
   # published major and must pass (TypeScript 7 has no leg here; `ts-peer`
   # below covers the TypeScript majors in a scratch npm project, because
   # Yarn 4.10's compat patch cannot install TypeScript 7). ci.yml's `check`
-  # job covers the lockfile's Vite 7/TS 5.
+  # job covers the lockfile's Vite 8/TS 5).
   peer-matrix:
     name: Peer matrix (${{ matrix.peer }} ${{ matrix.major }})
     runs-on: ubuntu-latest
@@ -138,6 +138,7 @@ jobs:
         include:
           - { peer: vite, major: 5 }
           - { peer: vite, major: 6 }
+          - { peer: vite, major: 7 }
           - { peer: vite, major: 8 }
           - { peer: typescript, major: 6 }
 

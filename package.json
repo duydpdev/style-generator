@@ -137,7 +137,7 @@
     "check:next-build": "node scripts/next-build-smoke.mjs",
     "check:plain-ui": "node scripts/check-plain-ui.mjs",
     "check:publish-target": "node scripts/check-publish-target.mjs",
-    "check:sizes": "node scripts/check-sizes.mjs",
+    "check:sizes": "node scripts/check-sizes.mjs && node scripts/check-dist-reachable.mjs",
     "check:smoke": "node scripts/smoke-dist.mjs",
     "check:ts-peer": "node scripts/ts-peer-smoke.mjs",
     "check:tokens": "node scripts/check-tokens-fresh.mjs",
@@ -207,7 +207,7 @@
     "tsdown": "^0.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.5",
+    "vite": "^8.3.8",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^5.1.0",
     "vue-eslint-parser": "^10.4.1"
@@ -263,6 +263,6 @@
     "@joshwooding/vite-plugin-react-docgen-typescript/glob": "^14.0.4",
     "@nuxt/vite-builder/vite": "^8.3.5",
     "vite-node/vite": "^8.3.5",
-    "vite": "^7.3.5"
+    "vite": "^8.3.8"
   }
 }

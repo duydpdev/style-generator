@@ -129,10 +129,10 @@ the single `vite` import becomes `import type … with { 'resolution-mode': 'imp
 `package.json#exports` uses nested conditions (`import: { types: .d.ts, default: .js }`, `require: { types: .d.cts, default: .cjs }`) and has no top-level `types`;
 `moduleResolution: node10` is unsupported. `yarn typecheck:dist` checks the `.d.ts` under ESNext + Bundler (`tsconfig.dts-check.json`) and the `.d.cts` as a CommonJS consumer under
 `node16` with `skipLibCheck: false` (`tsconfig.dts-check.cjs.json`, `scripts/dist-types.cjs.assert.cts`); attw never resolves peer types, so it cannot replace that check.
-Shared hashed chunks are internal. `vite.config.ts` pins the modules several entries share (`helpers`+`colorStates`, `exports/spacing`+`spacingHelpers`, `defaultOption`,
-the `recipes` entry's modules, `axisAttributeName`) via `manualChunks` so a new entry cannot reshuffle chunks and push `tokens`/`cva`/`spacing`/`index` over budget;
-the chunk name `spacing` MUST equal its entry name; when a new shared module or entry makes those four sizes drift,
-pin it or restructure the import instead of raising their budgets (Vite 8/Rolldown deprecates `manualChunks` for `advancedChunks`: revisit on upgrade).
+Shared hashed chunks are internal. `vite.config.ts` pins the modules several entries share to stable chunks with Rolldown's `output.codeSplitting.groups` (`helpers`+`colorStates` → `helpers`,
+`exports/cva`+`createVariantMapper` → `cva`, the `./tokens` internals → `tokens`) so a new entry cannot reshuffle chunks and push `tokens`/`cva`/`spacing`/`index` over budget;
+a group name equal to an entry name merges the group with that entry, so a group that is not meant to merge MUST use a name no entry has; when a new shared module or entry makes those four sizes drift,
+pin it or restructure the import instead of raising their budgets (`scripts/check-dist-reachable.mjs`, chained into `check:sizes`, fails when a `dist` file is not reachable from a published entry, which would leave it uncounted).
 Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/check-sizes.mjs`.
 
 Source layout: `documents/architecture.md`; public exports per subpath and CLI: `documents/reference/`.
@@ -255,7 +255,7 @@ Two example apps have a Storybook (`plain-react`, `plain-nuxt`; component storie
 and each app's CSS has `@source not` for `*.stories.*`). The `plain-react` job of `ci.yml` (Storybook stories and the plain-vs-harness parity gate) is separate from `check` and
 runs on drafts and documentation-only PRs; the `plain-nuxt` job (its stories, not a required check) runs alongside it. Layers and CI legs (including `tailwind-floor`, `node-floor`,
 `peer-matrix` (decides the `vite`/`typescript` peer ranges), `ts-peer` (proves the `typescript` range in a scratch npm project) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
-these 8 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
+these 9 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
 it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
 `check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
 

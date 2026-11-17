@@ -80,6 +80,7 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-11-03 (./ui, ./ui-react): measured ui 3414 B, ui-react 58 B transitive; budgets = measured + ~10 %, rounded up to 10 B. index, tokens, cva, spacing unchanged.
 // 2026-11-05 (5.4: four more color prefixes, typed opacity steps, divider-width color-key check, doctor color-prefix warnings): measured next 14632 B, cli 24964 B transitive; budgets raised (user-approved) to measured + ~10 %, rounded up to 10 B: next 14450 -> 16100, cli 24750 -> 27460. index 12796, vite 14476, tokens 1753 (+67), cva 737 (+13), ui 3432 stay within their budgets.
 // 2026-11-17 (8.0.2: file identity `sameFile`, schema guards, init warnings; user-approved): cli measured 28123 B transitive, budget raised to measured + ~10 %, rounded up to 10 B: 27460 -> 30940. index 10664 (79 %), vite 15237 (99 %), next 15449 (96 %) and the other budgets are unchanged; `sameFile` landed in the shared node chunk of vite and next without exceeding them.
+// 2026-11-17 (8.1.1: library built with Vite 8 / Rolldown; chunk rules are `output.codeSplitting.groups` in vite.config.ts, `manualChunks` is gone): index 9926, tokens 1675 (91 %), cva 752 (94 %), spacing 819, recipes 1821, vite 14221, next 14411, ui 2776, cli 28182. No budget changed. Without the `cva` and `tokens` groups `cva` measured 1007 B (126 %) and `tokens` 1835 B (99 %).
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {

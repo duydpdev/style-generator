@@ -139,6 +139,7 @@
     "check:publish-target": "node scripts/check-publish-target.mjs",
     "check:sizes": "node scripts/check-sizes.mjs",
     "check:smoke": "node scripts/smoke-dist.mjs",
+    "check:ts-peer": "node scripts/ts-peer-smoke.mjs",
     "check:tokens": "node scripts/check-tokens-fresh.mjs",
     "check:types-pack": "node scripts/check-types-pack.mjs",
     "docs:embed": "node scripts/docs-embed.mjs --write",

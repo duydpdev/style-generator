@@ -73,6 +73,36 @@ export async function compileFixtureCss(
 }
 
 /**
+ * Whether a compiled selector styles `classSelector` (an escaped `.class`).
+ * Tailwind up to 4.3.2 nests a utility's wrapper under the class rule
+ * (`.divide-x { :where(& > :not(:last-child)) { … } }`, `&::placeholder`,
+ * `&:hover`); from 4.3.3 on `build()` emits it flat
+ * (`:where(.divide-x > :not(:last-child))`, `.placeholder-x::placeholder`,
+ * `.hover\:bg-x:hover`). Both shapes match; a longer class
+ * (`.divide-x-reverse`, `.bg-primary\/50`) does not.
+ * @param {string} selector - One selector of a compiled rule
+ * @param {string} classSelector - Escaped class selector, with the leading `.`
+ * @returns {boolean} `true` when the selector targets that class
+ */
+export const selectorTargetsClass = (
+  selector: string,
+  classSelector: string,
+): boolean => {
+  for (
+    let at = selector.indexOf(classSelector);
+    at !== -1;
+    at = selector.indexOf(classSelector, at + 1)
+  ) {
+    const end = at + classSelector.length;
+    const escaped = at > 0 && selector.charAt(at - 1) === "\\";
+    if (escaped) continue;
+    if (end === selector.length || /[\s:,>)]/.test(selector.charAt(end)))
+      return true;
+  }
+  return false;
+};
+
+/**
  * Compile like an app build: `source(none)` turns off automatic detection,
  * Tailwind's own scanner reads the `@source` paths in `css` (relative to
  * `base`), and the build gets exactly those candidates plus `@source inline`.

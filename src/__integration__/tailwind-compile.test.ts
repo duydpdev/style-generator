@@ -5,19 +5,24 @@ import postcss from "postcss";
 import { generate } from "../core/generate";
 
 import { fixtureTheme } from "./__fixtures__/fixtureTheme";
-import { compileFixtureCss } from "./compileFixtureCss";
+import { compileFixtureCss, selectorTargetsClass } from "./compileFixtureCss";
 
 /**
- * Declarations of every rule whose selector is exactly `selector`, as
- * `prop → value`. Later declarations win, as in the cascade.
+ * Declarations of every rule whose selector is `selector` or targets that
+ * class (`selectorTargetsClass`), as `prop → value`. Later declarations win,
+ * as in the cascade.
  * @param {string} css - Compiled CSS
- * @param {string} selector - Exact rule selector to collect
+ * @param {string} selector - Rule selector, or an escaped `.class`
  * @returns {Map<string, string>} Declarations found under that selector
  */
 const declsOf = (css: string, selector: string): Map<string, string> => {
   const decls = new Map<string, string>();
   postcss.parse(css).walkRules((rule) => {
-    if (rule.selector !== selector) return;
+    if (
+      rule.selector !== selector &&
+      !rule.selectors.some((s) => selectorTargetsClass(s.trim(), selector))
+    )
+      return;
     rule.walkDecls((decl) => {
       decls.set(decl.prop, decl.value);
     });

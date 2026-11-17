@@ -9,9 +9,13 @@
  * - `vite` has no usable CommonJS types in any supported major (5/6: an
  *   `export = any` stub without `Plugin`; 7/8: ESM only), so the copy imports
  *   it type-only with the `import` condition via `resolution-mode`. The
- *   `assert` spelling, not `with`: `with` is a parse error on TypeScript < 5.3
- *   (peer floor `^5.0.0`) even under `skipLibCheck`; `assert` parses on every
- *   5.x/6.x, and TS 5.8+ only rejects it on value imports under `nodenext`.
+ *   default copy (`.d.cts`) uses the `with` spelling: TypeScript 7 rejects
+ *   `assert` (TS2880), and `with` parses on TypeScript 5.3 and later. A second
+ *   function, `toLegacyCjsDeclaration`, keeps the `assert` spelling for
+ *   TypeScript before 5.3 (`with` is a parse error there even under
+ *   `skipLibCheck`; `assert` parses on every 5.x/6.x, and TS 5.8+ only rejects
+ *   it on value imports under `nodenext`). `package.json` picks the file with
+ *   a `types@<5.3` condition.
  *
  * Fail-closed: an unknown specifier fails the build, and so does any other
  * non-relative module reference the rules did not handle (default or
@@ -33,7 +37,7 @@ const CJS_SAFE_IMPORTS = {
   vite: (line) =>
     line
       .replace(/^import \{/, "import type {")
-      .replace(/;$/, " assert { 'resolution-mode': 'import' };"),
+      .replace(/;$/, " with { 'resolution-mode': 'import' };"),
 };
 
 // Rolled-up declarations carry one named import per package (single- or multi-line).
@@ -74,3 +78,16 @@ export const toCjsDeclaration = (source, name) => {
   }
   return rewritten;
 };
+
+/**
+ * Like `toCjsDeclaration`, with the `vite` import spelled `assert` for
+ * TypeScript before 5.3.
+ * @param {string} source - Contents of `dist/<name>.d.ts`
+ * @param {string} name - File name, for error messages
+ * @returns {string} Contents of `dist/<name>.legacy.d.cts`
+ */
+export const toLegacyCjsDeclaration = (source, name) =>
+  toCjsDeclaration(source, name).replaceAll(
+    " with { 'resolution-mode': 'import' };",
+    " assert { 'resolution-mode': 'import' };",
+  );

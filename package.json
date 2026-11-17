@@ -82,6 +82,7 @@
         "default": "./dist/vite.js"
       },
       "require": {
+        "types@<5.3": "./dist/vite.legacy.d.cts",
         "types": "./dist/vite.d.cts",
         "default": "./dist/vite.cjs"
       }

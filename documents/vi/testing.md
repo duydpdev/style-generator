@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 9bad32106510 -->
+<!-- source: documents/testing.md sha256: b9c4f1012d08 -->
 
 # Hướng dẫn kiểm thử
 
@@ -35,7 +35,7 @@ Các bước kiểm tra có hai lớp:
      `tsconfig.dts-check.cjs.json` kiểm tra `dist/*.d.cts` như một consumer CommonJS thật — `module: node16`, `skipLibCheck: false`,
      file `scripts/dist-types.cjs.assert.cts` import qua tên package ngay dưới điều kiện `require`. Nửa CJS dùng `node16`, không phải `nodenext`,
      vì từ TS 5.8 `nodenext` cho phép `require()` một ESM và sẽ che mất `TS1479` trên một peer chỉ có ESM.
-     `dist/vite.d.cts` là `vite.d.ts` với import `vite` được viết lại thành `import type … assert { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`);
+     `dist/vite.d.cts` là `vite.d.ts` với import `vite` được viết lại thành `import type … with { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`); `dist/vite.legacy.d.cts` giữ cách viết `assert` cho TypeScript trước 5.3 (`exports["./vite"].require["types@<5.3"]`);
      attw không resolve các kiểu peer, nên không thể thay thế bước này) → `yarn test:coverage` (thất bại nếu coverage tụt dưới `coverage.thresholds` trong `vitest.config.ts`) →
      `yarn test:types`;
    - job `plain-react` (một job riêng của `ci.yml`, tên check `Plain React (Storybook + parity)`, được ruleset `main-develop` bắt buộc;

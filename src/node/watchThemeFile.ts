@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 import { watch as chokidarWatch } from "chokidar";
@@ -168,15 +169,18 @@ export function watchThemeFile(
     // file itself and drops that watch on `unlink`: without a re-arm its
     // re-creation (`git checkout`, `git stash`) and later edits are never
     // seen. Unwatching first clears chokidar's ignore entry, so `add` really
-    // starts a fresh watch; the re-created file then reports one `add`.
+    // starts a fresh watch.
     if (isConfig || abs === path.resolve(current.themeFile)) {
       watcher.unwatch(file);
       watcher.add(file);
     }
     // A config file being removed means "the next candidate, else defaults":
-    // reload. A removed theme needs nothing more: its `add` event re-emits
-    // when it comes back.
-    if (isConfig) schedule(file);
+    // reload. A theme removed for good needs nothing more, but one recreated
+    // within a few tens of ms is already back by now: the re-arm `add()`
+    // counts as an initial add and `ignoreInitial` drops its event, so
+    // schedule the run here (A16). A theme that comes back later reports an
+    // `add` of its own.
+    if (isConfig || fs.existsSync(abs)) schedule(file);
   });
   watcher.on("error", (error) => {
     onResult({

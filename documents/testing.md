@@ -50,7 +50,7 @@ The checks have two layers:
      so the peer `tailwindcss ^4.1.0` is really checked — the lockfile currently resolves to 4.3.x, so without this job the lower bound would never be reached.
    - job `node-floor`: builds and runs `check:smoke` and `check:next-build` (a real `next build` through `styleGenNext`, `scripts/next-build-smoke.mjs`) on Node `20.19.0`,
      the floor of `engines.node` (the other jobs run Node 22);
-   - job `peer-matrix` (4 legs): builds the lib with the committed toolchain, then forces **one** peer to the latest version of **one** major through `resolutions` (`vite` 5/6/8,
+   - job `peer-matrix` (5 legs): builds the lib with the committed toolchain (Vite 8), then forces **one** peer to the latest version of **one** major through `resolutions` (`vite` 5/6/7/8,
      `typescript` 6), asserts that the resolved version is `N.x`, then builds `examples/harness`, (the `vite` leg) dev-server smoke, example typecheck and `yarn typecheck:dist`,
      (the `typescript` leg) `yarn test:types`. Every leg must be green (red means CI is red); there is no `experimental` leg any more.
      The results decide the peer ranges (edited by hand).
@@ -62,7 +62,7 @@ The checks have two layers:
      `@types/react`) to the floor of their `peerDependencies` ranges through `resolutions`, asserts the resolved versions,
      then runs `yarn typecheck:dist` and `yarn vitest run src/features/ui`. Two harness-only pins mirror what a consumer actually gets: cva 0.7.0 needs clsx 2.0.0 exactly,
      so it keeps its own nested copy, and `@types/scheduler` is held at 0.16.8, the last version with `scheduler/tracing`, which `@types/react` <=18.2.71 imports;
-   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` and `ui-peer-floor` are the heavy tier and live in `ci-matrix.yml` (8 jobs, `peer-matrix` has 4 legs; not a required check).
+   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` and `ui-peer-floor` are the heavy tier and live in `ci-matrix.yml` (9 jobs, `peer-matrix` has 5 legs; not a required check).
      It runs nightly on `main` (cron `43 5 * * *`), on manual dispatch (`gh workflow run ci-matrix.yml --ref main`) and on PRs into `main`/`release/**`, not on PRs into `develop`;
      every leg must be green before the PR into `main` is merged. It has `paths-ignore: ["documents/**"]` at the workflow level:
      a PR that only changes documentation does not run it. On PRs every job skips drafts and runs when the PR is marked ready (`ready_for_review`);

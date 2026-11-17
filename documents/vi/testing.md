@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: d274d7190b1d -->
+<!-- source: documents/testing.md sha256: f12f6afef77a -->
 
 # Hướng dẫn kiểm thử
 
@@ -51,7 +51,7 @@ Các bước kiểm tra có hai lớp:
      để peer `tailwindcss ^4.1.0` thực sự được kiểm tra — lockfile hiện resolve tới 4.3.x, nên nếu không có job này thì cận dưới sẽ không bao giờ được chạm tới.
    - job `node-floor`: build và chạy `check:smoke` cùng `check:next-build` (một lần `next build` thật qua `styleGenNext`, `scripts/next-build-smoke.mjs`) trên Node `20.19.0`,
      mức sàn của `engines.node` (các job khác chạy Node 22);
-   - job `peer-matrix` (4 nhánh): build thư viện bằng toolchain đã commit, rồi ép **một** peer về phiên bản mới nhất của **một** major qua `resolutions` (`vite` 5/6/8,
+   - job `peer-matrix` (5 nhánh): build thư viện bằng toolchain đã commit (Vite 8), rồi ép **một** peer về phiên bản mới nhất của **một** major qua `resolutions` (`vite` 5/6/7/8,
      `typescript` 6), khẳng định phiên bản được resolve là `N.x`, rồi build `examples/harness`, (nhánh `vite`) smoke test dev server, kiểm tra kiểu ví dụ và `yarn typecheck:dist`,
      (nhánh `typescript`) `yarn test:types`. Mọi nhánh đều phải xanh (đỏ nghĩa là CI đỏ); không còn nhánh `experimental` nào nữa.
      Kết quả quyết định các khoảng peer (được sửa tay).
@@ -64,7 +64,7 @@ Các bước kiểm tra có hai lớp:
      rồi chạy `yarn typecheck:dist` và `yarn vitest run src/features/ui`. Hai bản ghim chỉ dành cho harness (bộ ví dụ dùng để kiểm thử DX) phản ánh những gì một consumer thực sự
      nhận được: cva 0.7.0 cần đúng clsx 2.0.0, nên nó giữ một bản sao lồng nhau riêng, và `@types/scheduler` được giữ ở 0.16.8, phiên bản cuối cùng có `scheduler/tracing`,
      thứ mà `@types/react` <=18.2.71 import;
-   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` và `ui-peer-floor` là tầng nặng và nằm trong `ci-matrix.yml` (8 job, `peer-matrix` có 4 leg; không phải check bắt buộc).
+   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` và `ui-peer-floor` là tầng nặng và nằm trong `ci-matrix.yml` (9 job, `peer-matrix` có 5 leg; không phải check bắt buộc).
      Nó chạy hằng đêm trên `main` (cron `43 5 * * *`), khi dispatch thủ công (`gh workflow run ci-matrix.yml --ref main`) và trên các PR vào `main`/`release/**`,
      không chạy trên PR vào `develop`; mọi leg phải xanh trước khi merge PR vào `main`. Nó có `paths-ignore: ["documents/**"]` ở cấp workflow:
      một PR chỉ đổi tài liệu không chạy nó. Trên PR, mọi job bỏ qua các PR draft và chạy khi PR được đánh dấu ready (`ready_for_review`);

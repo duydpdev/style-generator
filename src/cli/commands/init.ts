@@ -542,27 +542,35 @@ function writeThemeFiles(
 }
 
 /**
- * Say so when init leaves a config that `generate` rejects as it is, so a
- * success message does not hide it.
- * @param {ConfigLayout} config - The config init keeps
+ * Say so when init leaves a config that `generate` rejects, so a success
+ * message does not hide it: kept as it is, or with only the theme merged in
+ * (the keys that make it invalid stay).
+ * @param {string} source - The config file init kept or merged into
+ * @param {string | undefined} problem - Why `generate` rejects that config, if it does
+ * @param {boolean} merged - Whether init merged a new theme into it
  */
-function warnInvalidConfig(config: ConfigLayout): void {
-  if (config.problem === undefined) return;
+function warnInvalidConfig(
+  source: string,
+  problem: string | undefined,
+  merged: boolean,
+): void {
+  if (problem === undefined) return;
   logger.warn(
-    `${config.source} is invalid and init left it as it is; generate rejects it:\n${config.problem}\n💡 Fix it: yarn style-gen doctor`,
+    `${source} is invalid and init ${merged ? "only merged the theme into it" : "left it as it is"}; generate rejects it:\n${problem}\n💡 Fix it: yarn style-gen doctor`,
   );
 }
 
 /**
  * Settle the config: one that already names this theme stays as it is
  * (`package.json#style-gen` included, so no `style-gen.config.json` shadows
- * it, and an invalid config is not rewritten); otherwise `theme` is merged
- * into it, and `output` only when it has none, or a new config is written.
- * A custom `output` is never rewritten.
+ * it); otherwise `theme` is merged into it, and `output` only when it has
+ * none, or a new config is written. A custom `output` is never rewritten,
+ * and an invalid config keeps the keys that make it invalid (warned).
  * @param {string} cwd - The project root
  * @param {MergeBase} mergeBase - The existing config content, if any
  * @param {ConfigLayout | undefined} config - The existing config whose theme is readable, if any
  * @param {string} themeLoc - Repo-relative POSIX path of the theme
+ * @param {string | undefined} problem - Why `generate` rejects the existing config, if it does
  * @returns {{ layout: { theme: string; output: string }; changed: boolean }} The theme and output in effect, and whether a config file was written
  */
 function updateConfig(
@@ -570,10 +578,11 @@ function updateConfig(
   mergeBase: MergeBase,
   config: ConfigLayout | undefined,
   themeLoc: string,
+  problem: string | undefined,
 ): { layout: { theme: string; output: string }; changed: boolean } {
   if (config !== undefined && samePath(cwd, themeLoc, config.theme)) {
     logger.info(`Kept ${config.source}: theme and output stay as configured.`);
-    warnInvalidConfig(config);
+    warnInvalidConfig(config.source, problem, false);
     return { layout: config, changed: false };
   }
   const { content } = mergeBase;
@@ -599,6 +608,7 @@ function updateConfig(
       'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
     );
   }
+  warnInvalidConfig("style-gen.config.json", problem, true);
   return {
     layout: {
       theme: themeLoc,
@@ -904,7 +914,7 @@ async function scaffold(
   // so `generate` can build afterwards. An invalid config is the exception:
   // declining leaves it, and everything else, as it is.
   if (proceed === "fill" && found?.problem !== undefined) {
-    warnInvalidConfig(found);
+    warnInvalidConfig(found.source, found.problem, false);
     const rules = await applyAgentRules(args, cwd, rulesSource, isInteractive);
     printNextSteps(
       detected,
@@ -924,7 +934,13 @@ async function scaffold(
     choice.includeDark,
     proceed === "overwrite",
   );
-  const settled = updateConfig(cwd, mergeBase, config, target.loc);
+  const settled = updateConfig(
+    cwd,
+    mergeBase,
+    config,
+    target.loc,
+    found?.problem,
+  );
 
   /* ---------- Agent rules ---------- */
 

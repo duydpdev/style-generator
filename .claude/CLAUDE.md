@@ -235,7 +235,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
   shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
   it never edits a bundler config and scaffolds no generator script; `init` merges `theme`/`$schema` (and `output` only when absent) into a valid config that does not already name the theme (or into a copy of `package.json["style-gen"]`) when it writes, and drops no key a major removed (7.x-to-8.0.md B10):
-  an invalid config is not rewritten, so a key the schema rejects (`plugin`, `extraSources`, `axes`) stays and `generate` reports it as an unknown key. `budget` writes `OK: …`/`OVER BUDGET: …` lines that are a contract
+  an invalid config is kept as it is, or gets only the chosen theme merged in (both with a warning), so a key the schema rejects (`plugin`, `extraSources`, `axes`) stays and `generate` reports it as an unknown key. `budget` writes `OK: …`/`OVER BUDGET: …` lines that are a contract
   consumers grep.
 
 ## Testing

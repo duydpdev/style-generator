@@ -47,6 +47,7 @@ yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn chec
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
 yarn check:tokens   # after build:all: `generate --check` in each app that commits a theme.tokens.ts (plain-react, plain-nuxt, design-system, site) — fails when one is stale (CI)
 yarn check:next-build   # after build:all, needs network: packed tarball + next@16.4.5 in a scratch project, init + `next build` (Turbopack) through styleGenNext (CI node-floor)
+yarn check:ts-peer   # after build:all: tarball + npm + TypeScript 5.0/5.2/5.9/6/7 in a scratch project, tsc on every subpath (CI ts-peer job; needs network)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
@@ -122,9 +123,9 @@ class-prefix lists.
 
 Build outputs: `dist/{index,tokens,cva,spacing,recipes,types,ui,ui-react,vite,next}.{js,cjs,d.ts,d.cts}` (10 subpaths, Vite lib multi-entry;
 `dist/<n>.d.cts` is `dist/<n>.d.ts` run through `toCjsDeclaration` (`scripts/cjs-declaration.mjs`) by `scripts/emit-cts-types.mjs`, the last step of `yarn build`:
-the single `vite` import becomes `import type … assert { 'resolution-mode': 'import' }` because Vite has no usable CommonJS types, `zod`, `class-variance-authority`, `clsx`,
-`tailwind-merge` and `react` are kept, any other external specifier or import form fails the build; `assert`, not `with`,
-because `with` is a parse error on TypeScript < 5.3) + `dist/cli/index.mjs` (tsdown, JSDoc stripped via `outputOptions.comments.jsdoc = false`).
+the single `vite` import becomes `import type … with { 'resolution-mode': 'import' }` because Vite has no usable CommonJS types, `zod`, `class-variance-authority`, `clsx`,
+`tailwind-merge` and `react` are kept, any other external specifier or import form fails the build; `with` parses on TypeScript 5.3+ and TypeScript 7 rejects `assert` (TS2880), so `dist/vite.legacy.d.cts`
+(`toLegacyCjsDeclaration`) keeps `assert` and `package.json#exports["./vite"].require["types@<5.3"]` points at it, because `with` is a parse error on TypeScript < 5.3) + `dist/cli/index.mjs` (tsdown, JSDoc stripped via `outputOptions.comments.jsdoc = false`).
 `package.json#exports` uses nested conditions (`import: { types: .d.ts, default: .js }`, `require: { types: .d.cts, default: .cjs }`) and has no top-level `types`;
 `moduleResolution: node10` is unsupported. `yarn typecheck:dist` checks the `.d.ts` under ESNext + Bundler (`tsconfig.dts-check.json`) and the `.d.cts` as a CommonJS consumer under
 `node16` with `skipLibCheck: false` (`tsconfig.dts-check.cjs.json`, `scripts/dist-types.cjs.assert.cts`); attw never resolves peer types, so it cannot replace that check.
@@ -253,8 +254,8 @@ Two example apps have a Storybook (`plain-react`, `plain-nuxt`; component storie
 `yarn workspace <app>-example test:stories` runs the stories as Vitest browser tests; `storybook:build` builds it; stories use the app's own components, never raw Tailwind classes,
 and each app's CSS has `@source not` for `*.stories.*`). The `plain-react` job of `ci.yml` (Storybook stories and the plain-vs-harness parity gate) is separate from `check` and
 runs on drafts and documentation-only PRs; the `plain-nuxt` job (its stories, not a required check) runs alongside it. Layers and CI legs (including `tailwind-floor`, `node-floor`,
-`peer-matrix` (decides the `vite`/`typescript` peer ranges) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
-these 7 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
+`peer-matrix` (decides the `vite`/`typescript` peer ranges), `ts-peer` (proves the `typescript` range in a scratch npm project) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
+these 8 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
 it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
 `check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
 

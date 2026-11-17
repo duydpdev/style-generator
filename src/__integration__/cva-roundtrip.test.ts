@@ -15,7 +15,7 @@ import { toCamelCase, toKebabCase, toPascalCase } from "../shared/helpers";
 
 import { fixtureTheme, fixtureOptions } from "./__fixtures__/fixtureTheme";
 import { kebabParityCases } from "./__fixtures__/kebabParityCases";
-import { compileFixtureCss } from "./compileFixtureCss";
+import { compileFixtureCss, selectorTargetsClass } from "./compileFixtureCss";
 
 /**
  * CSS.escape-like escaping for a bare class-name segment used inside a
@@ -185,6 +185,13 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
    */
   let ruleBodiesBySelector: Map<string, string[]>;
 
+  const hasClass = (classSelector: string): boolean =>
+    [...selectors].some((s) => selectorTargetsClass(s, classSelector));
+  const bodiesOf = (classSelector: string): string[] =>
+    [...ruleBodiesBySelector].flatMap(([s, bodies]) =>
+      selectorTargetsClass(s, classSelector) ? bodies : [],
+    );
+
   beforeAll(async () => {
     const { css } = generate(fixtureTheme, fixtureOptions);
     const compiled = await compileFixtureCss(css, []);
@@ -226,11 +233,11 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
       }).trim();
       const selector = `.${escapeClassName(cls)}`;
 
-      expect(selectors.has(selector)).toBe(true);
+      expect(hasClass(selector)).toBe(true);
       if (cssVarPrefix === undefined) return;
 
       const expectedVarRef = `var(--${cssVarPrefix}-${toKebabCase(key)})`;
-      const bodies = ruleBodiesBySelector.get(selector) ?? [];
+      const bodies = bodiesOf(selector);
       expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
     },
   );
@@ -259,10 +266,10 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
         throw new Error("empty classes array");
       }
       const baseSelector = `.${escapeClassName(base)}`;
-      expect(selectors.has(baseSelector)).toBe(true);
+      expect(hasClass(baseSelector)).toBe(true);
       if (cssVarPrefix !== undefined) {
         const expectedVarRef = `var(--${cssVarPrefix}-${toKebabCase(key)})`;
-        const bodies = ruleBodiesBySelector.get(baseSelector) ?? [];
+        const bodies = bodiesOf(baseSelector);
         expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
       }
 
@@ -277,11 +284,11 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
         expect(cls).toBe(expectedCls);
 
         const selector = `.${escapeClassName(cls)}`;
-        expect(selectors.has(selector)).toBe(true);
+        expect(hasClass(selector)).toBe(true);
         if (cssVarPrefix === undefined) return;
 
         const expectedVarRef = `var(--${cssVarPrefix}-${toKebabCase(siblingKey)})`;
-        const bodies = ruleBodiesBySelector.get(selector) ?? [];
+        const bodies = bodiesOf(selector);
         expect(bodies.some((body) => body.includes(expectedVarRef))).toBe(true);
       });
     },
@@ -312,7 +319,10 @@ describe("integration: createVariantMapper { opacities } classes exist in compil
 
       expect(stepped).toHaveLength(keys.length * 2);
       for (const [, value] of stepped) {
-        expect(selectors.has(`.${escapeClassName(value)}`)).toBe(true);
+        const classSelector = `.${escapeClassName(value)}`;
+        expect(
+          [...selectors].some((s) => selectorTargetsClass(s, classSelector)),
+        ).toBe(true);
       }
     },
   );

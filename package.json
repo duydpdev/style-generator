@@ -82,6 +82,7 @@
         "default": "./dist/vite.js"
       },
       "require": {
+        "types@<5.3": "./dist/vite.legacy.d.cts",
         "types": "./dist/vite.d.cts",
         "default": "./dist/vite.cjs"
       }
@@ -138,6 +139,7 @@
     "check:publish-target": "node scripts/check-publish-target.mjs",
     "check:sizes": "node scripts/check-sizes.mjs",
     "check:smoke": "node scripts/smoke-dist.mjs",
+    "check:ts-peer": "node scripts/ts-peer-smoke.mjs",
     "check:tokens": "node scripts/check-tokens-fresh.mjs",
     "check:types-pack": "node scripts/check-types-pack.mjs",
     "docs:embed": "node scripts/docs-embed.mjs --write",
@@ -175,12 +177,12 @@
     "@playwright/test": "^1.63.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@tailwindcss/node": "4.3.0",
-    "@tailwindcss/oxide": "4.3.0",
+    "@tailwindcss/node": "4.3.5",
+    "@tailwindcss/oxide": "4.3.5",
     "@types/node": "^25.3.3",
     "@types/react": "^19.0.0",
     "@typescript-eslint/parser": "^8.56.1",
-    "@vitest/coverage-v8": "^4.1.12",
+    "@vitest/coverage-v8": "^5.1.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "commitlint": "^21.2.4",
@@ -201,13 +203,13 @@
     "prettier": "^3.8.1",
     "semantic-release": "^25.0.3",
     "tailwind-merge": "^3.0.0",
-    "tailwindcss": "4.3.0",
+    "tailwindcss": "4.3.5",
     "tsdown": "^0.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.5",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^4.1.12",
+    "vitest": "^5.1.0",
     "vue-eslint-parser": "^10.4.1"
   },
   "peerDependencies": {
@@ -216,7 +218,7 @@
     "clsx": "^1.2.0 || ^2.0.0",
     "tailwind-merge": "^3.0.0",
     "tailwindcss": "^4.1.0",
-    "typescript": "^5.0.0 || ^6.0.0",
+    "typescript": "^5.0.0 || ^6.0.0 || ^7.0.0",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {

@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 9bad32106510 -->
+<!-- source: documents/testing.md sha256: d274d7190b1d -->
 
 # Hướng dẫn kiểm thử
 
@@ -35,7 +35,7 @@ Các bước kiểm tra có hai lớp:
      `tsconfig.dts-check.cjs.json` kiểm tra `dist/*.d.cts` như một consumer CommonJS thật — `module: node16`, `skipLibCheck: false`,
      file `scripts/dist-types.cjs.assert.cts` import qua tên package ngay dưới điều kiện `require`. Nửa CJS dùng `node16`, không phải `nodenext`,
      vì từ TS 5.8 `nodenext` cho phép `require()` một ESM và sẽ che mất `TS1479` trên một peer chỉ có ESM.
-     `dist/vite.d.cts` là `vite.d.ts` với import `vite` được viết lại thành `import type … assert { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`);
+     `dist/vite.d.cts` là `vite.d.ts` với import `vite` được viết lại thành `import type … with { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`); `dist/vite.legacy.d.cts` giữ cách viết `assert` cho TypeScript trước 5.3 (`exports["./vite"].require["types@<5.3"]`);
      attw không resolve các kiểu peer, nên không thể thay thế bước này) → `yarn test:coverage` (thất bại nếu coverage tụt dưới `coverage.thresholds` trong `vitest.config.ts`) →
      `yarn test:types`;
    - job `plain-react` (một job riêng của `ci.yml`, tên check `Plain React (Storybook + parity)`, được ruleset `main-develop` bắt buộc;
@@ -53,15 +53,18 @@ Các bước kiểm tra có hai lớp:
      mức sàn của `engines.node` (các job khác chạy Node 22);
    - job `peer-matrix` (4 nhánh): build thư viện bằng toolchain đã commit, rồi ép **một** peer về phiên bản mới nhất của **một** major qua `resolutions` (`vite` 5/6/8,
      `typescript` 6), khẳng định phiên bản được resolve là `N.x`, rồi build `examples/harness`, (nhánh `vite`) smoke test dev server, kiểm tra kiểu ví dụ và `yarn typecheck:dist`,
-     (nhánh `typescript`) `yarn test:types`. Mọi nhánh đều phải xanh (đỏ nghĩa là CI đỏ); không còn nhánh `experimental` nào nữa:
-     nhánh TypeScript 7 đã bị bỏ vì Yarn 4.10 không cài được TypeScript 7 native. Kết quả quyết định các khoảng peer (được sửa tay).
+     (nhánh `typescript`) `yarn test:types`. Mọi nhánh đều phải xanh (đỏ nghĩa là CI đỏ); không còn nhánh `experimental` nào nữa.
+     Kết quả quyết định các khoảng peer (được sửa tay).
      Chỉ phiên bản mới nhất của mỗi major được chạy; mức sàn của một khoảng (ví dụ `vite@5.0.0`) không được kiểm tra;
+   - job `ts-peer` (5 nhánh): `scripts/ts-peer-smoke.mjs` (`yarn check:ts-peer`) đóng gói tarball đã build, cài nó cùng `typescript` 5.0.4, 5.2.2, 5.9.3, 6 và 7.0.2 trong một scratch project npm
+     (Yarn 4.10 không cài được TypeScript 7) và chạy `tsc` dưới `node16` trên mọi subpath qua điều kiện `require` (`.d.cts`) và `import` (`.d.ts`);
+     `skipLibCheck` bật cho 5.0.4 và 5.2.2, tắt cho các bản còn lại. Job này chứng minh khoảng peer `typescript` của `package.json`;
    - job `ui-peer-floor`: build thư viện, ép bốn optional peer của UI kit (`class-variance-authority`, `clsx`, `tailwind-merge`,
      `@types/react`) về mức sàn của các khoảng `peerDependencies` qua `resolutions`, khẳng định các phiên bản được resolve,
      rồi chạy `yarn typecheck:dist` và `yarn vitest run src/features/ui`. Hai bản ghim chỉ dành cho harness (bộ ví dụ dùng để kiểm thử DX) phản ánh những gì một consumer thực sự
      nhận được: cva 0.7.0 cần đúng clsx 2.0.0, nên nó giữ một bản sao lồng nhau riêng, và `@types/scheduler` được giữ ở 0.16.8, phiên bản cuối cùng có `scheduler/tracing`,
      thứ mà `@types/react` <=18.2.71 import;
-   - `tailwind-floor`, `node-floor`, `peer-matrix` và `ui-peer-floor` là tầng nặng và nằm trong `ci-matrix.yml` (7 job, `peer-matrix` có 4 leg; không phải check bắt buộc).
+   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` và `ui-peer-floor` là tầng nặng và nằm trong `ci-matrix.yml` (8 job, `peer-matrix` có 4 leg; không phải check bắt buộc).
      Nó chạy hằng đêm trên `main` (cron `43 5 * * *`), khi dispatch thủ công (`gh workflow run ci-matrix.yml --ref main`) và trên các PR vào `main`/`release/**`,
      không chạy trên PR vào `develop`; mọi leg phải xanh trước khi merge PR vào `main`. Nó có `paths-ignore: ["documents/**"]` ở cấp workflow:
      một PR chỉ đổi tài liệu không chạy nó. Trên PR, mọi job bỏ qua các PR draft và chạy khi PR được đánh dấu ready (`ready_for_review`);

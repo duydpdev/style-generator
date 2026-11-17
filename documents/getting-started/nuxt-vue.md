@@ -11,7 +11,7 @@ yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind
 yarn add -D typescript@^5.9.0
 ```
 
-`typescript` is a development dependency of the app because `@vue/compiler-sfc` reads the props type from `types.ts` through the TypeScript compiler API. Use 5.x or 6.x (the package's own peer range is `^5.0.0 || ^6.0.0`): TypeScript 7 does not provide that API, and the page then fails with `No fs option provided to compileScript`.
+`typescript` is a development dependency of the app because `@vue/compiler-sfc` reads the props type from `types.ts` through the TypeScript compiler API. Use 5.x or 6.x in a Vue or Nuxt app (the package's own peer range is `^5.0.0 || ^6.0.0 || ^7.0.0`, which lets apps that do not compile Vue SFCs type-check against the package's declarations on TypeScript 7): TypeScript 7 does not provide that API, and the page then fails with `No fs option provided to compileScript` ([Troubleshooting](../troubleshooting.md#no-fs-option-provided-to-compilescript)).
 
 ## Create the theme
 

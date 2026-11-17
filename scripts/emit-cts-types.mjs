@@ -13,7 +13,8 @@
  * `.cjs`. The script fails if one appears, which means the declaration
  * bundling changed. The copy is byte-identical except for the rules in
  * `cjs-declaration.mjs` (the `vite` import resolves as ESM: Vite has no
- * usable CommonJS types).
+ * usable CommonJS types). `vite.d.ts` also gets `vite.legacy.d.cts`, the same
+ * text with the `assert` spelling for TypeScript before 5.3.
  *
  * Runs as the last step of `yarn build`. Declarations under `dist/cli` do
  * not exist (the CLI has no import API) and are not copied.
@@ -22,7 +23,10 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { toCjsDeclaration } from "./cjs-declaration.mjs";
+import {
+  toCjsDeclaration,
+  toLegacyCjsDeclaration,
+} from "./cjs-declaration.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
@@ -49,14 +53,17 @@ const declarations = readdirSync(dist).filter(
 );
 if (declarations.length === 0) fail("no dist/*.d.ts found");
 
+let emitted = 0;
 for (const name of declarations) {
   const source = readFileSync(join(dist, name), "utf8");
   if (RELATIVE_SPECIFIER_RE.test(source)) {
     fail(`${name} has a relative import; it is no longer self-contained`);
   }
   let converted;
+  let legacy;
   try {
     converted = toCjsDeclaration(source, name);
+    if (name === "vite.d.ts") legacy = toLegacyCjsDeclaration(source, name);
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
   }
@@ -64,6 +71,11 @@ for (const name of declarations) {
     fail("vite.d.ts no longer imports `vite`; the CommonJS rule did not apply");
   }
   writeFileSync(join(dist, name.replace(/\.d\.ts$/, ".d.cts")), converted);
+  emitted += 1;
+  if (legacy !== undefined) {
+    writeFileSync(join(dist, "vite.legacy.d.cts"), legacy);
+    emitted += 1;
+  }
 }
 
-console.log(`✓ emitted ${declarations.length} .d.cts files`);
+console.log(`✓ emitted ${emitted} .d.cts files`);

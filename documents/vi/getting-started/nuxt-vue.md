@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 730e63ff2a87 -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: c83aa3aa4167 -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -13,7 +13,7 @@ yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind
 yarn add -D typescript@^5.9.0
 ```
 
-`typescript` là development dependency của ứng dụng vì `@vue/compiler-sfc` đọc kiểu props từ `types.ts` qua TypeScript compiler API. Dùng 5.x hoặc 6.x (peer range của chính package là `^5.0.0 || ^6.0.0`): TypeScript 7 không cung cấp API đó, và trang sẽ thất bại với `No fs option provided to compileScript`.
+`typescript` là development dependency của ứng dụng vì `@vue/compiler-sfc` đọc kiểu props từ `types.ts` qua TypeScript compiler API. Dùng 5.x hoặc 6.x trong ứng dụng Vue hoặc Nuxt (peer range của chính package là `^5.0.0 || ^6.0.0 || ^7.0.0`, cho phép các ứng dụng không biên dịch Vue SFC kiểm tra kiểu với các khai báo của package trên TypeScript 7): TypeScript 7 không cung cấp API đó, và trang sẽ thất bại với `No fs option provided to compileScript` ([Khắc phục sự cố](../troubleshooting.md#no-fs-option-provided-to-compilescript)).
 
 ## Tạo theme
 

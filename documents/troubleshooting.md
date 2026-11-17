@@ -24,6 +24,7 @@ Find the start of the message the CLI, `styleGenVite()` or `styleGenNext()` prin
 | `--check and --watch cannot be combined`                                                                                                                                                                                                                                 | [--check and --watch cannot be combined](#--check-and---watch-cannot-be-combined)   |
 | `… is invalid, so --yes cannot tell`, `--theme … differs from`, `… is invalid and its "theme" cannot be read`, `… is not valid JSON (`, `init writes or merges into`, `Files already exist`, `… is invalid and init left it as it is`, `… only merged the theme into it` | [init stops with exit code 1](#init-stops-with-exit-code-1)                         |
 | `--out and --config-out`, `… would overwrite the theme file`, `… would overwrite the config file`                                                                                                                                                                        | [schema refuses two files at one path](#schema-refuses-two-files-at-one-path)       |
+| `No fs option provided to compileScript`                                                                                                                                                                                                                                 | [No fs option provided to compileScript](#no-fs-option-provided-to-compilescript)   |
 
 ## Invalid theme (
 
@@ -152,3 +153,7 @@ The dev server or the build did not run the generator. With Vite, `styleGenVite(
 ## tailwind-merge keeps the wrong class
 
 A plain `twMerge` does not know the theme's `text-16-medium`, `rounded-pill` or `shadow-card`, so it can keep the earlier class. Build one `cn` per theme with `createCn(tokens)` ([Build components → `cn`](./getting-started/build-components.md#4-cn-merge-classes-with-the-themes-classes-in-mind)).
+
+## No fs option provided to compileScript
+
+`No fs option provided to compileScript` appears in a Vue or Nuxt app (often as a failing page or Storybook story) that runs on TypeScript 7. The cause is `@vue/compiler-sfc`: it reads the props type of a `<script setup lang="ts">` component through the TypeScript compiler API, and TypeScript 7 (the native port) does not provide that API. This package's declarations type-check on TypeScript 7; the failure is in the Vue compiler, not in the generated CSS or tokens. Keep `typescript` at 5.x or 6.x in that app ([Nuxt and Vue](./getting-started/nuxt-vue.md)).

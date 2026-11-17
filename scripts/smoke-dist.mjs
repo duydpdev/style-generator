@@ -5,7 +5,8 @@
  *
  * 1. every file named in `package.json#exports` and `bin` exists (nested
  *    `import`/`require` → `types`/`default` conditions included), and each
- *    `.d.cts` is its `.d.ts` rewritten by `scripts/cjs-declaration.mjs`;
+ *    `.d.cts` is its `.d.ts` rewritten by `scripts/cjs-declaration.mjs` (the
+ *    `./vite` `types@<5.3` target is the `assert` spelling of that rewrite);
  * 2. every subpath loads through the package name with both `import` and
  *    `require`, exposes the same export names, and those names match the
  *    value exports its `.d.ts` declares (`./tokens` may add one-letter
@@ -35,7 +36,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { toCjsDeclaration } from "./cjs-declaration.mjs";
+import {
+  toCjsDeclaration,
+  toLegacyCjsDeclaration,
+} from "./cjs-declaration.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -109,6 +113,18 @@ for (const key of subpaths) {
     toCjsDeclaration(readFileSync(join(root, esm.types), "utf8"), esm.types)
   ) {
     fail(`exports["${key}"]: ${cjs.types} differs from ${esm.types}`);
+  }
+  // `./vite` also ships the `assert` spelling for TypeScript before 5.3.
+  const legacy = cjs["types@<5.3"];
+  if (
+    legacy !== undefined &&
+    readFileSync(join(root, legacy), "utf8") !==
+      toLegacyCjsDeclaration(
+        readFileSync(join(root, esm.types), "utf8"),
+        esm.types,
+      )
+  ) {
+    fail(`exports["${key}"]: ${legacy} differs from ${esm.types}`);
   }
 }
 if (!existsSync(cli)) fail(`bin points at missing ${pkg.bin["style-gen"]}`);

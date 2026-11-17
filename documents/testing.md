@@ -34,7 +34,7 @@ The checks have two layers:
      `tsconfig.dts-check.cjs.json` checks `dist/*.d.cts` as a real CommonJS consumer — `module: node16`, `skipLibCheck: false`,
      the file `scripts/dist-types.cjs.assert.cts` imports through the package name under the `require` condition itself.
      The CJS half uses `node16`, not `nodenext`, because since TS 5.8 `nodenext` allows `require()` of ESM and would mask `TS1479` on an ESM-only peer.
-     `dist/vite.d.cts` is `vite.d.ts` with the `vite` import rewritten as `import type … assert { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`);
+     `dist/vite.d.cts` is `vite.d.ts` with the `vite` import rewritten as `import type … with { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`); `dist/vite.legacy.d.cts` keeps the `assert` spelling for TypeScript before 5.3 (`exports["./vite"].require["types@<5.3"]`);
      attw does not resolve peer types, so it cannot replace this step) → `yarn test:coverage` (fails if coverage drops below `coverage.thresholds` in `vitest.config.ts`) →
      `yarn test:types`;
    - job `plain-react` (a separate job of `ci.yml`, check name `Plain React (Storybook + parity)`, required by the `main-develop` ruleset;
@@ -52,14 +52,17 @@ The checks have two layers:
      the floor of `engines.node` (the other jobs run Node 22);
    - job `peer-matrix` (4 legs): builds the lib with the committed toolchain, then forces **one** peer to the latest version of **one** major through `resolutions` (`vite` 5/6/8,
      `typescript` 6), asserts that the resolved version is `N.x`, then builds `examples/harness`, (the `vite` leg) dev-server smoke, example typecheck and `yarn typecheck:dist`,
-     (the `typescript` leg) `yarn test:types`. Every leg must be green (red means CI is red); there is no `experimental` leg any more:
-     the TypeScript 7 leg was dropped because Yarn 4.10 cannot install native TypeScript 7. The results decide the peer ranges (edited by hand).
+     (the `typescript` leg) `yarn test:types`. Every leg must be green (red means CI is red); there is no `experimental` leg any more.
+     The results decide the peer ranges (edited by hand).
      Only the latest version of each major is run; the floor of a range (e.g. `vite@5.0.0`) is not checked;
+   - job `ts-peer` (5 legs): `scripts/ts-peer-smoke.mjs` (`yarn check:ts-peer`) packs the built tarball, installs it with `typescript` 5.0.4, 5.2.2, 5.9.3, 6 and 7.0.2 in a scratch npm project
+     (Yarn 4.10 cannot install TypeScript 7) and runs `tsc` under `node16` on every subpath through the `require` (`.d.cts`) and `import` (`.d.ts`) conditions;
+     `skipLibCheck` is on for 5.0.4 and 5.2.2 and off for the others. It proves the `typescript` peer range of `package.json`;
    - job `ui-peer-floor`: builds the lib, forces the four UI-kit optional peers (`class-variance-authority`, `clsx`, `tailwind-merge`,
      `@types/react`) to the floor of their `peerDependencies` ranges through `resolutions`, asserts the resolved versions,
      then runs `yarn typecheck:dist` and `yarn vitest run src/features/ui`. Two harness-only pins mirror what a consumer actually gets: cva 0.7.0 needs clsx 2.0.0 exactly,
      so it keeps its own nested copy, and `@types/scheduler` is held at 0.16.8, the last version with `scheduler/tracing`, which `@types/react` <=18.2.71 imports;
-   - `tailwind-floor`, `node-floor`, `peer-matrix` and `ui-peer-floor` are the heavy tier and live in `ci-matrix.yml` (7 jobs, `peer-matrix` has 4 legs; not a required check).
+   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` and `ui-peer-floor` are the heavy tier and live in `ci-matrix.yml` (8 jobs, `peer-matrix` has 4 legs; not a required check).
      It runs nightly on `main` (cron `43 5 * * *`), on manual dispatch (`gh workflow run ci-matrix.yml --ref main`) and on PRs into `main`/`release/**`, not on PRs into `develop`;
      every leg must be green before the PR into `main` is merged. It has `paths-ignore: ["documents/**"]` at the workflow level:
      a PR that only changes documentation does not run it. On PRs every job skips drafts and runs when the PR is marked ready (`ready_for_review`);

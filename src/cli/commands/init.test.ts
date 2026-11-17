@@ -1183,6 +1183,18 @@ describe("initCommand", () => {
       });
     });
 
+    it("A15: init warns when it merges a new theme into an invalid config", async () => {
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      invalid();
+
+      expect(await run({ theme: "b/theme.json" }, tmp)).toBe(0);
+
+      expect(logged(warn)).toContain(
+        "style-gen.config.json is invalid and init only merged the theme into it",
+      );
+      expect(logged(warn)).toContain("extraSources");
+    });
+
     it("output: a custom output is kept when the wizard picks another theme", async () => {
       setTty(true);
       write(

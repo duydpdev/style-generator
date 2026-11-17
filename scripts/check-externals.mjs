@@ -21,7 +21,7 @@
  * Exits 1 with details on a missing artifact, a missing map or an inlined module.
  */
 import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { resolve, dirname, join, relative } from "node:path";
+import { resolve, dirname, join, relative, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -94,9 +94,54 @@ for (const file of targets) {
   );
 }
 
+/**
+ * Rolldown's interop helper chunk: bundler-generated, no project or
+ * third-party code, and it ships without a sourcemap.
+ */
+const RUNTIME_SHIM_RE = /^rolldown-runtime-[\w-]+\.[cm]?js$/;
+
+/** One statement of a pure re-export shim (relative specifiers only). */
+const RELATIVE_SPECIFIER = String.raw`["'\`]\.{1,2}/[^"'\`]+["'\`]`;
+const EXPORT_ASSIGN = String.raw`exports\.[\w$]+=[\w$]+(?:\.[\w$]+)?`;
+const SHIM_STATEMENTS = [
+  // ESM: `import { a as b } from "./x.js"`, `import "./x.js"`
+  new RegExp(
+    String.raw`^import\s*(?:[\w$*{}\s,]+\s*from\s*)?${RELATIVE_SPECIFIER}$`,
+  ),
+  // ESM: `export { a as b }`, `export { a } from "./x.js"`, `export * from "./x.js"`
+  new RegExp(
+    String.raw`^export\s*(?:\{[\w$\s,]*\}|\*)(?:\s*from\s*${RELATIVE_SPECIFIER})?$`,
+  ),
+  // CJS: `Object.defineProperty(exports,Symbol.toStringTag,{value:\`Module\`})`
+  /^Object\.defineProperty\(exports,Symbol\.toStringTag,\{value:["'`]Module["'`]\}\)$/,
+  // CJS: `const a=require("./x.cjs"),b=require("./y.cjs")`
+  new RegExp(
+    String.raw`^(?:const|let|var)\s+[\w$]+=require\(${RELATIVE_SPECIFIER}\)(?:,[\w$]+=require\(${RELATIVE_SPECIFIER}\))*$`,
+  ),
+  // CJS: `exports.a=b.c,exports.d=e.f`
+  new RegExp(String.raw`^${EXPORT_ASSIGN}(?:,${EXPORT_ASSIGN})*$`),
+];
+
+/**
+ * Whether a bundle file without a sourcemap can hold no third-party code a
+ * map would have to name: Rolldown's runtime shim, or a file made only of
+ * relative import/export/require statements (a pure re-export entry such as
+ * `dist/spacing.js`, or the empty output of a type-only entry).
+ * @param {string} file - Absolute path of a bundle file
+ * @returns {boolean} True when the file carries no code of its own
+ */
+const isCodeFreeShim = (file) => {
+  if (RUNTIME_SHIM_RE.test(basename(file))) return true;
+  return readFileSync(file, "utf8")
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement !== "")
+    .every((statement) => SHIM_STATEMENTS.some((re) => re.test(statement)));
+};
+
 const files = existsSync(dist) ? walk(dist) : [];
 for (const file of files.filter((f) => /\.[cm]?js$/.test(f))) {
-  if (!existsSync(`${file}.map`)) {
+  if (!existsSync(`${file}.map`) && !isCodeFreeShim(file)) {
     console.error(
       `✗ ${relative(root, file)} has no sourcemap — inlining cannot be checked`,
     );

@@ -284,12 +284,12 @@ Consequence: `dist/tokens.js` and `dist/tokens.cjs` export a few extra single-le
 `dist/tokens.d.ts` is unchanged and is the only contract, these aliases are not API. The `./tokens` budget is raised only when the tokens surface itself grows (for example
 `aliasedColors` in phase 09), never to absorb accidental coupling.
 
-**Shared chunks and `manualChunks`:** adding an entry (such as `./recipes`, which uses `helpers` + `spacingHelpers` but not `colorStates`) changes the set of entries that depend on
-each module, so Rollup splits `helpers`/`colorStates` and splits `spacingHelpers` out of the `spacing` entry, pushing the cost of importing a chunk onto `./tokens`, `./cva`,
-`./spacing`. `vite.config.ts` pins those modules into stable chunks with `manualChunks`: `helpers` + `colorStates` → `helpers`,
-`exports/spacing` + `spacingHelpers` → `spacing` (the chunk name `spacing` MUST equal the entry name, otherwise they cannot be merged), `defaultOption` → `defaultOption`.
+**Shared chunks and `codeSplitting.groups`:** adding an entry (such as `./recipes`, which uses `helpers` + `spacingHelpers` but not `colorStates`) changes the set of entries that depend on
+each module, so the bundler splits `helpers`/`colorStates` apart and pushes the cost of importing a chunk onto `./tokens` and `./cva`. `vite.config.ts` pins those modules into stable
+chunks with Rolldown's `output.codeSplitting.groups`: `helpers` + `colorStates` → `helpers`, `exports/cva` + `createVariantMapper` → `cva`, the `./tokens` internals
+(`exports/tokens`, `createDesignTokens`, `Options`, `resolveTokenOptions`, `categoryTokenMeta`, `classPrefixes`) → `tokens`; `includeDependenciesRecursively` is `false`, so a group takes only the modules it names.
 When adding a shared module or a new entry, re-run `yarn build:all && yarn check:sizes`; `tokens`/`cva`/`spacing`/`index` must not creep up — pin the module or restructure the
-imports, do not raise the budget. Vite 8 / Rolldown marks `manualChunks` as deprecated in favor of `advancedChunks`: revisit when upgrading.
+imports, do not raise the budget. `check:sizes` also runs `scripts/check-dist-reachable.mjs`, which fails when a `dist` JavaScript file is not reachable from a published entry (such a file would not be counted by the size budget).
 
 **Why `@source inline` instead of a safelist:** Tailwind v4 does not scan classes built at runtime. `generateSourceInline` emits one `@source inline("…")` line per category (and
 per state that has a sibling, for example `hover:bg-primary-hover`), so the classes always exist even if no source references them;

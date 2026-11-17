@@ -1,3 +1,18 @@
+# [8.1.0](https://github.com/duydpdev/style-generator/compare/v8.0.2...v8.1.0) (2026-11-17)
+
+### Features
+
+- accept TypeScript 7 as a peer ([53d2844](https://github.com/duydpdev/style-generator/commit/53d2844c75fe1511cd3c5a0d809b56e3409b4c8f))
+
+  peerDependencies.typescript is now ^5.0.0 || ^6.0.0 || ^7.0.0. The CommonJS ./vite declaration compiles on TypeScript 7 since the previous fix. Docs: peer table, nuxt-vue note, a troubleshooting entry for the Vue compiler error on TypeScript 7 (a Vue limitation, not this package).
+
+
+### Bug Fixes
+
+- resolve the vite types of the CommonJS build on TypeScript 5.3 and later ([81bd70b](https://github.com/duydpdev/style-generator/commit/81bd70bbcb562e5501d7bece998fb18db7091d48))
+
+  dist/vite.d.cts now imports vite with the 'with' import attribute, which TypeScript 7 requires (it rejects 'assert'). dist/vite.legacy.d.cts keeps the 'assert' spelling and exports['./vite'].require['types@<5.3'] points at it, so TypeScript before 5.3 still parses the declaration.
+
 # [8.0.2](https://github.com/duydpdev/style-generator/compare/v8.0.1...v8.0.2) (2026-11-17)
 
 ### Bug Fixes

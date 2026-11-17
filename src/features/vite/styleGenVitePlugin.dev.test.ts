@@ -18,6 +18,7 @@ import {
   makeServer,
   minimalTheme,
   viteHarness,
+  type StubServer,
 } from "../../__integration__/__fixtures__/viteHookStubs";
 import type * as ResolvePluginTargetModule from "../../node/resolvePluginTarget";
 import { resolvePluginTarget } from "../../node/resolvePluginTarget";
@@ -382,6 +383,150 @@ describe("styleGenVite plugin", () => {
         vi.advanceTimersByTime(200);
 
         expect(restart).not.toHaveBeenCalled();
+      });
+    });
+
+    // Phase 03c: chokidar 3 (bundled by every Vite) closes the watch of a file
+    // on `unlink`, so without a re-arm a removed theme or config is never seen
+    // again; on Linux a theme re-created right away yields only a bare
+    // `unlink` (no `add`, no `change`).
+    describe("re-arming a removed theme or config (03c)", () => {
+      const recolor = (themeAbs: string, color: string): void => {
+        writeFileSync(
+          themeAbs,
+          JSON.stringify({
+            ...minimalTheme,
+            colors: { ...minimalTheme.colors, primary: color },
+          }),
+          "utf8",
+        );
+      };
+      const expectRearmed = (server: StubServer, file: string): void => {
+        expect(server.watcher.unwatch.mock.calls).toEqual([[file]]);
+        expect(server.watcher.add.mock.calls).toEqual([[file]]);
+        expect(server.watcher.unwatch.mock.invocationCallOrder[0]).toBeLessThan(
+          server.watcher.add.mock.invocationCallOrder[0] ?? 0,
+        );
+      };
+
+      it("re-arms the theme on unlink with unwatch then add", () => {
+        const { themeAbs, server } = setup();
+        server.watcher.add.mockClear();
+        unlinkSync(themeAbs);
+
+        server.watcher.handlers.get("unlink")?.(themeAbs);
+
+        expectRearmed(server, themeAbs);
+      });
+
+      it("re-arms the theme a reloaded config moved to, not the old one", () => {
+        const { server } = setup();
+        const moved = writeTheme("other/theme.json");
+        const configAbs = writeConfig({ theme: "other/theme.json" });
+        server.watcher.handlers.get("change")?.(configAbs);
+        vi.advanceTimersByTime(200);
+        server.watcher.add.mockClear();
+
+        server.watcher.handlers.get("unlink")?.(moved);
+
+        expectRearmed(server, moved);
+      });
+
+      it.each([["style-gen.config.json"], ["package.json"]])(
+        "re-arms the config candidate %s on unlink with unwatch then add",
+        (name) => {
+          const { server } = setup();
+          server.watcher.add.mockClear();
+          const file = join(tmp, name);
+
+          server.watcher.handlers.get("unlink")?.(file);
+
+          expectRearmed(server, file);
+        },
+      );
+
+      it("does not re-arm a file it does not watch", () => {
+        const { server } = setup();
+        server.watcher.add.mockClear();
+
+        server.watcher.handlers.get("unlink")?.(join(tmp, "src/random.tsx"));
+
+        expect(server.watcher.unwatch).not.toHaveBeenCalled();
+        expect(server.watcher.add).not.toHaveBeenCalled();
+      });
+
+      it("re-emits and reloads on a theme `add`", () => {
+        const { themeAbs, server } = setup();
+        recolor(themeAbs, "#ABCDEF");
+
+        server.watcher.handlers.get("add")?.(themeAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(readFileSync(join(tmp, "src/theme/theme.css"), "utf8")).toMatch(
+          /#ABCDEF/,
+        );
+        expect(server.ws.send).toHaveBeenCalledExactlyOnceWith({
+          type: "full-reload",
+          path: "*",
+        });
+      });
+
+      it("re-emits after an `unlink` of a theme that exists again (a bare `unlink`, no `add`)", () => {
+        const { themeAbs, server } = setup();
+        recolor(themeAbs, "#123456");
+
+        server.watcher.handlers.get("unlink")?.(themeAbs);
+        vi.advanceTimersByTime(199);
+        expect(server.ws.send).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+
+        expect(readFileSync(join(tmp, "src/theme/theme.css"), "utf8")).toMatch(
+          /#123456/,
+        );
+        expect(server.ws.send).toHaveBeenCalledExactlyOnceWith({
+          type: "full-reload",
+          path: "*",
+        });
+      });
+
+      it("emits once for an `unlink` followed by an `add`", () => {
+        const { themeAbs, server } = setup();
+        recolor(themeAbs, "#654321");
+
+        server.watcher.handlers.get("unlink")?.(themeAbs);
+        server.watcher.handlers.get("add")?.(themeAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(server.ws.send).toHaveBeenCalledOnce();
+      });
+
+      it("neither emits nor logs when the theme stays removed", () => {
+        const { themeAbs, logger, server } = setup();
+        const cssPath = join(tmp, "src/theme/theme.css");
+        const before = readFileSync(cssPath, "utf8");
+        vi.mocked(emitTheme).mockClear();
+        unlinkSync(themeAbs);
+
+        server.watcher.handlers.get("unlink")?.(themeAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(emitTheme).not.toHaveBeenCalled();
+        expect(logger.error).not.toHaveBeenCalled();
+        expect(server.ws.send).not.toHaveBeenCalled();
+        expect(readFileSync(cssPath, "utf8")).toBe(before);
+      });
+
+      it("neither emits nor logs when the theme is removed again before the debounce fires", () => {
+        const { themeAbs, logger, server } = setup();
+        vi.mocked(emitTheme).mockClear();
+
+        // Back at the `unlink`, gone again when the schedule fires.
+        server.watcher.handlers.get("unlink")?.(themeAbs);
+        unlinkSync(themeAbs);
+        vi.advanceTimersByTime(200);
+
+        expect(emitTheme).not.toHaveBeenCalled();
+        expect(logger.error).not.toHaveBeenCalled();
       });
     });
 

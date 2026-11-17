@@ -527,6 +527,31 @@ describe("watchThemeFile", () => {
         expect(results).toEqual([ok(true)]);
       });
 
+      // Phase 03c: the existence check moved from the `unlink` to the moment
+      // the schedule fires, so a theme that changes state in between is
+      // judged by its final state.
+      it("emits for a theme removed at its `unlink` that is back when the schedule fires", () => {
+        const w = start();
+        fs.rmSync(themeFile);
+
+        w.emit("unlink", themeFile);
+        fs.writeFileSync(themeFile, theme("#111"));
+        vi.advanceTimersByTime(50);
+
+        expect(results).toEqual([ok(true)]);
+        expect(w.calls).toEqual([`unwatch ${themeFile}`, `add ${themeFile}`]);
+      });
+
+      it("emits nothing for a theme present at its `unlink` that is gone when the schedule fires", () => {
+        const w = start();
+
+        w.emit("unlink", themeFile);
+        fs.rmSync(themeFile);
+        vi.advanceTimersByTime(50);
+
+        expect(results).toEqual([]);
+      });
+
       it.each([["style-gen.config.json"], ["package.json"]])(
         "re-arms %s with unwatch then add and reloads once",
         (name) => {

@@ -125,6 +125,12 @@ export function watchThemeFile(
 
   const run = (): void => {
     timer = undefined;
+    // A theme removed for good: nothing to emit and nothing to log.
+    if (!configDirty && !fs.existsSync(current.themeFile)) {
+      primaryDirty = false;
+      themeDirty = false;
+      return;
+    }
     const outcome = configDirty ? reload() : "changed";
     const nothingToEmit =
       (outcome === "failed" && !themeDirty) ||
@@ -164,23 +170,23 @@ export function watchThemeFile(
   watcher.on("add", schedule);
   watcher.on("unlink", (file) => {
     const abs = path.resolve(file);
-    const isConfig = candidates.includes(abs);
+    if (!candidates.includes(abs) && abs !== path.resolve(current.themeFile)) {
+      return;
+    }
     // chokidar watches a file that existed at start through a watch on the
     // file itself and drops that watch on `unlink`: without a re-arm its
     // re-creation (`git checkout`, `git stash`) and later edits are never
     // seen. Unwatching first clears chokidar's ignore entry, so `add` really
     // starts a fresh watch.
-    if (isConfig || abs === path.resolve(current.themeFile)) {
-      watcher.unwatch(file);
-      watcher.add(file);
-    }
+    watcher.unwatch(file);
+    watcher.add(file);
     // A config file being removed means "the next candidate, else defaults":
-    // reload. A theme removed for good needs nothing more, but one recreated
-    // within a few tens of ms is already back by now: the re-arm `add()`
-    // counts as an initial add and `ignoreInitial` drops its event, so
-    // schedule the run here (A16). A theme that comes back later reports an
-    // `add` of its own.
-    if (isConfig || fs.existsSync(abs)) schedule(file);
+    // reload. A theme recreated within a few tens of ms is already back, and
+    // the re-arm `add()` counts as an initial add that `ignoreInitial` drops,
+    // so the run is scheduled from the `unlink` itself (A16); `run` skips a
+    // theme that is still gone when it fires. A theme that comes back later
+    // reports an `add` of its own.
+    schedule(file);
   });
   watcher.on("error", (error) => {
     onResult({

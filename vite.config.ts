@@ -54,69 +54,29 @@ export default defineConfig({
       output: {
         preserveModules: false,
         minifyInternalExports: true,
-        // Pin the modules several entries share to stable chunks. Without it
-        // `./recipes` (which uses helpers + spacingHelpers but not
-        // colorStates) changes the set of entries depending on each module,
-        // so Rollup splits `helpers`/`colorStates` apart and `spacingHelpers`
-        // off the `spacing` entry, adding chunk overhead to `./tokens`,
-        // `./cva` and `./spacing` (see the 2026-10-28 note in
-        // scripts/check-sizes.mjs). `spacing` merges the entry module with
-        // `spacingHelpers` so `./recipes` imports `spacing.js` instead of
-        // duplicating it.
-        //
-        // Rules: the chunk name "spacing" MUST equal the entry name (a
-        // differently named chunk would not merge with the entry and would
-        // split it again). `tokens`, `cva`, `spacing` and `index` must not
-        // drift when a new shared module or entry appears: re-run
-        // `yarn build:all && yarn check:sizes` and pin the module here (or
-        // restructure the import) instead of raising their budgets. A manual
-        // chunk also absorbs every unassigned module in its static import
-        // closure, so every shared module reachable from a pinned module must
-        // be pinned too.
-        // Vite 8 / Rolldown deprecates `manualChunks` in favour of
-        // `advancedChunks`: revisit this rule when upgrading.
-        manualChunks: (id) => {
-          if (/[/\\]src[/\\]shared[/\\](helpers|colorStates)\.ts$/.test(id)) {
-            return "helpers";
-          }
-          if (
-            /[/\\]src[/\\](exports[/\\]spacing|features[/\\]spacing[/\\]spacingHelpers)\.ts$/.test(
-              id,
-            )
-          ) {
-            return "spacing";
-          }
-          if (/[/\\]src[/\\]shared[/\\]defaultOption\.ts$/.test(id)) {
-            return "defaultOption";
-          }
-          // `axisAttributeName` is shared by the generator (`.`, `./vite`,
-          // `./next`) and `./recipes` (`themeAxisAttributes`). A manual chunk
-          // absorbs its whole unassigned static closure (Rollup
-          // `addStaticDependenciesToManualChunk`), so without this pin the
-          // `recipes` rule would swallow it and `index` would load all of
-          // `recipes.js` (+617 B, measured 2026-11-03).
-          if (/[/\\]src[/\\]shared[/\\]axisAttributeName\.ts$/.test(id)) {
-            return "axisAttributeName";
-          }
-          if (
-            /[/\\]src[/\\](exports[/\\]tokens|core[/\\](Options|resolveTokenOptions)|features[/\\]registry[/\\]categoryTokenMeta|shared[/\\]classPrefixes)\.ts$/.test(
-              id,
-            )
-          ) {
-            return "tokens";
-          }
-          // `./ui` shares the tailwind-merge extension and spacing props with
-          // `./recipes`. Keep those modules in the entry chunk (chunk name =
-          // entry name, as for `spacing`) so the new entry cannot split them
-          // out.
-          if (
-            /[/\\]src[/\\](exports[/\\]recipes|features[/\\]recipes[/\\](extendTailwindMerge|spacingProps|themeAxisAttributes))\.ts$/.test(
-              id,
-            )
-          ) {
-            return "recipes";
-          }
-          return undefined;
+        // Pin the modules `./tokens` and `./cva` share with other entries to
+        // stable chunks, so a new shared module or entry cannot push `tokens`,
+        // `cva`, `spacing` or `index` over their budgets (see the notes in
+        // scripts/check-sizes.mjs). A group name MUST NOT equal an entry
+        // name it does not merge with; re-run `yarn build:all && yarn
+        // check:sizes` after touching a shared module and pin it here (or
+        // restructure the import) instead of raising a budget.
+        codeSplitting: {
+          includeDependenciesRecursively: false,
+          groups: [
+            {
+              name: "helpers",
+              test: /[\\/]src[\\/]shared[\\/](helpers|colorStates)\.ts$/,
+            },
+            {
+              name: "cva",
+              test: /[\\/]src[\\/](exports[\\/]cva|features[\\/]cva[\\/]createVariantMapper)\.ts$/,
+            },
+            {
+              name: "tokens",
+              test: /[\\/]src[\\/](exports[\\/]tokens|features[\\/]tokens[\\/]createDesignTokens|core[\\/](Options|resolveTokenOptions)|features[\\/]registry[\\/]categoryTokenMeta|shared[\\/]classPrefixes)\.ts$/,
+            },
+          ],
         },
       },
     },

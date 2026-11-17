@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: 25a24ae1ba44 -->
+<!-- source: documents/reference/core.md sha256: bb6f09b6f6ee -->
 
 # API lõi (@duydpdev/style-generator)
 

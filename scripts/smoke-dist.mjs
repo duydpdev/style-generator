@@ -10,7 +10,9 @@
  * 2. every subpath loads through the package name with both `import` and
  *    `require`, exposes the same export names, and those names match the
  *    value exports its `.d.ts` declares (`./tokens` may add one-letter
- *    internal aliases);
+ *    internal aliases); a real `cn()` call through `require` also merges
+ *    classes (`createCn` is the one default import of an external, `clsx`,
+ *    where a bundler's CommonJS interop can differ);
  * 3. `generate()` from the ESM and CJS builds returns identical CSS;
  * 4. the CLI bundle runs: `--version`, `schema`, `generate` (same CSS as the
  *    library), `tokens`, `budget` (each also with `--help`) and `init`: in an
@@ -209,6 +211,19 @@ for (const key of subpaths) {
     `✓ ${specifier} — import + require (${esmKeys.length} exports, ${dtsKeys.length} declared)`,
   );
 }
+
+// `createCn` default-imports `clsx`: a CommonJS build that mishandles that
+// interop only breaks when the function is called.
+const cn = require(`${pkg.name}/ui`).createCn(
+  require(`${pkg.name}/tokens`).createDesignTokens({
+    colors: { primary: "#000" },
+  }).DesignTokens.Web,
+);
+const merged = cn("px-2", undefined, "px-4");
+if (merged !== "px-4") {
+  fail(`cn() through require returned "${merged}", expected "px-4"`);
+}
+console.log('✓ cn() through require merges "px-2 px-4" into "px-4"');
 
 /* ---------- 3. ESM and CJS builds agree ---------- */
 

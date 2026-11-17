@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: 7e611ec2c40a -->
+<!-- source: documents/reference/core.md sha256: 25a24ae1ba44 -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -44,7 +44,7 @@ import { styleGenVite } from "@duydpdev/style-generator/vite";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 ```
 
-Yêu cầu `tsconfig.json#compilerOptions.moduleResolution` là `"bundler"`, `"node16"`, hoặc `"nodenext"`; **`"node10"` (`"node"` cũ) không được hỗ trợ**: package không có `typesVersions`, nên các subpath sẽ không resolve được ở đó. Bản build ESM và CJS đều kèm theo file declaration riêng (`.d.ts` cho `import`, `.d.cts` cho `require`), nhờ đó consumer dùng CommonJS dưới `node16`/`nodenext` sẽ resolve đúng kiểu thay vì gặp lỗi lệch "masquerading as ESM" (`yarn check:types-pack` kiểm tra điều này bằng `@arethetypeswrong/cli`). `dist/*.d.cts` chính là `.d.ts` được viết lại một chỗ: import `vite` chuyển thành type-only `import type { Plugin } from 'vite' assert { 'resolution-mode': 'import' }`, vì Vite không có kiểu CommonJS dùng được (5/6 đi kèm stub `export = any`, 7/8 chỉ hỗ trợ ESM). `yarn typecheck:dist` kiểm tra kiểu của `.d.cts` như một CommonJS consumer (`module: node16`, `skipLibCheck: false`). Trên TypeScript 5.0–5.2, dòng `assert` đó sẽ bị báo lỗi (`TS4125`) khi một consumer CommonJS bật `skipLibCheck: false`; `skipLibCheck: true` (mặc định trong hầu hết cấu hình) và TypeScript >= 5.3 không bị ảnh hưởng. Xem [`documents/migration/3.x-subpath-exports.md`](../../migration/3.x-subpath-exports.md) để biết bối cảnh.
+Yêu cầu `tsconfig.json#compilerOptions.moduleResolution` là `"bundler"`, `"node16"`, hoặc `"nodenext"`; **`"node10"` (`"node"` cũ) không được hỗ trợ**: package không có `typesVersions`, nên các subpath sẽ không resolve được ở đó. Bản build ESM và CJS đều kèm theo file declaration riêng (`.d.ts` cho `import`, `.d.cts` cho `require`), nhờ đó consumer dùng CommonJS dưới `node16`/`nodenext` sẽ resolve đúng kiểu thay vì gặp lỗi lệch "masquerading as ESM" (`yarn check:types-pack` kiểm tra điều này bằng `@arethetypeswrong/cli`). `dist/*.d.cts` chính là `.d.ts` được viết lại một chỗ: import `vite` chuyển thành type-only `import type { Plugin } from 'vite' with { 'resolution-mode': 'import' }`, vì Vite không có kiểu CommonJS dùng được (5/6 đi kèm stub `export = any`, 7/8 chỉ hỗ trợ ESM). Điều kiện `types@<5.3` của `./vite` trỏ tới `dist/vite.legacy.d.cts`, file giữ cách viết `assert` cho TypeScript trước 5.3. `yarn typecheck:dist` kiểm tra kiểu của `.d.cts` như một CommonJS consumer (`module: node16`, `skipLibCheck: false`). Trên TypeScript 5.0–5.2, dòng `assert` đó sẽ bị báo lỗi (`TS4125`) khi một consumer CommonJS bật `skipLibCheck: false`; `skipLibCheck: true` (mặc định trong hầu hết cấu hình) và TypeScript >= 5.3 không bị ảnh hưởng. Xem [`documents/migration/3.x-subpath-exports.md`](../../migration/3.x-subpath-exports.md) để biết bối cảnh.
 
 ## Toàn bộ export theo subpath
 
@@ -78,21 +78,21 @@ Yêu cầu `tsconfig.json#compilerOptions.moduleResolution` là `"bundler"`, `"n
 
 Các peer dependency (`typescript`, `vite` và bốn peer của UI-kit là tùy chọn: chỉ cài đặt nếu bạn kiểm tra kiểu với package, dùng `styleGenVite`, hoặc import `./ui`/`./ui-react`):
 
-| Peer                       | Dải phiên bản                           | Đã kiểm thử trong CI              | Ghi chú                                                                                          |
-| -------------------------- | --------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `node`                     | `^20.19.0 \|\| >=22.12.0`               | 20.19.0 (built-package smoke), 22 | Hỗ trợ `require(esm)` không cần cờ, nhờ đó các entry CJS có thể nạp `chokidar@5` vốn chỉ có ESM. |
-| `tailwindcss`              | `^4.1.0`                                | 4.1.x, 4.3.0                      | Không hỗ trợ Tailwind v3. `@source inline(...)` cần 4.1 trở lên.                                 |
-| `typescript`               | `^5 \|\| ^6` (tùy chọn)                 | 5.9, 6.0                          | Dùng để kiểm tra kiểu với `.d.ts` của package. TypeScript 7 (bản port native) chưa được hỗ trợ.  |
-| `vite`                     | `^5 \|\| ^6 \|\| ^7 \|\| ^8` (tùy chọn) | 5.4, 6.4, 7.3, 8.3                | Chỉ dùng cho `styleGenVite` (Nuxt cũng sử dụng).                                                 |
-| `class-variance-authority` | `^0.7.0` (tùy chọn)                     | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`recipeFromTables`).                                                        |
-| `clsx`                     | `^1.2.0 \|\| ^2.0.0` (tùy chọn)         | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`createCn`, kiểu `ClassValue`).                                             |
-| `tailwind-merge`           | `^3.0.0` (tùy chọn)                     | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`createCn`); `./recipes` không bao giờ import nó.                           |
-| `@types/react`             | `^18.0.0 \|\| ^19.0.0` (tùy chọn)       | phiên bản trong lockfile          | Chỉ dùng cho các kiểu của `./ui-react`.                                                          |
+| Peer                       | Dải phiên bản                           | Đã kiểm thử trong CI              | Ghi chú                                                                                                            |
+| -------------------------- | --------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `node`                     | `^20.19.0 \|\| >=22.12.0`               | 20.19.0 (built-package smoke), 22 | Hỗ trợ `require(esm)` không cần cờ, nhờ đó các entry CJS có thể nạp `chokidar@5` vốn chỉ có ESM.                   |
+| `tailwindcss`              | `^4.1.0`                                | 4.1.x, 4.3.5                      | Không hỗ trợ Tailwind v3. `@source inline(...)` cần 4.1 trở lên.                                                   |
+| `typescript`               | `^5 \|\| ^6 \|\| ^7` (tùy chọn)         | 5.9, 6.x, 7.x (scratch project)   | Dùng để kiểm tra kiểu với `.d.ts` của package. TypeScript 7 (bản port native) kiểm tra kiểu được với các khai báo. |
+| `vite`                     | `^5 \|\| ^6 \|\| ^7 \|\| ^8` (tùy chọn) | 5.4, 6.4, 7.3, 8.3                | Chỉ dùng cho `styleGenVite` (Nuxt cũng sử dụng).                                                                   |
+| `class-variance-authority` | `^0.7.0` (tùy chọn)                     | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`recipeFromTables`).                                                                          |
+| `clsx`                     | `^1.2.0 \|\| ^2.0.0` (tùy chọn)         | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`createCn`, kiểu `ClassValue`).                                                               |
+| `tailwind-merge`           | `^3.0.0` (tùy chọn)                     | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`createCn`); `./recipes` không bao giờ import nó.                                             |
+| `@types/react`             | `^18.0.0 \|\| ^19.0.0` (tùy chọn)       | phiên bản trong lockfile          | Chỉ dùng cho các kiểu của `./ui-react`.                                                                            |
 
 > [!WARNING]
 > npm 7 trở lên vẫn báo lỗi `ERESOLVE` khi cây dependency của bạn đã có sẵn một bản nằm ngoài dải của một peer tùy chọn (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`), kể cả khi ứng dụng không bao giờ import `./ui` hay `./ui-react`. Hãy đưa phiên bản đó về đúng dải ở bảng trên, hoặc cài đặt với `--legacy-peer-deps`.
 
-CI chạy phiên bản phát hành mới nhất của từng bản major trong mục "Đã kiểm thử trong CI"; cận dưới của một dải (ví dụ `vite@5.0.0`) không được kiểm thử. Job `check` bao gồm các phiên bản trong lockfile (Vite 7.3, TypeScript 5.9). Job `peer-matrix` kiểm thử Vite 5, 6 và 8 cùng TypeScript 6: nó build `examples/harness`, chạy một Vite dev server phát sinh lại file khi theme được sửa, và kiểm tra kiểu cho ví dụ cùng `dist/*.d.ts`. Một nhánh kiểm thử thất bại đối với một bản major đã phát hành sẽ khiến CI thất bại. TypeScript 7 không có nhánh CI: bản vá `compat/typescript` tích hợp sẵn của Yarn không áp dụng cho `typescript@7`, nên nhánh này thậm chí không thể cài đặt (xem [`documents/testing.md`](../testing.md)).
+CI chạy phiên bản phát hành mới nhất của từng bản major trong mục "Đã kiểm thử trong CI"; cận dưới của một dải (ví dụ `vite@5.0.0`) không được kiểm thử. Job `check` bao gồm các phiên bản trong lockfile (Vite 7.3, TypeScript 5.9). Job `peer-matrix` kiểm thử Vite 5, 6 và 8 cùng TypeScript 6: nó build `examples/harness`, chạy một Vite dev server phát sinh lại file khi theme được sửa, và kiểm tra kiểu cho ví dụ cùng `dist/*.d.ts`. Một nhánh kiểm thử thất bại đối với một bản major đã phát hành sẽ khiến CI thất bại. Job `ts-peer` kiểm thử các bản major của TypeScript trong một scratch project npm (xem [`documents/testing.md`](../testing.md)).
 
 `zod` là một dependency thông thường của package; bạn không cần tự cài đặt nó.
 

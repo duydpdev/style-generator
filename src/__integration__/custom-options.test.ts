@@ -1,4 +1,4 @@
-import postcss, { type AtRule, type Root, type Rule } from "postcss";
+import postcss, { type AtRule, type Node, type Root, type Rule } from "postcss";
 import { describe, it, expect } from "vitest";
 
 import { defineTheme } from "../core/defineTheme";
@@ -33,10 +33,24 @@ const ruleFor = (root: Root, selector: string): Rule | undefined => {
   return found;
 };
 
-const mediaParams = (rule: Rule | undefined): string[] =>
-  (rule?.nodes ?? [])
-    .filter((n): n is AtRule => n.type === "atrule" && n.name === "media")
-    .map((n) => n.params);
+const isMedia = (n: { type: string }): n is AtRule =>
+  n.type === "atrule" && (n as AtRule).name === "media";
+
+/**
+ * Media queries gating a rule, outermost first: the `@media` blocks around it
+ * (Tailwind 4.3.3+ hoists a variant's query) followed by the ones nested in
+ * it (earlier versions, and the `sp-*` chain in every version).
+ * @param {Rule | undefined} rule - Compiled rule
+ * @returns {string[]} `@media` params
+ */
+const mediaParams = (rule: Rule | undefined): string[] => {
+  if (!rule) return [];
+  const around: string[] = [];
+  for (let p: Node["parent"] = rule.parent; p; p = p.parent) {
+    if (isMedia(p)) around.unshift(p.params);
+  }
+  return [...around, ...rule.nodes.filter(isMedia).map((n) => n.params)];
+};
 
 const declProps = (rule: Rule | undefined): string[] =>
   (rule?.nodes ?? []).flatMap((n) => (n.type === "decl" ? [n.prop] : []));

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: f783a35092c7 -->
+<!-- source: documents/reference/core.md sha256: 25a24ae1ba44 -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -81,7 +81,7 @@ Các peer dependency (`typescript`, `vite` và bốn peer của UI-kit là tùy 
 | Peer                       | Dải phiên bản                           | Đã kiểm thử trong CI              | Ghi chú                                                                                                            |
 | -------------------------- | --------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `node`                     | `^20.19.0 \|\| >=22.12.0`               | 20.19.0 (built-package smoke), 22 | Hỗ trợ `require(esm)` không cần cờ, nhờ đó các entry CJS có thể nạp `chokidar@5` vốn chỉ có ESM.                   |
-| `tailwindcss`              | `^4.1.0`                                | 4.1.x, 4.3.0                      | Không hỗ trợ Tailwind v3. `@source inline(...)` cần 4.1 trở lên.                                                   |
+| `tailwindcss`              | `^4.1.0`                                | 4.1.x, 4.3.5                      | Không hỗ trợ Tailwind v3. `@source inline(...)` cần 4.1 trở lên.                                                   |
 | `typescript`               | `^5 \|\| ^6 \|\| ^7` (tùy chọn)         | 5.9, 6.x, 7.x (scratch project)   | Dùng để kiểm tra kiểu với `.d.ts` của package. TypeScript 7 (bản port native) kiểm tra kiểu được với các khai báo. |
 | `vite`                     | `^5 \|\| ^6 \|\| ^7 \|\| ^8` (tùy chọn) | 5.4, 6.4, 7.3, 8.3                | Chỉ dùng cho `styleGenVite` (Nuxt cũng sử dụng).                                                                   |
 | `class-variance-authority` | `^0.7.0` (tùy chọn)                     | phiên bản trong lockfile          | Chỉ dùng cho `./ui` (`recipeFromTables`).                                                                          |

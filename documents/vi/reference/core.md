@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: 7e611ec2c40a -->
+<!-- source: documents/reference/core.md sha256: 6b89a05c4292 -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -44,7 +44,7 @@ import { styleGenVite } from "@duydpdev/style-generator/vite";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 ```
 
-Yêu cầu `tsconfig.json#compilerOptions.moduleResolution` là `"bundler"`, `"node16"`, hoặc `"nodenext"`; **`"node10"` (`"node"` cũ) không được hỗ trợ**: package không có `typesVersions`, nên các subpath sẽ không resolve được ở đó. Bản build ESM và CJS đều kèm theo file declaration riêng (`.d.ts` cho `import`, `.d.cts` cho `require`), nhờ đó consumer dùng CommonJS dưới `node16`/`nodenext` sẽ resolve đúng kiểu thay vì gặp lỗi lệch "masquerading as ESM" (`yarn check:types-pack` kiểm tra điều này bằng `@arethetypeswrong/cli`). `dist/*.d.cts` chính là `.d.ts` được viết lại một chỗ: import `vite` chuyển thành type-only `import type { Plugin } from 'vite' assert { 'resolution-mode': 'import' }`, vì Vite không có kiểu CommonJS dùng được (5/6 đi kèm stub `export = any`, 7/8 chỉ hỗ trợ ESM). `yarn typecheck:dist` kiểm tra kiểu của `.d.cts` như một CommonJS consumer (`module: node16`, `skipLibCheck: false`). Trên TypeScript 5.0–5.2, dòng `assert` đó sẽ bị báo lỗi (`TS4125`) khi một consumer CommonJS bật `skipLibCheck: false`; `skipLibCheck: true` (mặc định trong hầu hết cấu hình) và TypeScript >= 5.3 không bị ảnh hưởng. Xem [`documents/migration/3.x-subpath-exports.md`](../../migration/3.x-subpath-exports.md) để biết bối cảnh.
+Yêu cầu `tsconfig.json#compilerOptions.moduleResolution` là `"bundler"`, `"node16"`, hoặc `"nodenext"`; **`"node10"` (`"node"` cũ) không được hỗ trợ**: package không có `typesVersions`, nên các subpath sẽ không resolve được ở đó. Bản build ESM và CJS đều kèm theo file declaration riêng (`.d.ts` cho `import`, `.d.cts` cho `require`), nhờ đó consumer dùng CommonJS dưới `node16`/`nodenext` sẽ resolve đúng kiểu thay vì gặp lỗi lệch "masquerading as ESM" (`yarn check:types-pack` kiểm tra điều này bằng `@arethetypeswrong/cli`). `dist/*.d.cts` chính là `.d.ts` được viết lại một chỗ: import `vite` chuyển thành type-only `import type { Plugin } from 'vite' with { 'resolution-mode': 'import' }`, vì Vite không có kiểu CommonJS dùng được (5/6 đi kèm stub `export = any`, 7/8 chỉ hỗ trợ ESM). Điều kiện `types@<5.3` của `./vite` trỏ tới `dist/vite.legacy.d.cts`, file giữ cách viết `assert` cho TypeScript trước 5.3. `yarn typecheck:dist` kiểm tra kiểu của `.d.cts` như một CommonJS consumer (`module: node16`, `skipLibCheck: false`). Trên TypeScript 5.0–5.2, dòng `assert` đó sẽ bị báo lỗi (`TS4125`) khi một consumer CommonJS bật `skipLibCheck: false`; `skipLibCheck: true` (mặc định trong hầu hết cấu hình) và TypeScript >= 5.3 không bị ảnh hưởng. Xem [`documents/migration/3.x-subpath-exports.md`](../../migration/3.x-subpath-exports.md) để biết bối cảnh.
 
 ## Toàn bộ export theo subpath
 

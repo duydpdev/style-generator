@@ -122,9 +122,9 @@ class-prefix lists.
 
 Build outputs: `dist/{index,tokens,cva,spacing,recipes,types,ui,ui-react,vite,next}.{js,cjs,d.ts,d.cts}` (10 subpaths, Vite lib multi-entry;
 `dist/<n>.d.cts` is `dist/<n>.d.ts` run through `toCjsDeclaration` (`scripts/cjs-declaration.mjs`) by `scripts/emit-cts-types.mjs`, the last step of `yarn build`:
-the single `vite` import becomes `import type … assert { 'resolution-mode': 'import' }` because Vite has no usable CommonJS types, `zod`, `class-variance-authority`, `clsx`,
-`tailwind-merge` and `react` are kept, any other external specifier or import form fails the build; `assert`, not `with`,
-because `with` is a parse error on TypeScript < 5.3) + `dist/cli/index.mjs` (tsdown, JSDoc stripped via `outputOptions.comments.jsdoc = false`).
+the single `vite` import becomes `import type … with { 'resolution-mode': 'import' }` because Vite has no usable CommonJS types, `zod`, `class-variance-authority`, `clsx`,
+`tailwind-merge` and `react` are kept, any other external specifier or import form fails the build; `with` parses on TypeScript 5.3+ and TypeScript 7 rejects `assert` (TS2880), so `dist/vite.legacy.d.cts`
+(`toLegacyCjsDeclaration`) keeps `assert` and `package.json#exports["./vite"].require["types@<5.3"]` points at it, because `with` is a parse error on TypeScript < 5.3) + `dist/cli/index.mjs` (tsdown, JSDoc stripped via `outputOptions.comments.jsdoc = false`).
 `package.json#exports` uses nested conditions (`import: { types: .d.ts, default: .js }`, `require: { types: .d.cts, default: .cjs }`) and has no top-level `types`;
 `moduleResolution: node10` is unsupported. `yarn typecheck:dist` checks the `.d.ts` under ESNext + Bundler (`tsconfig.dts-check.json`) and the `.d.cts` as a CommonJS consumer under
 `node16` with `skipLibCheck: false` (`tsconfig.dts-check.cjs.json`, `scripts/dist-types.cjs.assert.cts`); attw never resolves peer types, so it cannot replace that check.

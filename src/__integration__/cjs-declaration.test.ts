@@ -9,16 +9,20 @@ const moduleUrl = pathToFileURL(
 ).href;
 
 /**
- * Run `toCjsDeclaration` in a Node child process (the script is plain ESM).
+ * Run `toCjsDeclaration` (or the legacy variant) in a Node child process (the script is plain ESM).
  * @param {string} source - A declaration file's text
+ * @param {string} fn - Which export of the script to call
  * @returns {{ ok?: string, error?: string }} The output, or the thrown message
  */
-function convert(source: string): { ok?: string; error?: string } {
+function convert(
+  source: string,
+  fn: "toCjsDeclaration" | "toLegacyCjsDeclaration" = "toCjsDeclaration",
+): { ok?: string; error?: string } {
   const code = [
-    `import { toCjsDeclaration } from ${JSON.stringify(moduleUrl)};`,
+    `import { ${fn} } from ${JSON.stringify(moduleUrl)};`,
     `const source = ${JSON.stringify(source)};`,
     "let result;",
-    'try { result = { ok: toCjsDeclaration(source, "x.d.ts") }; }',
+    `try { result = { ok: ${fn}(source, "x.d.ts") }; }`,
     "catch (error) { result = { error: error.message }; }",
     "process.stdout.write(JSON.stringify(result));",
   ].join("\n");
@@ -42,7 +46,7 @@ describe("integration: toCjsDeclaration", () => {
 
   it("rewrites the vite import to a type-only import with resolution-mode", () => {
     expect(convert("import { Plugin as Plugin_2 } from 'vite';\n")).toEqual({
-      ok: "import type { Plugin as Plugin_2 } from 'vite' assert { 'resolution-mode': 'import' };\n",
+      ok: "import type { Plugin as Plugin_2 } from 'vite' with { 'resolution-mode': 'import' };\n",
     });
   });
 
@@ -52,9 +56,17 @@ describe("integration: toCjsDeclaration", () => {
     expect(convert(source)).toEqual({ ok: source });
     expect(convert("import {\n  Plugin as Plugin_2\n} from 'vite';\n")).toEqual(
       {
-        ok: "import type {\n  Plugin as Plugin_2\n} from 'vite' assert { 'resolution-mode': 'import' };\n",
+        ok: "import type {\n  Plugin as Plugin_2\n} from 'vite' with { 'resolution-mode': 'import' };\n",
       },
     );
+  });
+
+  it("spells the vite import `assert` in the legacy variant and leaves the other imports alone", () => {
+    const source =
+      "import { Plugin as Plugin_2 } from 'vite';\nimport { X } from 'clsx';\n";
+    expect(convert(source, "toLegacyCjsDeclaration")).toEqual({
+      ok: "import type { Plugin as Plugin_2 } from 'vite' assert { 'resolution-mode': 'import' };\nimport { X } from 'clsx';\n",
+    });
   });
 
   it("leaves relative imports alone", () => {

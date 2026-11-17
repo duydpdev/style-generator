@@ -34,7 +34,7 @@ The checks have two layers:
      `tsconfig.dts-check.cjs.json` checks `dist/*.d.cts` as a real CommonJS consumer — `module: node16`, `skipLibCheck: false`,
      the file `scripts/dist-types.cjs.assert.cts` imports through the package name under the `require` condition itself.
      The CJS half uses `node16`, not `nodenext`, because since TS 5.8 `nodenext` allows `require()` of ESM and would mask `TS1479` on an ESM-only peer.
-     `dist/vite.d.cts` is `vite.d.ts` with the `vite` import rewritten as `import type … assert { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`);
+     `dist/vite.d.cts` is `vite.d.ts` with the `vite` import rewritten as `import type … with { 'resolution-mode': 'import' }` (`scripts/cjs-declaration.mjs`); `dist/vite.legacy.d.cts` keeps the `assert` spelling for TypeScript before 5.3 (`exports["./vite"].require["types@<5.3"]`);
      attw does not resolve peer types, so it cannot replace this step) → `yarn test:coverage` (fails if coverage drops below `coverage.thresholds` in `vitest.config.ts`) →
      `yarn test:types`;
    - job `plain-react` (a separate job of `ci.yml`, check name `Plain React (Storybook + parity)`, required by the `main-develop` ruleset;

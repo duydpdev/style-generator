@@ -1,3 +1,9 @@
+# [8.1.1](https://github.com/duydpdev/style-generator/compare/v8.1.0...v8.1.1) (2026-11-17)
+
+### Refactor
+
+- build the library with Vite 8 and Rolldown ([1204a56](https://github.com/duydpdev/style-generator/commit/1204a569a692a52616fe2d7a47d276febfa9e975))
+
 # [8.1.0](https://github.com/duydpdev/style-generator/compare/v8.0.2...v8.1.0) (2026-11-17)
 
 ### Features

@@ -1,7 +1,9 @@
 import path from "node:path";
 
+import { configCandidates } from "./configSource";
 import { toGeneratorOptions, type StyleGenConfig } from "./loadStyleGenConfig";
 import { resolveProjectPath } from "./resolveProjectPath";
+import { sameFile } from "./sameFile";
 import type { EmitTarget } from "./themeEmitter";
 
 /** File the tokens module lands in when `tokensOutput` is not set: beside `output`. */
@@ -28,24 +30,41 @@ export function assertTokensFile(
 }
 
 /**
- * Reject two roles that resolve to the same file: one write would silently
+ * The config files no generated file may overwrite, as `assertDistinctFiles`
+ * entries: both candidates (`style-gen.config.json`, `package.json`), whether
+ * or not they exist yet.
+ * @param {string} root - Directory the config is read from
+ * @returns {Array<[string, string]>} `[label, absolute file]` pairs
+ */
+export function configGuardEntries(root: string): [string, string][] {
+  return configCandidates(root).map((file): [string, string] => [
+    path.basename(file),
+    file,
+  ]);
+}
+
+/**
+ * Reject two roles that name the same file: one write would silently
  * overwrite the other (the CSS over the tokens module, the CSS over the theme
- * JSON).
+ * JSON, a generated file over the config). "Same file" is `sameFile`'s rule,
+ * so a different case, a symlink or a `.` segment does not hide it.
  * @param {ReadonlyArray<readonly [string, string]>} entries - `[label, absolute file]` pairs, in the order they are reported
+ * @param {string} [prefix] - Put once before the message (`"[style-gen-vite] "`)
  * @throws {Error} Naming the first two labels whose files are the same
  */
 export function assertDistinctFiles(
   entries: readonly (readonly [label: string, file: string])[],
+  prefix = "",
 ): void {
-  const seen = new Map<string, string>();
-  for (const [label, file] of entries) {
-    const first = seen.get(file);
-    if (first !== undefined) {
-      throw new Error(
-        `${first} and ${label} must be different files, both resolve to ${file}`,
-      );
+  for (let index = 1; index < entries.length; index += 1) {
+    const [label, file] = entries[index] as readonly [string, string];
+    for (const [first, other] of entries.slice(0, index)) {
+      if (sameFile(file, other)) {
+        throw new Error(
+          `${prefix}${first} and ${label} must be different files, both resolve to ${file}`,
+        );
+      }
     }
-    seen.set(file, label);
   }
 }
 
@@ -86,16 +105,20 @@ export function resolveEmitTarget(
           `${labelPrefix}tokensOutput`,
         );
   assertTokensFile(tokensFile, `${labelPrefix}tokensOutput`);
-  assertDistinctFiles([
-    [`${labelPrefix}theme`, themeFile],
-    [`${labelPrefix}output`, outFile],
+  assertDistinctFiles(
     [
-      config.tokensOutput === undefined
-        ? `${labelPrefix}tokens file (${TOKENS_FILE_NAME} beside output)`
-        : `${labelPrefix}tokensOutput`,
-      tokensFile,
+      ["theme", themeFile],
+      ["output", outFile],
+      [
+        config.tokensOutput === undefined
+          ? `tokens file (${TOKENS_FILE_NAME} beside output)`
+          : "tokensOutput",
+        tokensFile,
+      ],
+      ...configGuardEntries(root),
     ],
-  ]);
+    labelPrefix,
+  );
   return {
     themeFile,
     outFile,

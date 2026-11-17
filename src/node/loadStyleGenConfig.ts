@@ -105,6 +105,41 @@ export interface ConfigFile {
    * merged.
    */
   issues?: string;
+  /**
+   * The config object as it was parsed, valid or not, so a caller can read
+   * what it declares ({@link declaredLayout}) or merge into it (`init`);
+   * unset without a config and for a file that is not a JSON object.
+   */
+  raw?: Record<string, unknown>;
+}
+
+/** The `theme`/`output` a config file declares, and where it came from. */
+export interface DeclaredLayout {
+  /** `style-gen.config.json` or `package.json`. */
+  source: string;
+  /** The `theme` key, when it is a non-empty string. */
+  theme?: string;
+  /** The `output` key, when it is a non-empty string. */
+  output?: string;
+}
+
+/**
+ * The raw `theme`/`output` strings of a config file, whether or not the file
+ * passes validation: an invalid config still declares them, so a caller that
+ * repairs it (`init`) can keep them. A key that is not a non-empty string is
+ * left out.
+ * @param {ConfigFile} file - {@link readConfigFile}'s result
+ * @returns {DeclaredLayout | undefined} The declared paths, or `undefined` without a config
+ */
+export function declaredLayout(file: ConfigFile): DeclaredLayout | undefined {
+  if (file.source === undefined) return undefined;
+  const values: Record<string, unknown> = file.raw ?? file.config;
+  const declared: DeclaredLayout = { source: file.source };
+  for (const key of ["theme", "output"] as const) {
+    const value = values[key];
+    if (typeof value === "string" && value !== "") declared[key] = value;
+  }
+  return declared;
 }
 
 /**
@@ -119,12 +154,17 @@ const validateFileConfig = (
 ): ConfigFile => {
   const result = StyleGenConfigFileSchema.safeParse(value);
   if (!result.success) {
-    return { config: {}, source, issues: formatZodError(result.error) };
+    return {
+      config: {},
+      source,
+      issues: formatZodError(result.error),
+      raw: value,
+    };
   }
   // `$schema` points an editor at the JSON Schema; it is not a config value.
   const config: StyleGenFileConfig = { ...result.data };
   delete config.$schema;
-  return { config, source };
+  return { config, source, raw: value };
 };
 
 /**

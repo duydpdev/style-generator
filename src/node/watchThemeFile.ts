@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 import { watch as chokidarWatch } from "chokidar";
@@ -19,8 +20,8 @@ export interface WatchThemeOptions {
   /**
    * The files the config can live in, highest precedence first
    * (`configCandidates(root)`). All are watched, also when they do not exist
-   * yet; a change, creation or removal of one calls
-   * {@link WatchThemeOptions.reloadTarget} and re-emits. An event of a file
+   * yet or are removed and created again; a change, creation or removal of one
+   * calls {@link WatchThemeOptions.reloadTarget} and re-emits. An event of a file
    * shadowed by an earlier one that exists is ignored, and an edit of a later
    * one (`package.json`) that leaves the reloaded target unchanged emits nothing.
    */
@@ -124,6 +125,12 @@ export function watchThemeFile(
 
   const run = (): void => {
     timer = undefined;
+    // A theme removed for good: nothing to emit and nothing to log.
+    if (!configDirty && !fs.existsSync(current.themeFile)) {
+      primaryDirty = false;
+      themeDirty = false;
+      return;
+    }
     const outcome = configDirty ? reload() : "changed";
     const nothingToEmit =
       (outcome === "failed" && !themeDirty) ||
@@ -162,10 +169,24 @@ export function watchThemeFile(
   watcher.on("change", schedule);
   watcher.on("add", schedule);
   watcher.on("unlink", (file) => {
+    const abs = path.resolve(file);
+    if (!candidates.includes(abs) && abs !== path.resolve(current.themeFile)) {
+      return;
+    }
+    // chokidar watches a file that existed at start through a watch on the
+    // file itself and drops that watch on `unlink`: without a re-arm its
+    // re-creation (`git checkout`, `git stash`) and later edits are never
+    // seen. Unwatching first clears chokidar's ignore entry, so `add` really
+    // starts a fresh watch.
+    watcher.unwatch(file);
+    watcher.add(file);
     // A config file being removed means "the next candidate, else defaults":
-    // reload. A removed theme needs nothing: its `add` event re-emits when it
-    // comes back.
-    if (candidates.includes(path.resolve(file))) schedule(file);
+    // reload. A theme recreated within a few tens of ms is already back, and
+    // the re-arm `add()` counts as an initial add that `ignoreInitial` drops,
+    // so the run is scheduled from the `unlink` itself (A16); `run` skips a
+    // theme that is still gone when it fires. A theme that comes back later
+    // reports an `add` of its own.
+    schedule(file);
   });
   watcher.on("error", (error) => {
     onResult({

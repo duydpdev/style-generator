@@ -32,7 +32,7 @@ export interface RecipeTables {
     | readonly Readonly<Record<string, ClassValue>>[]
     | undefined;
   readonly defaultVariants?:
-    | Readonly<Record<string, string | boolean | undefined>>
+    | Readonly<Record<string, string | number | boolean | undefined>>
     | undefined;
 }
 
@@ -43,6 +43,8 @@ export type RecipeProps = Readonly<
 
 // `string extends O`: the tables are not literal, so any option is possible.
 // A numeric key (`10`) also takes its string form; a numeric string key (`"10"`) also takes the number.
+// `${infer N extends number}` infers a wide `number` for a key that does not round-trip (`"01"`, `".5"`, `"1.0"`, `"0x10"`, `"1e3"`):
+// cva looks up `String(n)`, so those keys stay string-only.
 type VariantOptionValue<O> = string extends O
   ? string | number | boolean
   : O extends "true" | "false"
@@ -50,7 +52,9 @@ type VariantOptionValue<O> = string extends O
     : O extends number
       ? O | `${O}`
       : O extends `${infer N extends number}`
-        ? N | O
+        ? number extends N
+          ? O
+          : N | O
         : O extends string
           ? O
           : never;

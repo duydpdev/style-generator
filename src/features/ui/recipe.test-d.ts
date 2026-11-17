@@ -68,6 +68,66 @@ describe("RecipeFn<T>", () => {
     expectTypeOf(spacing({ gap: 5 })).toBeString();
   });
 
+  // L7a: a numeric value is allowed only when `${N}` equals the key exactly
+  it("keeps a key that does not round-trip string-only (L7a)", () => {
+    const keys = recipeFromTables({
+      base: "",
+      variants: {
+        pad: {
+          "01": "p-01",
+          ".5": "p-half",
+          "1.0": "p-one",
+          "0x10": "p-hex",
+          "1e3": "p-exp",
+        },
+      },
+    });
+    keys({ pad: "01" });
+    keys({ pad: ".5" });
+    keys({ pad: "1.0" });
+    keys({ pad: "0x10" });
+    keys({ pad: "1e3" });
+    // @ts-expect-error cva looks up "1", not "01"
+    expectTypeOf(keys({ pad: 1 })).toBeString();
+    // @ts-expect-error cva looks up "0.5", not ".5"
+    expectTypeOf(keys({ pad: 0.5 })).toBeString();
+    // @ts-expect-error cva looks up "1", not "1.0"
+    expectTypeOf(keys({ pad: 1 })).toBeString();
+    // @ts-expect-error cva looks up "16", not "0x10"
+    expectTypeOf(keys({ pad: 16 })).toBeString();
+    // @ts-expect-error cva looks up "1000", not "1e3"
+    expectTypeOf(keys({ pad: 1000 })).toBeString();
+  });
+
+  it("takes the number form of a numeric string key that round-trips (L7a)", () => {
+    const steps = recipeFromTables({
+      base: "",
+      variants: { step: { "10": "a", "0": "b", "-1": "c" } },
+    });
+    steps({ step: 10 });
+    steps({ step: 0 });
+    steps({ step: -1 });
+    steps({ step: "-1" });
+    // @ts-expect-error 1 is not a `step` option
+    expectTypeOf(steps({ step: 1 })).toBeString();
+  });
+
+  // L7b: defaultVariants takes what the props take, numbers included
+  it("takes a number in defaultVariants (L7b)", () => {
+    const layered = recipeFromTables({
+      base: "",
+      variants: {
+        z: { 0: "z-0", 10: "z-10" },
+        size: { sm: "h-8", md: "h-10" },
+      },
+      defaultVariants: { z: 10, size: "md" },
+    });
+    expectTypeOf(layered).returns.toBeString();
+    // a later prop error is no longer masked by the defaultVariants error
+    // @ts-expect-error `huge` is not a `size` option
+    expectTypeOf(layered({ size: "huge" })).toBeString();
+  });
+
   it("accepts any widened value when the recipe is annotated RecipeFn (L-L7)", () => {
     const loose: RecipeFn = button;
     const call = (size: string, zIndex: number) =>

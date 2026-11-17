@@ -3,7 +3,15 @@ import path from "node:path";
 import os from "node:os";
 
 import * as p from "@clack/prompts";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type MockInstance,
+} from "vitest";
 import { z } from "zod";
 
 import { ThemeSchema } from "../../core/themeSchema";
@@ -252,7 +260,8 @@ describe("initCommand", () => {
       expect(cfg).toEqual({
         $schema: CONFIG_SCHEMA_REF,
         theme: "a/theme.json",
-        output: "a/theme.css",
+        // A config that names an output keeps it: only `theme` follows --theme.
+        output: "old/theme.css",
         breakpoints: ["xl"],
       });
       expect(infoSpy).toHaveBeenCalledWith(
@@ -261,11 +270,19 @@ describe("initCommand", () => {
     });
 
     it.each([
-      ["invalid JSON", "{ nope"],
-      ["a JSON array", "[1]"],
+      [
+        "invalid JSON",
+        "{ nope",
+        /^style-gen\.config\.json is not valid JSON \(/,
+      ],
+      [
+        "a JSON array",
+        "[1]",
+        /^style-gen\.config\.json must contain a JSON object\./,
+      ],
     ])(
       "returns 1 before writing anything when style-gen.config.json is %s",
-      async (_label, content) => {
+      async (_label, content, message) => {
         fs.writeFileSync(path.join(tmp, "style-gen.config.json"), content);
         const errorSpy = vi
           .spyOn(logger, "error")
@@ -274,8 +291,9 @@ describe("initCommand", () => {
         const code = await run({ theme: "a/theme.json", dark: false }, tmp);
 
         expect(code).toBe(1);
-        expect(errorSpy).toHaveBeenCalledWith(
-          expect.stringMatching(/^style-gen\.config\.json .*Cannot merge/),
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringMatching(message));
+        expect(errorSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining("Cannot merge"),
         );
         expect(fs.existsSync(path.join(tmp, "a"))).toBe(false);
         expect(
@@ -538,7 +556,7 @@ describe("initCommand", () => {
       expect(await run({}, tmp)).toBe(0);
 
       expect(infoSpy).toHaveBeenCalledWith(
-        "Operation cancelled. Existing files kept.",
+        "Existing files kept; writing only what is missing.",
       );
       expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
         "{}",
@@ -812,6 +830,22 @@ describe("initCommand", () => {
         expect(exists("src")).toBe(false);
       });
 
+      // L3: `--yes --theme` agrees with the config when both name one file.
+      it("L3: accepts --theme that reaches the config's theme through a symlinked directory", async () => {
+        fs.mkdirSync(path.join(tmp, "src/theme"), { recursive: true });
+        fs.writeFileSync(path.join(tmp, "src/theme/theme.json"), "{}");
+        fs.symlinkSync(path.join(tmp, "src/theme"), path.join(tmp, "link"));
+        const config = writeConfig({
+          theme: "src/theme/theme.json",
+          output: "src/theme/theme.css",
+        });
+
+        expect(await run({ yes: true, theme: "link/theme.json" }, tmp)).toBe(0);
+
+        expect(read(CONFIG)).toBe(config);
+        expect(read("src/theme/theme.json")).toBe("{}");
+      });
+
       it("C-H1: accepts --theme that names the config's theme", async () => {
         const config = writeConfig({
           theme: "src/theme/theme.json",
@@ -969,6 +1003,296 @@ describe("initCommand", () => {
 
       expect(fs.readFileSync(rulesPath(), "utf8")).toBe(RULES);
       expect(fs.existsSync(path.join(tmp, "styles"))).toBe(false);
+    });
+  });
+
+  describe("a config that declares a theme (8.0.2)", () => {
+    const CONFIG = "style-gen.config.json";
+    const THEME = "src/t/theme.json";
+    const read = (file: string): string =>
+      fs.readFileSync(path.join(tmp, file), "utf8");
+    const exists = (file: string): boolean =>
+      fs.existsSync(path.join(tmp, file));
+    const write = (file: string, content: string): void => {
+      fs.mkdirSync(path.dirname(path.join(tmp, file)), { recursive: true });
+      fs.writeFileSync(path.join(tmp, file), content);
+    };
+    // A config with a key removed in 7.0: invalid, yet it declares a theme and an output.
+    const invalid = (extra: Record<string, unknown> = {}): string => {
+      const text = JSON.stringify(
+        {
+          theme: THEME,
+          output: "src/t/theme.css",
+          extraSources: ["bg-x"],
+          ...extra,
+        },
+        null,
+        2,
+      );
+      write(CONFIG, text);
+      return text;
+    };
+    const logged = (spy: { mock: { calls: unknown[][] } }): string =>
+      spy.mock.calls.map((call) => String(call[0])).join("\n");
+    let error: MockInstance<typeof logger.error>;
+    let log: MockInstance<typeof logger.log>;
+
+    beforeEach(() => {
+      vi.spyOn(logger, "info").mockImplementation(() => undefined);
+      vi.spyOn(logger, "success").mockImplementation(() => undefined);
+      log = vi.spyOn(logger, "log").mockImplementation(() => undefined);
+      error = vi.spyOn(logger, "error").mockImplementation(() => undefined);
+      // The stack's default theme (`src/styles/`) differs from the declared one.
+      fs.mkdirSync(path.join(tmp, "src"));
+    });
+
+    it("H1: without a terminal, an existing declared theme is not redirected; the config stays byte-identical", async () => {
+      const config = invalid();
+      write(THEME, "{}");
+
+      expect(await run({}, tmp)).toBe(1);
+
+      expect(logged(error)).toContain("Files already exist");
+      expect(read(CONFIG)).toBe(config);
+      expect(read(THEME)).toBe("{}");
+      expect(exists("src/styles")).toBe(false);
+    });
+
+    it("H1: a declared theme that does not exist yet is scaffolded at the declared path", async () => {
+      const config = invalid();
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(read(THEME)).toBe(themeTemplate);
+      expect(exists("src/t/theme.schema.json")).toBe(true);
+      expect(read(CONFIG)).toBe(config);
+      expect(exists("src/styles")).toBe(false);
+    });
+
+    it("A15: init warns when it keeps an invalid config as it is", async () => {
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      invalid();
+
+      expect(await run({ theme: THEME }, tmp)).toBe(0);
+
+      expect(logged(warn)).toContain(
+        "style-gen.config.json is invalid and init left it as it is",
+      );
+      expect(logged(warn)).toContain("extraSources");
+    });
+
+    it("A15: init warns when the user declines on an invalid config", async () => {
+      setTty(true);
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      invalid();
+      write(THEME, "{}");
+      vi.mocked(p.text).mockResolvedValueOnce(THEME);
+      vi.mocked(p.confirm)
+        .mockResolvedValueOnce(false) // dark mode
+        .mockResolvedValueOnce(false); // overwrite
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(logged(warn)).toContain(
+        "style-gen.config.json is invalid and init left it as it is",
+      );
+    });
+
+    it("A15: a valid config draws no warning", async () => {
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      write(
+        CONFIG,
+        JSON.stringify({ theme: THEME, output: "src/t/theme.css" }),
+      );
+
+      expect(await run({ theme: THEME }, tmp)).toBe(0);
+
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("H1: the wizard offers the declared theme, and declining changes nothing", async () => {
+      setTty(true);
+      const config = invalid();
+      write(THEME, "{}");
+      vi.mocked(p.text).mockResolvedValueOnce(THEME);
+      vi.mocked(p.confirm)
+        .mockResolvedValueOnce(false) // dark mode
+        .mockResolvedValueOnce(false); // overwrite
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(p.text).toHaveBeenCalledWith(
+        expect.objectContaining({ initialValue: THEME }),
+      );
+      expect(read(CONFIG)).toBe(config);
+      expect(read(THEME)).toBe("{}");
+      expect(exists("src/styles")).toBe(false);
+      expect(exists("src/t/theme.schema.json")).toBe(false);
+    });
+
+    it("H1: package.json#style-gen with a removed key keeps its theme and creates no style-gen.config.json", async () => {
+      const pkg = JSON.stringify({
+        name: "app",
+        "style-gen": { theme: THEME, output: "src/t/theme.css", axes: {} },
+      });
+      write("package.json", pkg);
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(exists(CONFIG)).toBe(false);
+      expect(read("package.json")).toBe(pkg);
+      expect(read(THEME)).toBe(themeTemplate);
+      expect(exists("src/styles")).toBe(false);
+    });
+
+    it("H1: a config without a `theme` key resolves to styles/theme.json, not to the stack's default", async () => {
+      const config = invalid({ theme: undefined, output: undefined });
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(read(CONFIG)).toBe(config);
+      expect(exists("styles/theme.json")).toBe(true);
+      expect(exists("src/styles")).toBe(false);
+    });
+
+    it("H1: a `theme` that is not a string cannot be read; without a terminal and --theme, init exits 1 and writes nothing", async () => {
+      const config = invalid({ theme: 5 });
+
+      expect(await run({}, tmp)).toBe(1);
+
+      expect(logged(error)).toContain('its "theme" cannot be read');
+      expect(logged(error)).toContain("--theme <path>");
+      expect(read(CONFIG)).toBe(config);
+      expect(fs.readdirSync(tmp).sort((a, b) => a.localeCompare(b))).toEqual([
+        "src",
+        CONFIG,
+      ]);
+      expect(fs.readdirSync(path.join(tmp, "src"))).toEqual([]);
+    });
+
+    it("H1: --theme on an invalid config keeps its output and its other keys", async () => {
+      invalid();
+
+      expect(await run({ theme: "b/theme.json" }, tmp)).toBe(0);
+
+      expect(JSON.parse(read(CONFIG))).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
+        theme: "b/theme.json",
+        output: "src/t/theme.css",
+        extraSources: ["bg-x"],
+      });
+    });
+
+    it("A15: init warns when it merges a new theme into an invalid config", async () => {
+      const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      invalid();
+
+      expect(await run({ theme: "b/theme.json" }, tmp)).toBe(0);
+
+      expect(logged(warn)).toContain(
+        "style-gen.config.json is invalid and init only merged the theme into it",
+      );
+      expect(logged(warn)).toContain("extraSources");
+    });
+
+    it("output: a custom output is kept when the wizard picks another theme", async () => {
+      setTty(true);
+      write(
+        CONFIG,
+        JSON.stringify({ theme: "a/theme.json", output: "gen/out.css" }),
+      );
+      vi.mocked(p.text).mockResolvedValueOnce("b/theme.json");
+      vi.mocked(p.confirm).mockResolvedValueOnce(false); // dark mode
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(JSON.parse(read(CONFIG))).toEqual({
+        $schema: CONFIG_SCHEMA_REF,
+        theme: "b/theme.json",
+        output: "gen/out.css",
+      });
+    });
+
+    it("M4: declining the overwrite writes the missing config, so `generate` builds", async () => {
+      setTty(true);
+      write("src/styles/theme.json", themeTemplate);
+      vi.mocked(p.text).mockResolvedValueOnce("src/styles/theme.json");
+      vi.mocked(p.confirm)
+        .mockResolvedValueOnce(false) // dark mode
+        .mockResolvedValueOnce(false); // overwrite
+
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(JSON.parse(read(CONFIG))).toMatchObject({
+        theme: "src/styles/theme.json",
+        output: "src/styles/theme.css",
+      });
+      expect(read("src/styles/theme.json")).toBe(themeTemplate);
+      expect(await runCli(["generate"], tmp)).toBe(0);
+      expect(exists("src/styles/theme.css")).toBe(true);
+    });
+
+    describe("--rules-only (L1)", () => {
+      beforeEach(() => {
+        // The Vite entry is src/index.css, so the printed path is relative to src/.
+        write("vite.config.ts", "");
+      });
+
+      it("prints the output an invalid config declares", async () => {
+        invalid();
+
+        expect(await run({ rulesOnly: true }, tmp)).toBe(0);
+
+        expect(logged(log)).toContain('@import "./t/theme.css";');
+      });
+
+      it("prints the default output for a config that names none", async () => {
+        write(CONFIG, JSON.stringify({ breakpoints: ["xl"] }));
+
+        expect(await run({ rulesOnly: true }, tmp)).toBe(0);
+
+        expect(logged(log)).toContain('@import "../styles/theme.css";');
+      });
+
+      it("without a config, prints the CSS beside the theme a first config would name", async () => {
+        write("styles/theme.json", "{}");
+
+        expect(await run({ rulesOnly: true }, tmp)).toBe(0);
+
+        expect(logged(log)).toContain('@import "../styles/theme.css";');
+      });
+    });
+
+    it.each([
+      "styles/theme.schema.json",
+      "style-gen.config.schema.json",
+      "package.json",
+      "style-gen.config.json",
+    ])("L2: --theme %s exits 1 before writing anything", async (theme) => {
+      expect(await run({ theme }, tmp)).toBe(1);
+
+      expect(logged(error)).toContain("would overwrite it");
+      expect(fs.readdirSync(tmp)).toEqual(["src"]);
+      expect(fs.readdirSync(path.join(tmp, "src"))).toEqual([]);
+    });
+
+    it("a malformed style-gen.config.json fails with an accurate message under --yes", async () => {
+      write(CONFIG, "{ nope");
+
+      expect(await run({ yes: true }, tmp)).toBe(1);
+
+      expect(logged(error)).toContain("is not valid JSON");
+      expect(logged(error)).not.toContain("Cannot merge");
+      expect(read(CONFIG)).toBe("{ nope");
+    });
+
+    it("with no config and no terminal, init still scaffolds and exits 0", async () => {
+      expect(await run({}, tmp)).toBe(0);
+
+      expect(exists("src/styles/theme.json")).toBe(true);
+      expect(JSON.parse(read(CONFIG))).toMatchObject({
+        theme: "src/styles/theme.json",
+      });
     });
   });
 

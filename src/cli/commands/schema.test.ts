@@ -252,5 +252,142 @@ describe("schemaCommand", () => {
         '{"colors":{}}',
       );
     });
+
+    // M2a: the theme stays protected when the config cannot be merged.
+    it("returns 1 and keeps the theme a config with issues declares when --out names it (M2a)", () => {
+      fs.mkdirSync(path.join(tmp, "custom"));
+      fs.writeFileSync(path.join(tmp, "custom/theme.json"), '{"colors":{}}');
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({ theme: "custom/theme.json", extraSources: ["x"] }),
+      );
+      const errorSpy = vi
+        .spyOn(logger, "error")
+        .mockImplementation(() => undefined);
+
+      expect(schemaCommand({ out: "custom/theme.json" }, tmp)).toBe(1);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "--out would overwrite the theme file: custom/theme.json",
+      );
+      expect(fs.readFileSync(path.join(tmp, "custom/theme.json"), "utf8")).toBe(
+        '{"colors":{}}',
+      );
+      expect(
+        fs.existsSync(path.join(tmp, "style-gen.config.schema.json")),
+      ).toBe(false);
+    });
+
+    it("returns 1 and keeps the default theme when the config is malformed and --out names it (M2a)", () => {
+      fs.mkdirSync(path.join(tmp, "styles"));
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), '{"colors":{}}');
+      fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "{ not json");
+      vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+      const errorSpy = vi
+        .spyOn(logger, "error")
+        .mockImplementation(() => undefined);
+
+      expect(schemaCommand({ out: "styles/theme.json" }, tmp)).toBe(1);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "--out would overwrite the theme file: styles/theme.json",
+      );
+      expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
+        '{"colors":{}}',
+      );
+    });
+
+    it("returns 1 and keeps the declared theme when --config-out names it and the config has issues (M2a)", () => {
+      fs.mkdirSync(path.join(tmp, "custom"));
+      fs.writeFileSync(path.join(tmp, "custom/theme.json"), '{"colors":{}}');
+      fs.writeFileSync(
+        path.join(tmp, "style-gen.config.json"),
+        JSON.stringify({ theme: "custom/theme.json", extraSources: ["x"] }),
+      );
+      vi.spyOn(logger, "error").mockImplementation(() => undefined);
+
+      expect(
+        schemaCommand(
+          { out: "t.schema.json", configOut: "custom/theme.json" },
+          tmp,
+        ),
+      ).toBe(1);
+
+      expect(fs.readFileSync(path.join(tmp, "custom/theme.json"), "utf8")).toBe(
+        '{"colors":{}}',
+      );
+    });
+
+    it("returns 1 and keeps the theme when --out reaches it through a symlinked directory", () => {
+      fs.mkdirSync(path.join(tmp, "styles"));
+      fs.writeFileSync(path.join(tmp, "styles/theme.json"), '{"colors":{}}');
+      fs.symlinkSync(path.join(tmp, "styles"), path.join(tmp, "link"));
+      vi.spyOn(logger, "error").mockImplementation(() => undefined);
+
+      expect(schemaCommand({ out: "link/theme.json" }, tmp)).toBe(1);
+
+      expect(fs.readFileSync(path.join(tmp, "styles/theme.json"), "utf8")).toBe(
+        '{"colors":{}}',
+      );
+    });
+
+    // M2b: the config files are protected too.
+    it.each([
+      ["--config-out", { configOut: "style-gen.config.json" }],
+      ["--config-out", { configOut: "package.json" }],
+      ["--out", { out: "style-gen.config.json" }],
+      ["--out", { out: "package.json" }],
+    ])(
+      "returns 1 and keeps the config when %s names it (M2b)",
+      (flag, args) => {
+        fs.writeFileSync(
+          path.join(tmp, "style-gen.config.json"),
+          '{"theme":"styles/theme.json"}',
+        );
+        fs.writeFileSync(path.join(tmp, "package.json"), '{"name":"app"}');
+        const errorSpy = vi
+          .spyOn(logger, "error")
+          .mockImplementation(() => undefined);
+
+        expect(schemaCommand(args, tmp)).toBe(1);
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`${flag} would overwrite the config file`),
+        );
+        expect(
+          fs.readFileSync(path.join(tmp, "style-gen.config.json"), "utf8"),
+        ).toBe('{"theme":"styles/theme.json"}');
+        expect(fs.readFileSync(path.join(tmp, "package.json"), "utf8")).toBe(
+          '{"name":"app"}',
+        );
+      },
+    );
+
+    it("protects package.json even when it holds no style-gen section (M2b)", () => {
+      fs.writeFileSync(path.join(tmp, "package.json"), '{"name":"app"}');
+      vi.spyOn(logger, "error").mockImplementation(() => undefined);
+
+      expect(schemaCommand({ out: "package.json" }, tmp)).toBe(1);
+
+      expect(fs.readFileSync(path.join(tmp, "package.json"), "utf8")).toBe(
+        '{"name":"app"}',
+      );
+    });
+
+    it("warns about a malformed config with --out too, and still writes", () => {
+      fs.writeFileSync(path.join(tmp, "style-gen.config.json"), "{ not json");
+      const warnSpy = vi
+        .spyOn(logger, "warn")
+        .mockImplementation(() => undefined);
+
+      expect(schemaCommand({ out: "gen/theme.schema.json" }, tmp)).toBe(0);
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^Ignoring style-gen\.config\.json is not valid JSON/,
+        ),
+      );
+      expect(fs.existsSync(path.join(tmp, "gen/theme.schema.json"))).toBe(true);
+    });
   });
 });

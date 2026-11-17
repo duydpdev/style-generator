@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: acbd6fe8d2ff -->
+<!-- source: documents/reference/ui.md sha256: cadd745fed67 -->
 
 # UI kit (./ui)
 
@@ -81,7 +81,7 @@ export declare interface RecipeTables {
     | readonly Readonly<Record<string, ClassValue>>[]
     | undefined;
   readonly defaultVariants?:
-    | Readonly<Record<string, string | boolean | undefined>>
+    | Readonly<Record<string, string | number | boolean | undefined>>
     | undefined;
 }
 ```

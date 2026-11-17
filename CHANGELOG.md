@@ -1,3 +1,20 @@
+# [8.0.2](https://github.com/duydpdev/style-generator/compare/v8.0.1...v8.0.2) (2026-11-17)
+
+### Bug Fixes
+
+- detect one file behind two paths and guard the theme and config in schema ([2d4c61d](https://github.com/duydpdev/style-generator/commit/2d4c61d233ed3c5f8f5f2962d8e3d9705bcc5a4d))
+- keep the theme an invalid config declares in init ([6c233e2](https://github.com/duydpdev/style-generator/commit/6c233e2d95ba220e146b99f8fd1ff762ce1ac6aa))
+- keep watching a config or theme file that is removed and recreated ([1f84b9a](https://github.com/duydpdev/style-generator/commit/1f84b9adf4792f75af3527166620c2d32539e07e))
+- re-arm a removed theme or config in the Vite plugin and re-emit on its re-creation ([ab4073f](https://github.com/duydpdev/style-generator/commit/ab4073f5fbfd9755aed22da2d6acd72f3e55c811))
+- re-emit a theme recreated right after its removal ([5da0e63](https://github.com/duydpdev/style-generator/commit/5da0e634e5f05f8fcf801fcfa14e87ed3ca18abf))
+
+  A theme recreated 20-60 ms after its removal yielded only unlink: the re-arm add() counts as an initial add and ignoreInitial drops it. The unlink handler now also schedules a run when the theme exists again.
+
+- type numeric recipe options by round-trip and in defaultVariants ([ada91e7](https://github.com/duydpdev/style-generator/commit/ada91e7a9b5c368b60595c4d05782fba4ea68f6b))
+- warn when init merges a theme into an invalid config ([be2be7d](https://github.com/duydpdev/style-generator/commit/be2be7dda214fbb5bb59be9e74f41f03c9b5ca8c))
+
+  Final advisory review gap: the merge branch of updateConfig kept the rejected keys silently; it now warns like the kept branch. Docs (en + vi) and CLAUDE.md no longer say an invalid config is never rewritten.
+
 # [8.0.1](https://github.com/duydpdev/style-generator/compare/v8.0.0...v8.0.1) (2026-11-15)
 
 ### Bug Fixes

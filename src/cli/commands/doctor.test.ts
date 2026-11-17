@@ -316,6 +316,39 @@ describe("doctorCommand", () => {
 
       expect(lines()).toContain("output and tokens file");
     });
+
+    // M1: doctor reports what generate refuses.
+    it("an output that reaches the theme through a symlinked directory → ❌, 1 (M1)", () => {
+      writeProject(tmp, {
+        "style-gen.config.json": {
+          theme: "styles/theme.json",
+          output: "link/theme.json",
+        },
+        "styles/theme.json": { colors: { primary: "#3B82F6" } },
+      });
+      fs.symlinkSync(path.join(tmp, "styles"), path.join(tmp, "link"));
+
+      expect(doctorCommand(tmp)).toBe(1);
+
+      expect(lines()).toContain("theme and output must be different files");
+    });
+
+    it.each(["style-gen.config.json", "package.json"])(
+      "an output that is %s → ❌, 1 (L4)",
+      (output) => {
+        writeProject(tmp, {
+          "style-gen.config.json": { output },
+          "package.json": { name: "app" },
+          "styles/theme.json": { colors: { primary: "#3B82F6" } },
+        });
+
+        expect(doctorCommand(tmp)).toBe(1);
+
+        expect(lines()).toContain(
+          `output and ${output} must be different files`,
+        );
+      },
+    );
   });
 
   describe("Tailwind utility collision warnings", () => {

@@ -11,6 +11,7 @@ import {
   type ConfigFile,
 } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
+import { sameFile } from "../../node/sameFile";
 import { logger } from "../logger";
 import {
   themeTemplate,
@@ -328,14 +329,16 @@ function readConfigLayout(file: ConfigFile): ConfigLayout | undefined {
 }
 
 /**
- * Whether two project-relative paths name the same file.
+ * Whether two project-relative paths name the same file (`sameFile`: one
+ * inode, or one canonical path, so a different case, a symlink or `/tmp` vs
+ * `/private/tmp` does not make them differ).
  * @param {string} cwd - The project root
  * @param {string} a - A path, relative to `cwd` or absolute
  * @param {string} b - Another path
- * @returns {boolean} `true` when both resolve to one absolute path
+ * @returns {boolean} `true` when both name one file
  */
 function samePath(cwd: string, a: string, b: string): boolean {
-  return path.resolve(cwd, a) === path.resolve(cwd, b);
+  return sameFile(path.resolve(cwd, a), path.resolve(cwd, b));
 }
 
 /**
@@ -539,6 +542,18 @@ function writeThemeFiles(
 }
 
 /**
+ * Say so when init leaves a config that `generate` rejects as it is, so a
+ * success message does not hide it.
+ * @param {ConfigLayout} config - The config init keeps
+ */
+function warnInvalidConfig(config: ConfigLayout): void {
+  if (config.problem === undefined) return;
+  logger.warn(
+    `${config.source} is invalid and init left it as it is; generate rejects it:\n${config.problem}\n💡 Fix it: yarn style-gen doctor`,
+  );
+}
+
+/**
  * Settle the config: one that already names this theme stays as it is
  * (`package.json#style-gen` included, so no `style-gen.config.json` shadows
  * it, and an invalid config is not rewritten); otherwise `theme` is merged
@@ -558,6 +573,7 @@ function updateConfig(
 ): { layout: { theme: string; output: string }; changed: boolean } {
   if (config !== undefined && samePath(cwd, themeLoc, config.theme)) {
     logger.info(`Kept ${config.source}: theme and output stay as configured.`);
+    warnInvalidConfig(config);
     return { layout: config, changed: false };
   }
   const { content } = mergeBase;
@@ -888,6 +904,7 @@ async function scaffold(
   // so `generate` can build afterwards. An invalid config is the exception:
   // declining leaves it, and everything else, as it is.
   if (proceed === "fill" && found?.problem !== undefined) {
+    warnInvalidConfig(found);
     const rules = await applyAgentRules(args, cwd, rulesSource, isInteractive);
     printNextSteps(
       detected,

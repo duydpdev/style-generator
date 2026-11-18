@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: af937f3fc61d -->
+<!-- source: README.md sha256: d9e91a9b6a8f -->
 
 # @duydpdev/style-generator
 
@@ -104,6 +104,15 @@ Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
 ```
 
 Chỉ vậy là xong phần nối dây: không có `@plugin`, không có file safelist. Bạn có sẵn `bg-primary`, `text-primary`, `border-primary`, các utility typography đặt theo tên kebab-case của key (`heading1` → `.heading-1`), `shadow-sm`, `rounded-md`, các utility spacing `.sp-*` và những thứ còn lại. Các modifier độ mờ như `bg-primary/10` cần các mức trong `coverage.colors.opacities` ([`options`](./reference/options.md)).
+
+## Được dùng trong
+
+Hai ứng dụng đang chạy thư viện này ở phiên bản 8.1.1:
+
+- Một ứng dụng có 24 thư mục component UI. CSS biên dịch là 12669 B gzip so với ngân sách 14000 B. Nâng cấp từ 7.2.0 mất 7 phút xử lý các vướng mắc.
+- Ứng dụng còn lại có 20 component. CSS biên dịch là 13778 B gzip so với ngân sách 14925 B; `coverage.colors.prefixes` giữ nó trong ngân sách đó. Nâng cấp từ 4.0.3 mất 70 phút xử lý các vướng mắc.
+
+Mọi vướng mắc và kết cục của từng cái: [Adopting 8.x in two real apps](https://github.com/duydpdev/style-generator/blob/main/documents/migration/adoption-8x.md).
 
 ## Tài liệu
 

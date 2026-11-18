@@ -28,6 +28,8 @@ yarn add @duydpdev/style-generator
 
 > **Installed it from GitHub Packages before (7.1.1 and earlier)?** Remove the `@duydpdev` scope from your project, otherwise the install keeps resolving against GitHub Packages, which gets no new versions:
 > delete the `npmScopes.duydpdev` block from `.yarnrc.yml` (Yarn Berry) or the `@duydpdev:registry=https://npm.pkg.github.com` and `//npm.pkg.github.com/:_authToken=…` lines from `.npmrc` (npm, pnpm, Yarn Classic), then run `yarn add @duydpdev/style-generator@latest`.
+>
+> **Another `@duydpdev` package still comes from GitHub Packages (for example `@duydpdev/logger`)?** Keep the scope and install this package from its npmjs.org tarball URL instead: `"@duydpdev/style-generator": "https://registry.npmjs.org/@duydpdev/style-generator/-/style-generator-<version>.tgz"`. A URL dependency has no semver range, and a `peerDependencies` entry of your own package cannot be a URL: list the bare version there (`syncpack` then reports the two as different).
 
 Peer dependencies and the versions CI tests: [reference/core.md](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md#peer-dependencies).
 

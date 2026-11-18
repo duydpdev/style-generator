@@ -97,7 +97,7 @@ Summary: 7.2.0 to 8.1.1 (8.0.2, then 8.1.0, then 8.1.1). Time lost on listed sna
 
 - Step: the app's `check:css-budget` (14925 B gzip) after the pin
 - The docs said: [5.3 to 5.4](./5.3-to-5.4.md) "colors now feed seven prefixes", with `coverage.colors.prefixes: ["bg", "text", "border"]` to keep three
-- What happened: the budget failed at 17589 B gzip against 13351 B on 4.0.3 (+3811 B gzip; the 5.3 to 5.4 page lists +540 to 630 B). Raw CSS grew from 27251 B to 29213 B: the `--sg-color-` variable prefix plus four more prefixes on every color and state line. `coverage: { colors: { prefixes: ["bg", "text", "border"] } }` brought it to 13778 B. Apart from the `--sg-color-` rename, the trimmed 8.1.1 CSS differs from 4.0.3 by one line: the border line gains `border-s`, `border-e`, `divide-x`, `divide-y`. The app builds every `ring-*` class as a literal, so nothing it uses is lost
+- What happened: the budget failed at 17589 B gzip (4.0.3: 13351 B). `coverage: { colors: { prefixes: ["bg", "text", "border"] } }` brought it to 13778 B, so the four extra prefixes cost 3811 B gzip (the 5.3 to 5.4 page lists +540 to 630 B for its two builds). The remaining +427 B over 4.0.3 comes from the `--sg-color-` variable prefix (raw `theme.css` 27251 B to 29117 B) and the new `border-s`, `border-e`, `divide-x`, `divide-y` classes; the split between the two was not measured. Apart from the `--sg-color-` rename, the trimmed 8.1.1 `theme.css` differs from 4.0.3 by one line: the border line gains those four prefixes. The app builds every `ring-*` class as a literal, so nothing it uses is lost
 - Time lost: about 15 minutes
 - Conclusion: fix docs
 

@@ -25,13 +25,13 @@ An entry stays on the page after it is resolved, so the next upgrade can start f
 - Time lost: 0
 - Conclusion: no fix: a clean run; the peer range itself moved to `^7.0.0` in 8.1.0
 
-### learn-sql: `init --rules-only` prints a CSS snippet for a default path
+### learn-sql: `init --rules-only` prints CSS lines for a default path
 
 - Step: `style-gen init --rules-only` from the repo root
 - The docs said: [7.x to 8.0](./7.x-to-8.0.md) "New in 8.0": refresh only the agent rules with `style-gen init --rules-only`
-- What happened: the rules file was updated, then the command printed `Keep these lines in styles/index.css … @import "./theme.css"; @source not "../.claude";`. This app's CSS is `ui/src/index.css` importing `./theme/theme.css`, and the config names `src/theme/`; the hint ignores the configured `output`
+- What happened: the rules file was updated, then the command printed `Keep these lines in styles/index.css … @import "./theme.css"; @source not "../.claude";`. This app's config is `ui/style-gen.config.json` (output under `src/theme/`) and its CSS is `ui/src/index.css`; the command ran from the repo root, where no config exists, so it printed the defaults for a first config (`init.test.ts` pins that case). Not a library bug: the lines come from the config in the current directory
 - Time lost: 1 minute to confirm the app needs no change
-- Conclusion: fix lib
+- Conclusion: fix docs
 
 ### learn-sql: bare `: RecipeFn` annotations on 53 recipes in 24 files
 

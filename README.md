@@ -103,6 +103,15 @@ Colors are a **flat object**; only `colors` is required:
 
 That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`heading1` → `.heading-1`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available. Opacity modifiers such as `bg-primary/10` need steps in `coverage.colors.opacities` ([`options`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md)).
 
+## Used in
+
+Two applications run this library on 8.1.1:
+
+- One has 24 UI component folders. Its compiled CSS is 12669 B gzip against a 14000 B budget. Moving from 7.2.0 took 7 minutes of snags.
+- The other has 20 components. Its compiled CSS is 13778 B gzip against a 14925 B budget; `coverage.colors.prefixes` keeps it inside that budget. Moving from 4.0.3 took 70 minutes of snags.
+
+Every snag and what became of it: [Adopting 8.x in two real apps](https://github.com/duydpdev/style-generator/blob/main/documents/migration/adoption-8x.md).
+
 ## Documentation
 
 - [Documents index](https://github.com/duydpdev/style-generator/blob/main/documents/README.md)

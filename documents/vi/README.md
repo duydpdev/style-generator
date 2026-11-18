@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: ed433b2594da -->
+<!-- source: README.md sha256: af937f3fc61d -->
 
 # @duydpdev/style-generator
 
@@ -30,6 +30,8 @@ yarn add @duydpdev/style-generator
 
 > **Trước đây đã cài từ GitHub Packages (7.1.1 trở về trước)?** Hãy xóa scope `@duydpdev` khỏi dự án, nếu không việc cài đặt vẫn resolve về GitHub Packages, nơi không còn nhận phiên bản mới:
 > xóa khối `npmScopes.duydpdev` khỏi `.yarnrc.yml` (Yarn Berry) hoặc các dòng `@duydpdev:registry=https://npm.pkg.github.com` và `//npm.pkg.github.com/:_authToken=…` khỏi `.npmrc` (npm, pnpm, Yarn Classic), rồi chạy `yarn add @duydpdev/style-generator@latest`.
+>
+> **Vẫn còn một package `@duydpdev` khác lấy từ GitHub Packages (ví dụ `@duydpdev/logger`)?** Hãy giữ scope và cài package này từ URL tarball của npmjs.org: `"@duydpdev/style-generator": "https://registry.npmjs.org/@duydpdev/style-generator/-/style-generator-<version>.tgz"`. Một dependency dạng URL không có semver range, và mục `peerDependencies` trong package của bạn không thể là URL: hãy ghi phiên bản thuần ở đó (`syncpack` khi đó báo hai giá trị khác nhau).
 
 Các peer dependency và các phiên bản mà CI kiểm thử: [reference/core.md](./reference/core.md#các-peer-dependency).
 

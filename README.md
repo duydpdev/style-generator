@@ -123,6 +123,12 @@ Every snag and what became of it: [Adopting 8.x in two real apps](https://github
 - [Changelog](https://github.com/duydpdev/style-generator/blob/main/CHANGELOG.md)
 - [Migration guides](https://github.com/duydpdev/style-generator/blob/main/documents/README.md#migration)
 
+## Try it
+
+- [The site](https://duydpdev.github.io/style-generator/): the documentation, rendered
+- [`llms.txt`](https://duydpdev.github.io/style-generator/llms.txt): the docs as one index for AI tools
+- [The examples page](https://duydpdev.github.io/style-generator/examples/v4): the harness app, running
+
 ## Examples
 
 Working apps for React (`plain-react`, `harness`) and Nuxt (`plain-nuxt`) live in [`examples/`](https://github.com/duydpdev/style-generator/blob/main/examples/README.md); the landing site in `site/` uses the same components.

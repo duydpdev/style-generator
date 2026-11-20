@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 37005c4c1864 -->
+<!-- source: documents/deploy.md sha256: 199ec6170b9c -->
 
 # Triển khai & CI/CD
 
@@ -12,6 +12,7 @@ Quy trình triển khai cho thư viện `@duydpdev/style-generator`.
   - [Các workflow GitHub Actions](#các-workflow-github-actions)
     - [`ci.yml` — Kiểm tra PR](#ciyml--kiểm-tra-pr)
     - [`ci-matrix.yml` — Tầng nặng](#ci-matrixyml--tầng-nặng)
+    - [`deploy-site.yml` — Site trên GitHub Pages](#deploy-siteyml--site-trên-github-pages)
     - [`pr-title.yml` — Lint tiêu đề PR](#pr-titleyml--lint-tiêu-đề-pr)
     - [Quy ước Pull Request \& merge](#quy-ước-pull-request--merge)
     - [Cục bộ (Pre-commit) — Husky](#cục-bộ-pre-commit--husky)
@@ -75,6 +76,15 @@ Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-re
 - `ui-peer-floor`: build thư viện bằng toolchain đã commit, ép bốn optional peer của UI kit (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`) về mức sàn của các khoảng `peerDependencies` qua `resolutions` (không commit), khẳng định các phiên bản được resolve, rồi chạy `yarn typecheck:dist` và `yarn vitest run src/features/ui`. Nó thất bại khi một mức sàn đã ghim không còn là mức tối thiểu của khoảng trong `package.json`. Hai bản ghim chỉ dành cho harness (bộ ví dụ dùng để kiểm thử DX) phản ánh những gì một consumer thực sự nhận được: cva 0.7.0 cần đúng clsx 2.0.0, nên nó giữ một bản sao lồng nhau riêng, và `@types/scheduler` được giữ ở 0.16.8, phiên bản cuối cùng có `scheduler/tracing`, thứ mà `@types/react` <=18.2.71 import.
 
 Các trình duyệt Playwright **không** được cache, và đây là một quyết định đã đo đạc (PR #73). Khi trúng cache, bước cài đặt mất 42 giây; không có cache là 49–52 giây; khi trượt cache là 56–75 giây, cộng thêm 5–8 giây để lưu cache, và mỗi ref của PR tốn 383 MB. Cache không thể bỏ qua bước `install-deps` (apt), bước chiếm phần lớn thời gian. Phép đo được thực hiện khi `e2e` còn chạy trong `ci-matrix.yml`; `e2e` nay nằm trong `ci.yml` và quyết định này không đổi. Kết quả là mỗi PR mới đều chậm hơn. Chỉ đáng xem lại việc dùng container `mcr.microsoft.com/playwright` nếu e2e trở thành nút thắt cổ chai.
+
+### `deploy-site.yml` — Site trên GitHub Pages
+
+**Trigger:** một push vào `main` đổi `site/**`, `documents/**`, `examples/**`, `src/**`, `README.md`, `package.json`, `yarn.lock` hoặc chính workflow; `workflow_dispatch` (`gh workflow run deploy-site.yml --ref main`); và một Pull Request đổi workflow hoặc `site/scripts/build-llms.mjs`, chỉ chạy job `build`. Workflow có `permissions: contents: read` và độc lập với `release.yml` và `deploy.yml` (publish npm). Nguồn Pages của repository là **GitHub Actions**; site được phục vụ tại `https://duydpdev.github.io/style-generator/`.
+
+**Các job** (Node 22):
+
+- `build` (tên check `Build site bundle`): checkout không giữ lại credential → `yarn install --immutable` → `yarn site:build` với `VITE_BASE=/<repo>/` (build thư viện, các ví dụ nhúng, build Vite của site, rồi `site/scripts/build-llms.mjs` ghi `llms.txt` vào `site/dist/`) → `cp site/dist/index.html site/dist/404.html` (SPA fallback: GitHub Pages phục vụ nó cho một deep link với status 404, và trình duyệt vẫn render trang) → `actions/upload-pages-artifact`.
+- `deploy` (tên check `Deploy to GitHub Pages`): chỉ chạy với `push` và `workflow_dispatch` trên `refs/heads/main`. Đây là job duy nhất có `pages: write` và `id-token: write`, và là job duy nhất thuộc nhóm concurrency `pages` (`cancel-in-progress: false`), nên một lần build của PR không thể huỷ một lần deploy. Một bước duy nhất, `actions/deploy-pages`, trong environment `github-pages`. Mọi action trong file đều do GitHub sở hữu (`actions/*`).
 
 ### `pr-title.yml` — Lint tiêu đề PR
 
@@ -271,7 +281,7 @@ Xem: [`commitlint.config.ts`](../../commitlint.config.ts) và [`release.config.c
 
 ## Site (landing + ví dụ)
 
-Landing site (`site/`) và các ví dụ (`examples/design-system`, `harness`, `plain-react`, `plain-nuxt`) dùng thư viện qua một dependency `link:`. Site **không được triển khai** (chưa có kế hoạch hosting). `deploy-site.yml` và `site:deploy:manual` đã bị gỡ (2026-09-30). Bật lại nó cần một plan riêng.
+Landing site (`site/`) và các ví dụ (`examples/design-system`, `harness`, `plain-react`, `plain-nuxt`) dùng thư viện qua một dependency `link:`. `deploy-site.yml` triển khai site lên `https://duydpdev.github.io/style-generator/` ở mỗi push vào `main` đổi đầu vào của nó; deep link hoạt động nhờ một bản sao `404.html` của `index.html`; bản build cũng ghi `llms.txt`.
 
 Site vẫn được build trong mọi PR: job `check` của `ci.yml` chạy `yarn workspace site build` ngay sau `yarn build:all`, kể cả với các PR chỉ đổi `documents/**`, vì site render `documents/*.md`. `yarn workspace site build` chạy `build:examples` (build `examples/harness` với base `./`, chép `examples/harness/dist` vào `site/public/examples/v4`), rồi build Vite của site. `harness` import theme, tokens và recipe của nó từ workspace `design-system-example` (`workspace:*`, một symlink thật), nên bản build của site không cần bước nào thêm; trình khám phá mã nguồn của site cũng đọc `examples/design-system`.
 

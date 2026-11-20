@@ -1,6 +1,19 @@
 {
   "name": "@duydpdev/style-generator",
   "version": "8.1.1",
+  "description": "Compile one theme JSON into Tailwind CSS v4 utilities, typed design tokens and a JSON Schema.",
+  "keywords": [
+    "tailwindcss",
+    "tailwind",
+    "tailwindcss-v4",
+    "design-tokens",
+    "theme",
+    "css-variables",
+    "cva",
+    "vite-plugin",
+    "nextjs",
+    "cli"
+  ],
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
@@ -245,6 +258,7 @@
     "type": "git",
     "url": "git+https://github.com/duydpdev/style-generator.git"
   },
+  "homepage": "https://duydpdev.github.io/style-generator/",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"

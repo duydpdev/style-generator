@@ -32,6 +32,7 @@ An entry stays on the page after it is resolved, so the next upgrade can start f
 - What happened: the rules file was updated, then the command printed `Keep these lines in styles/index.css … @import "./theme.css"; @source not "../.claude";`. This app's config is `ui/style-gen.config.json` (output under `src/theme/`) and its CSS is `ui/src/index.css`; the command ran from the repo root, where no config exists, so it printed the defaults for a first config (`init.test.ts` pins that case). Not a library bug: the lines come from the config in the current directory
 - Time lost: 1 minute to confirm the app needs no change
 - Conclusion: fix docs
+- Fixed in 8.2.0: `init --rules-only` without a config prints no CSS lines and says no config was found
 
 ### learn-sql: bare `: RecipeFn` annotations on 53 recipes in 24 files
 
@@ -48,6 +49,7 @@ An entry stays on the page after it is resolved, so the next upgrade can start f
 - What happened: the file appeared untracked; an existing config does not get the `$schema` key (only `init` for a new config writes it). The key was added by hand
 - Time lost: 1 minute
 - Conclusion: fix docs
+- Fixed in 8.2.0: `style-gen schema` inserts one `"$schema"` line into a valid `style-gen.config.json` that has none
 
 ### learn-sql: generated CSS identical across 7.2.0 and 8.0.2
 

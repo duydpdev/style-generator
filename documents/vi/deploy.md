@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 199ec6170b9c -->
+<!-- source: documents/deploy.md sha256: 3d0827d772a9 -->
 
 # Triển khai & CI/CD
 
@@ -12,6 +12,7 @@ Quy trình triển khai cho thư viện `@duydpdev/style-generator`.
   - [Các workflow GitHub Actions](#các-workflow-github-actions)
     - [`ci.yml` — Kiểm tra PR](#ciyml--kiểm-tra-pr)
     - [`ci-matrix.yml` — Tầng nặng](#ci-matrixyml--tầng-nặng)
+    - [`nightly.yml` — macOS và Bun](#nightlyyml--macos-và-bun)
     - [`deploy-site.yml` — Site trên GitHub Pages](#deploy-siteyml--site-trên-github-pages)
     - [`pr-title.yml` — Lint tiêu đề PR](#pr-titleyml--lint-tiêu-đề-pr)
     - [Quy ước Pull Request \& merge](#quy-ước-pull-request--merge)
@@ -76,6 +77,15 @@ Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-re
 - `ui-peer-floor`: build thư viện bằng toolchain đã commit, ép bốn optional peer của UI kit (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`) về mức sàn của các khoảng `peerDependencies` qua `resolutions` (không commit), khẳng định các phiên bản được resolve, rồi chạy `yarn typecheck:dist` và `yarn vitest run src/features/ui`. Nó thất bại khi một mức sàn đã ghim không còn là mức tối thiểu của khoảng trong `package.json`. Hai bản ghim chỉ dành cho harness (bộ ví dụ dùng để kiểm thử DX) phản ánh những gì một consumer thực sự nhận được: cva 0.7.0 cần đúng clsx 2.0.0, nên nó giữ một bản sao lồng nhau riêng, và `@types/scheduler` được giữ ở 0.16.8, phiên bản cuối cùng có `scheduler/tracing`, thứ mà `@types/react` <=18.2.71 import.
 
 Các trình duyệt Playwright **không** được cache, và đây là một quyết định đã đo đạc (PR #73). Khi trúng cache, bước cài đặt mất 42 giây; không có cache là 49–52 giây; khi trượt cache là 56–75 giây, cộng thêm 5–8 giây để lưu cache, và mỗi ref của PR tốn 383 MB. Cache không thể bỏ qua bước `install-deps` (apt), bước chiếm phần lớn thời gian. Phép đo được thực hiện khi `e2e` còn chạy trong `ci-matrix.yml`; `e2e` nay nằm trong `ci.yml` và quyết định này không đổi. Kết quả là mỗi PR mới đều chậm hơn. Chỉ đáng xem lại việc dùng container `mcr.microsoft.com/playwright` nếu e2e trở thành nút thắt cổ chai.
+
+### `nightly.yml` — macOS và Bun
+
+**Trigger:** `schedule` hằng đêm (cron `17 6 * * *`, GitHub chạy trên branch mặc định `main`), `workflow_dispatch` (`gh workflow run nightly.yml --ref main`) và Pull Request vào `main` hoặc `release/**` có đổi `.github/workflows/nightly.yml` hoặc `scripts/bun-smoke.mjs`, nên một PR bình thường không tốn gì cho nó. Nó không phải check bắt buộc. Nó có `concurrency: nightly-<event>-<ref>` riêng với `cancel-in-progress: true`, `permissions: contents: read` và `persist-credentials: false` ở cả hai lần checkout.
+
+**Các job** (Node 22): mỗi job chạy `yarn install --immutable` → `yarn build:all`.
+
+- `macos` (`macos-latest`, 30 phút): `yarn test`. Nó chạy các ca filesystem không phân biệt hoa thường của `sameFile` (bị bỏ qua trên Linux) và các test watcher dùng chokidar thật trên FSEvents.
+- `bun` (`ubuntu-latest`, 20 phút): `npm install -g bun@1.3.14` (repo chỉ cho phép action do GitHub sở hữu, nên không dùng `oven-sh/setup-bun`) → `node scripts/bun-smoke.mjs`: pack tarball, cài bằng `bun add` cùng phiên bản Tailwind của repo, kiểm tra link `.bin/style-gen`, chạy `dist/cli/index.mjs generate` trực tiếp bằng `bun` (`bun x style-gen` sẽ theo shebang của Node) và gọi `generate()` từ tên package dưới `bun`.
 
 ### `deploy-site.yml` — Site trên GitHub Pages
 
@@ -296,8 +306,6 @@ Quy tắc này chỉ áp dụng cho thư viện gốc: `design-system-example` l
 
 ### Các alias script (root)
 
-| Script              | Mô tả                                                   |
-| ------------------- | ------------------------------------------------------- |
-| `yarn site:dev`     | Vite dev server cho site (cổng 5174)                    |
-| `yarn site:build`   | Build thư viện → build site → output trong `site/dist/` |
-| `yarn site:preview` | Vite preview server đọc `site/dist/`                    |
+| Script            | Mô tả                                                   |
+| ----------------- | ------------------------------------------------------- |
+| `yarn site:build` | Build thư viện → build site → output trong `site/dist/` |

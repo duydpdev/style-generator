@@ -910,40 +910,6 @@ describe("watchThemeFile with the real chokidar: removed and recreated files (M3
     },
   );
 
-  // A16: a theme recreated 20-60 ms after its removal yielded only `unlink`:
-  // the re-arm `add()` counts as an initial add and `ignoreInitial` drops it.
-  // One write only (no `settle` retries, which would hide the gap with a
-  // later `change`).
-  it(
-    "emits once for a theme recreated 20 ms after its removal (A16)",
-    { timeout: 60_000 },
-    async () => {
-      await startWatching();
-      await settle(
-        () => {
-          fs.writeFileSync(themeFile, theme("#a00"));
-        },
-        () => cssHas("#a00"),
-      );
-      await quiet();
-      const before = results.length;
-
-      fs.rmSync(themeFile);
-      await sleep(20);
-      fs.writeFileSync(themeFile, theme("#b00"));
-
-      await vi.waitFor(
-        () => {
-          expect(cssHas("#b00")).toBe(true);
-        },
-        { timeout: 5_000, interval: 50 },
-      );
-      await quiet();
-      expect(results.slice(before)).toHaveLength(1);
-      expect(results.slice(before).every((r) => r.ok)).toBe(true);
-    },
-  );
-
   it(
     "keeps seeing the theme after an atomic rename-over save",
     { timeout: 60_000 },

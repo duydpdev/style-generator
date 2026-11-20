@@ -22,7 +22,7 @@ export interface ResolvedTokenOptions {
   /** The px `defaultScreens` overridden/extended by `options.screens`. */
   screens: Readonly<Record<string, string>>;
   spacing: { enabled: boolean; properties: SpacingPropertyMap };
-  /** `options.coverage.colors.opacities` sorted ascending, else `[]`. */
+  /** The plain steps of `options.coverage.colors.opacities` (groups are not typed) sorted ascending, else `[]`. */
   opacities: readonly number[];
 }
 
@@ -56,7 +56,9 @@ export const resolveTokenOptions = (
     },
     opacities:
       typeof colors === "object" && colors.opacities
-        ? [...colors.opacities].sort((a, b) => a - b)
+        ? colors.opacities
+            .filter((step): step is number => typeof step === "number")
+            .sort((a, b) => a - b)
         : [],
   };
 };

@@ -7,6 +7,8 @@ import { defineConfig } from "tsdown";
 // otherwise: the bundle is unminified and they were more than half of its
 // gzip size (37 694 B → 18 096 B on the phase 10 source, measured
 // 2026-10-28). Legal comments (`@license`, `@preserve`) are kept by default.
+// `attachDebugInfo: "none"` drops rolldown's `//#region`/`//#endregion` module
+// markers (about 570 B gzip); the sourcemap still maps every module.
 export default defineConfig({
   entry: ["src/cli/index.ts"],
   format: "esm",
@@ -16,4 +18,5 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   outputOptions: { comments: { jsdoc: false } },
+  inputOptions: { experimental: { attachDebugInfo: "none" } },
 });

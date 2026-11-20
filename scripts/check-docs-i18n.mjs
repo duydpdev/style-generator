@@ -207,13 +207,13 @@ function checkSource(viText, en, vi, hash, errors) {
   const source = SOURCE_LINE.exec(viText.split("\n")[0]);
   if (!source) {
     errors.push(
-      `${vi}:1: expected "<!-- source: ${en} sha256: ${hash} -->"; after translating, run yarn check:docs-i18n --write-hash ${vi}`,
+      `${vi}:1: expected "<!-- source: ${en} sha256: ${hash} -->"; after translating, run node scripts/check-docs-i18n.mjs --write-hash ${vi}`,
     );
   } else if (source[1] !== en) {
     errors.push(`${vi}:1: source is ${source[1]}, expected ${en}`);
   } else if (source[2] !== hash) {
     errors.push(
-      `${vi}: ${en} changed since it was translated (sha256 ${source[2]} → ${hash}); update the Vietnamese text, then run yarn check:docs-i18n --write-hash ${vi}`,
+      `${vi}: ${en} changed since it was translated (sha256 ${source[2]} → ${hash}); update the Vietnamese text, then run node scripts/check-docs-i18n.mjs --write-hash ${vi}`,
     );
   }
   if (viText !== viText.normalize("NFC")) {

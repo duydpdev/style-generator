@@ -234,6 +234,39 @@ const buildStateLines = (
 };
 
 /**
+ * The opacity-modifier lines of one category: the plain steps (the rule's
+ * covered prefixes and keys), then one line per opacity group in
+ * declaration order (its own prefixes and keys where given).
+ * @param {BuiltInCategory} descriptor - Category descriptor
+ * @param {string[]} keys - The rule's resolved keys
+ * @param {readonly string[]} prefixes - The rule's covered prefixes
+ * @param {readonly string[]} breakpointKeys - Breakpoint keys
+ * @param {ResolvedCoverageRule | undefined} rule - The category's coverage rule
+ * @returns {string[]} The directives that are not empty
+ */
+const buildOpacityLines = (
+  descriptor: BuiltInCategory,
+  keys: string[],
+  prefixes: readonly string[],
+  breakpointKeys: readonly string[],
+  rule: ResolvedCoverageRule | undefined,
+): string[] =>
+  [
+    { steps: rule?.opacities ?? [], keys: undefined, prefixes: undefined },
+    ...(rule?.opacityGroups ?? []),
+  ].flatMap(({ steps, keys: own, prefixes: ownPrefixes }) => {
+    if (steps.length === 0) return [];
+    const line = buildCategoryLine(
+      descriptor,
+      own?.map(toKebabCase) ?? keys,
+      ownPrefixes ?? prefixes,
+      breakpointKeys,
+      `/{${steps.join(",")}}`,
+    );
+    return line ? [line] : [];
+  });
+
+/**
  * Generate the `@source inline(...)` directives that cover classes
  * Tailwind's static candidate scan can never see on its own: one line per
  * built-in category (colors, typography, shadows, backdrop blurs, border
@@ -248,8 +281,9 @@ const buildStateLines = (
  * value is a `$` alias; the primitives they point to need no class).
  * `opacities` (colors only) adds one line right after the category line:
  * the same prefixes and keys with a `/{10,20}` modifier group, never
- * crossed with the state lines. Absent (or `true`, `{}`) leaves the output
- * unchanged.
+ * crossed with the state lines; each opacity group adds one further line
+ * with its own steps and, when given, its own prefixes and keys. Absent
+ * (or `true`, `{}`) leaves the output unchanged.
  *
  * Each category gets its OWN line (not one giant merged directive) so a
  * single category exceeding a reasonable brace-expansion size never
@@ -279,17 +313,15 @@ export const generateSourceInline = (
     );
     if (line) lines.push(line);
 
-    const opacities = rule?.opacities ?? [];
-    if (opacities.length > 0) {
-      const opacityLine = buildCategoryLine(
+    lines.push(
+      ...buildOpacityLines(
         descriptor,
         keys,
         prefixes,
         options.breakpoints,
-        `/{${opacities.join(",")}}`,
-      );
-      if (opacityLine) lines.push(opacityLine);
-    }
+        rule,
+      ),
+    );
     lines.push(...buildStateLines(descriptor, theme, rule));
   }
 

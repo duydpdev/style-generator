@@ -160,6 +160,8 @@ yarn workspace admin style-gen generate --check
 
 Next.js writes its CSS to `.next/static/css`; use that directory instead of `dist/assets`. The exit code is the contract: `0` within budget, `1` over budget (`OVER BUDGET: …`), `2` for a usage error, an unreadable target or no `.css` file found, so a wrong path fails the step instead of passing silently. Set `--max-gzip` a little above today's size (the `OK: …` line prints it) and lower it when a trim such as `coverage` shrinks the file. See [CLI → `style-gen budget`](./reference/cli.md#style-gen-budget).
 
+When the step fails, add `--coverage-cost` to see which theme class groups cost the most (it prints them after the summary line, with the `coverage` setting that removes each); apply the top suggestion in the config, rebuild, and run the budget again to measure the saving. The figure is an upper bound: classes your source uses stay.
+
 ## A component recipe from tables
 
 A recipe is a function from variant props to a class string. Plain class tables go in, `recipeFromTables` (class-variance-authority underneath) returns the recipe, and `createVariantMapper` fills the tables from the theme's keys, so renaming a color in `theme.json` breaks the build instead of shipping a dead class:

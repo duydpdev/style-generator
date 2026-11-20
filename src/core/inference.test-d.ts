@@ -321,6 +321,27 @@ describe("BreakpointKeys / SpacingKeys / ScreenKeys", () => {
     expectTypeOf<
       OpacitySteps<{ readonly coverage: { readonly shadows: false } }>
     >().toBeNever();
+    expectTypeOf<
+      OpacitySteps<{
+        readonly coverage: {
+          readonly colors: {
+            readonly opacities: readonly [
+              10,
+              { readonly steps: readonly [32] },
+            ];
+          };
+        };
+      }>
+    >().toEqualTypeOf<10>();
+    expectTypeOf<
+      OpacitySteps<{
+        readonly coverage: {
+          readonly colors: {
+            readonly opacities: readonly [{ readonly steps: readonly [32] }];
+          };
+        };
+      }>
+    >().toBeNever();
   });
 
   it("SpacingKeys: declared properties, optional properties, absent", () => {

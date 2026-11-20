@@ -9,7 +9,7 @@
  * and `#endregion docs:<name>` in it, in any comment syntax).
  *
  *   --write   rewrite the blocks (yarn docs:embed)
- *   --check   fail when a block differs from its source (yarn check:docs-embed)
+ *   --check   fail when a block differs from its source (node scripts/docs-embed.mjs --check)
  *   --root    repository root (default: the repo of this script)
  */
 import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";

@@ -147,6 +147,54 @@ describe("generate() coverage validation", () => {
       { coverage: { borderWidth: { opacities: [10] } } },
       "coverage.borderWidth.opacities",
     ],
+    [
+      { coverage: { colors: { opacities: [{ steps: [] }] } } },
+      "coverage.colors.opacities.0.steps",
+    ],
+    [
+      { coverage: { colors: { opacities: [10, { steps: [32, 32] }] } } },
+      "coverage.colors.opacities.1.steps",
+    ],
+    [
+      {
+        coverage: {
+          colors: { opacities: [{ steps: [32], prefixes: ["shadow"] }] },
+        },
+      },
+      "coverage.colors.opacities.0.prefixes.0",
+    ],
+    [
+      {
+        coverage: {
+          colors: { opacities: [5, { steps: [32], prefixes: ["bg", "bgg"] }] },
+        },
+      },
+      "coverage.colors.opacities.1.prefixes.1",
+    ],
+    [
+      { coverage: { colors: { opacities: [{ steps: [32], prefixes: [] }] } } },
+      "coverage.colors.opacities.0.prefixes",
+    ],
+    [
+      { coverage: { colors: { opacities: [{ steps: [32], keys: [] }] } } },
+      "coverage.colors.opacities.0.keys",
+    ],
+    [
+      { coverage: { colors: { opacities: [{ steps: [32], extra: 1 }] } } },
+      "coverage.colors.opacities.0",
+    ],
+    [
+      { coverage: { colors: { opacities: [{ steps: [101] }] } } },
+      "coverage.colors.opacities.0.steps.0",
+    ],
+    [
+      { coverage: { colors: { opacities: [5, 5, { steps: [32] }] } } },
+      "coverage.colors.opacities",
+    ],
+    [
+      { coverage: { shadows: { opacities: [{ steps: [32] }] } } },
+      "coverage.shadows.opacities",
+    ],
   ])("rejects %o with an issue at %s", (options, path) => {
     expect(issuesOf(options).map((i) => i.path)).toContain(path);
   });
@@ -171,6 +219,50 @@ describe("generate() coverage validation", () => {
         },
       }),
     ).toEqual([]);
+  });
+
+  it("accepts opacity groups next to plain steps", () => {
+    expect(
+      issuesOf({
+        coverage: {
+          colors: {
+            prefixes: ["bg", "text"],
+            opacities: [
+              5,
+              { steps: [32], prefixes: ["bg"], keys: ["primary"] },
+              { steps: [10, 20] },
+            ],
+          },
+        },
+      }),
+    ).toEqual([]);
+    expect(
+      issuesOf({ coverage: { colors: { opacities: [{ steps: [32] }] } } }),
+    ).toEqual([]);
+    expect(
+      issuesOf({
+        coverage: { colors: { opacities: [32, { steps: [32] }] } },
+      }),
+    ).toEqual([]);
+  });
+
+  it("rejects a group `keys` entry that is not a theme color, at its own path", () => {
+    expect(
+      issuesOf({
+        coverage: {
+          colors: {
+            opacities: [
+              5,
+              { steps: [32], keys: ["primary", "foregroundd"] },
+              { steps: [10], keys: ["nope"] },
+            ],
+          },
+        },
+      }).map((i) => i.path),
+    ).toEqual([
+      "coverage.colors.opacities.1.keys.1",
+      "coverage.colors.opacities.2.keys.0",
+    ]);
   });
 
   it("accepts `opacities` on colors, alone or with prefixes and keys", () => {

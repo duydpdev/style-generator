@@ -68,6 +68,11 @@ const checkObject: Check = (schema, value, at) => {
   if (!isJson(value)) return [];
   const errors: string[] = [];
   const properties = isJson(schema.properties) ? schema.properties : {};
+  for (const key of Array.isArray(schema.required) ? schema.required : []) {
+    if (typeof key === "string" && !Object.hasOwn(value, key)) {
+      errors.push(`${at}: missing "${key}"`);
+    }
+  }
   const extra = schema.additionalProperties;
   for (const [key, item] of Object.entries(value)) {
     errors.push(...validate(schema.propertyNames, key, `${at}<${key}>`));
@@ -141,6 +146,26 @@ describe("buildConfigJsonSchema", () => {
       { coverage: { colors: { opacities: [101] } } },
     ],
     ["an opacity step of 0", { coverage: { colors: { opacities: [0] } } }],
+    [
+      "an opacity group with a prefix that is not a colors prefix",
+      {
+        coverage: {
+          colors: { opacities: [{ steps: [32], prefixes: ["shadow"] }] },
+        },
+      },
+    ],
+    [
+      "an opacity group without steps",
+      { coverage: { colors: { opacities: [{ prefixes: ["bg"] }] } } },
+    ],
+    [
+      "an opacity group with an unknown key",
+      { coverage: { colors: { opacities: [{ steps: [32], extra: 1 }] } } },
+    ],
+    [
+      "an opacity group on a category without an opacity modifier",
+      { coverage: { shadows: { opacities: [{ steps: [32] }] } } },
+    ],
     ["an unknown category", { coverage: { sizes: true } }],
   ])("rejects %s, as the CLI does", (_title, config) => {
     expect(StyleGenConfigFileSchema.safeParse(config).success).toBe(false);
@@ -153,6 +178,21 @@ describe("buildConfigJsonSchema", () => {
     [
       "colors with opacities",
       { coverage: { colors: { opacities: [10, 50], keys: "aliased" } } },
+    ],
+    [
+      "colors with opacity groups next to plain steps",
+      {
+        coverage: {
+          colors: {
+            prefixes: ["bg", "text"],
+            opacities: [
+              5,
+              { steps: [32], prefixes: ["bg"], keys: ["foreground"] },
+              { steps: [10, 20] },
+            ],
+          },
+        },
+      },
     ],
     [
       "a real prefix of every category",

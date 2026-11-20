@@ -49,20 +49,49 @@ export const checkResetTailwindDefaults = (
 };
 
 /**
+ * Check every `coverage.colors.opacities` group `keys` entry against the
+ * theme's `colors`: a key that is not one would emit a class no theme token
+ * produces, so a typo is reported at its own path instead of dropped.
+ * @param {OptionsIssueCtx} ctx - Issue collector
+ * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
+ * @param {ResolvedOptions["coverage"]} coverage - Resolved `coverage`
+ * @returns {void}
+ */
+export const checkOpacityGroupKeys = (
+  ctx: OptionsIssueCtx,
+  theme: ThemeConfig,
+  coverage: ResolvedOptions["coverage"],
+): void => {
+  const colorKeys = new Set(Object.keys(theme.colors));
+  for (const group of coverage.colors?.opacityGroups ?? []) {
+    group.keys?.forEach((key, index) => {
+      if (colorKeys.has(key)) return;
+      ctx.addIssue({
+        code: "custom",
+        path: ["coverage", "colors", "opacities", group.index, "keys", index],
+        message: `Unknown color key "${key}" in an opacity group`,
+      });
+    });
+  }
+};
+
+/**
  * Run every check that needs both the theme and the options and throw every
  * issue as one `ZodError`, like the other `generate()` option and theme
- * failures: today {@link checkResetTailwindDefaults}.
+ * failures: today {@link checkResetTailwindDefaults} and
+ * {@link checkOpacityGroupKeys}.
  * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
- * @param {Pick<ResolvedOptions, "resetTailwindDefaults">} resolved - Resolved options
+ * @param {Pick<ResolvedOptions, "resetTailwindDefaults" | "coverage">} resolved - Resolved options
  * @returns {void}
- * @throws {z.ZodError} on a reset with no theme replacement
+ * @throws {z.ZodError} on a reset with no theme replacement or an unknown opacity group key
  */
 export const assertThemeOptions = (
   theme: ThemeConfig,
-  resolved: Pick<ResolvedOptions, "resetTailwindDefaults">,
+  resolved: Pick<ResolvedOptions, "resetTailwindDefaults" | "coverage">,
 ): void => {
   const issues: z.core.$ZodIssue[] = [];
   const ctx: OptionsIssueCtx = { addIssue: (issue) => issues.push(issue) };
   checkResetTailwindDefaults(ctx, theme, resolved.resetTailwindDefaults);
+  checkOpacityGroupKeys(ctx, theme, resolved.coverage);
   if (issues.length > 0) throw new z.ZodError(issues);
 };

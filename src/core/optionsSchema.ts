@@ -61,13 +61,31 @@ const CoverageCategoryKey = z.enum(
 const OpacityStep = z.number().int().min(1).max(100);
 
 /**
+ * One opacity group of `coverage.colors.opacities`: its own steps, narrowed
+ * to some prefixes and/or theme color keys (each defaulting to the rule's
+ * covered ones). Prefixes are checked against the category in the coverage
+ * refinement, keys against the theme in `assertThemeOptions`.
+ */
+const OpacityGroup = z.strictObject({
+  steps: z
+    .array(OpacityStep)
+    .min(1)
+    .refine(
+      (steps) => new Set(steps).size === steps.length,
+      "Opacity steps must be unique",
+    ),
+  prefixes: z.array(z.string()).min(1).optional(),
+  keys: z.array(z.string()).min(1).optional(),
+});
+
+/**
  * Per-category `@source inline` coverage. A bare boolean switches the
  * category on/off; the object form narrows it to some class prefixes
  * and/or to the alias holders. Every `prefixes` entry must be a real class
  * prefix of that category (`bg`, `rounded-t`, …): a typo would otherwise
  * silently drop the category's coverage. `opacities` (colors only, distinct
- * integers 1–100) adds the `/<n>` opacity-modifier classes of the covered
- * prefixes and keys.
+ * integers 1–100, or groups of steps with their own prefixes and keys) adds
+ * the `/<n>` opacity-modifier classes of the covered prefixes and keys.
  */
 const CoverageSchema = z
   .partialRecord(
@@ -79,12 +97,19 @@ const CoverageSchema = z
           prefixes: z.array(z.string()).min(1).optional(),
           keys: z.enum(["aliased", "all"]).optional(),
           opacities: z
-            .array(OpacityStep)
-            .min(1)
-            .refine(
-              (steps) => new Set(steps).size === steps.length,
-              "Opacity steps must be unique",
+            .array(
+              z.union([OpacityStep, OpacityGroup], {
+                error:
+                  "Expected opacities?: (integer 1–100 | { steps, prefixes?, keys? })[]",
+              }),
             )
+            .min(1)
+            .refine((entries) => {
+              const steps = entries.filter(
+                (entry) => typeof entry === "number",
+              );
+              return new Set(steps).size === steps.length;
+            }, "Opacity steps must be unique")
             .optional(),
         }),
       ],
@@ -113,20 +138,40 @@ const CoverageSchema = z
           message: `"${descriptor.key}" utilities take no \`/<n>\` opacity modifier (only color utilities do)`,
         });
       }
-      if (!rule.prefixes) continue;
-
       const valid: readonly string[] = descriptor.classPrefixes;
-      rule.prefixes.forEach((prefix, index) => {
-        if (!("bareClassName" in descriptor) && valid.includes(prefix)) return;
-        ctx.addIssue({
-          code: "custom",
-          path: [descriptor.key, "prefixes", index],
-          message:
-            "bareClassName" in descriptor
-              ? `"${descriptor.key}" has no class prefixes (its keys are the class names); drop \`prefixes\` or use \`keys\``
-              : `Unknown class prefix "${prefix}" for "${descriptor.key}"; expected one of: ${valid.join(", ")}`,
+      const checkPrefixes = (
+        prefixes: readonly string[],
+        path: (string | number)[],
+      ): void => {
+        prefixes.forEach((prefix, index) => {
+          if (!("bareClassName" in descriptor) && valid.includes(prefix)) {
+            return;
+          }
+          ctx.addIssue({
+            code: "custom",
+            path: [...path, index],
+            message:
+              "bareClassName" in descriptor
+                ? `"${descriptor.key}" has no class prefixes (its keys are the class names); drop \`prefixes\` or use \`keys\``
+                : `Unknown class prefix "${prefix}" for "${descriptor.key}"; expected one of: ${valid.join(", ")}`,
+          });
         });
-      });
+      };
+
+      if ("opacityModifier" in descriptor) {
+        rule.opacities?.forEach((entry, index) => {
+          if (typeof entry === "number" || !entry.prefixes) return;
+          checkPrefixes(entry.prefixes, [
+            descriptor.key,
+            "opacities",
+            index,
+            "prefixes",
+          ]);
+        });
+      }
+      if (rule.prefixes) {
+        checkPrefixes(rule.prefixes, [descriptor.key, "prefixes"]);
+      }
     }
   });
 

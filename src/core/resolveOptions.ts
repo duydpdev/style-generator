@@ -11,6 +11,26 @@ export interface ResolvedBreakpoint {
   numericValue: number;
 }
 
+/** One `coverage.colors.opacities` group with its steps sorted ascending. */
+export interface ResolvedOpacityGroup {
+  /** Position in the raw `opacities` array, for error paths. */
+  index: number;
+  steps: readonly number[];
+  /** `undefined`: the rule's covered prefixes. */
+  prefixes: readonly string[] | undefined;
+  /** Theme color keys as written; `undefined`: the rule's covered keys. */
+  keys: readonly string[] | undefined;
+}
+
+/** One raw `opacities` entry as `resolveCoverage` reads it (any category's rule). */
+type RawOpacityEntry =
+  | number
+  | {
+      steps: readonly number[];
+      prefixes?: readonly string[];
+      keys?: readonly string[];
+    };
+
 /** One category's `coverage` entry with every default filled in. */
 export interface ResolvedCoverageRule {
   /** `false`: the category emits no `@source inline` lines. */
@@ -19,8 +39,10 @@ export interface ResolvedCoverageRule {
   prefixes: readonly string[] | undefined;
   /** `"aliased"` keeps only the keys whose value is a `$<key>` alias. */
   keys: "aliased" | "all";
-  /** Opacity-modifier steps to cover (`/10`), ascending; `[]`: none. */
+  /** Plain opacity-modifier steps to cover (`/10`), ascending; `[]`: none. */
   opacities: readonly number[];
+  /** Opacity groups in declaration order (see `coverage.colors.opacities`). */
+  opacityGroups: readonly ResolvedOpacityGroup[];
 }
 
 /**
@@ -71,15 +93,37 @@ const resolveCoverage = (
 ): ResolvedOptions["coverage"] => {
   const resolved: Record<string, ResolvedCoverageRule> = {};
   for (const [key, rule] of Object.entries(coverage ?? {})) {
-    resolved[key] =
-      typeof rule === "boolean"
-        ? { enabled: rule, prefixes: undefined, keys: "all", opacities: [] }
-        : {
-            enabled: true,
-            prefixes: rule.prefixes,
-            keys: rule.keys ?? "all",
-            opacities: [...(rule.opacities ?? [])].sort((a, b) => a - b),
-          };
+    if (typeof rule === "boolean") {
+      resolved[key] = {
+        enabled: rule,
+        prefixes: undefined,
+        keys: "all",
+        opacities: [],
+        opacityGroups: [],
+      };
+      continue;
+    }
+    const entries: readonly RawOpacityEntry[] = rule.opacities ?? [];
+    resolved[key] = {
+      enabled: true,
+      prefixes: rule.prefixes,
+      keys: rule.keys ?? "all",
+      opacities: entries
+        .filter((entry): entry is number => typeof entry === "number")
+        .sort((a, b) => a - b),
+      opacityGroups: entries.flatMap((entry, index) =>
+        typeof entry === "number"
+          ? []
+          : [
+              {
+                index,
+                steps: [...entry.steps].sort((a, b) => a - b),
+                prefixes: entry.prefixes,
+                keys: entry.keys,
+              },
+            ],
+      ),
+    };
   }
   return resolved;
 };

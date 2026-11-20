@@ -42,7 +42,8 @@ function child(value: unknown, key: string): JsonObject {
  * rule) with one entry per registry category, so each category only accepts
  * what `StyleGeneratorOptionsSchema` accepts for it: its own `prefixes`
  * (none for a bare-class category), `opacities` only for opacity-modifier
- * categories (distinct), and `keys: "aliased"` only where `$` aliases exist.
+ * categories (distinct; a group's `prefixes` limited like the rule's), and
+ * `keys: "aliased"` only where `$` aliases exist.
  * @param {JsonObject} coverage - The generated `coverage` node, rewritten in place
  */
 function refineCoverage(coverage: JsonObject): void {
@@ -68,7 +69,14 @@ function refineCoverage(coverage: JsonObject): void {
       };
     }
     if ("opacityModifier" in descriptor) {
-      child(ruleProperties, "opacities").uniqueItems = true;
+      const opacities = child(ruleProperties, "opacities");
+      opacities.uniqueItems = true;
+      const entry: unknown = child(opacities, "items").anyOf;
+      const group: unknown = Array.isArray(entry) ? entry[1] : undefined;
+      child(child(group, "properties"), "prefixes").items = {
+        type: "string",
+        enum: [...descriptor.classPrefixes],
+      };
     } else {
       delete ruleProperties.opacities;
     }

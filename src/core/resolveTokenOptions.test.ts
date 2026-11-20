@@ -43,6 +43,18 @@ describe("resolveTokenOptions", () => {
       resolveTokenOptions({ coverage: { colors: { prefixes: ["bg"] } } })
         .opacities,
     ).toEqual([]);
+    expect(
+      resolveTokenOptions({
+        coverage: {
+          colors: { opacities: [50, { steps: [32] }, 10, { steps: [5] }] },
+        },
+      }).opacities,
+    ).toEqual([10, 50]);
+    expect(
+      resolveTokenOptions({
+        coverage: { colors: { opacities: [{ steps: [32] }] } },
+      }).opacities,
+    ).toEqual([]);
   });
 });
 

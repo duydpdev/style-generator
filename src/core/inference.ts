@@ -147,11 +147,11 @@ export type BreakpointKeys<O> = O extends {
     ? string
     : DefaultBreakpointKeys;
 
-/** The opacity steps of one `coverage.colors` entry: literal when the entry carries a literal `opacities` list, `number` when it only declares the field optionally, `never` otherwise. */
+/** The plain opacity steps of one `coverage.colors` entry (groups are not typed): literal when the entry carries a literal `opacities` list, `number` when it only declares the field optionally, `never` otherwise. */
 type OpacityStepsOf<C> = C extends {
-  readonly opacities: readonly (infer N extends number)[];
+  readonly opacities: readonly (infer E)[];
 }
-  ? N
+  ? Extract<E, number>
   : C extends object
     ? "opacities" extends keyof C
       ? number

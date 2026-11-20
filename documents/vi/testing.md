@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: f12f6afef77a -->
+<!-- source: documents/testing.md sha256: c4be5c427f82 -->
 
 # Hướng dẫn kiểm thử
 
@@ -103,6 +103,7 @@ Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:al
 | `yarn check:browser-safe`                                                       | một subpath trình duyệt chạm tới Zod, một builtin của Node hoặc một runtime dependency                                 | `check`: Check browser-safe subpaths; `deploy.yml`             | `src/**`, config build                                                        |
 | `yarn check:publish-target`                                                     | registry publish khác npmjs.org, hoặc access khác `public`                                                             | `deploy.yml`: Verify publish target; `prepublish`              | `package.json`, `.yarnrc.yml`                                                 |
 | `yarn check:smoke`                                                              | thiếu file `dist`, một subpath không nạp được bằng `import` hoặc `require`, CLI hỏng                                   | `check`: Smoke-run built artifacts; `node-floor`; `deploy.yml` | `src/**`, config build                                                        |
+| `node scripts/starter-smoke.mjs`                                                | starter Vite + React không còn cài hoặc build được với package đã đóng gói                                             | `check`: Starter smoke                                         | `starters/**`, `src/**`, config build                                         |
 | `yarn check:next-build`                                                         | `styleGenNext` hỏng trong một lần `next build` thật (nạp config qua `require`, chọn phase, CSS được sinh)              | `node-floor`: Next build smoke                                 | `src/features/next/**`, `src/node/**`, config build                           |
 | `yarn check:types-pack`                                                         | một subpath có kiểu không resolve được cho người dùng ESM và CJS (attw, node16)                                        | `check`: Check types resolve for ESM and CJS; `deploy.yml`     | `src/**`, `package.json#exports`                                              |
 | `node scripts/vite-dev-smoke.mjs`                                               | một dev server `styleGenVite` không ghi hoặc không emit lại `theme.css`                                                | `check`: Vite dev-server smoke; `peer-matrix` (các nhánh vite) | `src/features/vite/**`                                                        |

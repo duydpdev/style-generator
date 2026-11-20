@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 50f4394ea48c -->
+<!-- source: README.md sha256: bee5656572a8 -->
 
 # @duydpdev/style-generator
 
@@ -131,6 +131,7 @@ Mọi vướng mắc và kết cục của từng cái: [Adopting 8.x in two rea
 - [`llms.txt`](https://duydpdev.github.io/style-generator/llms.txt): toàn bộ tài liệu thành một chỉ mục cho các công cụ AI
 - [Trang ví dụ](https://duydpdev.github.io/style-generator/examples/v4): ứng dụng harness đang chạy
 - [Playground](https://duydpdev.github.io/style-generator/playground): dán theme JSON, nhận CSS và token có kiểu, tất cả chạy trong trình duyệt
+- Bắt đầu một dự án: `npx degit duydpdev/style-generator/starters/vite-react my-app` (một ứng dụng Vite + React + Tailwind v4 nối qua `styleGenVite`)
 
 ## Ví dụ
 

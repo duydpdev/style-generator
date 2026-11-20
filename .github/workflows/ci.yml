@@ -171,6 +171,11 @@ jobs:
         # including `init` (stack detection) and `generate` in a fresh project.
         run: yarn check:smoke
 
+      - name: Starter smoke (packed tarball + npm, vite build)
+        # Installs starters/vite-react from the packed library with npm,
+        # builds it, type-checks it and runs `style-gen generate --check`.
+        run: node scripts/starter-smoke.mjs
+
       - name: Check types resolve for ESM and CJS (attw, node16 profile)
         # Packs the package and runs @arethetypeswrong/cli on the tarball;
         # needs dist/*.d.cts from `yarn build:all`.

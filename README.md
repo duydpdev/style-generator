@@ -129,6 +129,7 @@ Every snag and what became of it: [Adopting 8.x in two real apps](https://github
 - [`llms.txt`](https://duydpdev.github.io/style-generator/llms.txt): the docs as one index for AI tools
 - [The examples page](https://duydpdev.github.io/style-generator/examples/v4): the harness app, running
 - [The playground](https://duydpdev.github.io/style-generator/playground): paste a theme JSON, get the CSS and the typed tokens, all in the browser
+- Start a project: `npx degit duydpdev/style-generator/starters/vite-react my-app` (a Vite + React + Tailwind v4 app wired through `styleGenVite`)
 
 ## Examples
 

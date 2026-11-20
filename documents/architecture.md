@@ -198,7 +198,7 @@ Its only option is `root` (`StyleGenNextOptions`, default `process.cwd()`): ever
 
 ### CLI
 
-`style-gen` (built separately with `tsdown` → `dist/cli/index.mjs`, JSDoc stripped from the bundle via `outputOptions.comments.jsdoc = false`;
+`style-gen` (built separately with `tsdown` → `dist/cli/index.mjs`, JSDoc stripped from the bundle via `outputOptions.comments.jsdoc = false` and the `//#region` module markers via `inputOptions.experimental.attachDebugInfo = "none"`;
 gzip budget in `scripts/check-sizes.mjs`): `init`, `generate [--watch]`, `doctor`, `schema`, `tokens`, `budget`.
 `src/cli/run.ts` holds one **registry** of `CliCommand` (`name`, `description`, `usage`, `options`, `run`);
 `runCli(args, cwd)` parses in two passes (the global pass looks for `--help`/`--version` and the command name, the command pass parses that command's flags in strict mode,

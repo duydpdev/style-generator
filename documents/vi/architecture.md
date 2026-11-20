@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 6cf4d3e393ba -->
+<!-- source: documents/architecture.md sha256: 944b94e5851a -->
 
 # Kiến trúc
 
@@ -201,7 +201,7 @@ Tùy chọn duy nhất của nó là `root` (`StyleGenNextOptions`, mặc địn
 
 ### CLI
 
-`style-gen` (được build riêng bằng `tsdown` → `dist/cli/index.mjs`, JSDoc bị loại khỏi bundle qua `outputOptions.comments.jsdoc = false`;
+`style-gen` (được build riêng bằng `tsdown` → `dist/cli/index.mjs`, JSDoc bị loại khỏi bundle qua `outputOptions.comments.jsdoc = false` và các marker module `//#region` qua `inputOptions.experimental.attachDebugInfo = "none"`;
 ngân sách gzip trong `scripts/check-sizes.mjs`): `init`, `generate [--watch]`, `doctor`, `schema`, `tokens`, `budget`.
 `src/cli/run.ts` chứa một **registry** gồm các `CliCommand` (`name`, `description`, `usage`, `options`, `run`);
 `runCli(args, cwd)` phân tích cú pháp qua hai lượt (lượt toàn cục tìm `--help`/`--version` và tên lệnh, lượt của lệnh phân tích các flag của lệnh đó ở chế độ nghiêm ngặt,

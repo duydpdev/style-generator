@@ -3,14 +3,16 @@ import path from "node:path";
 
 import * as p from "@clack/prompts";
 
+import { readConfigFile } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { logger } from "../logger";
 import { getCssImport } from "../templates";
 
 import type { DetectedStack } from "./detectStack";
 import type { InitArgs } from "./init";
+import { readConfigLayout } from "./initConfig";
 import { AGENT_DIR, RULES_FILE, printRulesNote, writeFile } from "./initFiles";
-import { cssEntryFor, rulesOutput } from "./initNextSteps";
+import { cssEntryFor } from "./initNextSteps";
 
 /** The rules the build emits next to the CLI bundle (`dist/agent/`, see `scripts/emit-agent-rules.mjs`). */
 export const DEFAULT_RULES_SOURCE = new URL(
@@ -111,7 +113,8 @@ export async function applyAgentRules(
 /**
  * `init --rules-only`: refuse the flags that scaffold, else write or refresh
  * the rules and print the CSS lines that keep Tailwind out of `.claude/`; the
- * theme and config stay as they are.
+ * theme and config stay as they are. Without a config there is no generated
+ * CSS to point at, so it prints no CSS lines and says so.
  * @param {InitArgs} args The initial CLI arguments.
  * @param {DetectedStack} detected The detected stack.
  * @param {string} cwd The project root.
@@ -137,7 +140,14 @@ export async function runRulesOnly(
     return 1;
   }
   if (!(await writeAgentRules(cwd, rulesSource, isInteractive))) return 0;
-  const output = rulesOutput(detected, cwd);
+  const layout = readConfigLayout(readConfigFile(cwd));
+  if (layout === undefined) {
+    logger.info(
+      "No style-gen.config.json in this directory, so there are no CSS lines to print. Run `style-gen init` to scaffold the theme; it prints them.",
+    );
+    return 0;
+  }
+  const output = layout.output;
   const entry = cssEntryFor(detected, output, cwd);
   logger.info(
     `Keep these lines in ${entry} (or the CSS file in ${path.posix.dirname(entry)}/ that imports Tailwind):`,

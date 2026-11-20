@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: a0ed07351149 -->
+<!-- source: documents/reference/cli.md sha256: ae4d0fc911cf -->
 
 # CLI
 
@@ -214,17 +214,28 @@ Module có dạng `export const tokens = {…} as const` cùng `export type Toke
 
 ### `style-gen budget`
 
-Làm thất bại CI khi CSS sau khi build vượt quá ngân sách dung lượng gzip: lệnh tính tổng dung lượng gzip (mặc định của `node:zlib`) của một file `.css`, hoặc của mọi file `.css` trong một thư mục (duyệt đệ quy, ví dụ `.next/static/css` hoặc `dist/assets`).
+Làm thất bại CI khi CSS sau khi build vượt quá ngân sách dung lượng gzip: lệnh tính tổng dung lượng gzip (mặc định của `node:zlib`) của một file `.css`, hoặc của mọi file `.css` trong một thư mục (duyệt đệ quy, ví dụ `.next/static/css` hoặc `dist/assets`). Với `--coverage-cost` nó còn liệt kê những nhóm class của theme tốn dung lượng nhất.
 
 ```bash
-yarn style-gen budget .next/static/css --max-gzip 14925
+yarn style-gen budget .next/static/css --max-gzip 14925 --coverage-cost
 ```
 
-| Cờ                   | Kiểu     | Mặc định | Mô tả                                                                                  |
-| :------------------- | :------- | :------- | :------------------------------------------------------------------------------------- |
-| `--max-gzip <bytes>` | `number` | bắt buộc | Ngân sách tính bằng byte; lệnh thoát với mã 1 khi tổng dung lượng gzip lớn hơn mức này |
+| Cờ                   | Kiểu      | Mặc định | Mô tả                                                                                                          |
+| :------------------- | :-------- | :------- | :------------------------------------------------------------------------------------------------------------- |
+| `--max-gzip <bytes>` | `number`  | bắt buộc | Ngân sách tính bằng byte; lệnh thoát với mã 1 khi tổng dung lượng gzip lớn hơn mức này                         |
+| `--coverage-cost`    | `boolean` | tắt      | Sau dòng tóm tắt, liệt kê các nhóm class của theme theo dung lượng gzip, kèm thiết lập `coverage` loại bỏ nhóm |
+| `--theme <path>`     | `string`  | config   | Theme cho `--coverage-cost`; mặc định: theme trong config. Dùng mà không có `--coverage-cost` là lỗi cách dùng |
 
-Khi thành công nó in ra dòng tóm tắt `OK: …`; khi vượt ngân sách nó in `OVER BUDGET: …` và thoát với mã 1. Các mã thoát: `0` trong ngân sách, `1` vượt ngân sách, `2` lỗi cách dùng, target không đọc được hoặc không tìm thấy CSS.
+Khi thành công nó in ra dòng tóm tắt `OK: …`; khi vượt ngân sách nó in `OVER BUDGET: …` và thoát với mã 1. Các mã thoát: `0` trong ngân sách, `1` vượt ngân sách, `2` lỗi cách dùng, target không đọc được hoặc không tìm thấy CSS, hoặc (với `--coverage-cost`) config hay theme không đọc được.
+
+`--coverage-cost` in dòng tóm tắt trước và giữ nguyên, rồi tối đa mười dòng, lớn nhất trước:
+
+```text
+Coverage cost (upper bound):
+  colors/divide           1062 B gzip  (120 rules)  coverage.colors.prefixes: ["bg","text","border","ring","outline","placeholder"]
+```
+
+Mỗi dòng là một nhóm (`<category>/<class prefix>`): số byte gzip tiết kiệm được khi bỏ các rule của nó khỏi CSS, số rule, và thiết lập `coverage` khiến `@source inline` không sinh nhóm đó nữa. Con số là cận trên: các class mà source của bạn đang dùng vẫn nằm trong CSS sau khi cắt. Các dòng chi phí chỉ mang tính thông tin, không phải hợp đồng; chỉ dòng tóm tắt là hợp đồng.
 
 ### `style-gen --version`
 

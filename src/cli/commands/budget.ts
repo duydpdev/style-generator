@@ -3,6 +3,18 @@ import { join, resolve } from "node:path";
 import { gzipSync } from "node:zlib";
 
 import { errorMessage } from "../../node/errorMessage";
+import { resolveEmitTarget } from "../../node/resolveEmitTarget";
+import {
+  readAndPrepareTheme,
+  type PreparedTheme,
+} from "../../node/themeEmitter";
+import {
+  coverageCost,
+  groupId,
+  suggestCoverage,
+  themeClassGroups,
+} from "../coverageCost";
+import { loadCliConfig } from "../loadCliConfig";
 import { logger } from "../logger";
 
 export interface BudgetArgs {
@@ -10,11 +22,15 @@ export interface BudgetArgs {
   target?: string | undefined;
   /** Raw `--max-gzip` value, in bytes. */
   maxGzip?: string | undefined;
+  /** `--coverage-cost`: also list the theme class groups by gzip cost. */
+  coverageCost?: boolean | undefined;
+  /** `--theme` for `--coverage-cost`; default: the config's theme. */
+  theme?: string | undefined;
 }
 
 /** Usage line, shared by the command registry's `--help` and the usage error. */
 export const BUDGET_USAGE =
-  "style-gen budget <file.css|dir> --max-gzip <bytes>";
+  "style-gen budget <file.css|dir> --max-gzip <bytes> [--coverage-cost [--theme <path>]]";
 
 /**
  * The CSS files to measure: one file, or every `.css` file under a directory.
@@ -44,15 +60,55 @@ function collectCss(target: string, cwd: string): string[] {
 }
 
 /**
+ * Print the theme class groups of the measured CSS by marginal gzip cost,
+ * each with the `coverage` setting that removes it (an upper bound: the
+ * classes the app's source uses stay after the cut).
+ * @param {{ file: string; css: string }[]} files - The measured CSS files and their text
+ * @param {string | undefined} theme - `--theme`; default: the config's theme
+ * @param {string} cwd - Project root
+ * @returns {boolean} `false` after logging why the config or the theme cannot be read
+ */
+function logCoverageCost(
+  files: readonly { file: string; css: string }[],
+  theme: string | undefined,
+  cwd: string,
+): boolean {
+  const loaded = loadCliConfig(cwd, theme === undefined ? {} : { theme });
+  if (!loaded) return false;
+  let prepared: PreparedTheme;
+  try {
+    const target = resolveEmitTarget(cwd, loaded.config);
+    prepared = readAndPrepareTheme(target.themeFile, target.options);
+  } catch (error) {
+    logger.error(errorMessage(error));
+    return false;
+  }
+  if (!prepared.ok) {
+    logger.error(prepared.message);
+    return false;
+  }
+  const costs = coverageCost(files, themeClassGroups(prepared.parsed));
+  logger.log("Coverage cost (upper bound):");
+  if (costs.length === 0) logger.log("  No theme classes found.");
+  for (const { group, bytes, rules } of costs.slice(0, 10)) {
+    logger.log(
+      `  ${groupId(group).padEnd(20)} ${String(bytes).padStart(7)} B gzip  (${String(rules)} rules)  ${suggestCoverage(group, prepared.resolved)}`,
+    );
+  }
+  return true;
+}
+
+/**
  * Executes the `budget` CLI command: sums the gzip size (`node:zlib`
  * defaults) of every `.css` file under
  * the target and compares it with `--max-gzip`. Directories are walked
  * recursively (Next emits `.next/static/css/*.css`). The two summary lines
- * (`OK: …` / `OVER BUDGET: …`) are stable: consumer CI greps them.
+ * (`OK: …` / `OVER BUDGET: …`) are stable: consumer CI greps them. With
+ * `--coverage-cost`, informational cost lines follow the summary line.
  *
  * Exit codes: 0 = within budget, 1 = over budget, 2 = usage error, unreadable
- * target or no CSS found.
- * @param {BudgetArgs} args - Target path and raw `--max-gzip` value
+ * target, no CSS found, or (with `--coverage-cost`) an unreadable config or theme.
+ * @param {BudgetArgs} args - Target path, raw `--max-gzip` value and the `--coverage-cost` flags
  * @param {string} cwd - Directory the target is resolved against
  * @returns {number} The process exit code
  */
@@ -86,9 +142,12 @@ export function budgetCommand(
   }
 
   let total = 0;
+  const contents: { file: string; css: string }[] = [];
   for (const file of files) {
-    const gzip = gzipSync(readFileSync(file)).length;
+    const raw = readFileSync(file);
+    const gzip = gzipSync(raw).length;
     total += gzip;
+    if (args.coverageCost) contents.push({ file, css: raw.toString("utf8") });
     logger.log(`  ${String(gzip).padStart(8)} B gzip  ${file}`);
   }
 
@@ -99,5 +158,8 @@ export function budgetCommand(
   logger.log(
     `${within ? "OK" : "OVER BUDGET"}: ${String(total)} B gzip across ${String(files.length)} file(s), budget ${String(maxGzip)} B (${delta})`,
   );
+  if (args.coverageCost && !logCoverageCost(contents, args.theme, cwd)) {
+    return 2;
+  }
   return within ? 0 : 1;
 }

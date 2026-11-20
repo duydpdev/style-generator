@@ -212,17 +212,28 @@ The module is `export const tokens = {…} as const` plus `export type Tokens = 
 
 ### `style-gen budget`
 
-Fail CI when the built CSS grows past a gzip budget: it sums the gzip size (`node:zlib` defaults) of one `.css` file, or of every `.css` file under a directory (walked recursively, e.g. `.next/static/css` or `dist/assets`).
+Fail CI when the built CSS grows past a gzip budget: it sums the gzip size (`node:zlib` defaults) of one `.css` file, or of every `.css` file under a directory (walked recursively, e.g. `.next/static/css` or `dist/assets`). With `--coverage-cost` it also lists which theme class groups cost the most.
 
 ```bash
-yarn style-gen budget .next/static/css --max-gzip 14925
+yarn style-gen budget .next/static/css --max-gzip 14925 --coverage-cost
 ```
 
-| Flag                 | Type     | Default  | Description                                                                        |
-| :------------------- | :------- | :------- | :--------------------------------------------------------------------------------- |
-| `--max-gzip <bytes>` | `number` | required | Budget in bytes; the command exits 1 when the summed gzip size is larger than this |
+| Flag                 | Type      | Default  | Description                                                                                                   |
+| :------------------- | :-------- | :------- | :------------------------------------------------------------------------------------------------------------ |
+| `--max-gzip <bytes>` | `number`  | required | Budget in bytes; the command exits 1 when the summed gzip size is larger than this                            |
+| `--coverage-cost`    | `boolean` | off      | After the summary, list the theme class groups by gzip cost, each with the `coverage` setting that removes it |
+| `--theme <path>`     | `string`  | config   | Theme for `--coverage-cost`; default: the config's theme. Without `--coverage-cost` it is a usage error       |
 
-On success it prints an `OK: …` summary line; over budget it prints `OVER BUDGET: …` and exits 1. Exit codes: `0` within budget, `1` over budget, `2` usage error, unreadable target or no CSS found.
+On success it prints an `OK: …` summary line; over budget it prints `OVER BUDGET: …` and exits 1. Exit codes: `0` within budget, `1` over budget, `2` usage error, unreadable target or no CSS found, or (with `--coverage-cost`) a config or theme it cannot read.
+
+`--coverage-cost` prints the summary line first and unchanged, then up to ten lines, largest first:
+
+```text
+Coverage cost (upper bound):
+  colors/divide           1062 B gzip  (120 rules)  coverage.colors.prefixes: ["bg","text","border","ring","outline","placeholder"]
+```
+
+Each line is a group (`<category>/<class prefix>`): the gzip bytes saved when its rules are removed from the CSS, the rule count, and the `coverage` setting that stops `@source inline` from emitting it. The figure is an upper bound: classes your own source uses stay in the CSS after the cut. The cost lines are informational, not a contract; only the summary line is.
 
 ### `style-gen --version`
 

@@ -1,4 +1,4 @@
-<!-- source: documents/cookbook.md sha256: 60245b8402e7 -->
+<!-- source: documents/cookbook.md sha256: fd477c96d656 -->
 
 # Công thức
 
@@ -161,6 +161,8 @@ yarn workspace admin style-gen generate --check
 ```
 
 Next.js ghi CSS vào `.next/static/css`; hãy dùng thư mục đó thay cho `dist/assets`. Mã thoát chính là hợp đồng: `0` nằm trong ngân sách, `1` vượt ngân sách (`OVER BUDGET: …`), `2` cho lỗi sử dụng, đích không đọc được hoặc không tìm thấy file `.css` nào, nên một đường dẫn sai làm bước đó thất bại thay vì lặng lẽ pass. Hãy đặt `--max-gzip` cao hơn dung lượng hiện tại một chút (dòng `OK: …` in ra con số này) và hạ xuống khi một thao tác cắt tỉa như `coverage` làm file nhỏ đi. Xem [CLI → `style-gen budget`](./reference/cli.md#style-gen-budget).
+
+Khi bước này thất bại, thêm `--coverage-cost` để xem nhóm class nào của theme tốn dung lượng nhất (nó in sau dòng tóm tắt, kèm thiết lập `coverage` loại bỏ từng nhóm); áp dụng gợi ý đầu tiên trong config, build lại rồi chạy budget một lần nữa để đo mức tiết kiệm. Con số là cận trên: các class mà source của bạn dùng vẫn còn.
 
 ## Một recipe component từ các bảng
 

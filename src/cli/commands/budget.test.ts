@@ -134,4 +134,63 @@ describe("budgetCommand", () => {
       expect.stringMatching(/^Cannot read missing: /),
     );
   });
+
+  describe("--coverage-cost", () => {
+    const fixtureCss = `@layer utilities{${[
+      ".bg-primary{background-color:var(--sg-color-primary)}",
+      ".ring-primary{--tw-ring-color:var(--sg-color-primary)}",
+      ".ring-accent{--tw-ring-color:var(--sg-color-accent)}",
+    ].join("")}}`;
+
+    it("prints the summary first, then the cost lines with the setting that removes each group", () => {
+      writeFileSync(join(dir, "app.css"), fixtureCss);
+      writeFileSync(
+        join(dir, "theme.json"),
+        JSON.stringify({ colors: { primary: "#111", accent: "#222" } }),
+      );
+
+      const code = budgetCommand(
+        {
+          target: "app.css",
+          maxGzip: "100000",
+          coverageCost: true,
+          theme: "theme.json",
+        },
+        dir,
+      );
+
+      expect(code).toBe(0);
+      const lines = logged().split("\n");
+      const summary = lines.findIndex((line) => line.startsWith("OK: "));
+      const header = lines.findIndex((line) =>
+        line.startsWith("Coverage cost"),
+      );
+      expect(summary).toBeGreaterThan(-1);
+      expect(header).toBeGreaterThan(summary);
+      expect(lines.slice(header).join("\n")).toMatch(
+        /colors\/ring\s+\d+ B gzip {2}\(2 rules\) {2}coverage\.colors\.prefixes: \[[^\]]*\]/,
+      );
+      expect(lines.slice(header).join("\n")).toMatch(
+        /colors\/bg\s+\d+ B gzip {2}\(1 rules\)/,
+      );
+    });
+
+    it("keeps exit 1 over budget and returns 2 after the summary when the theme is missing", () => {
+      writeFileSync(join(dir, "app.css"), fixtureCss);
+
+      expect(
+        budgetCommand(
+          {
+            target: "app.css",
+            maxGzip: "1",
+            coverageCost: true,
+            theme: "missing.json",
+          },
+          dir,
+        ),
+      ).toBe(2);
+      expect(logged()).toContain("OVER BUDGET: ");
+      expect(errorSpy).toHaveBeenCalled();
+    });
+  });
 });

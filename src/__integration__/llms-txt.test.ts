@@ -84,6 +84,9 @@ describe(
       expect(lines[4]).toBe(
         "Site: https://duydpdev.github.io/style-generator/",
       );
+      expect(lines[5]).toBe(
+        "Playground: https://duydpdev.github.io/style-generator/playground",
+      );
       expect(lines.filter((line) => line.startsWith("## "))).toEqual([
         "## Start",
         "## Reference",

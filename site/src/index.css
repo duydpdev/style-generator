@@ -16,5 +16,6 @@
 @import "./styles/terminal.css";
 @import "./styles/docs.css";
 @import "./styles/examples.css";
+@import "./styles/playground.css";
 
 @source "../../examples/design-system/src/recipes/factories";

@@ -10,6 +10,11 @@ const DocsPage = lazy(() =>
 const ExamplesPage = lazy(() =>
   import("./pages/examples-page").then((m) => ({ default: m.ExamplesPage })),
 );
+const PlaygroundPage = lazy(() =>
+  import("./pages/playground-page").then((m) => ({
+    default: m.PlaygroundPage,
+  })),
+);
 const NotFound = lazy(() =>
   import("./pages/not-found").then((m) => ({ default: m.NotFound })),
 );
@@ -41,6 +46,7 @@ export function App() {
           <Route path="/vi/docs/:slug" element={<DocsPage />} />
           <Route path="/examples" element={<ExamplesPage />} />
           <Route path="/examples/:variant" element={<ExamplesPage />} />
+          <Route path="/playground" element={<PlaygroundPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

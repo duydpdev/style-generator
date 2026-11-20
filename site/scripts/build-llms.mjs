@@ -69,6 +69,7 @@ const lines = [
   `> ${description}`,
   "",
   `Site: ${SITE_URL}`,
+  `Playground: ${SITE_URL}playground`,
 ];
 for (const [group, entries] of groups) {
   lines.push("", `## ${group}`, "");

@@ -415,6 +415,7 @@ The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) th
   titled with the entry's `vi.title`. The docs chrome strings come from `UI_TEXT` in `site/src/lib/locale.ts`, the breadcrumb links each page to its twin in the other language,
   and `<html lang>` follows the page. `yarn check:docs-i18n` keeps every twin in step with its English file.
 - `/examples/v4` — an iframe embedding `examples/harness/dist`.
+- `/playground` — a lazy page that runs `generate()` in the browser on a theme JSON (and an options JSON) and prints the CSS, the typed tokens or the validation error.
 
 ### Examples integration
 

@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 8e4b53e05efe -->
+<!-- source: documents/architecture.md sha256: 7ff20c98cc74 -->
 
 # Kiến trúc
 
@@ -421,6 +421,7 @@ Danh sách export theo từng subpath, kèm chữ ký và ví dụ, nằm trong 
   với tiêu đề lấy từ `vi.title` của mục. Các chuỗi chrome của docs lấy từ `UI_TEXT` trong `site/src/lib/locale.ts`,
   breadcrumb liên kết mỗi trang tới twin của nó ở ngôn ngữ còn lại, và `<html lang>` đi theo trang. `yarn check:docs-i18n` giữ mọi twin đồng bộ với file tiếng Anh của nó.
 - `/examples/v4` — một iframe nhúng `examples/harness/dist`.
+- `/playground` — một trang lazy chạy `generate()` ngay trong trình duyệt trên theme JSON (và options JSON) rồi in ra CSS, token có kiểu hoặc lỗi validate.
 
 ### Tích hợp ví dụ
 

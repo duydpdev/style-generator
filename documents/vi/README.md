@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 976e38afe77c -->
+<!-- source: README.md sha256: 50f4394ea48c -->
 
 # @duydpdev/style-generator
 
@@ -130,6 +130,7 @@ Mọi vướng mắc và kết cục của từng cái: [Adopting 8.x in two rea
 - [Trang web](https://duydpdev.github.io/style-generator/): tài liệu đã được render
 - [`llms.txt`](https://duydpdev.github.io/style-generator/llms.txt): toàn bộ tài liệu thành một chỉ mục cho các công cụ AI
 - [Trang ví dụ](https://duydpdev.github.io/style-generator/examples/v4): ứng dụng harness đang chạy
+- [Playground](https://duydpdev.github.io/style-generator/playground): dán theme JSON, nhận CSS và token có kiểu, tất cả chạy trong trình duyệt
 
 ## Ví dụ
 

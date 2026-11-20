@@ -45,6 +45,7 @@ yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn pret
 yarn tsc --noEmit   # Type check
 yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
+node scripts/starter-smoke.mjs   # after build:all, needs network: packed tarball + npm in a copy of starters/vite-react, vite build + tsc (CI)
 yarn check:tokens   # after build:all: `generate --check` in each app that commits a theme.tokens.ts (plain-react, plain-nuxt, design-system, site) — fails when one is stale (CI)
 yarn check:next-build   # after build:all, needs network: packed tarball + next@16.4.5 in a scratch project, init + `next build` (Turbopack) through styleGenNext (CI node-floor)
 yarn check:ts-peer   # after build:all: tarball + npm + TypeScript 5.0/5.2/5.9/6/7 in a scratch project, tsc on every subpath (CI ts-peer job; needs network)
@@ -269,6 +270,7 @@ it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`
 - `yarn check:types-pack` (`scripts/check-types-pack.mjs`; CI after `build:all`, and `deploy.yml` before publish) packs the package and runs
   `@arethetypeswrong/cli --profile node16` on the tarball, so every subpath must resolve to `.d.ts` under `import` and `.d.cts` under `require`.
 - The package is public on npmjs.org: consumers need no token or scope config. 7.2.0 is the first npm release and 8.0.0 the first npm major; versions up to 7.1.1 exist only on GitHub Packages (npm holds 1.7–3.0).
+- The site is deployed by `deploy-site.yml` (GitHub Pages, base `/style-generator/`, `404.html` copy of `index.html` as the SPA fallback, `llms.txt` built from `site/src/lib/docs-meta.json` by `site/scripts/build-llms.mjs`); its deploy job runs only from `main` and holds the only `pages: write` / `id-token: write` permissions of that workflow.
 
 ## Project-Specific Workflow Rules
 

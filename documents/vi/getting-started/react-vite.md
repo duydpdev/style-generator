@@ -1,8 +1,10 @@
-<!-- source: documents/getting-started/react-vite.md sha256: dca97f43a8bc -->
+<!-- source: documents/getting-started/react-vite.md sha256: 5e8ad63650f2 -->
 
 # Bắt đầu: React + Vite
 
 Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Vite + React và render một `Button` có theme, dựng từ một component chép dùng được. Mọi khối mã bên dưới, trừ `src/App.tsx` ở cuối, đều được chép từ [`examples/plain-react`](../../../examples/plain-react/README.md), thư mục này được build và kiểm tra kiểu trong CI; các section landing page của ví dụ (`Hero`, `Features`, ...) không thuộc hướng dẫn này.
+
+Để bỏ qua phần thiết lập, hãy chép starter: `npx degit duydpdev/style-generator/starters/vite-react my-app`.
 
 ## Cài đặt
 

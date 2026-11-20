@@ -341,7 +341,7 @@ function tsdocErrors(checker, subpaths) {
  * Moves line 1 of a twin (`<!-- source: … sha256: … -->`) to the English
  * page's new hash, but only when it recorded the previous hash, i.e. the
  * twin was in step with the English page before this run. A twin that was
- * already stale keeps its hash, so `check:docs-i18n` still asks for the
+ * already stale keeps its hash, so `scripts/check-docs-i18n.mjs` still asks for the
  * translation update.
  * @param {string} twin - Twin text
  * @param {string} enPath - POSIX repo-relative English page

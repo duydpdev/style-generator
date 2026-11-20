@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: c4be5c427f82 -->
+<!-- source: documents/testing.md sha256: b048494b778a -->
 
 # Hướng dẫn kiểm thử
 
@@ -18,10 +18,10 @@ Các bước kiểm tra có hai lớp:
      `examples/plain-nuxt/app/**`) → lint → `prettier:check` → `tsc` → kiểm tra cú pháp (`node --check`) và kiểm tra kiểu (`yarn typecheck:scripts`) cho `scripts/*.mjs` và
      `site/scripts/*.mjs` → build site (`yarn workspace site build`) → `yarn workspace site check:links` (liên kết tương đối,
      liên kết tuyệt đối `https://github.com/duydpdev/style-generator/blob/main/…` như README.md viết,
-     và các `#anchor` trong markdown mà site render) → `yarn check:docs-embed` (mã trong hướng dẫn bằng với các vùng ví dụ mà nó nhúng) → `yarn check:docs-i18n` (mỗi tài liệu được
-     render có một twin `documents/vi/` với hash nguồn hiện tại và cùng các heading, marker và khối mã) → `yarn check:doc-snippets` (mọi khối `ts`/`tsx` trong tài liệu đều qua kiểm
-     tra kiểu với `dist/*.d.ts`) → `yarn check:doc-exports` (mỗi export có một heading tham chiếu, một khối signature khớp và một TSDoc không rỗng,
-     xem [lớp 9](#9-docs-embed-snippet-export)) → `yarn check:doc-reference` (mọi cờ trong `style-gen <command> --help` của bản build và mọi khóa của `style-gen.config.json` đều được ghi lại,
+     và các `#anchor` trong markdown mà site render) → `node scripts/docs-embed.mjs --check` (mã trong hướng dẫn bằng với các vùng ví dụ mà nó nhúng) → `node scripts/check-docs-i18n.mjs` (mỗi tài liệu được
+     render có một twin `documents/vi/` với hash nguồn hiện tại và cùng các heading, marker và khối mã) → `node scripts/check-doc-snippets.mjs` (mọi khối `ts`/`tsx` trong tài liệu đều qua kiểm
+     tra kiểu với `dist/*.d.ts`) → `node scripts/check-doc-exports.mjs` (mỗi export có một heading tham chiếu, một khối signature khớp và một TSDoc không rỗng,
+     xem [lớp 9](#9-docs-embed-snippet-export)) → `node scripts/check-doc-reference.mjs` (mọi cờ trong `style-gen <command> --help` của bản build và mọi khóa của `style-gen.config.json` đều được ghi lại,
      không trang được render nào kể lịch sử phiên bản) → kiểm tra kiểu cho mọi workspace `*-example` và cho `site` (một lệnh `yarn workspaces foreach`;
      `tsconfig.json` gốc không bao gồm `site/`, nên đây là nơi duy nhất một kiểu prop sai trong `site/src` bị bắt) — nó cũng biên dịch các file kiểm tra kiểu của component mẫu,
      xem [lớp 8](#8-kiểm-tra-các-component-mẫu) → `yarn workspace design-system-example test` (DX test,
@@ -109,11 +109,12 @@ Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:al
 | `node scripts/vite-dev-smoke.mjs`                                               | một dev server `styleGenVite` không ghi hoặc không emit lại `theme.css`                                                | `check`: Vite dev-server smoke; `peer-matrix` (các nhánh vite) | `src/features/vite/**`                                                        |
 | `yarn site:build`                                                               | build site hoặc harness thất bại (site render `documents/*.md`)                                                        | `check`: Build site; `visual.yml`                              | `site`, `documents/**`, `examples/**`                                         |
 | `yarn workspace site check:links`                                               | link tương đối và `#anchor` hỏng trong các doc được render và bản twin của chúng                                       | `check`: Check doc links                                       | `documents/**`, `README.md`                                                   |
-| `yarn check:docs-embed`                                                         | một block code nhúng khác vùng nguồn của nó                                                                            | `check`: Check embedded doc code                               | `documents/**`, `examples/**`                                                 |
-| `yarn check:docs-i18n`                                                          | một bản twin tiếng Việt bị thiếu, cũ hoặc khác cấu trúc                                                                | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                                                   |
-| `yarn check:doc-snippets`                                                       | một block `ts`/`tsx` trong doc không qua được kiểm tra kiểu, hoặc số block opt-out vượt 10%                            | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                                                   |
-| `yarn check:doc-exports`                                                        | một export công khai thiếu heading tham chiếu, signature block hoặc TSDoc                                              | `check`: Check reference coverage of exports                   | export trong `src/**`, `documents/reference/**`                               |
-| `yarn check:doc-reference`                                                      | một cờ CLI, một khóa config hoặc một cụm lịch sử phiên bản mà các trang tham chiếu ghi sai                             | `check`: Check CLI and config reference                        | `src/cli/**`, `documents/reference/**`, các trang được render                 |
+| `node scripts/docs-embed.mjs --check`                                           | một block code nhúng khác vùng nguồn của nó                                                                            | `check`: Check embedded doc code                               | `documents/**`, `examples/**`                                                 |
+| `node scripts/check-docs-i18n.mjs`                                              | một bản twin tiếng Việt bị thiếu, cũ hoặc khác cấu trúc                                                                | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                                                   |
+| `node scripts/check-doc-snippets.mjs`                                           | một block `ts`/`tsx` trong doc không qua được kiểm tra kiểu, hoặc số block opt-out vượt 10%                            | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                                                   |
+| `node scripts/check-doc-exports.mjs`                                            | một export công khai thiếu heading tham chiếu, signature block hoặc TSDoc                                              | `check`: Check reference coverage of exports                   | export trong `src/**`, `documents/reference/**`                               |
+| `node scripts/check-doc-reference.mjs`                                          | một cờ CLI, một khóa config hoặc một cụm lịch sử phiên bản mà các trang tham chiếu ghi sai                             | `check`: Check CLI and config reference                        | `src/cli/**`, `documents/reference/**`, các trang được render                 |
+| `yarn check:docs`                                                               | một trong năm kiểm tra doc ở trên, chạy cùng nhau cục bộ                                                               | `check` chạy chúng thành năm bước riêng                        | `documents/**`, `README.md`, `src/cli/**`                                     |
 | `yarn check:plain-ui`                                                           | một thư mục component plain vi phạm quy tắc layout hoặc import                                                         | `check`: Check plain UI folders                                | `examples/plain-*`                                                            |
 | `yarn workspaces foreach -A --include '*-example' --include site run typecheck` | lỗi kiểu trong các app ví dụ và site so với thư viện đã build                                                          | `check`: Typecheck examples                                    | `examples/**`, `site/**`, kiểu trong `src/**`                                 |
 | `yarn workspace site typecheck`                                                 | lỗi kiểu trong `site/**` (cũng được dòng trên bao phủ)                                                                 | `check`: Typecheck examples                                    | `site/**`                                                                     |
@@ -129,7 +130,7 @@ Mọi script `check:*` đều chạy trong CI hoặc trong `yarn verify`: không
 
 ```bash
 yarn test                                                   # all *.test.ts
-yarn test:watch                                             # watch mode
+yarn vitest                                                 # watch mode
 yarn test:coverage                                          # v8 coverage; fails below coverage.thresholds (vitest.config.ts)
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # a single file
 ```
@@ -260,7 +261,7 @@ trước khi build các ứng dụng ví dụ. Nó khóa chặt trải nghiệm 
 ```bash
 yarn site:build              # the suite screenshots the BUILT site (vite preview, port 4173)
 yarn test:visual             # compare against the committed baselines
-yarn test:visual:update      # rewrite changed/missing baselines (--update-snapshots=changed)
+yarn test:visual --update-snapshots=changed   # rewrite changed/missing baselines
 ```
 
 `playwright.site.config.ts` (tách khỏi `playwright.config.ts` để `yarn test:e2e` không cần server) chạy `e2e-site/site.spec.ts`: 3 route (`/`, `/docs/architecture`,
@@ -293,7 +294,7 @@ mục với tên `<path>` trong đó mỗi `/` được thay bằng `_` (ví d�
 và xóa các file fixture không còn được tham chiếu.
 
 Baseline chỉ có cho Linux (`*-chromium-linux.png`; `.gitignore` loại trừ các file `-darwin`/`-win32`) vì cách render font khác nhau giữa macOS và Linux.
-Chạy cục bộ trên macOS chỉ để gỡ lỗi (tạo các baseline darwin tạm bằng `yarn test:visual:update`). Để cập nhật các baseline sau một thay đổi UI có chủ đích:
+Chạy cục bộ trên macOS chỉ để gỡ lỗi (tạo các baseline darwin tạm bằng `yarn test:visual --update-snapshots=changed`). Để cập nhật các baseline sau một thay đổi UI có chủ đích:
 chạy phần so sánh trước (một PR không phải draft), tải artifact `site-visual-report` để có danh sách chính xác các ảnh đã đổi, để danh sách đó được duyệt,
 và chỉ khi đó mới thêm nhãn `visual-update` (`gh pr edit <N> --add-label visual-update`). Tải artifact `site-visual-baselines` của lần chạy `Site visual update` vào một thư mục
 tạm, kiểm tra `headSha` của lần chạy so với `HEAD`, chép các file vào `e2e-site/__screenshots__/`, commit chúng và gỡ nhãn.
@@ -321,11 +322,12 @@ Lint cũng cần `yarn workspace plain-nuxt-example prepare:nuxt`.
 
 ```bash
 yarn build:all              # snippets and exports read dist/*.d.ts
-yarn check:docs-embed       # a block with <!-- embed: path#region --> must equal that region of the real example file
-yarn check:docs-i18n        # every rendered doc has a documents/vi/ twin: current source hash, same headings, markers and code blocks
-yarn check:doc-snippets     # every ts/tsx block in README.md and documents/ (not plans, brainstorm, migration) must type-check
-yarn check:doc-exports      # every export of every subpath needs a heading in documents/reference/<subpath>.md, a signature block matching dist/*.d.ts and a non-empty TSDoc (fix with yarn docs:signatures)
-yarn check:doc-reference     # every flag of the built CLI's --help in its documents/reference/cli.md section, every config-schema key in options.md, no version history on rendered pages
+yarn check:docs                   # all five, in this order
+node scripts/docs-embed.mjs --check        # a block with <!-- embed: path#region --> must equal that region of the real example file
+node scripts/check-docs-i18n.mjs           # every rendered doc has a documents/vi/ twin: current source hash, same headings, markers and code blocks
+node scripts/check-doc-snippets.mjs        # every ts/tsx block in README.md and documents/ (not plans, brainstorm, migration) must type-check
+node scripts/check-doc-exports.mjs         # every export of every subpath needs a heading in documents/reference/<subpath>.md, a signature block matching dist/*.d.ts and a non-empty TSDoc (fix with yarn docs:signatures)
+node scripts/check-doc-reference.mjs       # every flag of the built CLI's --help in its documents/reference/cli.md section, every config-schema key in options.md, no version history on rendered pages
 ```
 
 Vì sao: các hướng dẫn không bao giờ chứa mã chép tay (nên chúng không thể lệch khỏi ví dụ đang chạy), và một ví dụ trong tài liệu không thể lặng lẽ hỏng khi API đổi.
@@ -334,7 +336,7 @@ Cách bỏ qua: một dòng `<!-- snippet: no-check <reason> -->` ngay trước 
 `site/src/lib/example-files.ts` loại các dòng này khỏi trang ví dụ. Test: `src/__integration__/doc-scripts.test.ts`.
 
 Các twin tiếng Việt (`documents/vi/`) đi qua cùng các bước kiểm tra embed và snippet (trừ các twin của hướng dẫn nâng cấp).
-`check:docs-i18n` so sánh mỗi twin với file tiếng Anh của nó; quy trình làm việc và bảng thuật ngữ nằm trong `documents/README.md`.
+`scripts/check-docs-i18n.mjs` so sánh mỗi twin với file tiếng Anh của nó; quy trình làm việc và bảng thuật ngữ nằm trong `documents/README.md`.
 Test: `src/__integration__/docs-i18n.test.ts` (cũng gồm các quy tắc twin của `site/scripts/check-doc-links.mjs`).
 
 ### 10. Các Storybook, gate đối sánh, copy-out smoke

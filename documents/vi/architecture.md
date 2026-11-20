@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 7ff20c98cc74 -->
+<!-- source: documents/architecture.md sha256: 6cf4d3e393ba -->
 
 # Kiến trúc
 
@@ -377,7 +377,7 @@ giá trị luôn là `var(--sg-sp-<key>)`). Chỉ các breakpoint trong `options
 ## API export
 
 Danh sách export theo từng subpath, kèm chữ ký và ví dụ, nằm trong [`reference/`](./reference/core.md#toàn-bộ-export-theo-subpath);
-`yarn check:doc-exports` đảm bảo mọi export đều có một heading ở đó. Các thay đổi phá vỡ giữa các bản major nằm trong các hướng dẫn dưới `migration/` (bản mới nhất là [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
+`node scripts/check-doc-exports.mjs` đảm bảo mọi export đều có một heading ở đó. Các thay đổi phá vỡ giữa các bản major nằm trong các hướng dẫn dưới `migration/` (bản mới nhất là [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
 
 ---
 
@@ -419,7 +419,7 @@ Danh sách export theo từng subpath, kèm chữ ký và ví dụ, nằm trong 
   (`site/src/lib/strip-html-comments.ts`).
 - `/vi/docs`, `/vi/docs/:slug` — bản twin tiếng Việt của cùng trang đó (`documents/vi/<path>`; `README.md` của repo → `documents/vi/README.md`) dưới cùng slug,
   với tiêu đề lấy từ `vi.title` của mục. Các chuỗi chrome của docs lấy từ `UI_TEXT` trong `site/src/lib/locale.ts`,
-  breadcrumb liên kết mỗi trang tới twin của nó ở ngôn ngữ còn lại, và `<html lang>` đi theo trang. `yarn check:docs-i18n` giữ mọi twin đồng bộ với file tiếng Anh của nó.
+  breadcrumb liên kết mỗi trang tới twin của nó ở ngôn ngữ còn lại, và `<html lang>` đi theo trang. `node scripts/check-docs-i18n.mjs` giữ mọi twin đồng bộ với file tiếng Anh của nó.
 - `/examples/v4` — một iframe nhúng `examples/harness/dist`.
 - `/playground` — một trang lazy chạy `generate()` ngay trong trình duyệt trên theme JSON (và options JSON) rồi in ra CSS, token có kiểu hoặc lỗi validate.
 

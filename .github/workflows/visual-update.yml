@@ -48,7 +48,7 @@ jobs:
         run: yarn playwright install --with-deps chromium
 
       - name: Rewrite changed or missing baselines
-        run: yarn test:visual:update
+        run: yarn test:visual --update-snapshots=changed
 
       - name: Upload baselines
         uses: actions/upload-artifact@v7

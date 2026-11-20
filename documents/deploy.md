@@ -294,8 +294,6 @@ This rule only applies to the root library: `design-system-example` is a separat
 
 ### Script aliases (root)
 
-| Script              | Description                                         |
-| ------------------- | --------------------------------------------------- |
-| `yarn site:dev`     | Vite dev server for the site (port 5174)            |
-| `yarn site:build`   | Library build → site build → output in `site/dist/` |
-| `yarn site:preview` | Vite preview server that reads `site/dist/`         |
+| Script            | Description                                         |
+| ----------------- | --------------------------------------------------- |
+| `yarn site:build` | Library build → site build → output in `site/dist/` |

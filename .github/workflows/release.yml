@@ -81,7 +81,7 @@ jobs:
       - name: Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.CI_WORKER_REPOSITORY_TOKEN }}
-        run: yarn release
+        run: yarn semantic-release
 
       # This run's tag is a tag on HEAD that did not exist before
       # semantic-release ran and matches this branch's channel. semantic-release

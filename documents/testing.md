@@ -16,10 +16,10 @@ The checks have two layers:
      needs for `examples/plain-nuxt/app/**`) → lint → `prettier:check` → `tsc` → syntax check (`node --check`) and type check (`yarn typecheck:scripts`) of `scripts/*.mjs` and
      `site/scripts/*.mjs` → site build (`yarn workspace site build`) → `yarn workspace site check:links` (relative links,
      absolute `https://github.com/duydpdev/style-generator/blob/main/…` links as README.md writes them,
-     and `#anchor`s in the markdown that the site renders) → `yarn check:docs-embed` (tutorial code equals the example regions it embeds) → `yarn check:docs-i18n` (every rendered
-     doc has a `documents/vi/` twin with the current source hash and the same headings, markers and code blocks) → `yarn check:doc-snippets` (every `ts`/`tsx` block in the docs
-     type-checks against `dist/*.d.ts`) → `yarn check:doc-exports` (every export has a reference heading, a matching signature block and a non-empty TSDoc,
-     see [layer 9](#9-docs-embed-snippet-export)) → `yarn check:doc-reference` (every flag of a built `style-gen <command> --help` and every `style-gen.config.json` key is documented,
+     and `#anchor`s in the markdown that the site renders) → `node scripts/docs-embed.mjs --check` (tutorial code equals the example regions it embeds) → `node scripts/check-docs-i18n.mjs` (every rendered
+     doc has a `documents/vi/` twin with the current source hash and the same headings, markers and code blocks) → `node scripts/check-doc-snippets.mjs` (every `ts`/`tsx` block in the docs
+     type-checks against `dist/*.d.ts`) → `node scripts/check-doc-exports.mjs` (every export has a reference heading, a matching signature block and a non-empty TSDoc,
+     see [layer 9](#9-docs-embed-snippet-export)) → `node scripts/check-doc-reference.mjs` (every flag of a built `style-gen <command> --help` and every `style-gen.config.json` key is documented,
      no rendered page tells version history) → typecheck of every `*-example` workspace and of `site` (one `yarn workspaces foreach` call;
      the root `tsconfig.json` does not include `site/`, so this is the only place a wrong prop type in `site/src` fails) — it also compiles the sample components' type-check files,
      see [layer 8](#8-checks-of-the-sample-components) → `yarn workspace design-system-example test` (DX test,
@@ -107,11 +107,12 @@ Every gate once. `yarn verify` = base gate + `src/**` gate (`build:all`, `check:
 | `node scripts/vite-dev-smoke.mjs`                                               | a `styleGenVite` dev server that does not write or re-emit `theme.css`                                                   | `check`: Vite dev-server smoke; `peer-matrix` (vite legs)      | `src/features/vite/**`                                                        |
 | `yarn site:build`                                                               | a site or harness build failure (the site renders `documents/*.md`)                                                      | `check`: Build site; `visual.yml`                              | `site`, `documents/**`, `examples/**`                                         |
 | `yarn workspace site check:links`                                               | broken relative links and `#anchors` in the rendered docs and their twins                                                | `check`: Check doc links                                       | `documents/**`, `README.md`                                                   |
-| `yarn check:docs-embed`                                                         | an embedded code block that differs from its source region                                                               | `check`: Check embedded doc code                               | `documents/**`, `examples/**`                                                 |
-| `yarn check:docs-i18n`                                                          | a Vietnamese twin that is missing, stale or structurally different                                                       | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                                                   |
-| `yarn check:doc-snippets`                                                       | a `ts`/`tsx` doc block that does not type-check, or opt-outs above 10%                                                   | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                                                   |
-| `yarn check:doc-exports`                                                        | a public export without a reference heading, signature block or TSDoc                                                    | `check`: Check reference coverage of exports                   | `src/**` exports, `documents/reference/**`                                    |
-| `yarn check:doc-reference`                                                      | a CLI flag, a config key or a version-history phrase that the reference pages get wrong                                  | `check`: Check CLI and config reference                        | `src/cli/**`, `documents/reference/**`, rendered pages                        |
+| `node scripts/docs-embed.mjs --check`                                           | an embedded code block that differs from its source region                                                               | `check`: Check embedded doc code                               | `documents/**`, `examples/**`                                                 |
+| `node scripts/check-docs-i18n.mjs`                                              | a Vietnamese twin that is missing, stale or structurally different                                                       | `check`: Check the Vietnamese docs mirror                      | `documents/**`, `README.md`                                                   |
+| `node scripts/check-doc-snippets.mjs`                                           | a `ts`/`tsx` doc block that does not type-check, or opt-outs above 10%                                                   | `check`: Type-check doc snippets                               | `documents/**`, `README.md`                                                   |
+| `node scripts/check-doc-exports.mjs`                                            | a public export without a reference heading, signature block or TSDoc                                                    | `check`: Check reference coverage of exports                   | `src/**` exports, `documents/reference/**`                                    |
+| `node scripts/check-doc-reference.mjs`                                          | a CLI flag, a config key or a version-history phrase that the reference pages get wrong                                  | `check`: Check CLI and config reference                        | `src/cli/**`, `documents/reference/**`, rendered pages                        |
+| `yarn check:docs`                                                               | any of the five doc checks above, run together locally                                                                   | `check` runs them as five separate steps                       | `documents/**`, `README.md`, `src/cli/**`                                     |
 | `yarn check:plain-ui`                                                           | a plain-example component folder that breaks the layout or import rules                                                  | `check`: Check plain UI folders                                | `examples/plain-*`                                                            |
 | `yarn workspaces foreach -A --include '*-example' --include site run typecheck` | type errors in the example apps and the site against the built library                                                   | `check`: Typecheck examples                                    | `examples/**`, `site/**`, `src/**` types                                      |
 | `yarn workspace site typecheck`                                                 | type errors in `site/**` (also covered by the row above)                                                                 | `check`: Typecheck examples                                    | `site/**`                                                                     |
@@ -127,7 +128,7 @@ Every `check:*` script runs in CI or in `yarn verify`: no gate depends on a huma
 
 ```bash
 yarn test                                                   # all *.test.ts
-yarn test:watch                                             # watch mode
+yarn vitest                                                 # watch mode
 yarn test:coverage                                          # v8 coverage; fails below coverage.thresholds (vitest.config.ts)
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # a single file
 ```
@@ -258,7 +259,7 @@ before building the example apps. It locks down the library user's end-to-end ex
 ```bash
 yarn site:build              # the suite screenshots the BUILT site (vite preview, port 4173)
 yarn test:visual             # compare against the committed baselines
-yarn test:visual:update      # rewrite changed/missing baselines (--update-snapshots=changed)
+yarn test:visual --update-snapshots=changed   # rewrite changed/missing baselines
 ```
 
 `playwright.site.config.ts` (separate from `playwright.config.ts` so that `yarn test:e2e` needs no server) runs `e2e-site/site.spec.ts`: 3 routes (`/`, `/docs/architecture`,
@@ -291,7 +292,7 @@ then download every referenced `https://fonts.gstatic.com/<path>` into the same 
 `s_geist_v5_x.woff2`), which is the name the spec looks up, and delete fixture files that are no longer referenced.
 
 Baselines exist only for Linux (`*-chromium-linux.png`; `.gitignore` excludes the `-darwin`/`-win32` ones) because font rendering differs between macOS and Linux.
-Running locally on macOS is only for debugging (create temporary darwin baselines with `yarn test:visual:update`).
+Running locally on macOS is only for debugging (create temporary darwin baselines with `yarn test:visual --update-snapshots=changed`).
 To update the baselines after an intentional UI change: run the compare first (a non-draft PR), download the `site-visual-report` artifact to get the exact list of changed images,
 get that list approved, and only then add the `visual-update` label (`gh pr edit <N> --add-label visual-update`).
 Download the `site-visual-baselines` artifact of the `Site visual update` run into a temporary directory, check the run's `headSha` against `HEAD`,
@@ -320,11 +321,12 @@ Lint needs `yarn workspace plain-nuxt-example prepare:nuxt` as well.
 
 ```bash
 yarn build:all              # snippets and exports read dist/*.d.ts
-yarn check:docs-embed       # a block with <!-- embed: path#region --> must equal that region of the real example file
-yarn check:docs-i18n        # every rendered doc has a documents/vi/ twin: current source hash, same headings, markers and code blocks
-yarn check:doc-snippets     # every ts/tsx block in README.md and documents/ (not plans, brainstorm, migration) must type-check
-yarn check:doc-exports      # every export of every subpath needs a heading in documents/reference/<subpath>.md, a signature block matching dist/*.d.ts and a non-empty TSDoc (fix with yarn docs:signatures)
-yarn check:doc-reference     # every flag of the built CLI's --help in its documents/reference/cli.md section, every config-schema key in options.md, no version history on rendered pages
+yarn check:docs                   # all five, in this order
+node scripts/docs-embed.mjs --check        # a block with <!-- embed: path#region --> must equal that region of the real example file
+node scripts/check-docs-i18n.mjs           # every rendered doc has a documents/vi/ twin: current source hash, same headings, markers and code blocks
+node scripts/check-doc-snippets.mjs        # every ts/tsx block in README.md and documents/ (not plans, brainstorm, migration) must type-check
+node scripts/check-doc-exports.mjs         # every export of every subpath needs a heading in documents/reference/<subpath>.md, a signature block matching dist/*.d.ts and a non-empty TSDoc (fix with yarn docs:signatures)
+node scripts/check-doc-reference.mjs       # every flag of the built CLI's --help in its documents/reference/cli.md section, every config-schema key in options.md, no version history on rendered pages
 ```
 
 Why: tutorials never hold hand-copied code (so they cannot drift from the example that runs), and an example in the docs cannot silently break when the API changes.
@@ -333,7 +335,7 @@ Mark a region in the source file with `#region docs:<name>` / `#endregion docs:<
 `site/src/lib/example-files.ts` drops these lines from the examples page. Tests: `src/__integration__/doc-scripts.test.ts`.
 
 The Vietnamese twins (`documents/vi/`) go through the same embed and snippet checks (except the twins of the migration guides).
-`check:docs-i18n` compares each twin with its English file; the workflow and the glossary are in `documents/README.md`.
+`scripts/check-docs-i18n.mjs` compares each twin with its English file; the workflow and the glossary are in `documents/README.md`.
 Tests: `src/__integration__/docs-i18n.test.ts` (also the twin rules of `site/scripts/check-doc-links.mjs`).
 
 ### 10. Storybooks, parity gate, copy-out smoke

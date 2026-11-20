@@ -403,7 +403,7 @@ describe(
       expect(result.output).toContain("(2 Vietnamese)");
     });
 
-    it("leaves a missing twin to check:docs-i18n", () => {
+    it("leaves a missing twin to scripts/check-docs-i18n.mjs", () => {
       linkTree(t.dir, false);
       expect(links(t.dir).status).toBe(0);
     });

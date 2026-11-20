@@ -1,18 +1,10 @@
 import path from "node:path";
 
-import { readConfigFile } from "../../node/loadStyleGenConfig";
 import { logger } from "../logger";
 import { getBundlerSnippet, getCssImport } from "../templates";
 
 import type { BundlerStack, DetectedStack } from "./detectStack";
-import { readConfigLayout } from "./initConfig";
-import {
-  AGENT_DIR,
-  besideTheme,
-  printRulesNote,
-  projectHas,
-} from "./initFiles";
-import { firstConfigTheme } from "./initTheme";
+import { AGENT_DIR, printRulesNote, projectHas } from "./initFiles";
 
 /** Display names for the next-steps message. */
 const STACK_NAMES: Record<BundlerStack, string> = {
@@ -111,20 +103,4 @@ export function cssEntryFor(
   return detected.stack === "none"
     ? path.posix.join(path.posix.dirname(output), "index.css")
     : cssEntryFile(detected.stack, cwd);
-}
-
-/**
- * The generated CSS the printed Tailwind lines point at: the `output` of the
- * project's config (the default when the config names none, also when the
- * config is invalid), else the `theme.css` beside the theme a first config
- * would name.
- * @param {DetectedStack} detected - The detected stack
- * @param {string} cwd - The project root
- * @returns {string} Project-relative POSIX CSS location
- */
-export function rulesOutput(detected: DetectedStack, cwd: string): string {
-  return (
-    readConfigLayout(readConfigFile(cwd))?.output ??
-    besideTheme(firstConfigTheme(detected, cwd, undefined))
-  );
 }

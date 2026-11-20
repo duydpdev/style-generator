@@ -1254,12 +1254,14 @@ describe("initCommand", () => {
         expect(logged(log)).toContain('@import "../styles/theme.css";');
       });
 
-      it("without a config, prints the CSS beside the theme a first config would name", async () => {
-        write("styles/theme.json", "{}");
-
+      it("without a config, prints no CSS lines and says no config was found", async () => {
         expect(await run({ rulesOnly: true }, tmp)).toBe(0);
 
-        expect(logged(log)).toContain('@import "../styles/theme.css";');
+        const said = logged(vi.mocked(logger.info)) + logged(log);
+        expect(said).toContain("No style-gen.config.json in this directory");
+        expect(said).not.toContain("@import");
+        expect(said).not.toContain("@source not");
+        expect(exists(".claude/rules/style-generator.md")).toBe(true);
       });
     });
 
@@ -1386,7 +1388,7 @@ describe("initCommand", () => {
         fs.writeFileSync(theme(), "{}");
       });
 
-      it("refreshes the rules next to an existing theme without a terminal", async () => {
+      it("refreshes the rules next to an existing theme without a terminal, printing no CSS lines", async () => {
         writeRules("<!-- @duydpdev/style-generator 0.0.0-old — x -->\n");
 
         expect(await run({ rulesOnly: true }, tmp)).toBe(0);
@@ -1396,13 +1398,10 @@ describe("initCommand", () => {
         expect(fs.existsSync(path.join(tmp, "style-gen.config.json"))).toBe(
           false,
         );
-        // `out()` groups calls by logger method, so check each part.
-        expect(out()).toContain(
-          "Keep these lines in src/index.css (or the CSS file in src/ that imports Tailwind):",
-        );
-        expect(out()).toContain(
-          '@import "tailwindcss";\n@import "./styles/theme.css";\n@source not "../.claude";',
-        );
+        // `out()` groups calls by logger method, so check the whole text.
+        expect(out()).toContain("No style-gen.config.json in this directory");
+        expect(out()).not.toContain("@import");
+        expect(out()).not.toContain("@source not");
       });
 
       it("reads the generated CSS path from style-gen.config.json", async () => {
@@ -1416,7 +1415,13 @@ describe("initCommand", () => {
 
         expect(await run({ rulesOnly: true }, tmp)).toBe(0);
 
-        expect(out()).toContain('@import "./gen/theme.css";');
+        // `out()` groups calls by logger method, so check each part.
+        expect(out()).toContain(
+          "Keep these lines in src/index.css (or the CSS file in src/ that imports Tailwind):",
+        );
+        expect(out()).toContain(
+          '@import "tailwindcss";\n@import "./gen/theme.css";\n@source not "../.claude";',
+        );
       });
 
       it("never opens the wizard", async () => {

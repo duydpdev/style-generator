@@ -1,4 +1,4 @@
-<!-- source: documents/troubleshooting.md sha256: 74d97078d7c8 -->
+<!-- source: documents/troubleshooting.md sha256: 264acd875a71 -->
 
 # Khắc phục sự cố
 
@@ -145,7 +145,7 @@ Hãy kiểm tra theo thứ tự:
 1. Key có trong theme và class dùng tên kebab-case của nó: `blue500` là `bg-blue-500`, `text16Medium` là `text-16-medium`.
 2. `theme.css` được import cạnh `@import "tailwindcss"`, và đường dẫn khớp với `output` trong config.
 3. Class không được dựng lúc runtime. Một template literal như `` `bg-${variant}` `` vô hình trước lượt quét của Tailwind: hãy khai báo các class đó bằng `@source inline(...)` của riêng bạn ([Tùy chọn](./reference/options.md#class-được-tạo-lúc-runtime)).
-4. `coverage` không cắt mất class, và một class có opacity (`bg-primary/10`) có mức của nó trong `coverage.colors.opacities` ([`coverage`](./reference/options.md#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token)).
+4. `coverage` không cắt mất class, và một class có opacity (`bg-primary/10`) có mức của nó trong `coverage.colors.opacities`: một bước thường bao phủ mọi tiền tố và key được giữ, còn một group `{ steps, prefixes, keys }` chỉ bao phủ đúng một class như `bg-foreground/32` với chi phí của một dòng hẹp ([`coverage`](./reference/options.md#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token)).
 5. Key không trùng với một class có sẵn của Tailwind (`bg-none`, `text-sm`): `style-gen doctor` in cảnh báo cho các trường hợp trùng đã biết ([Cấu hình theme](./reference/theme.md#trùng-tên-với-utility-tích-hợp-sẵn)).
 
 ## theme.css bị thiếu

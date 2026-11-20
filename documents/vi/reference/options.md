@@ -1,4 +1,4 @@
-<!-- source: documents/reference/options.md sha256: 0a3b5e7e7d0e -->
+<!-- source: documents/reference/options.md sha256: ef5f030c030c -->
 
 # Tùy chọn
 
@@ -142,7 +142,7 @@ Theo mặc định, mỗi nhóm token nhận một dòng `@source inline` bao ph
 | `{ keys: "all" }`            | Mặc định: tất cả các key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `{ opacities: [10, 20] }`    | Chỉ dành cho `colors`. Thêm một dòng phụ, `{bg,text,border,ring,outline,divide,placeholder}-{<keys>}/{10,20}`, ngay sau dòng colors: cùng các tiền tố và key (nó tuân theo `prefixes` và `keys`) với modifier độ mờ `/<n>` của Tailwind, nhờ đó `bg-primary/10` tồn tại ngay cả khi không có file mã nguồn nào nhắc đến nó. Các số nguyên phân biệt từ 1–100, không rỗng; được phát ra theo thứ tự tăng dần. Không kết hợp với các dòng trạng thái (`hover:bg-primary-hover/10` không được bao phủ). Bất kỳ nhóm token nào khác đều ném lỗi (`coverage.<category>.opacities`). |
 
-`prefixes`, `keys` và `opacities` có thể kết hợp với nhau; danh sách `prefixes` và `opacities` không được rỗng. Với `keys: "aliased"` mà không có token giữ alias nào trong nhóm (hoặc không khai báo key nào), sẽ không có gì được phát ra: các giá trị mặc định tích hợp sẵn không bao giờ là alias. `coverage` chỉ thay đổi `@source inline`: `@theme inline`, các khối `@utility` và `DesignTokens` có kiểu đều giữ nguyên không đổi (ngoại trừ `DesignTokens.Web.opacities`, liệt kê các bước `opacities`), vì vậy một class bạn vẫn dùng nhưng không còn được bao phủ thì phải xuất hiện nguyên văn trong mã nguồn của bạn hoặc được khai báo bằng một `@source inline(...)` trong CSS của app.
+`prefixes`, `keys` và `opacities` có thể kết hợp với nhau; danh sách `prefixes` và `opacities` không được rỗng. Với `keys: "aliased"` mà không có token giữ alias nào trong nhóm (hoặc không khai báo key nào), sẽ không có gì được phát ra: các giá trị mặc định tích hợp sẵn không bao giờ là alias. `coverage` chỉ thay đổi `@source inline`: `@theme inline`, các khối `@utility` và `DesignTokens` có kiểu đều giữ nguyên không đổi (ngoại trừ `DesignTokens.Web.opacities`, liệt kê các bước thường của `opacities`), vì vậy một class bạn vẫn dùng nhưng không còn được bao phủ thì phải xuất hiện nguyên văn trong mã nguồn của bạn hoặc được khai báo bằng một `@source inline(...)` trong CSS của app.
 
 ```ts
 import { generate } from "@duydpdev/style-generator";
@@ -170,9 +170,31 @@ generate(theme, {
 });
 ```
 
+**Group độ mờ.** Một `bg-foreground/32` không nên tốn cả một dòng `prefixes × keys`. Bên cạnh các bước thường, một entry của `opacities` có thể là một group `{ steps, prefixes?, keys? }`: nó thêm một dòng `@source inline` nữa chỉ cho các bước của riêng nó, đặt sau dòng của các bước thường, theo thứ tự khai báo. `steps` là danh sách không rỗng các số nguyên phân biệt từ 1–100 (được phát ra theo thứ tự tăng dần). `prefixes` (không rỗng, mỗi phần tử là một tiền tố của `colors`) và `keys` (không rỗng, mỗi phần tử là một key của `theme.colors`) mặc định là các tiền tố và key mà rule đang bao phủ. Một phần tử `prefixes` không phải tiền tố của `colors` sẽ ném lỗi tại `coverage.colors.opacities.<i>.prefixes.<j>`, một phần tử `keys` không phải màu của theme sẽ ném lỗi tại `coverage.colors.opacities.<i>.keys.<j>` (`Unknown color key "…" in an opacity group`), và một member lạ hoặc một danh sách rỗng cũng ném lỗi. Option không có group phát ra đúng CSS như trước. `DesignTokens.Web.opacities` chỉ liệt kê các bước thường: một group chỉ bao phủ một tập con, nên `createVariantMapper` không đưa `foreground/32` vào làm key, và class đó được viết nguyên văn ở nơi dùng.
+
+```ts
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+
+generate(theme, {
+  coverage: {
+    colors: {
+      prefixes: ["bg", "text", "border"],
+      opacities: [
+        5,
+        10,
+        { steps: [32], prefixes: ["bg"], keys: ["foreground"] },
+      ],
+    },
+  },
+});
+```
+
+Cấu hình này phát ra `{bg,text,border}-{<keys>}/{5,10}` rồi `{bg}-{foreground}/{32}`, nên `bg-foreground/32` tồn tại mà không cần dòng đầy đủ mà thêm một bước thường sẽ kéo theo.
+
 ### Giới hạn của JSON Schema
 
-`style-gen schema` ghi JSON Schema của `style-gen.config.json`, và một editor đọc nó qua `"$schema"` sẽ đánh dấu key hoặc giá trị sai ngay khi bạn gõ. Schema mang các quy tắc key và giá trị mà bộ sinh của nó ánh xạ vào: các key được chấp nhận, hình dạng giá trị, và, với mỗi nhóm `coverage`, chỉ `prefixes` của riêng nhóm đó (không có cho `typography`), `opacities` là các số nguyên khác nhau (chỉ cho `colors`) và `keys: "aliased"` chỉ ở nơi có alias `$`. Một file schema đã commit giữ các key của phiên bản đã ghi ra nó: hãy chạy `yarn style-gen schema` sau khi nâng cấp package.
+`style-gen schema` ghi JSON Schema của `style-gen.config.json`, và một editor đọc nó qua `"$schema"` sẽ đánh dấu key hoặc giá trị sai ngay khi bạn gõ. Schema mang các quy tắc key và giá trị mà bộ sinh của nó ánh xạ vào: các key được chấp nhận, hình dạng giá trị, và, với mỗi nhóm `coverage`, chỉ `prefixes` của riêng nhóm đó (không có cho `typography`), `opacities` là các số nguyên khác nhau hoặc các group mà `prefixes` là tiền tố của `colors` (chỉ cho `colors`) và `keys: "aliased"` chỉ ở nơi có alias `$`. Một file schema đã commit giữ các key của phiên bản đã ghi ra nó: hãy chạy `yarn style-gen schema` sau khi nâng cấp package.
 
 Nó không thể diễn đạt một quy tắc so sánh hai key, đọc một file khác hoặc ràng buộc một đường dẫn, nên editor có thể chấp nhận một config mà `generate`, `style-gen doctor` và các plugin bundler từ chối:
 

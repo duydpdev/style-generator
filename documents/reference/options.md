@@ -140,7 +140,7 @@ By default every category gets a `@source inline` line covering all its keys (an
 | `{ keys: "all" }`         | The default: every key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `{ opacities: [10, 20] }` | `colors` only. One extra line, `{bg,text,border,ring,outline,divide,placeholder}-{<keys>}/{10,20}`, right after the colors line: the same prefixes and keys (it follows `prefixes` and `keys`) with Tailwind's `/<n>` opacity modifier, so `bg-primary/10` exists even when no source file names it. Distinct integers 1–100, non-empty; emitted ascending. Not crossed with the state lines (`hover:bg-primary-hover/10` is not covered). Any other category throws (`coverage.<category>.opacities`). |
 
-`prefixes`, `keys` and `opacities` combine; `prefixes` and `opacities` lists must be non-empty. With `keys: "aliased"` and no alias holder in the category (or no declared keys at all), nothing is emitted: the built-in defaults are never aliases. `coverage` only changes `@source inline`: `@theme inline`, `@utility` blocks and the typed `DesignTokens` are unchanged (except `DesignTokens.Web.opacities`, which lists the `opacities` steps), so a class you still use that is no longer covered must appear literally in your source or in your own `@source inline(...)` (see [Classes built at runtime](#classes-built-at-runtime)).
+`prefixes`, `keys` and `opacities` combine; `prefixes` and `opacities` lists must be non-empty. With `keys: "aliased"` and no alias holder in the category (or no declared keys at all), nothing is emitted: the built-in defaults are never aliases. `coverage` only changes `@source inline`: `@theme inline`, `@utility` blocks and the typed `DesignTokens` are unchanged (except `DesignTokens.Web.opacities`, which lists the plain `opacities` steps), so a class you still use that is no longer covered must appear literally in your source or in your own `@source inline(...)` (see [Classes built at runtime](#classes-built-at-runtime)).
 
 ```ts
 import { generate } from "@duydpdev/style-generator";
@@ -168,9 +168,31 @@ generate(theme, {
 });
 ```
 
+**Opacity groups.** One `bg-foreground/32` should not cost a whole `prefixes × keys` line. Next to the plain steps, an `opacities` entry may be a group `{ steps, prefixes?, keys? }`: it adds one further `@source inline` line for its own steps only, after the plain-step line, in declaration order. `steps` is a non-empty list of distinct integers 1–100 (emitted ascending). `prefixes` (non-empty, each a `colors` prefix) and `keys` (non-empty, each a key of `theme.colors`) default to the prefixes and keys the rule covers. A `prefixes` entry that is not a `colors` prefix throws at `coverage.colors.opacities.<i>.prefixes.<j>`, a `keys` entry that is not a theme color throws at `coverage.colors.opacities.<i>.keys.<j>` (`Unknown color key "…" in an opacity group`), and an unknown member or an empty list throws too. Options without a group emit the same CSS as before. `DesignTokens.Web.opacities` lists the plain steps only: a group covers a subset, so `createVariantMapper` does not offer `foreground/32` as a key, and the class is written as a literal where it is used.
+
+```ts
+import { generate } from "@duydpdev/style-generator";
+import theme from "./theme.json";
+
+generate(theme, {
+  coverage: {
+    colors: {
+      prefixes: ["bg", "text", "border"],
+      opacities: [
+        5,
+        10,
+        { steps: [32], prefixes: ["bg"], keys: ["foreground"] },
+      ],
+    },
+  },
+});
+```
+
+This emits `{bg,text,border}-{<keys>}/{5,10}` and then `{bg}-{foreground}/{32}`, so `bg-foreground/32` exists without the full line that one more plain step would add.
+
 ### JSON Schema limits
 
-`style-gen schema` writes the JSON Schema of `style-gen.config.json`, and an editor that reads it through `"$schema"` flags a wrong key or value as you type. The schema carries the key and value rules its generator maps into it: the accepted keys, the value shapes, and, for each `coverage` category, only its own `prefixes` (none for `typography`), `opacities` as distinct integers (only for `colors`) and `keys: "aliased"` only where `$` aliases exist. A committed schema file keeps the keys of the version that wrote it: run `yarn style-gen schema` after upgrading the package.
+`style-gen schema` writes the JSON Schema of `style-gen.config.json`, and an editor that reads it through `"$schema"` flags a wrong key or value as you type. The schema carries the key and value rules its generator maps into it: the accepted keys, the value shapes, and, for each `coverage` category, only its own `prefixes` (none for `typography`), `opacities` as distinct integers or groups whose `prefixes` are `colors` prefixes (only for `colors`) and `keys: "aliased"` only where `$` aliases exist. A committed schema file keeps the keys of the version that wrote it: run `yarn style-gen schema` after upgrading the package.
 
 It cannot state a rule that compares two keys, reads another file or constrains a path, so an editor can accept a config that `generate`, `style-gen doctor` and the bundler plugins reject:
 

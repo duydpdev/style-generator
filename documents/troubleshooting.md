@@ -143,7 +143,7 @@ Work through these in order:
 1. The key is in the theme and the class uses its kebab-cased name: `blue500` is `bg-blue-500`, `text16Medium` is `text-16-medium`.
 2. `theme.css` is imported next to `@import "tailwindcss"`, and the path matches `output` in the config.
 3. The class is not built at runtime. A template literal such as `` `bg-${variant}` `` is invisible to Tailwind's scan: declare those classes with your own `@source inline(...)` ([Options](./reference/options.md#classes-built-at-runtime)).
-4. `coverage` did not trim the class away, and an opacity class (`bg-primary/10`) has its step in `coverage.colors.opacities` ([`coverage`](./reference/options.md#coverage-trim-the-source-inline-lines-per-category)).
+4. `coverage` did not trim the class away, and an opacity class (`bg-primary/10`) has its step in `coverage.colors.opacities`: a plain step covers every kept prefix and key, while a group `{ steps, prefixes, keys }` covers just one class such as `bg-foreground/32` for the cost of one narrow line ([`coverage`](./reference/options.md#coverage-trim-the-source-inline-lines-per-category)).
 5. The key does not clash with a built-in Tailwind class (`bg-none`, `text-sm`): `style-gen doctor` prints a warning for known clashes ([Theme config](./reference/theme.md#built-in-utility-name-clashes)).
 
 ## theme.css is missing

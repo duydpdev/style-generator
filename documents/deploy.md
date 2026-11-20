@@ -10,6 +10,7 @@ Deployment process for the `@duydpdev/style-generator` library.
   - [GitHub Actions Workflows](#github-actions-workflows)
     - [`ci.yml` — PR Check](#ciyml--pr-check)
     - [`ci-matrix.yml` — Heavy tier](#ci-matrixyml--heavy-tier)
+    - [`nightly.yml` — macOS and Bun](#nightlyyml--macos-and-bun)
     - [`deploy-site.yml` — Site on GitHub Pages](#deploy-siteyml--site-on-github-pages)
     - [`pr-title.yml` — PR title lint](#pr-titleyml--pr-title-lint)
     - [Pull Request \& merge convention](#pull-request--merge-convention)
@@ -74,6 +75,15 @@ Every merge into `main`/`develop` runs `release.yml` (semantic-release). When th
 - `ui-peer-floor`: builds the lib with the committed toolchain, forces the four UI-kit optional peers (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`) to the floor of their `peerDependencies` ranges through `resolutions` (not committed), asserts the resolved versions, then runs `yarn typecheck:dist` and `yarn vitest run src/features/ui`. It fails when a pinned floor stops being the minimum of the range in `package.json`. Two harness-only pins mirror what a consumer actually gets: cva 0.7.0 needs clsx 2.0.0 exactly, so it keeps its own nested copy, and `@types/scheduler` is held at 0.16.8, the last version with `scheduler/tracing`, which `@types/react` <=18.2.71 imports.
 
 Playwright browsers are **not** cached, and this is a measured decision (PR #73). On a hit the install step takes 42 s; with no cache it is 49–52 s; on a miss it is 56–75 s, plus 5–8 s to save the cache, and every PR ref costs 383 MB. The cache cannot skip the `install-deps` (apt) step, which accounts for most of the time. The measurement was taken when `e2e` still ran in `ci-matrix.yml`; `e2e` now lives in `ci.yml` and the decision is unchanged. The result is that every new PR is slower. Using the `mcr.microsoft.com/playwright` container is only worth revisiting if e2e becomes the bottleneck.
+
+### `nightly.yml` — macOS and Bun
+
+**Trigger:** a nightly `schedule` (cron `17 6 * * *`, run by GitHub on the default branch `main`), `workflow_dispatch` (`gh workflow run nightly.yml --ref main`) and a Pull Request into `main` or `release/**` that changes `.github/workflows/nightly.yml` or `scripts/bun-smoke.mjs`, so an ordinary PR pays nothing for it. It is not a required check. It has its own `concurrency: nightly-<event>-<ref>` with `cancel-in-progress: true`, `permissions: contents: read` and `persist-credentials: false` on both checkouts.
+
+**Jobs** (Node 22): `yarn install --immutable` → `yarn build:all` in each.
+
+- `macos` (`macos-latest`, 30 minutes): `yarn test`. It runs the case-insensitive filesystem cases of `sameFile` (skipped on Linux) and the real-chokidar watcher tests on FSEvents.
+- `bun` (`ubuntu-latest`, 20 minutes): `npm install -g bun@1.3.14` (the repo allows GitHub-owned actions only, so no `oven-sh/setup-bun`) → `node scripts/bun-smoke.mjs`: packs the tarball, installs it with `bun add` next to the Tailwind version of the repo, checks the `.bin/style-gen` link, runs `dist/cli/index.mjs generate` with `bun` directly (`bun x style-gen` would follow the Node shebang) and calls `generate()` from the package name under `bun`.
 
 ### `deploy-site.yml` — Site on GitHub Pages
 

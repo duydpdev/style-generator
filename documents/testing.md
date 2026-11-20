@@ -69,6 +69,8 @@ The checks have two layers:
      on `schedule` and `workflow_dispatch` there is no draft, so the condition is `github.event_name != 'pull_request' || github.event.pull_request.draft == false`.
      The per-PR tier (`check`, `plain-react`, `e2e`) is in `ci.yml`, which also runs on draft PRs for `check`,
      so a pushed draft always gets a result (Actions minutes are free on this public repo).
+   - `nightly.yml` is a separate light tier (not a required check): it runs `yarn test` on `macos-latest` (the case-insensitive filesystem cases of `sameFile`, FSEvents behaviour of the real-chokidar watcher tests) and
+     `scripts/bun-smoke.mjs` (Bun install, the CLI file and `generate()` from the packed tarball) every night and on PRs into `main`/`release/**` that change the workflow or the smoke script.
 
 `check:publish-target` runs in `prepublish` and in the publish workflow (`deploy.yml`); `deploy.yml` additionally runs `check:types-pack` right after `build:all`, see [`deploy.md`](./deploy.md).
 

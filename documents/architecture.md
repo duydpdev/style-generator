@@ -373,7 +373,7 @@ for example `{ inset: ["top", "bottom"] }`; the value is always `var(--sg-sp-<ke
 ## Exports API
 
 The export list per subpath, with signatures and examples, lives in [`reference/`](./reference/core.md#all-exports-by-subpath);
-`yarn check:doc-exports` guarantees that every export has a heading there. Breaking changes between majors are in the guides under `migration/` (the latest is [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
+`node scripts/check-doc-exports.mjs` guarantees that every export has a heading there. Breaking changes between majors are in the guides under `migration/` (the latest is [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
 
 ---
 
@@ -413,7 +413,7 @@ The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) th
   (`site/src/lib/strip-html-comments.ts`).
 - `/vi/docs`, `/vi/docs/:slug` — the Vietnamese twin of the same page (`documents/vi/<path>`; the repo `README.md` → `documents/vi/README.md`) under the same slug,
   titled with the entry's `vi.title`. The docs chrome strings come from `UI_TEXT` in `site/src/lib/locale.ts`, the breadcrumb links each page to its twin in the other language,
-  and `<html lang>` follows the page. `yarn check:docs-i18n` keeps every twin in step with its English file.
+  and `<html lang>` follows the page. `node scripts/check-docs-i18n.mjs` keeps every twin in step with its English file.
 - `/examples/v4` — an iframe embedding `examples/harness/dist`.
 - `/playground` — a lazy page that runs `generate()` in the browser on a theme JSON (and an options JSON) and prints the CSS, the typed tokens or the validation error.
 

@@ -27,7 +27,7 @@ yarn build:all      # Both
 
 # Test
 yarn test           # Vitest run, unit (*.test.ts)
-yarn test:watch     # Watch mode
+yarn vitest          # Watch mode
 yarn test:coverage  # v8 coverage; excludes test files and dist/
 yarn test:types     # vitest run --typecheck.only — *.test-d.ts (expectTypeOf); `yarn test` does not run them
 yarn test:e2e       # Playwright (Chromium + WebKit) — spacing inheritance, compiled CSS
@@ -40,8 +40,8 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single fi
 # Quality
 yarn verify         # base gate + src gate in one command (documents/testing.md → Gate table)
 yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directives
-yarn lint:fix
-yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn prettier:fix writes
+yarn lint --fix
+yarn prettier:check # CI gate (check mode); yarn prettier:fix writes
 yarn tsc --noEmit   # Type check
 yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
@@ -53,7 +53,7 @@ yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (no
 yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
 yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
-yarn check:docs-embed && yarn check:docs-i18n && yarn check:doc-snippets && yarn check:doc-exports && yarn check:doc-reference   # docs gates (after build:all; CI check job); doc-reference: CLI flags + config keys documented, no version history on pages
+yarn check:docs    # docs gates (after build:all; CI check job runs them as five steps): embed, i18n, snippets, exports, reference; doc-reference: CLI flags + config keys documented, no version history on pages
 yarn check:plain-ui     # examples/plain-react/src/ui/<folder>/: style.ts, types.ts, <Name>.tsx, index.ts; relative imports only ./… and ../../theme; package allow-list (CI)
 ```
 
@@ -293,7 +293,7 @@ documents/
 ├── README.md                     # index of everything below
 ├── architecture.md guide.md troubleshooting.md testing.md deploy.md components.md cookbook.md   # rendered by the site
 ├── getting-started/  reference/  # rendered by the site (site/src/lib/docs-meta.json)
-├── vi/                           # Vietnamese twin of every rendered doc (yarn check:docs-i18n)
+├── vi/                           # Vietnamese twin of every rendered doc (node scripts/check-docs-i18n.mjs)
 ├── migration/                    # upgrade guides + v4 measurement proofs
 ├── standards/                    # cross-repo standards (git-workflow-app.md)
 ├── brainstorm/YYYY-MM-DD/<topic>.md

@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 199ec6170b9c -->
+<!-- source: documents/deploy.md sha256: bce48f670c99 -->
 
 # Triển khai & CI/CD
 
@@ -296,8 +296,6 @@ Quy tắc này chỉ áp dụng cho thư viện gốc: `design-system-example` l
 
 ### Các alias script (root)
 
-| Script              | Mô tả                                                   |
-| ------------------- | ------------------------------------------------------- |
-| `yarn site:dev`     | Vite dev server cho site (cổng 5174)                    |
-| `yarn site:build`   | Build thư viện → build site → output trong `site/dist/` |
-| `yarn site:preview` | Vite preview server đọc `site/dist/`                    |
+| Script            | Mô tả                                                   |
+| ----------------- | ------------------------------------------------------- |
+| `yarn site:build` | Build thư viện → build site → output trong `site/dist/` |

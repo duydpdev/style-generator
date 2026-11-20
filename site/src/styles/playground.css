@@ -1,0 +1,66 @@
+/* ============ Playground — JSON in, generate() output out ============ */
+.s-playground-grid {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+@media (min-width: 860px) {
+  .s-playground-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.s-playground-input {
+  width: 100%;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--c-fg);
+  background: var(--c-paper);
+  border: 1px solid var(--c-line-strong);
+  resize: vertical;
+  tab-size: 2;
+}
+.s-playground-theme {
+  min-height: 420px;
+}
+.s-playground-options {
+  min-height: 110px;
+}
+
+.s-playground-tab,
+.s-playground-copy {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--c-muted);
+  background: transparent;
+  border: 1px solid var(--c-line);
+  cursor: pointer;
+}
+.s-playground-tab:hover,
+.s-playground-copy:hover {
+  color: var(--c-fg);
+}
+.s-playground-tab.s-active {
+  color: var(--c-fg);
+  background: var(--c-paper);
+  border-color: var(--c-line-strong);
+}
+
+.s-playground-output {
+  max-height: 560px;
+  border-radius: var(--r-md);
+  overflow: auto;
+  white-space: pre;
+  background: var(--c-paper);
+  border: 1px solid var(--c-line);
+}
+
+.s-playground-error {
+  color: var(--c-danger);
+  background: var(--c-danger-soft);
+  border: 1px solid var(--c-danger);
+}
+.s-playground-error pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

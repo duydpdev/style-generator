@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { VERSION } from "../data/version";
 import { Box, Flex, Stack, Text } from "../ui";
 
-export type ActiveRoute = "landing" | "docs" | "examples";
+export type ActiveRoute = "landing" | "docs" | "examples" | "playground";
 
 export const NAV_ID = "topbar-nav";
 
@@ -74,6 +74,13 @@ export function TopbarNav({
           onClick={closeMenu}
         >
           Examples
+        </NavLink>
+        <NavLink
+          to="/playground"
+          className={activeRoute === "playground" ? "active" : ""}
+          onClick={closeMenu}
+        >
+          Playground
         </NavLink>
       </Flex>
     </Flex>

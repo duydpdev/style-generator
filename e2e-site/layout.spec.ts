@@ -17,6 +17,7 @@ const ROUTES = [
   "/vi/docs/architecture",
   "/vi/docs/guide",
   "/examples/v4",
+  "/playground",
 ] as const;
 
 const VIEWPORTS = [
@@ -59,6 +60,7 @@ for (const viewport of VIEWPORTS) {
         await expect(menu).toHaveAttribute("aria-expanded", "true");
         await expect(nav.locator('a[href="/docs"]')).toBeVisible();
         await expect(nav.locator('a[href="/examples/v4"]')).toBeVisible();
+        await expect(nav.locator('a[href="/playground"]')).toBeVisible();
 
         await page.keyboard.press("Escape");
         await expect(menu).toHaveAttribute("aria-expanded", "false");

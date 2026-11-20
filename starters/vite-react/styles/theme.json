@@ -1,0 +1,33 @@
+{
+  "colors": {
+    "primary": "#2647D9",
+    "onPrimary": "#FFFFFF",
+    "surface": "#FBF7EF",
+    "foreground": "#0F1530"
+  },
+  "typography": {
+    "heading": {
+      "fontSize": "32px",
+      "fontWeight": 600,
+      "lineHeight": "110%"
+    },
+    "body": {
+      "fontSize": "16px",
+      "fontWeight": 400,
+      "lineHeight": "150%"
+    }
+  },
+  "borderRadius": {
+    "card": "14px"
+  },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "surface": "#11142A",
+          "foreground": "#F2EFE9"
+        }
+      }
+    }
+  }
+}

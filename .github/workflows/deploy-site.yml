@@ -1,0 +1,96 @@
+# ─────────────────────────────────────────────────────
+# Deploy Site — GitHub Pages
+#
+# Builds the landing site (with the embedded examples and llms.txt) under
+# https://<owner>.github.io/<repo>/ and publishes it to GitHub Pages.
+# 404.html is a copy of index.html: it is the SPA fallback for deep links.
+#
+# Triggers:
+#   - push to main affecting the site inputs (site/, documents/, examples/,
+#     src/, README.md, package.json, yarn.lock, this file)
+#   - manual via workflow_dispatch
+#   - pull_request touching this file or site/scripts/build-llms.mjs: runs
+#     the build job only, so a change to either is proven before it merges
+#
+# Only the deploy job holds pages/id-token write access, and it runs only on
+# refs/heads/main. Independent from release.yml / deploy.yml (npm publish).
+# ─────────────────────────────────────────────────────
+name: Deploy Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "documents/**"
+      - "examples/**"
+      - "src/**"
+      - "README.md"
+      - "package.json"
+      - "yarn.lock"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/deploy-site.yml"
+      - "site/scripts/build-llms.mjs"
+
+permissions:
+  contents: read
+
+env:
+  # Repo path served at https://<owner>.github.io/<repo>/
+  VITE_BASE: /${{ github.event.repository.name }}/
+
+jobs:
+  build:
+    name: Build site bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build site (library, examples, llms.txt)
+        run: yarn site:build
+
+      - name: SPA fallback for deep links
+        run: cp site/dist/index.html site/dist/404.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

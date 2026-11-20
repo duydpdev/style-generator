@@ -10,6 +10,7 @@ Deployment process for the `@duydpdev/style-generator` library.
   - [GitHub Actions Workflows](#github-actions-workflows)
     - [`ci.yml` — PR Check](#ciyml--pr-check)
     - [`ci-matrix.yml` — Heavy tier](#ci-matrixyml--heavy-tier)
+    - [`deploy-site.yml` — Site on GitHub Pages](#deploy-siteyml--site-on-github-pages)
     - [`pr-title.yml` — PR title lint](#pr-titleyml--pr-title-lint)
     - [Pull Request \& merge convention](#pull-request--merge-convention)
     - [Local (Pre-commit) — Husky](#local-pre-commit--husky)
@@ -73,6 +74,15 @@ Every merge into `main`/`develop` runs `release.yml` (semantic-release). When th
 - `ui-peer-floor`: builds the lib with the committed toolchain, forces the four UI-kit optional peers (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`) to the floor of their `peerDependencies` ranges through `resolutions` (not committed), asserts the resolved versions, then runs `yarn typecheck:dist` and `yarn vitest run src/features/ui`. It fails when a pinned floor stops being the minimum of the range in `package.json`. Two harness-only pins mirror what a consumer actually gets: cva 0.7.0 needs clsx 2.0.0 exactly, so it keeps its own nested copy, and `@types/scheduler` is held at 0.16.8, the last version with `scheduler/tracing`, which `@types/react` <=18.2.71 imports.
 
 Playwright browsers are **not** cached, and this is a measured decision (PR #73). On a hit the install step takes 42 s; with no cache it is 49–52 s; on a miss it is 56–75 s, plus 5–8 s to save the cache, and every PR ref costs 383 MB. The cache cannot skip the `install-deps` (apt) step, which accounts for most of the time. The measurement was taken when `e2e` still ran in `ci-matrix.yml`; `e2e` now lives in `ci.yml` and the decision is unchanged. The result is that every new PR is slower. Using the `mcr.microsoft.com/playwright` container is only worth revisiting if e2e becomes the bottleneck.
+
+### `deploy-site.yml` — Site on GitHub Pages
+
+**Trigger:** a push to `main` that changes `site/**`, `documents/**`, `examples/**`, `src/**`, `README.md`, `package.json`, `yarn.lock` or the workflow itself; `workflow_dispatch` (`gh workflow run deploy-site.yml --ref main`); and a Pull Request that changes the workflow or `site/scripts/build-llms.mjs`, which runs the `build` job only. The workflow has `permissions: contents: read` and is independent of `release.yml` and `deploy.yml` (npm publish). The repository's Pages source is **GitHub Actions**; the site is served at `https://duydpdev.github.io/style-generator/`.
+
+**Jobs** (Node 22):
+
+- `build` (check name `Build site bundle`): checkout without persisted credentials → `yarn install --immutable` → `yarn site:build` with `VITE_BASE=/<repo>/` (library build, the embedded examples, the Vite site build, then `site/scripts/build-llms.mjs` writes `llms.txt` into `site/dist/`) → `cp site/dist/index.html site/dist/404.html` (the SPA fallback: GitHub Pages serves it for a deep link with status 404, and the browser still renders the page) → `actions/upload-pages-artifact`.
+- `deploy` (check name `Deploy to GitHub Pages`): runs only for `push` and `workflow_dispatch` on `refs/heads/main`. It is the only job with `pages: write` and `id-token: write`, and the only one in the `pages` concurrency group (`cancel-in-progress: false`), so a PR build cannot cancel a deploy. One step, `actions/deploy-pages`, in the `github-pages` environment. Every action in the file is GitHub-owned (`actions/*`).
 
 ### `pr-title.yml` — PR title lint
 
@@ -269,7 +279,7 @@ See: [`commitlint.config.ts`](../commitlint.config.ts) and [`release.config.cjs`
 
 ## Site (landing + examples)
 
-The landing site (`site/`) and the examples (`examples/design-system`, `harness`, `plain-react`, `plain-nuxt`) use the library through a `link:` dependency. The site is **not deployed** (there is no hosting plan yet). `deploy-site.yml` and `site:deploy:manual` were removed (2026-09-30). Re-enabling it needs a separate plan.
+The landing site (`site/`) and the examples (`examples/design-system`, `harness`, `plain-react`, `plain-nuxt`) use the library through a `link:` dependency. `deploy-site.yml` deploys the site to `https://duydpdev.github.io/style-generator/` on every push to `main` that changes its inputs; deep links work through a `404.html` copy of `index.html`; the build also writes `llms.txt`.
 
 The site is still built on every PR: the `check` job of `ci.yml` runs `yarn workspace site build` right after `yarn build:all`, even for PRs that only change `documents/**`, because the site renders `documents/*.md`. `yarn workspace site build` runs `build:examples` (builds `examples/harness` with base `./`, copies `examples/harness/dist` into `site/public/examples/v4`), then the Vite site build. `harness` imports its theme, tokens and recipes from the `design-system-example` workspace (`workspace:*`, a real symlink), so the site build needs no extra step; the site's source explorer also reads `examples/design-system`.
 

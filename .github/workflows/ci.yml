@@ -94,7 +94,7 @@ jobs:
       - name: Build site
         # site/ and examples/harness dogfood the library through `link:` deps,
         # and the site renders documents/*.md, so this runs for docs-only PRs too.
-        # It is the only check that builds them; nothing deploys the site.
+        # It is the only PR check that builds them; deploy-site.yml deploys the site from main.
         run: yarn workspace site build
 
       - name: Check doc links

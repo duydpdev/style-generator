@@ -128,6 +128,7 @@ Every snag and what became of it: [Adopting 8.x in two real apps](https://github
 - [The site](https://duydpdev.github.io/style-generator/): the documentation, rendered
 - [`llms.txt`](https://duydpdev.github.io/style-generator/llms.txt): the docs as one index for AI tools
 - [The examples page](https://duydpdev.github.io/style-generator/examples/v4): the harness app, running
+- [The playground](https://duydpdev.github.io/style-generator/playground): paste a theme JSON, get the CSS and the typed tokens, all in the browser
 
 ## Examples
 

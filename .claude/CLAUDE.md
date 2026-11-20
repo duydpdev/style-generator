@@ -259,6 +259,7 @@ runs on drafts and documentation-only PRs; the `plain-nuxt` job (its stories, no
 these 9 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
 it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
 `check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
+`.github/workflows/nightly.yml` (not a required check) adds `yarn test` on `macos-latest` and `scripts/bun-smoke.mjs` (Bun installed with `npm install -g bun`, no third-party action) every night and on PRs into `main`/`release/**` that change it.
 
 ## Publishing guards
 

@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: b048494b778a -->
+<!-- source: documents/testing.md sha256: f0a92880317d -->
 
 # Hướng dẫn kiểm thử
 
@@ -71,6 +71,8 @@ Các bước kiểm tra có hai lớp:
      với `schedule` và `workflow_dispatch` không có draft, nên điều kiện là `github.event_name != 'pull_request' || github.event.pull_request.draft == false`.
      Tầng theo từng PR (`check`, `plain-react`, `e2e`) nằm trong `ci.yml`, trong đó job `check` cũng chạy trên các PR draft,
      nên một draft đã push luôn có kết quả (phút Actions miễn phí trên repo công khai này).
+   - `nightly.yml` là một tầng nhẹ riêng (không phải check bắt buộc): nó chạy `yarn test` trên `macos-latest` (các ca filesystem không phân biệt hoa thường của `sameFile`, hành vi FSEvents của các test watcher dùng chokidar thật) và
+     `scripts/bun-smoke.mjs` (cài bằng Bun, file CLI và `generate()` từ tarball đã pack) hằng đêm và trên các PR vào `main`/`release/**` có đổi workflow hoặc script smoke đó.
 
 `check:publish-target` chạy trong `prepublish` và trong workflow publish (`deploy.yml`); `deploy.yml` còn chạy thêm `check:types-pack` ngay sau `build:all`, xem [`deploy.md`](./deploy.md).
 

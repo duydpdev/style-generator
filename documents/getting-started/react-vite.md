@@ -2,6 +2,8 @@
 
 This tutorial wires `@duydpdev/style-generator` into a Vite + React app and renders a themed `Button` built from a copy-paste component. Every code block below except the final `src/App.tsx` is copied from [`examples/plain-react`](../../examples/plain-react/README.md), which is built and type-checked in CI; the example's landing-page sections (`Hero`, `Features`, ...) are not part of this tutorial.
 
+To skip the setup, copy the starter: `npx degit duydpdev/style-generator/starters/vite-react my-app`.
+
 ## Install
 
 Start from a Vite React TypeScript app (`yarn create vite my-app --template react-ts`, then `yarn install`). Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`; the Vite setup below also imports `tailwindcss`, `@tailwindcss/vite` and `@vitejs/plugin-react` (the template already lists the last one).

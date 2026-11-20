@@ -1,0 +1,5 @@
+{
+  "theme": "styles/theme.json",
+  "output": "src/theme.css",
+  "tokensOutput": "src/theme.tokens.ts"
+}

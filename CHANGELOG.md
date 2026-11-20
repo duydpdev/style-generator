@@ -1,3 +1,34 @@
+# [8.2.0](https://github.com/duydpdev/style-generator/compare/v8.1.1...v8.2.0) (2026-11-20)
+
+### Features
+
+- budget --coverage-cost lists the theme class groups by gzip cost ([b373fa9](https://github.com/duydpdev/style-generator/commit/b373fa9b8a5c8536dd0301869240b5a8c25c175e))
+
+  style-gen budget <css> --max-gzip <n> --coverage-cost [--theme <path>] prints, after the unchanged OK/OVER BUDGET summary line, up to ten theme class groups (<category>/<class prefix>) by the gzip bytes saved when their rules are removed from the built CSS, with the coverage setting that removes each (src/cli/coverageCost.ts). --theme without --coverage-cost is a usage error; an unreadable config or theme exits 2 after the summary.
+
+  Method: one pass over the built CSS tracks braces, strings and comments, removes every rule whose selectors all carry a class of the group (nested rules included) and gzips the rest. The figure is an upper bound: classes the app's own source uses stay in the CSS after the cut. An emptied at-rule shell stays (a few bytes) to keep the cli bundle in budget.
+
+  Check on ecommerce-repo (default coverage, 17589 B gzip): the four prefixes the app dropped (ring, outline, divide, placeholder) are priced at S = 3932 B against the measured saving M = 3811 B, ratio 1.032 (reports/p09-eco.md). Integration test compares the ring group with the real Tailwind build within 15 %.
+
+  cli bundle: 30913 B gzip of the 30940 B budget (unchanged budget).
+
+- opacity groups cover one class without a full opacity line ([aa81b5a](https://github.com/duydpdev/style-generator/commit/aa81b5af99d6939cc3a4fd6d73228102c16ec815))
+
+  coverage.colors.opacities accepts, next to plain steps, group objects { steps, prefixes?, keys? }. Each group adds one narrow @source inline line after the plain-step line, in declaration order (e.g. { steps: [32], prefixes: ["bg"], keys: ["foreground"] } emits @source inline("{bg}-{foreground}/{32}");), so one bg-foreground/32 no longer costs a full prefixes x keys line. Omitted prefixes/keys fall back to the rule's covered ones.
+
+  A group prefix that is not a colors class prefix fails at coverage.colors.opacities.<i>.prefixes.<j>; a key that is not a theme color fails at coverage.colors.opacities.<i>.keys.<j> (assertThemeOptions). Groups never reach DesignTokens.Web.opacities or OpacitySteps (plain numbers only). Options without a group produce byte-identical CSS and identical typed tokens. The config JSON Schema and its three committed copies cover the group form.
+
+  learn-sql with the packed candidate (reports/p10-learn-sql.md): same config byte-identical to 8.1.1 output; T0 14577 B, T1 (group) 14577 B, T2 (plain step 32) 15170 B gzip.
+
+
+### Bug Fixes
+
+- schema points the config at its schema; init --rules-only without a config prints no css ([22a8690](https://github.com/duydpdev/style-generator/commit/22a869042c66a4b7a690c19114e352a0b63db427))
+
+### Refactor
+
+- split the init command into seven modules ([4a27bf9](https://github.com/duydpdev/style-generator/commit/4a27bf94925537d465d49cfae6a5bb81c2690b15))
+
 # [8.1.1](https://github.com/duydpdev/style-generator/compare/v8.1.0...v8.1.1) (2026-11-17)
 
 ### Refactor

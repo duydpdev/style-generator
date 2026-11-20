@@ -13,7 +13,7 @@ import {
 } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { sameFile } from "../../node/sameFile";
-import { buildConfigJsonSchema } from "../configJsonSchema";
+import { buildConfigJsonSchema, CONFIG_SCHEMA_FILE } from "../configJsonSchema";
 import { logger } from "../logger";
 
 export interface SchemaArgs {
@@ -22,7 +22,6 @@ export interface SchemaArgs {
 }
 
 const SCHEMA_FILE_NAME = "theme.schema.json";
-const CONFIG_SCHEMA_FILE_NAME = "style-gen.config.schema.json";
 
 /**
  * Writes `jsonSchema` to `filePath` (creating parent directories) in the
@@ -136,7 +135,7 @@ export function schemaCommand(
   try {
     configOutPath = args.configOut
       ? resolveProjectPath(cwd, args.configOut, "--config-out")
-      : path.join(cwd, CONFIG_SCHEMA_FILE_NAME);
+      : path.join(cwd, CONFIG_SCHEMA_FILE);
   } catch (error) {
     logger.error(errorMessage(error));
     return 1;

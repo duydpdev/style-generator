@@ -6,6 +6,9 @@ import {
 } from "../features/registry/builtInCategories";
 import { StyleGenConfigFileSchema } from "../node/loadStyleGenConfig";
 
+/** The config's JSON Schema `init` writes in the project root. */
+export const CONFIG_SCHEMA_FILE = "style-gen.config.schema.json";
+
 type JsonObject = Record<string, unknown>;
 
 /**
@@ -112,4 +115,18 @@ export function buildConfigJsonSchema(
   } catch {
     return plain;
   }
+}
+
+/**
+ * The config's `$schema` pointer, which goes first; a pointer the user wrote
+ * stays where it is.
+ * @param {Record<string, unknown>} content The existing config content.
+ * @returns {{ $schema?: string }} The key to put first, or nothing.
+ */
+export function configSchemaRef(content: Record<string, unknown>): {
+  $schema?: string;
+} {
+  return content.$schema === undefined
+    ? { $schema: `./${CONFIG_SCHEMA_FILE}` }
+    : {};
 }

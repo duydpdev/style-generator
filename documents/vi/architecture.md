@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: a2a4f74e9313 -->
+<!-- source: documents/architecture.md sha256: 8e4b53e05efe -->
 
 # Kiến trúc
 
@@ -384,7 +384,7 @@ Danh sách export theo từng subpath, kèm chữ ký và ví dụ, nằm trong 
 ## Landing site (`site/`)
 
 `site/` ở cấp cao nhất là một landing page riêng (React + Vite + Tailwind v4) dùng chính thư viện này (dogfood) qua dependency `link:..` (xem
-[`deploy.md`](./deploy.md#vì-sao-dùng-link-thay-vì-workspace)).
+[`deploy.md`](./deploy.md#vì-sao-dùng-link-thay-vì-workspace)). Nó được `deploy-site.yml` triển khai lên GitHub Pages ([`deploy.md`](./deploy.md#deploy-siteyml--site-trên-github-pages)).
 
 - **Đường dẫn:** `site/`
 - **Stack:** React 19, Vite 7, Tailwind v4, `@duydpdev/style-generator` (`link:..`), `styleGenVite()`

@@ -269,6 +269,7 @@ it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`
 - `yarn check:types-pack` (`scripts/check-types-pack.mjs`; CI after `build:all`, and `deploy.yml` before publish) packs the package and runs
   `@arethetypeswrong/cli --profile node16` on the tarball, so every subpath must resolve to `.d.ts` under `import` and `.d.cts` under `require`.
 - The package is public on npmjs.org: consumers need no token or scope config. 7.2.0 is the first npm release and 8.0.0 the first npm major; versions up to 7.1.1 exist only on GitHub Packages (npm holds 1.7–3.0).
+- The site is deployed by `deploy-site.yml` (GitHub Pages, base `/style-generator/`, `404.html` copy of `index.html` as the SPA fallback, `llms.txt` built from `site/src/lib/docs-meta.json` by `site/scripts/build-llms.mjs`); its deploy job runs only from `main` and holds the only `pages: write` / `id-token: write` permissions of that workflow.
 
 ## Project-Specific Workflow Rules
 

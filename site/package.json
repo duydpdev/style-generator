@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build:examples": "node scripts/build-examples.mjs",
-    "build": "yarn build:examples && vite build",
+    "build": "yarn build:examples && vite build && node scripts/build-llms.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "check:links": "node scripts/check-doc-links.mjs",

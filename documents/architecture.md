@@ -379,7 +379,7 @@ The export list per subpath, with signatures and examples, lives in [`reference/
 
 ## Landing Site (`site/`)
 
-The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) that dogfoods the library through the `link:..` dependency (see [`deploy.md`](./deploy.md#why-link-instead-of-workspace)).
+The top-level `site/` is a separate landing page (React + Vite + Tailwind v4) that dogfoods the library through the `link:..` dependency (see [`deploy.md`](./deploy.md#why-link-instead-of-workspace)). It is deployed to GitHub Pages by `deploy-site.yml` ([`deploy.md`](./deploy.md#deploy-siteyml--site-on-github-pages)).
 
 - **Path:** `site/`
 - **Stack:** React 19, Vite 7, Tailwind v4, `@duydpdev/style-generator` (`link:..`), `styleGenVite()`

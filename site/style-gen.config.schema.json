@@ -97,9 +97,54 @@
                   "minItems": 1,
                   "type": "array",
                   "items": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 100
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "steps": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 100
+                            }
+                          },
+                          "prefixes": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "bg",
+                                "text",
+                                "border",
+                                "ring",
+                                "outline",
+                                "divide",
+                                "placeholder"
+                              ]
+                            }
+                          },
+                          "keys": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "steps"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
                   },
                   "uniqueItems": true
                 }

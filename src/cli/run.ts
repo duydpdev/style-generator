@@ -254,9 +254,15 @@ walked recursively, e.g. .next/static/css) and compare it with the budget.
 
 Options:
   --max-gzip <bytes>   Budget in bytes (required)
+  --coverage-cost      List theme class groups by gzip cost
+  --theme <path>       Theme for --coverage-cost
 
 Exit codes: 0 within budget, 1 over budget, 2 usage error or no CSS found.`,
-  options: { "max-gzip": { type: "string" } },
+  options: {
+    "max-gzip": { type: "string" },
+    "coverage-cost": { type: "boolean" },
+    theme: { type: "string" },
+  },
   allowPositionals: true,
   usageExitCode: 2,
   run: (values, positionals, ctx) => {
@@ -264,8 +270,18 @@ Exit codes: 0 within budget, 1 over budget, 2 usage error or no CSS found.`,
       logger.error(`Usage: ${BUDGET_USAGE}`);
       return 2;
     }
+    const theme = str(values, "theme");
+    if (theme !== undefined && !flag(values, "coverage-cost")) {
+      logger.error("--theme needs --coverage-cost");
+      return 2;
+    }
     return budgetCommand(
-      { target: positionals[0], maxGzip: str(values, "max-gzip") },
+      {
+        target: positionals[0],
+        maxGzip: str(values, "max-gzip"),
+        coverageCost: flag(values, "coverage-cost"),
+        theme,
+      },
       ctx.cwd,
     );
   },

@@ -104,33 +104,33 @@ jobs:
       - name: Check embedded doc code
         # Tutorial blocks with an `<!-- embed: path#region -->` marker must
         # equal that region of the real example file (yarn docs:embed).
-        run: yarn check:docs-embed
+        run: node scripts/docs-embed.mjs --check
 
       - name: Check the Vietnamese docs mirror
         # Every doc the site renders has a documents/vi/ twin whose recorded
         # source hash, heading levels, doc-script markers and code blocks
-        # match the English file (yarn check:docs-i18n). After
-        # check:docs-embed: the hash is taken of the embedded file.
-        run: yarn check:docs-i18n
+        # match the English file (node scripts/check-docs-i18n.mjs). After
+        # the embed check: the hash is taken of the embedded file.
+        run: node scripts/check-docs-i18n.mjs
 
       - name: Type-check doc snippets
         # Every ts/tsx block in README.md and documents/ (not plans,
         # brainstorm, migration) against dist/*.d.ts; opt-outs need a reason
         # and stay at or below 10% of all blocks.
-        run: yarn check:doc-snippets
+        run: node scripts/check-doc-snippets.mjs
 
       - name: Check reference coverage of exports
         # Every export of every package.json#exports subpath needs a heading
         # in documents/reference/<subpath>.md with a signature block that
         # matches dist/*.d.ts and a non-empty TSDoc (yarn docs:signatures).
-        run: yarn check:doc-exports
+        run: node scripts/check-doc-exports.mjs
 
       - name: Check CLI and config reference
         # Every flag printed by a built `style-gen <command> --help` must sit
         # in that command's section of documents/reference/cli.md, every key of
         # the style-gen.config.json schema in documents/reference/options.md,
         # and no rendered page may tell version history.
-        run: yarn check:doc-reference
+        run: node scripts/check-doc-reference.mjs
 
       - name: Typecheck examples
         # The examples and the site consume the built library through `link:../..`.

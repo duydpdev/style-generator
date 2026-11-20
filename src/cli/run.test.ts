@@ -246,6 +246,40 @@ describe("runCli", () => {
       );
     });
 
+    it("passes --coverage-cost and --theme to budget", async () => {
+      await runCli(
+        [
+          "budget",
+          "a.css",
+          "--max-gzip",
+          "9",
+          "--coverage-cost",
+          "--theme",
+          "t.json",
+        ],
+        CWD,
+      );
+      expect(budgetCommand).toHaveBeenCalledWith(
+        {
+          target: "a.css",
+          maxGzip: "9",
+          coverageCost: true,
+          theme: "t.json",
+        },
+        CWD,
+      );
+    });
+
+    it("budget --theme without --coverage-cost is a usage error, 2", async () => {
+      expect(
+        await runCli(
+          ["budget", "a.css", "--max-gzip", "9", "--theme", "t.json"],
+          CWD,
+        ),
+      ).toBe(2);
+      expect(budgetCommand).not.toHaveBeenCalled();
+    });
+
     it("budget with a second positional is a usage error, 2", async () => {
       expect(
         await runCli(["budget", "a.css", "b.css", "--max-gzip", "1"], CWD),

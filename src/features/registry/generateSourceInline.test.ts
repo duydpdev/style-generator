@@ -330,4 +330,109 @@ describe("generateSourceInline coverage", () => {
     );
     expect(css).not.toContain("/{");
   });
+
+  it("an opacity group adds its own narrow line after the plain-step line", () => {
+    const lines = linesOf({
+      coverage: {
+        colors: {
+          prefixes: ["bg", "text", "border"],
+          opacities: [
+            5,
+            { steps: [32], prefixes: ["bg"], keys: ["brand", "primaryHover"] },
+          ],
+        },
+      },
+    });
+    expect(lines.slice(0, 4)).toEqual([
+      '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}");',
+      '@source inline("{bg,text,border}-{primary,primary-hover,brand,brand-hover}/{5}");',
+      '@source inline("{bg}-{brand,primary-hover}/{32}");',
+      '@source inline("hover:{bg,text,border}-{primary-hover,brand-hover}");',
+    ]);
+  });
+
+  it("a group without prefixes or keys uses the rule's, with its steps ascending", () => {
+    const lines = linesOf({
+      coverage: {
+        colors: { prefixes: ["bg"], opacities: [{ steps: [40, 32] }] },
+      },
+    });
+    expect(lines).toContain(
+      '@source inline("{bg}-{primary,primary-hover,brand,brand-hover}/{32,40}");',
+    );
+  });
+
+  it("only groups emit no plain opacity line, and groups keep declaration order", () => {
+    const lines = linesOf({
+      coverage: {
+        colors: {
+          prefixes: ["bg"],
+          opacities: [
+            { steps: [32], keys: ["brand"] },
+            { steps: [10], keys: ["primary"] },
+          ],
+        },
+      },
+    });
+    expect(lines.filter((l) => l.includes("/{"))).toEqual([
+      '@source inline("{bg}-{brand}/{32}");',
+      '@source inline("{bg}-{primary}/{10}");',
+    ]);
+  });
+
+  it('a group follows `keys: "aliased"` only when it names no keys', () => {
+    const lines = linesOf({
+      coverage: {
+        colors: {
+          prefixes: ["bg"],
+          keys: "aliased",
+          opacities: [{ steps: [32] }, { steps: [10], keys: ["primary"] }],
+        },
+      },
+    });
+    expect(lines).toContain('@source inline("{bg}-{brand,brand-hover}/{32}");');
+    expect(lines).toContain('@source inline("{bg}-{primary}/{10}");');
+  });
+});
+
+describe("generateSourceInline snapshots (learn-sql-like theme)", () => {
+  const theme: ThemeConfig = {
+    colors: {
+      foreground: "#111",
+      primary: "#222",
+      primaryHover: "#333",
+    },
+  };
+
+  it("default options", () => {
+    expect(generateSourceInline(theme)).toMatchInlineSnapshot(`
+      "@source inline("{bg,text,border,ring,outline,divide,placeholder}-{foreground,primary,primary-hover}");
+      @source inline("hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}");
+      @source inline("{md:,lg:,}{rounded,rounded-t,rounded-r,rounded-b,rounded-l}-{none,xs,sm,md,lg,xl,2xl,3xl,full}");
+      @source inline("{border,border-x,border-y,border-t,border-r,border-b,border-l,border-s,border-e,divide-x,divide-y}-{0,1,2,4}");
+      @source inline("sp-{p,px,py,pt,pb,pl,pr,m,mx,my,mt,mb,ml,mr,gap,gap-x,gap-y,top,right,bottom,left}");
+      "
+    `);
+  });
+
+  it("colors prefixes [bg, text, border] with plain opacities [5, 10, 15, 55]", () => {
+    expect(
+      generateSourceInline(theme, {
+        coverage: {
+          colors: {
+            prefixes: ["bg", "text", "border"],
+            opacities: [5, 10, 15, 55],
+          },
+        },
+      }),
+    ).toMatchInlineSnapshot(`
+      "@source inline("{bg,text,border}-{foreground,primary,primary-hover}");
+      @source inline("{bg,text,border}-{foreground,primary,primary-hover}/{5,10,15,55}");
+      @source inline("hover:{bg,text,border}-{primary-hover}");
+      @source inline("{md:,lg:,}{rounded,rounded-t,rounded-r,rounded-b,rounded-l}-{none,xs,sm,md,lg,xl,2xl,3xl,full}");
+      @source inline("{border,border-x,border-y,border-t,border-r,border-b,border-l,border-s,border-e,divide-x,divide-y}-{0,1,2,4}");
+      @source inline("sp-{p,px,py,pt,pb,pl,pr,m,mx,my,mt,mb,ml,mr,gap,gap-x,gap-y,top,right,bottom,left}");
+      "
+    `);
+  });
 });

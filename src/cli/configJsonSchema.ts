@@ -6,6 +6,9 @@ import {
 } from "../features/registry/builtInCategories";
 import { StyleGenConfigFileSchema } from "../node/loadStyleGenConfig";
 
+/** The config's JSON Schema `init` writes in the project root. */
+export const CONFIG_SCHEMA_FILE = "style-gen.config.schema.json";
+
 type JsonObject = Record<string, unknown>;
 
 /**
@@ -39,7 +42,8 @@ function child(value: unknown, key: string): JsonObject {
  * rule) with one entry per registry category, so each category only accepts
  * what `StyleGeneratorOptionsSchema` accepts for it: its own `prefixes`
  * (none for a bare-class category), `opacities` only for opacity-modifier
- * categories (distinct), and `keys: "aliased"` only where `$` aliases exist.
+ * categories (distinct; a group's `prefixes` limited like the rule's), and
+ * `keys: "aliased"` only where `$` aliases exist.
  * @param {JsonObject} coverage - The generated `coverage` node, rewritten in place
  */
 function refineCoverage(coverage: JsonObject): void {
@@ -65,7 +69,14 @@ function refineCoverage(coverage: JsonObject): void {
       };
     }
     if ("opacityModifier" in descriptor) {
-      child(ruleProperties, "opacities").uniqueItems = true;
+      const opacities = child(ruleProperties, "opacities");
+      opacities.uniqueItems = true;
+      const entry: unknown = child(opacities, "items").anyOf;
+      const group: unknown = Array.isArray(entry) ? entry[1] : undefined;
+      child(child(group, "properties"), "prefixes").items = {
+        type: "string",
+        enum: [...descriptor.classPrefixes],
+      };
     } else {
       delete ruleProperties.opacities;
     }
@@ -112,4 +123,18 @@ export function buildConfigJsonSchema(
   } catch {
     return plain;
   }
+}
+
+/**
+ * The config's `$schema` pointer, which goes first; a pointer the user wrote
+ * stays where it is.
+ * @param {Record<string, unknown>} content The existing config content.
+ * @returns {{ $schema?: string }} The key to put first, or nothing.
+ */
+export function configSchemaRef(content: Record<string, unknown>): {
+  $schema?: string;
+} {
+  return content.$schema === undefined
+    ? { $schema: `./${CONFIG_SCHEMA_FILE}` }
+    : {};
 }

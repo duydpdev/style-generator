@@ -73,7 +73,7 @@ The `--theme` default becomes `src/styles/theme.json` when a `src/` directory ex
 | same version but edited, or no version stamp, interactive     | asks before replacing it; a declined or cancelled prompt keeps it                 |
 | same version but edited, or no version stamp, non-interactive | keeps it and says to run `style-gen init --rules-only` in an interactive terminal |
 
-After upgrading, run `style-gen init --rules-only` to refresh the file: it leaves the theme, the schema and `style-gen.config.json` alone, never opens the wizard, prints the CSS lines with the `@source not` line and exits 0. The CSS path is the `output` of the config (`package.json#style-gen` included, and also when the config is invalid), `styles/theme.css` when the config names none, and the `theme.css` beside the theme a first `init` would name when there is no config. It cannot be combined with `--theme`, `--dark` or `--skip-rules` (exit code 1). A plain `init` that keeps the existing theme at the overwrite prompt also updates the rules and prints the next steps again. `--skip-rules` writes no rules file. A build without the rules (a local `yarn build` that skipped the emit step) prints a warning and exits 0.
+After upgrading, run `style-gen init --rules-only` to refresh the file: it leaves the theme, the schema and `style-gen.config.json` alone, never opens the wizard, prints the CSS lines with the `@source not` line and exits 0. The CSS path is the `output` of the config (`package.json#style-gen` included, and also when the config is invalid) and `styles/theme.css` when the config names none. Without a config (no `style-gen.config.json`, no `package.json#style-gen`) there is no generated CSS to point at: it prints no CSS lines, says `No style-gen.config.json in this directory` and points to `style-gen init`, which prints them. It cannot be combined with `--theme`, `--dark` or `--skip-rules` (exit code 1). A plain `init` that keeps the existing theme at the overwrite prompt also updates the rules and prints the next steps again. `--skip-rules` writes no rules file. A build without the rules (a local `yarn build` that skipped the emit step) prints a warning and exits 0.
 
 These are the snippets `init` prints for Next.js and Nuxt (the Vite one is in the [README](../../README.md#quickstart)).
 
@@ -159,7 +159,7 @@ Positional `style-gen generate <theme> <out>` also works; flags take precedence.
 
 ### `style-gen schema`
 
-Write the JSON Schemas of the theme (from `z.toJSONSchema(ThemeSchema)`) and of `style-gen.config.json` so editors can autocomplete keys and flag unknown ones when the file declares `"$schema"`. Without `--out` the theme's schema goes to `theme.schema.json` next to the configured `theme` (default `styles/theme.json`), where `"$schema": "./theme.schema.json"` looks for it; the config file is then read as `generate` reads it. The config's schema goes to `style-gen.config.schema.json` in the project root unless `--config-out` names another file, and it is written on every successful path, even when the config has issues: a schema-invalid config is the moment an upgrader needs it. Without `--out`, `schema` then reports the issues (`Invalid config (<file>):`), writes no theme schema (the config decides where it would go) and exits 1. Add `"$schema": "./style-gen.config.schema.json"` to `style-gen.config.json` for editor autocomplete. With `--out`, the config is consulted only for the theme file it must not overwrite, and a config with issues is not reported: both schemas are written and the exit code is 0. A config that is not valid JSON is warned about (`Ignoring <file> is not valid JSON (<reason>); using defaults`), with or without `--out`, and read as the defaults.
+Write the JSON Schemas of the theme (from `z.toJSONSchema(ThemeSchema)`) and of `style-gen.config.json` so editors can autocomplete keys and flag unknown ones when the file declares `"$schema"`. Without `--out` the theme's schema goes to `theme.schema.json` next to the configured `theme` (default `styles/theme.json`), where `"$schema": "./theme.schema.json"` looks for it; the config file is then read as `generate` reads it. The config's schema goes to `style-gen.config.schema.json` in the project root unless `--config-out` names another file, and it is written on every successful path, even when the config has issues: a schema-invalid config is the moment an upgrader needs it. Without `--out`, `schema` then reports the issues (`Invalid config (<file>):`), writes no theme schema (the config decides where it would go) and exits 1. A valid `style-gen.config.json` without `"$schema"` gets one `"$schema"` line (the config schema's path, relative and `./`-prefixed) right after its opening `{`, and nothing else in the file changes (line endings and indent are kept; the file is written in place, through a symlink); `Added "$schema" to style-gen.config.json` says so. An invalid or malformed one is left as it is and `schema` prints the line to add, with or without `--out`; a `"$schema"` the file already has and `package.json#style-gen` are never edited. With `--out`, the config is consulted only for the theme file it must not overwrite, and a config with issues is not reported: both schemas are written and the exit code is 0. A config that is not valid JSON is warned about (`Ignoring <file> is not valid JSON (<reason>); using defaults`), with or without `--out`, and read as the defaults.
 
 | Flag           | Type     | Default                                            | Description                                                     |
 | :------------- | :------- | :------------------------------------------------- | :-------------------------------------------------------------- |
@@ -168,7 +168,7 @@ Write the JSON Schemas of the theme (from `z.toJSONSchema(ThemeSchema)`) and of 
 
 Exit codes: `0` ok (also for a config with issues when `--out` is given), `1` failure (without `--out`, also a config with issues).
 
-Both paths are checked before anything is written (`--config-out escapes project root: <path>`, exit code 1). `schema` never overwrites the theme or the config. It protects the theme (the `theme` of a valid config, else the one an invalid config declares, else `styles/theme.json`), `style-gen.config.json` and `package.json` (both, whether or not they exist), and the two schema targets must differ from each other. A target that names one of them exits with code 1 and writes nothing, for `--config-out` as for `--out`: `--out and --config-out name the same file: <path>`, `--out would overwrite the theme file: <path>`, `--config-out would overwrite the theme file: <path>`, `--out would overwrite the config file: <path>` and `--config-out would overwrite the config file: <path>`. One file reached through another case or a symlink counts as one file ([must be different files](../troubleshooting.md#must-be-different-files)). The JSON Schema of the config carries the key and value rules its generator maps into it, not the cross-field checks listed under [Configuration file](#configuration-file) ([JSON Schema limits](./options.md#json-schema-limits)). Run `style-gen schema` after upgrading the package: neither `generate` nor `init` rewrites a committed schema, so it keeps the keys of the version that wrote it.
+Both paths are checked before anything is written (`--config-out escapes project root: <path>`, exit code 1). `schema` never overwrites the theme or the config (its only change to the config is the one `"$schema"` line above). It protects the theme (the `theme` of a valid config, else the one an invalid config declares, else `styles/theme.json`), `style-gen.config.json` and `package.json` (both, whether or not they exist), and the two schema targets must differ from each other. A target that names one of them exits with code 1 and writes nothing, for `--config-out` as for `--out`: `--out and --config-out name the same file: <path>`, `--out would overwrite the theme file: <path>`, `--config-out would overwrite the theme file: <path>`, `--out would overwrite the config file: <path>` and `--config-out would overwrite the config file: <path>`. One file reached through another case or a symlink counts as one file ([must be different files](../troubleshooting.md#must-be-different-files)). The JSON Schema of the config carries the key and value rules its generator maps into it, not the cross-field checks listed under [Configuration file](#configuration-file) ([JSON Schema limits](./options.md#json-schema-limits)). Run `style-gen schema` after upgrading the package: neither `generate` nor `init` rewrites a committed schema, so it keeps the keys of the version that wrote it.
 
 ```bash
 yarn style-gen schema                            # → styles/theme.schema.json (next to the theme) and style-gen.config.schema.json
@@ -212,17 +212,28 @@ The module is `export const tokens = {…} as const` plus `export type Tokens = 
 
 ### `style-gen budget`
 
-Fail CI when the built CSS grows past a gzip budget: it sums the gzip size (`node:zlib` defaults) of one `.css` file, or of every `.css` file under a directory (walked recursively, e.g. `.next/static/css` or `dist/assets`).
+Fail CI when the built CSS grows past a gzip budget: it sums the gzip size (`node:zlib` defaults) of one `.css` file, or of every `.css` file under a directory (walked recursively, e.g. `.next/static/css` or `dist/assets`). With `--coverage-cost` it also lists which theme class groups cost the most.
 
 ```bash
-yarn style-gen budget .next/static/css --max-gzip 14925
+yarn style-gen budget .next/static/css --max-gzip 14925 --coverage-cost
 ```
 
-| Flag                 | Type     | Default  | Description                                                                        |
-| :------------------- | :------- | :------- | :--------------------------------------------------------------------------------- |
-| `--max-gzip <bytes>` | `number` | required | Budget in bytes; the command exits 1 when the summed gzip size is larger than this |
+| Flag                 | Type      | Default  | Description                                                                                                   |
+| :------------------- | :-------- | :------- | :------------------------------------------------------------------------------------------------------------ |
+| `--max-gzip <bytes>` | `number`  | required | Budget in bytes; the command exits 1 when the summed gzip size is larger than this                            |
+| `--coverage-cost`    | `boolean` | off      | After the summary, list the theme class groups by gzip cost, each with the `coverage` setting that removes it |
+| `--theme <path>`     | `string`  | config   | Theme for `--coverage-cost`; default: the config's theme. Without `--coverage-cost` it is a usage error       |
 
-On success it prints an `OK: …` summary line; over budget it prints `OVER BUDGET: …` and exits 1. Exit codes: `0` within budget, `1` over budget, `2` usage error, unreadable target or no CSS found.
+On success it prints an `OK: …` summary line; over budget it prints `OVER BUDGET: …` and exits 1. Exit codes: `0` within budget, `1` over budget, `2` usage error, unreadable target or no CSS found, or (with `--coverage-cost`) a config or theme it cannot read.
+
+`--coverage-cost` prints the summary line first and unchanged, then up to ten lines, largest first:
+
+```text
+Coverage cost (upper bound):
+  colors/divide           1062 B gzip  (120 rules)  coverage.colors.prefixes: ["bg","text","border","ring","outline","placeholder"]
+```
+
+Each line is a group (`<category>/<class prefix>`): the gzip bytes saved when its rules are removed from the CSS, the rule count, and the `coverage` setting that stops `@source inline` from emitting it. The figure is an upper bound: classes your own source uses stay in the CSS after the cut. The cost lines are informational, not a contract; only the summary line is.
 
 ### `style-gen --version`
 
@@ -246,7 +257,7 @@ Print the installed CLI version.
 `breakpoints`, `screens`, `enableResponsive`, `spacing`, `typography`, `coverage` and `resetTailwindDefaults` are forwarded to `generate()`.
 Any other key (a typo such as `breakpoint`) is rejected with its name; `style-gen schema` writes the file's JSON Schema.
 Only `$schema`, `theme`, `output` and `tokensOutput` are accepted besides the forwarded keys.
-`$schema` is the editor's pointer to the config's JSON Schema, not a setting: add `"$schema": "./style-gen.config.schema.json"` as the first key (`style-gen schema` and `init` write that file) and the editor suggests keys and flags unknown ones; the key is accepted in the file, dropped on read and never reaches `generate()`.
+`$schema` is the editor's pointer to the config's JSON Schema, not a setting: add `"$schema": "./style-gen.config.schema.json"` as the first key (`init` writes it into a config it creates, and `style-gen schema` inserts it into a valid `style-gen.config.json` that has none) and the editor suggests keys and flags unknown ones; the key is accepted in the file, dropped on read and never reaches `generate()`.
 The JSON Schema states key and value shapes and, per `coverage` category, its own `prefixes`, `keys` and distinct `opacities`. It does not carry the checks that compare values with each other or read other files, nor the path rules, so an editor can accept a config that `generate` and `doctor` reject: see [JSON Schema limits](./options.md#json-schema-limits).
 `tokensOutput` is the path of the generated tokens module, relative to the project root and inside it (default: `theme.tokens.ts` beside `output`); it must name a `.ts`, `.mts` or `.cts` file, not a `.d.ts`.
 Classes built at runtime are declared with your own `@source inline(...)` next to the generated import (see [Options](./options.md#classes-built-at-runtime)).

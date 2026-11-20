@@ -53,6 +53,7 @@ describe("resolveOptions", () => {
       prefixes: undefined,
       keys: "all",
       opacities: [5, 10, 20],
+      opacityGroups: [],
     });
     expect(options).toEqual(snapshot);
     expect(
@@ -63,14 +64,43 @@ describe("resolveOptions", () => {
         prefixes: undefined,
         keys: "all",
         opacities: [],
+        opacityGroups: [],
       },
       shadows: {
         enabled: true,
         prefixes: undefined,
         keys: "all",
         opacities: [],
+        opacityGroups: [],
       },
     });
+  });
+
+  it("resolves opacity groups with their raw index and ascending steps, plain steps apart", () => {
+    const options: StyleGeneratorOptions = {
+      coverage: {
+        colors: {
+          opacities: [
+            20,
+            { steps: [40, 32], prefixes: ["bg"], keys: ["primary"] },
+            5,
+            { steps: [10] },
+          ],
+        },
+      },
+    };
+    const snapshot = structuredClone(options);
+    expect(resolveOptions(options).coverage.colors).toEqual({
+      enabled: true,
+      prefixes: undefined,
+      keys: "all",
+      opacities: [5, 20],
+      opacityGroups: [
+        { index: 1, steps: [32, 40], prefixes: ["bg"], keys: ["primary"] },
+        { index: 3, steps: [10], prefixes: undefined, keys: undefined },
+      ],
+    });
+    expect(options).toEqual(snapshot);
   });
 
   it("sorts breakpoints ascending by resolved width, not by declaration order", () => {

@@ -28,14 +28,14 @@ The site renders the files listed in `site/src/lib/docs-meta.json` at `/docs/<sl
 
 ## Vietnamese mirror ([`vi/`](./vi/README.md))
 
-English is the source of truth. Every file listed in `site/src/lib/docs-meta.json` has a Vietnamese twin at the same path under `vi/` (the repo `README.md` → `vi/README.md`); the site renders it at `/vi/docs/<slug>` with the entry's `vi.title`. `yarn check:docs-i18n` (CI check job, after `check:docs-embed`) fails when a twin is missing, when line 1 (`<!-- source: <english path> sha256: <hash> -->`) records an older version of the English file, or when the twin's heading levels (with their inline code), doc-script markers (`embed`, `signature`, `snippet`, `> [!NOTE]`-style alerts), code blocks or signature blocks differ from the English file. Code blocks and signature blocks are copied verbatim; everything else is translated.
+English is the source of truth. Every file listed in `site/src/lib/docs-meta.json` has a Vietnamese twin at the same path under `vi/` (the repo `README.md` → `vi/README.md`); the site renders it at `/vi/docs/<slug>` with the entry's `vi.title`. `node scripts/check-docs-i18n.mjs` (CI check job, after `node scripts/docs-embed.mjs --check`) fails when a twin is missing, when line 1 (`<!-- source: <english path> sha256: <hash> -->`) records an older version of the English file, or when the twin's heading levels (with their inline code), doc-script markers (`embed`, `signature`, `snippet`, `> [!NOTE]`-style alerts), code blocks or signature blocks differ from the English file. Code blocks and signature blocks are copied verbatim; everything else is translated.
 
 When you change an English doc:
 
 1. Edit the English file and run `yarn docs:embed` (it also rewrites the code embedded in the twins). Signature blocks: `yarn docs:signatures` (needs `yarn build:all`) rewrites them in the English page and in its twin, and moves the twin's source hash along when the twin was in step with the English page. Never copy a signature block by hand.
 2. Update the twin's text to match: same headings and levels, the same markers and code blocks, links to the twins of rendered docs (`./guide.md`), one more `../` for any other repo file, and `#anchors` that match the translated headings.
-3. `yarn exec prettier --write <twin>`, then `yarn check:docs-i18n --write-hash <twin>` to record the new source hash. Use `--write-hash` only when the twin matches the current English file, never to silence the gate.
-4. `yarn check:docs-i18n && yarn workspace site check:links`. `--only <path>` limits the check to one twin or directory; `--untranslated` (advisory, never a gate) also lists prose lines copied from the English file.
+3. `yarn exec prettier --write <twin>`, then `node scripts/check-docs-i18n.mjs --write-hash <twin>` to record the new source hash. Use `--write-hash` only when the twin matches the current English file, never to silence the gate.
+4. `node scripts/check-docs-i18n.mjs && yarn workspace site check:links`. `--only <path>` limits the check to one twin or directory; `--untranslated` (advisory, never a gate) also lists prose lines copied from the English file.
 
 A new rendered doc needs its `docs-meta.json` entry with `vi.title` and its twin in the same change.
 

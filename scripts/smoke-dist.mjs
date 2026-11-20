@@ -287,6 +287,23 @@ runNode(
   [cli, "budget", "theme.css", "--max-gzip", "100000"],
   work,
 );
+const costOut = runNode(
+  "style-gen budget --coverage-cost",
+  [
+    cli,
+    "budget",
+    "theme.css",
+    "--max-gzip",
+    "100000",
+    "--coverage-cost",
+    "--theme",
+    "theme.json",
+  ],
+  work,
+);
+if (!costOut.includes("Coverage cost")) {
+  fail(`budget --coverage-cost printed no cost header:\n${costOut}`);
+}
 
 // `init` in an empty project: no bundler config, so it prints the
 // `style-gen generate` fallback; `generate` then writes the CSS from what

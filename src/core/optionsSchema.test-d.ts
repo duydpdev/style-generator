@@ -37,7 +37,16 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
       | {
           prefixes?: string[] | undefined;
           keys?: "aliased" | "all" | undefined;
-          opacities?: number[] | undefined;
+          opacities?:
+            | (
+                | number
+                | {
+                    steps: number[];
+                    prefixes?: string[] | undefined;
+                    keys?: string[] | undefined;
+                  }
+              )[]
+            | undefined;
         }
       | undefined
     >();
@@ -132,5 +141,38 @@ describe("StyleGeneratorOptionsSchema mirrors StyleGeneratorOptions", () => {
     expectTypeOf<{
       borderWidth: { opacities: [10] };
     }>().not.toExtend<Coverage>();
+  });
+
+  it("an opacity group is a colors-only entry whose prefixes are colors prefixes", () => {
+    type Coverage = NonNullable<StyleGeneratorOptions["coverage"]>;
+
+    expectTypeOf<{
+      colors: {
+        opacities: [5, { steps: [32]; prefixes: ["bg"]; keys: ["foreground"] }];
+      };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { opacities: [{ steps: [32] }] };
+    }>().toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { opacities: [{ steps: [] }] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { opacities: [{ steps: [32]; prefixes: ["shadow"] }] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      colors: { opacities: [{ steps: [32]; prefixes: [] }] };
+    }>().not.toExtend<Coverage>();
+    expectTypeOf<{
+      shadows: { opacities: [{ steps: [32] }] };
+    }>().not.toExtend<Coverage>();
+
+    const coverage: Coverage = {
+      colors: {
+        // @ts-expect-error `shadow` is not a class prefix of `colors`
+        opacities: [{ steps: [32], prefixes: ["shadow"] }],
+      },
+    };
+    expectTypeOf(coverage).toExtend<Coverage>();
   });
 });

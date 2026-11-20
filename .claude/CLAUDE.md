@@ -27,7 +27,7 @@ yarn build:all      # Both
 
 # Test
 yarn test           # Vitest run, unit (*.test.ts)
-yarn test:watch     # Watch mode
+yarn vitest          # Watch mode
 yarn test:coverage  # v8 coverage; excludes test files and dist/
 yarn test:types     # vitest run --typecheck.only — *.test-d.ts (expectTypeOf); `yarn test` does not run them
 yarn test:e2e       # Playwright (Chromium + WebKit) — spacing inheritance, compiled CSS
@@ -40,8 +40,8 @@ yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single fi
 # Quality
 yarn verify         # base gate + src gate in one command (documents/testing.md → Gate table)
 yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directives
-yarn lint:fix
-yarn prettier:check # CI gate (check mode); yarn prettier only prints, yarn prettier:fix writes
+yarn lint --fix
+yarn prettier:check # CI gate (check mode); yarn prettier:fix writes
 yarn tsc --noEmit   # Type check
 yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
 yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
@@ -53,7 +53,7 @@ yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (no
 yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
 yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
-yarn check:docs-embed && yarn check:docs-i18n && yarn check:doc-snippets && yarn check:doc-exports && yarn check:doc-reference   # docs gates (after build:all; CI check job); doc-reference: CLI flags + config keys documented, no version history on pages
+yarn check:docs    # docs gates (after build:all; CI check job runs them as five steps): embed, i18n, snippets, exports, reference; doc-reference: CLI flags + config keys documented, no version history on pages
 yarn check:plain-ui     # examples/plain-react/src/ui/<folder>/: style.ts, types.ts, <Name>.tsx, index.ts; relative imports only ./… and ../../theme; package allow-list (CI)
 ```
 
@@ -126,7 +126,7 @@ Build outputs: `dist/{index,tokens,cva,spacing,recipes,types,ui,ui-react,vite,ne
 `dist/<n>.d.cts` is `dist/<n>.d.ts` run through `toCjsDeclaration` (`scripts/cjs-declaration.mjs`) by `scripts/emit-cts-types.mjs`, the last step of `yarn build`:
 the single `vite` import becomes `import type … with { 'resolution-mode': 'import' }` because Vite has no usable CommonJS types, `zod`, `class-variance-authority`, `clsx`,
 `tailwind-merge` and `react` are kept, any other external specifier or import form fails the build; `with` parses on TypeScript 5.3+ and TypeScript 7 rejects `assert` (TS2880), so `dist/vite.legacy.d.cts`
-(`toLegacyCjsDeclaration`) keeps `assert` and `package.json#exports["./vite"].require["types@<5.3"]` points at it, because `with` is a parse error on TypeScript < 5.3) + `dist/cli/index.mjs` (tsdown, JSDoc stripped via `outputOptions.comments.jsdoc = false`).
+(`toLegacyCjsDeclaration`) keeps `assert` and `package.json#exports["./vite"].require["types@<5.3"]` points at it, because `with` is a parse error on TypeScript < 5.3) + `dist/cli/index.mjs` (tsdown, JSDoc stripped via `outputOptions.comments.jsdoc = false`, `//#region` markers via `inputOptions.experimental.attachDebugInfo = "none"`).
 `package.json#exports` uses nested conditions (`import: { types: .d.ts, default: .js }`, `require: { types: .d.cts, default: .cjs }`) and has no top-level `types`;
 `moduleResolution: node10` is unsupported. `yarn typecheck:dist` checks the `.d.ts` under ESNext + Bundler (`tsconfig.dts-check.json`) and the `.d.cts` as a CommonJS consumer under
 `node16` with `skipLibCheck: false` (`tsconfig.dts-check.cjs.json`, `scripts/dist-types.cjs.assert.cts`); attw never resolves peer types, so it cannot replace that check.
@@ -203,8 +203,10 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `keys: "aliased"` keeps the alias **holders** — declared keys whose value is a `$alias` in the base record or any `themeAxes` override of the same category;
   the primitives they point to need no class (rejected for `typography`, which has no aliases). `opacities` (distinct integers 1–100, non-empty;
   only for categories whose descriptor sets `opacityModifier`, i.e. `colors`) adds ONE line `{bg,text,border,ring,outline,divide,placeholder}-{keys}/{steps}` right after the
-  category line, following `prefixes`/`keys`, steps sorted ascending in `resolveOptions`, never crossed with the state lines.
-  The same steps are `DesignTokens.Web.opacities` (`OpacitySteps<O>`, `resolveTokenOptions`), which `createVariantMapper(prefix, colors, { opacities })` turns into `token/step`
+  category line, following `prefixes`/`keys`, steps sorted ascending in `resolveOptions`, never crossed with the state lines. An `opacities` entry may be a group
+  `{ steps, prefixes?, keys? }` that adds its own narrower line after the plain-step line (`prefixes` checked in the schema, `keys` against `theme.colors` in `assertThemeOptions`, error path
+  `coverage.colors.opacities.<i>.keys.<j>`); groups never reach `DesignTokens.Web.opacities`.
+  The plain steps are `DesignTokens.Web.opacities` (`OpacitySteps<O>`, `resolveTokenOptions`), which `createVariantMapper(prefix, colors, { opacities })` turns into `token/step`
   keys; coverage changes no other typed token. Absent/`true`/`{}` is byte-identical to no option. `generate()` resolves every option default once in `resolveOptions()`
   (`src/core/resolveOptions.ts`, which spreads the slim `resolveTokenOptions()`); never re-apply `options.x ?? DEFAULT_X` downstream.
   Category defaults live in `src/features/registry/categoryTokenMeta.ts` (descriptors spread it); both it and `resolveTokenOptions.ts` must stay separate small files so the
@@ -230,15 +232,15 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   **commands never call `process.exit`** (only `src/cli/index.ts` assigns `process.exitCode`), so tests drive `runCli`/the command functions directly.
   `generate --watch` (like the Vite/Next dev servers) watches the theme AND both config candidates (`style-gen.config.json`, `package.json#style-gen`; resolved by `src/node/configSource.ts`, `package.json` events ignored while `style-gen.config.json` exists) and keeps the last valid config when an edit is invalid.
   `generate --check` compares the committed tokens file with CRLF normalised and fails on a malformed config (the other commands warn `Ignoring … using defaults`). `generate`, `doctor` and the plugins resolve outputs through `resolveEmitTarget` (`output`/`tokensOutput` inside the root, `tokensOutput` a `.ts`/`.mts`/`.cts` file, theme, CSS, tokens module, `style-gen.config.json` and `package.json` five different files, decided by `sameFile`: same canonical path or same inode, so another case, a symlink or a hard link counts; both config files are protected even when absent); `doctor` reports a refusal as `Output (…) ❌ Invalid emit paths`.
-  `schema` writes `theme.schema.json` (next to the theme, `--out`) and `style-gen.config.schema.json` (project root, `--config-out`; the config schema is written even when the config violates the schema: without `--out` the issues are then reported and the exit code is 1, with `--out` both schemas are written and the exit code is 0) from `z.toJSONSchema(StyleGenConfigFileSchema)` narrowed by `buildConfigJsonSchema` (`src/cli/configJsonSchema.ts`: per-category `coverage` prefixes/`keys`, distinct `opacities`); neither target may be the theme, `style-gen.config.json` or `package.json`, nor each other;
+  `schema` writes `theme.schema.json` (next to the theme, `--out`) and `style-gen.config.schema.json` (project root, `--config-out`; the config schema is written even when the config violates the schema: without `--out` the issues are then reported and the exit code is 1, with `--out` both schemas are written and the exit code is 0) from `z.toJSONSchema(StyleGenConfigFileSchema)` narrowed by `buildConfigJsonSchema` (`src/cli/configJsonSchema.ts`: per-category `coverage` prefixes/`keys`, distinct `opacities`); a valid `style-gen.config.json` without `$schema` gets that one line inserted after its `{` (every other byte kept, written in place; an invalid one is left as it is and the line to add is printed; `package.json#style-gen` is never edited); neither target may be the theme, `style-gen.config.json` or `package.json`, nor each other;
   cross-field rules (`breakpoints` ⊂ screens, one `screens` unit, `resetTailwindDefaults` replacements) and path rules stay out of the JSON Schema; the three committed copies (`examples/`, `examples/design-system/`, `site/`) are pinned by `committed-schema.test.ts`.
-  `init --yes`/`-y` never prompts and never overwrites (existing files kept, exit 0) and keeps an existing config as it is: it reads the theme from it and exits 1 when the config is invalid or `--theme` names another theme; `init` writes `"$schema": "./style-gen.config.schema.json"` as a new config's first key. A config `generate` rejects keeps the `theme`/`output` it declares and is left byte for byte as it was (warning), a `style-gen.config.json` that is not valid JSON stops `init` with exit 1, and a `--theme` that names a file `init` writes or merges into exits 1.
+  `init --yes`/`-y` never prompts and never overwrites (existing files kept, exit 0) and keeps an existing config as it is: it reads the theme from it and exits 1 when the config is invalid or `--theme` names another theme; `init` writes `"$schema": "./style-gen.config.schema.json"` as a new config's first key. `init --rules-only` without a config prints no CSS lines (it says no config was found). A config `generate` rejects keeps the `theme`/`output` it declares and is left byte for byte as it was (warning), a `style-gen.config.json` that is not valid JSON stops `init` with exit 1, and a `--theme` that names a file `init` writes or merges into exits 1.
   `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
   project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
   shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
   it never edits a bundler config and scaffolds no generator script; `init` merges `theme`/`$schema` (and `output` only when absent) into a valid config that does not already name the theme (or into a copy of `package.json["style-gen"]`) when it writes, and drops no key a major removed (7.x-to-8.0.md B10):
   an invalid config is kept as it is, or gets only the chosen theme merged in (both with a warning), so a key the schema rejects (`plugin`, `extraSources`, `axes`) stays and `generate` reports it as an unknown key. `budget` writes `OK: …`/`OVER BUDGET: …` lines that are a contract
-  consumers grep.
+  consumers grep; `--coverage-cost` adds informational cost lines after them (`src/cli/coverageCost.ts`, an upper bound: classes the app's source uses stay).
 
 ## Testing
 
@@ -259,6 +261,7 @@ runs on drafts and documentation-only PRs; the `plain-nuxt` job (its stories, no
 these 9 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
 it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
 `check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
+`.github/workflows/nightly.yml` (not a required check) adds `yarn test` on `macos-latest` and `scripts/bun-smoke.mjs` (Bun installed with `npm install -g bun`, no third-party action) every night and on PRs into `main`/`release/**` that change it.
 
 ## Publishing guards
 
@@ -293,7 +296,7 @@ documents/
 ├── README.md                     # index of everything below
 ├── architecture.md guide.md troubleshooting.md testing.md deploy.md components.md cookbook.md   # rendered by the site
 ├── getting-started/  reference/  # rendered by the site (site/src/lib/docs-meta.json)
-├── vi/                           # Vietnamese twin of every rendered doc (yarn check:docs-i18n)
+├── vi/                           # Vietnamese twin of every rendered doc (node scripts/check-docs-i18n.mjs)
 ├── migration/                    # upgrade guides + v4 measurement proofs
 ├── standards/                    # cross-repo standards (git-workflow-app.md)
 ├── brainstorm/YYYY-MM-DD/<topic>.md

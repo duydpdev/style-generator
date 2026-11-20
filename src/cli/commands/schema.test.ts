@@ -390,4 +390,127 @@ describe("schemaCommand", () => {
       expect(fs.existsSync(path.join(tmp, "gen/theme.schema.json"))).toBe(true);
     });
   });
+
+  describe('"$schema" in style-gen.config.json', () => {
+    const POINTER = "./style-gen.config.schema.json";
+    const configFile = (): string => path.join(tmp, "style-gen.config.json");
+    const read = (): string => fs.readFileSync(configFile(), "utf8");
+    const silenceInfo = () =>
+      vi.spyOn(logger, "info").mockImplementation(() => undefined);
+
+    it("inserts one line after the opening brace and keeps every other byte", () => {
+      silenceInfo();
+      const before =
+        '{\n  "theme": "styles/theme.json",\n  "breakpoints": ["md", "lg"]\n}\n';
+      fs.writeFileSync(configFile(), before);
+
+      expect(schemaCommand({}, tmp)).toBe(0);
+
+      expect(read()).toBe(
+        before.replace("{\n", `{\n  "$schema": "${POINTER}",\n`),
+      );
+    });
+
+    it("follows the file's CRLF line ending and indent", () => {
+      silenceInfo();
+      const before =
+        '{\r\n    "theme": "styles/theme.json",\r\n    "breakpoints": ["md", "lg"]\r\n}\r\n';
+      fs.writeFileSync(configFile(), before);
+
+      expect(schemaCommand({}, tmp)).toBe(0);
+
+      expect(read()).toBe(
+        before.replace("{\r\n", `{\r\n    "$schema": "${POINTER}",\r\n`),
+      );
+    });
+
+    it.each([
+      ["{}", `{\n  "$schema": "${POINTER}"\n}`],
+      ["{}\n", `{\n  "$schema": "${POINTER}"\n}\n`],
+    ])("fills the empty object %j", (before, after) => {
+      silenceInfo();
+      fs.writeFileSync(configFile(), before);
+
+      expect(schemaCommand({}, tmp)).toBe(0);
+
+      expect(read()).toBe(after);
+      expect(JSON.parse(read())).toEqual({ $schema: POINTER });
+    });
+
+    it("points at the --config-out target", () => {
+      silenceInfo();
+      fs.writeFileSync(configFile(), '{\n  "theme": "styles/theme.json"\n}\n');
+
+      expect(schemaCommand({ configOut: "schemas/c.json" }, tmp)).toBe(0);
+
+      expect(JSON.parse(read())).toMatchObject({
+        $schema: "./schemas/c.json",
+      });
+    });
+
+    it("leaves a file that already has $schema as it is", () => {
+      const infoSpy = silenceInfo();
+      const before = '{\n  "$schema": "./x.json",\n  "theme": "t.json"\n}\n';
+      fs.writeFileSync(configFile(), before);
+
+      expect(schemaCommand({}, tmp)).toBe(0);
+
+      expect(read()).toBe(before);
+      expect(infoSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Add "$schema"'),
+      );
+    });
+
+    it.each([
+      ["without --out", {}, 1],
+      ["with --out", { out: "t.schema.json" }, 0],
+    ])(
+      "leaves an invalid config as it is and prints the line to add %s",
+      (_label, args, exitCode) => {
+        const infoSpy = silenceInfo();
+        vi.spyOn(logger, "error").mockImplementation(() => undefined);
+        const before = '{\n  "theme": "t.json",\n  "extraSources": ["x"]\n}\n';
+        fs.writeFileSync(configFile(), before);
+
+        expect(schemaCommand(args, tmp)).toBe(exitCode);
+
+        expect(read()).toBe(before);
+        expect(infoSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`Add "$schema": "${POINTER}"`),
+        );
+      },
+    );
+
+    it("never edits package.json#style-gen", () => {
+      const infoSpy = silenceInfo();
+      const before = '{\n  "name": "app",\n  "style-gen": {}\n}\n';
+      fs.writeFileSync(path.join(tmp, "package.json"), before);
+
+      expect(schemaCommand({}, tmp)).toBe(0);
+
+      expect(fs.readFileSync(path.join(tmp, "package.json"), "utf8")).toBe(
+        before,
+      );
+      expect(infoSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Add "$schema"'),
+      );
+    });
+
+    it.skipIf(process.platform === "win32")(
+      "writes through a symlinked config and keeps the link",
+      () => {
+        silenceInfo();
+        const real = path.join(tmp, "real.json");
+        fs.writeFileSync(real, '{\n  "theme": "styles/theme.json"\n}\n');
+        fs.symlinkSync(real, configFile());
+
+        expect(schemaCommand({}, tmp)).toBe(0);
+
+        expect(fs.lstatSync(configFile()).isSymbolicLink()).toBe(true);
+        expect(fs.readFileSync(real, "utf8")).toBe(
+          `{\n  "$schema": "${POINTER}",\n  "theme": "styles/theme.json"\n}\n`,
+        );
+      },
+    );
+  });
 });

@@ -162,6 +162,29 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     expect(compiled).not.toContain(".bg-primary\\/10");
   });
 
+  it("an opacity group builds only its own class (build([]))", async () => {
+    const withForeground = {
+      ...theme,
+      colors: { ...theme.colors, foreground: "#111827" },
+    };
+    const { css: themeCss } = generate(withForeground, {
+      coverage: {
+        colors: {
+          prefixes: ["bg", "text"],
+          opacities: [{ steps: [32], prefixes: ["bg"], keys: ["foreground"] }],
+        },
+      },
+    });
+    const compiled = await compileFixtureCss(themeCss, []);
+
+    expect(compiled).toContain(".bg-foreground\\/32");
+    expect(
+      declsOf(compiled, ".bg-foreground\\/32").get("background-color"),
+    ).toContain("var(--sg-color-foreground) 32%");
+    expect(compiled).not.toContain(".text-foreground\\/32");
+    expect(compiled).not.toContain(".bg-primary\\/32");
+  });
+
   it("builds ring/outline/divide/placeholder color classes via @source inline (build([]))", async () => {
     const withMuted = {
       ...theme,

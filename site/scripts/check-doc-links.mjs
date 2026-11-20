@@ -6,7 +6,7 @@
  * file, and a `#anchor` into a markdown file must match one of its headings
  * (GitHub slug rules). The Vietnamese twins under documents/vi/ that exist
  * are checked too, and a link from a twin to an English rendered doc fails:
- * it must point at that doc's twin. A missing twin is check:docs-i18n's
+ * it must point at that doc's twin. A missing twin is scripts/check-docs-i18n.mjs's
  * error, not this script's. --root <dir> points at another repo tree
  * (tests). Absolute URLs are not fetched, except links into this
  * repository (`REPO_BLOB_URL`, as README.md writes them): those are checked
@@ -46,7 +46,7 @@ const EN_DOC_FILES = [
   ...markdownIn("documents/getting-started"),
   ...markdownIn("documents/reference"),
 ];
-/** Vietnamese twins that exist (decision: a missing twin is reported by check:docs-i18n). */
+/** Vietnamese twins that exist (decision: a missing twin is reported by scripts/check-docs-i18n.mjs). */
 const VI_DOC_FILES = EN_DOC_FILES.map(viTwinOf).filter((file) =>
   existsSync(resolve(repoRoot, file)),
 );

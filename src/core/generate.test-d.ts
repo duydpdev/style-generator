@@ -295,6 +295,16 @@ describe("a top-level option typo is a type error", () => {
     expectTypeOf(
       createDesignTokens(theme, withSteps).DesignTokens.Web.opacities,
     ).toEqualTypeOf<readonly (10 | 50)[]>();
+    const withGroup = {
+      coverage: {
+        colors: {
+          opacities: [10, { steps: [32], prefixes: ["bg"], keys: ["primary"] }],
+        },
+      },
+    } as const satisfies StyleGeneratorOptions;
+    expectTypeOf(generate(theme, withGroup).tokens.Web.opacities).toEqualTypeOf<
+      readonly 10[]
+    >();
     expectTypeOf(generate(theme).tokens.Web.opacities).toEqualTypeOf<
       readonly never[]
     >();

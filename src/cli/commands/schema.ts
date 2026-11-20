@@ -10,10 +10,11 @@ import {
   declaredLayout,
   defaultConfig,
   readConfigFile,
+  type ConfigFile,
 } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { sameFile } from "../../node/sameFile";
-import { buildConfigJsonSchema } from "../configJsonSchema";
+import { buildConfigJsonSchema, CONFIG_SCHEMA_FILE } from "../configJsonSchema";
 import { logger } from "../logger";
 
 export interface SchemaArgs {
@@ -22,7 +23,6 @@ export interface SchemaArgs {
 }
 
 const SCHEMA_FILE_NAME = "theme.schema.json";
-const CONFIG_SCHEMA_FILE_NAME = "style-gen.config.schema.json";
 
 /**
  * Writes `jsonSchema` to `filePath` (creating parent directories) in the
@@ -58,6 +58,83 @@ export function writeConfigSchema(cwd: string, absPath: string): void {
   writeJsonSchema(absPath, buildConfigJsonSchema());
   logger.success(
     `Config JSON Schema written to ${path.relative(cwd, absPath)}`,
+  );
+}
+
+/**
+ * `text` with `"$schema": <pointer>` inserted as the first key of the JSON
+ * object it holds, every other byte unchanged: the line ending is the
+ * file's (CRLF when it has one), the indent that of the first property line
+ * (two spaces when there is none). An empty object gets the key on its own
+ * line.
+ * @param {string} text - The content of `style-gen.config.json`
+ * @param {string} pointer - The value of `"$schema"`
+ * @returns {string | undefined} The new content, or `undefined` when it would not be a JSON object that starts with `$schema`
+ */
+function insertSchemaKey(text: string, pointer: string): string | undefined {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const open = text.indexOf("{");
+  if (open < 0 || text.slice(0, open).trim() !== "") return undefined;
+  const head = text.slice(0, open + 1);
+  const rest = text.slice(open + 1);
+  const entry = `"$schema": ${JSON.stringify(pointer)}`;
+  const empty = /^\s*\}/.exec(rest);
+  let result: string;
+  if (empty) {
+    result = `${head}${eol}  ${entry}${eol}}${rest.slice(empty[0].length)}`;
+  } else {
+    const next = rest
+      .split(/\r?\n/)
+      .slice(1)
+      .find((line) => line.trim() !== "");
+    const indent = next === undefined ? "  " : (/^\s*/.exec(next)?.[0] ?? "");
+    result = `${head}${eol}${indent}${entry},${rest}`;
+  }
+  try {
+    const parsed = JSON.parse(result) as unknown;
+    return typeof parsed === "object" &&
+      parsed !== null &&
+      Object.keys(parsed)[0] === "$schema"
+      ? result
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Point `style-gen.config.json` at its JSON Schema: a valid file without
+ * `"$schema"` gets that one line after the opening `{`, written in place
+ * (through a symlink, file mode kept). Any other `style-gen.config.json`
+ * without `"$schema"` (invalid, malformed, or when the insertion would not
+ * parse) is left as it is and the line to add is printed. A config in
+ * `package.json["style-gen"]` and a file that already has `"$schema"` are
+ * never touched.
+ * @param {string} cwd - Project root
+ * @param {ConfigFile} file - The project's config, as `readConfigFile` read it
+ * @param {string} pointer - The value of `"$schema"`, relative to the project root
+ */
+function pointConfigAtSchema(
+  cwd: string,
+  file: ConfigFile,
+  pointer: string,
+): void {
+  if (file.source !== "style-gen.config.json") return;
+  if (file.raw?.$schema !== undefined) return;
+  const configPath = path.join(cwd, "style-gen.config.json");
+  if (file.error === undefined && file.issues === undefined) {
+    const updated = insertSchemaKey(
+      fs.readFileSync(configPath, "utf8"),
+      pointer,
+    );
+    if (updated !== undefined) {
+      fs.writeFileSync(configPath, updated);
+      logger.info('Added "$schema" to style-gen.config.json');
+      return;
+    }
+  }
+  logger.info(
+    `💡 Add "$schema": ${JSON.stringify(pointer)} as the first key of style-gen.config.json for editor hints`,
   );
 }
 
@@ -113,6 +190,10 @@ function describeCollision(
  * needs it); without `--out` the issues are then reported, the exit code is 1
  * and no theme schema is written, while with `--out` both schemas are written,
  * nothing is reported and the exit code is 0.
+ * A valid `style-gen.config.json` without `"$schema"` gets that one line
+ * after its opening `{` (nothing else in the file changes); an invalid or
+ * malformed one is left as it is and the line to add is printed;
+ * `package.json["style-gen"]` is never edited.
  *
  * Both targets must stay inside the project root, so a theme outside it
  * (a monorepo's shared theme) needs an explicit `--out`. Nothing is written
@@ -136,7 +217,7 @@ export function schemaCommand(
   try {
     configOutPath = args.configOut
       ? resolveProjectPath(cwd, args.configOut, "--config-out")
-      : path.join(cwd, CONFIG_SCHEMA_FILE_NAME);
+      : path.join(cwd, CONFIG_SCHEMA_FILE);
   } catch (error) {
     logger.error(errorMessage(error));
     return 1;
@@ -182,6 +263,11 @@ export function schemaCommand(
   }
 
   writeConfigSchema(cwd, configOutPath);
+  pointConfigAtSchema(
+    cwd,
+    file,
+    `./${path.relative(cwd, configOutPath).split(path.sep).join("/")}`,
+  );
   if (outPath === undefined) {
     // Only a config with issues leaves the theme schema without a target.
     logger.error(

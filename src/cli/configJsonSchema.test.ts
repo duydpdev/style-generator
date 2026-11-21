@@ -159,6 +159,10 @@ describe("buildConfigJsonSchema", () => {
       { coverage: { colors: { opacities: [{ prefixes: ["bg"] }] } } },
     ],
     [
+      "an opacity group with duplicate steps",
+      { coverage: { colors: { opacities: [{ steps: [32, 32] }] } } },
+    ],
+    [
       "an opacity group with an unknown key",
       { coverage: { colors: { opacities: [{ steps: [32], extra: 1 }] } } },
     ],

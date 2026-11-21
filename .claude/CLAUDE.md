@@ -204,8 +204,8 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   the primitives they point to need no class (rejected for `typography`, which has no aliases). `opacities` (distinct integers 1–100, non-empty;
   only for categories whose descriptor sets `opacityModifier`, i.e. `colors`) adds ONE line `{bg,text,border,ring,outline,divide,placeholder}-{keys}/{steps}` right after the
   category line, following `prefixes`/`keys`, steps sorted ascending in `resolveOptions`, never crossed with the state lines. An `opacities` entry may be a group
-  `{ steps, prefixes?, keys? }` that adds its own narrower line after the plain-step line (`prefixes` checked in the schema, `keys` against `theme.colors` in `assertThemeOptions`, error path
-  `coverage.colors.opacities.<i>.keys.<j>`); groups never reach `DesignTokens.Web.opacities`.
+  `{ steps, prefixes?, keys? }` that adds its own line after the plain-step line (`prefixes` checked in the schema, `keys` against `theme.colors` in `assertThemeOptions`, error path
+  `coverage.colors.opacities.<i>.keys.<j>`); groups never reach `DesignTokens.Web.opacities`. A group's own `prefixes`/`keys` are not limited to the rule's; a step repeated across plain steps and groups, or two identical groups, are accepted and build one class (`tailwind-compile.test.ts`); `budget --coverage-cost` (`suggestCoverage`) appends `(opacity group <i> still adds it)` (`<i>` = zero-based index in `opacities`) when a group lists the prefix itself.
   The plain steps are `DesignTokens.Web.opacities` (`OpacitySteps<O>`, `resolveTokenOptions`), which `createVariantMapper(prefix, colors, { opacities })` turns into `token/step`
   keys; coverage changes no other typed token. Absent/`true`/`{}` is byte-identical to no option. `generate()` resolves every option default once in `resolveOptions()`
   (`src/core/resolveOptions.ts`, which spreads the slim `resolveTokenOptions()`); never re-apply `options.x ?? DEFAULT_X` downstream.

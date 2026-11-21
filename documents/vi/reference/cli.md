@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: ae4d0fc911cf -->
+<!-- source: documents/reference/cli.md sha256: 71978988bbb0 -->
 
 # CLI
 
@@ -235,7 +235,7 @@ Coverage cost (upper bound):
   colors/divide           1062 B gzip  (120 rules)  coverage.colors.prefixes: ["bg","text","border","ring","outline","placeholder"]
 ```
 
-Mỗi dòng là một nhóm (`<category>/<class prefix>`): số byte gzip tiết kiệm được khi bỏ các rule của nó khỏi CSS, số rule, và thiết lập `coverage` khiến `@source inline` không sinh nhóm đó nữa. Con số là cận trên: các class mà source của bạn đang dùng vẫn nằm trong CSS sau khi cắt. Các dòng chi phí chỉ mang tính thông tin, không phải hợp đồng; chỉ dòng tóm tắt là hợp đồng.
+Mỗi dòng là một nhóm (`<category>/<class prefix>`): số byte gzip tiết kiệm được khi bỏ các rule của nó khỏi CSS, số rule, và thiết lập `coverage` khiến `@source inline` không sinh nhóm đó nữa. Con số là cận trên: các class mà source của bạn đang dùng vẫn nằm trong CSS sau khi cắt. Khi một group trong `coverage.colors.opacities` tự liệt kê tiền tố đó trong `prefixes` của nó, thiết lập kết thúc bằng `(opacity group <i> still adds it)`, với `<i>` là chỉ số bắt đầu từ 0 của group trong `opacities` (các bước thường cũng được đếm): chỉ thu hẹp `prefixes` của rule thì chưa bỏ được các class của group đó. Các dòng chi phí chỉ mang tính thông tin, không phải hợp đồng; chỉ dòng tóm tắt là hợp đồng.
 
 ### `style-gen --version`
 

@@ -1,3 +1,12 @@
+# [8.2.1](https://github.com/duydpdev/style-generator/compare/v8.2.0...v8.2.1) (2026-11-21)
+
+### Bug Fixes
+
+- a malformed opacity group error names the group form ([2fad30f](https://github.com/duydpdev/style-generator/commit/2fad30fa677985b361ddbe130867f2c94a1bb440))
+- budget help lists the unreadable config or theme exit code ([d4c227b](https://github.com/duydpdev/style-generator/commit/d4c227b3ca594637e9f73f81e2377dd3e144f2c2))
+- config schema keeps opacity group steps unique ([6502f4b](https://github.com/duydpdev/style-generator/commit/6502f4b809a903d6ecd6ebbd8224bc8791776057))
+- coverage-cost names the opacity groups that still add a prefix ([5ab8b1c](https://github.com/duydpdev/style-generator/commit/5ab8b1c0934f6bc7c63fe30803c05cc67b8704c7))
+
 # [8.2.0](https://github.com/duydpdev/style-generator/compare/v8.1.1...v8.2.0) (2026-11-20)
 
 ### Features

@@ -94,7 +94,7 @@ interface OpacityCoverage<P extends string> {
    * prefix and key and each listed step, in one extra `@source inline`
    * line after the category's own line. Distinct integers 1–100
    * (non-empty), emitted ascending. An entry may also be a group
-   * `{ steps, prefixes?, keys? }` that adds its own, narrower line after
+   * `{ steps, prefixes?, keys? }` that adds its own line after
    * that one (`{ steps: [32], prefixes: ["bg"], keys: ["foreground"] }`
    * covers `bg-foreground/32` only); omitted `prefixes`/`keys` are the
    * rule's. Not crossed with the state lines:
@@ -188,7 +188,7 @@ export interface StyleGeneratorOptions {
    * one extra line covering `<prefix>-<key>/<n>` for the kept prefixes and
    * keys (`bg-primary/10`), never crossed with the state lines. An
    * `opacities` entry may be a group `{ steps, prefixes?, keys? }` that adds
-   * its own narrower line (`bg-foreground/32` without the full line).
+   * its own line (`bg-foreground/32` without the full line).
    * The plain steps become `DesignTokens.Web.opacities` (groups never do);
    * the other typed tokens and the `@theme`/`@utility` CSS are unaffected.
    *

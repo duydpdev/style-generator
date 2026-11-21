@@ -185,6 +185,28 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     expect(compiled).not.toContain(".bg-primary\\/32");
   });
 
+  it("a step repeated as a plain step and in identical groups builds one class (build([]))", async () => {
+    const withForeground = {
+      ...theme,
+      colors: { ...theme.colors, foreground: "#111827" },
+    };
+    const { css: themeCss } = generate(withForeground, {
+      coverage: {
+        colors: {
+          prefixes: ["bg"],
+          opacities: [
+            32,
+            { steps: [32], keys: ["foreground"] },
+            { steps: [32], keys: ["foreground"] },
+          ],
+        },
+      },
+    });
+    const compiled = await compileFixtureCss(themeCss, []);
+
+    expect(compiled.split(".bg-foreground\\/32").length - 1).toBe(1);
+  });
+
   it("builds ring/outline/divide/placeholder color classes via @source inline (build([]))", async () => {
     const withMuted = {
       ...theme,

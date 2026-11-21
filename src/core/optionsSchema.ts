@@ -115,7 +115,7 @@ const CoverageSchema = z
       ],
       {
         error:
-          'Expected a boolean or { prefixes?: string[] (non-empty), keys?: "aliased" | "all", opacities?: integers 1–100 (non-empty, colors only) }',
+          'Expected a boolean or { prefixes?: string[] (non-empty), keys?: "aliased" | "all", opacities?: (integer 1–100 | { steps, prefixes?, keys? })[] (non-empty, colors only) }',
       },
     ),
   )

@@ -233,7 +233,7 @@ Coverage cost (upper bound):
   colors/divide           1062 B gzip  (120 rules)  coverage.colors.prefixes: ["bg","text","border","ring","outline","placeholder"]
 ```
 
-Each line is a group (`<category>/<class prefix>`): the gzip bytes saved when its rules are removed from the CSS, the rule count, and the `coverage` setting that stops `@source inline` from emitting it. The figure is an upper bound: classes your own source uses stay in the CSS after the cut. The cost lines are informational, not a contract; only the summary line is.
+Each line is a group (`<category>/<class prefix>`): the gzip bytes saved when its rules are removed from the CSS, the rule count, and the `coverage` setting that stops `@source inline` from emitting it. The figure is an upper bound: classes your own source uses stay in the CSS after the cut. When a `coverage.colors.opacities` group lists the prefix in its own `prefixes`, the setting ends with `(opacity group <i> still adds it)`, `<i>` being the zero-based index of the group in `opacities` (plain steps count too): shrinking the rule's `prefixes` alone does not remove that group's classes. The cost lines are informational, not a contract; only the summary line is.
 
 ### `style-gen --version`
 

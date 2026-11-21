@@ -394,6 +394,91 @@ describe("suggestCoverage", () => {
     ).toBe("coverage.colors is already false");
   });
 
+  it("names the opacity group that still adds a prefix the rule dropped", () => {
+    expect(
+      suggestCoverage(
+        ringGroup,
+        resolveOptions({
+          coverage: {
+            colors: {
+              prefixes: ["bg"],
+              opacities: [{ steps: [32], prefixes: ["ring"] }],
+            },
+          },
+        }),
+      ),
+    ).toBe("already out of coverage (opacity group 0 still adds it)");
+  });
+
+  it("appends the group note to a prefixes suggestion", () => {
+    expect(
+      suggestCoverage(
+        bgGroup,
+        resolveOptions({
+          coverage: {
+            colors: {
+              prefixes: ["bg", "ring"],
+              opacities: [5, { steps: [32], prefixes: ["bg"] }],
+            },
+          },
+        }),
+      ),
+    ).toBe(
+      'coverage.colors.prefixes: ["ring"] (opacity group 1 still adds it)',
+    );
+  });
+
+  it("lists every group that names the prefix", () => {
+    expect(
+      suggestCoverage(
+        bgGroup,
+        resolveOptions({
+          coverage: {
+            colors: {
+              prefixes: ["bg", "ring"],
+              opacities: [
+                { steps: [1], prefixes: ["bg"] },
+                { steps: [2], prefixes: ["ring"] },
+                { steps: [3], prefixes: ["bg"] },
+              ],
+            },
+          },
+        }),
+      ),
+    ).toBe(
+      'coverage.colors.prefixes: ["ring"] (opacity group 0, 2 still adds it)',
+    );
+  });
+
+  it("adds no note for a group that follows the rule's prefixes", () => {
+    expect(
+      suggestCoverage(
+        bgGroup,
+        resolveOptions({
+          coverage: {
+            colors: { prefixes: ["bg", "ring"], opacities: [{ steps: [32] }] },
+          },
+        }),
+      ),
+    ).toBe('coverage.colors.prefixes: ["ring"]');
+  });
+
+  it("adds no note when the whole category is dropped", () => {
+    expect(
+      suggestCoverage(
+        bgGroup,
+        resolveOptions({
+          coverage: {
+            colors: {
+              prefixes: ["bg"],
+              opacities: [{ steps: [32], prefixes: ["bg"] }],
+            },
+          },
+        }),
+      ),
+    ).toBe("coverage.colors: false");
+  });
+
   it("suggests false for a single-prefix and a bare-class category", () => {
     expect(
       suggestCoverage(

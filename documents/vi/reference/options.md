@@ -1,4 +1,4 @@
-<!-- source: documents/reference/options.md sha256: ef5f030c030c -->
+<!-- source: documents/reference/options.md sha256: 97fcd5718a5a -->
 
 # Tùy chọn
 
@@ -170,7 +170,7 @@ generate(theme, {
 });
 ```
 
-**Group độ mờ.** Một `bg-foreground/32` không nên tốn cả một dòng `prefixes × keys`. Bên cạnh các bước thường, một entry của `opacities` có thể là một group `{ steps, prefixes?, keys? }`: nó thêm một dòng `@source inline` nữa chỉ cho các bước của riêng nó, đặt sau dòng của các bước thường, theo thứ tự khai báo. `steps` là danh sách không rỗng các số nguyên phân biệt từ 1–100 (được phát ra theo thứ tự tăng dần). `prefixes` (không rỗng, mỗi phần tử là một tiền tố của `colors`) và `keys` (không rỗng, mỗi phần tử là một key của `theme.colors`) mặc định là các tiền tố và key mà rule đang bao phủ. Một phần tử `prefixes` không phải tiền tố của `colors` sẽ ném lỗi tại `coverage.colors.opacities.<i>.prefixes.<j>`, một phần tử `keys` không phải màu của theme sẽ ném lỗi tại `coverage.colors.opacities.<i>.keys.<j>` (`Unknown color key "…" in an opacity group`), và một member lạ hoặc một danh sách rỗng cũng ném lỗi. Option không có group phát ra đúng CSS như trước. `DesignTokens.Web.opacities` chỉ liệt kê các bước thường: một group chỉ bao phủ một tập con, nên `createVariantMapper` không đưa `foreground/32` vào làm key, và class đó được viết nguyên văn ở nơi dùng.
+**Group độ mờ.** Một `bg-foreground/32` không nên tốn cả một dòng `prefixes × keys`. Bên cạnh các bước thường, một entry của `opacities` có thể là một group `{ steps, prefixes?, keys? }`: nó thêm một dòng `@source inline` nữa chỉ cho các bước của riêng nó, đặt sau dòng của các bước thường, theo thứ tự khai báo. `steps` là danh sách không rỗng các số nguyên phân biệt từ 1–100 (được phát ra theo thứ tự tăng dần). `prefixes` (không rỗng, mỗi phần tử là một tiền tố của `colors`) và `keys` (không rỗng, mỗi phần tử là một key của `theme.colors`) mặc định là các tiền tố và key mà rule đang bao phủ. Một phần tử `prefixes` không phải tiền tố của `colors` sẽ ném lỗi tại `coverage.colors.opacities.<i>.prefixes.<j>`, một phần tử `keys` không phải màu của theme sẽ ném lỗi tại `coverage.colors.opacities.<i>.keys.<j>` (`Unknown color key "…" in an opacity group`), và một member lạ hoặc một danh sách rỗng cũng ném lỗi. Option không có group phát ra đúng CSS như trước. Một bước vừa là bước thường vừa nằm trong một group phủ cùng một class hai lần, và hai group giống hệt nhau lặp lại cùng một dòng `@source inline`; Tailwind chỉ tạo mỗi class một lần. `DesignTokens.Web.opacities` chỉ liệt kê các bước thường: một group nêu `prefixes` và `keys` riêng, không nhất thiết trùng với rule, nên `createVariantMapper` không đưa `foreground/32` vào làm key, và class đó được viết nguyên văn ở nơi dùng.
 
 ```ts
 import { generate } from "@duydpdev/style-generator";

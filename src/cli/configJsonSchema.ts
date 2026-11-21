@@ -43,7 +43,10 @@ function child(value: unknown, key: string): JsonObject {
  * what `StyleGeneratorOptionsSchema` accepts for it: its own `prefixes`
  * (none for a bare-class category), `opacities` only for opacity-modifier
  * categories (distinct; a group's `prefixes` limited like the rule's), and
- * `keys: "aliased"` only where `$` aliases exist.
+ * `keys: "aliased"` only where `$` aliases exist. `uniqueItems` on `opacities`
+ * also flags two identical groups, which the CLI accepts: JSON Schema cannot
+ * compare the plain numbers alone, and the editor being stricter there is
+ * deliberate.
  * @param {JsonObject} coverage - The generated `coverage` node, rewritten in place
  */
 function refineCoverage(coverage: JsonObject): void {
@@ -73,6 +76,7 @@ function refineCoverage(coverage: JsonObject): void {
       opacities.uniqueItems = true;
       const entry: unknown = child(opacities, "items").anyOf;
       const group: unknown = Array.isArray(entry) ? entry[1] : undefined;
+      child(child(group, "properties"), "steps").uniqueItems = true;
       child(child(group, "properties"), "prefixes").items = {
         type: "string",
         enum: [...descriptor.classPrefixes],

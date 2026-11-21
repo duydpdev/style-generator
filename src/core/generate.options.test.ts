@@ -315,6 +315,11 @@ describe("generate() coverage validation", () => {
     expect(text({ coverage: { colors: "off" } })).toMatch(
       /^coverage\.colors → Expected a boolean or \{ prefixes/m,
     );
+    for (const group of [{ keys: ["primary"] }, { stpes: [32] }]) {
+      expect(text({ coverage: { colors: { opacities: [group] } } })).toMatch(
+        /^coverage\.colors → Expected a boolean or \{ prefixes.*opacities\?: \(integer 1–100 \| \{ steps, prefixes\?, keys\? \}\)\[\]/m,
+      );
+    }
     expect(text({ coverage: { shadows: { opacities: [10] } } })).toMatch(
       /^coverage\.shadows\.opacities → "shadows" utilities take no `\/<n>` opacity modifier \(only color utilities do\)$/m,
     );

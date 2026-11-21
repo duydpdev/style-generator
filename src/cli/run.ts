@@ -257,7 +257,7 @@ Options:
   --coverage-cost      List theme class groups by gzip cost
   --theme <path>       Theme for --coverage-cost
 
-Exit codes: 0 within budget, 1 over budget, 2 usage error or no CSS found.`,
+Exit codes: 0 within budget, 1 over budget, 2 usage error, no CSS found, or (with --coverage-cost) an unreadable config or theme.`,
   options: {
     "max-gzip": { type: "string" },
     "coverage-cost": { type: "boolean" },

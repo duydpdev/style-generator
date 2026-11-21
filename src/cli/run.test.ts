@@ -101,6 +101,11 @@ describe("runCli", () => {
       expect(await runCli(["tokens", "-h"], CWD)).toBe(0);
       expect(printed()).toContain("Usage: style-gen tokens");
     });
+
+    it("the budget usage names the unreadable config or theme exit code", async () => {
+      expect(await runCli(["budget", "--help"], CWD)).toBe(0);
+      expect(printed()).toContain("unreadable config or theme");
+    });
   });
 
   describe("usage text", () => {

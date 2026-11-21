@@ -291,6 +291,7 @@ export function coverageCost(
 
 /**
  * The `coverage` setting that removes a group's `@source inline` classes.
+ * A group that lists the prefix in its own `prefixes` keeps emitting it when only the rule's `prefixes` shrinks, so the line names that group.
  * @param {CoverageGroup} group - The group
  * @param {ResolvedOptions} resolved - The project's options through `resolveOptions`
  * @returns {string} The setting, or why the classes already come from the app's source
@@ -308,11 +309,17 @@ export function suggestCoverage(
     (c) => c.key === cat,
   );
   const current = rule?.prefixes ?? d?.classPrefixes ?? [];
+  const own = (rule?.opacityGroups ?? [])
+    .filter((g) => g.prefixes?.includes(group.prefix))
+    .map((g) => String(g.index));
+  const note =
+    own.length === 0 ? "" : ` (opacity group ${own.join(", ")} still adds it)`;
   if (!current.includes(group.prefix)) {
-    return "already out of coverage";
+    return `already out of coverage${note}`;
   }
   const remaining = current.filter((p) => p !== group.prefix);
-  return remaining.length === 0 || d?.bareClassName === true
-    ? `coverage.${cat}: false`
-    : `coverage.${cat}.prefixes: ${JSON.stringify(remaining)}`;
+  if (remaining.length === 0 || d?.bareClassName === true) {
+    return `coverage.${cat}: false`;
+  }
+  return `coverage.${cat}.prefixes: ${JSON.stringify(remaining)}${note}`;
 }

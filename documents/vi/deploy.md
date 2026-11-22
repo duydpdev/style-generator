@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 3d0827d772a9 -->
+<!-- source: documents/deploy.md sha256: 970ab3324f1c -->
 
 # Triển khai & CI/CD
 
@@ -27,6 +27,10 @@ Quy trình triển khai cho thư viện `@duydpdev/style-generator`.
     - [Gỡ một feature bị từ chối](#gỡ-một-feature-bị-từ-chối)
   - [Quy trình phát hành](#quy-trình-phát-hành)
     - [Quy trình đúng](#quy-trình-đúng)
+    - [Cắt một bản phát hành](#cắt-một-bản-phát-hành)
+    - [DEV theo yêu cầu](#dev-theo-yêu-cầu)
+    - [Hotfix](#hotfix)
+    - [Chu kỳ major](#chu-kỳ-major)
     - [Các secret bắt buộc](#các-secret-bắt-buộc)
   - [Định dạng commit](#định-dạng-commit)
     - [Cấu hình](#cấu-hình)
@@ -40,13 +44,16 @@ Quy trình triển khai cho thư viện `@duydpdev/style-generator`.
 
 ```mermaid
 flowchart LR
-    M[main] -->|branch off| F["feat/x"]
-    F -->|PR, merge commit| D["develop → vX.Y.Z-DEV.N"]
-    F -->|PR, merge commit, after approval| M2["main → vX.Y.Z"]
-    M2 -.->|back-merge after every push to main| D
+    D[develop] -->|branch off| F["feat/x"]
+    F -->|PR, merge commit, publishes nothing| D
+    D -->|manual dispatch, optional| V["develop → vX.Y.Z-DEV.N"]
+    D -->|PR develop → main, merge commit| M["main → vX.Y.Z"]
+    M -->|branch off| H["fix/x (hotfix)"]
+    H -->|PR, merge commit| M
+    M -.->|back-merge after every push to main| D
 ```
 
-Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-release). Khi có tag mới, `deploy.yml` publish lên npm registry công khai (`registry.npmjs.org`). Mọi lần push vào `main` (có hoặc không có release) đều kết thúc bằng `back-merge.yml`, workflow này merge `main` ngược lại vào `develop`. `drift.yml` chạy hằng ngày (06:17 UTC) và cảnh báo khi `develop` vẫn thiếu các commit từ `main`.
+Một lần merge vào `develop` không publish gì. Một bản phát hành stable là một lần merge PR `develop` → `main`: `release.yml` (semantic-release) tính một phiên bản từ header của mọi commit mà PR thêm vào, và `deploy.yml` publish nó lên npm registry công khai (`registry.npmjs.org`). Một bản pre-release DEV chỉ được cắt bằng tay: `gh workflow run release.yml --ref develop`. Mọi lần push vào `main` (có hoặc không có release) đều kết thúc bằng `back-merge.yml`, workflow này merge `main` ngược lại vào `develop`. `drift.yml` chạy hằng ngày (06:17 UTC) và cảnh báo khi `develop` vẫn thiếu các commit từ `main`.
 
 ---
 
@@ -54,7 +61,7 @@ Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-re
 
 ### `ci.yml` — Kiểm tra PR
 
-**Trigger:** Pull Request vào `main`, `develop` hoặc một branch tích hợp `release/**` (ví dụ `release/5.0` cho chu kỳ 5.0: một PR từ branch làm việc vào `release/5.0` và PR `promote/<x>` → `develop` (được tạo tại đúng SHA của `release/5.0`, xem [Quy ước Pull Request & merge](#quy-ước-pull-request--merge)) đều có CI). `release.yml` **không** chạy trên `release/**`: các bản phát hành chỉ được publish từ `main`/`develop`.
+**Trigger:** Pull Request vào `main` hoặc `develop`. `release.yml` **không** chạy cho một PR: một bản phát hành chỉ được publish bởi một lần push vào `main` hoặc một lần dispatch tay trên `develop`.
 
 **Draft:** job `check` không có cổng draft và `on.pull_request.types` là `opened`, `synchronize`, `reopened`, `ready_for_review`: một PR draft chạy CI như mọi PR khác (phút Actions miễn phí trên repo công khai này, và một check bắt buộc bị bỏ qua sẽ được tính là đạt, nên một PR draft sẽ không có kết quả thật nào). Job `e2e` là ngoại lệ: nó bỏ qua các PR draft (`if: github.event.pull_request.draft == false`), và `ready_for_review` chạy lại workflow để lần chạy draft đã bị bỏ qua được thay thế khi PR được đánh dấu ready. Hãy mở PR ở dạng draft cho đến khi gate cục bộ xanh; CI sau đó chạy ở mỗi lần push vào nó. `ci.yml` không có bộ lọc path: một PR chỉ đổi `documents/**` vẫn chạy `check`, vì site render `documents/*.md` và `check:links` kiểm tra các liên kết của chúng.
 
@@ -62,11 +69,11 @@ Mọi lần merge vào `main`/`develop` đều chạy `release.yml` (semantic-re
 
 - `check`: `yarn install --immutable` → `yarn npm audit --recursive --severity high --environment production` (chặn khi một production dependency có lỗ hổng mức high/critical) → `yarn npm audit --all --recursive || true` (chỉ ghi log, các công cụ dev/example/site không được ship) → commitlint các commit của PR → `yarn build:all` (chạy trước lint: ESLint nhận biết kiểu cũng quét `examples/**`, nơi import thư viện đã build) → `yarn check:tokens` (mọi `theme.tokens.ts` đã commit vẫn khớp theme và config của nó) → `yarn lint` → `yarn prettier:check` → `yarn tsc --noEmit` → `node --check scripts/*.mjs site/scripts/*.mjs` + `yarn typecheck:scripts` → `yarn workspace site build` → `yarn workspace site check:links` → kiểm tra kiểu 4 ví dụ và `site` (`yarn workspaces foreach -A --include '*-example' --include site run typecheck`; cũng biên dịch các file kiểm tra kiểu của component mẫu; `tsconfig.json` gốc không bao gồm `site/`) → `yarn workspace design-system-example test` (DX test, cần `dist/` từ `build:all`) → build `plain-react-example` và `plain-nuxt-example` → `yarn check:externals` → `yarn check:browser-safe` → `yarn check:sizes` → `yarn check:smoke` → `yarn check:types-pack` (tarball + `@arethetypeswrong/cli`, profile node16) → `node scripts/vite-dev-smoke.mjs` → `yarn typecheck:dist` → `yarn test:coverage` (giới hạn `coverage.thresholds`) → `yarn test:types`.
   - `e2e` (tên check `E2E (Playwright)`, một job riêng để nó báo cáo trên mọi PR, kể cả PR chỉ đổi tài liệu): `yarn build:all` → `yarn playwright install --with-deps chromium webkit` → `yarn test:e2e`. Nó bỏ qua các PR draft.
-  - Phạm vi commitlint: `base..head` cho các PR vào cả `develop` lẫn `main`. Một feature được tách từ `main` và vào cả hai branch với cùng các commit (merge commit, không squash), nên phạm vi này chính xác là các commit của feature đó. Header của chúng quyết định loại release, vì vậy mọi commit đều được lint.
+  - Phạm vi commitlint: `base..head` cho các PR vào cả `develop` lẫn `main`: với một PR feature, đó chính xác là các commit của feature; với PR release `develop` → `main`, đó là mọi commit mà bản release thêm vào (merge commit, không squash). Header của chúng quyết định loại release, vì vậy mọi commit đều được lint. Với một PR vào `develop`, một bước theo sau sẽ thất bại khi header của một commit bắt đầu bằng `[release]` và biến repository `MAJOR_CYCLE` không phải `open` (xem [Chu kỳ major](#chu-kỳ-major)).
 
 ### `ci-matrix.yml` — Tầng nặng
 
-**Trigger:** tầng nặng. `schedule` hằng đêm (cron `43 5 * * *`, GitHub chạy trên branch mặc định `main`), `workflow_dispatch` (`gh workflow run ci-matrix.yml --ref main`) và Pull Request vào `main` hoặc `release/**` (`types: [opened, synchronize, reopened, ready_for_review]`), trừ các PR chỉ đổi `documents/**`: `paths-ignore: ["documents/**"]` ở cấp workflow nghĩa là GitHub không tạo một lần chạy, nên không tốn phút nào. Nó không chạy trên PR vào `develop`: tầng theo từng PR nằm trong `ci.yml`. Nó không phải check bắt buộc, nên **mọi leg phải xanh trước khi merge PR vào `main`** (người merge kiểm tra thủ công). Nó có `concurrency: ci-matrix-<ref>` riêng với `cancel-in-progress: true`. Mỗi job đều có `if: github.event_name != 'pull_request' || github.event.pull_request.draft == false`: trên PR, ma trận bỏ qua các PR draft và chạy khi PR được đánh dấu ready; các sự kiện `schedule` và `workflow_dispatch` không có `pull_request.draft`, nên vế đầu cho phép chúng chạy.
+**Trigger:** tầng nặng. `schedule` hằng đêm (cron `43 5 * * *`, GitHub chạy trên branch mặc định `main`), `workflow_dispatch` (`gh workflow run ci-matrix.yml --ref main`) và Pull Request vào `main`, tức PR release `develop` → `main` (`types: [opened, synchronize, reopened, ready_for_review]`), trừ các PR chỉ đổi `documents/**`: `paths-ignore: ["documents/**"]` ở cấp workflow nghĩa là GitHub không tạo một lần chạy, nên không tốn phút nào. Nó không chạy trên PR vào `develop`: tầng theo từng PR nằm trong `ci.yml`. Nó không phải check bắt buộc, nên **mọi leg phải xanh trước khi merge PR vào `main`** (người merge kiểm tra thủ công). Nó có `concurrency: ci-matrix-<ref>` riêng với `cancel-in-progress: true`. Mỗi job đều có `if: github.event_name != 'pull_request' || github.event.pull_request.draft == false`: trên PR, ma trận bỏ qua các PR draft và chạy khi PR được đánh dấu ready; các sự kiện `schedule` và `workflow_dispatch` không có `pull_request.draft`, nên vế đầu cho phép chúng chạy.
 
 **Các job** (Node 22, trừ `node-floor`); mỗi job chạy `yarn install` và `yarn build:all` riêng của nó:
 
@@ -80,7 +87,7 @@ Các trình duyệt Playwright **không** được cache, và đây là một qu
 
 ### `nightly.yml` — macOS và Bun
 
-**Trigger:** `schedule` hằng đêm (cron `17 6 * * *`, GitHub chạy trên branch mặc định `main`), `workflow_dispatch` (`gh workflow run nightly.yml --ref main`) và Pull Request vào `main` hoặc `release/**` có đổi `.github/workflows/nightly.yml` hoặc `scripts/bun-smoke.mjs`, nên một PR bình thường không tốn gì cho nó. Nó không phải check bắt buộc. Nó có `concurrency: nightly-<event>-<ref>` riêng với `cancel-in-progress: true`, `permissions: contents: read` và `persist-credentials: false` ở cả hai lần checkout.
+**Trigger:** `schedule` hằng đêm (cron `17 6 * * *`, GitHub chạy trên branch mặc định `main`), `workflow_dispatch` (`gh workflow run nightly.yml --ref main`) và Pull Request vào `main` có đổi `.github/workflows/nightly.yml` hoặc `scripts/bun-smoke.mjs`, nên một PR bình thường không tốn gì cho nó. Nó không phải check bắt buộc. Nó có `concurrency: nightly-<event>-<ref>` riêng với `cancel-in-progress: true`, `permissions: contents: read` và `persist-credentials: false` ở cả hai lần checkout.
 
 **Các job** (Node 22): mỗi job chạy `yarn install --immutable` → `yarn build:all`.
 
@@ -98,32 +105,30 @@ Các trình duyệt Playwright **không** được cache, và đây là một qu
 
 ### `pr-title.yml` — Lint tiêu đề PR
 
-**Trigger:** Pull Request vào `main`, `develop` hoặc `release/**`, `opened`, `edited`, `reopened` (`edited` cũng bắt được việc chỉ sửa tiêu đề). Nó không chạy ở `synchronize`: push một commit mới không đổi tiêu đề, nên check này chỉ gắn vào head tại thời điểm PR được mở/sửa/mở lại.
+**Trigger:** Pull Request vào `main` hoặc `develop`, `opened`, `edited`, `reopened` (`edited` cũng bắt được việc chỉ sửa tiêu đề). Nó không chạy ở `synchronize`: push một commit mới không đổi tiêu đề, nên check này chỉ gắn vào head tại thời điểm PR được mở/sửa/mở lại.
 
-Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR. Config này dùng lại `commitlint.config.ts` và chỉ tắt `defaultIgnores`, nên một tiêu đề `Revert "…"` (mặc định của GitHub khi revert một PR) hoặc `Merge …` cũng thất bại. Phạm vi lint trong `ci.yml` vẫn dùng config chung vì ở đó có các merge commit thật. Vì các feature vào `develop` qua merge commit, tiêu đề PR không còn quyết định release: dòng đầu của một merge commit là `Merge pull request #N from …` (bị analyzer bỏ qua), và tiêu đề PR chỉ xuất hiện trong phần body. Check này được giữ lại để tiêu đề PR dễ đọc và khớp với header của commit. Bước `Check branch name` (chạy trước khi cài dependency) kiểm tra `github.head_ref` bằng `scripts/check-branch-name.sh`, cùng quy tắc với hook `pre-push` (xem [Chiến lược branch](#chiến-lược-branch)).
+Chạy `commitlint --config commitlint.pr-title.config.ts` trên tiêu đề PR. Config này dùng lại `commitlint.config.ts` và chỉ tắt `defaultIgnores`, nên một tiêu đề `Revert "…"` (mặc định của GitHub khi revert một PR) hoặc `Merge …` cũng thất bại. Phạm vi lint trong `ci.yml` vẫn dùng config chung vì ở đó có các merge commit thật. Vì các feature vào `develop` qua merge commit, tiêu đề PR không còn quyết định release: dòng đầu của một merge commit là `Merge pull request #N from …` (bị analyzer bỏ qua), và tiêu đề PR chỉ xuất hiện trong phần body. Check này được giữ lại để tiêu đề PR dễ đọc và khớp với header của commit. Bước `Check branch name` (chạy trước khi cài dependency) kiểm tra `github.head_ref` bằng `scripts/check-branch-name.sh`, cùng quy tắc với hook `pre-push` (xem [Chiến lược branch](#chiến-lược-branch)). Với một PR vào `main`, bước này cũng truyền branch base, và head phải là `develop`, `fix/<slug>`, `docs/<slug>` hoặc `dependabot/**`.
 
 ### Quy ước Pull Request & merge
 
-Các ruleset bảo vệ `main`/`develop` (bắt buộc có PR, chỉ dùng merge commit, và bắt buộc có ba check: `Build & Lint Check`, `Plain React (Storybook + parity)` và `E2E (Playwright)`); admin có thể bỏ qua vì `release.yml`/`back-merge.yml` push bằng một PAT. Người merge vẫn phải dừng lại khi một check nằm ngoài danh sách bắt buộc bị đỏ; lưới an toàn cuối cùng là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag.
+Các ruleset bảo vệ `main`/`develop` (bắt buộc có PR, chỉ dùng merge commit, và bắt buộc có ba check: `Build & Lint Check`, `Plain React (Storybook + parity)` và `E2E (Playwright)`); admin có thể bỏ qua vì `release.yml`/`back-merge.yml` push bằng một PAT. Người merge vẫn phải dừng lại khi một check nằm ngoài danh sách bắt buộc bị đỏ; lưới an toàn cuối cùng là `yarn test` + `yarn test:types` trong `release.yml`, chạy trước khi cắt tag. Ruleset `no-delete` (không có bypass actor, các rule `deletion` và `non_fast_forward`) cấm xóa hoặc force-push `main` và `develop`, nên việc merge PR `develop` → `main` không thể khiến GitHub xóa `develop`.
 
-| PR                  | Cách merge                                                   | Ghi chú                                                                                                                                                                  |
-| ------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Feature → `develop` | **Create a merge commit**                                    | Feature giữ nguyên các SHA của nó. Khi feature vào `main`, back-merge nhận ra các commit đó đã có trên `develop`, nên merge sạch và DEV không phân tích lại chúng.       |
-| Feature → `main`    | **Create a merge commit**                                    | Cùng branch feature, mở PR thứ hai sau khi được duyệt trên `develop`.                                                                                                    |
-| `develop` → `main`  | **Không dùng**                                               | `develop` cũng chứa các feature chưa được duyệt; promote cả branch sẽ ship những thứ chưa được duyệt.                                                                    |
-| Squash / Rebase     | Tắt (`allow_squash_merge=false`, `allow_rebase_merge=false`) | Squash tạo một bản sao với SHA khác: DEV phân tích lại các feature đã ship và các feature phụ thuộc bị xung đột (được đo trong plan `feature-from-main-flow`, phase 01). |
+| PR                  | Cách merge                                                   | Ghi chú                                                                                                                                                                                |
+| ------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature → `develop` | **Create a merge commit**                                    | Feature giữ nguyên các SHA của nó; không có gì được publish.                                                                                                                           |
+| `develop` → `main`  | **Create a merge commit**                                    | PR release: một lần merge publish một phiên bản cho mọi commit trong phạm vi. Head là chính `develop`; ruleset `no-delete` ngăn GitHub xóa nó sau khi merge.                           |
+| Hotfix → `main`     | **Create a merge commit**                                    | `fix/<slug>` hoặc `docs/<slug>`, tách từ `main`; back-merge đưa nó vào `develop`.                                                                                                      |
+| Squash / Rebase     | Tắt (`allow_squash_merge=false`, `allow_rebase_merge=false`) | Squash tạo một bản sao với SHA khác: một bản release sẽ phân tích lại các commit đã ship và các feature phụ thuộc sẽ xung đột (được đo trong plan `feature-from-main-flow`, phase 01). |
 
 **Thiết lập mang tính chịu lực:** `merge_commit_title = MERGE_MESSAGE` (dòng đầu `Merge pull request #N …`) và `merge_commit_message = PR_TITLE`. Nếu dòng đầu trở thành tiêu đề PR, merge commit sẽ mang một header `[type]`, và mọi merge commit chỉ tồn tại trên `develop` sẽ bị đếm lại sau mỗi lần back-merge. Đừng đổi nó.
 
-`delete_branch_on_merge=true`: GitHub xóa branch head khi một PR được merge. Branch feature vẫn cần cho PR thứ hai vào `main`. Nếu PR vào `develop` đến thẳng từ `feat/x`, GitHub đã xóa `feat/x`: hãy tạo lại nó trên GitHub tại đúng SHA đã merge, không bao giờ push từ một bản clone cục bộ: `SHA=$(gh pr view <PR into develop> --json headRefOid --jq .headRefOid)`, rồi `gh api -X POST repos/duydpdev/style-generator/git/refs -f ref=refs/heads/feat/x -f sha=$SHA`. Trước khi merge PR vào `main`, `gh pr view <PR into main> --json headRefOid --jq .headRefOid` phải in ra chính xác `$SHA`. Nếu PR vào `develop` đi qua `integrate/x`, `feat/x` không bị xóa. Các commit của một branch đã xóa vẫn nằm trong PR (`refs/pull/<N>/head`), nên việc xóa branch không làm mất lịch sử nào.
+`delete_branch_on_merge=true`: GitHub xóa branch head khi một PR được merge, nên một branch feature biến mất sau PR của nó. Các commit của một branch đã xóa vẫn nằm trong PR (`refs/pull/<N>/head`), nên việc xóa branch không làm mất lịch sử nào. `main` và `develop` được ruleset `no-delete` bảo vệ khỏi việc xóa đó.
 
-`release/*` không bao giờ là head của một PR đã merge: merge một PR `release/5.0` → `develop` sẽ xóa `release/5.0`, và GitHub chuyển mục tiêu của mọi PR đang mở có base là `release/5.0`. Để đưa `release/*` vào `develop` hoặc `main`, hãy tạo một branch `promote/<x>` tại đúng SHA của nó (`gh api -X POST repos/duydpdev/style-generator/git/refs -f ref=refs/heads/promote/<x> -f sha=$(gh api repos/duydpdev/style-generator/git/ref/heads/release/5.0 --jq .object.sha)`) và mở PR từ `promote/<x>`; khi merge, GitHub chỉ xóa `promote/<x>`.
+Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hằng tháng thành **một** PR được gom nhóm (`groups`) nhắm vào `develop` (`target-branch`), với tiền tố `"[ci] "` (có dấu cách ở cuối để GitHub không chèn `:` sau `]`). Dependabot tách branch từ branch đích, nên PR của nó đáp xuống `develop` như mọi feature và vào `main` cùng PR release kế tiếp. Dependabot chỉ đọc file này trên branch mặc định `main`.
 
-Template: `.github/pull_request_template.md`. Dependabot (`.github/dependabot.yml`) cập nhật GitHub Actions hằng tháng thành **một** PR được gom nhóm (`groups`) nhắm vào `main` (`target-branch`), với tiền tố `"[ci] "` (có dấu cách ở cuối để GitHub không chèn `:` sau `]`). Dependabot tách branch từ branch đích, nên nhắm vào `main` khiến branch của nó là một branch feature sạch. Hãy đưa nó vào `develop` trước bằng một PR thứ hai từ cùng branch đó (`gh pr create --base develop --head <dependabot branch>`), rồi merge PR Dependabot vào `main`. Nếu GitHub đã xóa branch Dependabot khi PR vào `develop` được merge (PR Dependabot vào `main` khi đó bị đóng), hãy tạo lại branch tại `headRefOid` của PR vào `develop` (`gh api -X POST repos/duydpdev/style-generator/git/refs -f ref=refs/heads/<branch> -f sha=<SHA>`) và chạy `gh pr reopen <N>`. Dependabot chỉ đọc file này trên branch mặc định `main`.
+Mục `npm` trong cùng file chạy hằng tháng theo cùng cách (nhắm vào `develop`, tiền tố `"[ci] "`, tối đa 2 PR đang mở). Mọi bản nâng minor/patch được gom vào **một** PR (nhóm `npm-minor-patch`); mỗi bản nâng major là một PR riêng. Nó không bao giờ đề xuất major cho `tailwindcss`, `@tailwindcss/*`, `zod`, `vite` và `typescript`: các dòng này (và các khoảng peer) được theo dõi bằng tay, và các job `tailwind-floor` và `peer-matrix` kiểm tra chúng. Một bản nâng làm đổi một khoảng đã publish (`dependencies`/`peerDependencies`) phải đổi header của nó thành `[fix]`/`[feat]` trước khi merge.
 
-Mục `npm` trong cùng file chạy hằng tháng với cùng quy trình (nhắm vào `main`, tiền tố `"[ci] "`, tối đa 2 PR đang mở). Mọi bản nâng minor/patch được gom vào **một** PR (nhóm `npm-minor-patch`); mỗi bản nâng major là một PR riêng. Nó không bao giờ đề xuất major cho `tailwindcss`, `@tailwindcss/*`, `zod`, `vite` và `typescript`: các dòng này (và các khoảng peer) được theo dõi bằng tay, và các job `tailwind-floor` và `peer-matrix` kiểm tra chúng. Một bản nâng làm đổi một khoảng đã publish (`dependencies`/`peerDependencies`) phải đổi header của nó thành `[fix]`/`[feat]` trước khi merge.
-
-Cả hai mục đều đặt `rebase-strategy: disabled`: Dependabot không tự rebase các PR đang mở mỗi khi `main` thay đổi, vì mỗi lần rebase chạy lại toàn bộ CI của PR. Để cập nhật một PR, hãy comment `@dependabot rebase`. Các PR được mở trước khi tắt rebase vẫn được rebase tới 30 ngày sau khi chúng được mở (tài liệu `rebase-strategy` của GitHub). Cảnh báo và cập nhật bảo mật của Dependabot được bật (`gh api repos/duydpdev/style-generator/automated-security-fixes --jq .enabled` in ra `true`): một PR cập nhật bảo mật mở ra ngay khi có advisory, không theo `schedule`, và nhắm vào branch mặc định `main` (hãy đưa nó vào `develop` trước bằng cùng quy trình).
+Cả hai mục đều đặt `rebase-strategy: disabled`: Dependabot không tự rebase các PR đang mở mỗi khi `develop` thay đổi, vì mỗi lần rebase chạy lại toàn bộ CI của PR. Để cập nhật một PR, hãy comment `@dependabot rebase`. Các PR được mở trước khi tắt rebase vẫn được rebase tới 30 ngày sau khi chúng được mở (tài liệu `rebase-strategy` của GitHub). Cảnh báo và cập nhật bảo mật của Dependabot được bật (`gh api repos/duydpdev/style-generator/automated-security-fixes --jq .enabled` in ra `true`): một PR cập nhật bảo mật mở ra ngay khi có advisory, không theo `schedule`, và nhắm vào branch mặc định `main`: hãy merge nó vào `main` như một hotfix; back-merge đưa nó vào `develop`.
 
 ---
 
@@ -141,7 +146,7 @@ Dự án dùng **Husky** và **lint-staged** để chặn các commit không đ�
 
 ### `release.yml` — Điều phối Semantic Release
 
-**Trigger:** Push vào `main` hoặc `develop`. `concurrency: release-<ref>`, `cancel-in-progress: false`: mỗi branch chỉ có một lần chạy release tại một thời điểm, và một lần chạy đang chạy không bao giờ bị hủy (để tránh một tag đã push mà không publish). GitHub chỉ giữ một lần chạy đang chờ cho mỗi nhóm, nên một lần push mới thay thế lần chạy đang chờ cũ hơn; lần chạy mới phát hành một tập commit bao gồm cả hai.
+**Trigger:** Push vào `main` (bản phát hành stable) hoặc `workflow_dispatch` trên `develop` (bản release DEV, `gh workflow run release.yml --ref develop`; job từ chối mọi ref khác). Một lần push vào `develop` không khởi chạy nó. `concurrency: release-<ref>`, `cancel-in-progress: false`: mỗi ref chỉ có một lần chạy release tại một thời điểm, và một lần chạy đang chạy không bao giờ bị hủy (để tránh một tag đã push mà không publish). GitHub chỉ giữ một lần chạy đang chờ cho mỗi nhóm, nên một lần push mới thay thế lần chạy đang chờ cũ hơn; lần chạy mới phát hành một tập commit bao gồm cả hai.
 
 **Các bước:**
 
@@ -151,7 +156,7 @@ Dự án dùng **Husky** và **lint-staged** để chặn các commit không đ�
 4. Nếu có tag mới → kích hoạt `deploy.yml`
 5. Trên `main`, sau khi job release thành công (có hoặc không có tag, `deploy` thành công hoặc bị bỏ qua) → kích hoạt `back-merge.yml`
 
-`release.config.cjs` chỉ bật `@semantic-release/changelog` và `@semantic-release/git` khi branch đúng là `main`, và in `[release.config] branch=<b> commitsRelease=<bool>` ra log. Một bản release DEV trên `develop` chỉ tạo một tag và không commit `package.json`/`CHANGELOG.md`: nếu có, `develop` và `main` sẽ sửa cùng các dòng version/changelog và mọi lần back-merge sau một bản stable sẽ bị xung đột.
+`release.config.cjs` chỉ bật `@semantic-release/changelog` và `@semantic-release/git` khi branch đúng là `main`, và in `[release.config] branch=<b> commitsRelease=<bool>` ra log. Một bản release DEV trên `develop` chỉ tạo một tag và không commit `package.json`/`CHANGELOG.md`: nếu có, PR `develop` → `main` và mọi lần back-merge sau một bản stable sẽ bị xung đột trên các dòng version và changelog. Các commit `refactor` và `style` không release (xem [Định dạng commit](#định-dạng-commit)).
 
 ---
 
@@ -194,9 +199,9 @@ gh run watch "$(gh run list --workflow=deploy.yml --limit 1 --json databaseId --
 
 **Trigger:** Được gọi từ `release.yml` sau mỗi lần push vào `main` (input `version` rỗng khi lần push đó không tạo release)
 
-**Mục đích:** Merge `main` ngược lại vào `develop` để `develop` luôn chứa mọi commit của `main`: các commit release, và các feature `[ci]`/`[docs]` không tạo release.
+**Mục đích:** Merge `main` ngược lại vào `develop` để `develop` luôn chứa mọi commit của `main`: merge commit của mỗi PR release, commit release, và các hotfix.
 
-Một merge thường, **không phải** `-X theirs` (tùy chọn đó chọn phía `main` cho mọi hunk xung đột và lặng lẽ bỏ mã mới hơn của `develop`). Một feature vào `develop` trước `main` với cùng các commit, và DEV không commit gì, nên một merge bình thường là sạch. Khi có xung đột, job liệt kê các file xung đột, chạy `git merge --abort` và thất bại; hãy merge `main` vào `develop` bằng tay bằng lệnh được in trong log. Nếu push bị từ chối vì `develop` vừa nhận một commit mới, job fetch lại, merge lại từ đầu mới và thử lại tối đa 3 lần. Thông điệp chứa `[skip ci]`, nên nó không tạo một DEV mới.
+Một merge thường, **không phải** `-X theirs` (tùy chọn đó chọn phía `main` cho mọi hunk xung đột và lặng lẽ bỏ mã mới hơn của `develop`). `main` chỉ nhận thêm merge release, commit release và các hotfix, và một bản release DEV không commit gì, nên một merge bình thường là sạch trừ khi một hotfix đụng vào các dòng mà `develop` cũng đã đổi. Khi có xung đột, job liệt kê các file xung đột, chạy `git merge --abort` và thất bại; hãy merge `main` vào `develop` bằng tay bằng lệnh được in trong log. Nếu push bị từ chối vì `develop` vừa nhận một commit mới, job fetch lại, merge lại từ đầu mới và thử lại tối đa 3 lần. Thông điệp chứa `[skip ci]`, nên nó không tạo một DEV mới.
 
 ### `drift.yml` — Kiểm tra drift
 
@@ -208,31 +213,30 @@ Thất bại khi `git rev-list --count origin/develop..origin/main` > 0 và đ�
 
 ## Chiến lược branch
 
-| Branch                       | Mục đích                                                                                                                                                                               |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main`                       | Các bản phát hành stable. Mỗi lần push → luồng release + back-merge                                                                                                                    |
-| `develop`                    | Tích hợp và kiểm thử. Các phiên bản pre-release (hậu tố DEV, dist-tag `DEV`)                                                                                                           |
-| `<type>/<slug>`              | Tách từ `main`. PR vào `develop`, rồi một PR riêng vào `main` sau khi được duyệt (mọi leg của tầng nặng phải xanh ở đó). Một bản sửa khẩn cấp cũng làm như vậy (`fix/<slug>`)          |
-| `integrate/<slug>`           | Branch tạm để giải quyết xung đột của một feature với `develop`; chỉ vào `develop`                                                                                                     |
-| `release/*`                  | Branch tích hợp của một chu kỳ major (ví dụ `release/5.0`): các PR từ branch làm việc đi vào đây. Không bao giờ là head của một PR đã merge; nó vào `develop`/`main` qua `promote/<x>` |
-| `promote/*`, `dependabot/**` | `promote/<x>`: được tạo tại đúng SHA của một `release/*` để mở PR vào `develop`/`main` (ví dụ trước đây: `promote/4.0.0`); `dependabot/**`: các branch do Dependabot tạo               |
+| Branch                               | Mục đích                                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `main`                               | Chỉ mã đã phát hành, cùng các hotfix. Mỗi lần push → luồng release + back-merge                                                 |
+| `develop`                            | Tích hợp. Các feature đáp xuống đây; một lần merge không publish gì. Các bản pre-release DEV (dist-tag `DEV`) được cắt bằng tay |
+| `<type>/<slug>`                      | Tách từ `develop`. Một PR vào `develop`                                                                                         |
+| `fix/<slug>`, `docs/<slug>` (hotfix) | Tách từ `main`. PR vào `main`; back-merge đưa nó vào `develop`                                                                  |
+| `dependabot/**`                      | Các branch do Dependabot tạo (nhắm vào `develop`; cập nhật bảo mật nhắm vào `main`)                                             |
 
-**Quy tắc đặt tên branch** (`scripts/check-branch-name.sh`): `^(feat|fix|docs|chore|ci|build|refactor|test|perf|revert)/[a-z0-9]+(-[a-z0-9]+){0,5}$`, tức `<type>/<slug>`: `type` là một loại commit trừ `style`, `release`, `temp`, `conf`, `wip`; `slug` gồm 1–6 từ là chữ thường hoặc chữ số nối bằng `-` (ví dụ `feat/theme-axes`, `ci/branch-hygiene`). Ngoại lệ: `release/<x>`, `promote/<x>`, `dependabot/**`, `integrate/<slug>`. Quy tắc được kiểm tra ở hai nơi: hook `.husky/pre-push` trên máy cục bộ và bước `Check branch name` của `pr-title.yml` trên branch head của PR (bước đó bị bỏ qua khi head nằm trong một fork, `github.event.pull_request.head.repo.full_name != github.repository`, vì một contributor bên ngoài không thể tuân theo quy tắc đặt tên; check tiêu đề chạy cho tất cả mọi người). Các check bắt buộc của ruleset là `Build & Lint Check`, `Plain React (Storybook + parity)` và `E2E (Playwright)`, nên một check `PR Title` đỏ tự nó không chặn merge: người merge phải dừng lại vì nó.
+**Quy tắc đặt tên branch** (`scripts/check-branch-name.sh`): `^(feat|fix|docs|chore|ci|build|refactor|test|perf|revert)/[a-z0-9]+(-[a-z0-9]+){0,5}$`, tức `<type>/<slug>`: `type` là một loại commit trừ `style`, `release`, `temp`, `conf`, `wip`; `slug` gồm 1–6 từ là chữ thường hoặc chữ số nối bằng `-` (ví dụ `feat/theme-axes`, `ci/branch-hygiene`). Ngoại lệ: `dependabot/**`. Một PR vào `main` có quy tắc thứ hai: head của nó phải là `develop`, `fix/<slug>`, `docs/<slug>` hoặc `dependabot/**` (script nhận branch base làm đối số thứ hai). Quy tắc được kiểm tra ở hai nơi: hook `.husky/pre-push` trên máy cục bộ và bước `Check branch name` của `pr-title.yml` trên branch head của PR (bước đó bị bỏ qua khi head nằm trong một fork, `github.event.pull_request.head.repo.full_name != github.repository`, vì một contributor bên ngoài không thể tuân theo quy tắc đặt tên; check tiêu đề chạy cho tất cả mọi người). Các check bắt buộc của ruleset là `Build & Lint Check`, `Plain React (Storybook + parity)` và `E2E (Playwright)`, nên một check `PR Title` đỏ tự nó không chặn merge: người merge phải dừng lại vì nó.
 
 ### Quy trình feature
 
-1. `git fetch origin && git switch -c feat/x origin/main`. Không bao giờ tách từ `develop`.
-2. **Một commit, header đúng.** Loại release được quyết định bởi header của các commit trong branch (merge commit bị analyzer bỏ qua). Trước PR đầu tiên, hãy squash branch thành một commit `[type] subject` và dùng đúng header đó làm tiêu đề của cả hai PR. Một commit `[feat] wip` còn sót lại sẽ thành minor ngay cả khi PR được đặt tên `[fix] …`. Major: `[release] …`.
-3. PR `feat/x` → `develop`, **Create a merge commit**. Kết quả là `vX.Y.Z-DEV.N` trên dist-tag `DEV`. Consumer kiểm thử bằng phiên bản chính xác (`@duydpdev/style-generator@4.1.0-DEV.3`), không phải một khoảng: `^4.1.0-DEV.3` resolve lên tới bản stable `4.1.0`, bản có thể thiếu một feature khác đang nằm trên `develop`.
-4. Sau khi được duyệt: nếu `feat/x` đã bị xóa khi PR vào `develop` được merge (`delete_branch_on_merge=true`), hãy tạo lại nó trên GitHub tại đúng SHA đã merge (xem [Quy ước Pull Request & merge](#quy-ước-pull-request--merge)), không bao giờ push từ một bản clone cục bộ. Sau đó PR `feat/x` → `main`, **Create a merge commit**; trước khi merge, `headRefOid` của PR phải bằng SHA đó. Bản phát hành stable, publish `latest`, back-merge.
-5. **Phụ thuộc vào một feature khác:** tách branch từ branch của feature kia, nói rõ trong PR, và feature kia phải vào `main` trước.
-6. **Xung đột khi vào `develop`:** **không** dùng nút "Resolve conflicts" hay "Update branch" của GitHub: cả hai đều merge `develop` vào `feat/x`, và PR vào `main` sau đó sẽ mang theo feature chưa được duyệt. Thay vào đó: `git switch -c integrate/x origin/develop && git merge feat/x`, giải quyết xung đột, mở một PR `integrate/x` → `develop` (merge commit); GitHub xóa branch khi merge (`delete_branch_on_merge=true`). `feat/x` giữ sạch cho `main`. Chỉ cập nhật `feat/x` bằng `git merge origin/main`.
+1. `git fetch origin && git switch -c feat/x origin/develop`. Feature được tách từ `develop`; hotfix là loại branch duy nhất được tách từ `main`.
+2. **Một commit, header đúng.** Loại release được quyết định bởi header của các commit mà một PR release thêm vào (merge commit bị analyzer bỏ qua). Trước PR, hãy squash branch thành một commit `[type] subject` và dùng đúng header đó làm tiêu đề của PR. Một commit `[feat] wip` còn sót lại sẽ thành minor ngay cả khi PR được đặt tên `[fix] …`. `[release] …` (major) chỉ được phép khi một chu kỳ major đang mở (xem [Chu kỳ major](#chu-kỳ-major)).
+3. PR `feat/x` → `develop`, **Create a merge commit**. Không có gì được publish; CI (`ci.yml`) chạy trên PR.
+4. Thay đổi chờ trên `develop` cho PR release kế tiếp (xem [Cắt một bản phát hành](#cắt-một-bản-phát-hành)). Để thử nó trong một ứng dụng thật trước đó, hãy cắt một bản DEV (xem [DEV theo yêu cầu](#dev-theo-yêu-cầu)).
+5. **Phụ thuộc vào một feature khác:** tách branch từ branch của feature kia, nói rõ trong PR, và merge feature kia vào `develop` trước.
+6. **Xung đột hoặc lỗi thời:** `git merge origin/develop` vào `feat/x`, giải quyết xung đột, push. Không bao giờ dùng nút "Resolve conflicts" của GitHub trên một PR có branch được dùng chung.
 
 ### Gỡ một feature bị từ chối
 
-- **Khỏi `develop`:** PR `[revert] <feature>` (`git revert -m 1 <merge-commit>`), tạo một bản patch DEV mới. Không bao giờ force-push `develop`.
-- **Bẫy revert:** các commit của feature đã là tổ tiên của `develop`. Nếu chính các commit đó được merge lại sau này (vào `develop` hoặc `main`), git coi chúng đã có sẵn: `develop` thiếu mã trong khi `drift.yml` vẫn báo 0 (được đo trong plan `feature-from-main-flow`, phase 01). Quy tắc: trước khi một feature đã revert vào lại bất kỳ đâu, hãy chạy `git rebase --force-rebase origin/main` trên branch để các commit có SHA mới.
-- **Khỏi `main`:** PR `[revert] <feature>` vào `develop` rồi vào `main`, tạo ra một bản phát hành patch. Phiên bản cũ đã publish vẫn còn trên registry.
+- **Chưa phát hành (trên `develop`):** PR `[revert] <feature>` vào `develop` (`git revert -m 1 <merge-commit>`). Không bao giờ force-push `develop`.
+- **Bẫy revert:** các commit của feature đã là tổ tiên của `develop`. Nếu chính các commit đó được merge lại sau này, git coi chúng đã có sẵn: `develop` thiếu mã trong khi `drift.yml` vẫn báo 0. Quy tắc: trước khi một feature đã revert vào lại, hãy chạy `git rebase --force-rebase origin/develop` trên branch để các commit có SHA mới.
+- **Đã phát hành:** PR `[revert] <feature>` vào `develop`; nó được ship cùng PR release kế tiếp như một bản patch. Phiên bản cũ đã publish vẫn còn trên registry.
 
 ---
 
@@ -241,17 +245,41 @@ Thất bại khi `git rev-list --count origin/develop..origin/main` > 0 và đ�
 > [!IMPORTANT]
 > Dự án dùng **semantic-release** — phiên bản được tính tự động từ các thông điệp commit. **Không cần** sửa `package.json` bằng tay.
 > Một bản phát hành major cần một commit `[release] …` (xem bảng Định dạng commit).
+> `[refactor]` và `[style]` không release; một thay đổi hành vi phải được viết là `[fix]`, `[perf]` hoặc `[feat]`.
 
 ### Quy trình đúng
 
-1. Tách branch `feat/x` từ `main` (xem [Quy trình feature](#quy-trình-feature))
-2. Một commit theo định dạng `[type] subject` (xem bên dưới)
-3. PR vào `develop`, CI đạt → **Create a merge commit** → `release.yml` cắt `vX.Y.Z-DEV.N` (chỉ tag, không commit) và publish dist-tag `DEV`
-4. Sau khi được duyệt → PR từ cùng branch vào `main`, CI đạt → **Create a merge commit** → `release.yml`:
-   - Tính phiên bản mới từ header của các commit của feature
-   - Commit `package.json` + `CHANGELOG.md` (`[chore] release x [skip ci]`) và tạo tag `vX.Y.Z`
-   - Kích hoạt `deploy.yml` để publish lên npmjs.org
-   - Kích hoạt `back-merge.yml` để merge `main` ngược lại vào `develop`
+1. Tách branch `feat/x` từ `develop` (xem [Quy trình feature](#quy-trình-feature)).
+2. Một commit theo định dạng `[type] subject` (xem [Định dạng commit](#định-dạng-commit)).
+3. PR vào `develop`, CI đạt → **Create a merge commit**. Không có gì được publish.
+4. Khi `develop` đã chứa đủ, hãy cắt một bản phát hành (mục kế tiếp). `release.yml` khi đó tính phiên bản mới từ header của mọi commit trong phạm vi, commit `package.json` + `CHANGELOG.md` (`[chore] release x [skip ci]`), tạo tag `vX.Y.Z`, kích hoạt `deploy.yml` để publish lên npmjs.org, và kích hoạt `back-merge.yml` để merge `main` ngược lại vào `develop`.
+
+### Cắt một bản phát hành
+
+1. `git fetch origin && git rev-list --count origin/develop..origin/main` in ra `0` (nếu không, một back-merge đang chờ: hãy xử lý nó trước).
+2. `git log --no-merges --format=%s origin/main..origin/develop` cho thấy những gì sẽ được ship: header `[release]` cho một major, `[feat]` một minor, `[fix]`/`[perf]`/`[revert]` một patch; không có cái nào trong số đó thì không có gì để release.
+3. `gh pr create --base main --head develop --title "[chore] release $(date +%F)" --body-file <file liệt kê các thay đổi>`. Đừng đặt số phiên bản vào tiêu đề: semantic-release tự tính.
+4. Chờ ba check bắt buộc và mọi job tầng nặng của `ci-matrix.yml` đạt.
+5. **Create a merge commit**, rồi `npm view @duydpdev/style-generator dist-tags` hiện `latest` mới (có thể mất khoảng 10 phút).
+
+### DEV theo yêu cầu
+
+`gh workflow run release.yml --ref develop` cắt `vX.Y.Z-DEV.N` trên dist-tag `DEV` khi `develop` có một commit có thể release mà chưa release nào chứa; `latest` không đổi. Consumer kiểm thử bằng phiên bản chính xác (`@duydpdev/style-generator@4.1.0-DEV.3`), không phải một khoảng: `^4.1.0-DEV.3` resolve lên tới bản stable `4.1.0`.
+
+### Hotfix
+
+`git fetch origin && git switch -c fix/x origin/main`, một commit, PR `fix/x` → `main` với **Create a merge commit**: một bản patch stable được phát hành ngay và back-merge đưa bản sửa vào `develop`. Một bản sửa tài liệu cần lên site ngay dùng `docs/x` theo cùng cách (`[docs]` không release; `deploy-site.yml` chạy khi push vào `main`). Một PR bảo mật của Dependabot nhắm vào `main` và là một hotfix.
+
+### Chu kỳ major
+
+Một major được lên kế hoạch, không phải ngẫu nhiên. Các commit `[release]` chỉ vào `develop` khi biến repository `MAJOR_CYCLE` là `open`.
+
+1. `gh variable set MAJOR_CYCLE --body open`, rồi chạy lại `Build & Lint Check` đã thất bại của các PR `[release]` đang chờ (`gh run rerun <id> --failed`) và merge chúng vào `develop`.
+2. Viết một hướng dẫn migration `documents/migration/<old>-to-<new>.md`; cắt các bản `X.0.0-DEV.N` theo yêu cầu để thử major trong các ứng dụng thật.
+3. Cắt bản phát hành như bình thường; phiên bản là một major vì header `[release]`.
+4. `gh variable set MAJOR_CYCLE --body closed`.
+
+Giữa hai major chỉ có các bản minor và patch được ship; khoảng cách ít nhất ba tháng là mức tối thiểu được khuyến nghị. Hãy ưu tiên deprecate trước: ship API thay thế trong một minor, đánh dấu API cũ `@deprecated` và làm `style-gen doctor` cảnh báo, rồi gỡ nó trong major.
 
 ### Các secret bắt buộc
 
@@ -272,16 +300,14 @@ Bước `Publish to npm` xanh chưa chứng minh phiên bản đã công khai. M
 
 Định dạng thông điệp commit: `[type] subject`, với type viết thường (`[Feat] …` bị commitlint từ chối, vì analyzer chỉ ánh xạ các type viết thường và sẽ không release).
 
-| Type                                                          | Tăng phiên bản  | Ví dụ                                |
-| ------------------------------------------------------------- | --------------- | ------------------------------------ |
-| `release`                                                     | Major (`2.0.0`) | `[release] ship public v2 API`       |
-| `feat`                                                        | Minor (`1.1.0`) | `[feat] add multi-theme support`     |
-| `fix`                                                         | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
-| `perf`                                                        | Patch (`1.0.1`) | `[perf] reduce generated CSS size`   |
-| `refactor`, `style`, `revert`                                 | Patch (`1.0.1`) | `[refactor] simplify registry walk`  |
-| `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | Không tăng      | `[docs] update architecture guide`   |
+| Type                                                                               | Tăng phiên bản  | Ví dụ                                |
+| ---------------------------------------------------------------------------------- | --------------- | ------------------------------------ |
+| `release`                                                                          | Major (`2.0.0`) | `[release] ship public v2 API`       |
+| `feat`                                                                             | Minor (`1.1.0`) | `[feat] add multi-theme support`     |
+| `fix`, `perf`, `revert`                                                            | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
+| `refactor`, `style`, `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | Không tăng      | `[refactor] simplify registry walk`  |
 
-Ghi chú release dùng preset `conventionalcommits` (khai báo trong `devDependencies`) với template `changelog-template.hbs`; các mục theo thứ tự này: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. Các type không tăng phiên bản không xuất hiện trong ghi chú. Phần body của các commit `[feat]` và `[fix]` được in thụt lề ngay dưới mục tương ứng (`finalizeContext` trong `release.config.cjs`). Vì `[fix]` thường siết chặt việc kiểm tra hợp lệ, hãy viết một body nói rõ điều gì giờ bị từ chối và cách nâng cấp; body của một `[feat]` liệt kê các thay đổi hành vi mà người dùng cần biết (giá trị mặc định mới, ngữ nghĩa mới). Body của các type khác không xuất hiện trong ghi chú.
+Ghi chú release dùng preset `conventionalcommits` (khai báo trong `devDependencies`) với template `changelog-template.hbs`; các mục theo thứ tự này: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp` và `wip` không bao giờ xuất hiện trong ghi chú; `refactor` và `style` không tăng phiên bản nhưng được liệt kê dưới `Refactor` và `Style` khi cùng bản release được cắt vì một commit khác. Phần body của các commit `[feat]` và `[fix]` được in thụt lề ngay dưới mục tương ứng (`finalizeContext` trong `release.config.cjs`). Vì `[fix]` thường siết chặt việc kiểm tra hợp lệ, hãy viết một body nói rõ điều gì giờ bị từ chối và cách nâng cấp; body của một `[feat]` liệt kê các thay đổi hành vi mà người dùng cần biết (giá trị mặc định mới, ngữ nghĩa mới). Body của các type khác không xuất hiện trong ghi chú.
 
 ### Cấu hình
 

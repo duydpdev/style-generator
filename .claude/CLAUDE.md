@@ -64,26 +64,25 @@ eslint --fix → prettier → `tsc --noEmit` → `vitest related --run` (`lint-s
 so Husky is installed via `postinstall: husky` (verify with `git config core.hooksPath` → `.husky/_`).
 `pinst` (`prepack: pinst --disable`, `postpack: pinst --enable`) renames `postinstall` to `_postinstall` inside the published tarball so consumers never run Husky.
 Release CI sets `HUSKY=0`. `.husky/pre-push` runs `scripts/check-branch-name.sh`, also a step of `pr-title.yml`:
-branch names are `<type>/<slug>` (`feat|fix|docs|chore|ci|build|refactor|test|perf|revert`, slug 1–6 lowercase words joined by `-`), plus `release/*`, `promote/*`,
-`dependabot/**` and `integrate/<slug>` (`documents/deploy.md` → Branching Strategy).
+branch names are `<type>/<slug>` (`feat|fix|docs|chore|ci|build|refactor|test|perf|revert`, slug 1–6 lowercase words joined by `-`), plus `dependabot/**` (`documents/deploy.md` → Branching Strategy);
+a PR into `main` must come from `develop`, `fix/<slug>`, `docs/<slug>` or `dependabot/**`.
 
 ## Commit Convention
 
 Custom format `[type] subject`, lowercase type (NOT conventional-commits `type:`), parsed by `release.config.cjs`:
 
-| Type                                               | Release |
-| -------------------------------------------------- | ------- |
-| `[release]`                                        | major   |
-| `[feat]`                                           | minor   |
-| `[fix]` `[perf]` `[revert]` `[style]` `[refactor]` | patch   |
-| `[chore]` `[docs]` `[test]` `[build]` `[ci]`       | none    |
+| Type                                                                | Release |
+| ------------------------------------------------------------------- | ------- |
+| `[release]`                                                         | major   |
+| `[feat]`                                                            | minor   |
+| `[fix]` `[perf]` `[revert]`                                         | patch   |
+| `[chore]` `[docs]` `[test]` `[build]` `[ci]` `[refactor]` `[style]` | none    |
 
-`[conf]` `[temp]` `[wip]` are valid, no release. Features are cut from `main` and land twice, both as merge commits (never squash):
-a PR into `develop` (pre-release `DEV` dist-tag), then, once approved, a PR from the same branch into `main` (stable).
-With `delete_branch_on_merge=true` GitHub deletes the branch when the `develop` PR merges: recreate it on GitHub at that PR's `headRefOid` (`gh api -X POST …/git/refs`,
-never a local push) and check that the `main` PR's `headRefOid` equals it before merging. `release/*` is never the head of a merged PR:
-promote it through a `promote/<x>` branch at the same SHA. Each merge triggers Semantic Release → tag → publish to **npmjs.org** (public, scope `@duydpdev`, npm trusted publishing: no token secret);
-the release type comes from the feature's commit headers. Every push to `main` back-merges to `develop`. Details: `documents/deploy.md`.
+`[conf]` `[temp]` `[wip]` are valid, no release. Features are cut from `develop` and land once, as a merge commit (never squash), through a PR into `develop`; a merge into `develop` publishes nothing.
+A stable release is one PR `develop` → `main` (merge commit): semantic-release computes ONE version from every commit header that PR adds, Deploy publishes it to **npmjs.org** (public, scope `@duydpdev`, npm trusted publishing: no token secret)
+and the back-merge returns `main` to `develop`. A DEV pre-release is cut only by hand: `gh workflow run release.yml --ref develop`. Hotfixes (`fix/<slug>`, `docs/<slug>`) are cut from `main` and go straight into `main`.
+`[release]` (major) commits enter `develop` only while the repo variable `MAJOR_CYCLE` is `open`; CI fails a PR into `develop` that carries one otherwise.
+The `no-delete` ruleset keeps GitHub from deleting `develop` after the release PR merges. Details: `documents/deploy.md`.
 
 ## Architecture
 
@@ -258,10 +257,10 @@ Two example apps have a Storybook (`plain-react`, `plain-nuxt`; component storie
 and each app's CSS has `@source not` for `*.stories.*`). The `plain-react` job of `ci.yml` (Storybook stories and the plain-vs-harness parity gate) is separate from `check` and
 runs on drafts and documentation-only PRs; the `plain-nuxt` job (its stories, not a required check) runs alongside it. Layers and CI legs (including `tailwind-floor`, `node-floor`,
 `peer-matrix` (decides the `vite`/`typescript` peer ranges), `ts-peer` (proves the `typescript` range in a scratch npm project) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
-these 9 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main`/`release/**`, not on PRs into `develop`;
+these 9 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main` (the `develop` → `main` release PR), not on PRs into `develop`;
 it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
 `check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
-`.github/workflows/nightly.yml` (not a required check) adds `yarn test` on `macos-latest` and `scripts/bun-smoke.mjs` (Bun installed with `npm install -g bun`, no third-party action) every night and on PRs into `main`/`release/**` that change it.
+`.github/workflows/nightly.yml` (not a required check) adds `yarn test` on `macos-latest` and `scripts/bun-smoke.mjs` (Bun installed with `npm install -g bun`, no third-party action) every night and on PRs into `main` that change it.
 
 ## Publishing guards
 

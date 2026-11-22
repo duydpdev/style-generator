@@ -1,3 +1,9 @@
+# [8.2.2](https://github.com/duydpdev/style-generator/compare/v8.2.1...v8.2.2) (2026-11-22)
+
+### Refactor
+
+- the opacity group comment no longer says a group is narrowed to the rule ([0aee28a](https://github.com/duydpdev/style-generator/commit/0aee28a499128969b0017e1fd03b559bcbbd66c3))
+
 # [8.2.1](https://github.com/duydpdev/style-generator/compare/v8.2.0...v8.2.1) (2026-11-21)
 
 ### Bug Fixes

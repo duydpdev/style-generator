@@ -61,10 +61,10 @@ const CoverageCategoryKey = z.enum(
 const OpacityStep = z.number().int().min(1).max(100);
 
 /**
- * One opacity group of `coverage.colors.opacities`: its own steps, narrowed
- * to some prefixes and/or theme color keys (each defaulting to the rule's
- * covered ones). Prefixes are checked against the category in the coverage
- * refinement, keys against the theme in `assertThemeOptions`.
+ * One opacity group of `coverage.colors.opacities`: its own steps with their
+ * own prefixes and/or theme color keys (each defaulting to the rule's covered
+ * ones, not limited to them). Prefixes are checked against the category in the
+ * coverage refinement, keys against the theme in `assertThemeOptions`.
  */
 const OpacityGroup = z.strictObject({
   steps: z

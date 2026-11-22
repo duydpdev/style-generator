@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: f0a92880317d -->
+<!-- source: documents/testing.md sha256: bff5a92c5520 -->
 
 # Hướng dẫn kiểm thử
 
@@ -12,7 +12,7 @@ Các bước kiểm tra có hai lớp:
 1. **Cục bộ (pre-commit):** `Husky` + `lint-staged` chạy trên snapshot đã stage của các file code đã stage:
    `eslint --fix` → `prettier --write` → `tsc --noEmit` → `vitest related --run` (chỉ các test import các file đã stage).
    Husky được cài qua `postinstall` (Yarn Berry không chạy `prepare`).
-2. **Từ xa** (GitHub Actions, `.github/workflows/ci.yml` và `.github/workflows/ci-matrix.yml`, PR vào `main`/`develop`/`release/**`):
+2. **Từ xa** (GitHub Actions, `.github/workflows/ci.yml` và `.github/workflows/ci-matrix.yml`, PR vào `main`/`develop`):
    - job `check`: audit dependency production (chặn high/critical) và audit đầy đủ (chỉ ghi log) → commitlint → `build:all` (trước lint vì ESLint nhận biết kiểu cũng quét
      `examples/**`, nơi import thư viện đã build qua `link:../..`) → `yarn workspace plain-nuxt-example prepare:nuxt` (ghi các file `.nuxt/tsconfig.*.json` mà ESLint cần cho
      `examples/plain-nuxt/app/**`) → lint → `prettier:check` → `tsc` → kiểm tra cú pháp (`node --check`) và kiểm tra kiểu (`yarn typecheck:scripts`) cho `scripts/*.mjs` và
@@ -65,14 +65,14 @@ Các bước kiểm tra có hai lớp:
      nhận được: cva 0.7.0 cần đúng clsx 2.0.0, nên nó giữ một bản sao lồng nhau riêng, và `@types/scheduler` được giữ ở 0.16.8, phiên bản cuối cùng có `scheduler/tracing`,
      thứ mà `@types/react` <=18.2.71 import;
    - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` và `ui-peer-floor` là tầng nặng và nằm trong `ci-matrix.yml` (9 job, `peer-matrix` có 5 leg; không phải check bắt buộc).
-     Nó chạy hằng đêm trên `main` (cron `43 5 * * *`), khi dispatch thủ công (`gh workflow run ci-matrix.yml --ref main`) và trên các PR vào `main`/`release/**`,
+     Nó chạy hằng đêm trên `main` (cron `43 5 * * *`), khi dispatch thủ công (`gh workflow run ci-matrix.yml --ref main`) và trên các PR vào `main` (PR release `develop` → `main`),
      không chạy trên PR vào `develop`; mọi leg phải xanh trước khi merge PR vào `main`. Nó có `paths-ignore: ["documents/**"]` ở cấp workflow:
      một PR chỉ đổi tài liệu không chạy nó. Trên PR, mọi job bỏ qua các PR draft và chạy khi PR được đánh dấu ready (`ready_for_review`);
      với `schedule` và `workflow_dispatch` không có draft, nên điều kiện là `github.event_name != 'pull_request' || github.event.pull_request.draft == false`.
      Tầng theo từng PR (`check`, `plain-react`, `e2e`) nằm trong `ci.yml`, trong đó job `check` cũng chạy trên các PR draft,
      nên một draft đã push luôn có kết quả (phút Actions miễn phí trên repo công khai này).
    - `nightly.yml` là một tầng nhẹ riêng (không phải check bắt buộc): nó chạy `yarn test` trên `macos-latest` (các ca filesystem không phân biệt hoa thường của `sameFile`, hành vi FSEvents của các test watcher dùng chokidar thật) và
-     `scripts/bun-smoke.mjs` (cài bằng Bun, file CLI và `generate()` từ tarball đã pack) hằng đêm và trên các PR vào `main`/`release/**` có đổi workflow hoặc script smoke đó.
+     `scripts/bun-smoke.mjs` (cài bằng Bun, file CLI và `generate()` từ tarball đã pack) hằng đêm và trên các PR vào `main` có đổi workflow hoặc script smoke đó.
 
 `check:publish-target` chạy trong `prepublish` và trong workflow publish (`deploy.yml`); `deploy.yml` còn chạy thêm `check:types-pack` ngay sau `build:all`, xem [`deploy.md`](./deploy.md).
 

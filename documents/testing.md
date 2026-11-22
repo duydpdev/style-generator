@@ -10,7 +10,7 @@ The checks have two layers:
 1. **Local (pre-commit):** `Husky` + `lint-staged` run on the staged snapshot of the staged code files:
    `eslint --fix` → `prettier --write` → `tsc --noEmit` → `vitest related --run` (only tests that import the staged files).
    Husky is installed through `postinstall` (Yarn Berry does not run `prepare`).
-2. **Remote** (GitHub Actions, `.github/workflows/ci.yml` and `.github/workflows/ci-matrix.yml`, PRs into `main`/`develop`/`release/**`):
+2. **Remote** (GitHub Actions, `.github/workflows/ci.yml` and `.github/workflows/ci-matrix.yml`, PRs into `main`/`develop`):
    - job `check`: production dependency audit (blocks high/critical) and full audit (log only) → commitlint → `build:all` (before lint because the type-aware ESLint also scans
      `examples/**`, which import the built library through `link:../..`) → `yarn workspace plain-nuxt-example prepare:nuxt` (writes the `.nuxt/tsconfig.*.json` files that ESLint
      needs for `examples/plain-nuxt/app/**`) → lint → `prettier:check` → `tsc` → syntax check (`node --check`) and type check (`yarn typecheck:scripts`) of `scripts/*.mjs` and
@@ -63,14 +63,14 @@ The checks have two layers:
      then runs `yarn typecheck:dist` and `yarn vitest run src/features/ui`. Two harness-only pins mirror what a consumer actually gets: cva 0.7.0 needs clsx 2.0.0 exactly,
      so it keeps its own nested copy, and `@types/scheduler` is held at 0.16.8, the last version with `scheduler/tracing`, which `@types/react` <=18.2.71 imports;
    - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` and `ui-peer-floor` are the heavy tier and live in `ci-matrix.yml` (9 jobs, `peer-matrix` has 5 legs; not a required check).
-     It runs nightly on `main` (cron `43 5 * * *`), on manual dispatch (`gh workflow run ci-matrix.yml --ref main`) and on PRs into `main`/`release/**`, not on PRs into `develop`;
+     It runs nightly on `main` (cron `43 5 * * *`), on manual dispatch (`gh workflow run ci-matrix.yml --ref main`) and on PRs into `main` (the `develop` → `main` release PR), not on PRs into `develop`;
      every leg must be green before the PR into `main` is merged. It has `paths-ignore: ["documents/**"]` at the workflow level:
      a PR that only changes documentation does not run it. On PRs every job skips drafts and runs when the PR is marked ready (`ready_for_review`);
      on `schedule` and `workflow_dispatch` there is no draft, so the condition is `github.event_name != 'pull_request' || github.event.pull_request.draft == false`.
      The per-PR tier (`check`, `plain-react`, `e2e`) is in `ci.yml`, which also runs on draft PRs for `check`,
      so a pushed draft always gets a result (Actions minutes are free on this public repo).
    - `nightly.yml` is a separate light tier (not a required check): it runs `yarn test` on `macos-latest` (the case-insensitive filesystem cases of `sameFile`, FSEvents behaviour of the real-chokidar watcher tests) and
-     `scripts/bun-smoke.mjs` (Bun install, the CLI file and `generate()` from the packed tarball) every night and on PRs into `main`/`release/**` that change the workflow or the smoke script.
+     `scripts/bun-smoke.mjs` (Bun install, the CLI file and `generate()` from the packed tarball) every night and on PRs into `main` that change the workflow or the smoke script.
 
 `check:publish-target` runs in `prepublish` and in the publish workflow (`deploy.yml`); `deploy.yml` additionally runs `check:types-pack` right after `build:all`, see [`deploy.md`](./deploy.md).
 

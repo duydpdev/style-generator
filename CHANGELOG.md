@@ -1,3 +1,12 @@
+# [8.2.3](https://github.com/duydpdev/style-generator/compare/v8.2.2...v8.2.3) (2026-11-22)
+
+### Bug Fixes
+
+- report an unreadable config file as unreadable, not as invalid JSON ([dd75351](https://github.com/duydpdev/style-generator/commit/dd75351b636a407f6d1474f6235b4b41df3b5968))
+
+  A style-gen.config.json or package.json that exists but cannot be read (a directory, a permission error) was reported as 'is not valid JSON (EISDIR…)'.
+  The message now reads '<file> cannot be read (<reason>)'; a file that is read but does not parse still reports 'is not valid JSON'. The config is still ignored and the defaults apply, as before.
+
 # [8.2.2](https://github.com/duydpdev/style-generator/compare/v8.2.1...v8.2.2) (2026-11-22)
 
 ### Refactor

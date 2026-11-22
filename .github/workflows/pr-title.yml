@@ -1,26 +1,27 @@
 # ─────────────────────────────────────────────────────
 # PR Title — lint the PR title with commitlint.config.ts
 #
-# Features land on develop and main through merge commits: the first line is
-# `Merge pull request #N …` (ignored by the analyzer), and the PR title lives
-# only in the body. The headers of the commits on the branch decide the release
-# (linted in ci.yml). This check keeps the PR title readable and consistent
-# with those headers.
+# A feature lands on develop and a release is one develop -> main merge, both
+# through merge commits: the first line is `Merge pull request #N …` (ignored
+# by the analyzer), and the PR title lives only in the body. The headers of the
+# commits in the range decide the release (linted in ci.yml). This check keeps
+# the PR title readable and consistent with those headers.
 # `edited` also catches a title-only edit (ci.yml does not re-run then).
 # Does not run on `synchronize`: pushing a new commit does not change the title.
 # Consequence: the check attaches only to the head at the time it ran; commits
 # pushed afterwards do not carry this check (it is not a required check of the
 # rulesets, so it does not block the merge).
 # The "Check branch name" step checks the head branch name with
-# scripts/check-branch-name.sh, the same rule as .husky/pre-push. It is skipped
-# for fork PRs (outside contributors cannot follow the naming rule); the title
-# check runs for everyone.
+# scripts/check-branch-name.sh, the same rule as .husky/pre-push. For a PR into
+# main it also passes the base, so only develop, fix/*, docs/* and dependabot/**
+# heads are accepted. It is skipped for fork PRs (outside contributors cannot
+# follow the naming rule); the title check runs for everyone.
 # ─────────────────────────────────────────────────────
 name: PR Title
 
 on:
   pull_request:
-    branches: [main, develop, "release/**"]
+    branches: [main, develop]
     types: [opened, edited, reopened]
 
 concurrency:
@@ -49,7 +50,8 @@ jobs:
         if: github.event.pull_request.head.repo.full_name == github.repository
         env:
           HEAD_REF: ${{ github.head_ref }}
-        run: sh scripts/check-branch-name.sh "$HEAD_REF"
+          BASE_REF: ${{ github.base_ref }}
+        run: sh scripts/check-branch-name.sh "$HEAD_REF" "$BASE_REF"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7

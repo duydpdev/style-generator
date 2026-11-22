@@ -5,12 +5,10 @@
 const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
 
-// Features land on develop and on main separately (documents/deploy.md), so
-// main is not an ancestor of develop. A DEV release that committed
-// package.json/CHANGELOG.md to develop would make every back-merge of a stable
-// release conflict on those lines (measured in a dry run of the feature-from-main
-// flow). Only a release on main
-// commits them; deploy.yml sets the published version from the tag. Any branch
+// A stable release is one develop -> main merge. Only a release on main
+// commits package.json/CHANGELOG.md: a DEV release that committed them to
+// develop would make the develop -> main PR and every back-merge conflict on
+// those lines. deploy.yml sets the published version from the tag. Any branch
 // value other than exactly "main" (develop, HEAD, a PR ref) means no commit, so
 // a detection failure costs a CHANGELOG entry, never a commit on develop.
 function currentBranch() {
@@ -78,8 +76,8 @@ module.exports = {
           { type: "fix", release: "patch" },
           { type: "perf", release: "patch" },
           { type: "revert", release: "patch" },
-          { type: "style", release: "patch" },
-          { type: "refactor", release: "patch" },
+          { type: "style", release: false },
+          { type: "refactor", release: false },
           { type: "test", release: false },
           { type: "build", release: false },
           { type: "ci", release: false },

@@ -6,7 +6,7 @@ name: Site visual
 # No label trigger type: a label event must never cancel a compare run.
 on:
   pull_request:
-    branches: [main, develop, "release/**"]
+    branches: [main, develop]
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "site/**"

@@ -131,6 +131,24 @@ describe("generateSourceInline coverage", () => {
     expect(lines.some((l) => l.includes("shadow"))).toBe(true);
   });
 
+  it("`false` also drops the opacity group lines that a colors rule would emit", () => {
+    const withGroups = linesOf({
+      coverage: {
+        colors: {
+          opacities: [
+            5,
+            { steps: [32], prefixes: ["ring"], keys: ["primary"] },
+          ],
+        },
+      },
+    });
+    expect(withGroups.some((l) => l.includes("/{5}"))).toBe(true);
+    expect(withGroups).toContain('@source inline("{ring}-{primary}/{32}");');
+
+    const dropped = linesOf({ coverage: { colors: false } });
+    expect(dropped.some((l) => l.includes("/{"))).toBe(false);
+  });
+
   it("`prefixes` keeps only the listed class prefixes, in descriptor order", () => {
     const lines = linesOf({
       coverage: {

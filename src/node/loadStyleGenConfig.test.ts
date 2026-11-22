@@ -224,6 +224,24 @@ describe("resolveConfig", () => {
     );
   });
 
+  it("reports a config that cannot be read as unreadable, not as invalid JSON", () => {
+    fs.mkdirSync(path.join(tmp, "style-gen.config.json"));
+
+    const file = readConfigFile(tmp);
+    expect(file.source).toBe("style-gen.config.json");
+    expect(file.error).toMatch(/style-gen\.config\.json cannot be read/);
+    expect(file.error).not.toMatch(/not valid JSON/);
+  });
+
+  it("reports an unreadable package.json as unreadable, not as invalid JSON", () => {
+    fs.mkdirSync(path.join(tmp, "package.json"));
+
+    const file = readConfigFile(tmp);
+    expect(file.source).toBe("package.json");
+    expect(file.error).toMatch(/package\.json cannot be read/);
+    expect(file.error).not.toMatch(/not valid JSON/);
+  });
+
   it("reports a non-object config instead of merging it", () => {
     fs.writeFileSync(
       path.join(tmp, "package.json"),

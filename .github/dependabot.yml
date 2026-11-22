@@ -2,12 +2,10 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
-    # Dependabot cuts its branch from the target branch. A feature must be cut
-    # from main (documents/deploy.md), so target main: the branch is then a
-    # clean feature branch. Land it on develop first with a second PR from the
-    # same branch (`gh pr create --base develop --head <dependabot branch>`),
-    # then merge Dependabot's own PR into main.
-    target-branch: main
+    # Dependabot cuts its branch from the target branch. Features are cut from
+    # develop (documents/deploy.md), so target develop: the PR lands there and
+    # reaches main with the next develop -> main release PR.
+    target-branch: develop
     schedule:
       interval: monthly
     # No automatic rebase: every rebase re-runs the whole CI on the PR.
@@ -25,9 +23,9 @@ updates:
 
   - package-ecosystem: npm
     directory: /
-    # Same flow as github-actions above: branch from main, land on develop
-    # first. Covers the root package and every workspace in the lockfile.
-    target-branch: main
+    # Same flow as github-actions above: branch from develop, one PR. Covers the
+    # root package and every workspace in the lockfile.
+    target-branch: develop
     schedule:
       interval: monthly
     # Same as github-actions above.

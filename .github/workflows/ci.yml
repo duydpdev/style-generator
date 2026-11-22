@@ -2,7 +2,7 @@ name: CI Check
 
 on:
   pull_request:
-    branches: [main, develop, "release/**"]
+    branches: [main, develop]
     types: [opened, synchronize, reopened, ready_for_review]
 
 # Cancel any in-progress run for the same PR when new commits are pushed.
@@ -49,16 +49,36 @@ jobs:
         run: yarn npm audit --all --recursive || true
 
       - name: Commitlint (PR commits)
-        # A feature is cut from main and lands on develop and on main as the
-        # same commits (merge commits, never squash), so base..head is exactly
-        # the feature's commits for either base. Their headers decide the
-        # release, so lint every one of them.
+        # A feature lands on develop and a release is the develop -> main PR, both
+        # as merge commits (never squash), so base..head is exactly the commits
+        # that PR adds. Their headers decide the release, so lint every one.
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           echo "Linting commits $BASE_SHA..$HEAD_SHA"
           yarn commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
+
+      - name: Block [release] commits outside a major cycle
+        # A major is planned: [release] commits enter develop only while the
+        # repository variable MAJOR_CYCLE is `open` (documents/deploy.md, Major cycle).
+        if: github.event.pull_request.base.ref == 'develop'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MAJOR_CYCLE: ${{ vars.MAJOR_CYCLE }}
+        run: |
+          if [ "$MAJOR_CYCLE" = "open" ]; then
+            echo "MAJOR_CYCLE is open: [release] commits are allowed."
+            exit 0
+          fi
+          BAD=$(git log --no-merges --format='%h %s' "$BASE_SHA..$HEAD_SHA" | grep -E '^[0-9a-f]+ \[release\] ' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::[release] commits need an open major cycle (gh variable set MAJOR_CYCLE --body open). Commits:"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "No [release] commit in the range."
 
       - name: Build
         run: yarn build:all

@@ -1,18 +1,21 @@
 # ─────────────────────────────────────────────────────
 # Release — Main orchestrator
 #
-# Trigger: push to main or develop
+# Trigger: push to main (stable), or manual dispatch on develop (DEV)
 # Flow:
 #   1. Semantic-release creates the tag & version bump
 #   2. Detect the new tag (compare before/after)
 #   3. Call deploy.yml to build & publish to npmjs.org
 #   4. Call back-merge.yml after every push to main (even when there is no release)
+# A merge into develop publishes nothing. A stable release is the PR
+# develop -> main; a DEV release is `gh workflow run release.yml --ref develop`.
 # ─────────────────────────────────────────────────────
 name: Release
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
+  workflow_dispatch:
 
 # Least privilege for the built-in GITHUB_TOKEN: read by default, and only
 # `deploy` widens it. `release` and `back-merge` push with the
@@ -40,7 +43,9 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    if: >-
+      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop')
     outputs:
       new_release_published: ${{ steps.check.outputs.new_release_published }}
       new_release_tag: ${{ steps.check.outputs.new_release_tag }}
@@ -141,10 +146,9 @@ jobs:
     # (trusted publishing) and must not see the write PAT.
 
   # ── 3. Back-merge (every push to main, with or without a release) ──
-  # Features land on develop and main separately, so a push to main that cuts
-  # no release (a [ci]/[docs] feature) still leaves main ahead of develop.
-  # Run after every successful release job on main; deploy may be skipped (no
-  # tag) but must not have failed.
+  # A push to main leaves main ahead of develop by at least its merge commit,
+  # and by the release commit when a tag was cut. Run after every successful
+  # release job on main; deploy may be skipped (no tag) but must not have failed.
   back-merge:
     name: Back-merge
     needs: [release, deploy]

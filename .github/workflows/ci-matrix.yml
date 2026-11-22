@@ -2,7 +2,7 @@
 # CI Matrix — heavy tier: Tailwind floor, Node floor, peer matrix, TypeScript peer, UI-kit floors
 #
 # Runs nightly on the default branch, on manual dispatch and on PRs into
-# main / release/** (not on PRs into develop). The per-PR tier (check,
+# main (the develop -> main release PR; not on PRs into develop). The per-PR tier (check,
 # plain-react, e2e, pr-title) lives in ci.yml. A workflow-level
 # `paths-ignore` skips the PR run when a PR only changes documents/**.
 # On PRs, every job skips draft PRs; `ready_for_review` runs them when the
@@ -12,7 +12,7 @@ name: CI Matrix
 
 on:
   pull_request:
-    branches: [main, "release/**"]
+    branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
       - "documents/**"

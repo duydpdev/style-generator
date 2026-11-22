@@ -2,7 +2,7 @@
 
 This standard is for apps deployed through 4 environment branches: `develop` → `staging` → `pre-release` → `release` (production). The goal is to ship each feature independently: feature A reaches production while feature B is still on staging.
 
-The `@duydpdev/style-generator` library does not use this standard. It has only 2 branches, `develop` and `main`, and applies the same principles; see [`../deploy.md`](../deploy.md).
+The `@duydpdev/style-generator` library does not use this standard. It has only 2 branches, `develop` and `main`: features land on `develop`, and one `develop` → `main` PR cuts each stable release; see [`../deploy.md`](../deploy.md).
 
 The git behaviors referred to here (squash creating new SHAs, the revert trap, back-merge) were measured in internal dry runs that are not published.
 

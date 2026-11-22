@@ -7,7 +7,7 @@ name: Site visual update
 # visual.yml) has been approved: see documents/testing.md, section 7.
 on:
   pull_request:
-    branches: [main, develop, "release/**"]
+    branches: [main, develop]
     types: [labeled]
 
 # One group per label name: another label added at the same time gets its

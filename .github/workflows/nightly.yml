@@ -3,7 +3,7 @@
 #          sameFile, FSEvents behaviour of the real-chokidar watcher tests).
 #   bun:   scripts/bun-smoke.mjs installs the packed tarball with Bun and runs
 #          the CLI file and generate() under it.
-# Runs every night, on manual dispatch, and on PRs into main/release/** that
+# Runs every night, on manual dispatch, and on PRs into main that
 # change this workflow or the smoke script.
 name: Nightly
 
@@ -12,7 +12,7 @@ on:
     - cron: "17 6 * * *"
   workflow_dispatch:
   pull_request:
-    branches: [main, "release/**"]
+    branches: [main]
     paths:
       - ".github/workflows/nightly.yml"
       - "scripts/bun-smoke.mjs"

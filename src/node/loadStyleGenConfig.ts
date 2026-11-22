@@ -168,6 +168,33 @@ const validateFileConfig = (
 };
 
 /**
+ * Reads and parses one JSON file, telling a file that cannot be read (a
+ * directory, a permission error) from one that holds invalid JSON.
+ * @param {string} filePath - The file to read
+ * @param {string} source - The label used in the error message
+ * @returns {{ value: unknown } | { error: string }} The parsed value or the error
+ */
+const readJsonFile = (
+  filePath: string,
+  source: string,
+): { value: unknown } | { error: string } => {
+  let text: string;
+  try {
+    text = fs.readFileSync(filePath, "utf-8");
+  } catch (error) {
+    return { error: `${source} cannot be read (${(error as Error).message})` };
+  }
+
+  try {
+    return { value: JSON.parse(text) as unknown };
+  } catch (error) {
+    return {
+      error: `${source} is not valid JSON (${(error as Error).message})`,
+    };
+  }
+};
+
+/**
  * Reads `style-gen.config.json`, else `package.json#style-gen`, from `cwd`.
  * A malformed file is ignored (defaults apply) and reported through `error`
  * so callers can warn (`generate`) or fail (`doctor`, the bundler plugins).
@@ -179,18 +206,13 @@ export function readConfigFile(cwd: string): ConfigFile {
 
   if (fs.existsSync(configPath)) {
     const source = "style-gen.config.json";
-    try {
-      const parsed: unknown = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-      return isPlainObject(parsed)
-        ? validateFileConfig(parsed, source)
-        : { config: {}, source, error: `${source} must contain a JSON object` };
-    } catch (error) {
-      return {
-        config: {},
-        source,
-        error: `${source} is not valid JSON (${(error as Error).message})`,
-      };
+    const read = readJsonFile(configPath, source);
+    if ("error" in read) {
+      return { config: {}, source, error: read.error };
     }
+    return isPlainObject(read.value)
+      ? validateFileConfig(read.value, source)
+      : { config: {}, source, error: `${source} must contain a JSON object` };
   }
 
   const pkgPath = path.resolve(cwd, "package.json");
@@ -200,16 +222,11 @@ export function readConfigFile(cwd: string): ConfigFile {
   }
 
   const source = "package.json";
-  let pkg: unknown;
-  try {
-    pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-  } catch (error) {
-    return {
-      config: {},
-      source,
-      error: `${source} is not valid JSON (${(error as Error).message})`,
-    };
+  const read = readJsonFile(pkgPath, source);
+  if ("error" in read) {
+    return { config: {}, source, error: read.error };
   }
+  const pkg = read.value;
 
   if (!isPlainObject(pkg) || !("style-gen" in pkg)) {
     return { config: {} };

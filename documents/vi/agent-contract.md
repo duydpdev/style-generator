@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 214909b8df5a -->
+<!-- source: documents/agent-contract.md sha256: dc9b4e1033fb -->
 
 # Hợp đồng cho agent
 
@@ -20,6 +20,8 @@ Các quy tắc mà một agent (hoặc một người) tuân theo khi viết the
 - `style-gen init` ghi một theme khởi đầu. Đổi tên key của nó theo vai trò của app và đặt lại mọi giá trị cho app này; một key khởi đầu còn nguyên giá trị khởi đầu là bản chép, không phải một lựa chọn.
 
 Mỗi quy tắc trên được schema của theme bắt buộc (`generate()`, `style-gen generate`, các plugin Vite/Next) hoặc được `style-gen doctor` báo. Giữ `"$schema"` trỏ tới `theme.schema.json` được sinh ra để editor kiểm tra.
+
+**Mỗi bộ UI một theme.** Mỗi bộ UI — một app, một design canvas, một design-system artifact — có `theme.json` riêng trong repository của sản phẩm, key đặt theo vai trò của sản phẩm đó. Design system hay canvas được dựng từ theme đó và không tự khai giá trị token nào. Không công cụ nào kiểm quy tắc này; đây là quy tắc review.
 
 ## 2. Bố cục
 
@@ -191,6 +193,8 @@ export function Badge<T extends ElementType = "span">({
 - Thuộc tính `data-*` dùng làm hook CSS. Thuộc tính data duy nhất thư viện đọc là các thuộc tính `themeAxes` trên `<html>`.
 - Giá trị theme (mã hex, hàm màu, kích thước pixel) trong TypeScript. Giá trị nằm trong theme JSON; code chỉ gọi tên key.
 - Key chép từ một theme ví dụ. Suy ra intent từ vai trò của app bạn đang xây.
+- Một namespace token thứ hai bên cạnh `--sg-*`: custom property (như `--app-ink`) chứa giá trị màu, radius, shadow, font hay cỡ chữ. Kích thước layout không thuộc category nào của theme (độ rộng sidebar) không phải token.
+- `font-size` hoặc shorthand `font` viết ngoài một key typography — inline, trong CSS hay trên canvas.
 
 ## 6. Sàn giao diện (mọi theme)
 

@@ -19,6 +19,8 @@ Name the keys after the app's own roles. The library derives every type and clas
 
 Each rule above is enforced by the theme schema (`generate()`, `style-gen generate`, the Vite/Next plugins) or reported by `style-gen doctor`. Keep `"$schema"` pointing at the generated `theme.schema.json` for editor validation.
 
+**One theme per UI set.** Every UI set — an app, a design canvas, a design-system artifact — has its own `theme.json` in the product's repository, with keys named after that product's roles. A design system or a canvas is built from that theme and declares no token values of its own. No tool enforces this; it is a review rule.
+
 ## 2. Layout
 
 ```text
@@ -189,6 +191,8 @@ export function Badge<T extends ElementType = "span">({
 - `data-*` attributes as CSS hooks. The only data attributes the library reads are the `themeAxes` ones on `<html>`.
 - Theme values (hex codes, colour functions, pixel sizes) in TypeScript. Values live in the theme JSON; code names keys.
 - Keys copied from an example theme. Derive intents from the roles of the app you are building.
+- A second token namespace beside `--sg-*`: custom properties (such as `--app-ink`) that hold colour, radius, shadow, font or type values. Layout sizes that no theme category covers (a sidebar width) are not tokens.
+- A `font-size` or `font` shorthand written outside a typography key — inline, in CSS or on a canvas.
 
 ## 6. Interface floor (any theme)
 

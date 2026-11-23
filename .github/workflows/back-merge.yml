@@ -3,7 +3,9 @@
 #
 # Reusable workflow, called from release.yml
 # Runs after every push to main, with or without a release (empty version)
-# The commit message contains [skip ci] so NO new tag is created on develop
+# A push to develop never starts release.yml (a DEV is cut by hand), so the
+# `[skip ci]` in the commit message only keeps other push-triggered workflows
+# from running on the merge commit
 # ─────────────────────────────────────────────────────
 name: Back-merge
 
@@ -40,11 +42,13 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       # No `-X theirs`: it resolves every conflicting hunk to main's side, which
-      # silently drops develop's newer code. Features land on develop before
-      # main as the same commits (merge commits, never squash), and the DEV
-      # release commits nothing, so this merge is normally clean; a conflict
-      # means a human must look. A rejected push (develop moved after the
-      # fetch) is retried from the new develop tip, up to 3 attempts.
+      # silently drops develop's newer code. A stable release is a develop to
+      # main pull request merged with a merge commit (never squash), so main
+      # holds the same commits as develop plus the release commit and any
+      # hotfix, and a DEV release commits nothing: this merge is normally
+      # clean; a conflict means a human must look. A rejected push (develop
+      # moved after the fetch) is retried from the new develop tip, up to 3
+      # attempts.
       - name: Merge main into develop and push
         env:
           VERSION: ${{ inputs.version }}
@@ -58,9 +62,8 @@ jobs:
             git fetch origin main develop
             git reset -q --hard origin/develop
             # --no-ff: even when develop is an ancestor of main, record a
-            # `[skip ci]` merge commit instead of fast-forwarding develop onto
-            # main's tip (a plain "Merge pull request" tip would start a
-            # Release run on develop).
+            # merge commit instead of fast-forwarding develop onto main's tip,
+            # so every back-merge leaves one `[skip ci]` commit on develop.
             if ! git merge --no-ff origin/main --no-edit -m "$MSG"; then
               echo "Conflicting files:"
               git diff --name-only --diff-filter=U

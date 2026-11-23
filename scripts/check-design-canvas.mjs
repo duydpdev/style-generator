@@ -312,13 +312,23 @@ function collectBlobs(file, text, lineOf) {
 }
 
 /**
- * `bl-*` class names in `class="…"`, one entry per use.
+ * `bl-*` class names, one entry per use: in `class="…"`, and in string
+ * literals of `<script>` blocks, which bind a class at runtime
+ * (`frost: sc ? 'bl-frost' : ''`).
  * @param {string} text - File contents
  * @returns {string[]} Class names
  */
 function collectBlClasses(text) {
-  return [...text.matchAll(/\bclass\s*=\s*(["'])([^"']*)\1/g)].flatMap((m) =>
-    (m[2] ?? "").split(/\s+/).filter((name) => name.startsWith("bl-")),
+  const attributes = [...text.matchAll(/\bclass\s*=\s*(["'])([^"']*)\1/g)];
+  const scripts = [...text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+  // Only a literal that is nothing but class names counts: a CSS code sample
+  // in a string (`'.bl-x { animation: bl-pulse 1s }'`) is content.
+  const classLists = scripts
+    .flatMap((s) => [...(s[1] ?? "").matchAll(ANY_LITERAL)])
+    .map((m) => m[1] ?? "")
+    .filter((value) => /^[\w\s-]*$/.test(value));
+  return [...attributes.map((m) => m[2] ?? ""), ...classLists].flatMap(
+    (value) => value.split(/\s+/).filter((name) => /^bl-[\w-]+$/.test(name)),
   );
 }
 

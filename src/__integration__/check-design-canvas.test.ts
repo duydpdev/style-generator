@@ -242,6 +242,7 @@ describe("integration: scripts/check-design-canvas.mjs", () => {
       [
         '<x-import component-from-global-scope="BodyLog.Button"></x-import>',
         '<p class="bl-card" style="color:var(--sg-color-primary);background:var(--bl-ink);font-size:{{h2}}">b</p>',
+        "<script>const s = { frost: sc ? 'bl-frost' : '', code: '.bl-y { animation: bl-pulse 1s }' };</script>",
       ].join("\n"),
       "two.dc.html",
     );
@@ -249,7 +250,11 @@ describe("integration: scripts/check-design-canvas.mjs", () => {
     expect(inv.files).toBe(2);
     expect(inv.vars).toEqual({ "--bl-ink": 2 });
     expect(inv.sgVars).toEqual({ "--sg-color-primary": 1 });
-    expect(inv.blClasses).toEqual({ "bl-card": 2, "bl-hover": 1 });
+    expect(inv.blClasses).toEqual({
+      "bl-card": 2,
+      "bl-hover": 1,
+      "bl-frost": 1,
+    });
     expect(inv.fontSizes).toHaveLength(2);
     expect(inv.dsGlobals).toEqual({ "BodyLog.Button": 1 });
   });

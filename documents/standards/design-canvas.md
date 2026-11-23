@@ -19,9 +19,10 @@ Why:
 2. Run `style-gen generate` and `style-gen doctor` in the product folder.
 3. Build the design system:
    `node scripts/build-ds.mjs --theme <theme.json> --config <style-gen.config.json> --preset <preset.json> --namespace <Name> --out <dir> [--name <title>]`.
-   It writes the component bundle, `tokens.json` and `ds-stamp.json` (library version, git SHA and the sha256 of the theme bytes).
+   It writes `components/bundle.js`, `components/bundle.css`, `components/index.d.ts`, `tokens.json`, `README.md` and `ds-stamp.json`.
+   The stamp records the library version, the git SHA, `srcDirty`, the sha256 of the theme bytes and the namespace. Build from a clean checkout: when `srcDirty` is `true`, the SHA does not identify the code in the bundle.
 4. Publish the output as a Design System artifact. Create it once and keep its URL; later builds update the same artifact.
-5. Copy `components/bundle.css` and `components/bundle.js` to the canvas under `ds/<namespace>/`. Do not copy `tokens.css`: it declares unprefixed variables, which is a second namespace on a canvas.
+5. Copy `components/bundle.css` and `components/bundle.js` to the canvas as `ds/<namespace>/components/bundle.css` and `ds/<namespace>/components/bundle.js`, keeping the `components/` folder: the check skips the bundle stylesheet only at that path, and a flattened copy would be scanned for Tailwind's own variables. Do not copy `tokens.css`: it declares unprefixed variables, which is a second namespace on a canvas.
 6. Artboards use only `var(--sg-…)`, `calc(var(--spacing) * N)`, a few `--layout-*` variables and typography classes.
 7. Dark mode is a `data-theme` attribute (or any `themeAxes` attribute) on any element. For the design-system bundle only, the producer gives every `html[data-…]` block a second, unscoped selector, so a wrapper `<div data-theme="dark">` switches the theme inside a frame. The CSS the library emits for apps stays pinned to `html`.
 
@@ -45,7 +46,7 @@ Name roles after their job: `display`, `pageTitle`, `heading1`, `heading2`, `bod
 node scripts/check-design-canvas.mjs --canvas <dir> --theme <theme.json> [--stamp <ds-stamp.json>] [--intents primary,danger]
 ```
 
-It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` and the producer's own `ds/<namespace>/tokens.css` and `ds/<namespace>/components/bundle.css`, and prints `OK: <n> files` or one line per violation:
+It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` and the producer's own `ds/<namespace>/tokens.css` and `ds/<namespace>/components/bundle.css`, and prints `OK: <n> files` (exit 0) or one line per violation followed by `<n> violation(s)` (exit 1). A usage error exits 2.
 
 | Message                                                  | Meaning                                                                                                                                |
 | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -59,7 +60,7 @@ It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` a
 | `unknown intent …`                                       | With `--intents`: a `*.Button` `color` that is not one of the listed variant names.                                                    |
 | `stamp does not match theme (rebuild the design system)` | With `--stamp`: the design system was built from different theme bytes.                                                                |
 
-`--inventory` prints what the canvas uses (JSON) instead of checking it. Its `varText` list is a starting point, not a complete list of boards that show token names: a documentation board that builds names at runtime does not appear there.
+`--inventory` prints what the canvas uses (JSON) instead of checking it; it still needs `--theme`. Its `varText` list is a starting point, not a complete list of boards that show token names: a documentation board that builds names at runtime does not appear there.
 
 Run the check on a fresh read of the live canvas, not on the local copy alone. For a large canvas, comparing the artifact's file listing (sha256 per file) with the local files is an accepted read when there are 0 mismatches, no local-only file, and at least one file downloaded for real and compared byte for byte; the check then runs on that verified copy.
 

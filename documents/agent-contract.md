@@ -190,6 +190,19 @@ export function Badge<T extends ElementType = "span">({
 - Theme values (hex codes, colour functions, pixel sizes) in TypeScript. Values live in the theme JSON; code names keys.
 - Keys copied from an example theme. Derive intents from the roles of the app you are building.
 
-## 6. More
+## 6. Interface floor (any theme)
+
+A theme sets the look; these limits hold under every theme and every `themeAxes` variant. Each one is a number or a state you can measure, not a matter of taste.
+
+- Text reaches 4.5:1 against the surface it sits on, 3:1 when it is 24px or larger (or about 19px bold), in every variant of every axis (WCAG 1.4.3). Check the pairs your components actually render, not only `foreground` on `background`.
+- Control borders, focus outlines and icons that carry meaning reach 3:1 against their surroundings (WCAG 1.4.11).
+- Every interactive element shows a visible focus state for keyboard users: a `focus-visible:` outline in a theme colour, never `outline: none` alone (WCAG 2.4.7).
+- A pointer target is at least 24×24 CSS px (WCAG 2.5.8) and 44×44 on touch screens. Grow the hit area with padding, not the icon.
+- Colour is never the only signal: an error, a status or a selected state also has a word, an icon or a shape (WCAG 1.4.1).
+- Motion that is not essential stops under `prefers-reduced-motion` (`motion-reduce:` variants).
+- An icon inside a component goes in that component's icon slot (`Button`'s `prefix`/`suffix`), never in the children beside the label and never pushed with a margin: the slot centres it, a label line puts it on the text baseline. An icon-only button has no children and an `aria-label`; the slot makes it square.
+- One icon set, one stroke width and one declared size scale by role (for example 12 for chevrons, 16 beside text, 20 for icon-only touch controls, 24 for illustrations). No emoji or pictograph stands in for an icon.
+
+## 7. More
 
 [Components](./components.md) holds the ten example components, the harness and the recipe factories; [UI kit](./reference/ui.md) documents `recipeFromTables`, `pick`, `contrastText`, `createCn` and the spacing helpers.

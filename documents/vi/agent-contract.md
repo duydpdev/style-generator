@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 52eab10b23bb -->
+<!-- source: documents/agent-contract.md sha256: 214909b8df5a -->
 
 # Hợp đồng cho agent
 
@@ -192,6 +192,19 @@ export function Badge<T extends ElementType = "span">({
 - Giá trị theme (mã hex, hàm màu, kích thước pixel) trong TypeScript. Giá trị nằm trong theme JSON; code chỉ gọi tên key.
 - Key chép từ một theme ví dụ. Suy ra intent từ vai trò của app bạn đang xây.
 
-## 6. Thêm
+## 6. Sàn giao diện (mọi theme)
+
+Theme quyết định vẻ ngoài; các giới hạn dưới đây đúng với mọi theme và mọi variant của `themeAxes`. Mỗi giới hạn là một con số hoặc một trạng thái đo được, không phải chuyện gu thẩm mỹ.
+
+- Chữ đạt 4.5:1 so với bề mặt nó nằm trên, 3:1 khi cỡ chữ từ 24px trở lên (hoặc khoảng 19px đậm), trong mọi variant của mọi axis (WCAG 1.4.3). Kiểm các cặp màu mà component thực sự render, không chỉ `foreground` trên `background`.
+- Viền control, outline focus và icon mang nghĩa đạt 3:1 so với xung quanh (WCAG 1.4.11).
+- Mọi phần tử tương tác có trạng thái focus nhìn thấy được cho người dùng bàn phím: một outline `focus-visible:` bằng màu của theme, không bao giờ chỉ `outline: none` (WCAG 2.4.7).
+- Vùng bấm tối thiểu 24×24 CSS px (WCAG 2.5.8) và 44×44 trên màn hình cảm ứng. Mở rộng vùng bấm bằng padding, không phóng to icon.
+- Màu sắc không bao giờ là tín hiệu duy nhất: lỗi, trạng thái hay lựa chọn đều có thêm chữ, icon hoặc hình dạng (WCAG 1.4.1).
+- Chuyển động không thiết yếu dừng lại khi có `prefers-reduced-motion` (các variant `motion-reduce:`).
+- Icon bên trong một component nằm trong slot icon của component đó (`prefix`/`suffix` của `Button`), không bao giờ nằm trong children cạnh nhãn và không đẩy bằng margin: slot căn giữa icon, còn dòng nhãn đặt icon lên baseline của chữ. Button chỉ có icon thì không có children và có `aria-label`; slot làm nó vuông.
+- Một bộ icon, một độ dày nét và một thang cỡ được khai báo theo vai trò (ví dụ 12 cho chevron, 16 cạnh chữ, 20 cho control cảm ứng chỉ có icon, 24 cho minh hoạ). Không dùng emoji hay ký tự hình thay cho icon.
+
+## 7. Thêm
 
 [Component](./components.md) chứa mười component ví dụ, harness và các recipe factory; [UI kit](./reference/ui.md) mô tả `recipeFromTables`, `pick`, `contrastText`, `createCn` và các helper spacing.

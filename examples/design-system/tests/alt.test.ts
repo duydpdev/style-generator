@@ -38,7 +38,9 @@ describe("a second theme through the same factories", () => {
   it("generates CSS for the alt theme's own variables", () => {
     const { css } = generate(altTheme, altOptions);
     expect(css).toContain("--sg-color-brand:");
-    expect(css).toContain("--sg-color-on-brand: var(--sg-color-paper);");
+    expect(css).toContain(
+      "--sg-color-brand-foreground: var(--sg-color-paper);",
+    );
     expect(css).toContain('html[data-mode="night"]');
     expect(css).not.toContain("--sg-color-primary");
   });
@@ -57,7 +59,7 @@ describe("a second theme through the same factories", () => {
     );
     expect(all).toContain("bg-brand");
     expect(all).toMatch(/\bhover:bg-brand-hover\b/);
-    expect(all).toMatch(/\btext-on-brand\b/);
+    expect(all).toMatch(/\btext-brand-foreground\b/);
     expect(all).toMatch(/\brounded-soft\b/);
     expect(all).not.toMatch(/primary|text16Medium|text-16-medium/);
     expect({ button, text, box }).toMatchSnapshot();

@@ -109,11 +109,13 @@ export const pick = (map: object, key: string): string => {
 };
 
 /**
- * `text-on-<intent>` when the theme declares the `on<Intent>` sibling
- * color, else `text-<fallback>`.
+ * The text colour that sits on an intent's fill: `text-<intent>-foreground`
+ * when the theme declares `<intent>Foreground`, else `text-on-<intent>`
+ * when it declares `on<Intent>` (deprecated: 9.0 drops this lookup),
+ * else `text-<fallback>`.
  * @param {readonly string[]} colors - The theme's `colors` tokens
  * @param {string} intent - A color key (`primary`)
- * @param {string} fallback - The color key used when `on<Intent>` is missing
+ * @param {string} fallback - The color key used when neither sibling exists
  * @returns {string} The text color class
  */
 export const contrastText = (
@@ -121,9 +123,10 @@ export const contrastText = (
   intent: string,
   fallback: string,
 ): string => {
+  const foreground = `${intent}Foreground`;
   const on = `on${intent.charAt(0).toUpperCase()}${intent.slice(1)}`;
-  return pick(
-    createVariantMapper("text", colors),
-    colors.includes(on) ? on : fallback,
-  );
+  let key = fallback;
+  if (colors.includes(foreground)) key = foreground;
+  else if (colors.includes(on)) key = on;
+  return pick(createVariantMapper("text", colors), key);
 };

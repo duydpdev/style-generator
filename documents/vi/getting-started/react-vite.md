@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: ecbf0f630d9a -->
+<!-- source: documents/getting-started/react-vite.md sha256: 326427cf1721 -->
 
 # Bắt đầu: React + Vite
 
@@ -26,7 +26,7 @@ Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
     "primary": "#2647D9",
     "primaryHover": "#1F3BB8",
     "primaryActive": "#19319A",
-    "onPrimary": "$surface",
+    "primaryForeground": "$surface",
     "secondary": "#6E5BFF",
     "accent": "$secondary",
     "success": "#2E7D5B",

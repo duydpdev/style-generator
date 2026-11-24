@@ -15,7 +15,7 @@ export function App() {
         </p>
         <button
           type="button"
-          className="bg-primary text-on-primary rounded-card mt-6 px-4 py-2"
+          className="bg-primary text-primary-foreground rounded-card mt-6 px-4 py-2"
           onClick={toggleTheme}
         >
           Toggle dark theme

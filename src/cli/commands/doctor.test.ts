@@ -494,6 +494,28 @@ describe("doctorCommand", () => {
     });
   });
 
+  describe("deprecated on<Intent> keys", () => {
+    it("warns without changing the exit code", () => {
+      writeProject(tmp, {
+        "style-gen.config.json": {
+          theme: "styles/theme.json",
+          output: "styles/theme.css",
+        },
+        "styles/theme.json": {
+          colors: { primary: "#000", onPrimary: "#fff", onboarding: "#111" },
+        },
+        "styles/theme.css": "x",
+      });
+
+      expect(doctorCommand(tmp)).toBe(0);
+
+      expect(lines()).toContain(
+        "Theme   ⚠️  colors.onPrimary is deprecated: contrastText reads primaryForeground first and drops on<Intent> in 9.0; rename to primaryForeground",
+      );
+      expect(lines()).not.toContain("onboarding");
+    });
+  });
+
   describe("alias hints (override repeats a base literal)", () => {
     const runWithAxes = (themeAxes: object): void => {
       writeProject(tmp, {

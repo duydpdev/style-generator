@@ -2,7 +2,7 @@
 export const SAMPLE_THEME = `{
   "colors": {
     "primary": "#2647D9",
-    "onPrimary": "#FFFFFF",
+    "primaryForeground": "#FFFFFF",
     "surface": "#FBF7EF",
     "link": "$primary"
   },

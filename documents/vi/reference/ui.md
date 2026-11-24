@@ -1,4 +1,4 @@
-<!-- source: documents/reference/ui.md sha256: cadd745fed67 -->
+<!-- source: documents/reference/ui.md sha256: 7e2458bb001d -->
 
 # UI kit (./ui)
 
@@ -191,12 +191,15 @@ export declare const contrastText: (
 ) => string;
 ```
 
-`text-on-<intent>` when the theme declares the `on<Intent>` sibling
-color, else `text-<fallback>`.
+The text colour that sits on an intent's fill: `text-<intent>-foreground`
+when the theme declares `<intent>Foreground`, else `text-on-<intent>`
+when it declares `on<Intent>` (deprecated: 9.0 drops this lookup),
+else `text-<fallback>`.
 
 <!-- /signature -->
 
 - `pick` sẽ ném lỗi kèm tên token thay vì trả về `undefined`, nhờ đó một token theme bị đổi tên sẽ báo lỗi ngay ở lần render đầu tiên.
+- `contrastText` tra theo thứ tự: `<intent>Foreground` (`text-primary-foreground`), rồi `on<Intent>` đã deprecated (`text-on-primary`), rồi `fallback`. Bản 9.0 bỏ bước `on<Intent>`; `style-gen doctor` cảnh báo mỗi key `on<Intent>` có `<intent>` là một màu. Theme khai báo `<intent>Foreground` nhận `text-<intent>-foreground`, kể cả khi nó cũng khai báo `on<Intent>` hoặc trước đó vẫn dùng `fallback`.
 
 ## `createCn`, `Cn`
 

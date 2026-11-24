@@ -1,20 +1,56 @@
 {
   "semanticCore": [
     "background",
-    "surface",
     "foreground",
+    "surface",
     "muted",
+    "mutedForeground",
     "border",
+    "focus",
+    "scrim",
     "primary",
+    "primaryForeground",
     "primaryHover",
     "primaryActive",
-    "onPrimary",
     "danger",
     "success",
-    "warning",
-    "focus",
-    "scrim"
+    "warning"
   ],
+  "grammar": {
+    "neutral": [
+      "background",
+      "foreground",
+      "surface",
+      "surfaceRaised",
+      "muted",
+      "mutedForeground",
+      "border",
+      "borderStrong",
+      "focus",
+      "scrim"
+    ],
+    "roles": [
+      "primary",
+      "secondary",
+      "accent",
+      "danger",
+      "success",
+      "warning",
+      "info"
+    ],
+    "suffixes": ["Subtle", "Border", "Foreground"],
+    "states": ["Hover", "Active", "Selected"],
+    "renames": {
+      "Ink": "Foreground",
+      "Soft": "Subtle",
+      "Line": "Border",
+      "ok": "success",
+      "bad": "danger",
+      "warn": "warning",
+      "line": "border",
+      "lineStrong": "borderStrong"
+    }
+  },
   "radius": ["sm", "md", "lg", "full"],
   "weights": {
     "400": "Regular",
@@ -24,10 +60,22 @@
   },
   "typeScale": [12, 14, 16, 20, 24, 32, 40, 56],
   "pages": [
-    { "id": "bia", "name": "00 · Bìa" },
-    { "id": "ds", "name": "01 · Design system" },
-    { "id": "cl", "name": "02 · Component" },
-    { "id": "src", "name": "03 · Nguồn component" }
+    {
+      "id": "bia",
+      "name": "00 · Bìa"
+    },
+    {
+      "id": "ds",
+      "name": "01 · Design system"
+    },
+    {
+      "id": "cl",
+      "name": "02 · Component"
+    },
+    {
+      "id": "src",
+      "name": "03 · Nguồn component"
+    }
   ],
   "boards": [
     {
@@ -68,7 +116,10 @@
     "maxHeight": 1600,
     "minPaddingSteps": 8
   },
-  "sourceBoards": { "page": "src", "prefix": "s-" },
+  "sourceBoards": {
+    "page": "src",
+    "prefix": "s-"
+  },
   "dsComponents": ["box", "text", "stack", "flex", "grid", "button"],
   "primitiveBoards": ["ds-mau.dc.html", "ds-token.dc.html"],
   "content": {

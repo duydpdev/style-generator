@@ -19,7 +19,7 @@
     "primary": "$blue600",
     "primaryHover": "$blue700",
     "primaryActive": "$blue800",
-    "onPrimary": "$white",
+    "primaryForeground": "$white",
     "danger": "$red600",
     "success": "$green600",
     "warning": "$amber500",

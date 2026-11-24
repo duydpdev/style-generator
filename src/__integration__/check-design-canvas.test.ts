@@ -52,11 +52,12 @@ const NAMED: NamedTheme = {
     surface: "$gray100",
     foreground: "$gray900",
     muted: "$gray100",
+    mutedForeground: "$gray900",
     border: "$gray100",
     primary: "$blue600",
+    primaryForeground: "$white",
     primaryHover: "$blue700",
     primaryActive: "$blue800",
-    onPrimary: "$white",
     danger: "$red600",
     success: "$green600",
     warning: "$amber500",
@@ -101,7 +102,7 @@ const COMPONENT_BOARDS = ["box", "text", "stack", "flex", "grid", "button"].map(
 );
 
 const THEME = {
-  colors: { primary: "#000", onPrimary: "#fff" },
+  colors: { primary: "#000", primaryForeground: "#fff" },
   borderRadius: { md: "8px" },
 };
 
@@ -294,7 +295,7 @@ describe("integration: style-gen canvas check", () => {
 
   it("passes a board that reads only theme tokens", () => {
     board(
-      '<div style="color:var(--sg-color-on-primary);border-radius:var(--sg-radius-md)">x</div>',
+      '<div style="color:var(--sg-color-primary-foreground);border-radius:var(--sg-radius-md)">x</div>',
     );
     expect(check()).toEqual([]);
   });
@@ -549,8 +550,8 @@ describe("integration: style-gen canvas check", () => {
     it.each<[string, (t: NamedTheme) => void, string]>([
       [
         "a literal semantic key",
-        (t) => (t.colors.okInk = "#123"),
-        "colors.okInk is not a primitive name and not an alias of a primitive",
+        (t) => (t.colors.successForeground = "#123"),
+        "colors.successForeground is not a primitive name and not an alias of a primitive",
       ],
       [
         "a semantic key aliasing a semantic key",
@@ -821,13 +822,17 @@ describe("integration: style-gen canvas check", () => {
       [
         "a literal lacking a key",
         "ds-mau.dc.html",
-        (t) => t.replace(',"onPrimary":"#fff"', ""),
-        "ds-mau.dc.html:2 literal colors lacks key onPrimary",
+        (t) => t.replace(',"primaryForeground":"#fff"', ""),
+        "ds-mau.dc.html:2 literal colors lacks key primaryForeground",
       ],
       [
         "a literal with an extra key",
         "ds-mau.dc.html",
-        (t) => t.replace('"onPrimary":"#fff"', '"onPrimary":"#fff","x":"#123"'),
+        (t) =>
+          t.replace(
+            '"primaryForeground":"#fff"',
+            '"primaryForeground":"#fff","x":"#123"',
+          ),
         "ds-mau.dc.html:2 literal colors has extra key x",
       ],
       [
@@ -1189,6 +1194,25 @@ describe("integration: style-gen canvas check", () => {
           out.some((line) => line.includes(kind)),
           kind,
         ).toBe(true);
+    });
+
+    it("broken canvas reports each v1 colour name with its v2 rename", () => {
+      const fixture = join(__dirname, "__fixtures__", "canvas-broken");
+      const out = checkCanvas({
+        canvasDir: fixture,
+        theme: join(fixture, "theme.json"),
+        naming: true,
+      });
+      const form = "<role>[Subtle][Border][Foreground][Hover|Active|Selected]";
+      for (const [key, v2] of [
+        ["okInk", "successForeground"],
+        ["badSoft", "dangerSubtle"],
+        ["line", "border"],
+        ["onPrimary", "primaryForeground"],
+      ] as const)
+        expect(out).toContain(
+          `${join(fixture, "theme.json")}:1 colors.${key} does not follow ${form} (rename to ${v2})`,
+        );
     });
   });
 

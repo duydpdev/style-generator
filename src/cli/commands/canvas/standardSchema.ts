@@ -11,6 +11,8 @@ const coreBoardSchema = z.object({
   title: z.string(),
 });
 const positiveInt = z.number().int().positive();
+/** A suffix or state: one capitalised camelCase segment, so it is safe inside a RegExp. */
+const segment = z.string().regex(/^[A-Z][a-z0-9]*$/);
 
 /**
  * The design-canvas manifest. The keys of the 8.x manifest plus `dsComponents`
@@ -20,6 +22,20 @@ const positiveInt = z.number().int().positive();
  */
 export const StandardSchema = z.object({
   semanticCore: z.array(z.string()),
+  /**
+   * The v2 semantic colour grammar: neutral keys, core roles, the suffixes in
+   * order, the states (always last) and the deprecated names with their v2
+   * replacement. Absent: the grammar rule is skipped.
+   */
+  grammar: z
+    .object({
+      neutral: z.array(z.string()),
+      roles: z.array(z.string()),
+      suffixes: z.array(segment),
+      states: z.array(segment).min(1),
+      renames: z.record(z.string(), z.string()),
+    })
+    .optional(),
   radius: z.array(z.string()),
   weights: z.record(z.string(), z.string()),
   typeScale: z.array(z.number()),

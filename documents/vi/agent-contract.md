@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 25d333f23e69 -->
+<!-- source: documents/agent-contract.md sha256: a0458c7238fd -->
 
 # Hợp đồng cho agent
 
@@ -254,5 +254,13 @@ Theme quyết định vẻ ngoài; các giới hạn dưới đây đúng với 
 - Một bộ icon, một độ dày nét và một thang cỡ được khai báo theo vai trò (ví dụ 12 cho chevron, 16 cạnh chữ, 20 cho control cảm ứng chỉ có icon, 24 cho minh hoạ). Không dùng emoji hay ký tự hình thay cho icon.
 
 ## 7. Thêm
+
+Quy tắc nào được công cụ kiểm tra, và ở đâu:
+
+| Mức      | Nội dung                                                                                                                | Chạy ở đâu                                     |
+| :------- | :---------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------- |
+| Bắt buộc | Schema của theme: tên key, alias, override `themeAxes`, xung đột                                                        | Mọi `generate()`, `style-gen generate`, plugin |
+| Tự chọn  | `style-gen canvas check`: một theme cho mỗi canvas, cùng `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Chỉ khi được gọi (một script, CI)              |
+| Quy ước  | Mọi thứ khác trong hợp đồng này (layout, checklist component, code bị cấm trong app, mức sàn giao diện)                 | Review                                         |
 
 [Component](./components.md) chứa mười component ví dụ, harness và các recipe factory; [UI kit](./reference/ui.md) mô tả `recipeFromTables`, `pick`, `contrastText`, `createCn` và các helper spacing.

@@ -1,5 +1,5 @@
 /**
- * Shared design-system data for `build-ds.mjs` and `check-design-canvas.mjs`, and the pure helpers that write
+ * Shared design-system data for `build-ds.mjs` and `style-gen canvas check`, and the pure helpers that write
  * the design system's README and cover and check the producer's own output. No file I/O.
  */
 import { toKebabCase } from "../dist/cva.js";

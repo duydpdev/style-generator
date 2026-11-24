@@ -74,7 +74,7 @@ src/
 │   └── next/                   # styleGenNext
 ├── shared/                     # helpers (kebab/camel), defaults, COLOR_STATES, class prefixes, cssBlock
 ├── node/                       # shared Node-only runner: loadStyleGenConfig, resolveProjectPath, sameFile, configSource, resolveEmitTarget, themeEmitter, watchThemeFile, resolvePluginTarget, writeFileAtomic, errorMessage, isPlainObject
-├── cli/                        # commands: init, generate, doctor, schema, tokens, budget
+├── cli/                        # commands: init, generate, doctor, schema, tokens, budget, canvas
 ├── exports/                    # one file per public subpath
 ├── __integration__/            # tests that compile CSS through the real Tailwind engine
 └── index.ts                    # root barrel
@@ -199,11 +199,11 @@ Its only option is `root` (`StyleGenNextOptions`, default `process.cwd()`): ever
 ### CLI
 
 `style-gen` (built separately with `tsdown` → `dist/cli/index.mjs`, JSDoc stripped from the bundle via `outputOptions.comments.jsdoc = false` and the `//#region` module markers via `inputOptions.experimental.attachDebugInfo = "none"`;
-gzip budget in `scripts/check-sizes.mjs`): `init`, `generate [--watch]`, `doctor`, `schema`, `tokens`, `budget`.
+gzip budget in `scripts/check-sizes.mjs`): `init`, `generate [--watch]`, `doctor`, `schema`, `tokens`, `budget`, `canvas check`.
 `src/cli/run.ts` holds one **registry** of `CliCommand` (`name`, `description`, `usage`, `options`, `run`);
 `runCli(args, cwd)` parses in two passes (the global pass looks for `--help`/`--version` and the command name, the command pass parses that command's flags in strict mode,
 so an unknown flag is an error) and then returns an **exit code** instead of calling `process.exit` — `src/cli/index.ts` only assigns `process.exitCode`,
-so any command can be tested directly without stubbing `process`. Codes: `0` success / `--help` / `--version` / prompt cancelled, `1` failure (`budget`: `2` for a usage error).
+so any command can be tested directly without stubbing `process`. Codes: `0` success / `--help` / `--version` / prompt cancelled, `1` failure (`budget` and `canvas`: `2` for a usage error).
 Config resolution order: flags → `style-gen.config.json` → `package.json["style-gen"]` → defaults; `loadStyleGenConfig`/`readConfigFile` (`src/node/loadStyleGenConfig.ts`,
 shared with Vite/Next) validate the config file with `StyleGenConfigSchema` (its Shape and refinements are shared with `generate()` from `src/core/optionsSchema.ts`),
 return `issues` when the schema is violated (nothing is merged) and `error` when the file is broken JSON (`generate`, `tokens` and `schema` warn `Ignoring … using defaults` and use the defaults; `generate --check`, `doctor` and the plugins fail),

@@ -253,4 +253,12 @@ A theme sets the look; these limits hold under every theme and every `themeAxes`
 
 ## 7. More
 
+Which rules a tool enforces, and where:
+
+| Level      | What                                                                                                                | Where it runs                                    |
+| :--------- | :------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| Hard       | The theme schema: key names, aliases, `themeAxes` overrides, collisions                                             | Every `generate()`, `style-gen generate`, plugin |
+| Opt-in     | `style-gen canvas check`: one theme per canvas, plus `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Only when it is called (a script, CI)            |
+| Convention | Everything else in this contract (layout, component checklist, forbidden app code, interface floor)                 | Review                                           |
+
 [Components](./components.md) holds the ten example components, the harness and the recipe factories; [UI kit](./reference/ui.md) documents `recipeFromTables`, `pick`, `contrastText`, `createCn` and the spacing helpers.

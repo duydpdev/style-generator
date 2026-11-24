@@ -16,7 +16,7 @@ Published on the public npm registry as `@duydpdev/style-generator`; installing 
 - ⚡ **One call, one file** — `generate(theme)` returns the CSS you `@import` next to `@import "tailwindcss"`; no `@plugin`, no safelist file.
 - 🚀 **CSS-variable spacing** — `.sp-*` utilities with `var()` fallback chains instead of thousands of safelisted classes.
 - 🧩 **Typed design tokens + CVA helper** — `createVariantMapper` maps token keys to class names (including `hover:`/`active:` state classes).
-- 🖥️ **CLI + plugins** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`), `styleGenVite`, `styleGenNext`.
+- 🖥️ **CLI + plugins** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`, `canvas check`), `styleGenVite`, `styleGenNext`.
 
 ## Install
 
@@ -119,7 +119,7 @@ Every snag and what became of it: [Adopting 8.x in two real apps](https://github
 ## Documentation
 
 - [Documents index](https://github.com/duydpdev/style-generator/blob/main/documents/README.md)
-- [CLI](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, flags and the configuration file
+- [CLI](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, `canvas`, flags and the configuration file
 - [Subpaths](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md#all-exports-by-subpath): the root entry point holds the generator; tokens, CVA, spacing, recipes, plugins and the UI kit live in `./tokens`, `./cva`, `./spacing`, `./recipes`, `./vite`, `./next`, `./ui`, `./ui-react`, `./types`
 - [Getting started](https://github.com/duydpdev/style-generator/blob/main/documents/getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
 - [Guide](https://github.com/duydpdev/style-generator/blob/main/documents/guide.md), [troubleshooting](https://github.com/duydpdev/style-generator/blob/main/documents/troubleshooting.md) and [cookbook](https://github.com/duydpdev/style-generator/blob/main/documents/cookbook.md)

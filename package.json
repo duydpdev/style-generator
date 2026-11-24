@@ -138,7 +138,7 @@
   ],
   "scripts": {
     "build": "tsc && vite build && node scripts/emit-cts-types.mjs && node scripts/emit-agent-rules.mjs",
-    "build:cli": "tsdown",
+    "build:cli": "tsdown && node scripts/emit-canvas-standard.mjs",
     "build:all": "yarn build && yarn build:cli",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",
     "check:docs": "node scripts/docs-embed.mjs --check && node scripts/check-docs-i18n.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-exports.mjs && node scripts/check-doc-reference.mjs",

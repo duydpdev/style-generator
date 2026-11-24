@@ -1,0 +1,15 @@
+{
+  "pages": [
+    { "id": "bia", "name": "00 · Bìa" },
+    { "id": "ds", "name": "01 · Design system" },
+    { "id": "cl", "name": "02 · Component" }
+  ],
+  "designSystems": [{ "namespace": "Demo", "version": "1" }],
+  "boards": {
+    "Main.dc.html": { "page": "bia", "title": "Board / Bìa / Tổng quan board / v2", "w": 1440, "h": 900 },
+    "cl-moi.dc.html": { "page": "cl", "title": "Component / Mới", "w": 1200, "h": 800 },
+    "c-toast.dc.html": { "page": "cl", "title": "Component / Toast", "w": 420, "h": 68 },
+    "ds-mau.dc.html": { "page": "ds", "title": "Board / Design system / Màu sắc / Light + Dark", "w": 1438, "h": 2754 }
+  },
+  "order": ["Main.dc.html", "cl-moi.dc.html", "c-toast.dc.html", "ds-mau.dc.html"]
+}

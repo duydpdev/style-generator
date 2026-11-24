@@ -2,19 +2,24 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { PRIMITIVE } from "../cli/commands/canvas";
+import { toKebabCase } from "../shared/helpers";
 
 interface Standard {
   semanticCore: string[];
   radius: string[];
+  dsComponents: string[];
   typeScale: number[];
   boards: { file: string; page: string; title: string }[];
+  content: Record<string, { sections: string[]; literals: string[] }>;
 }
 
 const repoRoot = join(__dirname, "..", "..");
 const read = (rel: string): string => readFileSync(join(repoRoot, rel), "utf8");
 const standard = JSON.parse(
-  read("scripts/design-canvas-standard.json"),
+  read("src/cli/canvas/design-canvas-standard.json"),
 ) as Standard;
 
 /**
@@ -46,21 +51,44 @@ const section = (text: string, heading: string): string => {
   return next === -1 ? body : body.slice(0, next);
 };
 
-const coreBoardRows = (text: string): string[][] => {
-  const start = text.indexOf("<!-- core-boards:start -->");
-  const end = text.indexOf("<!-- core-boards:end -->");
+/**
+ * The body rows of the table between `<!-- <name>:start -->` and `<!-- <name>:end -->`.
+ * @param {string} text - Markdown
+ * @param {string} name - Marker name
+ * @returns {string[]} Raw row lines, header and separator excluded
+ */
+const markedRows = (text: string, name: string): string[] => {
+  const start = text.indexOf(`<!-- ${name}:start -->`);
+  const end = text.indexOf(`<!-- ${name}:end -->`);
   return text
     .slice(start, end)
     .split("\n")
     .filter((line) => line.startsWith("|"))
-    .slice(2)
-    .map((line) =>
-      line
-        .split("|")
-        .slice(1, -1)
-        .map((cell) => cell.trim().replace(/^`|`$/g, "")),
-    );
+    .slice(2);
 };
+
+const cells = (line: string): string[] => line.split("|").slice(1, -1);
+
+const coreBoardRows = (text: string): string[][] =>
+  markedRows(text, "core-boards").map((line) =>
+    cells(line).map((cell) => cell.trim().replace(/^`|`$/g, "")),
+  );
+
+/**
+ * The core-content table as `[file, { sections, literals }]` pairs.
+ * @param {string} text - Markdown
+ * @returns {[string, { sections: string[], literals: string[] }][]} One pair per row
+ */
+const coreContentRows = (
+  text: string,
+): [string, { sections: string[]; literals: string[] }][] =>
+  markedRows(text, "core-content").map((line) => {
+    const [file = "", sections = "", literals = ""] = cells(line);
+    return [
+      codeSpans(file)[0] ?? "",
+      { sections: codeSpans(sections), literals: codeSpans(literals) },
+    ];
+  });
 
 const lineSpans = (text: string, prefix: string): string[] =>
   codeSpans(text.split("\n").find((line) => line.startsWith(prefix)) ?? "");
@@ -80,24 +108,25 @@ const typeScale = (text: string): number[] => {
 const primitiveSource = (text: string, prefix: string): string =>
   lineSpans(text, prefix).find((span) => span.startsWith("^")) ?? "";
 
-describe("documents pin scripts/design-canvas-standard.json", () => {
+describe("documents pin src/cli/canvas/design-canvas-standard.json", () => {
   const canvasDoc = read("documents/standards/design-canvas.md");
   const contract = read("documents/agent-contract.md");
   const contractVi = read("documents/vi/agent-contract.md");
   const manifestRows = standard.boards.map((b) => [b.file, b.page, b.title]);
   const firstTitle = standard.boards[0]?.title ?? "";
-  let primitive: RegExp;
-
-  beforeAll(async () => {
-    ({ PRIMITIVE: primitive } = (await import(
-      pathToFileURL(join(repoRoot, "scripts", "check-design-canvas.mjs")).href
-    )) as { PRIMITIVE: RegExp });
-  });
+  const primitive = PRIMITIVE;
 
   it("the core-boards table equals the manifest boards", () => {
     expect(coreBoardRows(canvasDoc)).toEqual(manifestRows);
     const edited = mutate(canvasDoc, firstTitle, `${firstTitle} x`);
     expect(coreBoardRows(edited)).not.toEqual(manifestRows);
+  });
+
+  it("the core-content table equals the manifest content", () => {
+    const manifestContent = Object.entries(standard.content);
+    expect(coreContentRows(canvasDoc)).toEqual(manifestContent);
+    const edited = mutate(canvasDoc, "`primitives`", "`primitive`");
+    expect(coreContentRows(edited)).not.toEqual(manifestContent);
   });
 
   it.each([
@@ -142,4 +171,13 @@ describe("documents pin scripts/design-canvas-standard.json", () => {
       expect(primitiveSource(edited, prefix)).not.toBe(primitive.source);
     },
   );
+
+  it("dsComponents equals the components scripts/ds-docs.mjs builds", async () => {
+    const { COMPONENTS } = (await import(
+      pathToFileURL(join(repoRoot, "scripts", "ds-docs.mjs")).href
+    )) as { COMPONENTS: { name: string }[] };
+    const built = COMPONENTS.map((c) => toKebabCase(c.name));
+    expect(standard.dsComponents).toEqual(built);
+    expect([...standard.dsComponents, "card"]).not.toEqual(built);
+  });
 });

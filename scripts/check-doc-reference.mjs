@@ -48,7 +48,15 @@ import { join } from "node:path";
 import { docMarkdownFiles, repoRootFromArgs } from "./doc-markdown.mjs";
 
 const USAGE = "usage: check-doc-reference.mjs [--root <dir>]";
-const COMMANDS = ["init", "generate", "doctor", "schema", "tokens", "budget"];
+const COMMANDS = [
+  "init",
+  "generate",
+  "doctor",
+  "schema",
+  "tokens",
+  "budget",
+  "canvas",
+];
 /** Commands whose `--help` legitimately lists no flag. */
 const FLAGLESS = new Set(["doctor"]);
 const HISTORY =

@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 7e71fae04f5e -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 3fde99dba84a -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -127,7 +127,7 @@ Tạo `app/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
 }
 ```
 
-`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi một theme khởi đầu nhỏ hơn vào `app/assets/css/theme.json` (cùng một `theme.schema.json` bên cạnh) và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `app/theme/`: hoặc bỏ qua `init`, hoặc xóa hai file đó mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
+`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi theme khởi đầu riêng của nó vào `app/assets/css/theme.json` (cùng một `theme.schema.json` bên cạnh) và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `app/theme/`: hoặc bỏ qua `init`, hoặc xóa hai file đó mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
 
 ## Tự quản lý theme
 

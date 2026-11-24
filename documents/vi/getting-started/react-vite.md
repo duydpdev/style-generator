@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: f7f8d020973c -->
+<!-- source: documents/getting-started/react-vite.md sha256: ecbf0f630d9a -->
 
 # Bắt đầu: React + Vite
 
@@ -126,7 +126,7 @@ Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
 }
 ```
 
-`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi một theme khởi đầu nhỏ hơn vào `src/styles/theme.json` và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `src/theme/`: hoặc bỏ qua `init`, hoặc xóa thư mục `src/styles/` mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
+`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi theme khởi đầu riêng của nó vào `src/styles/theme.json` và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `src/theme/`: hoặc bỏ qua `init`, hoặc xóa thư mục `src/styles/` mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
 
 ## Tự quản lý theme
 

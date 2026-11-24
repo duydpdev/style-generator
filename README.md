@@ -101,7 +101,7 @@ Colors are a **flat object**; only `colors` is required:
 }
 ```
 
-That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`heading1` → `.heading-1`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available. Opacity modifiers such as `bg-primary/10` need steps in `coverage.colors.opacities` ([`options`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md)).
+That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`text32Bold` → `.text-32-bold`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available. Opacity modifiers such as `bg-primary/10` need steps in `coverage.colors.opacities` ([`options`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md)).
 
 ## Used in
 

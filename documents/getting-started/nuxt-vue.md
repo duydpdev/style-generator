@@ -125,7 +125,7 @@ Create `app/theme/theme.json`. The `Button` below reads the colors `primary`, `s
 }
 ```
 
-`yarn style-gen init` (the [Quickstart](../../README.md#quickstart)) writes a smaller starter theme to `app/assets/css/theme.json` (with a `theme.schema.json` next to it) and a `style-gen.config.json` that points there. This tutorial keeps the theme in `app/theme/` instead: either skip `init`, or delete those two files it wrote and replace `style-gen.config.json` with the file shown below.
+`yarn style-gen init` (the [Quickstart](../../README.md#quickstart)) writes its own starter theme to `app/assets/css/theme.json` (with a `theme.schema.json` next to it) and a `style-gen.config.json` that points there. This tutorial keeps the theme in `app/theme/` instead: either skip `init`, or delete those two files it wrote and replace `style-gen.config.json` with the file shown below.
 
 ## Own the theme
 

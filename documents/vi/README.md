@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: bee5656572a8 -->
+<!-- source: README.md sha256: 3aefc9ea42e5 -->
 
 # @duydpdev/style-generator
 
@@ -103,7 +103,7 @@ Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
 }
 ```
 
-Chỉ vậy là xong phần nối dây: không có `@plugin`, không có file safelist. Bạn có sẵn `bg-primary`, `text-primary`, `border-primary`, các utility typography đặt theo tên kebab-case của key (`heading1` → `.heading-1`), `shadow-sm`, `rounded-md`, các utility spacing `.sp-*` và những thứ còn lại. Các modifier độ mờ như `bg-primary/10` cần các mức trong `coverage.colors.opacities` ([`options`](./reference/options.md)).
+Chỉ vậy là xong phần nối dây: không có `@plugin`, không có file safelist. Bạn có sẵn `bg-primary`, `text-primary`, `border-primary`, các utility typography đặt theo tên kebab-case của key (`text32Bold` → `.text-32-bold`), `shadow-sm`, `rounded-md`, các utility spacing `.sp-*` và những thứ còn lại. Các modifier độ mờ như `bg-primary/10` cần các mức trong `coverage.colors.opacities` ([`options`](./reference/options.md)).
 
 ## Được dùng trong
 

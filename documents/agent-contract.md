@@ -6,7 +6,7 @@ The rules an agent (or a person) follows to write a theme and components with `@
 
 ## 1. Role contract (theme shape, not theme names)
 
-Name the keys after the app's own roles. The library derives every type and class from the keys you write; it never expects a particular name.
+Name the semantic keys after the app's own roles; name primitive colours and typography after their values (see [Naming convention](#naming-convention)). The library derives every type and class from the keys you write; it never expects a particular name.
 
 - `colors` is required and **flat camelCase**: `brand`, `brandHover`, `surfaceRaised`. No nested object, no `DEFAULT`, no `_`, no leading run of two or more capitals (`CTA`, `HTMLText`); a single capital or an inner run (`primaryCTA`) is fine. The schema rejects the rest.
 - An intent may declare state siblings `<intent>Hover` and `<intent>Active`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` from `@duydpdev/style-generator/cva`) turns `brand` into `bg-brand hover:bg-brand-hover active:bg-brand-active` when they exist and into `bg-brand` when they do not.
@@ -14,12 +14,51 @@ Name the keys after the app's own roles. The library derives every type and clas
 - A value `"$<key>"` aliases another key **of the same category** (`"brandHover": "$brandActive"` in `colors`). Not in `typography`. Unknown targets and cycles are schema errors.
 - Dark mode and palettes go in `themeAxes.<axis>.<variant>`; an override may only redefine keys that exist in the base category. Activation is `html[data-<axis>="<variant>"]` (use `themeAxisAttributes` from `@duydpdev/style-generator/recipes`). `base` is reserved as a variant name.
 - Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
-- Avoid keys whose class equals a Tailwind utility (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` warns; rename to `clear`, `flat`, `heading1`.
-- `style-gen init` writes a starter theme. Rename its keys to the app's roles and set every value for this app; a starter key left with its starter value is a copy, not a choice.
+- Avoid keys whose class equals a Tailwind utility (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` warns; rename to `clear`, `flat`, or a value-named typography key such as `text32Bold`.
+- `style-gen init` writes a starter theme whose keys and values are placeholders. Replace them following the [Naming convention](#naming-convention): semantic keys named after the app's roles, primitives and typography named after their values, and every value set for this app; a starter key left with its starter value is a copy, not a choice.
 
 Each rule above is enforced by the theme schema (`generate()`, `style-gen generate`, the Vite/Next plugins) or reported by `style-gen doctor`. Keep `"$schema"` pointing at the generated `theme.schema.json` for editor validation.
 
-**One theme per UI set.** Every UI set — an app, a design canvas, a design-system artifact — has its own `theme.json` in the product's repository, with keys named after that product's roles. A design system or a canvas is built from that theme and declares no token values of its own. No tool enforces this; it is a review rule.
+**One theme per UI set.** Every UI set — an app, a design canvas, a design-system artifact — has its own `theme.json` in the product's repository, with semantic keys named after that product's roles. A design system or a canvas is built from that theme and declares no token values of its own. No tool enforces this; it is a review rule.
+
+### Naming convention
+
+This convention applies to new themes and new design canvases. Never rename a key an existing app already uses to follow it: every class literal that uses the old key would stop matching. The library accepts any key that passes the schema; the convention is a recommendation, not a schema rule.
+
+- Colours come in two layers: primitives hold every literal value, semantic keys point at primitives.
+- A primitive key is a hue and a step, or `black`/`white`: it matches `^(?:[a-z]+(?:[1-9]00)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray100`, `white`; `gray50` is not one). Its value is a literal, never `$…`. The hue is lowercase letters only; steps run 100 to 900, and a scale may skip steps.
+- A translucent colour is a primitive with an alpha suffix in percent (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
+- Every other colour key is semantic. Its value is `"$<primitive>"` in the base `colors` and in every `themeAxes` override that redefines it; a semantic key never aliases another semantic key, and an override never redefines a primitive.
+
+Semantic core: `background`, `surface`, `foreground`, `muted`, `border`, `primary`, `primaryHover`, `primaryActive`, `onPrimary`, `danger`, `success`, `warning`, `focus`, `scrim`.
+Product keys (`domainNutrition`) sit beside them.
+
+- A typography key is `text<size><Weight>`: it matches `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. The digits are `fontSize` in px (a rem value counts as rem × 16) and the word is `fontWeight` 400/500/600/700. Every key with the same size has the same `lineHeight`. The scale is 12, 14, 16, 20, 24, 32, 40, 56.
+- A typography entry never sets `fontFamily`. A different face is the `font-<fontFamily key>` class next to the typography class: `class="text-56-regular font-display"`.
+- Radius keys are `sm`, `md`, `lg` and `full`.
+
+<!-- prettier-ignore -->
+```json
+{
+  "colors": {
+    "blue400": "#60a5fa",
+    "blue600": "#2563eb",
+    "blue600Alpha10": "rgba(37, 99, 235, 0.10)",
+    "primary": "$blue600",
+    "primaryHover": "$blue400",
+    "scrim": "$blue600Alpha10"
+  },
+  "themeAxes": {
+    "theme": { "dark": { "colors": { "primary": "$blue400" } } }
+  },
+  "typography": {
+    "text16Regular": { "fontSize": "16px", "lineHeight": "24px", "fontWeight": 400 },
+    "text32Bold": { "fontSize": "32px", "lineHeight": "40px", "fontWeight": 700 }
+  }
+}
+```
+
+Components and artboards use semantic keys only. Every colour key has a class by default; `coverage: { colors: { keys: "aliased" } }` in `style-gen.config.json` (recommended) drops the generated coverage of the primitives, so only the semantic keys are always built. Add `resetTailwindDefaults: ["colors"]` only for a new app that uses no Tailwind palette classes: it removes Tailwind's palette, so an existing `bg-red-500` stops being emitted.
 
 ## 2. Layout
 

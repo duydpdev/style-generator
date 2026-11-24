@@ -46,6 +46,15 @@ export const fixtureTheme = defineTheme({
     "2xl": "8px",
     zero: "0px",
   },
+  motionDuration: { fast: "150ms", slow: "0.4s" },
+  motionEasing: {
+    standard: "cubic-bezier(0.2, 0, 0, 1)",
+    emphasized: "ease-out",
+  },
+  controlHeight: { sm: "32px", md: "2.5rem" },
+  iconSize: { sm: "16px", md: "1.25rem" },
+  opacity: { disabled: 0.4, muted: 0.64 },
+  zIndex: { overlay: 40, modal: 50 },
   themeAxes: {
     theme: {
       dark: {

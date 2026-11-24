@@ -68,6 +68,35 @@ describe("style-gen canvas check", () => {
   });
 
   describe("exit 1", () => {
+    it("knows the variables of every registry category with a CSS variable", async () => {
+      writeTmpFile(dir, "theme.json", {
+        colors: { primary: "#000" },
+        motionDuration: { fast: "150ms", slow: "0.4s" },
+        motionEasing: { standard: "ease-out", emphasized: "ease-in" },
+        controlHeight: { sm: "32px", md: "40px" },
+        iconSize: { sm: "16px", md: "20px" },
+        opacity: { muted: 0.64, disabled: 0.4 },
+        zIndex: { overlay: 40, modal: 50 },
+      });
+      writeTmpFile(
+        dir,
+        "canvas/a.css",
+        [
+          ".a { transition: opacity var(--sg-duration-fast) var(--sg-ease-standard); }",
+          ".b { height: var(--sg-control-md); width: var(--sg-icon-sm); }",
+          ".c { opacity: var(--sg-opacity-muted); z-index: var(--sg-z-modal); }",
+          ".d { z-index: var(--sg-z-nope); }",
+        ].join("\n"),
+      );
+      expect(await canvas("--canvas", "canvas", "--theme", "theme.json")).toBe(
+        1,
+      );
+      expect(stdout()).toEqual([
+        "a.css:4 unknown token --sg-z-nope",
+        "1 violation(s)",
+      ]);
+    });
+
     it("prints every violation, then the count", async () => {
       const args = ["--canvas", BROKEN, "--theme", BROKEN_THEME];
       expect(await canvas(...args, "--naming", "--boards")).toBe(1);

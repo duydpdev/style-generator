@@ -71,6 +71,10 @@ const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
   group `sg-typography`. A later `sg-typography` class removes earlier
   `font-size`/`font-weight`/`leading`/`tracking` classes; a later
   single-property utility refines it (both are kept).
+- the scale tokens (`motionDuration`, `motionEasing`, `controlHeight`,
+  `iconSize`, `opacity`, `zIndex`; each optional, an absent one adds
+  nothing) extend `duration`, `ease`, `h`, `min-h`, `max-h`, `size`,
+  `opacity` and `z`, so `h-control-md` replaces an earlier `h-10`.
 - `colors` and `fontFamily` are deliberately absent: the default `color`
   and `font-family` groups already accept any value.
 
@@ -114,6 +118,12 @@ export declare interface TailwindMergeTokens {
   readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
+  readonly motionDuration?: readonly string[];
+  readonly motionEasing?: readonly string[];
+  readonly controlHeight?: readonly string[];
+  readonly iconSize?: readonly string[];
+  readonly opacity?: readonly string[];
+  readonly zIndex?: readonly string[];
 }
 ```
 
@@ -123,7 +133,7 @@ and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
 
 <!-- /signature -->
 
-- `createTailwindMergeExtension` covers `typography`, `shadows`, `backdropBlurs`, `borderRadius` and `borderWidth` tokens; colors and font families already match tailwind-merge's default `color`/`font-family` groups. `borderRadius` extends tailwind-merge's `radius` theme scale, so side, logical and corner utilities (`rounded-tl-pill`, `rounded-s-pill`) merge with their `rounded-*` siblings. A later typography class removes earlier `font-size`/`font-weight`/`leading`/`tracking` classes; a later single-property utility refines it.
+- `createTailwindMergeExtension` covers `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `borderWidth` and the six scale groups (`motionDuration`, `motionEasing`, `controlHeight`, `iconSize`, `opacity`, `zIndex`: `h-control-md` after `h-10` removes `h-10`; each field is optional, so an object with only the first five still fits); colors and font families already match tailwind-merge's default `color`/`font-family` groups. `borderRadius` extends tailwind-merge's `radius` theme scale, so side, logical and corner utilities (`rounded-tl-pill`, `rounded-s-pill`) merge with their `rounded-*` siblings. A later typography class removes earlier `font-size`/`font-weight`/`leading`/`tracking` classes; a later single-property utility refines it.
 
 ## `splitSpacingProps`, `SpacingProps`
 

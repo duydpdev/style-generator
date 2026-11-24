@@ -51,6 +51,12 @@ const { DesignTokens } = createDesignTokens(theme, {
 | `fontFamily`        | Keys of `fontFamily`                                                                                                                       |
 | `borderWidth`       | Keys of `borderWidth` (falls back to `0, 1, 2, 4` when omitted or empty)                                                                   |
 | `borderRadius`      | Keys of `borderRadius` (falls back to `DEFAULT_ROUNDED_VALUES` when omitted or empty)                                                      |
+| `motionDuration`    | Keys of `motionDuration` (`[]` when omitted)                                                                                               |
+| `motionEasing`      | Keys of `motionEasing` (`[]` when omitted)                                                                                                 |
+| `controlHeight`     | Keys of `controlHeight` (`[]` when omitted)                                                                                                |
+| `iconSize`          | Keys of `iconSize` (`[]` when omitted)                                                                                                     |
+| `opacity`           | Keys of the `opacity` group (`[]` when omitted); not the colour steps in `opacities`                                                       |
+| `zIndex`            | Keys of `zIndex` (`[]` when omitted)                                                                                                       |
 | `spacingProperties` | List of spacing props — the keys of `options.spacing.properties`, or the defaults                                                          |
 | `breakpoints`       | Active breakpoints — defaults to `["md", "lg"]`                                                                                            |
 | `screens`           | Breakpoint → width map: the default screens plus the keys of `options.screens`                                                             |

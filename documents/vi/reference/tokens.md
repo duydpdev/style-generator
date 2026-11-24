@@ -1,4 +1,4 @@
-<!-- source: documents/reference/tokens.md sha256: 447d090e0f03 -->
+<!-- source: documents/reference/tokens.md sha256: 489d500ae7d8 -->
 
 # Design token (./tokens)
 
@@ -53,6 +53,12 @@ const { DesignTokens } = createDesignTokens(theme, {
 | `fontFamily`        | Các key của `fontFamily`                                                                                                                             |
 | `borderWidth`       | Các key của `borderWidth` (dùng giá trị dự phòng `0, 1, 2, 4` khi bị bỏ qua hoặc để trống)                                                           |
 | `borderRadius`      | Các key của `borderRadius` (dùng giá trị dự phòng `DEFAULT_ROUNDED_VALUES` khi bị bỏ qua hoặc để trống)                                              |
+| `motionDuration`    | Các key của `motionDuration` (`[]` khi bị bỏ qua)                                                                                                    |
+| `motionEasing`      | Các key của `motionEasing` (`[]` khi bị bỏ qua)                                                                                                      |
+| `controlHeight`     | Các key của `controlHeight` (`[]` khi bị bỏ qua)                                                                                                     |
+| `iconSize`          | Các key của `iconSize` (`[]` khi bị bỏ qua)                                                                                                          |
+| `opacity`           | Các key của nhóm `opacity` (`[]` khi bị bỏ qua); không phải các bước màu trong `opacities`                                                           |
+| `zIndex`            | Các key của `zIndex` (`[]` khi bị bỏ qua)                                                                                                            |
 | `spacingProperties` | Danh sách prop spacing — các key của `options.spacing.properties`, hoặc các giá trị mặc định                                                         |
 | `breakpoints`       | Các breakpoint đang hoạt động — mặc định là `["md", "lg"]`                                                                                           |
 | `screens`           | Map breakpoint → độ rộng: các screen mặc định cộng thêm các key của `options.screens`                                                                |

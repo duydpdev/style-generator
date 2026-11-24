@@ -60,14 +60,14 @@ Each core board carries the sections and theme literals below (the manifest's `c
 
 <!-- core-content:start -->
 
-| File               | Sections                                    | Literals                   |
-| ------------------ | ------------------------------------------- | -------------------------- |
-| `Main.dc.html`     | `product`, `provenance`, `structure`, `toc` |                            |
-| `ds-mau.dc.html`   | `primitives`, `semantic`, `contrast`        | `colors`, `themeAxes`      |
-| `ds-chu.dc.html`   | `typography`, `font-family`                 | `typography`, `fontFamily` |
-| `ds-khung.dc.html` | `spacing`, `radius`, `shadow`, `icon`       | `borderRadius`, `shadows`  |
-| `ds-luoi.dc.html`  | `breakpoints`, `columns`                    |                            |
-| `ds-token.dc.html` | `css`, `json`                               |                            |
+| File               | Sections                                    | Literals                                                                                                      |
+| ------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Main.dc.html`     | `product`, `provenance`, `structure`, `toc` |                                                                                                               |
+| `ds-mau.dc.html`   | `primitives`, `semantic`, `contrast`        | `colors`, `themeAxes`                                                                                         |
+| `ds-chu.dc.html`   | `typography`, `font-family`                 | `typography`, `fontFamily`                                                                                    |
+| `ds-khung.dc.html` | `spacing`, `radius`, `shadow`, `icon`       | `borderRadius`, `shadows`, `motionDuration`, `motionEasing`, `controlHeight`, `iconSize`, `opacity`, `zIndex` |
+| `ds-luoi.dc.html`  | `breakpoints`, `columns`                    |                                                                                                               |
+| `ds-token.dc.html` | `css`, `json`                               |                                                                                                               |
 
 <!-- core-content:end -->
 

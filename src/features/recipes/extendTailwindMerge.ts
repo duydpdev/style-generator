@@ -11,6 +11,12 @@ export interface TailwindMergeTokens {
   readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
+  readonly motionDuration?: readonly string[];
+  readonly motionEasing?: readonly string[];
+  readonly controlHeight?: readonly string[];
+  readonly iconSize?: readonly string[];
+  readonly opacity?: readonly string[];
+  readonly zIndex?: readonly string[];
 }
 
 /**
@@ -55,6 +61,26 @@ const BORDER_WIDTH_PREFIXES = [
 ] as const;
 
 /**
+ * The scale token fields, each with the `tailwind-merge` class group its
+ * utilities belong to and the class prefix the registry emits. A local
+ * literal table for the same reason as {@link BORDER_WIDTH_PREFIXES};
+ * `extendTailwindMerge.test.ts` pins the prefixes to the registry.
+ * `--height-control-*` also feeds Tailwind's `min-h-*`/`max-h-*`, so
+ * `controlHeight` has two extra rows the registry does not cover (an app
+ * that writes `min-h-control-md` gets it from its own source scan).
+ */
+const SCALE_GROUPS = [
+  ["motionDuration", "duration", "duration"],
+  ["motionEasing", "ease", "ease"],
+  ["controlHeight", "h", "h-control"],
+  ["controlHeight", "min-h", "min-h-control"],
+  ["controlHeight", "max-h", "max-h-control"],
+  ["iconSize", "size", "size-icon"],
+  ["opacity", "opacity", "opacity"],
+  ["zIndex", "z", "z"],
+] as const;
+
+/**
  * Build the `tailwind-merge` v3 config extension for a theme's custom
  * tokens, so `twMerge` stops treating `border-thin` as a border colour,
  * `rounded-pill` / `shadow-card` as unknown classes, or `text-10-light` as a
@@ -77,6 +103,10 @@ const BORDER_WIDTH_PREFIXES = [
  *   group `sg-typography`. A later `sg-typography` class removes earlier
  *   `font-size`/`font-weight`/`leading`/`tracking` classes; a later
  *   single-property utility refines it (both are kept).
+ * - the scale tokens (`motionDuration`, `motionEasing`, `controlHeight`,
+ *   `iconSize`, `opacity`, `zIndex`; each optional, an absent one adds
+ *   nothing) extend `duration`, `ease`, `h`, `min-h`, `max-h`, `size`,
+ *   `opacity` and `z`, so `h-control-md` replaces an earlier `h-10`.
  * - `colors` and `fontFamily` are deliberately absent: the default `color`
  *   and `font-family` groups already accept any value.
  *
@@ -108,6 +138,9 @@ export const createTailwindMergeExtension = (
   }
   for (const prefix of BORDER_WIDTH_PREFIXES) {
     addGroup(prefix.replace(/^border/, "border-w"), prefix, tokens.borderWidth);
+  }
+  for (const [field, id, prefix] of SCALE_GROUPS) {
+    addGroup(id, prefix, tokens[field] ?? []);
   }
 
   const conflictingClassGroups: Record<string, string[]> = {};

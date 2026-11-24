@@ -3,6 +3,7 @@
  * button intents and, with `--naming`, inline weights, hand-written values
  * and primitive colour variables.
  */
+import { cssVarCategories } from "../../../features/registry/builtInCategories";
 import { toKebabCase } from "../../../shared/helpers";
 
 import type { HandValue, Located, Occurrence, ScannedFile } from "./scan";
@@ -13,15 +14,13 @@ type Where = Pick<Located, "file" | "line">;
 /** Custom properties that are not a second token namespace. */
 const ALLOWED_VAR = /^--(?:sg-|tw-|layout-)|^--spacing$/;
 
-/** Theme category → the `--<prefix>-<key>` its tokens are emitted under. */
-const CATEGORY_PREFIXES = [
-  ["colors", "sg-color"],
-  ["shadows", "sg-shadow"],
-  ["borderRadius", "sg-radius"],
-  ["fontFamily", "sg-font"],
-  ["backdropBlurs", "sg-backdrop-blur"],
-  ["borderWidth", "sg-border-width"],
-] as const;
+/**
+ * Theme category → the `--<prefix>-<key>` its tokens are emitted under:
+ * every registry category with a CSS variable.
+ */
+const CATEGORY_PREFIXES = cssVarCategories.map(
+  (descriptor) => [descriptor.key, descriptor.cssVarPrefix] as const,
+);
 
 /**
  * The `--sg-*` variable names a theme file produces (spacing aside).

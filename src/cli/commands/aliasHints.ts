@@ -42,7 +42,8 @@ const aliasTarget = (
  * **different** key of the same base category already holds — the override
  * could point at that key with a `$alias` instead (`"$blue500"`), so a later
  * palette change in the base reaches the variant too. Covers every category
- * that emits a `--sg-*` variable, not only colors.
+ * that emits a `--sg-*` variable and takes `$` aliases, not only colors (a
+ * literal scale such as `motionDuration` takes none, so it is skipped).
  *
  * An override equal to its own base key is a redundant override, not an alias
  * candidate, and is skipped. Values are compared trimmed and lowercased
@@ -62,8 +63,9 @@ export function findAliasHints(theme: ThemeConfig): string[] {
   });
   const redefinedBy = (category: (typeof cssVarCategories)[number]["key"]) =>
     new Set(overrides.flatMap(([, o]) => Object.keys(o[category] ?? {})));
+  const aliasCategories = cssVarCategories.filter((d) => !d.literalScale);
   for (const [where, override] of overrides) {
-    for (const { key: category } of cssVarCategories) {
+    for (const { key: category } of aliasCategories) {
       const base: Record<string, unknown> = theme[category] ?? {};
       const redefined = redefinedBy(category);
       for (const [key, value] of Object.entries(override[category] ?? {})) {
@@ -74,7 +76,7 @@ export function findAliasHints(theme: ThemeConfig): string[] {
             : aliasTarget(base, key, literal, redefined);
         if (target === undefined) continue;
         hints.push(
-          `Override ${where}.${category}.${key} repeats base value ${value.trim()} → use alias "$${target}"`,
+          `Override ${where}.${category}.${key} repeats base value ${String(value).trim()} → use alias "$${target}"`,
         );
       }
     }

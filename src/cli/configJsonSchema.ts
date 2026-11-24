@@ -41,7 +41,7 @@ function child(value: unknown, key: string): JsonObject {
  * Replaces Zod's one-size `coverage` schema (any category key maps to any
  * rule) with one entry per registry category, so each category only accepts
  * what `StyleGeneratorOptionsSchema` accepts for it: its own `prefixes`
- * (none for a bare-class category), `opacities` only for opacity-modifier
+ * (none for a bare-class or `literalScale` category), `opacities` only for opacity-modifier
  * categories (distinct; a group's `prefixes` limited like the rule's), and
  * `keys: "aliased"` only where `$` aliases exist. `uniqueItems` on `opacities`
  * also flags two identical groups, which the CLI accepts: JSON Schema cannot
@@ -63,7 +63,7 @@ function refineCoverage(coverage: JsonObject): void {
     if (!isJsonObject(rule)) throw new Error("Coverage rule is not an object");
     const ruleProperties = child(rule, "properties");
 
-    if ("bareClassName" in descriptor) {
+    if ("bareClassName" in descriptor || "literalScale" in descriptor) {
       delete ruleProperties.prefixes;
     } else {
       child(ruleProperties, "prefixes").items = {
@@ -84,7 +84,7 @@ function refineCoverage(coverage: JsonObject): void {
     } else {
       delete ruleProperties.opacities;
     }
-    if (!isCssVarCategory(descriptor)) {
+    if (!isCssVarCategory(descriptor) || "literalScale" in descriptor) {
       child(ruleProperties, "keys").enum = ["all"];
     }
     properties[descriptor.key] = { anyOf: [structuredClone(boolRule), rule] };

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: 8422e621a117 -->
+<!-- source: documents/reference/recipes.md sha256: 6aad0a7ca3d2 -->
 
 # Recipe (./recipes)
 
@@ -73,6 +73,10 @@ const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
   group `sg-typography`. A later `sg-typography` class removes earlier
   `font-size`/`font-weight`/`leading`/`tracking` classes; a later
   single-property utility refines it (both are kept).
+- the scale tokens (`motionDuration`, `motionEasing`, `controlHeight`,
+  `iconSize`, `opacity`, `zIndex`; each optional, an absent one adds
+  nothing) extend `duration`, `ease`, `h`, `min-h`, `max-h`, `size`,
+  `opacity` and `z`, so `h-control-md` replaces an earlier `h-10`.
 - `colors` and `fontFamily` are deliberately absent: the default `color`
   and `font-family` groups already accept any value.
 
@@ -116,6 +120,12 @@ export declare interface TailwindMergeTokens {
   readonly backdropBlurs: readonly string[];
   readonly borderRadius: readonly string[];
   readonly borderWidth: readonly string[];
+  readonly motionDuration?: readonly string[];
+  readonly motionEasing?: readonly string[];
+  readonly controlHeight?: readonly string[];
+  readonly iconSize?: readonly string[];
+  readonly opacity?: readonly string[];
+  readonly zIndex?: readonly string[];
 }
 ```
 
@@ -125,7 +135,7 @@ and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
 
 <!-- /signature -->
 
-- `createTailwindMergeExtension` bao quát các token `typography`, `shadows`, `backdropBlurs`, `borderRadius` và `borderWidth`; màu sắc và font family vốn đã khớp với các group `color`/`font-family` mặc định của tailwind-merge. `borderRadius` mở rộng scale theme `radius` của tailwind-merge, nhờ đó các utility theo phía, theo logic và góc (`rounded-tl-pill`, `rounded-s-pill`) sẽ merge với các sibling `rounded-*` của chúng. Một class typography đứng sau sẽ loại bỏ các class `font-size`/`font-weight`/`leading`/`tracking` đứng trước; một utility đơn thuộc tính đứng sau sẽ tinh chỉnh lại nó.
+- `createTailwindMergeExtension` bao quát các token `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `borderWidth` và sáu nhóm thang đo (`motionDuration`, `motionEasing`, `controlHeight`, `iconSize`, `opacity`, `zIndex`: `h-control-md` đứng sau `h-10` sẽ loại bỏ `h-10`; mỗi trường đều tùy chọn, nên một object chỉ có năm trường đầu vẫn hợp lệ); màu sắc và font family vốn đã khớp với các group `color`/`font-family` mặc định của tailwind-merge. `borderRadius` mở rộng scale theme `radius` của tailwind-merge, nhờ đó các utility theo phía, theo logic và góc (`rounded-tl-pill`, `rounded-s-pill`) sẽ merge với các sibling `rounded-*` của chúng. Một class typography đứng sau sẽ loại bỏ các class `font-size`/`font-weight`/`leading`/`tracking` đứng trước; một utility đơn thuộc tính đứng sau sẽ tinh chỉnh lại nó.
 
 ## `splitSpacingProps`, `SpacingProps`
 

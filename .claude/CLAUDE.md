@@ -51,6 +51,7 @@ yarn check:next-build   # after build:all, needs network: packed tarball + next@
 yarn check:ts-peer   # after build:all: tarball + npm + TypeScript 5.0/5.2/5.9/6/7 in a scratch project, tsc on every subpath (CI ts-peer job; needs network)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 yarn site:build     # lib build + landing site (renders documents/*.md)
+yarn schema:refresh # build:cli + rewrite the six committed theme/config JSON Schemas (examples/, examples/design-system/, site/) and prettier them
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
 yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
 yarn check:docs    # docs gates (after build:all; CI check job runs them as five steps): embed, i18n, snippets, exports, reference; doc-reference: CLI flags + config keys documented, no version history on pages
@@ -99,7 +100,8 @@ also `createDesignTokens()` from `./tokens`) and `schema` (`z.toJSONSchema(Theme
 Pipelines, all driven by the category registry:
 
 1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backdropBlurs`,
-   `borderRadius`, `fontFamily`, `borderWidth`; `colors` feeds `bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`);
+   `borderRadius`, `fontFamily`, `borderWidth`, and the `literalScale` groups `motionDuration`→`duration`, `motionEasing`→`ease`, `controlHeight`→`h-control`, `iconSize`→`size-icon`,
+   `opacity`, `zIndex`→`z` (no `$` aliases; `coverage` takes only `true`/`false`/`{ keys: "all" }`; a digit-only `opacity` key is rejected because `--opacity-<n>` would replace the colour `/<n>` modifier; `--height-control-*` also yields `min-h-control-*`/`max-h-control-*`, which `createTailwindMergeExtension` groups but `@source inline` does not cover); `colors` feeds `bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`);
    `generateSourceInline.ts` emits one `@source inline(...)` per category.
 2. **theme-css** (`src/features/theme-css/`) — `:root` `--sg-*` vars, `html[data-<axis>="<variant>"]` overrides,
    `@theme inline` mapping (including `--border-width-<key>` for `borderWidth`); `generateScreensCss.ts` (custom breakpoints).
@@ -159,7 +161,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` and a leading uppercase run of two or more letters (`CTA`, `ABtn`,
   `HTMLParser`) are rejected in every token-name position**: the camelCased token would map to a class the registry never emits (a single capital such as `Blue`,
   or an inner run such as `primaryCTA`, round-trips and is accepted). `formatZodError` prints the hint on the path.
-  Each category owns a distinct `--sg-<category>-` namespace (`sg-color`, `sg-shadow`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`, plus spacing's `sg-sp`),
+  Each category owns a distinct `--sg-<category>-` namespace (`sg-color`, `sg-shadow`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`, `sg-duration`, `sg-ease`, `sg-control`, `sg-icon`, `sg-opacity`, `sg-z`, plus spacing's `sg-sp`),
   so cross-category variable collisions are impossible by construction. A `typography` key kebab-casing to `sp-*` or `font-*` is rejected,
   and `typography.*.fontWeight` is a number in 1–1000.
 - A `__proto__` key is rejected at its exact path wherever it appears in a theme (`rejectProtoKeys`, the raw-input `z.preprocess` step of `ThemeSchema`, `src/core/themeSchema.ts`):

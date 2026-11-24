@@ -53,7 +53,9 @@ const aliasedKeys = (
   });
   for (const record of records) {
     for (const [key, value] of Object.entries(record ?? {})) {
-      if (parseAlias(value) !== undefined) holders.add(toKebabCase(key));
+      if (typeof value === "string" && parseAlias(value) !== undefined) {
+        holders.add(toKebabCase(key));
+      }
     }
   }
   return holders;

@@ -1,0 +1,6 @@
+{
+  "theme": "theme.json",
+  "output": "theme.css",
+  "coverage": { "colors": { "keys": "aliased" } },
+  "resetTailwindDefaults": ["colors"]
+}

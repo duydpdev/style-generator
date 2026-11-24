@@ -256,7 +256,9 @@ describe("themeToDsTokens — rules", () => {
         k.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase(),
       ),
     );
-    expect(t.color.tokens.find((x) => x.name === "on-brand")?.value).toEqual({
+    expect(
+      t.color.tokens.find((x) => x.name === "brand-foreground")?.value,
+    ).toEqual({
       light: "{paper}",
       night: "{paper}",
     });

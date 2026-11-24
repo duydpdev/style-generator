@@ -19,6 +19,7 @@ import { logger } from "../logger";
 import { styleGenCommand } from "../packageManager";
 
 import { findAliasHints } from "./aliasHints";
+import { findDeprecatedColorKeys } from "./deprecatedColorKeys";
 import { findUtilityCollisions } from "./utilityCollisions";
 
 const padStr = (str: string) => {
@@ -100,6 +101,7 @@ function checkTheme(cwd: string, config: StyleGenConfig): boolean {
   for (const warning of [
     ...findUtilityCollisions(result.data),
     ...findAliasHints(result.data),
+    ...findDeprecatedColorKeys(result.data),
   ]) {
     logger.log(`  Theme   ⚠️  ${warning}`);
   }

@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/next.md sha256: 4b4057082c3e -->
+<!-- source: documents/getting-started/next.md sha256: e412ce46dab6 -->
 
 # Bắt đầu: Next.js
 
@@ -24,7 +24,7 @@ Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
     "primary": "#2647D9",
     "primaryHover": "#1F3BB8",
     "primaryActive": "#19319A",
-    "onPrimary": "$surface",
+    "primaryForeground": "$surface",
     "secondary": "#6E5BFF",
     "accent": "$secondary",
     "success": "#2E7D5B",

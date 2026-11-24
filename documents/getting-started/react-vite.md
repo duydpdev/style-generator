@@ -24,7 +24,7 @@ Create `src/theme/theme.json`. The `Button` below reads the colors `primary`, `s
     "primary": "#2647D9",
     "primaryHover": "#1F3BB8",
     "primaryActive": "#19319A",
-    "onPrimary": "$surface",
+    "primaryForeground": "$surface",
     "secondary": "#6E5BFF",
     "accent": "$secondary",
     "success": "#2E7D5B",

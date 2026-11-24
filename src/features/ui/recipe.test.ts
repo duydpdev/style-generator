@@ -68,13 +68,33 @@ describe("pick", () => {
 });
 
 describe("contrastText", () => {
-  it("uses the on<Intent> sibling when the theme declares it", () => {
+  it("uses the <intent>Foreground sibling when the theme declares it", () => {
+    expect(
+      contrastText(
+        ["primary", "primaryForeground", "white"],
+        "primary",
+        "white",
+      ),
+    ).toBe("text-primary-foreground");
+  });
+
+  it("prefers <intent>Foreground over the deprecated on<Intent>", () => {
+    expect(
+      contrastText(
+        ["primary", "onPrimary", "primaryForeground", "white"],
+        "primary",
+        "white",
+      ),
+    ).toBe("text-primary-foreground");
+  });
+
+  it("still uses the deprecated on<Intent> sibling when it is the only one", () => {
     expect(
       contrastText(["primary", "onPrimary", "white"], "primary", "white"),
     ).toBe("text-on-primary");
   });
 
-  it("falls back when the sibling is missing", () => {
+  it("falls back when neither sibling exists", () => {
     expect(contrastText(["secondary", "white"], "secondary", "white")).toBe(
       "text-white",
     );

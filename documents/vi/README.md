@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 6b866be3b591 -->
+<!-- source: README.md sha256: 68507308a65e -->
 
 # @duydpdev/style-generator
 
@@ -102,7 +102,7 @@ Màu là một **object phẳng**; chỉ `colors` là bắt buộc. Các primiti
     "foreground": "$gray900",
     "muted": "$gray500",
     "primary": "$blue600",
-    "onPrimary": "$white"
+    "primaryForeground": "$white"
   }
 }
 ```

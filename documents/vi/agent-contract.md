@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: a0458c7238fd -->
+<!-- source: documents/agent-contract.md sha256: def0f3e297d8 -->
 
 # Hợp đồng cho agent
 
@@ -12,7 +12,7 @@ Các quy tắc mà một agent (hoặc một người) tuân theo khi viết the
 
 - `colors` là bắt buộc và là **camelCase phẳng**: `brand`, `brandHover`, `surfaceRaised`. Không object lồng nhau, không `DEFAULT`, không `_`, không mở đầu bằng một chuỗi từ hai chữ hoa trở lên (`CTA`, `HTMLText`); một chữ hoa đơn hoặc chuỗi hoa ở giữa (`primaryCTA`) thì được. Schema từ chối phần còn lại.
 - Một intent có thể khai báo các sibling trạng thái `<intent>Hover` và `<intent>Active`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` từ `@duydpdev/style-generator/cva`) biến `brand` thành `bg-brand hover:bg-brand-hover active:bg-brand-active` khi chúng tồn tại và thành `bg-brand` khi không có.
-- Một intent có thể khai báo màu chữ `on<Intent>` (`brand` → `onBrand`). `contrastText(tokens.colors, intent, fallback)` trả về `text-on-brand` khi màu đó tồn tại, nếu không thì `text-<fallback>`.
+- Một intent có thể khai báo màu chữ `<intent>Foreground` (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` trả về `text-brand-foreground` khi màu đó tồn tại, nếu không thì `text-<fallback>`. Tên cũ `on<Intent>` (`text-on-brand`) vẫn chạy nhưng đã deprecated: `contrastText` thôi đọc nó từ 9.0, và `style-gen doctor` cảnh báo về nó.
 - Giá trị `"$<key>"` là alias tới một key khác **trong cùng category** (`"brandHover": "$brandActive"` trong `colors`). Không dùng trong `typography`. Đích không tồn tại và vòng lặp là lỗi schema.
 - Dark mode và palette nằm trong `themeAxes.<axis>.<variant>`; một override chỉ được định nghĩa lại các key đã có trong category gốc. Kích hoạt bằng `html[data-<axis>="<variant>"]` (dùng `themeAxisAttributes` từ `@duydpdev/style-generator/recipes`). `base` là tên variant dành riêng.
 - Mọi category khác (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) là tùy chọn và theo cùng ngữ pháp key. Mỗi mục typography cần `fontSize`, `lineHeight` và `fontWeight` dạng số.
@@ -28,12 +28,15 @@ Mỗi quy tắc trên được schema của theme bắt buộc (`generate()`, `s
 Quy ước này áp dụng cho theme mới và design canvas mới. Đừng bao giờ đổi tên một key mà app hiện có đang dùng chỉ để theo quy ước: mọi class literal dùng key cũ sẽ không còn khớp. Thư viện chấp nhận mọi key qua được schema; quy ước là khuyến nghị, không phải quy tắc của schema.
 
 - Màu gồm hai lớp: primitive giữ mọi giá trị literal, key ngữ nghĩa trỏ tới primitive.
-- Key primitive là một sắc độ kèm một bậc, hoặc `black`/`white`: nó khớp `^(?:[a-z]+(?:[1-9]00)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray100`, `white`; `gray50` thì không). Giá trị của nó là literal, không bao giờ là `$…`. Sắc độ chỉ gồm chữ thường; bậc chạy từ 100 đến 900, và một thang có thể bỏ trống bậc.
+- Key primitive là một sắc độ kèm một bậc, hoặc `black`/`white`: nó khớp `^(?:[a-z]+(?:50|[1-9]00|950)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray50`, `white`; `gray150` thì không). Giá trị của nó là literal, không bao giờ là `$…`. Sắc độ chỉ gồm chữ thường; các bậc là 50, từ 100 đến 900 và 950, và một thang có thể bỏ trống bậc.
 - Màu trong suốt là một primitive có hậu tố alpha tính theo phần trăm (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
 - Mọi key màu khác là key ngữ nghĩa. Giá trị của nó là `"$<primitive>"` trong `colors` gốc và trong mọi override `themeAxes` định nghĩa lại nó; key ngữ nghĩa không bao giờ là alias của key ngữ nghĩa khác, và override không bao giờ định nghĩa lại primitive.
 
-Lõi ngữ nghĩa: `background`, `surface`, `foreground`, `muted`, `border`, `primary`, `primaryHover`, `primaryActive`, `onPrimary`, `danger`, `success`, `warning`, `focus`, `scrim`.
+Lõi ngữ nghĩa: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.
 Key riêng của sản phẩm (`domainNutrition`) đứng cạnh chúng.
+
+- Một key ngữ nghĩa là key trung tính (`background`, `foreground`, `surface`, `surfaceRaised`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`) hoặc `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: một role lõi hoặc role sản phẩm, rồi các hậu tố theo đúng thứ tự đó, rồi tối đa một trạng thái, luôn đứng cuối. `primaryForegroundHover` là sibling hover của `primaryForeground`; `successSubtleForeground` là màu chữ trên nền `successSubtle`. Role sản phẩm là camelCase, mỗi segment một chữ hoa (`domainNutrition`, không phải `primaryCTA`). Segment đầu không phải `on`, `ok`, `bad`, `warn` hay `line`, và role nhiều segment không kết thúc bằng một hậu tố, một trạng thái, `Ink`, `Soft`, `Line`, `Ok`, `Bad` hay `Warn` (`chartLine` bị đọc là tên v1).
+- `style-gen canvas check --naming` báo các tên v1 kèm tên v2 thay thế: `on<Role>` → `<role>Foreground`, `…Ink` → `…Foreground`, `…Soft` → `…Subtle`, `…Line` → `…Border`, `ok`/`bad`/`warn` → `success`/`danger`/`warning`, `line`/`lineStrong` → `border`/`borderStrong`. Khi tên mới đã tồn tại, nó báo `merge manually` thay vì đổi tên.
 
 - Key typography có dạng `text<size><Weight>`: nó khớp `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. Phần số là `fontSize` tính bằng px (giá trị rem tính là rem × 16) và từ phía sau là `fontWeight` 400/500/600/700. Mọi key cùng cỡ chữ có cùng `lineHeight`. Thang cỡ chữ là 12, 14, 16, 20, 24, 32, 40, 56.
 - Một mục typography không bao giờ đặt `fontFamily`. Một kiểu chữ khác là class `font-<fontFamily key>` đặt cạnh class typography: `class="text-56-regular font-display"`.
@@ -87,7 +90,7 @@ Import được phép bên trong `src/ui/<folder>/`:
 
 ## 3. Checklist cho component mới
 
-1. Chọn các vai trò component cần và thêm các key còn thiếu vào theme JSON (kèm sibling `<intent>Hover`/`on<Intent>` nếu muốn).
+1. Chọn các vai trò component cần và thêm các key còn thiếu vào theme JSON (kèm sibling `<intent>Hover`/`<intent>Foreground` nếu muốn).
 2. Tạo `src/ui/<kebab-name>/` với `style.ts`, `types.ts`, `<Name>.tsx`, `index.ts`.
 3. Trong `style.ts`, khai báo các intent dạng `as const satisfies readonly ColorVariant<typeof theme>[]`.
 4. Dựng mọi class có tên một key của theme từ một mapper trên `tokens.*` (mục 4); chỉ dùng literal cho các trường hợp mục 4 cho phép, kèm một comment.

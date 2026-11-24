@@ -4,7 +4,7 @@
 import type { CSSProperties, ElementType, ReactNode, JSX, ComponentPropsWithoutRef } from "react";
 
 export type ColorToken =
-  | "primary" | "primaryHover" | "primaryActive" | "onPrimary" | "secondary" | "accent"
+  | "primary" | "primaryHover" | "primaryActive" | "primaryForeground" | "secondary" | "accent"
   | "success" | "danger" | "background" | "surface" | "foreground" | "muted" | "line";
 /** A colour token, or `token/step` with a step from `coverage.colors.opacities`. */
 export type ColorValue = ColorToken | `${ColorToken}/${10 | 20 | 50 | 80}`;

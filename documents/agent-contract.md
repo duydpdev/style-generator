@@ -10,7 +10,7 @@ Name the semantic keys after the app's own roles; name primitive colours and typ
 
 - `colors` is required and **flat camelCase**: `brand`, `brandHover`, `surfaceRaised`. No nested object, no `DEFAULT`, no `_`, no leading run of two or more capitals (`CTA`, `HTMLText`); a single capital or an inner run (`primaryCTA`) is fine. The schema rejects the rest.
 - An intent may declare state siblings `<intent>Hover` and `<intent>Active`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` from `@duydpdev/style-generator/cva`) turns `brand` into `bg-brand hover:bg-brand-hover active:bg-brand-active` when they exist and into `bg-brand` when they do not.
-- An intent may declare an `on<Intent>` text colour (`brand` → `onBrand`). `contrastText(tokens.colors, intent, fallback)` returns `text-on-brand` when it exists, else `text-<fallback>`.
+- An intent may declare a `<intent>Foreground` text colour (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` returns `text-brand-foreground` when it exists, else `text-<fallback>`. The older `on<Intent>` name (`text-on-brand`) still works but is deprecated: `contrastText` stops reading it in 9.0, and `style-gen doctor` warns on it.
 - A value `"$<key>"` aliases another key **of the same category** (`"brandHover": "$brandActive"` in `colors`). Not in `typography`. Unknown targets and cycles are schema errors.
 - Dark mode and palettes go in `themeAxes.<axis>.<variant>`; an override may only redefine keys that exist in the base category. Activation is `html[data-<axis>="<variant>"]` (use `themeAxisAttributes` from `@duydpdev/style-generator/recipes`). `base` is reserved as a variant name.
 - Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
@@ -26,12 +26,15 @@ Each rule above is enforced by the theme schema (`generate()`, `style-gen genera
 This convention applies to new themes and new design canvases. Never rename a key an existing app already uses to follow it: every class literal that uses the old key would stop matching. The library accepts any key that passes the schema; the convention is a recommendation, not a schema rule.
 
 - Colours come in two layers: primitives hold every literal value, semantic keys point at primitives.
-- A primitive key is a hue and a step, or `black`/`white`: it matches `^(?:[a-z]+(?:[1-9]00)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray100`, `white`; `gray50` is not one). Its value is a literal, never `$…`. The hue is lowercase letters only; steps run 100 to 900, and a scale may skip steps.
+- A primitive key is a hue and a step, or `black`/`white`: it matches `^(?:[a-z]+(?:50|[1-9]00|950)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray50`, `white`; `gray150` is not one). Its value is a literal, never `$…`. The hue is lowercase letters only; the steps are 50, 100 to 900 and 950, and a scale may skip steps.
 - A translucent colour is a primitive with an alpha suffix in percent (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
 - Every other colour key is semantic. Its value is `"$<primitive>"` in the base `colors` and in every `themeAxes` override that redefines it; a semantic key never aliases another semantic key, and an override never redefines a primitive.
 
-Semantic core: `background`, `surface`, `foreground`, `muted`, `border`, `primary`, `primaryHover`, `primaryActive`, `onPrimary`, `danger`, `success`, `warning`, `focus`, `scrim`.
+Semantic core: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.
 Product keys (`domainNutrition`) sit beside them.
+
+- A semantic key is a neutral key (`background`, `foreground`, `surface`, `surfaceRaised`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`) or `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: a core or product role, then the suffixes in that order, then at most one state, always last. `primaryForegroundHover` is the hover sibling of `primaryForeground`; `successSubtleForeground` is the text on a `successSubtle` fill. A product role is camelCase with one capital per segment (`domainNutrition`, not `primaryCTA`). Its first segment is not `on`, `ok`, `bad`, `warn` or `line`, and a role of several segments does not end in a suffix, a state, `Ink`, `Soft`, `Line`, `Ok`, `Bad` or `Warn` (`chartLine` reads as a v1 name).
+- `style-gen canvas check --naming` reports the v1 names with their v2 rename: `on<Role>` → `<role>Foreground`, `…Ink` → `…Foreground`, `…Soft` → `…Subtle`, `…Line` → `…Border`, `ok`/`bad`/`warn` → `success`/`danger`/`warning`, `line`/`lineStrong` → `border`/`borderStrong`. When the new name already exists, it says `merge manually` instead.
 
 - A typography key is `text<size><Weight>`: it matches `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. The digits are `fontSize` in px (a rem value counts as rem × 16) and the word is `fontWeight` 400/500/600/700. Every key with the same size has the same `lineHeight`. The scale is 12, 14, 16, 20, 24, 32, 40, 56.
 - A typography entry never sets `fontFamily`. A different face is the `font-<fontFamily key>` class next to the typography class: `class="text-56-regular font-display"`.
@@ -85,7 +88,7 @@ Imports allowed inside `src/ui/<folder>/`:
 
 ## 3. New component checklist
 
-1. Pick the roles the component needs and add the missing keys to the theme JSON (with `<intent>Hover`/`on<Intent>` siblings if wanted).
+1. Pick the roles the component needs and add the missing keys to the theme JSON (with `<intent>Hover`/`<intent>Foreground` siblings if wanted).
 2. Create `src/ui/<kebab-name>/` with `style.ts`, `types.ts`, `<Name>.tsx`, `index.ts`.
 3. In `style.ts`, declare the intents as `as const satisfies readonly ColorVariant<typeof theme>[]`.
 4. Build every class that names a theme key from a mapper over `tokens.*` (section 4); literals only for the cases section 4 allows, with a comment.

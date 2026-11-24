@@ -100,7 +100,7 @@ Colors are a **flat object**; only `colors` is required. Primitives named after 
     "foreground": "$gray900",
     "muted": "$gray500",
     "primary": "$blue600",
-    "onPrimary": "$white"
+    "primaryForeground": "$white"
   }
 }
 ```

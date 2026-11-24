@@ -4,7 +4,7 @@
     "brand": "#0f766e",
     "brandHover": "#115e59",
     "brandActive": "#134e4a",
-    "onBrand": "$paper",
+    "brandForeground": "$paper",
     "ink": "#1c1917",
     "paper": "#fafaf9",
     "panel": "#f5f5f4",

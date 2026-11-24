@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 27122a32f43b -->
+<!-- source: README.md sha256: 6b866be3b591 -->
 
 # @duydpdev/style-generator
 
@@ -18,7 +18,7 @@ Thư viện TypeScript + CLI biến một file theme JSON thành một **design 
 - ⚡ **Một lệnh gọi, một file** — `generate(theme)` trả về CSS để bạn `@import` cạnh `@import "tailwindcss"`; không cần `@plugin`, không cần file safelist.
 - 🚀 **Spacing bằng biến CSS** — các utility `.sp-*` với chuỗi giá trị dự phòng `var()` thay cho hàng nghìn class trong safelist.
 - 🧩 **Design token có kiểu + helper CVA** — `createVariantMapper` ánh xạ key của token sang tên class (gồm cả class trạng thái `hover:`/`active:`).
-- 🖥️ **CLI + plugin** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`), `styleGenVite`, `styleGenNext`.
+- 🖥️ **CLI + plugin** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`, `canvas check`), `styleGenVite`, `styleGenNext`.
 
 ## Cài đặt
 
@@ -121,7 +121,7 @@ Mọi vướng mắc và kết cục của từng cái: [Adopting 8.x in two rea
 ## Tài liệu
 
 - [Chỉ mục tài liệu](https://github.com/duydpdev/style-generator/blob/main/documents/README.md)
-- [CLI](./reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, các flag và file cấu hình
+- [CLI](./reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, `canvas`, các flag và file cấu hình
 - [Subpath](./reference/core.md#toàn-bộ-export-theo-subpath): entry point gốc chứa generator; token, CVA, spacing, recipe, plugin và bộ component nằm trong `./tokens`, `./cva`, `./spacing`, `./recipes`, `./vite`, `./next`, `./ui`, `./ui-react`, `./types`
 - [Bắt đầu](./getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
 - [Hướng dẫn](./guide.md), [khắc phục sự cố](./troubleshooting.md) và [cookbook](./cookbook.md)

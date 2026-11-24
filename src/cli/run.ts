@@ -3,6 +3,7 @@ import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { errorMessage } from "../node/errorMessage";
 
 import { BUDGET_USAGE, budgetCommand } from "./commands/budget";
+import { canvasCheckCommand } from "./commands/canvas";
 import { doctorCommand } from "./commands/doctor";
 import { generateCommand } from "./commands/generate";
 import { initCommand } from "./commands/init";
@@ -287,6 +288,57 @@ Exit codes: 0 within budget, 1 over budget, 2 usage error, no CSS found, or (wit
   },
 };
 
+const CANVAS_USAGE =
+  "style-gen canvas check --canvas <dir> --theme <file> [options]";
+
+const canvasCli: CliCommand = {
+  name: "canvas",
+  description:
+    "Check a design canvas against the theme and the canvas standard",
+  usage: `Usage: ${CANVAS_USAGE}
+       style-gen canvas check --inventory --canvas <dir>
+
+Check every *.dc.html and *.css under the canvas directory against ONE theme
+and the design-canvas standard (the manifest bundled with the package).
+
+Options:
+  --canvas <dir>                  Canvas directory (required)
+  --theme <file>                  Theme JSON (required unless --inventory)
+  --stamp <file>                  ds-stamp.json: the design system was built from this theme
+  --intents <a,b,c>               Allowed Button color values
+  --naming                        Theme naming, inline weights and hand-written values
+  --boards                        canvas.json pages and boards, board content, component pages, frames
+  --ds-version <namespace>=<ver>  canvas.json installs this design-system version
+  --standard <file>               Manifest replacing the bundled one
+  --inventory                     Print what the canvas uses (JSON) instead of checking
+
+Output: one "<file>:<line> <message>" line per violation, then "<n> violation(s)";
+or "OK: <n> files".
+
+Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
+(canvas, theme, stamp, canvas.json) or an invalid --standard.`,
+  options: {
+    canvas: { type: "string" },
+    theme: { type: "string" },
+    stamp: { type: "string" },
+    intents: { type: "string" },
+    standard: { type: "string" },
+    "ds-version": { type: "string" },
+    naming: { type: "boolean" },
+    boards: { type: "boolean" },
+    inventory: { type: "boolean" },
+  },
+  allowPositionals: true,
+  usageExitCode: 2,
+  run: (values, positionals, ctx) => {
+    if (positionals.length !== 1 || positionals[0] !== "check") {
+      logger.error(`Usage: ${CANVAS_USAGE}`);
+      return 2;
+    }
+    return canvasCheckCommand(values, ctx.cwd);
+  },
+};
+
 /** Every command, in the order the help lists them. */
 export const commands: readonly CliCommand[] = [
   initCli,
@@ -295,6 +347,7 @@ export const commands: readonly CliCommand[] = [
   schemaCli,
   tokensCli,
   budgetCli,
+  canvasCli,
 ];
 
 /* ------------------ Help ------------------ */
@@ -335,7 +388,8 @@ Options:
  * misspelled flag (`--them`) is an error instead of being silently ignored.
  *
  * Exit codes: 0 success, `--help`, `--version`, no command, or a cancelled
- * prompt; 1 failure, unknown command or flag (2 for `budget`'s flag errors).
+ * prompt; 1 failure, unknown command or flag (2 for `budget`'s and `canvas`'s
+ * flag errors).
  * @param {string[]} args - Arguments after `style-gen`
  * @param {string} cwd - The project root
  * @returns {Promise<number>} The process exit code

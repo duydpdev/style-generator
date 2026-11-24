@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 0bcf27efaf35 -->
+<!-- source: documents/reference/cli.md sha256: 96f37284abb9 -->
 
 # CLI
 
@@ -239,13 +239,40 @@ Coverage cost (upper bound):
 
 Mỗi dòng là một nhóm (`<category>/<class prefix>`): số byte gzip tiết kiệm được khi bỏ các rule của nó khỏi CSS, số rule, và thiết lập `coverage` khiến `@source inline` không sinh nhóm đó nữa. Con số là cận trên: các class mà source của bạn đang dùng vẫn nằm trong CSS sau khi cắt. Khi một group trong `coverage.colors.opacities` tự liệt kê tiền tố đó trong `prefixes` của nó, thiết lập kết thúc bằng `(opacity group <i> still adds it)`, với `<i>` là chỉ số bắt đầu từ 0 của group trong `opacities` (các bước thường cũng được đếm): chỉ thu hẹp `prefixes` của rule thì chưa bỏ được các class của group đó. Các dòng chi phí chỉ mang tính thông tin, không phải hợp đồng; chỉ dòng tóm tắt là hợp đồng.
 
+### `style-gen canvas`
+
+Kiểm tra một design canvas (một thư mục gồm các artboard `*.dc.html`, stylesheet của chúng và `canvas.json`) theo MỘT theme và chuẩn design canvas ([`documents/standards/design-canvas.md`](../../standards/design-canvas.md)). Lệnh con duy nhất là `check`.
+
+```bash
+yarn style-gen canvas check --canvas design/canvas --theme styles/theme.json --naming --boards
+yarn style-gen canvas check --inventory --canvas design/canvas
+```
+
+| Cờ                               | Kiểu      | Mặc định | Mô tả                                                                                                     |
+| :------------------------------- | :-------- | :------- | :-------------------------------------------------------------------------------------------------------- |
+| `--canvas <dir>`                 | `string`  | bắt buộc | Thư mục canvas; mọi `*.dc.html` và `*.css` bên trong đều được kiểm tra                                    |
+| `--theme <file>`                 | `string`  | bắt buộc | File theme JSON mà canvas lấy token; không cần khi dùng `--inventory`                                     |
+| `--stamp <file>`                 | `string`  | không có | `ds-stamp.json`: design system được build từ đúng các byte theme này, và khối provenance khớp với nó      |
+| `--intents <a,b,c>`              | `string`  | không có | Các giá trị `color` được phép của mọi `*.Button`                                                          |
+| `--naming`                       | `boolean` | tắt      | Quy ước đặt tên theme, không có `font-weight` inline, không viết tay radius, line height hay font family  |
+| `--boards`                       | `boolean` | tắt      | Page và board trong `canvas.json`, nội dung core board, page component, frame; canvas rỗng là một vi phạm |
+| `--ds-version <namespace>=<ver>` | `string`  | không có | `canvas.json` cài đúng phiên bản design system này, và khối provenance ghi đúng nó                        |
+| `--standard <file>`              | `string`  | đi kèm   | Manifest thay cho manifest đi kèm (cùng cấu trúc; file không hợp lệ là lỗi input)                         |
+| `--inventory`                    | `boolean` | tắt      | In ra những gì canvas dùng (biến, cỡ chữ và độ đậm, intent) dưới dạng JSON thay vì kiểm tra               |
+
+Đường dẫn được resolve theo thư mục hiện tại; các dòng vi phạm ghi file canvas tương đối với `--canvas`, còn theme và stamp giữ nguyên như khi truyền vào.
+
+Output: mỗi vi phạm một dòng `<file>:<line> <message>`, sau đó là `<n> violation(s)`; hoặc `OK: <n> files` khi không có vi phạm nào. Hợp đồng là format dòng đó, hai dòng tóm tắt và các mã thoát; câu chữ của từng message thì không, và có thể đổi trong một bản minor. Một bản minor chỉ được thêm key mới vào manifest dưới dạng optional, nên file `--standard` vẫn dùng được. Các mã thoát: `0` không có vi phạm (hoặc `--inventory`), `1` có vi phạm, `2` lỗi cách dùng (cờ lạ, lệnh con khác `check`, thiếu `--canvas` hoặc `--theme`, `--ds-version` sai dạng), một input không đọc hoặc không parse được (thư mục canvas, theme, stamp, một `canvas.json` không parse được; thông báo nêu tên file và lý do, ví dụ `theme.json: cannot read (ENOENT)`; thiếu `canvas.json` khi dùng `--boards` hoặc `--ds-version` là vi phạm `canvas.json:1 missing canvas.json`, mã `1`), hoặc `--standard` không hợp lệ (thông báo nêu key, ví dụ `standard.json: dsComponents …`).
+
+Manifest mặc định được đóng gói trong CLI; một bản sao nằm ở `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json` để làm điểm bắt đầu cho file `--standard`. Trong repository này, `node scripts/check-design-canvas.mjs` là wrapper đã deprecated, chuyển tiếp sang `style-gen canvas check`.
+
 ### `style-gen --version`
 
 In ra phiên bản CLI đã cài đặt.
 
 ### Trợ giúp và mã thoát
 
-`style-gen --help` liệt kê các lệnh; `style-gen <command> --help` in ra các tùy chọn của lệnh đó. Các cờ được phân tích nghiêm ngặt: **cờ lạ là một lỗi** (`--them` bị từ chối thay vì âm thầm dùng theme mặc định), và lệnh lạ cũng vậy. Mọi lệnh đều thoát với mã `0` khi thành công, khi gọi `--help`, `--version` hoặc khi hủy prompt, và thoát với mã `1` khi thất bại (`budget` dùng `2` cho lỗi sử dụng, xem ở trên).
+`style-gen --help` liệt kê các lệnh; `style-gen <command> --help` in ra các tùy chọn của lệnh đó. Các cờ được phân tích nghiêm ngặt: **cờ lạ là một lỗi** (`--them` bị từ chối thay vì âm thầm dùng theme mặc định), và lệnh lạ cũng vậy. Mọi lệnh đều thoát với mã `0` khi thành công, khi gọi `--help`, `--version` hoặc khi hủy prompt, và thoát với mã `1` khi thất bại (`budget` và `canvas` dùng `2` cho lỗi sử dụng, xem ở trên).
 
 ## File cấu hình
 

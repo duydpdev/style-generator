@@ -1,0 +1,7 @@
+{
+  "colors": {
+    "blue600": "#2563eb", "white": "#ffffff", "green700": "#15803d", "red100": "#fee2e2", "gray200": "#e5e7eb",
+    "primary": "$blue600", "onPrimary": "$white", "okInk": "$green700", "badSoft": "$red100", "line": "$gray200"
+  },
+  "borderRadius": { "md": "8px" }
+}

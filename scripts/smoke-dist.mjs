@@ -18,7 +18,10 @@
  *    library), `tokens`, `budget` (each also with `--help`) and `init`: in an
  *    empty project it prints the `style-gen generate` fallback and writes no
  *    generator script (`generate` then builds CSS from what it scaffolded);
- *    next to a `vite.config.ts` it prints the `styleGenVite()` snippet.
+ *    next to a `vite.config.ts` it prints the `styleGenVite()` snippet;
+ *    `canvas check --naming --boards` passes a minimal canvas built from the
+ *    emitted manifest and the theme `init` wrote, exits 1 with the retired
+ *    line once a `cl-*` board is added, and exits 2 without `--theme`.
  *
  * Run: node scripts/smoke-dist.mjs
  * Exits 1 on the first failed step.
@@ -377,6 +380,93 @@ if (
 ) {
   fail(`${config.output} written by style-gen generate has no @theme inline`);
 }
+
+// `canvas check` on the smallest canvas that passes `--naming --boards`: the
+// pages, core boards (sections, theme literals, provenance) and component
+// boards of the manifest the build emitted, over the theme `init` wrote.
+const standard = JSON.parse(
+  readFileSync(join(root, "dist/canvas/design-canvas-standard.json"), "utf8"),
+);
+const themeFile = join(project, config.theme);
+const starterTheme = JSON.parse(readFileSync(themeFile, "utf8"));
+const canvasDir = join(project, "canvas");
+mkdirSync(canvasDir);
+const frame = { w: 400, h: 300 };
+/**
+ * A board in the editor's markup, its root padded to the component minimum.
+ * @param {string} inner - Root content, on one line
+ * @returns {string} The board
+ */
+const boardHtml = (inner) =>
+  [
+    "<x-dc>",
+    `<div style="padding: calc(var(--spacing) * 8)">${inner}</div>`,
+    "</x-dc>",
+    `<script type="text/x-dc" data-dc-script data-props='${JSON.stringify({ $preview: { width: frame.w, height: frame.h } })}'></script>`,
+  ].join("\n");
+/** @type {{ pages: unknown[], boards: Record<string, unknown>, order: string[] }} */
+const canvasJson = { pages: standard.pages, boards: {}, order: [] };
+for (const { file, page, title } of standard.boards) {
+  const { sections = [], literals = [] } = standard.content?.[file] ?? {};
+  const blocks = [
+    ...sections.map((id) => `<section data-sg-section="${id}"></section>`),
+    ...literals.map(
+      (path) =>
+        `<script type="application/json" data-sg-literal="${path}">${JSON.stringify(starterTheme[path] ?? {})}</script>`,
+    ),
+  ];
+  if (file === standard.provenanceBoard)
+    blocks.push(
+      `<script type="application/json" data-sg-provenance="main">${JSON.stringify({ theme: "", lib: pkg.version, ds: "1", built: "2026-01-01" })}</script>`,
+    );
+  canvasJson.boards[file] = { title, page, ...frame };
+  canvasJson.order.push(file);
+  writeFileSync(join(canvasDir, file), boardHtml(blocks.join("")));
+}
+for (const name of standard.dsComponents) {
+  const file = `c-${name}.dc.html`;
+  const { page, titlePrefix } = standard.componentBoards;
+  canvasJson.boards[file] = { title: `${titlePrefix}${name}`, page, ...frame };
+  canvasJson.order.push(file);
+  writeFileSync(
+    join(canvasDir, file),
+    boardHtml('<p style="color: var(--sg-color-primary)">x</p>'),
+  );
+}
+writeFileSync(join(canvasDir, "canvas.json"), JSON.stringify(canvasJson));
+const canvasArgs = [cli, "canvas", "check", "--canvas", "canvas"];
+const canvasOk = runNode(
+  "style-gen canvas check --naming --boards",
+  [...canvasArgs, "--theme", config.theme, "--naming", "--boards"],
+  project,
+);
+if (!canvasOk.startsWith("OK: ")) {
+  fail(`canvas check on a valid canvas printed no OK line:\n${canvasOk}`);
+}
+writeFileSync(join(canvasDir, "cl-x.dc.html"), boardHtml("x"));
+const retired = spawnSync(
+  process.execPath,
+  [...canvasArgs, "--theme", config.theme, "--naming", "--boards"],
+  { cwd: project, encoding: "utf8" },
+);
+const retiredLine =
+  "cl-x.dc.html:1 cl-* boards are retired (split into one c-* board per component)";
+if (retired.status !== 1 || !retired.stdout.split("\n").includes(retiredLine)) {
+  fail(
+    `canvas check with a cl-* board: expected exit 1 and "${retiredLine}", got ${retired.status}:\n${retired.stdout}${retired.stderr}`,
+  );
+}
+console.log("✓ style-gen canvas check reports a cl-* board");
+const usage = spawnSync(process.execPath, canvasArgs, {
+  cwd: project,
+  encoding: "utf8",
+});
+if (usage.status !== 2) {
+  fail(
+    `canvas check without --theme: expected exit 2, got ${usage.status}:\n${usage.stdout}${usage.stderr}`,
+  );
+}
+console.log("✓ style-gen canvas check exits 2 without --theme");
 
 // Next to a vite.config.ts, `init` prints the styleGenVite() snippet.
 const viteProject = join(work, "vite-project");

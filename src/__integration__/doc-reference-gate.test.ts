@@ -18,6 +18,7 @@ const COMMAND_FLAGS: Record<string, string[]> = {
   schema: ["--out", "--config-out"],
   tokens: ["--out"],
   budget: ["--max-gzip"],
+  canvas: ["--canvas", "--theme"],
 };
 
 /** The shape of a per-category entry: `boolean | { prefixes?, keys? }`. */

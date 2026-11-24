@@ -26,7 +26,8 @@
   "pages": [
     { "id": "bia", "name": "00 · Bìa" },
     { "id": "ds", "name": "01 · Design system" },
-    { "id": "cl", "name": "02 · Component" }
+    { "id": "cl", "name": "02 · Component" },
+    { "id": "src", "name": "03 · Nguồn component" }
   ],
   "boards": [
     {
@@ -60,6 +61,41 @@
       "title": "Board / Design system / Xuất token CSS · JSON"
     }
   ],
-  "componentBoards": { "page": "cl", "titlePrefix": "Component / " },
-  "primitiveBoards": ["ds-mau.dc.html", "ds-token.dc.html"]
+  "componentBoards": {
+    "page": "cl",
+    "titlePrefix": "Component / ",
+    "maxWidth": 1440,
+    "maxHeight": 1600,
+    "minPaddingSteps": 8
+  },
+  "sourceBoards": { "page": "src", "prefix": "s-" },
+  "dsComponents": ["box", "text", "stack", "flex", "grid", "button"],
+  "primitiveBoards": ["ds-mau.dc.html", "ds-token.dc.html"],
+  "content": {
+    "Main.dc.html": {
+      "sections": ["product", "provenance", "structure", "toc"],
+      "literals": []
+    },
+    "ds-mau.dc.html": {
+      "sections": ["primitives", "semantic", "contrast"],
+      "literals": ["colors", "themeAxes"]
+    },
+    "ds-chu.dc.html": {
+      "sections": ["typography", "font-family"],
+      "literals": ["typography", "fontFamily"]
+    },
+    "ds-khung.dc.html": {
+      "sections": ["spacing", "radius", "shadow", "icon"],
+      "literals": ["borderRadius", "shadows"]
+    },
+    "ds-luoi.dc.html": {
+      "sections": ["breakpoints", "columns"],
+      "literals": []
+    },
+    "ds-token.dc.html": {
+      "sections": ["css", "json"],
+      "literals": []
+    }
+  },
+  "provenanceBoard": "Main.dc.html"
 }

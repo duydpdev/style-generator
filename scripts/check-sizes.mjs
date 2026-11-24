@@ -83,6 +83,7 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-11-17 (8.1.1: library built with Vite 8 / Rolldown; chunk rules are `output.codeSplitting.groups` in vite.config.ts, `manualChunks` is gone): index 9926, tokens 1675 (91 %), cva 752 (94 %), spacing 819, recipes 1821, vite 14221, next 14411, ui 2776, cli 28182. No budget changed. Without the `cva` and `tokens` groups `cva` measured 1007 B (126 %) and `tokens` 1835 B (99 %).
 // 2026-11-21 (8.2.1: group-aware coverage-cost suggestion, group-aware config error text, unique group steps in the config schema, budget help text; user-approved): cli measured 30870 B at 8.2.0; budget raised 30940 -> 31100 (+160 B, deliberately tighter than the usual +10 %). No other budget changed.
 // 2026-11-24 (starter theme that follows the naming convention: 16 primitives, the 14-key semantic core, value-named typography, a dark axis; CLI hints for the project's package manager; user-approved): cli measured 31727 B (starter theme ~670 B, package-manager detection and the hints that use it ~338 B; rewriting the typography as compact tuples was tried and grew it by 8 B, so the starter stays a plain object); budget raised 31100 -> 32000 (+273 B over the measurement). No other budget changed.
+// 2026-11-25 (`style-gen canvas check`: the design-canvas checker moves from scripts/check-design-canvas.mjs into the CLI, with its manifest inlined; user-approved 2026-11-24, measured 43873 B): cli budget raised 32000 -> 48270 (measured + ~10 %, rounded up to 10 B). No other budget changed.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -96,7 +97,7 @@ const budgets = {
   "ui-react": 70,
   vite: 15_430,
   next: 16_100,
-  cli: 32_000,
+  cli: 48_270,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.

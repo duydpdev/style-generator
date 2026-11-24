@@ -237,13 +237,40 @@ Coverage cost (upper bound):
 
 Each line is a group (`<category>/<class prefix>`): the gzip bytes saved when its rules are removed from the CSS, the rule count, and the `coverage` setting that stops `@source inline` from emitting it. The figure is an upper bound: classes your own source uses stay in the CSS after the cut. When a `coverage.colors.opacities` group lists the prefix in its own `prefixes`, the setting ends with `(opacity group <i> still adds it)`, `<i>` being the zero-based index of the group in `opacities` (plain steps count too): shrinking the rule's `prefixes` alone does not remove that group's classes. The cost lines are informational, not a contract; only the summary line is.
 
+### `style-gen canvas`
+
+Check a design canvas (a folder of `*.dc.html` artboards, their stylesheets and `canvas.json`) against ONE theme and the design-canvas standard ([`documents/standards/design-canvas.md`](../standards/design-canvas.md)). The only subcommand is `check`.
+
+```bash
+yarn style-gen canvas check --canvas design/canvas --theme styles/theme.json --naming --boards
+yarn style-gen canvas check --inventory --canvas design/canvas
+```
+
+| Flag                             | Type      | Default  | Description                                                                                                 |
+| :------------------------------- | :-------- | :------- | :---------------------------------------------------------------------------------------------------------- |
+| `--canvas <dir>`                 | `string`  | required | Canvas directory; every `*.dc.html` and `*.css` under it is checked                                         |
+| `--theme <file>`                 | `string`  | required | Theme JSON the canvas reads its tokens from; not needed with `--inventory`                                  |
+| `--stamp <file>`                 | `string`  | none     | `ds-stamp.json`: the design system was built from these theme bytes, and the provenance block matches it    |
+| `--intents <a,b,c>`              | `string`  | none     | The allowed `color` values of every `*.Button`                                                              |
+| `--naming`                       | `boolean` | off      | Theme naming convention, no inline `font-weight`, no hand-written radius, line height or font family        |
+| `--boards`                       | `boolean` | off      | `canvas.json` pages and boards, core-board content, component pages, frames; an empty canvas is a violation |
+| `--ds-version <namespace>=<ver>` | `string`  | none     | `canvas.json` installs this design-system version, and the provenance block names it                        |
+| `--standard <file>`              | `string`  | bundled  | A manifest that replaces the bundled one (same shape; an invalid file is an input error)                    |
+| `--inventory`                    | `boolean` | off      | Print what the canvas uses (variables, font sizes and weights, intents) as JSON instead of checking         |
+
+Paths are resolved against the current directory; violation lines name the canvas files relative to `--canvas`, and the theme and stamp as given.
+
+Output: one `<file>:<line> <message>` line per violation, then `<n> violation(s)`; or `OK: <n> files` when there is none. The contract is that line format, the two summary lines and the exit codes; the wording of a message is not, and may change in a minor release. A minor release may add manifest keys only as optional keys, so a `--standard` file keeps working. Exit codes: `0` no violation (or `--inventory`), `1` violations, `2` a usage error (unknown flag, a subcommand other than `check`, a missing `--canvas` or `--theme`, a malformed `--ds-version`), an input that cannot be read or parsed (canvas directory, theme, stamp, an unparsable `canvas.json`; the message names the file and the reason, e.g. `theme.json: cannot read (ENOENT)`; a missing `canvas.json` under `--boards` or `--ds-version` is the violation `canvas.json:1 missing canvas.json`, exit `1`), or an invalid `--standard` (the message names the key, e.g. `standard.json: dsComponents …`).
+
+The default manifest is bundled into the CLI; a copy ships at `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json` to start a `--standard` file from. In this repository, `node scripts/check-design-canvas.mjs` is a deprecated wrapper that forwards to `style-gen canvas check`.
+
 ### `style-gen --version`
 
 Print the installed CLI version.
 
 ### Help and exit codes
 
-`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` is rejected instead of silently using the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget` uses `2` for usage errors, see above).
+`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` is rejected instead of silently using the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget` and `canvas` use `2` for usage errors, see above).
 
 ## Configuration file
 

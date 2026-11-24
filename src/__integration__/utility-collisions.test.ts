@@ -1,3 +1,4 @@
+import postcss from "postcss";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,8 +8,9 @@ import {
   TAILWIND_STATIC_UTILITY_NAMES,
   findUtilityCollisions,
 } from "../cli/commands/utilityCollisions";
+import { generate } from "../core/generate";
 
-import { compileFixtureCss } from "./compileFixtureCss";
+import { compileFixtureCss, selectorTargetsClass } from "./compileFixtureCss";
 
 const escapeRegExp = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -96,6 +98,53 @@ describe("doctor color-prefix collision lists match the real Tailwind compiler",
       findUtilityCollisions({ colors: { primary: "#000", hidden: "#000" } }),
     ).toEqual([
       'colors.hidden → class "outline-hidden" collides with Tailwind\'s built-in "outline-hidden" utility',
+    ]);
+  });
+});
+
+/**
+ * Every `border-radius` value of the rules that target `classSelector`.
+ * @param {string} css - Compiled CSS
+ * @param {string} classSelector - Escaped class selector, with the leading `.`
+ * @returns {string[]} One value per matching declaration, in source order
+ */
+const radiusValues = (css: string, classSelector: string): string[] => {
+  const values: string[] = [];
+  postcss.parse(css).walkRules((rule) => {
+    if (
+      !rule.selectors.some((s) => selectorTargetsClass(s.trim(), classSelector))
+    )
+      return;
+    rule.walkDecls("border-radius", (decl) => {
+      values.push(decl.value);
+    });
+  });
+  return values;
+};
+
+describe("borderRadius.full against Tailwind's static rounded-full", () => {
+  it("the theme value wins: one rounded-full rule reads var(--sg-radius-full)", async () => {
+    const { css } = generate({
+      colors: { a: "#000" },
+      borderRadius: { full: "9999px" },
+    });
+    const out = await compileFixtureCss(css, ["rounded-full"]);
+    expect(radiusValues(out, ".rounded-full")).toEqual([
+      "var(--sg-radius-full)",
+    ]);
+    expect(
+      findUtilityCollisions({
+        colors: { a: "#000" },
+        borderRadius: { full: "9999px" },
+      }),
+    ).toEqual([]);
+  });
+
+  it("negative control: without borderRadius, rounded-full is Tailwind's static value", async () => {
+    const { css } = generate({ colors: { a: "#000" } });
+    const out = await compileFixtureCss(css, ["rounded-full"]);
+    expect(radiusValues(out, ".rounded-full")).toEqual([
+      "calc(infinity * 1px)",
     ]);
   });
 });

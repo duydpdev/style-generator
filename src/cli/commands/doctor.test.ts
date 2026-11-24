@@ -8,6 +8,7 @@ import {
   expect,
   beforeEach,
   afterEach,
+  onTestFinished,
   vi,
   type MockInstance,
 } from "vitest";
@@ -86,6 +87,13 @@ describe("doctorCommand", () => {
   });
 
   it("points at `generate` when the output has not been generated yet", () => {
+    vi.stubEnv(
+      "npm_config_user_agent",
+      "bun/1.1.30 npm/? node/v22.6.0 darwin arm64",
+    );
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
     writeProject(tmp, {
       "styles/theme.json": { colors: { primary: "#3B82F6" } },
     });
@@ -93,7 +101,7 @@ describe("doctorCommand", () => {
     expect(doctorCommand(tmp)).toBe(0);
 
     expect(lines()).toMatch(/Not generated yet/);
-    expect(lines()).toMatch(/yarn style-gen generate/);
+    expect(lines()).toContain("bun run style-gen generate");
   });
 
   it("a config that has a `plugin` key stops with a config error and prints no Script line", () => {

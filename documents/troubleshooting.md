@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Find the start of the message the CLI, `styleGenVite()` or `styleGenNext()` printed, then read the section with the same title. The bundler plugins prefix every message with `[style-gen-vite]` or `[style-gen-next]`; the text after the prefix is the same as the CLI's. Validation messages list one `path → message` line per problem. `yarn style-gen doctor` ([CLI](./reference/cli.md#style-gen-doctor)) checks the config, the theme and the generated CSS in one run.
+Find the start of the message the CLI, `styleGenVite()` or `styleGenNext()` printed, then read the section with the same title. The bundler plugins prefix every message with `[style-gen-vite]` or `[style-gen-next]`; the text after the prefix is the same as the CLI's. Validation messages list one `path → message` line per problem. `yarn style-gen doctor` ([CLI](./reference/cli.md#style-gen-doctor)) checks the config, the theme and the generated CSS in one run. A hint that names a command (`Run: … style-gen init`) prints it for the project's package manager, `yarn style-gen`, `pnpm exec style-gen`, `bun run style-gen` or `npm exec --no -- style-gen` ([CLI](./reference/cli.md#cli)).
 
 | Message starts with                                                                                                                                                                                                                                                      | Read                                                                                |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
@@ -70,7 +70,7 @@ The migration page lists every rename and each before and after: [Upgrading from
 
 ## Invalid JSON in and Theme file not found
 
-`Invalid JSON in <file>: …` carries the parser's position: a trailing comma, a comment or an unquoted key. `Theme file not found: <file>` means the path in `theme` (config) or `--theme` does not exist relative to the project root; the CLI adds `Run: yarn style-gen init`, which writes a starter theme and config. `Theme path is a directory` means the path names a folder.
+`Invalid JSON in <file>: …` carries the parser's position: a trailing comma, a comment or an unquoted key. `Theme file not found: <file>` means the path in `theme` (config) or `--theme` does not exist relative to the project root; the CLI adds `Run: … style-gen init`, which writes a starter theme and config. `Theme path is a directory` means the path names a folder.
 
 ## escapes project root
 
@@ -78,7 +78,7 @@ The migration page lists every rename and each before and after: [Upgrading from
 
 ## No config found
 
-`No style-gen.config.json or package.json#style-gen found in <directory>; using the defaults.` is an info line, not an error. `styleGenVite()` and `styleGenNext()` print it once per dev server or build process (with the `[style-gen-vite]` or `[style-gen-next]` prefix; Next.js evaluates its config in several worker processes, and each one prints it once), and `style-gen generate` prints it before `Run: yarn style-gen init` when the theme is missing. The directory is where the config was looked for: the Vite root, `process.cwd()` for Next.js, or the plugin's `root`. A wrong directory (Nuxt 4 sets Vite's root to `app/`) looks exactly like a project without a config: pass `root` ([Only { root } is accepted](#only--root--is-accepted)), or run `yarn style-gen init` to write the config.
+`No style-gen.config.json or package.json#style-gen found in <directory>; using the defaults.` is an info line, not an error. `styleGenVite()` and `styleGenNext()` print it once per dev server or build process (with the `[style-gen-vite]` or `[style-gen-next]` prefix; Next.js evaluates its config in several worker processes, and each one prints it once), and `style-gen generate` prints it before `Run: … style-gen init` when the theme is missing. The directory is where the config was looked for: the Vite root, `process.cwd()` for Next.js, or the plugin's `root`. A wrong directory (Nuxt 4 sets Vite's root to `app/`) looks exactly like a project without a config: pass `root` ([Only { root } is accepted](#only--root--is-accepted)), or run `yarn style-gen init` to write the config.
 
 ## must be a .ts, .mts or .cts file
 
@@ -120,17 +120,17 @@ Both come from a running dev server or `style-gen generate --watch`, and neither
 
 `style-gen init` never overwrites without asking and never redirects a config, so it stops instead of guessing. Under `--yes`:
 
-- `<file> is invalid, so --yes cannot tell where its theme lives:` followed by the config issues and `💡 Fix it first: yarn style-gen doctor`. Delete the removed or misspelled keys (`extraSources`, `axes`, `plugin`: [migration B10](./migration/7.x-to-8.0.md#b10-migration-helpers-are-removed)) and run it again, or use `style-gen init --rules-only` to refresh only the agent rules.
+- `<file> is invalid, so --yes cannot tell where its theme lives:` followed by the config issues and `💡 Fix it first: … style-gen doctor`. Delete the removed or misspelled keys (`extraSources`, `axes`, `plugin`: [migration B10](./migration/7.x-to-8.0.md#b10-migration-helpers-are-removed)) and run it again, or use `style-gen init --rules-only` to refresh only the agent rules.
 - `--theme <path> differs from the theme of <file> (<path>); --yes never redirects an existing config.` followed by `💡 Drop --theme, or run init without --yes to change it`. Drop `--theme`, or edit `theme` in the config.
 
 In every mode:
 
 - `Files already exist. Run interactively to confirm overwrite.` means the theme or a schema file exists and no terminal can confirm the overwrite. Run `init` in a terminal, or pass `--yes` to keep the files. It also covers a config that declares an existing theme, valid or not, and a declared theme that is missing next to an existing `style-gen.config.schema.json`.
-- `<file> is invalid and its "theme" cannot be read:` followed by the issues and `💡 Fix it first: yarn style-gen doctor, or pass --theme <path>` means the `theme` key is not a non-empty string, or the `package.json#style-gen` section is not an object, and there is no terminal and no `--theme`. Fix the config, or pass `--theme`.
+- `<file> is invalid and its "theme" cannot be read:` followed by the issues and `💡 Fix it first: … style-gen doctor, or pass --theme <path>` means the `theme` key is not a non-empty string, or the `package.json#style-gen` section is not an object, and there is no terminal and no `--theme`. Fix the config, or pass `--theme`.
 - `<file> is not valid JSON (<parser message>).` followed by `💡 Fix it, or delete it and run init again.` means `style-gen.config.json` cannot be parsed. Nothing is written until it is fixed or deleted.
 - `init writes or merges into <path>: the theme would overwrite it.` followed by `💡 Pass another --theme <path>` means `--theme` names either schema file, `style-gen.config.json` or `package.json`, however it is spelled (another case, a symlink). Nothing is written.
 
-Two lines are not failures. `The theme of <file> (<path>) is outside the project root: init writes no theme or theme schema for it.` is an info line: a shared theme (monorepo) is not scaffolded, and `init` writes only the config schema and the rules. `<file> is invalid and init left it as it is; generate rejects it:` (or, when another theme was chosen, `style-gen.config.json is invalid and init only merged the theme into it; generate rejects it:`) is a warning followed by the issues and `💡 Fix it: yarn style-gen doctor`: `init` keeps the theme and `output` an invalid config declares and does not rewrite it, so fix the config before `generate`. Declining the overwrite prompt on an invalid config writes nothing except the agent rules. A valid config or none gets the missing files, the config included.
+Two lines are not failures. `The theme of <file> (<path>) is outside the project root: init writes no theme or theme schema for it.` is an info line: a shared theme (monorepo) is not scaffolded, and `init` writes only the config schema and the rules. `<file> is invalid and init left it as it is; generate rejects it:` (or, when another theme was chosen, `style-gen.config.json is invalid and init only merged the theme into it; generate rejects it:`) is a warning followed by the issues and `💡 Fix it: … style-gen doctor`: `init` keeps the theme and `output` an invalid config declares and does not rewrite it, so fix the config before `generate`. Declining the overwrite prompt on an invalid config writes nothing except the agent rules. A valid config or none gets the missing files, the config included.
 
 ## schema refuses two files at one path
 

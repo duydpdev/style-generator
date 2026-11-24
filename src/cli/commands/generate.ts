@@ -19,6 +19,7 @@ import {
 } from "../../node/watchThemeFile";
 import { loadCliConfig } from "../loadCliConfig";
 import { logger } from "../logger";
+import { styleGenCommand } from "../packageManager";
 
 export interface GenerateArgs {
   theme?: string;
@@ -42,12 +43,14 @@ export interface GenerateHooks {
 
 /**
  * Print one failure the way the command always has.
+ * @param {string} cwd - Project root, for the package manager of the init hint
  * @param {{stage: string, message: string}} failure - The failed outcome
  * @param {string} failure.stage - Pipeline stage that failed
  * @param {string} failure.message - The message to print
  * @param {string} [noConfig] - Set when no config file exists: said before the init hint of a missing theme
  */
 function reportFailure(
+  cwd: string,
   failure: { stage: string; message: string },
   noConfig?: string,
 ): void {
@@ -62,7 +65,7 @@ function reportFailure(
     [
       failure.message,
       ...(noConfig === undefined ? [] : [noConfig]),
-      "💡 Run: yarn style-gen init",
+      `💡 Run: ${styleGenCommand(cwd, "init")}`,
     ].join("\n"),
   );
 }
@@ -75,7 +78,7 @@ function reportFailure(
  */
 function report(cwd: string, result: EmitResult, noConfig?: string): void {
   if (!result.ok) {
-    reportFailure(result, noConfig);
+    reportFailure(cwd, result, noConfig);
     return;
   }
   const out = path.relative(cwd, result.outFile);
@@ -111,7 +114,7 @@ function check(
   }
   const checked = checkTokensModule(target);
   if (!checked.ok) {
-    reportFailure(checked);
+    reportFailure(cwd, checked);
     return 1;
   }
   logger.success(`Tokens up to date: ${path.relative(cwd, target.tokensFile)}`);

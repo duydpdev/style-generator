@@ -102,7 +102,7 @@ async function scaffold(
   // so `generate` can build afterwards. An invalid config is the exception:
   // declining leaves it, and everything else, as it is.
   if (proceed === "fill" && found?.problem !== undefined) {
-    warnInvalidConfig(found.source, found.problem, false);
+    warnInvalidConfig(cwd, found.source, found.problem, false);
     const rules = await applyAgentRules(args, cwd, rulesSource, isInteractive);
     printNextSteps(
       detected,

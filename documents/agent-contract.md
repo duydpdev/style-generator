@@ -15,7 +15,7 @@ Name the semantic keys after the app's own roles; name primitive colours and typ
 - Dark mode and palettes go in `themeAxes.<axis>.<variant>`; an override may only redefine keys that exist in the base category. Activation is `html[data-<axis>="<variant>"]` (use `themeAxisAttributes` from `@duydpdev/style-generator/recipes`). `base` is reserved as a variant name.
 - Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
 - Avoid keys whose class equals a Tailwind utility (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` warns; rename to `clear`, `flat`, or a value-named typography key such as `text32Bold`.
-- `style-gen init` writes a starter theme whose keys and values are placeholders. Replace them following the [Naming convention](#naming-convention): semantic keys named after the app's roles, primitives and typography named after their values, and every value set for this app; a starter key left with its starter value is a copy, not a choice.
+- `style-gen init` writes a starter theme that already follows the [Naming convention](#naming-convention): gray, blue, red, green and amber primitives, the semantic core aliasing them, and value-named typography. Its keys are a shape to start from and its values are placeholders: rename or add semantic keys after the app's roles and set every value for this app; a starter value left as it is is a copy, not a choice.
 
 Each rule above is enforced by the theme schema (`generate()`, `style-gen generate`, the Vite/Next plugins) or reported by `style-gen doctor`. Keep `"$schema"` pointing at the generated `theme.schema.json` for editor validation.
 
@@ -73,7 +73,7 @@ src/ui/<kebab-name>/        # one folder per component, never a loose src/compon
   index.ts                  # re-exports the component and its types
 ```
 
-All generator options live in `style-gen.config.json` (`theme`, `output`, `tokensOutput` and every `generate()` option); the plugin takes only `root`. Run `yarn style-gen generate` once and commit the `theme.tokens.ts` it writes.
+All generator options live in `style-gen.config.json` (`theme`, `output`, `tokensOutput` and every `generate()` option); the plugin takes only `root`. Run `style-gen generate` once through the project's package manager (`yarn style-gen generate`, `npm exec --no -- style-gen generate`) and commit the `theme.tokens.ts` it writes.
 
 Imports allowed inside `src/ui/<folder>/`:
 
@@ -92,7 +92,7 @@ Imports allowed inside `src/ui/<folder>/`:
 5. Export `<name>Tables` (`satisfies RecipeTables`) and `<name>Recipe = recipeFromTables(<name>Tables)`.
 6. In `types.ts`, type `color` as `(typeof <name>Intents)[number]` and wrap the props with `Polymorphic`.
 7. In `<Name>.tsx`, render `cn(<name>Recipe({ … }), className)`; `index.ts` re-exports the component and its types.
-8. Run `yarn style-gen doctor` and `yarn tsc --noEmit`; after a production build, `yarn style-gen budget <css dir> --max-gzip <bytes>`.
+8. Run `style-gen doctor` and `tsc --noEmit` through the project's package manager (`yarn style-gen doctor`, `npm exec --no -- style-gen doctor`); after a production build, `style-gen budget <css dir> --max-gzip <bytes>`.
 
 ## 4. Type contract
 

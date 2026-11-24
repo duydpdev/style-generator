@@ -8,6 +8,7 @@ import {
   expect,
   beforeEach,
   afterEach,
+  onTestFinished,
   vi,
   type MockInstance,
 } from "vitest";
@@ -327,7 +328,14 @@ describe("generateCommand", () => {
       expect(read("styles/theme.css")).toContain("--color-*: initial;");
     });
 
-    it("returns 1 with an init hint when the theme file is missing", async () => {
+    it("returns 1 with an init hint for the project's package manager when the theme file is missing", async () => {
+      vi.stubEnv(
+        "npm_config_user_agent",
+        "npm/10.9.0 node/v22.11.0 darwin arm64 workspaces/false",
+      );
+      onTestFinished(() => {
+        vi.unstubAllEnvs();
+      });
       const code = await generateCommand(
         { theme: "styles/missing.json", out: "out.css" },
         tmp,
@@ -335,12 +343,19 @@ describe("generateCommand", () => {
 
       expect(code).toBe(1);
       expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-        /Theme file not found.*\n💡 Run: yarn style-gen init$/s,
+        /Theme file not found.*\n💡 Run: npm exec --no -- style-gen init$/s,
       );
       expect(exists("out.css")).toBe(false);
     });
 
     it("says no config was found before the init hint when the theme is missing (missing-config message)", async () => {
+      vi.stubEnv(
+        "npm_config_user_agent",
+        "yarn/4.5.0 npm/? node/v22.11.0 darwin arm64",
+      );
+      onTestFinished(() => {
+        vi.unstubAllEnvs();
+      });
       expect(await generateCommand({ out: "out.css" }, tmp)).toBe(1);
 
       expect(errorSpy.mock.calls[0]?.[0]).toBe(

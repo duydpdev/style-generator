@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 70c985d7c5c7 -->
+<!-- source: documents/agent-contract.md sha256: 25d333f23e69 -->
 
 # Hợp đồng cho agent
 
@@ -17,7 +17,7 @@ Các quy tắc mà một agent (hoặc một người) tuân theo khi viết the
 - Dark mode và palette nằm trong `themeAxes.<axis>.<variant>`; một override chỉ được định nghĩa lại các key đã có trong category gốc. Kích hoạt bằng `html[data-<axis>="<variant>"]` (dùng `themeAxisAttributes` từ `@duydpdev/style-generator/recipes`). `base` là tên variant dành riêng.
 - Mọi category khác (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) là tùy chọn và theo cùng ngữ pháp key. Mỗi mục typography cần `fontSize`, `lineHeight` và `fontWeight` dạng số.
 - Tránh key có class trùng một utility của Tailwind (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` sẽ cảnh báo; đổi tên thành `clear`, `flat`, hoặc một key typography đặt theo giá trị như `text32Bold`.
-- `style-gen init` ghi một theme khởi đầu với key và giá trị giữ chỗ. Thay chúng theo [Quy ước đặt tên](#quy-ước-đặt-tên): key ngữ nghĩa đặt theo vai trò của app, primitive và typography đặt theo giá trị, và mọi giá trị đặt lại cho app này; một key khởi đầu còn nguyên giá trị khởi đầu là bản chép, không phải một lựa chọn.
+- `style-gen init` ghi một theme khởi đầu đã theo đúng [Quy ước đặt tên](#quy-ước-đặt-tên): các primitive gray, blue, red, green và amber, bộ key ngữ nghĩa cốt lõi alias tới chúng, và typography đặt theo giá trị. Key của nó là khung để bắt đầu, còn giá trị chỉ là giữ chỗ: đổi tên hoặc thêm key ngữ nghĩa theo vai trò của app và đặt lại mọi giá trị cho app này; một giá trị khởi đầu còn nguyên là bản chép, không phải một lựa chọn.
 
 Mỗi quy tắc trên được schema của theme bắt buộc (`generate()`, `style-gen generate`, các plugin Vite/Next) hoặc được `style-gen doctor` báo. Giữ `"$schema"` trỏ tới `theme.schema.json` được sinh ra để editor kiểm tra.
 
@@ -75,7 +75,7 @@ src/ui/<kebab-name>/        # one folder per component, never a loose src/compon
   index.ts                  # re-exports the component and its types
 ```
 
-Mọi tùy chọn của generator nằm trong `style-gen.config.json` (`theme`, `output`, `tokensOutput` và mọi tùy chọn của `generate()`); plugin chỉ nhận `root`. Chạy `yarn style-gen generate` một lần và commit file `theme.tokens.ts` mà nó ghi ra.
+Mọi tùy chọn của generator nằm trong `style-gen.config.json` (`theme`, `output`, `tokensOutput` và mọi tùy chọn của `generate()`); plugin chỉ nhận `root`. Chạy `style-gen generate` một lần qua trình quản lý package của dự án (`yarn style-gen generate`, `npm exec --no -- style-gen generate`) và commit file `theme.tokens.ts` mà nó ghi ra.
 
 Import được phép bên trong `src/ui/<folder>/`:
 
@@ -94,7 +94,7 @@ Import được phép bên trong `src/ui/<folder>/`:
 5. Export `<name>Tables` (`satisfies RecipeTables`) và `<name>Recipe = recipeFromTables(<name>Tables)`.
 6. Trong `types.ts`, đặt type cho `color` là `(typeof <name>Intents)[number]` và bọc props bằng `Polymorphic`.
 7. Trong `<Name>.tsx`, render `cn(<name>Recipe({ … }), className)`; `index.ts` re-export component và các type của nó.
-8. Chạy `yarn style-gen doctor` và `yarn tsc --noEmit`; sau một bản build production, chạy `yarn style-gen budget <css dir> --max-gzip <bytes>`.
+8. Chạy `style-gen doctor` và `tsc --noEmit` qua trình quản lý package của dự án (`yarn style-gen doctor`, `npm exec --no -- style-gen doctor`); sau một bản build production, chạy `style-gen budget <css dir> --max-gzip <bytes>`.
 
 ## 4. Hợp đồng type
 

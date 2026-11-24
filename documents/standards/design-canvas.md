@@ -20,8 +20,9 @@ Why:
 3. Build the design system:
    `node scripts/build-ds.mjs --theme <theme.json> --config <style-gen.config.json> --preset <ds.preset.ts> --namespace <Name> --out <dir> [--name <title>]`.
    It writes `components/bundle.js`, `components/bundle.css`, `components/index.d.ts`, `components/Cover/preview.html`, `tokens.json`, `README.md` and `ds-stamp.json`.
-   The cover reads the `background`, `primary`, `foreground`, `success` and `warning` colour keys, so the theme needs them.
-   The producer checks its own output (README sections, cover variables, no unfilled placeholder) and writes nothing when a check fails; theme drift after a build is the checker's `--stamp` check.
+   The theme needs at least one `typography` key (the cover title and the Text component use one) and the `background`, `primary`, `foreground`, `success` and `warning` colour keys the cover reads.
+   The producer checks both before the build, names each missing key and exits 1 without writing anything. `borderRadius` is optional: without it the README's `## Radius` section says the theme defines no keys.
+   The producer also checks its own output (README sections, cover variables, no unfilled placeholder) and writes nothing when a check fails; theme drift after a build is the checker's `--stamp` check.
    The stamp records the library version, the git SHA, `srcDirty`, the sha256 of the theme bytes and the namespace. Build from a clean checkout: when `srcDirty` is `true`, the SHA does not identify the code in the bundle.
 4. Publish the output as a Design System artifact. Create it once and keep its URL; later builds update the same artifact.
 5. Copy `components/bundle.css` and `components/bundle.js` to the canvas as `ds/<namespace>/components/bundle.css` and `ds/<namespace>/components/bundle.js`, keeping the `components/` folder: the check skips the bundle stylesheet only at that path, and a flattened copy would be scanned for Tailwind's own variables. Do not copy `tokens.css`: it declares unprefixed variables, which is a second namespace on a canvas.

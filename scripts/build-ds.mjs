@@ -5,9 +5,10 @@
 // usage: node scripts/build-ds.mjs --theme <file> --config <file> --preset <file> --namespace <Name> --out <dir> [--name <title>]
 //
 // The bundle is built from this checkout (`dist/` + examples/harness/src/ui), so `gitSha`/`srcDirty` in
-// ds-stamp.json identify it. Every file is computed in memory and written last: a bundle that throws when a
-// component renders writes nothing, and so does output that fails `verifyDsOutput` (README sections, cover variables
-// and title class, no unfilled cover placeholder).
+// ds-stamp.json identify it. A theme without typography, or without a colour the cover reads, is refused before
+// the build (`dsInputFailures`; `borderRadius` is optional). Every file is computed in memory and written last: a
+// bundle that throws when a component renders writes nothing, and so does output that fails `verifyDsOutput`
+// (README sections, cover variables and title class, no unfilled cover placeholder).
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
@@ -34,6 +35,7 @@ import { generate } from "../dist/index.js";
 import {
   COMPONENTS,
   buildReadme,
+  dsInputFailures,
   renderCover,
   verifyDsOutput,
 } from "./ds-docs.mjs";
@@ -87,6 +89,7 @@ function firstChunk(result) {
 
 /**
  * The preset file imports without extensions, so Node cannot load it directly: bundle it, then import the chunk.
+ * Throws when the module lacks one of the presets the components bind.
  * @param {string} file - The preset module
  * @returns {Promise<Presets & Record<string, unknown>>} The preset module's exports
  */
@@ -103,9 +106,13 @@ async function loadPreset(file) {
       },
     }),
   );
-  return import(
+  /** @type {Presets & Record<string, unknown>} */
+  const presets = await import(
     `data:text/javascript;base64,${Buffer.from(chunk.code).toString("base64")}`
   );
+  for (const name of ["boxPreset", "buttonPreset", "textPreset"])
+    if (!presets[name]) throw new Error(`${file} does not export ${name}`);
+  return presets;
 }
 
 /**
@@ -398,6 +405,7 @@ function coverTitleClass(typography) {
  * @param {readonly string[]} input.intents - The Button preset's intents
  * @param {string} input.themeCss - `generate().css`, which declares the `--sg-*` variables the cover may read
  * @param {string} input.bundleCss - The compiled `components/bundle.css`
+ * @param {string} input.coverTemplate - `scripts/ds-cover.html.tmpl`
  * @returns {{ readme: string, cover: string, failures: string[] }} The two files and the gate's failures
  */
 function buildDocs({
@@ -408,13 +416,16 @@ function buildDocs({
   intents,
   themeCss,
   bundleCss,
+  coverTemplate,
 }) {
   const readme = buildReadme({ name, themeFile, theme, namespace, intents });
   const titleClass = coverTitleClass(theme.typography ?? {});
-  const cover = renderCover(
-    readFileSync(join(ROOT, "scripts/ds-cover.html.tmpl"), "utf8"),
-    { name, namespace, theme, titleClass },
-  );
+  const cover = renderCover(coverTemplate, {
+    name,
+    namespace,
+    theme,
+    titleClass,
+  });
   const coverVars = new Set(
     [...themeCss.matchAll(/(--sg-[a-z0-9-]+)\s*:/g)].map((m) => m[1] ?? ""),
   );
@@ -426,6 +437,19 @@ function buildDocs({
     bundleCss,
   });
   return { readme, cover, failures };
+}
+
+/**
+ * Reads the cover template and checks the theme against the producer's input requirements.
+ * @param {import("./ds-tokens.mjs").ThemeInput} theme - The theme, already accepted by `generate()`
+ * @returns {{ coverTemplate: string, failures: string[] }} The template and one failure per missing input
+ */
+function checkInputs(theme) {
+  const coverTemplate = readFileSync(
+    join(ROOT, "scripts/ds-cover.html.tmpl"),
+    "utf8",
+  );
+  return { coverTemplate, failures: dsInputFailures({ theme, coverTemplate }) };
 }
 
 /**
@@ -486,11 +510,13 @@ async function main() {
   // generate() validates the options with its strict schema; an unknown key throws there.
   const generated = generate(theme, /** @type {never} */ (options));
   const tokens = generated.tokens.Web;
+  const { coverTemplate, failures: inputFailures } = checkInputs(theme);
+  if (inputFailures.length > 0) {
+    console.error(inputFailures.join("\n"));
+    return 1;
+  }
 
   const presets = await loadPreset(presetPath);
-  for (const name of ["boxPreset", "buttonPreset", "textPreset"])
-    if (!presets[name])
-      throw new Error(`${presetPath} does not export ${name}`);
 
   const usageFile = join(dirname(presetPath), "ds.usage.json");
   const { usage, spacing } =
@@ -539,6 +565,7 @@ async function main() {
     intents: presets.buttonPreset.intents,
     themeCss: generated.css,
     bundleCss: css,
+    coverTemplate,
   });
   if (failures.length > 0) {
     console.error(failures.join("\n"));

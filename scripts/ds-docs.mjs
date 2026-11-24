@@ -134,6 +134,7 @@ function componentLines(namespace, firstType, intent) {
  */
 export function buildReadme({ name, themeFile, theme, namespace, intents }) {
   const typography = Object.entries(theme.typography ?? {});
+  const radius = Object.entries(theme.borderRadius ?? {});
   return [
     `# ${name}`,
     "",
@@ -166,15 +167,53 @@ export function buildReadme({ name, themeFile, theme, namespace, intents }) {
     "",
     "## Radius",
     "",
-    ...table(
-      ["key", "value"],
-      Object.entries(theme.borderRadius ?? {}).map(([k, v]) => [`\`${k}\``, v]),
-    ),
+    ...(radius.length === 0
+      ? ["This theme defines no `borderRadius` keys."]
+      : table(
+          ["key", "value"],
+          radius.map(([k, v]) => [`\`${k}\``, v]),
+        )),
     "",
     "## Components",
     "",
     ...componentLines(namespace, typography[0]?.[0], intents[0]),
   ].join("\n");
+}
+
+/**
+ * The colour keys the cover reads: every `{{v:<key>}}` placeholder of the template, in order, without repeats.
+ * @param {string} template - `scripts/ds-cover.html.tmpl`
+ * @returns {string[]} The keys
+ */
+const coverColourKeys = (template) => [
+  ...new Set(
+    [...template.matchAll(/\{\{v:(\w+)\}\}/g)].map(([, key]) => key ?? ""),
+  ),
+];
+
+/**
+ * The producer's input requirements, checked before the build: at least one typography key (the cover title and
+ * the Text component read one) and every colour the cover reads. `borderRadius` is optional.
+ * @param {object} input - The inputs
+ * @param {ThemeInput} input.theme - The theme, already accepted by `generate()`
+ * @param {string} input.coverTemplate - `scripts/ds-cover.html.tmpl`
+ * @returns {string[]} One failure per missing input; empty when the theme can build a design system
+ */
+export function dsInputFailures({ theme, coverTemplate }) {
+  const keys = coverColourKeys(coverTemplate);
+  const typography =
+    Object.keys(theme.typography ?? {}).length === 0
+      ? [
+          "theme has no typography: a design system needs at least one typography key (the cover title and the Text component use one)",
+        ]
+      : [];
+  const colours = keys
+    .filter((key) => !Object.hasOwn(theme.colors, key))
+    .map(
+      (key) =>
+        `theme has no colour key "${key}": the cover reads ${keys.join(", ")}`,
+    );
+  return [...typography, ...colours];
 }
 
 /**

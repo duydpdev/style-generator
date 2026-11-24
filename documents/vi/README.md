@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 3aefc9ea42e5 -->
+<!-- source: README.md sha256: 27122a32f43b -->
 
 # @duydpdev/style-generator
 
@@ -88,17 +88,21 @@ Import `./theme.css` cạnh `@import "tailwindcss";` trong một file CSS của 
 
 ### Theme
 
-Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
+Màu là một **object phẳng**; chỉ `colors` là bắt buộc. Các primitive đặt tên theo giá trị giữ giá trị literal, còn các key ngữ nghĩa đặt tên theo vai trò alias tới chúng bằng `$` ([quy ước đặt tên](./agent-contract.md#quy-ước-đặt-tên)):
 
 ```json
 {
   "$schema": "./theme.schema.json",
   "colors": {
-    "primary": "#3B82F6",
-    "secondary": "#6366F1",
-    "background": "#FFFFFF",
-    "foreground": "#111827",
-    "muted": "#6B7280"
+    "white": "#FFFFFF",
+    "gray500": "#6B7280",
+    "gray900": "#111827",
+    "blue600": "#2563EB",
+    "background": "$white",
+    "foreground": "$gray900",
+    "muted": "$gray500",
+    "primary": "$blue600",
+    "onPrimary": "$white"
   }
 }
 ```

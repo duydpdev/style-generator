@@ -118,8 +118,9 @@ const DEFAULT_STANDARD = join(
   "design-canvas-standard.json",
 );
 
-/** A primitive colour key: hue + step, or black/white, with an optional alpha. */
-const PRIMITIVE = /^(?:[a-z]+(?:[1-9]00)|black|white)(?:Alpha[1-9]\d?)?$/;
+/** A primitive colour key: hue + step, or black/white, with an optional alpha. Both agent contracts print its source. */
+export const PRIMITIVE =
+  /^(?:[a-z]+(?:[1-9]00)|black|white)(?:Alpha[1-9]\d?)?$/;
 
 /** Custom properties that are not a second token namespace. */
 const ALLOWED_VAR = /^--(?:sg-|tw-|layout-)|^--spacing$/;

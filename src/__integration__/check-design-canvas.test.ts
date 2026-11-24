@@ -775,7 +775,7 @@ describe("integration: scripts/check-design-canvas.mjs", () => {
 
     const violationCount = /^\d+ violation\(s\)$/;
 
-    it("CLI D6: a missing core board exits 1", () => {
+    it("CLI: a missing core board exits 1", () => {
       writeBoards();
       unlinkSync(join(canvas, "ds-mau.dc.html"));
       const run = cli("--boards");
@@ -784,7 +784,7 @@ describe("integration: scripts/check-design-canvas.mjs", () => {
       expect(run.last).toMatch(violationCount);
     });
 
-    it("CLI D6: a misnamed colour key exits 1", () => {
+    it("CLI: a misnamed colour key exits 1", () => {
       useTheme(named((t) => (t.colors.okInk = "#123")));
       board("<p>x</p>");
       const run = cli("--naming");
@@ -793,7 +793,7 @@ describe("integration: scripts/check-design-canvas.mjs", () => {
       expect(run.last).toMatch(violationCount);
     });
 
-    it("CLI D6: an inline font-weight exits 1", () => {
+    it("CLI: an inline font-weight exits 1", () => {
       useTheme(NAMED);
       board('<b style="font-weight:600">x</b>');
       const run = cli("--naming");
@@ -802,7 +802,7 @@ describe("integration: scripts/check-design-canvas.mjs", () => {
       expect(run.last).toMatch(violationCount);
     });
 
-    it("CLI D6: a primitive token on a screen exits 1", () => {
+    it("CLI: a primitive token on a screen exits 1", () => {
       useTheme(NAMED);
       board(
         '<p style="color:var(--sg-color-blue-600)">x</p>',

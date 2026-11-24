@@ -1,0 +1,65 @@
+{
+  "semanticCore": [
+    "background",
+    "surface",
+    "foreground",
+    "muted",
+    "border",
+    "primary",
+    "primaryHover",
+    "primaryActive",
+    "onPrimary",
+    "danger",
+    "success",
+    "warning",
+    "focus",
+    "scrim"
+  ],
+  "radius": ["sm", "md", "lg", "full"],
+  "weights": {
+    "400": "Regular",
+    "500": "Medium",
+    "600": "Semibold",
+    "700": "Bold"
+  },
+  "typeScale": [12, 14, 16, 20, 24, 32, 40, 56],
+  "pages": [
+    { "id": "bia", "name": "00 · Bìa" },
+    { "id": "ds", "name": "01 · Design system" },
+    { "id": "cl", "name": "02 · Component" }
+  ],
+  "boards": [
+    {
+      "file": "Main.dc.html",
+      "page": "bia",
+      "title": "Board / Bìa / Tổng quan board / v2"
+    },
+    {
+      "file": "ds-mau.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Màu sắc / Light + Dark"
+    },
+    {
+      "file": "ds-chu.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Typography & định dạng số"
+    },
+    {
+      "file": "ds-khung.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Spacing · Radius · Shadow · Icon"
+    },
+    {
+      "file": "ds-luoi.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Lưới & breakpoint"
+    },
+    {
+      "file": "ds-token.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Xuất token CSS · JSON"
+    }
+  ],
+  "componentBoards": { "page": "cl", "titlePrefix": "Component / " },
+  "primitiveBoards": ["ds-mau.dc.html", "ds-token.dc.html"]
+}

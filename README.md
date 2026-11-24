@@ -86,22 +86,26 @@ Import `./theme.css` next to `@import "tailwindcss";` in a CSS file of `styles/`
 
 ### The theme
 
-Colors are a **flat object**; only `colors` is required:
+Colors are a **flat object**; only `colors` is required. Primitives named after their values hold the literals, and semantic keys named after their role alias them with `$` ([naming convention](https://github.com/duydpdev/style-generator/blob/main/documents/agent-contract.md#naming-convention)):
 
 ```json
 {
   "$schema": "./theme.schema.json",
   "colors": {
-    "primary": "#3B82F6",
-    "secondary": "#6366F1",
-    "background": "#FFFFFF",
-    "foreground": "#111827",
-    "muted": "#6B7280"
+    "white": "#FFFFFF",
+    "gray500": "#6B7280",
+    "gray900": "#111827",
+    "blue600": "#2563EB",
+    "background": "$white",
+    "foreground": "$gray900",
+    "muted": "$gray500",
+    "primary": "$blue600",
+    "onPrimary": "$white"
   }
 }
 ```
 
-That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`heading1` → `.heading-1`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available. Opacity modifiers such as `bg-primary/10` need steps in `coverage.colors.opacities` ([`options`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md)).
+That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`text32Bold` → `.text-32-bold`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available. Opacity modifiers such as `bg-primary/10` need steps in `coverage.colors.opacities` ([`options`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md)).
 
 ## Used in
 

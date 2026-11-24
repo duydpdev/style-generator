@@ -6,6 +6,7 @@ import * as p from "@clack/prompts";
 import { readConfigFile } from "../../node/loadStyleGenConfig";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import { logger } from "../logger";
+import { styleGenCommand } from "../packageManager";
 import { getCssImport } from "../templates";
 
 import type { DetectedStack } from "./detectStack";
@@ -71,7 +72,7 @@ async function writeAgentRules(
   }
   if (!isInteractive) {
     logger.info(
-      `${RULES_FILE} was edited; kept. Run \`style-gen init --rules-only\` in an interactive terminal to replace it.`,
+      `${RULES_FILE} was edited; kept. Run \`${styleGenCommand(cwd, "init --rules-only")}\` in an interactive terminal to replace it.`,
     );
     return true;
   }
@@ -143,7 +144,7 @@ export async function runRulesOnly(
   const layout = readConfigLayout(readConfigFile(cwd));
   if (layout === undefined) {
     logger.info(
-      "No style-gen.config.json in this directory, so there are no CSS lines to print. Run `style-gen init` to scaffold the theme; it prints them.",
+      `No style-gen.config.json in this directory, so there are no CSS lines to print. Run \`${styleGenCommand(cwd, "init")}\` to scaffold the theme; it prints them.`,
     );
     return 0;
   }

@@ -14,7 +14,17 @@
  * - no artboard loads a `/_blob/` stylesheet or links a `/_blob/` file, both
  *   of which live outside the theme;
  * - with `--stamp`, the design system was built from these theme bytes; with
- *   `--intents`, every `*.Button` `color` is one of those variant names.
+ *   `--intents`, every `*.Button` `color` is one of those variant names;
+ * - with `--naming`, no `font-weight:` other than `inherit`, the theme keys
+ *   follow the naming convention (primitive/semantic colours, value-named
+ *   typography on the type scale, radius keys, the semantic core), and only the
+ *   manifest's `primitiveBoards` read a primitive colour variable;
+ * - with `--boards`, `canvas.json` holds the manifest's pages, core boards (in
+ *   order) and one `c-<kebab>` board per design-system component;
+ * - with `--ds-version <namespace>=<version>`, `canvas.json` installs that
+ *   design-system version.
+ *
+ * `--standard <file>` replaces the manifest (`design-canvas-standard.json`).
  *
  * Scanned: every `*.dc.html` and `*.css` under `--canvas`, recursively, except
  * `node_modules` and the two files a design-system producer writes
@@ -24,11 +34,13 @@
  * Node built-ins plus the built `dist/cva.js` (`toKebabCase`).
  */
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { toKebabCase } from "../dist/cva.js";
+
+import { COMPONENTS } from "./ds-docs.mjs";
 
 /**
  * @typedef {object} FontSize
@@ -63,6 +75,7 @@ import { toKebabCase } from "../dist/cva.js";
  * @property {Record<string, number>} dsGlobals - `component-from-global-scope` values
  * @property {string[]} dsPaths - Sorted unique `ds/…` references
  * @property {Located[]} fontShorthands - Every `font:` declaration
+ * @property {Located[]} fontWeights - Every `font-weight:` declaration
  * @property {Located[]} intents - Every `*.Button` `color`, bindings expanded to their literals
  */
 
@@ -81,10 +94,33 @@ import { toKebabCase } from "../dist/cva.js";
  * @property {string[]} blClasses - `bl-*` class names, one entry per use
  * @property {FontSize[]} fontSizes - `font-size:` declarations
  * @property {Located[]} fontShorthands - `font:` declarations
+ * @property {Located[]} fontWeights - `font-weight:` declarations
  * @property {string[]} dsGlobals - `component-from-global-scope` values, one per use
  * @property {string[]} dsPaths - `ds/…` references
  * @property {Located[]} intents - Button `color` values
  */
+
+/**
+ * @typedef {object} Standard
+ * @property {string[]} semanticCore - Colour keys every theme declares
+ * @property {string[]} radius - Allowed `borderRadius` keys
+ * @property {Record<string, string>} weights - `fontWeight` → the word in a typography key
+ * @property {number[]} typeScale - Allowed typography sizes in px
+ * @property {{ id: string, name: string }[]} pages - Pages of `canvas.json`
+ * @property {{ file: string, page: string, title: string }[]} boards - Core boards, in order
+ * @property {{ page: string, titlePrefix: string }} componentBoards - Page and title prefix of a component board
+ * @property {string[]} primitiveBoards - Files that may read a primitive colour variable
+ */
+
+/** The manifest `--standard` defaults to. */
+const DEFAULT_STANDARD = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "design-canvas-standard.json",
+);
+
+/** A primitive colour key: hue + step, or black/white, with an optional alpha. Both agent contracts print its source. */
+export const PRIMITIVE =
+  /^(?:[a-z]+(?:[1-9]00)|black|white)(?:Alpha[1-9]\d?)?$/;
 
 /** Custom properties that are not a second token namespace. */
 const ALLOWED_VAR = /^--(?:sg-|tw-|layout-)|^--spacing$/;
@@ -414,6 +450,24 @@ function collectFontSizes(file, text, lineOf) {
 }
 
 /**
+ * Every `font-weight:` declaration.
+ * @param {string} file - Path relative to the canvas dir (POSIX)
+ * @param {string} text - File contents
+ * @param {LineOf} lineOf - Index to line
+ * @returns {Located[]} In document order
+ */
+function collectFontWeights(file, text, lineOf) {
+  const declarations = text.matchAll(
+    /(?<![\w-])font-weight\s*:\s*(\{\{[^}]*\}\}|[^;"'}<>\n]+)/g,
+  );
+  return [...declarations].map((m) => ({
+    file,
+    line: lineOf(m.index),
+    value: (m[1] ?? "").trim(),
+  }));
+}
+
+/**
  * Every `*.Button` `color`, a binding expanded to the literals assigned to it.
  * @param {string} file - Path relative to the canvas dir (POSIX)
  * @param {string} text - File contents
@@ -461,6 +515,7 @@ export function scanText(file, text) {
       line: lineOf(m.index),
       value: (m[1] ?? "").trim(),
     })),
+    fontWeights: collectFontWeights(file, text, lineOf),
     dsGlobals: [
       ...text.matchAll(/component-from-global-scope\s*=\s*"([^"]*)"/g),
     ].map((m) => m[1] ?? ""),
@@ -517,6 +572,7 @@ export function inventoryCanvas(canvasDir) {
     dsGlobals: {},
     dsPaths: [],
     fontShorthands: [],
+    fontWeights: [],
     intents: [],
   };
   /** @type {Set<string>} */
@@ -532,6 +588,7 @@ export function inventoryCanvas(canvasDir) {
     for (const p of s.dsPaths) dsPaths.add(p);
     inv.fontSizes.push(...s.fontSizes);
     inv.fontShorthands.push(...s.fontShorthands);
+    inv.fontWeights.push(...s.fontWeights);
     inv.intents.push(...s.intents);
   }
   inv.dsPaths = [...dsPaths].sort();
@@ -563,6 +620,19 @@ export function themeVariableNames(theme) {
  * @property {string} theme - Theme JSON file the canvas must follow
  * @property {string} [stamp] - Design-system stamp JSON (`{ themeSha256 }`)
  * @property {readonly string[]} [intents] - Allowed button `color` values
+ * @property {boolean} [naming] - Check the naming convention and inline `font-weight`
+ * @property {boolean} [boards] - Check the pages, core boards and component boards of `canvas.json`
+ * @property {string} [standard] - Manifest file (default: `design-canvas-standard.json`)
+ * @property {{ namespace: string, version: string }} [dsVersion] - Design system `canvas.json` must install
+ */
+
+/**
+ * @typedef {object} FileRules
+ * @property {Set<string>} known - `themeVariableNames(theme)`
+ * @property {CheckOptions["intents"]} intents - Allowed button `color` values
+ * @property {boolean} naming - Whether the naming rules apply
+ * @property {Set<string>} primitiveVars - `--sg-color-*` names of the primitive colours
+ * @property {readonly string[]} primitiveBoards - Files allowed to read them
  */
 
 /**
@@ -593,11 +663,11 @@ function occurrenceViolation(o, known) {
 /**
  * Violations of one scanned file, each `<file>:<line> <message>`.
  * @param {ScannedFile} s - From `scanText`
- * @param {Set<string>} known - `themeVariableNames(theme)`
- * @param {CheckOptions["intents"]} intents - Allowed button `color` values
+ * @param {FileRules} rules - What to check
  * @returns {string[]} In check order
  */
-function fileViolations(s, known, intents) {
+function fileViolations(s, rules) {
+  const { known, intents } = rules;
   /** @type {string[]} */
   const out = [];
   /**
@@ -615,9 +685,348 @@ function fileViolations(s, known, intents) {
     report(f, `font-size ${f.value} (use a typography class)`);
   for (const f of s.fontShorthands.filter((x) => x.value !== "inherit"))
     report(f, "font shorthand (use a typography class)");
+  if (rules.naming)
+    for (const [where, message] of namingFileViolations(s, rules))
+      report(where, message);
   for (const i of intents ? s.intents : [])
     if (!intents?.includes(i.value)) report(i, `unknown intent ${i.value}`);
   return out;
+}
+
+/**
+ * The `--naming` rules of one scanned file: inline `font-weight`, and a
+ * primitive colour variable outside the manifest's `primitiveBoards`.
+ * @param {ScannedFile} s - From `scanText`
+ * @param {FileRules} rules - Primitive variables and the boards allowed to read them
+ * @returns {[{ file: string, line: number }, string][]} Location and message pairs
+ */
+function namingFileViolations(s, rules) {
+  /** @type {[{ file: string, line: number }, string][]} */
+  const out = s.fontWeights
+    .filter((x) => x.value !== "inherit")
+    .map((f) => [f, `font-weight ${f.value} (use a typography class)`]);
+  if (rules.primitiveBoards.includes(s.file)) return out;
+  for (const o of s.occurrences)
+    if (o.kind === "sgVar" && rules.primitiveVars.has(o.value))
+      out.push([o, `primitive token ${o.value} (use a semantic key)`]);
+  return out;
+}
+
+/**
+ * @param {unknown} value - Parsed JSON
+ * @returns {Record<string, unknown>} The value when it is a plain object, else `{}`
+ */
+function asRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? /** @type {Record<string, unknown>} */ (value)
+    : {};
+}
+
+/**
+ * @param {unknown} value - Parsed JSON
+ * @returns {unknown[]} The value when it is an array, else `[]`
+ */
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+/**
+ * @param {unknown} value - A colour value
+ * @returns {string | null} The alias target (`"$blue600"` → `blue600`), or null for a literal
+ */
+function aliasTarget(value) {
+  return typeof value === "string" && value.startsWith("$")
+    ? value.slice(1)
+    : null;
+}
+
+/**
+ * Reads a manifest file.
+ * @param {string} file - JSON manifest
+ * @returns {Standard} The parsed manifest
+ */
+function loadStandard(file) {
+  return /** @type {Standard} */ (JSON.parse(readFileSync(file, "utf8")));
+}
+
+/**
+ * Colour messages of a theme: primitives hold literals, semantic keys alias
+ * primitives, overrides redefine semantic keys only, the core is present.
+ * @param {Record<string, unknown>} theme - Parsed theme JSON
+ * @param {Standard} standard - Manifest
+ * @returns {string[]} Messages without a location
+ */
+function colourViolations(theme, standard) {
+  const colors = asRecord(theme.colors);
+  /** @type {(string | null)[]} */
+  const out = Object.entries(colors).map(([key, value]) =>
+    baseColourMessage(`colors.${key}`, key, value),
+  );
+  for (const [axis, variants] of Object.entries(asRecord(theme.themeAxes)))
+    for (const [variant, override] of Object.entries(asRecord(variants)))
+      for (const [key, value] of Object.entries(
+        asRecord(asRecord(override).colors),
+      ))
+        out.push(
+          overrideColourMessage(
+            `themeAxes.${axis}.${variant}.colors.${key}`,
+            key,
+            value,
+          ),
+        );
+  for (const name of standard.semanticCore)
+    if (!(name in colors)) out.push(`missing semantic core key ${name}`);
+  return out.filter((m) => m !== null);
+}
+
+/**
+ * @param {string} path - Where the alias is
+ * @param {string} target - Alias target
+ * @returns {string | null} The message when the target is not a primitive
+ */
+function aliasTargetMessage(path, target) {
+  return PRIMITIVE.test(target)
+    ? null
+    : `${path} aliases semantic key ${target} (alias a primitive)`;
+}
+
+/**
+ * A colour of the base `colors` record.
+ * @param {string} path - `colors.<key>`
+ * @param {string} key - Colour key
+ * @param {unknown} value - Its value
+ * @returns {string | null} The message, or null when the key follows the convention
+ */
+function baseColourMessage(path, key, value) {
+  const target = aliasTarget(value);
+  if (PRIMITIVE.test(key))
+    return target === null
+      ? null
+      : `${path} is a primitive name but holds an alias`;
+  return target === null
+    ? `${path} is not a primitive name and not an alias of a primitive`
+    : aliasTargetMessage(path, target);
+}
+
+/**
+ * A colour of a `themeAxes` override.
+ * @param {string} path - `themeAxes.<axis>.<variant>.colors.<key>`
+ * @param {string} key - Colour key
+ * @param {unknown} value - Its value
+ * @returns {string | null} The message, or null when the override follows the convention
+ */
+function overrideColourMessage(path, key, value) {
+  if (PRIMITIVE.test(key)) return `${path} overrides a primitive`;
+  const target = aliasTarget(value);
+  return target === null
+    ? `${path} is not an alias of a primitive`
+    : aliasTargetMessage(path, target);
+}
+
+/**
+ * Typography messages: `text<size><Weight>` keys that match their entry, sit
+ * on the type scale, set no font family and share a line height per size.
+ * @param {Record<string, unknown>} theme - Parsed theme JSON
+ * @param {Standard} standard - Manifest
+ * @returns {string[]} Messages without a location
+ */
+function typographyViolations(theme, standard) {
+  const pattern = new RegExp(
+    `^text(\\d{2,3})(${Object.values(standard.weights).join("|")})$`,
+  );
+  /** @type {string[]} */
+  const out = [];
+  /** @type {Map<number, string[]>} */
+  const lineHeights = new Map();
+  for (const [key, raw] of Object.entries(asRecord(theme.typography))) {
+    const entry = asRecord(raw);
+    const m = pattern.exec(key);
+    if (!m) {
+      out.push(`typography.${key} does not match text<size><Weight>`);
+      continue;
+    }
+    const { px, messages } = typographyEntryMessages(key, entry, m, standard);
+    out.push(...messages);
+    const group = lineHeights.get(px) ?? [];
+    group.push(`${key}=${String(entry.lineHeight)}`);
+    lineHeights.set(px, group);
+  }
+  for (const [px, group] of lineHeights) {
+    const distinct = new Set(group.map((g) => g.slice(g.indexOf("=") + 1)));
+    if (distinct.size > 1)
+      out.push(
+        `typography line-height differs at ${String(px)}px: ${group.join(", ")}`,
+      );
+  }
+  return out;
+}
+
+/**
+ * One typography entry against the size and weight its key names.
+ * @param {string} key - `text<size><Weight>` key
+ * @param {Record<string, unknown>} entry - Its entry
+ * @param {RegExpExecArray} m - The key's match: size, weight word
+ * @param {Standard} standard - Manifest
+ * @returns {{ px: number, messages: string[] }} The entry's size in px, and its messages
+ */
+function typographyEntryMessages(key, entry, m, standard) {
+  const path = `typography.${key}`;
+  const size = m[1] ?? "";
+  const word = m[2] ?? "";
+  const fontSize = String(entry.fontSize);
+  const weight = String(entry.fontWeight);
+  const px = fontSize.endsWith("rem")
+    ? parseFloat(fontSize) * 16
+    : parseFloat(fontSize);
+  const messages = [
+    px === Number(size)
+      ? null
+      : `${path} name says ${size}px, fontSize is ${fontSize}`,
+    standard.typeScale.includes(Number(size))
+      ? null
+      : `${path} size ${size}px is not on the scale`,
+    standard.weights[weight] === word
+      ? null
+      : `${path} name says ${word}, fontWeight is ${weight}`,
+    entry.fontFamily === undefined
+      ? null
+      : `${path} sets fontFamily (use a font-<family> class)`,
+  ];
+  return { px, messages: messages.filter((x) => x !== null) };
+}
+
+/**
+ * Every naming-convention message of a theme.
+ * @param {unknown} theme - Parsed theme JSON
+ * @param {Standard} standard - Manifest
+ * @returns {string[]} Messages without a location
+ */
+function namingViolations(theme, standard) {
+  const record = asRecord(theme);
+  const out = [
+    ...colourViolations(record, standard),
+    ...typographyViolations(record, standard),
+  ];
+  for (const key of Object.keys(asRecord(record.borderRadius)))
+    if (!standard.radius.includes(key))
+      out.push(
+        `borderRadius.${key} is not one of ${standard.radius.join(", ")}`,
+      );
+  return out;
+}
+
+/**
+ * Board messages of `canvas.json`: pages, core boards and their order,
+ * one board per design-system component.
+ * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
+ * @param {Set<string>} files - `*.dc.html` paths present in the canvas
+ * @param {Standard} standard - Manifest
+ * @returns {string[]} Messages without a location
+ */
+function boardViolations(canvasJson, files, standard) {
+  const pages = asArray(canvasJson.pages).map(asRecord);
+  /** @type {(string | null)[]} */
+  const out = standard.pages.map((page) => {
+    const found = pages.find((p) => p.id === page.id);
+    if (!found) return `missing page ${page.id}`;
+    return found.name === page.name
+      ? null
+      : `page ${page.id} is named "${String(found.name)}", expected "${page.name}"`;
+  });
+  const boards = asRecord(canvasJson.boards);
+  /**
+   * @param {string} file - Board file
+   * @returns {Record<string, unknown> | null} Its `canvas.json` entry when the file exists too
+   */
+  const present = (file) =>
+    files.has(file) && file in boards ? asRecord(boards[file]) : null;
+  for (const { file, page, title } of standard.boards)
+    out.push(
+      boardMessage(file, present(file), page, "core", (t) =>
+        t === title
+          ? null
+          : `board ${file} title "${String(t)}", expected "${title}"`,
+      ),
+    );
+  const order = asArray(canvasJson.order);
+  const indexes = standard.boards
+    .filter((b) => present(b.file) !== null)
+    .map((b) => order.indexOf(b.file));
+  if (
+    indexes.some(
+      (at, i) => at === -1 || (i > 0 && at <= (indexes[i - 1] ?? -1)),
+    )
+  )
+    out.push(
+      `core boards out of order in canvas.json#order (expected ${standard.boards.map((b) => b.file).join(", ")})`,
+    );
+  const { page, titlePrefix } = standard.componentBoards;
+  for (const { name } of COMPONENTS) {
+    const file = `c-${toKebabCase(name)}.dc.html`;
+    out.push(
+      boardMessage(file, present(file), page, "component", (t) =>
+        typeof t === "string" && t.startsWith(titlePrefix)
+          ? null
+          : `board ${file} title must start with "${titlePrefix}"`,
+      ),
+    );
+  }
+  return out.filter((m) => m !== null);
+}
+
+/**
+ * One board: present, on its page, with a valid title.
+ * @param {string} file - Board file
+ * @param {Record<string, unknown> | null} board - Its `canvas.json` entry, null when missing
+ * @param {string} page - Expected page id
+ * @param {"core" | "component"} kind - Which kind of board, for the missing message
+ * @param {(title: unknown) => string | null} titleMessage - Message for a wrong title
+ * @returns {string | null} The first message, or null
+ */
+function boardMessage(file, board, page, kind, titleMessage) {
+  if (!board) return `missing ${kind} board ${file}`;
+  if (board.page !== page)
+    return `board ${file} is on page ${String(board.page)}, expected ${page}`;
+  return titleMessage(board.title);
+}
+
+/**
+ * The installed version of one design system in `canvas.json`.
+ * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
+ * @param {{ namespace: string, version: string }} expected - Namespace and version
+ * @returns {string | null} The message, or null when that version is installed
+ */
+function dsVersionViolation(canvasJson, expected) {
+  const ds = asArray(canvasJson.designSystems)
+    .map(asRecord)
+    .find((d) => d.namespace === expected.namespace);
+  if (!ds) return `design system ${expected.namespace} is not installed`;
+  return ds.version === expected.version
+    ? null
+    : `design system ${expected.namespace} version ${String(ds.version)}, expected ${expected.version}`;
+}
+
+/**
+ * `canvas.json` checks (`--boards`, `--ds-version`), each `canvas.json:1 <message>`.
+ * @param {string} canvasDir - Canvas directory
+ * @param {CheckOptions} options - Which checks to run
+ * @param {() => Standard} standard - Manifest, loaded on demand
+ * @returns {string[]} Empty when neither check is asked for or both pass
+ */
+function canvasJsonViolations(canvasDir, options, standard) {
+  const { boards, dsVersion } = options;
+  if (!boards && dsVersion === undefined) return [];
+  const file = join(canvasDir, "canvas.json");
+  if (!existsSync(file)) return ["canvas.json:1 missing canvas.json"];
+  const canvasJson = asRecord(JSON.parse(readFileSync(file, "utf8")));
+  const files = new Set(
+    canvasFiles(canvasDir).filter((f) => f.endsWith(".dc.html")),
+  );
+  const messages = boards ? boardViolations(canvasJson, files, standard()) : [];
+  const version =
+    dsVersion === undefined ? null : dsVersionViolation(canvasJson, dsVersion);
+  if (version !== null) messages.push(version);
+  return messages.map((m) => `canvas.json:1 ${m}`);
 }
 
 /**
@@ -636,15 +1045,36 @@ function stampMatches(stamp, themeBytes) {
 
 /**
  * Violations of the one-theme rule, each `<file>:<line> <message>`.
- * @param {CheckOptions} options - Canvas, theme and the optional stamp and intents
+ * @param {CheckOptions} options - Canvas, theme and the optional checks
  * @returns {string[]} Empty when the canvas follows the theme
  */
-export function checkCanvas({ canvasDir, theme, stamp, intents }) {
+export function checkCanvas(options) {
+  const { canvasDir, theme, stamp, intents, naming = false } = options;
   const themeBytes = readFileSync(theme);
-  const known = themeVariableNames(JSON.parse(themeBytes.toString("utf8")));
-  const out = scanCanvas(canvasDir).flatMap((s) =>
-    fileViolations(s, known, intents),
+  /** @type {unknown} */
+  const parsed = JSON.parse(themeBytes.toString("utf8"));
+  /** @type {Standard | undefined} */
+  let loaded;
+  const standard = () =>
+    (loaded ??= loadStandard(options.standard ?? DEFAULT_STANDARD));
+  const primitiveKeys = Object.keys(asRecord(asRecord(parsed).colors)).filter(
+    (k) => PRIMITIVE.test(k),
   );
+  /** @type {FileRules} */
+  const rules = {
+    known: themeVariableNames(parsed),
+    intents,
+    naming,
+    primitiveVars: new Set(
+      primitiveKeys.map((k) => `--sg-color-${toKebabCase(k)}`),
+    ),
+    primitiveBoards: naming ? standard().primitiveBoards : [],
+  };
+  const out = scanCanvas(canvasDir).flatMap((s) => fileViolations(s, rules));
+  if (naming)
+    for (const message of namingViolations(parsed, standard()))
+      out.push(`${theme}:1 ${message}`);
+  out.push(...canvasJsonViolations(canvasDir, options, standard));
   if (stamp !== undefined && !stampMatches(stamp, themeBytes))
     out.push(
       `${stamp}:1 stamp does not match theme (rebuild the design system)`,
@@ -653,42 +1083,78 @@ export function checkCanvas({ canvasDir, theme, stamp, intents }) {
 }
 
 const USAGE =
-  "usage: node scripts/check-design-canvas.mjs --canvas <dir> --theme <file> [--stamp <file>] [--intents a,b,c] [--inventory]";
+  "usage: node scripts/check-design-canvas.mjs --canvas <dir> --theme <file> [--stamp <file>] [--intents a,b,c] [--naming] [--boards] [--standard <file>] [--ds-version <namespace>=<version>] [--inventory]";
+
+/** Flags that take a value. */
+const VALUE_FLAGS = new Set([
+  "--canvas",
+  "--theme",
+  "--stamp",
+  "--intents",
+  "--standard",
+  "--ds-version",
+]);
+
+/**
+ * @param {string} value - `<namespace>=<version>`
+ * @returns {{ namespace: string, version: string } | null} Both sides, or null unless there is exactly one `=` with non-empty sides
+ */
+function parseDsVersion(value) {
+  const parts = value.split("=");
+  const [namespace = "", version = ""] = parts;
+  return parts.length === 2 && namespace !== "" && version !== ""
+    ? { namespace, version }
+    : null;
+}
+
+/**
+ * @typedef {object} CliArgs
+ * @property {string} canvas - Canvas directory
+ * @property {string} theme - Theme JSON file
+ * @property {boolean} inventory - Print the inventory instead of checking
+ * @property {boolean} naming - `--naming`
+ * @property {boolean} boards - `--boards`
+ * @property {string} [stamp] - Stamp file
+ * @property {string[]} [intents] - Allowed button intents
+ * @property {string} [standard] - Manifest file
+ * @property {{ namespace: string, version: string }} [dsVersion] - Expected design-system version
+ */
 
 /**
  * Parses the CLI flags.
  * @param {string[]} args - `process.argv.slice(2)`
- * @returns {{ canvas: string, theme: string, stamp?: string, intents?: string[], inventory: boolean } | null} The flags, or null on a usage error
+ * @returns {CliArgs | null} The flags, or null on a usage error
  */
 export function parseArgs(args) {
   /** @type {Record<string, string>} */
   const values = {};
-  let inventory = false;
+  const booleans = { inventory: false, naming: false, boards: false };
   for (let i = 0; i < args.length; i++) {
-    const flag = args[i];
-    if (flag === "--inventory") {
-      inventory = true;
+    const flag = args[i] ?? "";
+    const name = flag.slice(2);
+    if (name === "inventory" || name === "naming" || name === "boards") {
+      booleans[name] = true;
       continue;
     }
-    if (
-      flag !== "--canvas" &&
-      flag !== "--theme" &&
-      flag !== "--stamp" &&
-      flag !== "--intents"
-    )
-      return null;
+    if (!VALUE_FLAGS.has(flag)) return null;
     const value = args[i + 1];
     if (value === undefined || value.startsWith("--")) return null;
-    values[flag.slice(2)] = value;
+    values[name] = value;
     i++;
   }
-  const { canvas, theme, stamp, intents } = values;
+  const { canvas, theme, stamp, intents, standard } = values;
+  const dsVersionText = values["ds-version"];
   if (canvas === undefined || theme === undefined) return null;
+  const dsVersion =
+    dsVersionText === undefined ? undefined : parseDsVersion(dsVersionText);
+  if (dsVersion === null) return null;
   return {
     canvas,
     theme,
-    inventory,
+    ...booleans,
     ...(stamp === undefined ? {} : { stamp }),
+    ...(standard === undefined ? {} : { standard }),
+    ...(dsVersion === undefined ? {} : { dsVersion }),
     ...(intents === undefined
       ? {}
       : {
@@ -717,6 +1183,10 @@ function main() {
     theme: args.theme,
     ...(args.stamp === undefined ? {} : { stamp: args.stamp }),
     ...(args.intents === undefined ? {} : { intents: args.intents }),
+    naming: args.naming,
+    boards: args.boards,
+    ...(args.standard === undefined ? {} : { standard: args.standard }),
+    ...(args.dsVersion === undefined ? {} : { dsVersion: args.dsVersion }),
   });
   if (violations.length > 0) {
     for (const v of violations) console.log(v);

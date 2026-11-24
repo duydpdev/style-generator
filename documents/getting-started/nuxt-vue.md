@@ -125,7 +125,7 @@ Create `app/theme/theme.json`. The `Button` below reads the colors `primary`, `s
 }
 ```
 
-`yarn style-gen init` (the [Quickstart](../../README.md#quickstart)) writes a smaller starter theme to `app/assets/css/theme.json` (with a `theme.schema.json` next to it) and a `style-gen.config.json` that points there. This tutorial keeps the theme in `app/theme/` instead: either skip `init`, or delete those two files it wrote and replace `style-gen.config.json` with the file shown below.
+`yarn style-gen init` (the [Quickstart](../../README.md#quickstart)) writes its own starter theme to `app/assets/css/theme.json` (with a `theme.schema.json` next to it) and a `style-gen.config.json` that points there. This tutorial keeps the theme in `app/theme/` instead: either skip `init`, or delete those two files it wrote and replace `style-gen.config.json` with the file shown below.
 
 ## Own the theme
 
@@ -235,7 +235,11 @@ import {
   COLOR_STATES,
   createVariantMapper,
 } from "@duydpdev/style-generator/cva";
-import type { ColorVariant } from "@duydpdev/style-generator/types";
+import type {
+  ColorVariant,
+  RoundedVariant,
+  TextVariant,
+} from "@duydpdev/style-generator/types";
 import {
   contrastText,
   pick,
@@ -295,13 +299,18 @@ const tint = {
   },
 } as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
-} as const;
+} as const satisfies {
+  background: ColorVariant<typeof theme>;
+  radius: RoundedVariant<typeof theme>;
+  type: TextVariant<typeof theme>;
+  typeLg: TextVariant<typeof theme>;
+};
 
 export type ButtonIntent = (typeof buttonIntents)[number];
 

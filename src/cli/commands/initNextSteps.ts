@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { logger } from "../logger";
+import { styleGenCommand } from "../packageManager";
 import { getBundlerSnippet, getCssImport } from "../templates";
 
 import type { BundlerStack, DetectedStack } from "./detectStack";
@@ -58,7 +59,7 @@ export function printNextSteps(
     logger.info(
       `📝 Next steps (no vite.config.*, next.config.* or nuxt.config.* found):
    1. Edit ${written.theme} with your design tokens
-   2. Write ${written.output} and ${tokensFile}: \`yarn style-gen generate\` (add --watch while you edit the theme)
+   2. Write ${written.output} and ${tokensFile}: \`${styleGenCommand(cwd, "generate")}\` (add --watch while you edit the theme)
    3. Import the CSS next to Tailwind from a CSS file in ${outDir}/:`,
     );
     logger.log(getCssImport(cwd, entry, written.output, exclude));

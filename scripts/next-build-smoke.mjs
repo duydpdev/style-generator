@@ -183,7 +183,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 `,
   "app/page.tsx": `export default function Page() {
-  return <main className="bg-primary text-secondary">style-gen</main>;
+  return <main className="bg-primary text-foreground">style-gen</main>;
 }
 `,
 };
@@ -196,7 +196,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 const EXPECTED_CSS = [
   ["--sg-color-primary", "theme variable"],
   [".bg-primary", "bg-primary utility"],
-  [".text-secondary", "text-secondary utility"],
+  [".text-foreground", "text-foreground utility"],
   ["data-theme", "html[data-theme] dark override"],
 ];
 
@@ -282,10 +282,10 @@ try {
           !filesBelow(
             join(scratch, ".next", "server", "app"),
             ".html",
-          ).includes('class="bg-primary text-secondary"')
+          ).includes('class="bg-primary text-foreground"')
         )
           problems.push(
-            "the prerendered page has no bg-primary text-secondary",
+            "the prerendered page has no bg-primary text-foreground",
           );
       }
     }

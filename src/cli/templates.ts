@@ -2,89 +2,83 @@ import path from "node:path";
 
 import type { DetectedStack } from "./commands/detectStack";
 
-export const themeTemplate = `{
-  "$schema": "./theme.schema.json",
-  "colors": {
-    "primary": "#3B82F6",
-    "secondary": "#6366F1",
-    "background": "#FFFFFF",
-    "surface": "#F9FAFB",
-    "foreground": "#111827",
-    "muted": "#6B7280"
+/**
+ * The starter theme `init` writes, following the agent contract's naming
+ * convention: primitives (`<hue><step>`, `white`, an `Alpha` primitive) hold
+ * every literal colour, the semantic core aliases them, typography keys are
+ * `text<size><Weight>` on the type scale with one line height per size, and
+ * radius keys are `sm`, `md`, `lg`, `full`. The values are placeholders.
+ */
+const starterTheme = {
+  $schema: "./theme.schema.json",
+  colors: {
+    white: "#FFFFFF",
+    gray100: "#F3F4F6",
+    gray200: "#E5E7EB",
+    gray400: "#9CA3AF",
+    gray500: "#6B7280",
+    gray700: "#374151",
+    gray800: "#1F2937",
+    gray900: "#111827",
+    gray900Alpha50: "rgba(17, 24, 39, 0.5)",
+    blue500: "#3B82F6",
+    blue600: "#2563EB",
+    blue700: "#1D4ED8",
+    blue800: "#1E40AF",
+    red600: "#DC2626",
+    green600: "#16A34A",
+    amber500: "#F59E0B",
+    background: "$white",
+    surface: "$gray100",
+    foreground: "$gray900",
+    muted: "$gray500",
+    border: "$gray200",
+    primary: "$blue600",
+    primaryHover: "$blue700",
+    primaryActive: "$blue800",
+    onPrimary: "$white",
+    danger: "$red600",
+    success: "$green600",
+    warning: "$amber500",
+    focus: "$blue500",
+    scrim: "$gray900Alpha50",
   },
-  "typography": {
-    "heading1": {
-      "fontSize": "32px",
-      "lineHeight": "120%",
-      "fontWeight": 700,
-      "letterSpacing": "-0.02em"
-    },
-    "body": {
-      "fontSize": "16px",
-      "lineHeight": "150%",
-      "fontWeight": 400,
-      "letterSpacing": "0px"
-    }
+  typography: {
+    text14Regular: { fontSize: "14px", lineHeight: "20px", fontWeight: 400 },
+    text16Regular: { fontSize: "16px", lineHeight: "24px", fontWeight: 400 },
+    text16Semibold: { fontSize: "16px", lineHeight: "24px", fontWeight: 600 },
+    text24Semibold: { fontSize: "24px", lineHeight: "32px", fontWeight: 600 },
+    text32Bold: { fontSize: "32px", lineHeight: "40px", fontWeight: 700 },
   },
-  "shadows": {
-    "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)",
-    "md": "0px 4px 6px rgba(0, 0, 0, 0.1)"
+  shadows: {
+    sm: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+    md: "0px 4px 6px rgba(0, 0, 0, 0.1)",
   },
-  "borderRadius": {
-    "sm": "4px",
-    "md": "8px",
-    "lg": "12px"
-  }
-}
-`;
+  borderRadius: { sm: "4px", md: "8px", lg: "12px", full: "9999px" },
+};
 
-export const themeTemplateDark = `{
-  "$schema": "./theme.schema.json",
-  "colors": {
-    "primary": "#3B82F6",
-    "secondary": "#6366F1",
-    "background": "#FFFFFF",
-    "surface": "#F9FAFB",
-    "foreground": "#111827",
-    "muted": "#6B7280"
-  },
-  "themeAxes": {
-    "theme": {
-      "dark": {
-        "colors": {
-          "background": "#111827",
-          "surface": "#1F2937",
-          "foreground": "#F9FAFB",
-          "muted": "#9CA3AF"
-        }
-      }
-    }
-  },
-  "typography": {
-    "heading1": {
-      "fontSize": "32px",
-      "lineHeight": "120%",
-      "fontWeight": 700,
-      "letterSpacing": "-0.02em"
+/** The dark variant re-points semantic keys at other primitives; it never redefines a primitive. */
+const starterDarkAxis = {
+  theme: {
+    dark: {
+      colors: {
+        background: "$gray900",
+        surface: "$gray800",
+        foreground: "$gray100",
+        muted: "$gray400",
+        border: "$gray700",
+      },
     },
-    "body": {
-      "fontSize": "16px",
-      "lineHeight": "150%",
-      "fontWeight": 400,
-      "letterSpacing": "0px"
-    }
   },
-  "shadows": {
-    "sm": "0px 1px 2px rgba(0, 0, 0, 0.05)",
-    "md": "0px 4px 6px rgba(0, 0, 0, 0.1)"
-  },
-  "borderRadius": {
-    "sm": "4px",
-    "md": "8px",
-    "lg": "12px"
-  }
-}
-`;
+};
+
+const { $schema, colors, ...rest } = starterTheme;
+
+/** The starter theme without dark mode, as `init` writes it. */
+export const themeTemplate = `${JSON.stringify(starterTheme, null, 2)}\n`;
+
+/** The starter theme with a `theme.dark` axis (`init --dark`), as `init` writes it. */
+export const themeTemplateDark = `${JSON.stringify({ $schema, colors, themeAxes: starterDarkAxis, ...rest }, null, 2)}\n`;
 
 const NO_ARGUMENT_NOTE =
   "// No arguments: reads style-gen.config.json (theme, output, options).";

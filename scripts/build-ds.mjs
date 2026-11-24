@@ -1,12 +1,14 @@
 // Builds the files of a claude.ai Design System artifact from a theme, its config and a component preset:
-// tokens.json, components/bundle.js, components/bundle.css, components/index.d.ts, README.md, ds-stamp.json.
-// The Design System type generates tokens.css, api/*.md and manifest.json itself.
+// tokens.json, components/bundle.js, components/bundle.css, components/index.d.ts, components/Cover/preview.html,
+// README.md, ds-stamp.json. The Design System type generates tokens.css, api/*.md and manifest.json itself.
 //
 // usage: node scripts/build-ds.mjs --theme <file> --config <file> --preset <file> --namespace <Name> --out <dir> [--name <title>]
 //
 // The bundle is built from this checkout (`dist/` + examples/harness/src/ui), so `gitSha`/`srcDirty` in
-// ds-stamp.json identify it. Every file is computed in memory and written last: a bundle that throws when a
-// component renders writes nothing.
+// ds-stamp.json identify it. A theme without typography, or without a colour the cover reads, is refused before
+// the build (`dsInputFailures`; `borderRadius` is optional). Every file is computed in memory and written last: a
+// bundle that throws when a component renders writes nothing, and so does output that fails `verifyDsOutput`
+// (README sections, cover variables and title class, no unfilled cover placeholder).
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
@@ -30,21 +32,19 @@ import { build } from "vite";
 import { toKebabCase } from "../dist/cva.js";
 import { generate } from "../dist/index.js";
 
+import {
+  COMPONENTS,
+  buildReadme,
+  dsInputFailures,
+  renderCover,
+  verifyDsOutput,
+} from "./ds-docs.mjs";
 import { themeToDsTokens } from "./ds-tokens.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const UI_DIR = join(ROOT, "examples/harness/src/ui");
 /** Header format of the Design System type's bundle (`@ds-bundle`, reference/format.md). */
 const BUNDLE_FORMAT = 4;
-/** Header order = the page's component order; the bindings mirror examples/harness/src/ui.ts. */
-const COMPONENTS = [
-  { name: "Box", preset: "boxPreset" },
-  { name: "Text", preset: "textPreset" },
-  { name: "Stack" },
-  { name: "Flex" },
-  { name: "Grid" },
-  { name: "Button", preset: "buttonPreset" },
-];
 /** Files whose change makes the bundle differ from the commit `gitSha` names. */
 const STAMP_PATHS = [
   "src/",
@@ -53,6 +53,8 @@ const STAMP_PATHS = [
   "scripts/build-ds.mjs",
   "scripts/ds-tokens.mjs",
   "scripts/ds-index.d.ts.tmpl",
+  "scripts/ds-docs.mjs",
+  "scripts/ds-cover.html.tmpl",
 ];
 /** Keys of style-gen.config.json that are not `generate()` options. */
 const CONFIG_ONLY_KEYS = new Set([
@@ -87,6 +89,7 @@ function firstChunk(result) {
 
 /**
  * The preset file imports without extensions, so Node cannot load it directly: bundle it, then import the chunk.
+ * Throws when the module lacks one of the presets the components bind.
  * @param {string} file - The preset module
  * @returns {Promise<Presets & Record<string, unknown>>} The preset module's exports
  */
@@ -103,9 +106,13 @@ async function loadPreset(file) {
       },
     }),
   );
-  return import(
+  /** @type {Presets & Record<string, unknown>} */
+  const presets = await import(
     `data:text/javascript;base64,${Buffer.from(chunk.code).toString("base64")}`
   );
+  for (const name of ["boxPreset", "buttonPreset", "textPreset"])
+    if (!presets[name]) throw new Error(`${file} does not export ${name}`);
+  return presets;
 }
 
 /**
@@ -152,6 +159,8 @@ export { jsx as jsxs, Fragment };
         resolve: {
           alias: [{ find: /^react\/jsx-runtime$/, replacement: shim }],
         },
+        // The bundle must not depend on NODE_ENV: development JSX imports react/jsx-dev-runtime, which bypasses the shim.
+        oxc: { jsx: { development: false } },
         build: {
           write: false,
           minify: false,
@@ -366,6 +375,84 @@ function warnDroppedColors(dsTokens) {
 }
 
 /**
+ * The cover title's class: the first typography key of size ≥ 32px, else the largest one.
+ * @param {Record<string, { fontSize: string }>} typography - The theme's typography
+ * @returns {string} The kebab-cased class, or "" for a theme without typography
+ */
+function coverTitleClass(typography) {
+  const px = (/** @type {string} */ size) =>
+    size.endsWith("rem")
+      ? Number.parseFloat(size) * 16
+      : Number.parseFloat(size);
+  const entries = Object.entries(typography);
+  const large = entries.find(([, t]) => px(t.fontSize) >= 32);
+  const largest = entries.reduce(
+    (/** @type {[string, { fontSize: string }] | undefined} */ best, e) =>
+      best && px(best[1].fontSize) >= px(e[1].fontSize) ? best : e,
+    undefined,
+  );
+  const key = (large ?? largest)?.[0];
+  return key ? toKebabCase(key) : "";
+}
+
+/**
+ * The README and the cover, and the failures of the producer's output gate.
+ * @param {object} input - The inputs
+ * @param {string} input.name - The design system's title
+ * @param {string} input.themeFile - The theme's file name
+ * @param {import("./ds-tokens.mjs").ThemeInput} input.theme - The theme
+ * @param {string} input.namespace - The bundle's global name
+ * @param {readonly string[]} input.intents - The Button preset's intents
+ * @param {string} input.themeCss - `generate().css`, which declares the `--sg-*` variables the cover may read
+ * @param {string} input.bundleCss - The compiled `components/bundle.css`
+ * @param {string} input.coverTemplate - `scripts/ds-cover.html.tmpl`
+ * @returns {{ readme: string, cover: string, failures: string[] }} The two files and the gate's failures
+ */
+function buildDocs({
+  name,
+  themeFile,
+  theme,
+  namespace,
+  intents,
+  themeCss,
+  bundleCss,
+  coverTemplate,
+}) {
+  const readme = buildReadme({ name, themeFile, theme, namespace, intents });
+  const titleClass = coverTitleClass(theme.typography ?? {});
+  const cover = renderCover(coverTemplate, {
+    name,
+    namespace,
+    theme,
+    titleClass,
+  });
+  const coverVars = new Set(
+    [...themeCss.matchAll(/(--sg-[a-z0-9-]+)\s*:/g)].map((m) => m[1] ?? ""),
+  );
+  const failures = verifyDsOutput({
+    readme,
+    cover,
+    coverVars,
+    titleClass,
+    bundleCss,
+  });
+  return { readme, cover, failures };
+}
+
+/**
+ * Reads the cover template and checks the theme against the producer's input requirements.
+ * @param {import("./ds-tokens.mjs").ThemeInput} theme - The theme, already accepted by `generate()`
+ * @returns {{ coverTemplate: string, failures: string[] }} The template and one failure per missing input
+ */
+function checkInputs(theme) {
+  const coverTemplate = readFileSync(
+    join(ROOT, "scripts/ds-cover.html.tmpl"),
+    "utf8",
+  );
+  return { coverTemplate, failures: dsInputFailures({ theme, coverTemplate }) };
+}
+
+/**
  * Parses the flags, builds every file in memory, self-checks the bundle, then writes the files.
  * @returns {Promise<number>} The exit code: 0 written, 1 failed, 2 usage
  */
@@ -423,11 +510,13 @@ async function main() {
   // generate() validates the options with its strict schema; an unknown key throws there.
   const generated = generate(theme, /** @type {never} */ (options));
   const tokens = generated.tokens.Web;
+  const { coverTemplate, failures: inputFailures } = checkInputs(theme);
+  if (inputFailures.length > 0) {
+    console.error(inputFailures.join("\n"));
+    return 1;
+  }
 
   const presets = await loadPreset(presetPath);
-  for (const name of ["boxPreset", "buttonPreset", "textPreset"])
-    if (!presets[name])
-      throw new Error(`${presetPath} does not export ${name}`);
 
   const usageFile = join(dirname(presetPath), "ds.usage.json");
   const { usage, spacing } =
@@ -468,18 +557,20 @@ async function main() {
     themeSha256: createHash("sha256").update(themeBytes).digest("hex"),
     namespace,
   };
-  const readme = [
-    `# ${flags.name ?? namespace}`,
-    "",
-    "## Theme",
-    "",
-    `Built from \`${basename(themePath)}\` by the style-generator design-system producer; do not edit token values here.`,
-    "",
-    "## Components",
-    "",
-    ...COMPONENTS.map((c) => `- ${c.name}`),
-    "",
-  ].join("\n");
+  const { readme, cover, failures } = buildDocs({
+    name: flags.name ?? namespace,
+    themeFile: basename(themePath),
+    theme,
+    namespace,
+    intents: presets.buttonPreset.intents,
+    themeCss: generated.css,
+    bundleCss: css,
+    coverTemplate,
+  });
+  if (failures.length > 0) {
+    console.error(failures.join("\n"));
+    return 1;
+  }
 
   /** @type {[string, string][]} */
   const files = [
@@ -492,6 +583,7 @@ async function main() {
       "components/index.d.ts",
       indexDts(theme, tokens, presets, namespace, basename(themePath)),
     ],
+    ["components/Cover/preview.html", cover],
   ];
   for (const [path, text] of files) {
     mkdirSync(dirname(join(outDir, path)), { recursive: true });

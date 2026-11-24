@@ -370,6 +370,9 @@ export default pluginTs.config(
       "*.cjs",
       ".yarn/*",
       "coverage/*",
+      // Git-ignored local working directories (plans, brainstorms); never committed or published.
+      "documents/plans/**",
+      "documents/brainstorm/**",
       "examples/**/.next/**",
       "examples/**/.nuxt/**",
       "examples/**/.output/**",

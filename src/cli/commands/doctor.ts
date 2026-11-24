@@ -16,6 +16,7 @@ import { resolveEmitTarget } from "../../node/resolveEmitTarget";
 import { resolveProjectPath } from "../../node/resolveProjectPath";
 import type { EmitTarget } from "../../node/themeEmitter";
 import { logger } from "../logger";
+import { styleGenCommand } from "../packageManager";
 
 import { findAliasHints } from "./aliasHints";
 import { findUtilityCollisions } from "./utilityCollisions";
@@ -105,8 +106,13 @@ function checkTheme(cwd: string, config: StyleGenConfig): boolean {
   return false;
 }
 
-const FIX_HINT =
-  "💡 Fix errors above or start fresh by running: yarn style-gen init\n";
+/**
+ * The hint after a failed check.
+ * @param {string} cwd - Project root, for the package manager
+ * @returns {string} The hint line
+ */
+const fixHint = (cwd: string): string =>
+  `💡 Fix errors above or start fresh by running: ${styleGenCommand(cwd, "init")}\n`;
 
 /**
  * Report the config file. An unusable one (malformed, schema issues) ends the
@@ -159,7 +165,7 @@ export function doctorCommand(cwd: string = process.cwd()): number {
 
   if (checkConfig(configFile)) {
     logger.log("");
-    logger.log(FIX_HINT);
+    logger.log(fixHint(cwd));
     return 1;
   }
 
@@ -173,14 +179,14 @@ export function doctorCommand(cwd: string = process.cwd()): number {
   logger.log("");
 
   if (themeFailed || output === "error") {
-    logger.log(FIX_HINT);
+    logger.log(fixHint(cwd));
     return 1;
   }
 
   logger.log(
     output === "generated"
       ? "💡 Everything looks good!\n"
-      : "💡 Setup looks complete! Generate your CSS by running: yarn style-gen generate\n",
+      : `💡 Setup looks complete! Generate your CSS by running: ${styleGenCommand(cwd, "generate")}\n`,
   );
   return 0;
 }

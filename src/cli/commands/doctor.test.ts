@@ -436,6 +436,41 @@ describe("doctorCommand", () => {
       expect(out.match(/colors\.3 →/g)).toHaveLength(2);
     });
 
+    it.each([
+      ["zIndex", { zIndex: { auto: 0, "10": 10, modal: 50 } }, ["auto", "10"]],
+      [
+        "motionDuration",
+        { motionDuration: { initial: "0s", "150": "150ms", fast: "100ms" } },
+        ["initial", "150"],
+      ],
+      [
+        "motionEasing",
+        {
+          motionEasing: {
+            linear: "linear",
+            in: "ease-in",
+            inOut: "ease-in-out",
+            standard: "ease-out",
+          },
+        },
+        ["linear", "in", "inOut"],
+      ],
+    ] as const)(
+      "warns on the %s keys whose class Tailwind ships",
+      (category, scale, colliding) => {
+        runWithTheme({ colors: { primary: "#000" }, ...scale });
+
+        expect(doctorCommand(tmp)).toBe(0);
+        const out = lines();
+        const reported = Object.keys(
+          Object.values<object>(scale)[0] ?? {},
+        ).filter((key) => out.includes(`${category}.${key} → class `));
+        // Integer-like keys enumerate first, so compare as sets.
+        const byName = (a: string, b: string): number => a.localeCompare(b);
+        expect([...reported].sort(byName)).toEqual([...colliding].sort(byName));
+      },
+    );
+
     it("prints no collision warning for a clean theme", () => {
       runWithTheme({
         colors: { primary: "#3B82F6" },

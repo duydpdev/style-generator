@@ -86,7 +86,16 @@
     },
     "ds-khung.dc.html": {
       "sections": ["spacing", "radius", "shadow", "icon"],
-      "literals": ["borderRadius", "shadows"]
+      "literals": [
+        "borderRadius",
+        "shadows",
+        "motionDuration",
+        "motionEasing",
+        "controlHeight",
+        "iconSize",
+        "opacity",
+        "zIndex"
+      ]
     },
     "ds-luoi.dc.html": {
       "sections": ["breakpoints", "columns"],

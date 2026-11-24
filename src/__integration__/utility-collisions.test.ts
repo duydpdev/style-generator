@@ -5,6 +5,7 @@ import {
   TAILWIND_COLOR_NUMERIC_ROOTS,
   TAILWIND_COLOR_STATIC_CLASSES,
   TAILWIND_NUMERIC_UTILITY_ROOTS,
+  TAILWIND_SCALE_COLLISIONS,
   TAILWIND_STATIC_UTILITY_NAMES,
   findUtilityCollisions,
 } from "../cli/commands/utilityCollisions";
@@ -56,6 +57,40 @@ describe("doctor typography collision lists match the real Tailwind compiler", (
       findUtilityCollisions({
         colors: { primary: "#000" },
         typography: { heading1: typo, body: typo, caption: typo, title2: typo },
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("doctor scale collision lists match the real Tailwind compiler", () => {
+  const owned = TAILWIND_SCALE_COLLISIONS.flatMap(
+    ({ category, statics, numeric }) => [
+      ...statics.map((name) => `${category.classPrefixes[0]}-${name}`),
+      ...(numeric ? [`${category.classPrefixes[0]}-10`] : []),
+    ],
+  );
+
+  it.each(owned)("Tailwind owns %s", async (className) => {
+    expect(await tailwindOwns(className)).toBe(true);
+  });
+
+  it("does not own the clean names doctor accepts (negative control)", async () => {
+    for (const className of [
+      "z-modal",
+      "opacity-muted",
+      "duration-fast",
+      "ease-standard",
+      "ease-10",
+    ]) {
+      expect(await tailwindOwns(className)).toBe(false);
+    }
+    expect(
+      findUtilityCollisions({
+        colors: { primary: "#000" },
+        zIndex: { modal: 50 },
+        opacity: { muted: 0.64 },
+        motionDuration: { fast: "150ms" },
+        motionEasing: { standard: "ease-out", "10": "linear" },
       }),
     ).toEqual([]);
   });

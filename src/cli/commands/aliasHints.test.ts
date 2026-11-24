@@ -43,6 +43,26 @@ describe("findAliasHints", () => {
     ]);
   });
 
+  it("skips the literal scales, which take no $ alias", () => {
+    const hints = findAliasHints(
+      parse({
+        colors: { primary: "#000" },
+        motionDuration: { fast: "150ms", slow: "300ms" },
+        zIndex: { overlay: 40, modal: 50 },
+        themeAxes: {
+          motion: {
+            reduced: {
+              motionDuration: { slow: "150ms" },
+              zIndex: { modal: 40 },
+            },
+          },
+        },
+      }),
+    );
+
+    expect(hints).toEqual([]);
+  });
+
   it("skips an override equal to its own base key (a redundant override, not an alias candidate)", () => {
     expect(
       findAliasHints(

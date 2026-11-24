@@ -14,7 +14,16 @@ import {
   reportKebabCollisions,
 } from "./themeCollisionChecks";
 import { forEachAxisVariant } from "./forEachAxisVariant";
-import { TokenKey, TokenValue, TypographyValue } from "./tokenGrammar";
+import {
+  DurationValue,
+  EasingValue,
+  OpacityValue,
+  SizeValue,
+  TokenKey,
+  TokenValue,
+  TypographyValue,
+  ZIndexValue,
+} from "./tokenGrammar";
 
 /**
  * A single typography variant. `letterSpacing`, `fontFamily` and
@@ -88,7 +97,7 @@ const TypographyRecordSchema = z
  * descriptor in `builtInCategories.ts`; `builtInCategories.test-d.ts` fails
  * the type check when the two disagree.
  */
-const ThemeCssVarShape = z.strictObject({
+const ThemeAliasShape = z.strictObject({
   colors: z.record(TokenKey, TokenValue),
   shadows: z.record(TokenKey, TokenValue).optional(),
   backdropBlurs: z.record(TokenKey, TokenValue).optional(),
@@ -96,6 +105,32 @@ const ThemeCssVarShape = z.strictObject({
   fontFamily: z.record(TokenKey, TokenValue).optional(),
   borderWidth: z.record(TokenKey, TokenValue).optional(),
 });
+
+/**
+ * The scale categories: CSS-var categories whose values follow one typed
+ * grammar each (a time, an easing, a length, a 0–1 number, an integer), so
+ * they hold no `$` alias. Their descriptors set `literalScale`.
+ */
+/**
+ * `opacity` key: Tailwind reads `--opacity-<key>` for the colour `/<key>`
+ * modifier too, and `color-mix()` needs a percentage there, so a digit-only
+ * key (`50`) would break the `/50` step of every colour class.
+ */
+const OpacityKey = TokenKey.refine(
+  (key) => !/^\d+$/.test(key),
+  "A digit-only opacity key would replace the colour modifier step of the same number (bg-primary/50 reads --opacity-50); name it by role (disabled, muted)",
+);
+
+const ThemeScaleShape = z.strictObject({
+  motionDuration: z.record(TokenKey, DurationValue).optional(),
+  motionEasing: z.record(TokenKey, EasingValue).optional(),
+  controlHeight: z.record(TokenKey, SizeValue).optional(),
+  iconSize: z.record(TokenKey, SizeValue).optional(),
+  opacity: z.record(OpacityKey, OpacityValue).optional(),
+  zIndex: z.record(TokenKey, ZIndexValue).optional(),
+});
+
+const ThemeCssVarShape = ThemeAliasShape.extend(ThemeScaleShape.shape);
 
 /**
  * The subset of `ThemeSchema`/`ThemeOverrideSchema` fields that carry
@@ -107,9 +142,12 @@ export type ThemeCssVarSource = z.infer<typeof ThemeCssVarShape>;
  * Every category key with a `--sg-*` CSS variable representation, derived
  * from {@link ThemeCssVarShape} (`.keyof().options`) instead of repeating
  * the key list a second time — adding a category to `ThemeCssVarShape`
- * automatically extends alias/kebab-collision validation to it too.
+ * automatically extends kebab-collision and override-key validation to it.
  */
-const ALIAS_CATEGORIES = ThemeCssVarShape.keyof().options;
+const CSS_VAR_CATEGORIES = ThemeCssVarShape.keyof().options;
+
+/** The CSS-var categories whose values may be `$` aliases (every non-scale one). */
+const ALIAS_CATEGORIES = ThemeAliasShape.keyof().options;
 
 /**
  * Theme override configuration. Contains partial overrides for every
@@ -132,9 +170,11 @@ const validateBaseCategories = (
   ctx: z.RefinementCtx,
   theme: ThemeCssVarSource,
 ): void => {
+  for (const category of CSS_VAR_CATEGORIES) {
+    reportKebabCollisions(ctx, theme[category], [category]);
+  }
   for (const category of ALIAS_CATEGORIES) {
     const record = theme[category];
-    reportKebabCollisions(ctx, record, [category]);
     if (record) {
       validateCategoryAliasGraph(ctx, record, record, (key) => [category, key]);
     }
@@ -166,7 +206,7 @@ const validateThemeOverride = (
   pathPrefix: (string | number)[],
   override: z.infer<typeof ThemeOverrideSchema>,
 ): void => {
-  for (const category of ALIAS_CATEGORIES) {
+  for (const category of CSS_VAR_CATEGORIES) {
     const overrideRecord = override[category];
     if (!overrideRecord) continue;
 
@@ -181,7 +221,10 @@ const validateThemeOverride = (
           "it produces no utility; declare it in the base theme instead.",
       });
     }
-
+  }
+  for (const category of ALIAS_CATEGORIES) {
+    const overrideRecord = override[category];
+    if (!overrideRecord) continue;
     const merged = { ...baseTheme[category], ...overrideRecord };
     validateCategoryAliasGraph(ctx, merged, overrideRecord, (key) => [
       ...pathPrefix,

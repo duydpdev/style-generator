@@ -336,6 +336,120 @@
               "additionalProperties": false
             }
           ]
+        },
+        "motionDuration": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "motionEasing": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "controlHeight": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "iconSize": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "opacity": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "zIndex": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "keys": {
+                  "type": "string",
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
         }
       }
     },

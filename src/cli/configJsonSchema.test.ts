@@ -170,6 +170,18 @@ describe("buildConfigJsonSchema", () => {
       "an opacity group on a category without an opacity modifier",
       { coverage: { shadows: { opacities: [{ steps: [32] }] } } },
     ],
+    [
+      "prefixes on a scale category",
+      { coverage: { zIndex: { prefixes: ["z"] } } },
+    ],
+    [
+      "keys: aliased on a scale category",
+      { coverage: { motionDuration: { keys: "aliased" } } },
+    ],
+    [
+      "opacities on the opacity scale",
+      { coverage: { opacity: { opacities: [10] } } },
+    ],
     ["an unknown category", { coverage: { sizes: true } }],
   ])("rejects %s, as the CLI does", (_title, config) => {
     expect(StyleGenConfigFileSchema.safeParse(config).success).toBe(false);
@@ -205,13 +217,23 @@ describe("buildConfigJsonSchema", () => {
           "coverage",
           Object.fromEntries(
             builtInCategories
-              .filter((d) => !("bareClassName" in d))
+              .filter((d) => !("bareClassName" in d || "literalScale" in d))
               .map((d) => [d.key, { prefixes: [d.classPrefixes[0]] }]),
           ),
         ],
       ]),
     ],
     ["typography keys: all", { coverage: { typography: { keys: "all" } } }],
+    [
+      "a scale category on, off or with keys: all",
+      {
+        coverage: {
+          zIndex: false,
+          opacity: true,
+          motionEasing: { keys: "all" },
+        },
+      },
+    ],
     [
       "the $schema pointer and the path keys",
       {
@@ -240,7 +262,9 @@ describe("buildConfigJsonSchema", () => {
 
   it("enumerates every category's real class prefixes", () => {
     for (const descriptor of builtInCategories) {
-      if ("bareClassName" in descriptor) continue;
+      if ("bareClassName" in descriptor || "literalScale" in descriptor) {
+        continue;
+      }
       for (const prefix of descriptor.classPrefixes) {
         expect(
           accepted({ coverage: { [descriptor.key]: { prefixes: [prefix] } } }),

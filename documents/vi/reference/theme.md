@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: c09e4a267cf6 -->
+<!-- source: documents/reference/theme.md sha256: 805533c82d1a -->
 
 # Cấu hình theme
 
@@ -44,7 +44,13 @@ Một theme dùng mọi nhóm token (`$schema` là con trỏ cho editor, xem [T�
   "backdropBlurs": { "sm": "4px" },
   "borderRadius": { "md": "8px" },
   "fontFamily": { "sans": "\"Inter\", system-ui, sans-serif" },
-  "borderWidth": { "thin": "1px" }
+  "borderWidth": { "thin": "1px" },
+  "motionDuration": { "fast": "150ms" },
+  "motionEasing": { "standard": "cubic-bezier(0.2, 0, 0, 1)" },
+  "controlHeight": { "md": "40px" },
+  "iconSize": { "sm": "16px" },
+  "opacity": { "disabled": 0.4 },
+  "zIndex": { "modal": 50 }
 }
 ```
 
@@ -90,15 +96,38 @@ colors.__proto__ → "__proto__" is not a valid token name
 
 ## Các nhóm token
 
-| Key của theme   | Sinh ra                                                                                                                         | Ghi chú                                                                                                                                                                          |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `colors`        | `bg-*`, `text-*`, `border-*` qua `@theme inline` (`--color-*`)                                                                  | Bắt buộc. Phẳng, camelCase.                                                                                                                                                      |
-| `typography`    | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)                                                                     | Mục nhập: `fontSize`, `lineHeight`, `fontWeight` (số, 1–1000), tùy chọn `letterSpacing`/`fontFamily`/`fontStyle`; thiếu `letterSpacing` thì không phát ra khai báo. Không alias. |
-| `shadows`       | `shadow-*`                                                                                                                      |                                                                                                                                                                                  |
-| `backdropBlurs` | `backdrop-blur-*`                                                                                                               |                                                                                                                                                                                  |
-| `borderRadius`  | `rounded-*` (+ các variant `md:`/`lg:` cho các breakpoint đang hoạt động)                                                       | Dự phòng về `DEFAULT_ROUNDED_VALUES`.                                                                                                                                            |
-| `fontFamily`    | `font-*` qua namespace `--font-*` của Tailwind                                                                                  | Key không được là tên font-weight của Tailwind (`bold`, `medium`, …).                                                                                                            |
-| `borderWidth`   | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` qua namespace `--border-width-*` của Tailwind (dựa trên `--sg-border-width-*`) | Dự phòng về thang `0/1/2/4` của Tailwind khi bỏ qua hoặc rỗng (`{}`). Thay thế thang độ rộng `border` của Tailwind.                                                              |
+| Key của theme    | Sinh ra                                                                                                                         | Ghi chú                                                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `colors`         | `bg-*`, `text-*`, `border-*` qua `@theme inline` (`--color-*`)                                                                  | Bắt buộc. Phẳng, camelCase.                                                                                                                                                      |
+| `typography`     | `@utility <kebab-key>` (`text16Medium` → `.text-16-medium`)                                                                     | Mục nhập: `fontSize`, `lineHeight`, `fontWeight` (số, 1–1000), tùy chọn `letterSpacing`/`fontFamily`/`fontStyle`; thiếu `letterSpacing` thì không phát ra khai báo. Không alias. |
+| `shadows`        | `shadow-*`                                                                                                                      |                                                                                                                                                                                  |
+| `backdropBlurs`  | `backdrop-blur-*`                                                                                                               |                                                                                                                                                                                  |
+| `borderRadius`   | `rounded-*` (+ các variant `md:`/`lg:` cho các breakpoint đang hoạt động)                                                       | Dự phòng về `DEFAULT_ROUNDED_VALUES`.                                                                                                                                            |
+| `fontFamily`     | `font-*` qua namespace `--font-*` của Tailwind                                                                                  | Key không được là tên font-weight của Tailwind (`bold`, `medium`, …).                                                                                                            |
+| `borderWidth`    | `border`, `border-x/y/t/r/b/l/s/e`, `divide-x/y` qua namespace `--border-width-*` của Tailwind (dựa trên `--sg-border-width-*`) | Dự phòng về thang `0/1/2/4` của Tailwind khi bỏ qua hoặc rỗng (`{}`). Thay thế thang độ rộng `border` của Tailwind.                                                              |
+| `motionDuration` | `duration-*` qua `--transition-duration-*` (dựa trên `--sg-duration-*`)                                                         | Xem [Các nhóm thang đo](#các-nhóm-thang-đo).                                                                                                                                     |
+| `motionEasing`   | `ease-*` qua `--ease-*` (dựa trên `--sg-ease-*`)                                                                                | Xem [Các nhóm thang đo](#các-nhóm-thang-đo).                                                                                                                                     |
+| `controlHeight`  | `h-control-*` qua `--height-control-*` (dựa trên `--sg-control-*`)                                                              | Xem [Các nhóm thang đo](#các-nhóm-thang-đo).                                                                                                                                     |
+| `iconSize`       | `size-icon-*` qua `--size-icon-*` (dựa trên `--sg-icon-*`)                                                                      | Xem [Các nhóm thang đo](#các-nhóm-thang-đo).                                                                                                                                     |
+| `opacity`        | `opacity-*` qua `--opacity-*` (dựa trên `--sg-opacity-*`)                                                                       | Xem [Các nhóm thang đo](#các-nhóm-thang-đo).                                                                                                                                     |
+| `zIndex`         | `z-*` qua `--z-index-*` (dựa trên `--sg-z-*`)                                                                                   | Xem [Các nhóm thang đo](#các-nhóm-thang-đo).                                                                                                                                     |
+
+## Các nhóm thang đo
+
+Sáu nhóm thang đo (`motionDuration`, `motionEasing`, `controlHeight`, `iconSize`, `opacity`, `zIndex`) là các thang literal tùy chọn: mỗi giá trị là một literal theo ngữ pháp bên dưới, không bao giờ là alias `$`, và `coverage` chỉ bật hoặc tắt cả nhóm (xem [`coverage`](./options.md#coverage-cắt-tỉa-các-dòng-source-inline-theo-từng-nhóm-token)). Mỗi class đọc biến `--sg-*` của nó qua một namespace theme của Tailwind, nên một override `themeAxes` cho key đã khai báo (`"motion": { "reduced": { "motionDuration": { "fast": "0ms" } } }`) sẽ đổi class đó lúc chạy.
+
+| Nhóm             | Giá trị                                                                                                                                                                         | Class (thuộc tính)                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `motionDuration` | Một khoảng thời gian bằng `ms` hoặc `s` (`150ms`, `0.2s`)                                                                                                                       | `duration-<key>` (`transition-duration`)    |
+| `motionEasing`   | `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, `step-start`, `step-end`, `cubic-bezier(x1, y1, x2, y2)` với `x1` và `x2` trong khoảng 0–1, hoặc `steps(n[, position])` | `ease-<key>` (`transition-timing-function`) |
+| `controlHeight`  | Một độ dài bằng `px` hoặc `rem`                                                                                                                                                 | `h-control-<key>` (`height`)                |
+| `iconSize`       | Một độ dài bằng `px` hoặc `rem`                                                                                                                                                 | `size-icon-<key>` (`width` và `height`)     |
+| `opacity`        | Một số JSON từ 0 đến 1                                                                                                                                                          | `opacity-<key>` (`opacity`)                 |
+| `zIndex`         | Một số nguyên JSON                                                                                                                                                              | `z-<key>` (`z-index`)                       |
+
+**Key `opacity` đặt theo vai trò, không bao giờ theo số.** Nhóm `opacity` đặt tên cho độ mờ của phần tử: `"opacity": { "disabled": 0.4 }` phát ra utility `opacity-disabled` (`opacity: var(--sg-opacity-disabled)`). `coverage.colors.opacities` thêm các modifier alpha dạng số cho class màu: `"coverage": { "colors": { "opacities": [50] } }` bao phủ `bg-primary/50`. Cả hai đều đọc namespace `--opacity-*` của Tailwind: key `50` sẽ biến bước `/50` của mọi class màu thành `color-mix(… var(--sg-opacity-50) …)`, vốn cần một giá trị phần trăm, nên key `opacity` chỉ gồm chữ số bị từ chối. `DesignTokens.Web.opacity` liệt kê các key của nhóm, còn `DesignTokens.Web.opacities` liệt kê các bước của coverage.
+
+**`controlHeight` cũng cấp cho `min-h-*` và `max-h-*`.** Tailwind đọc `--height-control-*` cho cả `min-h-control-<key>` và `max-h-control-<key>`, và `createTailwindMergeExtension` xếp chúng vào nhóm `min-h`/`max-h`. `@source inline` chỉ bao phủ `h-control-<key>`: hai class còn lại được bộ quét mã nguồn của app nhận ra ở nơi chúng được viết.
 
 ## Màu sắc — key dạng camelCase
 
@@ -285,8 +314,8 @@ Nên ưu tiên dùng các class Tailwind tiêu chuẩn và các biến `--color-
 }
 ```
 
-**Hợp đồng công khai.** Các biến mà generator phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, và các biến spacing nội dòng `--sg-sp-*`) là một phần của output công khai: alias phân giải về chúng, và CSS viết tay có thể đọc hoặc override chúng. Đổi tên một biến là thay đổi phá vỡ tương thích (breaking change).
+**Hợp đồng công khai.** Các biến mà generator phát ra (`--sg-color-<key>`, `--sg-shadow-<key>`, `--sg-radius-<key>`, `--sg-font-<key>`, `--sg-border-width-<key>`, `--sg-backdrop-blur-<key>`, `--sg-duration-<key>`, `--sg-ease-<key>`, `--sg-control-<key>`, `--sg-icon-<key>`, `--sg-opacity-<key>`, `--sg-z-<key>`, và các biến spacing nội dòng `--sg-sp-*`) là một phần của output công khai: alias phân giải về chúng, và CSS viết tay có thể đọc hoặc override chúng. Đổi tên một biến là thay đổi phá vỡ tương thích (breaking change).
 
 ## Trùng tên với utility tích hợp sẵn
 
-Một key của theme có class trùng với một utility của Tailwind (`bg-none`, `shadow-none`, `rounded-none`, một key typography trở thành `text-sm`, `h-1` từ `h1`, hoặc `italic`, các màu có tên `transparent`/`current`/`inherit`, các màu có class `ring-`/`outline-`/`divide-` là một static của Tailwind như `solid` → `outline-solid` hoặc một độ rộng số nguyên như `3` → `ring-3`) thì không bị từ chối, nhưng quy tắc nào thắng sẽ tùy thuộc vào cách hiện thực utility đó của Tailwind. Hãy chọn một cái tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các xung đột mà nó nhận diện được. Key `borderWidth` chỉ gồm chữ số (`2`) lại khác: giá trị theme thay thế các class tích hợp sẵn `border-2`, `border-x-2` và `divide-x-2` của Tailwind (Tailwind tra cứu theme trước thang mặc định); `doctor` vẫn báo cáo nó để bạn xác nhận rằng việc override là có chủ đích.
+Một key của theme có class trùng với một utility của Tailwind (`bg-none`, `shadow-none`, `rounded-none`, một key typography trở thành `text-sm`, `h-1` từ `h1`, hoặc `italic`, các màu có tên `transparent`/`current`/`inherit`, các màu có class `ring-`/`outline-`/`divide-` là một static của Tailwind như `solid` → `outline-solid` hoặc một độ rộng số nguyên như `3` → `ring-3`) thì không bị từ chối, nhưng quy tắc nào thắng sẽ tùy thuộc vào cách hiện thực utility đó của Tailwind. Hãy chọn một cái tên khác (`clear`, `flat`, `zero`, `heading1`); `style-gen doctor` liệt kê các xung đột mà nó nhận diện được. Key `borderWidth` chỉ gồm chữ số (`2`) lại khác: giá trị theme thay thế các class tích hợp sẵn `border-2`, `border-x-2` và `divide-x-2` của Tailwind (Tailwind tra cứu theme trước thang mặc định); `doctor` vẫn báo cáo nó để bạn xác nhận rằng việc override là có chủ đích. Các nhóm thang đo cũng xung đột theo cách đó: key `zIndex` tên `auto`, key `motionDuration` tên `initial`, key `motionEasing` tên `linear`, `in`, `out`, `inOut` hoặc `initial` (`ease-in`), và key `zIndex` hoặc `motionDuration` chỉ gồm chữ số (`10` → `z-10`) đều trùng với một class Tailwind có sẵn; `doctor` báo cáo từng key.

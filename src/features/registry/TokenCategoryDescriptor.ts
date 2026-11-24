@@ -69,6 +69,13 @@ export interface TokenCategoryDescriptor<K extends string = string> {
    * `var(--sg-shadow-<key>)` and stay unchanged.
    */
   opacityModifier?: boolean;
+  /**
+   * `true` for a scale category (`motionDuration`, `zIndex`, …): its values
+   * follow one typed grammar and hold no `$` alias, and it has a single
+   * class prefix, so `coverage.<key>` is only `false`, `true` or
+   * `{ keys: "all" }` (no `keys: "aliased"`, no `prefixes`).
+   */
+  literalScale?: boolean;
   /** Fallback values used when the theme config omits this category. */
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];
 }

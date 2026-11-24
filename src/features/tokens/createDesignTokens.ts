@@ -120,6 +120,28 @@ export const buildDesignTokens = <
         config.borderRadius,
         categoryTokenMeta.borderRadius.defaultValues,
       ) as CategoryTokenKey<TTheme, "borderRadius">[],
+      motionDuration: categoryTokenKeys(
+        config.motionDuration,
+      ) as CategoryTokenKey<TTheme, "motionDuration">[],
+      motionEasing: categoryTokenKeys(config.motionEasing) as CategoryTokenKey<
+        TTheme,
+        "motionEasing"
+      >[],
+      controlHeight: categoryTokenKeys(
+        config.controlHeight,
+      ) as CategoryTokenKey<TTheme, "controlHeight">[],
+      iconSize: categoryTokenKeys(config.iconSize) as CategoryTokenKey<
+        TTheme,
+        "iconSize"
+      >[],
+      opacity: categoryTokenKeys(config.opacity) as CategoryTokenKey<
+        TTheme,
+        "opacity"
+      >[],
+      zIndex: categoryTokenKeys(config.zIndex) as CategoryTokenKey<
+        TTheme,
+        "zIndex"
+      >[],
       spacingProperties: Object.keys(
         options.spacing.properties,
       ) as SpacingKeys<O>[],

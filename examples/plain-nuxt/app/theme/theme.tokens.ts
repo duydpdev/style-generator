@@ -49,6 +49,12 @@ export const tokens = {
     "lg",
     "pill"
   ],
+  "motionDuration": [],
+  "motionEasing": [],
+  "controlHeight": [],
+  "iconSize": [],
+  "opacity": [],
+  "zIndex": [],
   "spacingProperties": [
     "p",
     "px",

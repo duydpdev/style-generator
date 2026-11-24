@@ -40,6 +40,12 @@ describe("DesignTokenKeys semantic aliases", () => {
     borderRadius: { pill: string };
     borderWidth: { thin: string };
     fontFamily: { sans: string };
+    motionDuration: { fast: string };
+    motionEasing: { standard: string };
+    controlHeight: { md: string };
+    iconSize: { sm: string };
+    opacity: { muted: number };
+    zIndex: { modal: number };
   }
 
   it("ColorVariant<T> equals CategoryTokenKey<T, 'colors'>", () => {
@@ -78,7 +84,7 @@ describe("DesignTokenKeys semantic aliases", () => {
     expectTypeOf<FontFamilyVariant<SampleTheme>>().toEqualTypeOf<"sans">();
   });
 
-  it("DesignTokenKeys<T> exposes exactly the seven per-category keys", () => {
+  it("DesignTokenKeys<T> exposes exactly the thirteen per-category keys", () => {
     type Keys = DesignTokenKeys<SampleTheme>;
     expectTypeOf<keyof Keys>().toEqualTypeOf<
       | "colorKey"
@@ -88,6 +94,12 @@ describe("DesignTokenKeys semantic aliases", () => {
       | "fontFamilyKey"
       | "borderWidthKey"
       | "roundedKey"
+      | "motionDurationKey"
+      | "motionEasingKey"
+      | "controlHeightKey"
+      | "iconSizeKey"
+      | "opacityKey"
+      | "zIndexKey"
     >();
     expectTypeOf<Keys["colorKey"]>().toEqualTypeOf<
       "primary" | "sidebarForeground"
@@ -98,6 +110,12 @@ describe("DesignTokenKeys semantic aliases", () => {
     expectTypeOf<Keys["fontFamilyKey"]>().toEqualTypeOf<"sans">();
     expectTypeOf<Keys["borderWidthKey"]>().toEqualTypeOf<"thin">();
     expectTypeOf<Keys["roundedKey"]>().toEqualTypeOf<"pill">();
+    expectTypeOf<Keys["motionDurationKey"]>().toEqualTypeOf<"fast">();
+    expectTypeOf<Keys["motionEasingKey"]>().toEqualTypeOf<"standard">();
+    expectTypeOf<Keys["controlHeightKey"]>().toEqualTypeOf<"md">();
+    expectTypeOf<Keys["iconSizeKey"]>().toEqualTypeOf<"sm">();
+    expectTypeOf<Keys["opacityKey"]>().toEqualTypeOf<"muted">();
+    expectTypeOf<Keys["zIndexKey"]>().toEqualTypeOf<"modal">();
   });
 });
 

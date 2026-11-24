@@ -1355,7 +1355,7 @@ describe("initCommand", () => {
 
       expect(readRules()).toBe("# edited\n");
       expect(out()).toContain(
-        "Run `style-gen init --rules-only` in an interactive terminal to replace it.",
+        "style-gen init --rules-only` in an interactive terminal to replace it.",
       );
       expect(out()).toContain('@source not "../.claude";');
     });

@@ -249,7 +249,7 @@ describe("generateCommand", () => {
         expect(await generateCommand({ ...args, check: true }, tmp)).toBe(1);
 
         expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-          /theme\.tokens\.ts is out of date\. Run: style-gen generate$/,
+          /theme\.tokens\.ts is out of date\. Run: .+ style-gen generate$/,
         );
         expect(read("styles/theme.tokens.ts")).toBe(bytes);
         expect(exists("styles/theme.css")).toBe(false);
@@ -272,7 +272,7 @@ describe("generateCommand", () => {
         expect(await generateCommand({ ...args, check: true }, tmp)).toBe(1);
 
         expect(errorSpy.mock.calls[0]?.[0]).toMatch(
-          /theme\.tokens\.ts does not exist\. Run: style-gen generate$/,
+          /theme\.tokens\.ts does not exist\. Run: .+ style-gen generate$/,
         );
         expect(exists("styles/theme.tokens.ts")).toBe(false);
         expect(exists("styles/theme.css")).toBe(false);

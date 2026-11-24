@@ -42,8 +42,10 @@ export interface GenerateHooks {
 }
 
 /**
- * Print one failure the way the command always has.
- * @param {string} cwd - Project root, for the package manager of the init hint
+ * Print one failure the way the command always has. A stale tokens file
+ * (`--check`) gets the generate command and a missing theme the init command,
+ * both for the project's package manager.
+ * @param {string} cwd - Project root, for the package manager of the hints
  * @param {{stage: string, message: string}} failure - The failed outcome
  * @param {string} failure.stage - Pipeline stage that failed
  * @param {string} failure.message - The message to print
@@ -57,6 +59,10 @@ function reportFailure(
   const missingTheme =
     failure.stage === "read" &&
     failure.message.startsWith("Theme file not found");
+  if (failure.stage === "stale") {
+    logger.error(`${failure.message} Run: ${styleGenCommand(cwd, "generate")}`);
+    return;
+  }
   if (!missingTheme) {
     logger.error(failure.message);
     return;

@@ -1,4 +1,4 @@
-<!-- source: documents/troubleshooting.md sha256: ec064a8fd0c4 -->
+<!-- source: documents/troubleshooting.md sha256: cc55caaeb206 -->
 
 # Khắc phục sự cố
 
@@ -20,7 +20,7 @@ Tìm phần đầu của thông báo mà CLI, `styleGenVite()` hoặc `styleGenN
 | `… must be different files`, `Output (…) ❌ Invalid emit paths`                                                                                                                                                                                                          | [must be different files](#must-be-different-files)                                       |
 | `Cannot write`                                                                                                                                                                                                                                                           | [Cannot write](#cannot-write)                                                             |
 | `Cannot read`                                                                                                                                                                                                                                                            | [Cannot read](#cannot-read)                                                               |
-| `… does not exist. Run: style-gen generate`, `… is out of date`                                                                                                                                                                                                          | [File tokens bị thiếu hoặc lỗi thời](#file-tokens-bị-thiếu-hoặc-lỗi-thời)                 |
+| `… does not exist. Run: … style-gen generate`, `… is out of date`                                                                                                                                                                                                        | [File tokens bị thiếu hoặc lỗi thời](#file-tokens-bị-thiếu-hoặc-lỗi-thời)                 |
 | `Cannot reload config`, `Re-emit failed`                                                                                                                                                                                                                                 | [Cannot reload config và Re-emit failed](#cannot-reload-config-và-re-emit-failed)         |
 | `Only { root } is accepted`                                                                                                                                                                                                                                              | [Only { root } is accepted](#only--root--is-accepted)                                     |
 | `--check and --watch cannot be combined`                                                                                                                                                                                                                                 | [--check and --watch cannot be combined](#--check-and---watch-cannot-be-combined)         |
@@ -102,7 +102,7 @@ Hai đường dẫn là một file khi chúng tới cùng một inode (symlink, 
 
 ## File tokens bị thiếu hoặc lỗi thời
 
-`<file> does not exist. Run: style-gen generate` và `<file> is out of date. Run: style-gen generate` đến từ `style-gen generate --check`: file `theme.tokens.ts` đã commit không khớp với theme và config. Hãy chạy `yarn style-gen generate` (hoặc khởi động dev server, nơi plugin ghi file đó) rồi commit file. File chỉ chứa các key token, nên chỉ sửa một giá trị màu thì nó vẫn còn mới.
+`<file> does not exist. Run: … style-gen generate` và `<file> is out of date. Run: … style-gen generate` đến từ `style-gen generate --check`: file `theme.tokens.ts` đã commit không khớp với theme và config. Hãy chạy `yarn style-gen generate` (hoặc khởi động dev server, nơi plugin ghi file đó) rồi commit file. File chỉ chứa các key token, nên chỉ sửa một giá trị màu thì nó vẫn còn mới.
 
 Một file lỗi thời ngay sau một lần `generate` sạch đã bị một công cụ khác ghi lại. Chỉ Prettier tôn trọng dòng `// prettier-ignore` mà file mang trước mỗi export; hãy loại `theme.tokens.ts` khỏi Biome, dprint, oxfmt, `--fix` stylistic của ESLint và mọi glob lint-staged có ghi lại file. Một bản checkout có kết thúc dòng CRLF không phải nguyên nhân: phép so sánh bỏ qua chúng.
 

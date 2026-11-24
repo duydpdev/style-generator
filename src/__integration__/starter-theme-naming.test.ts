@@ -3,8 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { doctorCommand } from "../cli/commands/doctor";
+import { initCommand } from "../cli/commands/init";
+import { logger } from "../cli/logger";
 import { themeTemplate, themeTemplateDark } from "../cli/templates";
 import { generate } from "../core/generate";
 
@@ -79,4 +82,45 @@ describe("the theme style-gen init writes", () => {
     delete theme.$schema;
     expect(() => generate(theme as never)).not.toThrow();
   });
+
+  it.each([
+    ["light", false],
+    ["dark", true],
+  ])(
+    "style-gen doctor prints no theme warning after init --yes (%s)",
+    async (_name, dark) => {
+      const dir = mkdtempSync(join(tmpdir(), "starter-doctor-"));
+      scratch.push(dir);
+      const rules = join(dir, "rules.md");
+      writeFileSync(rules, "# rules\n");
+      const project = join(dir, "app");
+      mkdirSync(project);
+      const isTTY = process.stdin.isTTY;
+      Object.defineProperty(process.stdin, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+      const lines: string[] = [];
+      for (const method of ["log", "info", "warn", "error", "success"] as const)
+        vi.spyOn(logger, method).mockImplementation((message: unknown) => {
+          lines.push(String(message));
+        });
+      try {
+        expect(await initCommand({ yes: true, dark }, project, rules)).toBe(0);
+        lines.length = 0;
+
+        expect(doctorCommand(project)).toBe(0);
+      } finally {
+        vi.restoreAllMocks();
+        Object.defineProperty(process.stdin, "isTTY", {
+          value: isTTY,
+          configurable: true,
+        });
+      }
+
+      const report = lines.join("\n");
+      expect(report).toMatch(/Theme {3}\(.*\) ✅ Valid JSON, schema OK/);
+      expect(report).not.toMatch(/Theme {3}⚠️/);
+    },
+  );
 });

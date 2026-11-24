@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: f591b62a42e8 -->
+<!-- source: documents/agent-contract.md sha256: 70c985d7c5c7 -->
 
 # Hợp đồng cho agent
 
@@ -184,13 +184,18 @@ const tint = {
   },
 } as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
-} as const;
+} as const satisfies {
+  background: ColorVariant<typeof theme>;
+  radius: RoundedVariant<typeof theme>;
+  type: TextVariant<typeof theme>;
+  typeLg: TextVariant<typeof theme>;
+};
 ```
 
 File component áp recipe qua `cn` và nhận `className` sau cùng:

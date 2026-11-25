@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: 61f112ba99fb -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: e472e86756c3 -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -27,6 +27,7 @@ Tạo `app/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
     "primary": "#2647D9",
     "primaryHover": "#1F3BB8",
     "primaryActive": "#19319A",
+    "primarySelected": "$primary",
     "primaryForeground": "$surface",
     "secondary": "#6E5BFF",
     "accent": "$secondary",

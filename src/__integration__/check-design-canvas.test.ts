@@ -548,6 +548,10 @@ describe("integration: style-gen canvas check", () => {
       expect(grammar(NAMED)).toEqual([]);
     });
 
+    it("naming accepts the xl radius key", () => {
+      expect(grammar(named((t) => (t.borderRadius.xl = "24px")))).toEqual([]);
+    });
+
     it.each<[string, (t: NamedTheme) => void, string]>([
       [
         "a literal semantic key",
@@ -614,8 +618,8 @@ describe("integration: style-gen canvas check", () => {
       ],
       [
         "a radius key off the list",
-        (t) => (t.borderRadius.xl = "16px"),
-        "borderRadius.xl is not one of sm, md, lg, full",
+        (t) => (t.borderRadius.huge = "32px"),
+        "borderRadius.huge is not one of sm, md, lg, xl, full",
       ],
       [
         "a typography entry that sets fontFamily",

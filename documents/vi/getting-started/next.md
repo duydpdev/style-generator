@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/next.md sha256: 54f8cd483f08 -->
+<!-- source: documents/getting-started/next.md sha256: c0ca1dcebcd4 -->
 
 # Bắt đầu: Next.js
 
@@ -119,6 +119,17 @@ Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
   },
   "opacity": {
     "disabled": 0.5
+  },
+  "motionDuration": {
+    "fast": "150ms",
+    "slow": "300ms"
+  },
+  "motionEasing": {
+    "standard": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "zIndex": {
+    "overlay": 40,
+    "modal": 50
   },
   "themeAxes": {
     "theme": {

@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: 95716bf9a8a3 -->
+<!-- source: documents/getting-started/react-vite.md sha256: d3876dc60673 -->
 
 # Bắt đầu: React + Vite
 
@@ -121,6 +121,17 @@ Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
   },
   "opacity": {
     "disabled": 0.5
+  },
+  "motionDuration": {
+    "fast": "150ms",
+    "slow": "300ms"
+  },
+  "motionEasing": {
+    "standard": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "zIndex": {
+    "overlay": 40,
+    "modal": 50
   },
   "themeAxes": {
     "theme": {

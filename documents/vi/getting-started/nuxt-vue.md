@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: b2eed3fcf838 -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 61f112ba99fb -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -122,6 +122,17 @@ Tạo `app/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
   },
   "opacity": {
     "disabled": 0.5
+  },
+  "motionDuration": {
+    "fast": "150ms",
+    "slow": "300ms"
+  },
+  "motionEasing": {
+    "standard": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "zIndex": {
+    "overlay": 40,
+    "modal": 50
   },
   "themeAxes": {
     "theme": {

@@ -58,8 +58,13 @@ export const tokens = {
     "lg",
     "pill"
   ],
-  "motionDuration": [],
-  "motionEasing": [],
+  "motionDuration": [
+    "fast",
+    "slow"
+  ],
+  "motionEasing": [
+    "standard"
+  ],
   "controlHeight": [
     "sm",
     "md",
@@ -73,7 +78,10 @@ export const tokens = {
   "opacity": [
     "disabled"
   ],
-  "zIndex": [],
+  "zIndex": [
+    "overlay",
+    "modal"
+  ],
   "spacingProperties": [
     "p",
     "px",

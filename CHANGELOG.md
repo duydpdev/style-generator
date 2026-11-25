@@ -1,3 +1,11 @@
+# [9.0.2](https://github.com/duydpdev/style-generator/compare/v9.0.1...v9.0.2) (2026-11-25)
+
+### Bug Fixes
+
+- let a component board repeat its own source, one instance per state ([ccc4178](https://github.com/duydpdev/style-generator/commit/ccc4178b9c57e0c99c8e21d98a7928fb7e19ca89))
+
+  style-gen canvas check --boards rejected a c-<name> board that imports s-<name> more than once, so a showcase that shows each preset as one instance failed. The rule now compares the distinct imported names: only its own source, as often as it needs; another source, none or a wrong name still fail with the same message.
+
 # [9.0.1](https://github.com/duydpdev/style-generator/compare/v9.0.0...v9.0.1) (2026-11-25)
 
 ### Bug Fixes

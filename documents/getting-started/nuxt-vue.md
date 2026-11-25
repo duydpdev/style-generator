@@ -121,6 +121,17 @@ Create `app/theme/theme.json`. The `Button` below reads the colors `primary`, `s
   "opacity": {
     "disabled": 0.5
   },
+  "motionDuration": {
+    "fast": "150ms",
+    "slow": "300ms"
+  },
+  "motionEasing": {
+    "standard": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "zIndex": {
+    "overlay": 40,
+    "modal": 50
+  },
   "themeAxes": {
     "theme": {
       "dark": {

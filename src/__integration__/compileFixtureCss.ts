@@ -78,7 +78,8 @@ export async function compileFixtureCss(
  * (`.divide-x { :where(& > :not(:last-child)) { … } }`, `&::placeholder`,
  * `&:hover`); from 4.3.3 on `build()` emits it flat
  * (`:where(.divide-x > :not(:last-child))`, `.placeholder-x::placeholder`,
- * `.hover\:bg-x:hover`). Both shapes match; a longer class
+ * `.hover\:bg-x:hover`, `.aria-selected\:bg-x[aria-selected="true"]`).
+ * Both shapes match, an attribute selector right after the class included; a longer class
  * (`.divide-x-reverse`, `.bg-primary\/50`) does not.
  * @param {string} selector - One selector of a compiled rule
  * @param {string} classSelector - Escaped class selector, with the leading `.`
@@ -96,7 +97,7 @@ export const selectorTargetsClass = (
     const end = at + classSelector.length;
     const escaped = at > 0 && selector.charAt(at - 1) === "\\";
     if (escaped) continue;
-    if (end === selector.length || /[\s:,>)]/.test(selector.charAt(end)))
+    if (end === selector.length || /[\s:,>)[]/.test(selector.charAt(end)))
       return true;
   }
   return false;

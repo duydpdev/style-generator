@@ -117,8 +117,9 @@ const ThemeAliasShape = z.strictObject({
  * every colour class with the theme value.
  */
 const OpacityKey = TokenKey.regex(
-  // A pattern, not a refine, so the editor JSON Schema carries the rule.
-  /^(?!\d+$)/,
+  // A pattern, not a refine, so the editor JSON Schema carries the rule;
+  // no lookahead, which RE2-based validators reject.
+  /\D/,
   "A digit-only opacity key would replace the colour modifier step of the same number (bg-primary/50 reads --opacity-50); name it by role (disabled, muted)",
 );
 

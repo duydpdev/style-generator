@@ -205,6 +205,9 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
   if (canvas === undefined) return "--canvas is required";
   if (theme === undefined && !inventory)
     return "--theme is required (unless --inventory)";
+  // Dropping an empty optional path would skip its check silently.
+  for (const key of ["stamp", "standard"])
+    if (str(key) === "") return `--${key} must not be empty`;
   const dsVersionText = str("ds-version");
   const dsVersion =
     dsVersionText === undefined ? undefined : parseDsVersion(dsVersionText);

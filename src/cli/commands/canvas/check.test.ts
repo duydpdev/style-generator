@@ -193,6 +193,15 @@ describe("style-gen canvas check", () => {
       expect(stdout().filter((line) => result.test(line))).toEqual([]);
     });
 
+    it.each(["stamp", "standard"])(
+      "rejects an empty --%s instead of skipping its check",
+      async (flag) => {
+        const args = ["--canvas", "canvas", "--theme", "theme.json"];
+        expect(await canvas(...args, `--${flag}`, "")).toBe(2);
+        expect(stderr()).toBe(`--${flag} must not be empty`);
+      },
+    );
+
     it("names an unreadable theme", async () => {
       expect(await canvas("--canvas", "canvas", "--theme", "nope.json")).toBe(
         2,

@@ -290,8 +290,23 @@ describe("integration: Tailwind v4 compile pipeline", () => {
       '@source inline("aria-selected:{bg,text,border,ring,outline,divide,placeholder}-{primary-selected}");',
     );
     const compiled = await compileFixtureCss(themeCss, []);
-    expect(compiled).toContain(
-      '.aria-selected\\:bg-primary-selected[aria-selected="true"] {',
+    // The rule chain of every `background-color` that reads the Selected key:
+    // flat from Tailwind 4.3.3 (`.cls[aria-selected="true"]`), nested before it
+    // (`.cls { &[aria-selected="true"] { … } }`). Both mean the same selector.
+    const chains: string[] = [];
+    postcss.parse(compiled).walkDecls("background-color", (decl) => {
+      if (decl.value !== "var(--sg-color-primary-selected)") return;
+      const chain: string[] = [];
+      for (let node = decl.parent; node && node.type !== "root"; ) {
+        if (node.type === "rule") chain.unshift((node as Rule).selector);
+        node = node.parent;
+      }
+      chains.push(chain.join(" "));
+    });
+    expect(chains).toContainEqual(
+      expect.stringMatching(
+        /^\.aria-selected\\:bg-primary-selected(?: &)?\[aria-selected="true"\]$/,
+      ),
     );
   });
 

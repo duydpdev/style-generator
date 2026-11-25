@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 53830694cf9c -->
+<!-- source: documents/agent-contract.md sha256: e2ff093ebe05 -->
 
 # Hợp đồng cho agent
 
@@ -11,8 +11,8 @@ Các quy tắc mà một agent (hoặc một người) tuân theo khi viết the
 Đặt tên key ngữ nghĩa theo các vai trò của chính app; đặt tên màu primitive và typography theo giá trị của chúng (xem [Quy ước đặt tên](#quy-ước-đặt-tên)). Thư viện suy ra mọi type và class từ những key bạn viết; nó không bao giờ đòi một tên cụ thể.
 
 - `colors` là bắt buộc và là **camelCase phẳng**: `brand`, `brandHover`, `surfaceRaised`. Không object lồng nhau, không `DEFAULT`, không `_`, không mở đầu bằng một chuỗi từ hai chữ hoa trở lên (`CTA`, `HTMLText`); một chữ hoa đơn hoặc chuỗi hoa ở giữa (`primaryCTA`) thì được. Schema từ chối phần còn lại.
-- Một intent có thể khai báo các sibling trạng thái `<intent>Hover` và `<intent>Active`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` từ `@duydpdev/style-generator/cva`) biến `brand` thành `bg-brand hover:bg-brand-hover active:bg-brand-active` khi chúng tồn tại và thành `bg-brand` khi không có.
-- Một intent có thể khai báo màu chữ `<intent>Foreground` (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` trả về `text-brand-foreground` khi màu đó tồn tại, nếu không thì `text-<fallback>`. Tên cũ `on<Intent>` (`text-on-brand`) vẫn chạy nhưng đã deprecated: `contrastText` thôi đọc nó từ 9.0, và `style-gen doctor` cảnh báo về nó.
+- Một intent có thể khai báo các sibling trạng thái `<intent>Hover`, `<intent>Active` và `<intent>Selected`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` từ `@duydpdev/style-generator/cva`) biến `brand` thành `bg-brand hover:bg-brand-hover active:bg-brand-active aria-selected:bg-brand-selected` khi chúng tồn tại và thành `bg-brand` khi không có.
+- Một intent có thể khai báo màu chữ `<intent>Foreground` (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` trả về `text-brand-foreground` khi màu đó tồn tại, nếu không thì `text-<fallback>`. `contrastText` không đọc key `on<Intent>`; `style-gen doctor` chỉ ra tên `<intent>Foreground` cần đổi sang cho từng key như vậy.
 - Giá trị `"$<key>"` là alias tới một key khác **trong cùng category** (`"brandHover": "$brandActive"` trong `colors`). Không dùng trong `typography`. Đích không tồn tại và vòng lặp là lỗi schema.
 - Dark mode và palette nằm trong `themeAxes.<axis>.<variant>`; một override chỉ được định nghĩa lại các key đã có trong category gốc. Kích hoạt bằng `html[data-<axis>="<variant>"]` (dùng `themeAxisAttributes` từ `@duydpdev/style-generator/recipes`). `base` là tên variant dành riêng.
 - Mọi category khác (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) là tùy chọn và theo cùng ngữ pháp key. Mỗi mục typography cần `fontSize`, `lineHeight` và `fontWeight` dạng số.
@@ -91,7 +91,24 @@ Import được phép bên trong `src/ui/<folder>/`:
 
 ## 3. Checklist cho component mới
 
-1. Chọn các vai trò component cần và thêm các key còn thiếu vào theme JSON (kèm sibling `<intent>Hover`/`<intent>Foreground` nếu muốn).
+Một component khai báo các trục áp dụng cho nó (checkbox có `color` và `size`, field không có trục nào) và chỉ dùng bộ từ vựng này:
+
+<!-- component-axes:start -->
+
+| Trục      | Giá trị                                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `color`   | một key vai trò: `primary`, `secondary`, `accent`, `danger`, `success`, `warning`, `info` hoặc một vai trò của sản phẩm |
+| `variant` | `solid`, `soft`, `outline`, `ghost`, `link`                                                                             |
+| `size`    | `sm`, `md`, `lg`, `icon`                                                                                                |
+
+<!-- component-axes:end -->
+
+- `solid` tô nền `<role>` với chữ `<role>Foreground` (chữ `background` khi theme không có `<role>Foreground`); `soft` tô nền `<role>Subtle` với chữ `<role>SubtleForeground` và mờ đi khi hover (`hover:opacity-90`); `outline` là viền và chữ `<role>` trên nền `background`, với nền hover `<role>Subtle`; `ghost` là chữ `<role>` với nền hover `<role>Subtle`; `link` là chữ `<role>`, gạch chân khi hover.
+- `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`). `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
+- Trạng thái: hover và active lấy từ các key `<role>Hover`/`<role>Active` qua `COLOR_STATES` (thiếu chúng thì dùng `hover:opacity-90`); focus là outline `focus-visible:` (viền với field) theo key `focus`; disabled là `disabled:opacity-disabled` (token `opacity.disabled`) cùng `cursor-not-allowed`; selected là `<role>Selected` qua `COLOR_STATES` (`aria-selected:`) ở component có trạng thái chọn; invalid là `aria-invalid:` với vai trò `danger` trên field của form.
+- Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`).
+
+1. Chọn các vai trò component cần và thêm các key còn thiếu vào theme JSON (kèm sibling `<intent>Hover`/`<intent>Foreground` nếu muốn, và `<intent>Subtle`/`<intent>SubtleForeground` khi component có variant `soft`).
 2. Tạo `src/ui/<kebab-name>/` với `style.ts`, `types.ts`, `<Name>.tsx`, `index.ts`.
 3. Trong `style.ts`, khai báo các intent dạng `as const satisfies readonly ColorVariant<typeof theme>[]`.
 4. Dựng mọi class có tên một key của theme từ một mapper trên `tokens.*` (mục 4); chỉ dùng literal cho các trường hợp mục 4 cho phép, kèm một comment.
@@ -125,19 +142,20 @@ export const cn = createCn(tokens);
 - Danh sách intent dùng `ColorVariant` từ `@duydpdev/style-generator/types` với `typeof theme`. Không tự suy ra một `ColorKey` từ `tokens.colors`.
 - Mọi class có tên một key của theme đến từ một mapper, mỗi category một mapper; class mang key đã **kebab-case** (`text16Medium` → `text-16-medium`):
 
-  | Category       | Mapper                                                                   | Class           |
-  | -------------- | ------------------------------------------------------------------------ | --------------- |
-  | `colors`       | `createVariantMapper("bg", tokens.colors)` (cả `text`, `border`, `ring`) | `bg-<key>`      |
-  | `typography`   | `createVariantMapper("", tokens.typography)`                             | `<key>`         |
-  | `borderRadius` | `createVariantMapper("rounded", tokens.borderRadius)`                    | `rounded-<key>` |
-  | `fontFamily`   | `createVariantMapper("font", tokens.fontFamily)`                         | `font-<key>`    |
-  | `borderWidth`  | `createVariantMapper("border", tokens.borderWidth)`                      | `border-<key>`  |
-  | `shadows`      | `createVariantMapper("shadow", tokens.shadows)`                          | `shadow-<key>`  |
+  | Category        | Mapper                                                                   | Class             |
+  | --------------- | ------------------------------------------------------------------------ | ----------------- |
+  | `colors`        | `createVariantMapper("bg", tokens.colors)` (cả `text`, `border`, `ring`) | `bg-<key>`        |
+  | `typography`    | `createVariantMapper("", tokens.typography)`                             | `<key>`           |
+  | `borderRadius`  | `createVariantMapper("rounded", tokens.borderRadius)`                    | `rounded-<key>`   |
+  | `fontFamily`    | `createVariantMapper("font", tokens.fontFamily)`                         | `font-<key>`      |
+  | `borderWidth`   | `createVariantMapper("border", tokens.borderWidth)`                      | `border-<key>`    |
+  | `shadows`       | `createVariantMapper("shadow", tokens.shadows)`                          | `shadow-<key>`    |
+  | `controlHeight` | `createVariantMapper("h-control", tokens.controlHeight)`                 | `h-control-<key>` |
 
   Đọc mapper bằng `mapper.<key>` (kiểm tra lúc compile) hoặc `pick(mapper, key)` (ném lỗi lúc import khi theme thiếu key). Không bao giờ gõ tay `rounded-pill`, `font-sans` hay một class typography.
 
-- Một class literal có tên một key của theme chỉ được phép cho tổ hợp mà generator không emit với option của bạn: một variant khác `hover:`/`active:` (`focus-visible:outline-<key>`), một bước opacity không có trong `coverage.colors.opacities`, hoặc một trạng thái kèm opacity (`hover:bg-<key>/10`). Tailwind tìm thấy nó khi quét file. Mỗi bảng như vậy có một comment một dòng giải thích lý do. Utility bố cục không có key của theme (`inline-flex`, `gap-1.5`, `tabular-nums`) là literal bình thường.
-- Key của theme được gom trong một khối duy nhất mỗi `style.ts`. Trong button ví dụ, region này là **phần duy nhất thay đổi theo theme**:
+- Generator chỉ emit một state variant trên đúng key trạng thái tương ứng (`hover:bg-<key>-hover`, `active:bg-<key>-active`, `aria-selected:bg-<key>-selected`). Mọi cặp variant và key của theme khác là một class literal mà Tailwind tìm thấy khi quét file: một variant khác (`focus-visible:outline-<key>`, `disabled:opacity-<key>`, `aria-invalid:border-<key>`), một state variant trên key không phải sibling của trạng thái đó (`hover:bg-<intent>-subtle`), một bước opacity không có trong `coverage.colors.opacities`, hoặc một trạng thái kèm opacity (`hover:bg-<key>/10`). Đặt key cho mỗi literal như vậy theo key của theme mà nó nhắc tới và kiểm tra bằng `satisfies`, để một key rời khỏi theme làm compiler báo lỗi; mỗi bảng như vậy có một comment một dòng giải thích lý do. Utility bố cục không có key của theme (`inline-flex`, `gap-1.5`, `tabular-nums`) là literal bình thường.
+- Key của theme viết tay (danh sách key và class literal) nằm trong một khối mỗi `style.ts`, được kiểm tra bằng `satisfies`; một lần đọc `mapper.<key>` ở chỗ khác được compiler tự kiểm tra. Trong button ví dụ, region này là **phần duy nhất thay đổi theo theme**:
 
 <!-- embed: examples/plain-react/src/ui/button/style.ts#button-preset -->
 
@@ -145,6 +163,7 @@ export const cn = createCn(tokens);
 /**
  * The intents `color` offers. `satisfies` is the DX anchor: rename or
  * remove one of these colors in theme.json and the compiler fails here.
+ * Each needs `<intent>Subtle` and `<intent>SubtleForeground` for `soft`.
  */
 export const buttonIntents = [
   "primary",
@@ -153,52 +172,36 @@ export const buttonIntents = [
   "danger",
 ] as const satisfies readonly ColorVariant<typeof theme>[];
 
-/** Literal classes, so Tailwind's scanner sees them: the registry emits no `focus-visible:` variant, no `/15` step and no state × opacity (`hover:bg-<key>/10`). */
-const focusRing = {
-  primary: "focus-visible:outline-primary",
-  secondary: "focus-visible:outline-secondary",
-  success: "focus-visible:outline-success",
-  danger: "focus-visible:outline-danger",
+/** Literal classes, so Tailwind's scanner sees them: the registry emits no `hover:` variant of a `Subtle` key. */
+const hoverTint = {
+  primary: "hover:bg-primary-subtle",
+  secondary: "hover:bg-secondary-subtle",
+  success: "hover:bg-success-subtle",
+  danger: "hover:bg-danger-subtle",
 } as const satisfies Record<ButtonIntent, string>;
 
-const tint = {
-  primary: {
-    outline: "border-primary text-primary hover:bg-primary/10",
-    soft: "bg-primary/10 text-primary hover:bg-primary/15",
-    ghost: "text-primary hover:bg-primary/10",
-    link: "text-primary",
-  },
-  secondary: {
-    outline: "border-secondary text-secondary hover:bg-secondary/10",
-    soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
-    ghost: "text-secondary hover:bg-secondary/10",
-    link: "text-secondary",
-  },
-  success: {
-    outline: "border-success text-success hover:bg-success/10",
-    soft: "bg-success/10 text-success hover:bg-success/15",
-    ghost: "text-success hover:bg-success/10",
-    link: "text-success",
-  },
-  danger: {
-    outline: "border-danger text-danger hover:bg-danger/10",
-    soft: "bg-danger/10 text-danger hover:bg-danger/15",
-    ghost: "text-danger hover:bg-danger/10",
-    link: "text-danger",
-  },
-} as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
+/** Literal classes keyed by the theme key they name: the generator emits no `focus-visible:`/`disabled:` variant of a theme key, so Tailwind finds these by scanning this file. `satisfies` fails when a key leaves the theme. */
+const stateClasses = {
+  focus: { focus: "focus-visible:outline-focus" },
+  disabled: { disabled: "disabled:opacity-disabled" },
+} as const satisfies {
+  focus: Partial<Record<ColorVariant<typeof theme>, string>>;
+  disabled: Partial<Record<keyof (typeof theme)["opacity"], string>>;
+};
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles, one `controlHeight` key per size. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
+  height: { sm: "sm", md: "md", lg: "lg" },
 } as const satisfies {
   background: ColorVariant<typeof theme>;
   radius: RoundedVariant<typeof theme>;
   type: TextVariant<typeof theme>;
   typeLg: TextVariant<typeof theme>;
+  height: Record<"sm" | "md" | "lg", keyof (typeof theme)["controlHeight"]>;
 };
 ```
 
@@ -267,4 +270,4 @@ Quy tắc nào được công cụ kiểm tra, và ở đâu:
 | Tự chọn  | `style-gen canvas check`: một theme cho mỗi canvas, cùng `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Chỉ khi được gọi (một script, CI)              |
 | Quy ước  | Mọi thứ khác trong hợp đồng này (layout, checklist component, code bị cấm trong app, mức sàn giao diện)                 | Review                                         |
 
-[Component](./components.md) chứa mười component ví dụ, harness và các recipe factory; [UI kit](./reference/ui.md) mô tả `recipeFromTables`, `pick`, `contrastText`, `createCn` và các helper spacing.
+[Component](./components.md) chứa các component ví dụ, harness và các recipe factory; [UI kit](./reference/ui.md) mô tả `recipeFromTables`, `pick`, `contrastText`, `createCn` và các helper spacing.

@@ -5,8 +5,9 @@
 // usage: node scripts/build-ds.mjs --theme <file> --config <file> --preset <file> --namespace <Name> --out <dir> [--name <title>]
 //
 // The bundle is built from this checkout (`dist/` + examples/harness/src/ui), so `gitSha`/`srcDirty` in
-// ds-stamp.json identify it. A theme without typography, or without a colour the cover reads, is refused before
-// the build (`dsInputFailures`; `borderRadius` is optional). Every file is computed in memory and written last: a
+// ds-stamp.json identify it. A theme without typography, without a colour the cover reads, or without a key the
+// Button preset reads (`controlHeight`, `<intent>Subtle*`) is refused before the build (`dsInputFailures`;
+// `borderRadius` is optional). Every file is computed in memory and written last: a
 // bundle that throws when a component renders writes nothing, and so does output that fails `verifyDsOutput`
 // (README sections, cover variables and title class, no unfilled cover placeholder).
 import { execFileSync } from "node:child_process";
@@ -236,7 +237,7 @@ function selfCheck(code, namespace, intents) {
       `window.${namespace} has [${keys.join(", ")}], expected six functions [${expected.join(", ")}]`,
     );
   for (const color of intents)
-    for (const variant of ["fill", "outline"])
+    for (const variant of ["solid", "outline"])
       lib.Button({ color, variant, children: "x" });
   lib.Text({ children: "x" });
 }
@@ -304,7 +305,7 @@ async function buildCss(css, sources, forced) {
 const union = (keys) =>
   keys.length > 0 ? keys.map((k) => JSON.stringify(k)).join(" | ") : "never";
 
-/** @typedef {{ textPreset: { defaultType: string, defaultColor: string }, buttonPreset: { intents: string[] } }} Presets */
+/** @typedef {{ textPreset: { defaultType: string, defaultColor: string }, buttonPreset: { intents: string[], height: Record<string, string> } }} Presets */
 
 /**
  * The components' `index.d.ts`: the template filled with this theme's keys and the presets' defaults.
@@ -442,14 +443,18 @@ function buildDocs({
 /**
  * Reads the cover template and checks the theme against the producer's input requirements.
  * @param {import("./ds-tokens.mjs").ThemeInput} theme - The theme, already accepted by `generate()`
+ * @param {Presets["buttonPreset"]} buttonPreset - The preset module's `buttonPreset`
  * @returns {{ coverTemplate: string, failures: string[] }} The template and one failure per missing input
  */
-function checkInputs(theme) {
+function checkInputs(theme, buttonPreset) {
   const coverTemplate = readFileSync(
     join(ROOT, "scripts/ds-cover.html.tmpl"),
     "utf8",
   );
-  return { coverTemplate, failures: dsInputFailures({ theme, coverTemplate }) };
+  return {
+    coverTemplate,
+    failures: dsInputFailures({ theme, coverTemplate, buttonPreset }),
+  };
 }
 
 /**
@@ -510,13 +515,15 @@ async function main() {
   // generate() validates the options with its strict schema; an unknown key throws there.
   const generated = generate(theme, /** @type {never} */ (options));
   const tokens = generated.tokens.Web;
-  const { coverTemplate, failures: inputFailures } = checkInputs(theme);
+  const presets = await loadPreset(presetPath);
+  const { coverTemplate, failures: inputFailures } = checkInputs(
+    theme,
+    presets.buttonPreset,
+  );
   if (inputFailures.length > 0) {
     console.error(inputFailures.join("\n"));
     return 1;
   }
-
-  const presets = await loadPreset(presetPath);
 
   const usageFile = join(dirname(presetPath), "ds.usage.json");
   const { usage, spacing } =

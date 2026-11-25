@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 484f89807f61 -->
+<!-- source: documents/architecture.md sha256: 943de3cd8b86 -->
 
 # Kiến trúc
 
@@ -312,8 +312,9 @@ nên `createVariantMapper` sẽ sinh ra `bg-primary-active` — một class khô
 nới lỏng sau này không phải thay đổi phá vỡ tương thích, siết chặt sau này thì có. `formatZodError` mở lớp `invalid_key` của Zod để CLI/plugin in gợi ý camelCase/kebab ngay trên
 đúng path.
 
-**Trạng thái dạng kebab-case:** tên trạng thái được chuyển sang kebab-case ở cả `createVariantMapper` lẫn `generateSourceInline` (`focusVisible` → `focus-visible:`) vì Tailwind chỉ
-chấp nhận tên variant dạng kebab; việc tìm sibling vẫn dùng dạng Pascal (`primary` + `primaryFocusVisible`).
+**Bảng trạng thái:** mỗi dòng của `COLOR_STATES` mang hậu tố của sibling và variant Tailwind (`{ suffix: "Selected", variant: "aria-selected" }`); `createVariantMapper` và
+`generateSourceInline` đọc cùng một dòng và emit `variant` đúng như được viết, vì tên variant không nhất thiết suy ra từ hậu tố (`Selected` → `aria-selected:`).
+Việc tìm sibling là token cộng `suffix` (`primary` + `Selected` → `primarySelected`).
 
 ---
 

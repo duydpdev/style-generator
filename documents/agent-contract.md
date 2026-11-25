@@ -9,8 +9,8 @@ The rules an agent (or a person) follows to write a theme and components with `@
 Name the semantic keys after the app's own roles; name primitive colours and typography after their values (see [Naming convention](#naming-convention)). The library derives every type and class from the keys you write; it never expects a particular name.
 
 - `colors` is required and **flat camelCase**: `brand`, `brandHover`, `surfaceRaised`. No nested object, no `DEFAULT`, no `_`, no leading run of two or more capitals (`CTA`, `HTMLText`); a single capital or an inner run (`primaryCTA`) is fine. The schema rejects the rest.
-- An intent may declare state siblings `<intent>Hover` and `<intent>Active`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` from `@duydpdev/style-generator/cva`) turns `brand` into `bg-brand hover:bg-brand-hover active:bg-brand-active` when they exist and into `bg-brand` when they do not.
-- An intent may declare a `<intent>Foreground` text colour (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` returns `text-brand-foreground` when it exists, else `text-<fallback>`. The older `on<Intent>` name (`text-on-brand`) still works but is deprecated: `contrastText` stops reading it in 9.0, and `style-gen doctor` warns on it.
+- An intent may declare state siblings `<intent>Hover`, `<intent>Active` and `<intent>Selected`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` from `@duydpdev/style-generator/cva`) turns `brand` into `bg-brand hover:bg-brand-hover active:bg-brand-active aria-selected:bg-brand-selected` when they exist and into `bg-brand` when they do not.
+- An intent may declare a `<intent>Foreground` text colour (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` returns `text-brand-foreground` when it exists, else `text-<fallback>`. `contrastText` does not read an `on<Intent>` key; `style-gen doctor` names the `<intent>Foreground` rename for each one.
 - A value `"$<key>"` aliases another key **of the same category** (`"brandHover": "$brandActive"` in `colors`). Not in `typography`. Unknown targets and cycles are schema errors.
 - Dark mode and palettes go in `themeAxes.<axis>.<variant>`; an override may only redefine keys that exist in the base category. Activation is `html[data-<axis>="<variant>"]` (use `themeAxisAttributes` from `@duydpdev/style-generator/recipes`). `base` is reserved as a variant name.
 - Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
@@ -89,7 +89,24 @@ Imports allowed inside `src/ui/<folder>/`:
 
 ## 3. New component checklist
 
-1. Pick the roles the component needs and add the missing keys to the theme JSON (with `<intent>Hover`/`<intent>Foreground` siblings if wanted).
+A component declares the axes that apply to it (a checkbox has `color` and `size`, a field has none) and uses only this vocabulary:
+
+<!-- component-axes:start -->
+
+| Axis      | Values                                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------ |
+| `color`   | a role key: `primary`, `secondary`, `accent`, `danger`, `success`, `warning`, `info` or a product role |
+| `variant` | `solid`, `soft`, `outline`, `ghost`, `link`                                                            |
+| `size`    | `sm`, `md`, `lg`, `icon`                                                                               |
+
+<!-- component-axes:end -->
+
+- `solid` fills with `<role>` and `<role>Foreground` text (`background` text when the theme has no `<role>Foreground`); `soft` fills with `<role>Subtle` and `<role>SubtleForeground` text and dims on hover (`hover:opacity-90`); `outline` is a `<role>` border and text on the `background` fill, with a `<role>Subtle` hover fill; `ghost` is `<role>` text with a `<role>Subtle` hover fill; `link` is `<role>` text, underlined on hover.
+- `size` sets the height from `controlHeight` (`h-control-<key>`). `icon` is a square at the `md` height; only button-like components declare it.
+- States: hover and active come from the `<role>Hover`/`<role>Active` keys through `COLOR_STATES` (`hover:opacity-90` without them); focus is a `focus-visible:` outline (a border on a field) in the `focus` key; disabled is `disabled:opacity-disabled` (the `opacity.disabled` token) with `cursor-not-allowed`; selected is `<role>Selected` through `COLOR_STATES` (`aria-selected:`) where the component has a selected state; invalid is `aria-invalid:` with the `danger` role on a form field.
+- Anatomy slots are named `prefix`, `suffix`, `label`, `hint` and `error`; a component has the ones it needs (Button: `prefix`, `suffix`; a field: `label`, `hint`, `error`).
+
+1. Pick the roles the component needs and add the missing keys to the theme JSON (with `<intent>Hover`/`<intent>Foreground` siblings if wanted, and `<intent>Subtle`/`<intent>SubtleForeground` when the component has a `soft` variant).
 2. Create `src/ui/<kebab-name>/` with `style.ts`, `types.ts`, `<Name>.tsx`, `index.ts`.
 3. In `style.ts`, declare the intents as `as const satisfies readonly ColorVariant<typeof theme>[]`.
 4. Build every class that names a theme key from a mapper over `tokens.*` (section 4); literals only for the cases section 4 allows, with a comment.
@@ -123,19 +140,20 @@ export const cn = createCn(tokens);
 - Intent lists use `ColorVariant` from `@duydpdev/style-generator/types` against `typeof theme`. Do not derive your own `ColorKey` from `tokens.colors`.
 - Every class that names a theme key comes from a mapper, one per category; the class carries the **kebab-cased** key (`text16Medium` → `text-16-medium`):
 
-  | Category       | Mapper                                                                     | Class           |
-  | -------------- | -------------------------------------------------------------------------- | --------------- |
-  | `colors`       | `createVariantMapper("bg", tokens.colors)` (also `text`, `border`, `ring`) | `bg-<key>`      |
-  | `typography`   | `createVariantMapper("", tokens.typography)`                               | `<key>`         |
-  | `borderRadius` | `createVariantMapper("rounded", tokens.borderRadius)`                      | `rounded-<key>` |
-  | `fontFamily`   | `createVariantMapper("font", tokens.fontFamily)`                           | `font-<key>`    |
-  | `borderWidth`  | `createVariantMapper("border", tokens.borderWidth)`                        | `border-<key>`  |
-  | `shadows`      | `createVariantMapper("shadow", tokens.shadows)`                            | `shadow-<key>`  |
+  | Category        | Mapper                                                                     | Class             |
+  | --------------- | -------------------------------------------------------------------------- | ----------------- |
+  | `colors`        | `createVariantMapper("bg", tokens.colors)` (also `text`, `border`, `ring`) | `bg-<key>`        |
+  | `typography`    | `createVariantMapper("", tokens.typography)`                               | `<key>`           |
+  | `borderRadius`  | `createVariantMapper("rounded", tokens.borderRadius)`                      | `rounded-<key>`   |
+  | `fontFamily`    | `createVariantMapper("font", tokens.fontFamily)`                           | `font-<key>`      |
+  | `borderWidth`   | `createVariantMapper("border", tokens.borderWidth)`                        | `border-<key>`    |
+  | `shadows`       | `createVariantMapper("shadow", tokens.shadows)`                            | `shadow-<key>`    |
+  | `controlHeight` | `createVariantMapper("h-control", tokens.controlHeight)`                   | `h-control-<key>` |
 
   Read a mapper with `mapper.<key>` (a compile-time check) or `pick(mapper, key)` (throws at import when the theme lacks the key). Never type `rounded-pill`, `font-sans` or a typography class by hand.
 
-- A class literal that names a theme key is allowed only for a combination the generator does not emit for your options: a variant other than `hover:`/`active:` (`focus-visible:outline-<key>`), an opacity step not listed in `coverage.colors.opacities`, or a state with an opacity (`hover:bg-<key>/10`). Tailwind finds it by scanning the file. Each such table gets a one-line comment saying why. Layout utilities with no theme key (`inline-flex`, `gap-1.5`, `tabular-nums`) are plain literals.
-- Theme keys are confined to one block per `style.ts`. In the example button this region is **the only part that changes with the theme**:
+- The generator emits a state variant only on the matching state key (`hover:bg-<key>-hover`, `active:bg-<key>-active`, `aria-selected:bg-<key>-selected`). Any other variant and theme key pair is a class literal that Tailwind finds by scanning the file: another variant (`focus-visible:outline-<key>`, `disabled:opacity-<key>`, `aria-invalid:border-<key>`), a state variant on a key that is not that state's sibling (`hover:bg-<intent>-subtle`), an opacity step not listed in `coverage.colors.opacities`, or a state with an opacity (`hover:bg-<key>/10`). Key each such literal by the theme key it names and check it with `satisfies`, so a key that leaves the theme fails the compiler; each such table gets a one-line comment saying why. Layout utilities with no theme key (`inline-flex`, `gap-1.5`, `tabular-nums`) are plain literals.
+- Theme keys written by hand (key lists and literal classes) sit in one block per `style.ts`, checked with `satisfies`; a `mapper.<key>` read elsewhere is checked by the compiler on its own. In the example button this region is **the only part that changes with the theme**:
 
 <!-- embed: examples/plain-react/src/ui/button/style.ts#button-preset -->
 
@@ -143,6 +161,7 @@ export const cn = createCn(tokens);
 /**
  * The intents `color` offers. `satisfies` is the DX anchor: rename or
  * remove one of these colors in theme.json and the compiler fails here.
+ * Each needs `<intent>Subtle` and `<intent>SubtleForeground` for `soft`.
  */
 export const buttonIntents = [
   "primary",
@@ -151,52 +170,36 @@ export const buttonIntents = [
   "danger",
 ] as const satisfies readonly ColorVariant<typeof theme>[];
 
-/** Literal classes, so Tailwind's scanner sees them: the registry emits no `focus-visible:` variant, no `/15` step and no state × opacity (`hover:bg-<key>/10`). */
-const focusRing = {
-  primary: "focus-visible:outline-primary",
-  secondary: "focus-visible:outline-secondary",
-  success: "focus-visible:outline-success",
-  danger: "focus-visible:outline-danger",
+/** Literal classes, so Tailwind's scanner sees them: the registry emits no `hover:` variant of a `Subtle` key. */
+const hoverTint = {
+  primary: "hover:bg-primary-subtle",
+  secondary: "hover:bg-secondary-subtle",
+  success: "hover:bg-success-subtle",
+  danger: "hover:bg-danger-subtle",
 } as const satisfies Record<ButtonIntent, string>;
 
-const tint = {
-  primary: {
-    outline: "border-primary text-primary hover:bg-primary/10",
-    soft: "bg-primary/10 text-primary hover:bg-primary/15",
-    ghost: "text-primary hover:bg-primary/10",
-    link: "text-primary",
-  },
-  secondary: {
-    outline: "border-secondary text-secondary hover:bg-secondary/10",
-    soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
-    ghost: "text-secondary hover:bg-secondary/10",
-    link: "text-secondary",
-  },
-  success: {
-    outline: "border-success text-success hover:bg-success/10",
-    soft: "bg-success/10 text-success hover:bg-success/15",
-    ghost: "text-success hover:bg-success/10",
-    link: "text-success",
-  },
-  danger: {
-    outline: "border-danger text-danger hover:bg-danger/10",
-    soft: "bg-danger/10 text-danger hover:bg-danger/15",
-    ghost: "text-danger hover:bg-danger/10",
-    link: "text-danger",
-  },
-} as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
+/** Literal classes keyed by the theme key they name: the generator emits no `focus-visible:`/`disabled:` variant of a theme key, so Tailwind finds these by scanning this file. `satisfies` fails when a key leaves the theme. */
+const stateClasses = {
+  focus: { focus: "focus-visible:outline-focus" },
+  disabled: { disabled: "disabled:opacity-disabled" },
+} as const satisfies {
+  focus: Partial<Record<ColorVariant<typeof theme>, string>>;
+  disabled: Partial<Record<keyof (typeof theme)["opacity"], string>>;
+};
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles, one `controlHeight` key per size. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
+  height: { sm: "sm", md: "md", lg: "lg" },
 } as const satisfies {
   background: ColorVariant<typeof theme>;
   radius: RoundedVariant<typeof theme>;
   type: TextVariant<typeof theme>;
   typeLg: TextVariant<typeof theme>;
+  height: Record<"sm" | "md" | "lg", keyof (typeof theme)["controlHeight"]>;
 };
 ```
 
@@ -265,4 +268,4 @@ Which rules a tool enforces, and where:
 | Opt-in     | `style-gen canvas check`: one theme per canvas, plus `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Only when it is called (a script, CI)            |
 | Convention | Everything else in this contract (layout, component checklist, forbidden app code, interface floor)                 | Review                                           |
 
-[Components](./components.md) holds the ten example components, the harness and the recipe factories; [UI kit](./reference/ui.md) documents `recipeFromTables`, `pick`, `contrastText`, `createCn` and the spacing helpers.
+[Components](./components.md) holds the example components, the harness and the recipe factories; [UI kit](./reference/ui.md) documents `recipeFromTables`, `pick`, `contrastText`, `createCn` and the spacing helpers.

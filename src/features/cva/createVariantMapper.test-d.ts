@@ -1,6 +1,7 @@
 import { describe, it, expectTypeOf } from "vitest";
 
 import { COLOR_STATES } from "../../shared/colorStates";
+import type { ColorState } from "../../shared/colorStates";
 import {
   borderProperties,
   roundedProperties,
@@ -81,7 +82,10 @@ describe("createVariantMapper return type", () => {
 
     it("returns the literal chained class string per token", () => {
       const map = createVariantMapper("bg", tokens, {
-        states: ["hover", "active"],
+        states: [
+          { suffix: "Hover", variant: "hover" },
+          { suffix: "Active", variant: "active" },
+        ],
       });
 
       expectTypeOf(
@@ -104,7 +108,12 @@ describe("createVariantMapper return type", () => {
       const map = createVariantMapper(
         "bg",
         ["primary", "primaryActive"] as const,
-        { states: ["hover", "active"] },
+        {
+          states: [
+            { suffix: "Hover", variant: "hover" },
+            { suffix: "Active", variant: "active" },
+          ],
+        },
       );
 
       expectTypeOf(
@@ -112,29 +121,21 @@ describe("createVariantMapper return type", () => {
       ).toEqualTypeOf<"bg-primary active:bg-primary-active">();
     });
 
-    it("pascal-cases a camelCase or kebab-case state to find the sibling, kebab-cases the variant", () => {
-      const camel = createVariantMapper(
+    it("finds the sibling by suffix and prefixes it with the variant as given", () => {
+      const map = createVariantMapper(
         "bg",
-        ["primary", "primaryFocusVisible"] as const,
-        { states: ["focusVisible"] },
-      );
-      const kebab = createVariantMapper(
-        "bg",
-        ["primary", "primaryFocusVisible"] as const,
-        { states: ["focus-visible"] },
+        ["primary", "primarySelected"] as const,
+        { states: COLOR_STATES },
       );
 
       expectTypeOf(
-        camel.primary,
-      ).toEqualTypeOf<"bg-primary focus-visible:bg-primary-focus-visible">();
-      expectTypeOf(
-        kebab.primary,
-      ).toEqualTypeOf<"bg-primary focus-visible:bg-primary-focus-visible">();
+        map.primary,
+      ).toEqualTypeOf<"bg-primary aria-selected:bg-primary-selected">();
     });
 
     it('supports the "" prefix (bare class)', () => {
       const map = createVariantMapper("", ["text12", "text12Hover"] as const, {
-        states: ["hover"],
+        states: [{ suffix: "Hover", variant: "hover" }],
       });
 
       expectTypeOf(map.text12).toEqualTypeOf<"text-12 hover:text-12-hover">();
@@ -142,7 +143,7 @@ describe("createVariantMapper return type", () => {
 
     it("multi-prefix form maps each prefix to its own StateVariantMap", () => {
       const map = createVariantMapper(["bg", "text"] as const, tokens, {
-        states: ["hover"],
+        states: [{ suffix: "Hover", variant: "hover" }],
       });
 
       expectTypeOf(
@@ -154,17 +155,28 @@ describe("createVariantMapper return type", () => {
       expectTypeOf(map.text.danger).toEqualTypeOf<"text-danger">();
     });
 
-    it("falls back to string when states is typed readonly string[]", () => {
-      const states: readonly string[] = ["hover"];
+    it("falls back to string when states is typed readonly ColorState[]", () => {
+      const states: readonly ColorState[] = [
+        { suffix: "Hover", variant: "hover" },
+      ];
       const map = createVariantMapper("bg", tokens, { states });
 
       expectTypeOf(map.primary).toEqualTypeOf<string>();
       expectTypeOf(map.danger).toEqualTypeOf<string>();
     });
 
+    it("falls back to string for a tuple of wide ColorState rows", () => {
+      const hover: ColorState = { suffix: "Hover", variant: "hover" };
+      const map = createVariantMapper("bg", tokens, { states: [hover] });
+
+      expectTypeOf(map.primary).toEqualTypeOf<string>();
+    });
+
     it("falls back to string for non-literal tokens", () => {
       const wide: readonly string[] = ["primary"];
-      const map = createVariantMapper("bg", wide, { states: ["hover"] });
+      const map = createVariantMapper("bg", wide, {
+        states: [{ suffix: "Hover", variant: "hover" }],
+      });
 
       expectTypeOf(map).toEqualTypeOf<Readonly<Record<string, string>>>();
     });
@@ -172,7 +184,15 @@ describe("createVariantMapper return type", () => {
     it("rejects an unregistered prefix", () => {
       expectTypeOf<"fill">().not.toExtend<RegistryPrefix | "">();
       // @ts-expect-error "fill" is not a prefix any registry category feeds
-      createVariantMapper("fill", tokens, { states: ["hover"] });
+      createVariantMapper("fill", tokens, {
+        states: [{ suffix: "Hover", variant: "hover" }],
+      });
+    });
+
+    it("rejects a plain state name: a state is { suffix, variant }", () => {
+      expectTypeOf<"hover">().not.toExtend<ColorState>();
+      // @ts-expect-error a bare string is not a ColorState
+      createVariantMapper("bg", tokens, { states: ["hover"] });
     });
   });
 

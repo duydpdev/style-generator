@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 
+import { COLOR_STATES } from "../../shared/colorStates";
+
 import { createVariantMapper } from "./createVariantMapper";
+
+const HOVER = { suffix: "Hover", variant: "hover" } as const;
+const ACTIVE = { suffix: "Active", variant: "active" } as const;
 
 describe("createVariantMapper", () => {
   it("maps a flat token list under a single prefix", () => {
@@ -29,7 +34,7 @@ describe("createVariantMapper", () => {
 
     it("chains hover:/active: classes onto a token with matching siblings", () => {
       const map = createVariantMapper("bg", tokens, {
-        states: ["hover", "active"],
+        states: [HOVER, ACTIVE],
       });
 
       expect(map.primary).toBe(
@@ -39,7 +44,7 @@ describe("createVariantMapper", () => {
 
     it("keeps a token with no siblings as a plain single class", () => {
       const map = createVariantMapper("bg", tokens, {
-        states: ["hover", "active"],
+        states: [HOVER, ACTIVE],
       });
 
       expect(map.danger).toBe("bg-danger");
@@ -47,7 +52,7 @@ describe("createVariantMapper", () => {
 
     it("keeps sibling tokens themselves as plain single classes", () => {
       const map = createVariantMapper("bg", tokens, {
-        states: ["hover", "active"],
+        states: [HOVER, ACTIVE],
       });
 
       expect(map.primaryHover).toBe("bg-primary-hover");
@@ -58,7 +63,7 @@ describe("createVariantMapper", () => {
       const map = createVariantMapper(
         "bg",
         ["primary", "primaryHover"] as const,
-        { states: ["hover", "active"] },
+        { states: [HOVER, ACTIVE] },
       );
 
       // no `primaryActive` sibling declared -> no `active:` segment
@@ -66,28 +71,26 @@ describe("createVariantMapper", () => {
     });
 
     it("respects a states list narrower than the sibling naming convention", () => {
-      const map = createVariantMapper("bg", tokens, { states: ["hover"] });
+      const map = createVariantMapper("bg", tokens, { states: [HOVER] });
 
       expect(map.primary).toBe("bg-primary hover:bg-primary-hover");
     });
 
-    it("kebab-cases a camelCase state name into a valid Tailwind variant prefix", () => {
+    it("prefixes the sibling with the state's variant as given (Selected -> aria-selected)", () => {
       const map = createVariantMapper(
         "bg",
-        ["primary", "primaryFocusVisible"] as const,
-        { states: ["focusVisible"] },
+        ["primary", "primarySelected"] as const,
+        { states: COLOR_STATES },
       );
 
-      expect(map.primary).toBe(
-        "bg-primary focus-visible:bg-primary-focus-visible",
-      );
+      expect(map.primary).toBe("bg-primary aria-selected:bg-primary-selected");
     });
 
     it("supports the prefixes-array overload together with states", () => {
       const map = createVariantMapper(
         ["bg", "text"] as const,
         ["primary", "primaryHover"] as const,
-        { states: ["hover"] },
+        { states: [HOVER] },
       );
 
       expect(map.bg.primary).toBe("bg-primary hover:bg-primary-hover");
@@ -115,7 +118,7 @@ describe("createVariantMapper", () => {
       const map = createVariantMapper(
         "bg",
         ["primary", "primaryHover"] as const,
-        { states: ["hover"], opacities: [10] },
+        { states: [HOVER], opacities: [10] },
       );
       expect(map).toEqual({
         primary: "bg-primary hover:bg-primary-hover",

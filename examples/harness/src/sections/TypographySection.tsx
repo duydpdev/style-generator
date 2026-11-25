@@ -38,7 +38,7 @@ const ROWS: TypoRow[] = [
 
 export const TypographySection = () => {
   return (
-    <Box as="section" borderT="thin" py={14} borderColor="line">
+    <Box as="section" borderT="thin" py={14} borderColor="border">
       <SectionHead
         num="02 — Typography"
         title="Two voices, one rhythm."

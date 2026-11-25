@@ -77,7 +77,7 @@ const bg = createVariantMapper("bg", tokens.colors, { states: COLOR_STATES });
 // bg.danger       → "bg-danger"
 ```
 
-Pass `COLOR_STATES` rather than typing `["hover", "active"]`: it is the list the `@source inline` lines use as well. Pass camelCase keys like the ones in `tokens.colors` (`primaryHover`, not `primary-hover`). `prefix` is typed as the prefixes the registry covers, so `createVariantMapper("fill", …)` is a type error: no `@source inline` line keeps that class. [`createVariantMapper`](../reference/cva.md) documents `allowUnregisteredPrefix` for the rare case you declare the classes yourself.
+Pass `COLOR_STATES` rather than typing the state table by hand: it is the table the `@source inline` lines use as well (`Hover` → `hover:`, `Active` → `active:`, `Selected` → `aria-selected:`). Pass camelCase keys like the ones in `tokens.colors` (`primaryHover`, not `primary-hover`). `prefix` is typed as the prefixes the registry covers, so `createVariantMapper("fill", …)` is a type error: no `@source inline` line keeps that class. [`createVariantMapper`](../reference/cva.md) documents `allowUnregisteredPrefix` for the rare case you declare the classes yourself.
 
 A headless recipe composes the mappers with `recipeFromTables` (class-variance-authority underneath); framework components wrap it. List the intents the component offers with `satisfies` on the color keys: rename or delete a color in `theme.json` and the compiler flags exactly that line instead of emitting a class that no longer exists.
 

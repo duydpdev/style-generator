@@ -22,7 +22,9 @@
  * - with `--boards`, `canvas.json` holds the manifest's pages, core boards (in
  *   order) and one `c-<kebab>` board per design-system component; core boards
  *   carry their sections, theme literals and provenance block; component pages
- *   follow the `s-*`/`c-*` split; every `$preview` matches its frame;
+ *   follow the `s-*`/`c-*` split; every `$preview` matches its frame; with
+ *   `--recipes <file>`, every `c-<name>` board marks each axis value of its
+ *   recipe with `data-sg-cell="<axis>:<value>"`;
  * - with `--ds-version <namespace>=<version>`, `canvas.json` installs that
  *   design-system version.
  *
@@ -40,6 +42,7 @@ import { toKebabCase } from "../../../shared/helpers";
 import {
   boardContentViolations,
   canvasJsonViolations,
+  loadRecipes,
   type DsVersion,
 } from "./boardRules";
 import {
@@ -78,6 +81,8 @@ export interface CheckOptions {
   /** Manifest file; the bundled manifest when absent. */
   standard?: string | undefined;
   dsVersion?: DsVersion | undefined;
+  /** Recipes JSON (`{ "<kebab name>": { "<axis>": [values] } }`); read only with `boards`. */
+  recipes?: string | undefined;
   /** Base of relative paths (default: `process.cwd()`). */
   cwd?: string | undefined;
 }
@@ -117,6 +122,10 @@ export function checkCanvas(options: CheckOptions): string[] {
     options.standard === undefined
       ? DEFAULT_STANDARD
       : loadStandard(at(options.standard), options.standard);
+  const recipes =
+    options.recipes === undefined || !boards
+      ? undefined
+      : loadRecipes(at(options.recipes), options.recipes);
   const primitiveKeys = Object.keys(asRecord(asRecord(parsed).colors)).filter(
     (k) => PRIMITIVE.test(k),
   );
@@ -137,6 +146,7 @@ export function checkCanvas(options: CheckOptions): string[] {
       out.push(`${theme}:1 ${message}`);
   const boardOptions = {
     boards,
+    recipes,
     stamp: stampFile,
     dsVersion: options.dsVersion,
     canvasLabel: options.canvasDir,
@@ -169,6 +179,7 @@ export interface CanvasArgs {
   intents?: string[] | undefined;
   standard?: string | undefined;
   dsVersion?: DsVersion | undefined;
+  recipes?: string | undefined;
 }
 
 /**
@@ -206,8 +217,11 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
   if (theme === undefined && !inventory)
     return "--theme is required (unless --inventory)";
   // Dropping an empty optional path would skip its check silently.
-  for (const key of ["stamp", "standard"])
+  for (const key of ["stamp", "standard", "recipes"])
     if (str(key) === "") return `--${key} must not be empty`;
+  // The variant grid is a board rule: without --boards it would never run.
+  if (str("recipes") !== undefined && values.boards !== true)
+    return "--recipes needs --boards";
   const dsVersionText = str("ds-version");
   const dsVersion =
     dsVersionText === undefined ? undefined : parseDsVersion(dsVersionText);
@@ -227,6 +241,7 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
     intents,
     standard: str("standard"),
     dsVersion,
+    recipes: str("recipes"),
   };
 }
 

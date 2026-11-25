@@ -1,4 +1,4 @@
-<!-- source: documents/cookbook.md sha256: fd477c96d656 -->
+<!-- source: documents/cookbook.md sha256: 0b4f753bd48d -->
 
 # Công thức
 
@@ -191,4 +191,4 @@ const button = recipeFromTables({
 export const className = cn(button({ color: "danger" }), "px-4");
 ```
 
-`COLOR_STATES` nối các class `hover:` và `active:` vào một màu có các key ngang hàng `…Hover` và `…Active`; `createCn(tokens)` khiến một `rounded-pill` đứng sau thay thế `rounded-md` đứng trước. `recipeFromTables` trả về một recipe có kiểu, nên một giá trị variant viết sai là lỗi kiểu; hãy để kết quả không chú thích kiểu. Xem [UI kit](./reference/ui.md) và [Xây dựng component](./getting-started/build-components.md).
+`COLOR_STATES` nối các class `hover:`, `active:` và `aria-selected:` vào một màu có các key ngang hàng `…Hover`, `…Active` và `…Selected`; `createCn(tokens)` khiến một `rounded-pill` đứng sau thay thế `rounded-md` đứng trước. `recipeFromTables` trả về một recipe có kiểu, nên một giá trị variant viết sai là lỗi kiểu; hãy để kết quả không chú thích kiểu. Xem [UI kit](./reference/ui.md) và [Xây dựng component](./getting-started/build-components.md).

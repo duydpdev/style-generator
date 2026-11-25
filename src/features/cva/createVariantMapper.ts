@@ -1,5 +1,6 @@
-import type { CamelCase, KebabCase } from "../../core/inference";
-import { toKebabCase, toPascalCase } from "../../shared/helpers";
+import type { KebabCase } from "../../core/inference";
+import type { ColorState } from "../../shared/colorStates";
+import { toKebabCase } from "../../shared/helpers";
 import type { RegistryPrefix } from "../registry/builtInCategories";
 
 type MappedVariant<T extends string, P extends string> = P extends ""
@@ -15,38 +16,40 @@ type MultiVariantMap<T extends string, P extends string> = {
 };
 
 /**
- * The chained ` state:class` suffixes of token `K`: one per state in `S`
- * whose sibling token (`K` + Pascal-cased state — the runtime's
- * `toPascalCase`, so `focus-visible` -> `focusVisible`) is declared in `T`.
+ * The chained ` variant:class` suffixes of token `K`: one per state in `S`
+ * whose sibling token (`K` + the state's `suffix`) is declared in `T`.
  */
 type JoinStates<
   K extends string,
   P extends string,
-  S extends readonly string[],
+  S extends readonly ColorState[],
   T extends string,
 > = S extends readonly [
-  infer H extends string,
-  ...infer R extends readonly string[],
+  infer H extends ColorState,
+  ...infer R extends readonly ColorState[],
 ]
-  ? `${`${K}${Capitalize<CamelCase<H>>}` extends T ? ` ${KebabCase<H>}:${MappedVariant<`${K}${Capitalize<CamelCase<H>>}`, P>}` : ""}${JoinStates<K, P, R, T>}`
+  ? `${`${K}${H["suffix"]}` extends T ? ` ${H["variant"]}:${MappedVariant<`${K}${H["suffix"]}`, P>}` : ""}${JoinStates<K, P, R, T>}`
   : "";
 
 /**
  * Result of the `{ states }` overloads: each token maps to its own literal
  * class, followed by one `state:class` per sibling state. A non-tuple
- * `states` (`readonly string[]`) or a non-literal token type cannot be
- * resolved statically and falls back to `string`.
+ * `states` (`readonly ColorState[]`), a row whose `suffix` or `variant` is a
+ * wide `string` (`[row]` with `row: ColorState`) or a non-literal token type
+ * cannot be resolved statically and falls back to `string`.
  */
 type StateVariantMap<
   T extends string,
   P extends string,
-  S extends readonly string[],
+  S extends readonly ColorState[],
 > = {
   readonly [K in T]: number extends S["length"]
     ? string
-    : string extends K
+    : string extends S[number]["suffix"] | S[number]["variant"]
       ? string
-      : `${MappedVariant<K, P>}${JoinStates<K, P, S, T>}`;
+      : string extends K
+        ? string
+        : `${MappedVariant<K, P>}${JoinStates<K, P, S, T>}`;
 };
 
 /**
@@ -57,7 +60,7 @@ type StateVariantMap<
 type OpacityVariantMap<
   T extends string,
   P extends string,
-  S extends readonly string[],
+  S extends readonly ColorState[],
   N extends number,
 > = {
   readonly [K in T | `${T}/${N}`]: K extends T
@@ -69,7 +72,7 @@ type OpacityVariantMap<
 
 /** Runtime shape of the optional third argument (the overloads narrow it). */
 interface VariantMapperRuntimeOptions {
-  readonly states?: readonly string[];
+  readonly states?: readonly ColorState[];
   readonly opacities?: readonly number[];
   readonly allowUnregisteredPrefix?: true;
 }
@@ -81,14 +84,16 @@ interface VariantMapperRuntimeOptions {
  * output is guaranteed to match a class the registry emits `@source
  * inline(...)` for.
  *
- * The optional `{ states }` argument (e.g. `COLOR_STATES`) lists state names
- * to look up as sibling RAW tokens. For a raw token `t`, a state `s` is
- * appended to `t`'s class only when `tokens` also contains `t` + Pascal-cased
- * `s` (`primary` + `"hover"` -> `primaryHover`). A token with no matching
- * sibling keeps its plain single class; sibling tokens themselves are plain
- * single classes. The result is a literal chained string when `states` is a
- * literal tuple (`as const`, `COLOR_STATES`) and `string` when it is typed
- * `readonly string[]`. `{ allowUnregisteredPrefix: true }` accepts any
+ * The optional `{ states }` argument (e.g. `COLOR_STATES`) is a table of
+ * `{ suffix, variant }` states to look up as sibling RAW tokens. For a raw
+ * token `t`, a state is appended to `t`'s class as `<variant>:<class>` only
+ * when `tokens` also contains `t` + `suffix` (`primary` + `Hover` ->
+ * `primaryHover` -> `hover:bg-primary-hover`; `Selected` maps to
+ * `aria-selected:`). A token with no matching sibling keeps its plain
+ * single class; sibling tokens themselves are plain single classes. The
+ * result is a literal chained string when `states` is a literal tuple
+ * (`as const`, `COLOR_STATES`) and `string` when it is typed
+ * `readonly ColorState[]`. `{ allowUnregisteredPrefix: true }` accepts any
  * prefix string instead of only registry prefixes.
  *
  * `{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
@@ -146,7 +151,7 @@ export function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
   const N extends number,
-  const S extends readonly string[] = readonly [],
+  const S extends readonly ColorState[] = readonly [],
 >(
   prefix: P,
   tokens: readonly T[],
@@ -156,7 +161,7 @@ export function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
   const N extends number,
-  const S extends readonly string[] = readonly [],
+  const S extends readonly ColorState[] = readonly [],
 >(
   prefixes: readonly P[],
   tokens: readonly T[],
@@ -165,7 +170,7 @@ export function createVariantMapper<
 export function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
-  const S extends readonly string[],
+  const S extends readonly ColorState[],
 >(
   prefix: P,
   tokens: readonly T[],
@@ -174,7 +179,7 @@ export function createVariantMapper<
 export function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
-  const S extends readonly string[],
+  const S extends readonly ColorState[],
 >(
   prefixes: readonly P[],
   tokens: readonly T[],
@@ -202,10 +207,10 @@ export function createVariantMapper<
     for (const token of tokens) {
       const base = mapClass(prefix, token);
       let cls = base;
-      for (const state of states ?? []) {
-        const siblingKey = `${token}${toPascalCase(state)}`;
+      for (const { suffix, variant } of states ?? []) {
+        const siblingKey = `${token}${suffix}`;
         if (tokenSet.has(siblingKey)) {
-          cls += ` ${toKebabCase(state)}:${mapClass(prefix, siblingKey)}`;
+          cls += ` ${variant}:${mapClass(prefix, siblingKey)}`;
         }
       }
       map[token] = cls;

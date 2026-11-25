@@ -20,7 +20,11 @@
     "primaryHover": "$blue700",
     "primaryActive": "$blue800",
     "primaryForeground": "$white",
+    "primarySubtle": "color-mix(in srgb, var(--sg-color-primary) 10%, transparent)",
+    "primarySubtleForeground": "$primary",
     "danger": "$red600",
+    "dangerSubtle": "color-mix(in srgb, var(--sg-color-danger) 10%, transparent)",
+    "dangerSubtleForeground": "$danger",
     "success": "$green600",
     "warning": "$amber500",
     "focus": "$blue600",
@@ -48,7 +52,20 @@
       "fontWeight": 700
     }
   },
-  "borderRadius": { "sm": "4px", "md": "8px", "lg": "12px", "full": "9999px" },
+  "controlHeight": {
+    "sm": "1.75rem",
+    "md": "2.25rem",
+    "lg": "2.75rem"
+  },
+  "opacity": {
+    "disabled": 0.5
+  },
+  "borderRadius": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "12px",
+    "full": "9999px"
+  },
   "themeAxes": {
     "theme": {
       "dark": {

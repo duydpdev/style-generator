@@ -68,7 +68,7 @@
   --sg-shadow-sm: none;
   --sg-shadow-md: none;
   --sg-shadow-lg: none;
-  --sg-color-line: var(--c-line-strong);
+  --sg-color-border: var(--c-line-strong);
 }
 [data-surface="flat"] .x-sg-glass-target {
   border-width: 1.5px;
@@ -189,7 +189,7 @@ body {
   background: color-mix(in srgb, var(--color-background) 80%, transparent);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
-  border-bottom: 1px solid var(--sg-color-line);
+  border-bottom: 1px solid var(--sg-color-border);
 }
 
 /* Color card hover lift + tone strip */
@@ -233,7 +233,7 @@ body {
   padding: 8px 14px 8px 8px;
   border-radius: 999px;
   background: var(--color-surface);
-  border: 1px solid var(--sg-color-line);
+  border: 1px solid var(--sg-color-border);
   cursor: pointer;
   transition:
     border-color 0.15s,
@@ -350,7 +350,7 @@ body {
   cursor: pointer;
   background: transparent;
   color: var(--color-foreground);
-  border: 1px solid var(--sg-color-line);
+  border: 1px solid var(--sg-color-border);
   border-radius: 10px;
   padding: 10px 6px 8px;
   display: flex;
@@ -389,13 +389,13 @@ body {
   border: 1.5px solid var(--color-foreground);
 }
 .x-sg-tweak-surf-lifted {
-  border: 1px solid var(--sg-color-line);
+  border: 1px solid var(--sg-color-border);
   box-shadow:
     0 4px 8px -2px rgba(0, 0, 0, 0.18),
     0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .x-sg-tweak-surf-glass {
-  border: 1px solid var(--sg-color-line);
+  border: 1px solid var(--sg-color-border);
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--color-surface) 60%, transparent),
@@ -408,7 +408,7 @@ body {
 code {
   font-family: var(--f-mono);
   font-size: 0.88em;
-  background: var(--sg-color-line);
+  background: var(--sg-color-border);
   padding: 1px 5px;
   border-radius: 4px;
   color: var(--color-foreground);

@@ -37,37 +37,20 @@ export const altIntents = [
   "alert",
 ] as const satisfies readonly ColorVariant<AltTheme>[];
 
-/** Literal classes, so Tailwind's scanner sees them: the registry emits no `focus-visible:` variant, no `/15` step and no state × opacity (`hover:bg-<key>/10`). */
+/** `focusRing`, `disabled` and `hoverTint` are literal classes, so Tailwind's scanner sees them; the alt theme has no `opacity` group, so `disabled` uses Tailwind's own `opacity-50`. */
 export const altButtonPreset = {
   intents: altIntents,
   background: "paper",
   radius: "soft",
   type: "body",
   typeLg: "title",
-  focusRing: {
-    brand: "focus-visible:outline-brand",
-    positive: "focus-visible:outline-positive",
-    alert: "focus-visible:outline-alert",
-  },
-  tint: {
-    brand: {
-      outline: "border-brand text-brand hover:bg-brand/10",
-      soft: "bg-brand/10 text-brand hover:bg-brand/15",
-      ghost: "text-brand hover:bg-brand/10",
-      link: "text-brand",
-    },
-    positive: {
-      outline: "border-positive text-positive hover:bg-positive/10",
-      soft: "bg-positive/10 text-positive hover:bg-positive/15",
-      ghost: "text-positive hover:bg-positive/10",
-      link: "text-positive",
-    },
-    alert: {
-      outline: "border-alert text-alert hover:bg-alert/10",
-      soft: "bg-alert/10 text-alert hover:bg-alert/15",
-      ghost: "text-alert hover:bg-alert/10",
-      link: "text-alert",
-    },
+  height: { sm: "compact", md: "regular", lg: "roomy" },
+  focusRing: "focus-visible:outline-brand",
+  disabled: "disabled:opacity-50",
+  hoverTint: {
+    brand: "hover:bg-brand-subtle",
+    positive: "hover:bg-positive-subtle",
+    alert: "hover:bg-alert-subtle",
   },
 } as const satisfies ButtonPreset;
 

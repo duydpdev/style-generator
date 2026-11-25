@@ -310,15 +310,52 @@ export function jsonBlocks(
 }
 
 /**
+ * Decodes the five entities an editor writes into an attribute value.
+ * @param {string} value - Attribute value as saved
+ * @returns {string} The value
+ */
+const decodeEntities = (value: string): string =>
+  value
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&");
+
+/**
+ * The values of one `data-sg-*` marker attribute across a board (any case,
+ * quoted, entities decoded). A marker inside a comment or another
+ * attribute's value still counts.
+ * @param {string} text - File contents
+ * @param {"section" | "cell"} marker - `data-sg-<marker>`
+ * @returns {string[]} In document order
+ */
+function markerValues(text: string, marker: "section" | "cell"): string[] {
+  const attribute = new RegExp(
+    `\\sdata-sg-${marker}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`,
+    "gi",
+  );
+  return [...text.matchAll(attribute)].map((m) =>
+    decodeEntities(m[1] ?? m[2] ?? ""),
+  );
+}
+
+/**
  * The `data-sg-section` ids of a board.
  * @param {string} text - File contents
  * @returns {string[]} In document order
  */
-export function sectionIds(text: string): string[] {
-  return [
-    ...text.matchAll(/\sdata-sg-section\s*=\s*(?:"([^"]*)"|'([^']*)')/g),
-  ].map((m) => m[1] ?? m[2] ?? "");
-}
+export const sectionIds = (text: string): string[] =>
+  markerValues(text, "section");
+
+/**
+ * The `data-sg-cell` values of a board (`<axis>:<value>`): the variant-grid
+ * cells a `c-*` board shows.
+ * @param {string} text - File contents
+ * @returns {string[]} In document order
+ */
+export const cellMarkers = (text: string): string[] =>
+  markerValues(text, "cell");
 
 /**
  * The `$preview` frame of the `data-dc-script` block's `data-props`.
@@ -332,14 +369,10 @@ export function previewSize(
     if (attributeValue(m[0], "data-dc-script") === null) continue;
     const props = attributeValue(m[0], "data-props");
     if (props === null) return null;
-    const json = props
-      .replaceAll("&quot;", '"')
-      .replaceAll("&#39;", "'")
-      .replaceAll("&lt;", "<")
-      .replaceAll("&gt;", ">")
-      .replaceAll("&amp;", "&");
     try {
-      const preview = asRecord(asRecord(JSON.parse(json)).$preview);
+      const preview = asRecord(
+        asRecord(JSON.parse(decodeEntities(props))).$preview,
+      );
       const { width, height } = preview;
       return typeof width === "number" && typeof height === "number"
         ? { width, height }

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cva.md sha256: aa26296a831d -->
+<!-- source: documents/reference/cva.md sha256: a632006fa005 -->
 
 # Helper CVA (./cva)
 
@@ -31,7 +31,7 @@ export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
   const N extends number,
-  const S extends readonly string[] = readonly [],
+  const S extends readonly ColorState[] = readonly [],
 >(
   prefix: P,
   tokens: readonly T[],
@@ -44,7 +44,7 @@ export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
   const N extends number,
-  const S extends readonly string[] = readonly [],
+  const S extends readonly ColorState[] = readonly [],
 >(
   prefixes: readonly P[],
   tokens: readonly T[],
@@ -58,7 +58,7 @@ export declare function createVariantMapper<
 export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
-  const S extends readonly string[],
+  const S extends readonly ColorState[],
 >(
   prefix: P,
   tokens: readonly T[],
@@ -69,7 +69,7 @@ export declare function createVariantMapper<
 export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
-  const S extends readonly string[],
+  const S extends readonly ColorState[],
 >(
   prefixes: readonly P[],
   tokens: readonly T[],
@@ -87,14 +87,16 @@ registry (`flattenByCategory`/`generateSourceInline`), so a mapper's
 output is guaranteed to match a class the registry emits `@source
 inline(...)` for.
 
-The optional `{ states }` argument (e.g. `COLOR_STATES`) lists state names
-to look up as sibling RAW tokens. For a raw token `t`, a state `s` is
-appended to `t`'s class only when `tokens` also contains `t` + Pascal-cased
-`s` (`primary` + `"hover"` -> `primaryHover`). A token with no matching
-sibling keeps its plain single class; sibling tokens themselves are plain
-single classes. The result is a literal chained string when `states` is a
-literal tuple (`as const`, `COLOR_STATES`) and `string` when it is typed
-`readonly string[]`. `{ allowUnregisteredPrefix: true }` accepts any
+The optional `{ states }` argument (e.g. `COLOR_STATES`) is a table of
+`{ suffix, variant }` states to look up as sibling RAW tokens. For a raw
+token `t`, a state is appended to `t`'s class as `<variant>:<class>` only
+when `tokens` also contains `t` + `suffix` (`primary` + `Hover` ->
+`primaryHover` -> `hover:bg-primary-hover`; `Selected` maps to
+`aria-selected:`). A token with no matching sibling keeps its plain
+single class; sibling tokens themselves are plain single classes. The
+result is a literal chained string when `states` is a literal tuple
+(`as const`, `COLOR_STATES`) and `string` when it is typed
+`readonly ColorState[]`. `{ allowUnregisteredPrefix: true }` accepts any
 prefix string instead of only registry prefixes.
 
 `{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
@@ -149,7 +151,7 @@ const bgStates = createVariantMapper("bg", tokens, { states: COLOR_STATES });
 // }
 ```
 
-Hãy luôn truyền `COLOR_STATES` thay vì tự viết cứng mảng — đó chính là danh sách dùng để sinh ra các dòng trạng thái `@source inline`.
+Hãy luôn truyền `COLOR_STATES` thay vì tự viết cứng bảng — đó chính là danh sách dùng để sinh ra các dòng trạng thái `@source inline`.
 
 **Ràng buộc prefix.** `prefix` có kiểu `RegistryPrefix | ""` (các prefix mà registry sinh ra `@source inline`; `""` là typography), do đó `createVariantMapper("fill", …)` và một prefix lưu trong biến kiểu `string` đều là lỗi kiểu: chúng sẽ map sang các class mà không có dòng `@source inline` nào giữ lại. Để bỏ qua ràng buộc này cho một prefix đơn lẻ, hãy truyền `{ allowUnregisteredPrefix: true }` làm đối số thứ ba và tự khai báo các class đó trong CSS của app bằng một directive `@source inline(...)` thuần của Tailwind. Tùy chọn bỏ qua này không kết hợp được với `{ states }`, với `{ opacities }` hoặc với một mảng các prefix.
 
@@ -176,11 +178,25 @@ Hãy đặt cùng `coverage.colors.opacities` trong `style-gen.config.json` (fil
 <!-- signature: COLOR_STATES -->
 
 ```ts
-export declare const COLOR_STATES: readonly ["hover", "active"];
+export declare const COLOR_STATES: readonly [
+  {
+    readonly suffix: "Hover";
+    readonly variant: "hover";
+  },
+  {
+    readonly suffix: "Active";
+    readonly variant: "active";
+  },
+  {
+    readonly suffix: "Selected";
+    readonly variant: "aria-selected";
+  },
+];
 ```
 
-Interactive state suffixes a flat color token can opt into by declaring a
-sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`).
+The interactive states a flat color token can opt into by declaring a
+sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`,
+`primarySelected` -> `aria-selected:bg-primary-selected`).
 
 Single source of truth for BOTH sides of the contract: the registry's
 `colorsCategory.states` (which drives the `@source inline` state lines) and
@@ -190,7 +206,24 @@ subpath can re-export it without pulling Zod or the registry.
 
 <!-- /signature -->
 
-Các hậu tố trạng thái tương tác (`hover`, `active`) được chia sẻ giữa các dòng trạng thái `@source inline` và `createVariantMapper(…, { states })`.
+Bảng trạng thái tương tác (`Hover` → `hover:`, `Active` → `active:`, `Selected` → `aria-selected:`) được chia sẻ giữa các dòng trạng thái `@source inline` và `createVariantMapper(…, { states })`.
+
+## `ColorState`
+
+<!-- signature: ColorState -->
+
+```ts
+export declare interface ColorState {
+  readonly suffix: string;
+  readonly variant: string;
+}
+```
+
+One interactive state a flat color token can opt into: the sibling key is
+the token plus `suffix` (`primary` + `Hover` → `primaryHover`), and its
+class is chained behind the Tailwind `variant` (`hover:bg-primary-hover`).
+
+<!-- /signature -->
 
 ## `toKebabCase`
 

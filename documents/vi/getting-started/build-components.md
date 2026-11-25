@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/build-components.md sha256: 0b356e2f453b -->
+<!-- source: documents/getting-started/build-components.md sha256: 8ff72232a7f7 -->
 
 # Xây dựng component từ theme
 
@@ -79,7 +79,7 @@ const bg = createVariantMapper("bg", tokens.colors, { states: COLOR_STATES });
 // bg.danger       → "bg-danger"
 ```
 
-Hãy truyền `COLOR_STATES` thay vì tự gõ `["hover", "active"]`: đó cũng là danh sách mà các dòng `@source inline` dùng. Hãy truyền các key camelCase như trong `tokens.colors` (`primaryHover`, không phải `primary-hover`). `prefix` được định kiểu là các tiền tố mà registry bao phủ, nên `createVariantMapper("fill", …)` là lỗi kiểu: không có dòng `@source inline` nào giữ class đó. [`createVariantMapper`](../reference/cva.md) mô tả `allowUnregisteredPrefix` cho trường hợp hiếm hoi bạn tự khai báo các class.
+Hãy truyền `COLOR_STATES` thay vì tự gõ bảng trạng thái: đó cũng là bảng mà các dòng `@source inline` dùng (`Hover` → `hover:`, `Active` → `active:`, `Selected` → `aria-selected:`). Hãy truyền các key camelCase như trong `tokens.colors` (`primaryHover`, không phải `primary-hover`). `prefix` được định kiểu là các tiền tố mà registry bao phủ, nên `createVariantMapper("fill", …)` là lỗi kiểu: không có dòng `@source inline` nào giữ class đó. [`createVariantMapper`](../reference/cva.md) mô tả `allowUnregisteredPrefix` cho trường hợp hiếm hoi bạn tự khai báo các class.
 
 Một headless recipe ghép các mapper bằng `recipeFromTables` (bên dưới là class-variance-authority); các component của framework bọc nó lại. Hãy liệt kê các intent mà component cung cấp bằng `satisfies` trên các key màu: đổi tên hoặc xóa một màu trong `theme.json` thì trình biên dịch đánh dấu đúng dòng đó thay vì sinh ra một class không còn tồn tại.
 

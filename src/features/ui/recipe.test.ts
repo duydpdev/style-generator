@@ -78,23 +78,13 @@ describe("contrastText", () => {
     ).toBe("text-primary-foreground");
   });
 
-  it("prefers <intent>Foreground over the deprecated on<Intent>", () => {
-    expect(
-      contrastText(
-        ["primary", "onPrimary", "primaryForeground", "white"],
-        "primary",
-        "white",
-      ),
-    ).toBe("text-primary-foreground");
-  });
-
-  it("still uses the deprecated on<Intent> sibling when it is the only one", () => {
+  it("ignores on<Intent>, which 9.0 no longer reads", () => {
     expect(
       contrastText(["primary", "onPrimary", "white"], "primary", "white"),
-    ).toBe("text-on-primary");
+    ).toBe("text-white");
   });
 
-  it("falls back when neither sibling exists", () => {
+  it("falls back when <intent>Foreground is absent", () => {
     expect(contrastText(["secondary", "white"], "secondary", "white")).toBe(
       "text-white",
     );

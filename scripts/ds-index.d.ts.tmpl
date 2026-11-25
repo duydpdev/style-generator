@@ -132,12 +132,12 @@ export interface GridProps extends LayoutProps {
   rows?: number | string;
 }
 export interface ButtonProps extends SpacingProps {
-  /** Default `fill`. */
-  variant?: "fill" | "outline" | "soft" | "ghost" | "link";
+  /** Default `solid`. */
+  variant?: "solid" | "outline" | "soft" | "ghost" | "link";
   /** Default `{{defaultIntent}}`. */
   color?: {{Intent}};
-  /** Default `md`. */
-  size?: "sm" | "md" | "lg";
+  /** Default `md`. `icon` is a square at the `md` height, for an icon-only button with an `aria-label`. */
+  size?: "sm" | "md" | "lg" | "icon";
   /** Icon before the label, in a flex slot that centres it. Put icons here, never in `children`. Icon only: `prefix` alone, no `children`, an `aria-label`; the button turns square. On a canvas pass a React node: `prefix="{{ic.plus}}"`. */
   prefix?: ReactNode;
   /** Icon after the label, in the same centring slot as `prefix`. */

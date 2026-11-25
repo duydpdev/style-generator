@@ -1,4 +1,4 @@
-// Fixture presets for build-ds.test.ts (same shape the producer's --preset reads).
+// Fixture presets for build-ds.test.ts (same shape the producer's --preset reads: `examples/design-system/src/recipes/button.ts`).
 export const boxPreset = { base: "relative" } as const;
 
 export const textPreset = {
@@ -13,22 +13,11 @@ export const buttonPreset = {
   radius: "md",
   type: "text16Regular",
   typeLg: "text20Semibold",
-  focusRing: {
-    primary: "focus-visible:outline-primary",
-    danger: "focus-visible:outline-danger",
-  },
-  tint: {
-    primary: {
-      outline: "border-primary text-primary hover:bg-primary/10",
-      soft: "bg-primary/10 text-primary hover:bg-primary/15",
-      ghost: "text-primary hover:bg-primary/10",
-      link: "text-primary",
-    },
-    danger: {
-      outline: "border-danger text-danger hover:bg-danger/10",
-      soft: "bg-danger/10 text-danger hover:bg-danger/15",
-      ghost: "text-danger hover:bg-danger/10",
-      link: "text-danger",
-    },
+  height: { sm: "sm", md: "md", lg: "lg" },
+  focusRing: "focus-visible:outline-focus",
+  disabled: "disabled:opacity-disabled",
+  hoverTint: {
+    primary: "hover:bg-primary-subtle",
+    danger: "hover:bg-danger-subtle",
   },
 } as const;

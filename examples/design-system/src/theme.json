@@ -4,16 +4,26 @@
     "primary": "#2647D9",
     "primaryHover": "#1F3BB8",
     "primaryActive": "#19319A",
+    "primarySelected": "$primary",
     "primaryForeground": "$surface",
     "secondary": "#6E5BFF",
     "accent": "$secondary",
     "success": "#2E7D5B",
     "danger": "#C8462C",
+    "primarySubtle": "color-mix(in srgb, var(--sg-color-primary) 10%, transparent)",
+    "primarySubtleForeground": "$primary",
+    "secondarySubtle": "color-mix(in srgb, var(--sg-color-secondary) 10%, transparent)",
+    "secondarySubtleForeground": "$secondary",
+    "successSubtle": "color-mix(in srgb, var(--sg-color-success) 10%, transparent)",
+    "successSubtleForeground": "$success",
+    "dangerSubtle": "color-mix(in srgb, var(--sg-color-danger) 10%, transparent)",
+    "dangerSubtleForeground": "$danger",
     "background": "#FAF7F2",
     "surface": "#FFFFFF",
     "foreground": "#0F1530",
     "muted": "#6B6D7A",
-    "line": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)"
+    "border": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)",
+    "focus": "$primary"
   },
   "typography": {
     "text12Mono": {
@@ -77,6 +87,30 @@
   "borderWidth": {
     "thin": "1px",
     "thick": "2px"
+  },
+  "controlHeight": {
+    "sm": "1.75rem",
+    "md": "2.25rem",
+    "lg": "2.75rem"
+  },
+  "iconSize": {
+    "sm": "1rem",
+    "md": "1.25rem",
+    "lg": "1.5rem"
+  },
+  "opacity": {
+    "disabled": 0.5
+  },
+  "motionDuration": {
+    "fast": "150ms",
+    "slow": "300ms"
+  },
+  "motionEasing": {
+    "standard": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "zIndex": {
+    "overlay": 40,
+    "modal": 50
   },
   "themeAxes": {
     "theme": {

@@ -106,7 +106,7 @@ export const KNOWN_DIFFERENCES = [
     name: "line",
     field: "color",
     reason:
-      "the theme declares a color-mix(), which the page drops; the published system resolved it per theme",
+      "the theme declares a color-mix(), which the page drops; the published system resolved it per theme (the theme now names it border, see RENAMED_SINCE_PUBLISH)",
   },
   {
     name: "text-12-mono",
@@ -121,6 +121,14 @@ export const KNOWN_DIFFERENCES = [
       "the sample role has no fontFamily, so it goes to the default family; the published system set serif by hand",
   },
 ] as const;
+
+/**
+ * Colour keys the example theme renamed after the fixture was read from the published system: fixture name → theme name.
+ * Remove a row once the system is republished and the fixture refreshed; the guard test fails until then.
+ */
+const RENAMED_SINCE_PUBLISH: Readonly<Record<string, string>> = {
+  line: "border",
+};
 
 const known = (name: string, field: string): boolean =>
   KNOWN_DIFFERENCES.some((row) => row.name === name && row.field === field);
@@ -173,9 +181,8 @@ describe("themeToDsTokens — golden against the published Style Generator syste
     const got = new Map(generated.color.tokens.map((t) => [t.name, t.value]));
     for (const token of fixture.color.tokens) {
       if (known(token.name, "color")) continue;
-      expect(lower(got.get(token.name)), token.name).toEqual(
-        lower(token.value),
-      );
+      const name = RENAMED_SINCE_PUBLISH[token.name] ?? token.name;
+      expect(lower(got.get(name)), token.name).toEqual(lower(token.value));
     }
   });
 
@@ -232,8 +239,22 @@ describe("themeToDsTokens — golden against the published Style Generator syste
 
   it("keeps the known-difference list short and real", () => {
     expect(KNOWN_DIFFERENCES.length).toBeLessThanOrEqual(10);
-    const line = generated.color.tokens.find((t) => t.name === "line");
-    expect(JSON.stringify(line?.value)).toContain("color-mix(");
+    const border = generated.color.tokens.find(
+      (t) => t.name === RENAMED_SINCE_PUBLISH.line,
+    );
+    expect(JSON.stringify(border?.value)).toContain("color-mix(");
+  });
+
+  it("keeps a rename only while the fixture still has the old name", () => {
+    const fixtureNames = new Set(fixture.color.tokens.map((t) => t.name));
+    const generatedNames = new Set(generated.color.tokens.map((t) => t.name));
+    for (const [from, to] of Object.entries(RENAMED_SINCE_PUBLISH)) {
+      expect(fixtureNames.has(from), `fixture still has ${from}`).toBe(true);
+      expect(generatedNames.has(from), `theme no longer has ${from}`).toBe(
+        false,
+      );
+      expect(generatedNames.has(to), `theme has ${to}`).toBe(true);
+    }
   });
 
   it("emits unique names across families, as the fixture does", () => {

@@ -22,16 +22,26 @@ Create `src/theme/theme.json`. The `Button` below reads the colors `primary`, `s
     "primary": "#2647D9",
     "primaryHover": "#1F3BB8",
     "primaryActive": "#19319A",
+    "primarySelected": "$primary",
     "primaryForeground": "$surface",
     "secondary": "#6E5BFF",
     "accent": "$secondary",
     "success": "#2E7D5B",
     "danger": "#C8462C",
+    "primarySubtle": "color-mix(in srgb, var(--sg-color-primary) 10%, transparent)",
+    "primarySubtleForeground": "$primary",
+    "secondarySubtle": "color-mix(in srgb, var(--sg-color-secondary) 10%, transparent)",
+    "secondarySubtleForeground": "$secondary",
+    "successSubtle": "color-mix(in srgb, var(--sg-color-success) 10%, transparent)",
+    "successSubtleForeground": "$success",
+    "dangerSubtle": "color-mix(in srgb, var(--sg-color-danger) 10%, transparent)",
+    "dangerSubtleForeground": "$danger",
     "background": "#FAF7F2",
     "surface": "#FFFFFF",
     "foreground": "#0F1530",
     "muted": "#6B6D7A",
-    "line": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)"
+    "border": "color-mix(in srgb, var(--sg-color-foreground) 8%, transparent)",
+    "focus": "$primary"
   },
   "typography": {
     "text12Mono": {
@@ -95,6 +105,30 @@ Create `src/theme/theme.json`. The `Button` below reads the colors `primary`, `s
   "borderWidth": {
     "thin": "1px",
     "thick": "2px"
+  },
+  "controlHeight": {
+    "sm": "1.75rem",
+    "md": "2.25rem",
+    "lg": "2.75rem"
+  },
+  "iconSize": {
+    "sm": "1rem",
+    "md": "1.25rem",
+    "lg": "1.5rem"
+  },
+  "opacity": {
+    "disabled": 0.5
+  },
+  "motionDuration": {
+    "fast": "150ms",
+    "slow": "300ms"
+  },
+  "motionEasing": {
+    "standard": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "zIndex": {
+    "overlay": 40,
+    "modal": 50
   },
   "themeAxes": {
     "theme": {
@@ -239,6 +273,7 @@ type ButtonTint = (typeof BUTTON_TINTS)[number];
 /**
  * The intents `color` offers. `satisfies` is the DX anchor: rename or
  * remove one of these colors in theme.json and the compiler fails here.
+ * Each needs `<intent>Subtle` and `<intent>SubtleForeground` for `soft`.
  */
 export const buttonIntents = [
   "primary",
@@ -247,52 +282,36 @@ export const buttonIntents = [
   "danger",
 ] as const satisfies readonly ColorVariant<typeof theme>[];
 
-/** Literal classes, so Tailwind's scanner sees them: the registry emits no `focus-visible:` variant, no `/15` step and no state × opacity (`hover:bg-<key>/10`). */
-const focusRing = {
-  primary: "focus-visible:outline-primary",
-  secondary: "focus-visible:outline-secondary",
-  success: "focus-visible:outline-success",
-  danger: "focus-visible:outline-danger",
+/** Literal classes, so Tailwind's scanner sees them: the registry emits no `hover:` variant of a `Subtle` key. */
+const hoverTint = {
+  primary: "hover:bg-primary-subtle",
+  secondary: "hover:bg-secondary-subtle",
+  success: "hover:bg-success-subtle",
+  danger: "hover:bg-danger-subtle",
 } as const satisfies Record<ButtonIntent, string>;
 
-const tint = {
-  primary: {
-    outline: "border-primary text-primary hover:bg-primary/10",
-    soft: "bg-primary/10 text-primary hover:bg-primary/15",
-    ghost: "text-primary hover:bg-primary/10",
-    link: "text-primary",
-  },
-  secondary: {
-    outline: "border-secondary text-secondary hover:bg-secondary/10",
-    soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
-    ghost: "text-secondary hover:bg-secondary/10",
-    link: "text-secondary",
-  },
-  success: {
-    outline: "border-success text-success hover:bg-success/10",
-    soft: "bg-success/10 text-success hover:bg-success/15",
-    ghost: "text-success hover:bg-success/10",
-    link: "text-success",
-  },
-  danger: {
-    outline: "border-danger text-danger hover:bg-danger/10",
-    soft: "bg-danger/10 text-danger hover:bg-danger/15",
-    ghost: "text-danger hover:bg-danger/10",
-    link: "text-danger",
-  },
-} as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
+/** Literal classes keyed by the theme key they name: the generator emits no `focus-visible:`/`disabled:` variant of a theme key, so Tailwind finds these by scanning this file. `satisfies` fails when a key leaves the theme. */
+const stateClasses = {
+  focus: { focus: "focus-visible:outline-focus" },
+  disabled: { disabled: "disabled:opacity-disabled" },
+} as const satisfies {
+  focus: Partial<Record<ColorVariant<typeof theme>, string>>;
+  disabled: Partial<Record<keyof (typeof theme)["opacity"], string>>;
+};
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles, one `controlHeight` key per size. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
+  height: { sm: "sm", md: "md", lg: "lg" },
 } as const satisfies {
   background: ColorVariant<typeof theme>;
   radius: RoundedVariant<typeof theme>;
   type: TextVariant<typeof theme>;
   typeLg: TextVariant<typeof theme>;
+  height: Record<"sm" | "md" | "lg", keyof (typeof theme)["controlHeight"]>;
 };
 
 export type ButtonIntent = (typeof buttonIntents)[number];
@@ -303,11 +322,14 @@ const bgStates = createVariantMapper("bg", tokens.colors, {
   states: COLOR_STATES,
 });
 const bg = createVariantMapper("bg", tokens.colors);
+const text = createVariantMapper("text", tokens.colors);
+const border = createVariantMapper("border", tokens.colors);
 const rounded = createVariantMapper("rounded", tokens.borderRadius);
+const height = createVariantMapper("h-control", tokens.controlHeight);
 const type = createVariantMapper("", tokens.typography);
 
-/** A filled intent: state backgrounds, `on<Intent>` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
-const fill = (intent: ButtonIntent): string[] => {
+/** A solid intent: state backgrounds, `<intent>Foreground` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
+const solid = (intent: ButtonIntent): string[] => {
   const classes = [
     pick(bgStates, intent),
     contrastText(colors, intent, themeKeys.background),
@@ -316,44 +338,60 @@ const fill = (intent: ButtonIntent): string[] => {
   return classes;
 };
 
+/** The other variants: `outline`/`ghost` hover on `<intent>Subtle`, `soft` is `<intent>Subtle` with `<intent>SubtleForeground` text. */
+const tint = (intent: ButtonIntent): Record<ButtonTint, string[]> => ({
+  outline: [pick(border, intent), pick(text, intent), hoverTint[intent]],
+  soft: [
+    pick(bg, `${intent}Subtle`),
+    pick(text, `${intent}SubtleForeground`),
+    "hover:opacity-90",
+  ],
+  ghost: [pick(text, intent), hoverTint[intent]],
+  link: [pick(text, intent)],
+});
+
 /** Button as data: variant × intent × size. */
 export const buttonTables = {
   base: [
     "inline-flex shrink-0 items-center justify-center gap-1.5",
     `${pick(rounded, themeKeys.radius)} border`,
     `cursor-pointer ${pick(type, themeKeys.type)} whitespace-nowrap outline-hidden select-none`,
-    "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2",
+    `focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 ${stateClasses.focus.focus}`,
     "transition-[background-color,color,opacity] duration-150",
-    "disabled:cursor-not-allowed disabled:opacity-50",
+    `disabled:cursor-not-allowed ${stateClasses.disabled.disabled}`,
   ],
   variants: {
     variant: {
-      fill: "border-transparent active:scale-[0.98]",
+      solid: "border-transparent active:scale-[0.98]",
       outline: `${pick(bg, themeKeys.background)} active:scale-[0.98]`,
       soft: "border-transparent active:scale-[0.98]",
       ghost: "border-transparent active:scale-[0.98]",
       link: "border-transparent underline-offset-4 hover:underline",
     },
-    color: focusRing,
+    color: Object.fromEntries(buttonIntents.map((intent) => [intent, ""])),
     size: {
-      sm: "h-7 px-2.5",
-      md: "h-9 px-3.5",
-      lg: `h-11 px-5 ${pick(type, themeKeys.typeLg)}`,
+      sm: `${pick(height, themeKeys.height.sm)} px-2.5`,
+      md: `${pick(height, themeKeys.height.md)} px-3.5`,
+      lg: `${pick(height, themeKeys.height.lg)} px-5 ${pick(type, themeKeys.typeLg)}`,
+      icon: `${pick(height, themeKeys.height.md)} aspect-square px-0`,
     },
     // Set by the components when there is no label and exactly one icon slot.
     // `px-0` must beat the size's `px-*`: the components pass the recipe through `cn` (tailwind-merge), which keeps the later class, so `iconOnly` stays after `size`.
     iconOnly: { true: "aspect-square px-0" },
   },
-  compoundVariants: buttonIntents.flatMap((intent) => [
-    { color: intent, variant: "fill", class: fill(intent) },
-    ...BUTTON_TINTS.map((variant) => ({
-      color: intent,
-      variant,
-      class: tint[intent][variant],
-    })),
-  ]),
+  compoundVariants: buttonIntents.flatMap((intent) => {
+    const tints = tint(intent);
+    return [
+      { color: intent, variant: "solid", class: solid(intent) },
+      ...BUTTON_TINTS.map((variant) => ({
+        color: intent,
+        variant,
+        class: tints[variant],
+      })),
+    ];
+  }),
   defaultVariants: {
-    variant: "fill",
+    variant: "solid",
     color: buttonIntents[0],
     size: "md",
   },
@@ -376,10 +414,16 @@ import type { tokens } from "../../theme";
 import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
-  readonly variant?: "fill" | "outline" | "soft" | "ghost" | "link" | undefined;
+  readonly variant?:
+    | "solid"
+    | "outline"
+    | "soft"
+    | "ghost"
+    | "link"
+    | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
-  readonly size?: "sm" | "md" | "lg" | undefined;
+  readonly size?: "sm" | "md" | "lg" | "icon" | undefined;
   readonly prefix?: ReactNode;
   readonly suffix?: ReactNode;
   readonly children?: ReactNode;

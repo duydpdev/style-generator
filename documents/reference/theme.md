@@ -178,7 +178,7 @@ Declare flat sibling keys next to a color and the registry emits the state utili
 }
 ```
 
-`primary` now opts into `hover:bg-primary-hover` and `active:bg-primary-active` (and the `text-`/`border-` forms). The state list is the exported constant `COLOR_STATES` (`["hover", "active"]`); feed it to `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` to get the class string, see [section 7](./cva.md). State names are kebab-cased (`focusVisible` → `focus-visible:`).
+`primary` now opts into `hover:bg-primary-hover` and `active:bg-primary-active` (and the `text-`/`border-` forms). The state table is the exported constant `COLOR_STATES`: a `Hover`, `Active` or `Selected` sibling gets the `hover:`, `active:` or `aria-selected:` variant (`primarySelected` → `aria-selected:bg-primary-selected`, applied when the element has `aria-selected="true"`); feed it to `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` to get the class string, see [section 7](./cva.md).
 
 ## Editor autocomplete
 

@@ -80,7 +80,7 @@ export const BorderColors: Story = {
 };
 
 export const Bordered: Story = {
-  args: { border: "thin", borderColor: "line" },
+  args: { border: "thin", borderColor: "border" },
 };
 export const BorderX: Story = {
   args: { borderX: "thick", borderColor: "primary" },
@@ -150,7 +150,7 @@ export const Positioned: Story = {
       return { args };
     },
     template: `
-      <Box position="relative" :height="128" rounded="md" border="thin" border-color="line">
+      <Box position="relative" :height="128" rounded="md" border="thin" border-color="border">
         <Box v-bind="args">{{ args.default }}</Box>
       </Box>
     `,

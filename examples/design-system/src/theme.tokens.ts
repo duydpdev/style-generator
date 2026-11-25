@@ -13,16 +13,26 @@ export const tokens = {
     "primary",
     "primaryHover",
     "primaryActive",
+    "primarySelected",
     "primaryForeground",
     "secondary",
     "accent",
     "success",
     "danger",
+    "primarySubtle",
+    "primarySubtleForeground",
+    "secondarySubtle",
+    "secondarySubtleForeground",
+    "successSubtle",
+    "successSubtleForeground",
+    "dangerSubtle",
+    "dangerSubtleForeground",
     "background",
     "surface",
     "foreground",
     "muted",
-    "line"
+    "border",
+    "focus"
   ],
   "shadows": [
     "sm",
@@ -49,12 +59,30 @@ export const tokens = {
     "lg",
     "pill"
   ],
-  "motionDuration": [],
-  "motionEasing": [],
-  "controlHeight": [],
-  "iconSize": [],
-  "opacity": [],
-  "zIndex": [],
+  "motionDuration": [
+    "fast",
+    "slow"
+  ],
+  "motionEasing": [
+    "standard"
+  ],
+  "controlHeight": [
+    "sm",
+    "md",
+    "lg"
+  ],
+  "iconSize": [
+    "sm",
+    "md",
+    "lg"
+  ],
+  "opacity": [
+    "disabled"
+  ],
+  "zIndex": [
+    "overlay",
+    "modal"
+  ],
   "spacingProperties": [
     "p",
     "px",
@@ -90,8 +118,14 @@ export const tokens = {
     "2xl": "1536px"
   },
   "aliasedColors": [
+    "primarySelected",
     "primaryForeground",
-    "accent"
+    "accent",
+    "primarySubtleForeground",
+    "secondarySubtleForeground",
+    "successSubtleForeground",
+    "dangerSubtleForeground",
+    "focus"
   ],
   "opacities": [
     10,

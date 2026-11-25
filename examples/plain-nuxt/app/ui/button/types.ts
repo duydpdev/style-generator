@@ -9,8 +9,8 @@ export interface ButtonProps extends /* @vue-ignore */ ThemeSpacingProps<
   typeof tokens
 > {
   as?: string;
-  variant?: "fill" | "outline" | "soft" | "ghost" | "link";
+  variant?: "solid" | "outline" | "soft" | "ghost" | "link";
   /** One of `buttonIntents`. */
   color?: ButtonIntent;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "icon";
 }

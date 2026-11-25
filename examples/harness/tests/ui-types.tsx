@@ -58,7 +58,7 @@ void (
     ringColor="primary"
     outlineColor="primary/10"
     backgroundColor="primary/10"
-    borderColor="line/10"
+    borderColor="border/10"
   />
 );
 // @ts-expect-error not a z-index step
@@ -104,7 +104,7 @@ void (<Flex gap={{ xl: 4 }} />);
 // @ts-expect-error spacing takes numbers only
 void (<Flex mx="auto" />);
 void (<Stack gap={4} borderColor="surface" />);
-void (<Flex grow shrink={false} basis="1/2" divideColor="line" />);
+void (<Flex grow shrink={false} basis="1/2" divideColor="border" />);
 void (<Stack divideColor="primary/10" />);
 // @ts-expect-error not a basis
 void (<Flex basis="1/5" />);

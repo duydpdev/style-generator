@@ -17,7 +17,7 @@ import Text from "~/ui/text/Text.vue";
 // attribute, so the negative lives on the props type instead.
 /* eslint-disable sonarjs/void-use -- type-level checks, never executed */
 type StackProps = InstanceType<typeof Stack>["$props"];
-void ({ direction: "row", divideColor: "line" } satisfies StackProps);
+void ({ direction: "row", divideColor: "border" } satisfies StackProps);
 // @ts-expect-error Stack has no grow
 void ({ grow: true } satisfies StackProps);
 /* eslint-enable sonarjs/void-use */
@@ -62,7 +62,7 @@ void ({ grow: true } satisfies StackProps);
     <Box :opacity="55" />
     <!-- @vue-expect-error 55 is not a declared step -->
     <Box backgroundColor="primary/55" />
-    <Flex grow :shrink="false" basis="1/2" divideColor="line" />
+    <Flex grow :shrink="false" basis="1/2" divideColor="border" />
     <Stack divideColor="primary/10" />
     <!-- @vue-expect-error not a basis -->
     <Flex basis="1/5" />

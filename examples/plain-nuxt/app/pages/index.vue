@@ -21,7 +21,7 @@ import Text from "~/ui/text/Text.vue";
       position="sticky"
       backdropBlur="md"
       borderB="thin"
-      borderColor="line"
+      borderColor="border"
       class="top-0 z-10 bg-background/80"
     >
       <Container>

@@ -22,7 +22,7 @@ export function App(): JSX.Element {
         position="sticky"
         backdropBlur="md"
         borderB="thin"
-        borderColor="line"
+        borderColor="border"
         className="top-0 z-10 bg-background/80"
       >
         <Container>

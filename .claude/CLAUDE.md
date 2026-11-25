@@ -180,7 +180,7 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   the cycle is reported at the later axis.
 - Alias `"$<key>"` resolves within the SAME category to `var(--<cssVarPrefix>-<kebab-key>)` using that category's `cssVarPrefix` (`src/features/registry/builtInCategories.ts`):
   `$blue500` in `colors` → `var(--sg-color-blue-500)`, `$base` in `shadows` → `var(--sg-shadow-base)`. Existence and acyclicity are validated at parse time.
-  Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`. The emitted `--sg-*` variables (`--sg-color-<key>`, `--sg-shadow-<key>`,
+  Use the raw key (`$blue500`, not `$blue-500`). In `colors` only, `"$<key>/<n>"` (n an integer percent 1–100, `parseAliasRef`) emits `color-mix(in srgb, var(--sg-color-<kebab-key>) <n>%, transparent)`. Not supported inside `typography`. The emitted `--sg-*` variables (`--sg-color-<key>`, `--sg-shadow-<key>`,
   …) are a public contract (consumers read them); renaming one is breaking.
 - `COLOR_STATES` (a `{ suffix, variant }` table: `Hover` → `hover`, `Active` → `active`, `Selected` → `aria-selected`; `src/shared/colorStates.ts`, exported from `./cva` only with the `ColorState` type) is the single state table for the registry's `@source inline` state lines and
   `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` (`states` takes `readonly ColorState[]`, not plain strings, since 9.0). Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`);

@@ -1,3 +1,5 @@
+import type { ColorState } from "../../shared/colorStates";
+
 /**
  * Describes how a single theme token category (colors, shadows, typography,
  * etc.) is flattened into CSS variables, which utility classes it feeds and
@@ -58,8 +60,11 @@ export interface TokenCategoryDescriptor<K extends string = string> {
   bareClassName?: boolean;
   /** Whether this category gets responsive (`md:`, `lg:`, …) variants. */
   responsive?: boolean;
-  /** Interactive state suffixes this category supports (e.g. `["hover"]`). */
-  states?: readonly string[];
+  /**
+   * Interactive states this category supports: a sibling key `<token><suffix>`
+   * gets the `<variant>:` state line (`COLOR_STATES`).
+   */
+  states?: readonly ColorState[];
   /**
    * `true` when this category's utilities take Tailwind's `/<n>` opacity
    * modifier (`bg-primary/10` compiles to `color-mix(in oklab,

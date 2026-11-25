@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: d8555d418aae -->
+<!-- source: documents/components.md sha256: c998e88452b7 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -156,7 +156,7 @@ const bg = createVariantMapper("bg", tokens.colors);
 const rounded = createVariantMapper("rounded", tokens.borderRadius);
 const type = createVariantMapper("", tokens.typography);
 
-/** A filled intent: state backgrounds, `on<Intent>` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
+/** A filled intent: state backgrounds, `<intent>Foreground` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
 const fill = (intent: ButtonIntent): string[] => {
   const classes = [
     pick(bgStates, intent),

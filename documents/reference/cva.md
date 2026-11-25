@@ -29,7 +29,7 @@ export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
   const N extends number,
-  const S extends readonly string[] = readonly [],
+  const S extends readonly ColorState[] = readonly [],
 >(
   prefix: P,
   tokens: readonly T[],
@@ -42,7 +42,7 @@ export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
   const N extends number,
-  const S extends readonly string[] = readonly [],
+  const S extends readonly ColorState[] = readonly [],
 >(
   prefixes: readonly P[],
   tokens: readonly T[],
@@ -56,7 +56,7 @@ export declare function createVariantMapper<
 export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
-  const S extends readonly string[],
+  const S extends readonly ColorState[],
 >(
   prefix: P,
   tokens: readonly T[],
@@ -67,7 +67,7 @@ export declare function createVariantMapper<
 export declare function createVariantMapper<
   const T extends string,
   const P extends RegistryPrefix | "",
-  const S extends readonly string[],
+  const S extends readonly ColorState[],
 >(
   prefixes: readonly P[],
   tokens: readonly T[],
@@ -85,14 +85,16 @@ registry (`flattenByCategory`/`generateSourceInline`), so a mapper's
 output is guaranteed to match a class the registry emits `@source
 inline(...)` for.
 
-The optional `{ states }` argument (e.g. `COLOR_STATES`) lists state names
-to look up as sibling RAW tokens. For a raw token `t`, a state `s` is
-appended to `t`'s class only when `tokens` also contains `t` + Pascal-cased
-`s` (`primary` + `"hover"` -> `primaryHover`). A token with no matching
-sibling keeps its plain single class; sibling tokens themselves are plain
-single classes. The result is a literal chained string when `states` is a
-literal tuple (`as const`, `COLOR_STATES`) and `string` when it is typed
-`readonly string[]`. `{ allowUnregisteredPrefix: true }` accepts any
+The optional `{ states }` argument (e.g. `COLOR_STATES`) is a table of
+`{ suffix, variant }` states to look up as sibling RAW tokens. For a raw
+token `t`, a state is appended to `t`'s class as `<variant>:<class>` only
+when `tokens` also contains `t` + `suffix` (`primary` + `Hover` ->
+`primaryHover` -> `hover:bg-primary-hover`; `Selected` maps to
+`aria-selected:`). A token with no matching sibling keeps its plain
+single class; sibling tokens themselves are plain single classes. The
+result is a literal chained string when `states` is a literal tuple
+(`as const`, `COLOR_STATES`) and `string` when it is typed
+`readonly ColorState[]`. `{ allowUnregisteredPrefix: true }` accepts any
 prefix string instead of only registry prefixes.
 
 `{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
@@ -147,7 +149,7 @@ const bgStates = createVariantMapper("bg", tokens, { states: COLOR_STATES });
 // }
 ```
 
-Always pass `COLOR_STATES` rather than hard-coding the array — it is the same list the generated `@source inline` state lines come from.
+Always pass `COLOR_STATES` rather than hard-coding the table — it is the same list the generated `@source inline` state lines come from.
 
 **Prefix constraint.** `prefix` is typed `RegistryPrefix | ""` (the prefixes the registry emits `@source inline` for; `""` is typography), so `createVariantMapper("fill", …)` and a prefix held in a `string` variable are type errors: they would map to classes no `@source inline` line keeps. To opt out for a single prefix, pass `{ allowUnregisteredPrefix: true }` as the third argument and declare the classes with your own `@source inline(...)`. The opt-out does not combine with `{ states }`, with `{ opacities }` or with an array of prefixes.
 
@@ -174,11 +176,25 @@ Set the same `coverage.colors.opacities` in `style-gen.config.json` (the file th
 <!-- signature: COLOR_STATES -->
 
 ```ts
-export declare const COLOR_STATES: readonly ["hover", "active"];
+export declare const COLOR_STATES: readonly [
+  {
+    readonly suffix: "Hover";
+    readonly variant: "hover";
+  },
+  {
+    readonly suffix: "Active";
+    readonly variant: "active";
+  },
+  {
+    readonly suffix: "Selected";
+    readonly variant: "aria-selected";
+  },
+];
 ```
 
-Interactive state suffixes a flat color token can opt into by declaring a
-sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`).
+The interactive states a flat color token can opt into by declaring a
+sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`,
+`primarySelected` -> `aria-selected:bg-primary-selected`).
 
 Single source of truth for BOTH sides of the contract: the registry's
 `colorsCategory.states` (which drives the `@source inline` state lines) and
@@ -188,7 +204,24 @@ subpath can re-export it without pulling Zod or the registry.
 
 <!-- /signature -->
 
-The interactive state suffixes (`hover`, `active`) shared by the `@source inline` state lines and `createVariantMapper(…, { states })`.
+The interactive state table (`Hover` → `hover:`, `Active` → `active:`, `Selected` → `aria-selected:`) shared by the `@source inline` state lines and `createVariantMapper(…, { states })`.
+
+## `ColorState`
+
+<!-- signature: ColorState -->
+
+```ts
+export declare interface ColorState {
+  readonly suffix: string;
+  readonly variant: string;
+}
+```
+
+One interactive state a flat color token can opt into: the sibling key is
+the token plus `suffix` (`primary` + `Hover` → `primaryHover`), and its
+class is chained behind the Tailwind `variant` (`hover:bg-primary-hover`).
+
+<!-- /signature -->
 
 ## `toKebabCase`
 

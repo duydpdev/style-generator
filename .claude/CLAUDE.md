@@ -140,7 +140,7 @@ Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/chec
 Source layout: `documents/architecture.md`; public exports per subpath and CLI: `documents/reference/`.
 Internal helpers (`toCamelCase`, `toPascalCase`) are not exported from any barrel; `toKebabCase` is public (from `./cva`) because it is the function the registry and
 `createVariantMapper` share. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`; from 4.x: `documents/migration/4.x-to-5.0.md`; from 5.x:
-`documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`; from 7.x: `documents/migration/7.x-to-8.0.md`.
+`documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`; from 7.x: `documents/migration/7.x-to-8.0.md`; from 8.x: `documents/migration/8.x-to-9.0.md`.
 
 Sample components (examples, not an API; nothing is published): `Box`, `Text`, `Stack`, `Flex`, `Grid`, `Button` live in the harness app over the `examples/design-system` recipes.
 React: `examples/harness/src/ui/*.tsx`, each a self-contained factory file `create<Name>(tokens, preset?)` with its own prop types and `Polymorphic` type (all six import
@@ -182,9 +182,10 @@ one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@
   `$blue500` in `colors` → `var(--sg-color-blue-500)`, `$base` in `shadows` → `var(--sg-shadow-base)`. Existence and acyclicity are validated at parse time.
   Use the raw key (`$blue500`, not `$blue-500`). Not supported inside `typography`. The emitted `--sg-*` variables (`--sg-color-<key>`, `--sg-shadow-<key>`,
   …) are a public contract (consumers read them); renaming one is breaking.
-- `COLOR_STATES` (`["hover", "active"]`, `src/shared/colorStates.ts`, exported from `./cva` only) is the single state list for the registry's `@source inline` state lines and
-  `createVariantMapper(prefix, tokens, { states: COLOR_STATES })`. Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`);
-  states emit kebab-cased (`focusVisible` → `focus-visible:`).
+- `COLOR_STATES` (a `{ suffix, variant }` table: `Hover` → `hover`, `Active` → `active`, `Selected` → `aria-selected`; `src/shared/colorStates.ts`, exported from `./cva` only with the `ColorState` type) is the single state table for the registry's `@source inline` state lines and
+  `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` (`states` takes `readonly ColorState[]`, not plain strings, since 9.0). Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`);
+  the class is chained behind the row's `variant` as written (`primarySelected` → `aria-selected:bg-primary-selected`).
+- `contrastText(colors, intent, fallback)` reads only `<intent>Foreground` (9.0); `on<Intent>` keys are not read, and `style-gen doctor` names their v2 rename (`src/cli/commands/deprecatedColorKeys.ts`).
 - A theme key whose class equals a Tailwind _static_ utility (`bg-none`, typography `text-sm`, …) is not rejected, but Tailwind picks the winner — rename it (`clear`, `flat`,
   `zero`). `style-gen doctor` warns on known collisions (`src/cli/commands/utilityCollisions.ts`). A digit-only `borderWidth` key (`2`) is an override, not a tie:
   with `--border-width-2` in `@theme`, Tailwind resolves `border-2`/`border-x-2`/`divide-x-2` to the theme value; doctor still warns so the override is deliberate.

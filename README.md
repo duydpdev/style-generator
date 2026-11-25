@@ -6,7 +6,7 @@ TypeScript library + CLI that turns a theme JSON into a complete **design system
 
 Published on the public npm registry as `@duydpdev/style-generator`; installing needs no token (see [Install](#install)).
 
-> **Upgrading?** Read the migration guides: [7.x → 8.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/7.x-to-8.0.md), [6.x → 7.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/6.x-to-7.0.md), [5.x → 6.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/5.x-to-6.0.md), [4.x → 5.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md), [3.x → 4.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
+> **Upgrading?** Read the migration guides: [8.x → 9.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/8.x-to-9.0.md), [7.x → 8.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/7.x-to-8.0.md), [6.x → 7.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/6.x-to-7.0.md), [5.x → 6.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/5.x-to-6.0.md), [4.x → 5.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/4.x-to-5.0.md), [3.x → 4.0](https://github.com/duydpdev/style-generator/blob/main/documents/migration/3.x-to-4.0.md).
 
 ## Features
 
@@ -15,7 +15,7 @@ Published on the public npm registry as `@duydpdev/style-generator`; installing 
 - 🌗 **Multi-axis theming** — `themeAxes` generates `html[data-theme="dark"]`, `html[data-palette="forest"]`, … that can be toggled independently.
 - ⚡ **One call, one file** — `generate(theme)` returns the CSS you `@import` next to `@import "tailwindcss"`; no `@plugin`, no safelist file.
 - 🚀 **CSS-variable spacing** — `.sp-*` utilities with `var()` fallback chains instead of thousands of safelisted classes.
-- 🧩 **Typed design tokens + CVA helper** — `createVariantMapper` maps token keys to class names (including `hover:`/`active:` state classes).
+- 🧩 **Typed design tokens + CVA helper** — `createVariantMapper` maps token keys to class names (including `hover:`/`active:`/`aria-selected:` state classes).
 - 🖥️ **CLI + plugins** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`, `canvas check`), `styleGenVite`, `styleGenNext`.
 
 ## Install

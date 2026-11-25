@@ -20,9 +20,9 @@ export const BUTTON_TINTS = [
 
 /** Button roles. `focusRing`/`tint` are literal classes: the registry emits no `outline-*` or `/10` classes. */
 export interface ButtonPreset {
-  /** Colour keys offered as `color`; `<intent>Hover` / `on<Intent>` siblings come from `tokens.colors`. */
+  /** Colour keys offered as `color`; `<intent>Hover` / `<intent>Foreground` siblings come from `tokens.colors`. */
   readonly intents: readonly string[];
-  /** Outline-variant fill, and the text colour of a filled intent without an `on<Intent>` sibling. */
+  /** Outline-variant fill, and the text colour of a filled intent without an `<intent>Foreground` sibling. */
   readonly background: string;
   readonly radius: string;
   readonly type: string;

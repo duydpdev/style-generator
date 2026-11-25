@@ -51,11 +51,12 @@ describe("builtInCategories", () => {
     }
   });
 
-  it("colors declares hover/active states for sibling-token variant classes", () => {
+  it("colors declares the hover/active/aria-selected state table for sibling-token variant classes", () => {
     const colors = builtInCategories.find((c) => c.key === "colors");
     expect(colors && "states" in colors ? colors.states : undefined).toEqual([
-      "hover",
-      "active",
+      { suffix: "Hover", variant: "hover" },
+      { suffix: "Active", variant: "active" },
+      { suffix: "Selected", variant: "aria-selected" },
     ]);
   });
 

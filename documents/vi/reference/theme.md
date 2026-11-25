@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: a08f47efdd7c -->
+<!-- source: documents/reference/theme.md sha256: 42d18c92e0e4 -->
 
 # Cấu hình theme
 
@@ -180,7 +180,7 @@ Khai báo các key ngang hàng cạnh một màu và registry sẽ phát ra các
 }
 ```
 
-`primary` giờ đây có thêm `hover:bg-primary-hover` và `active:bg-primary-active` (cùng các dạng `text-`/`border-`). Danh sách trạng thái là hằng số được export `COLOR_STATES` (`["hover", "active"]`); truyền nó vào `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` để nhận chuỗi class, xem [mục 7](./cva.md). Tên trạng thái ở dạng kebab-case (`focusVisible` → `focus-visible:`).
+`primary` giờ đây có thêm `hover:bg-primary-hover` và `active:bg-primary-active` (cùng các dạng `text-`/`border-`). Bảng trạng thái là hằng số được export `COLOR_STATES`: một sibling `Hover`, `Active` hoặc `Selected` nhận variant `hover:`, `active:` hoặc `aria-selected:` (`primarySelected` → `aria-selected:bg-primary-selected`, áp dụng khi phần tử có `aria-selected="true"`); truyền nó vào `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` để nhận chuỗi class, xem [mục 7](./cva.md).
 
 ## Tự hoàn thành trong editor
 

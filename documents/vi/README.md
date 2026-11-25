@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: 8f786894c42e -->
+<!-- source: README.md sha256: 744e6b654fd8 -->
 
 # @duydpdev/style-generator
 
@@ -8,7 +8,7 @@ Thư viện TypeScript + CLI biến một file theme JSON thành một **design 
 
 Được phát hành trên npm registry công khai với tên `@duydpdev/style-generator`; cài đặt không cần token (xem [Cài đặt](#cài-đặt)).
 
-> **Nâng cấp?** Đọc các hướng dẫn nâng cấp: [7.x → 8.0](./migration/7.x-to-8.0.md), [6.x → 7.0](./migration/6.x-to-7.0.md), [5.x → 6.0](./migration/5.x-to-6.0.md), [4.x → 5.0](./migration/4.x-to-5.0.md), [3.x → 4.0](./migration/3.x-to-4.0.md).
+> **Nâng cấp?** Đọc các hướng dẫn nâng cấp: [8.x → 9.0](./migration/8.x-to-9.0.md), [7.x → 8.0](./migration/7.x-to-8.0.md), [6.x → 7.0](./migration/6.x-to-7.0.md), [5.x → 6.0](./migration/5.x-to-6.0.md), [4.x → 5.0](./migration/4.x-to-5.0.md), [3.x → 4.0](./migration/3.x-to-4.0.md).
 
 ## Tính năng
 
@@ -17,7 +17,7 @@ Thư viện TypeScript + CLI biến một file theme JSON thành một **design 
 - 🌗 **Theme nhiều trục** — `themeAxes` sinh ra `html[data-theme="dark"]`, `html[data-palette="forest"]`, … và có thể bật tắt độc lập.
 - ⚡ **Một lệnh gọi, một file** — `generate(theme)` trả về CSS để bạn `@import` cạnh `@import "tailwindcss"`; không cần `@plugin`, không cần file safelist.
 - 🚀 **Spacing bằng biến CSS** — các utility `.sp-*` với chuỗi giá trị dự phòng `var()` thay cho hàng nghìn class trong safelist.
-- 🧩 **Design token có kiểu + helper CVA** — `createVariantMapper` ánh xạ key của token sang tên class (gồm cả class trạng thái `hover:`/`active:`).
+- 🧩 **Design token có kiểu + helper CVA** — `createVariantMapper` ánh xạ key của token sang tên class (gồm cả class trạng thái `hover:`/`active:`/`aria-selected:`).
 - 🖥️ **CLI + plugin** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`, `canvas check`), `styleGenVite`, `styleGenNext`.
 
 ## Cài đặt

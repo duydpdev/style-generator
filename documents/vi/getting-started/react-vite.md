@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: 326427cf1721 -->
+<!-- source: documents/getting-started/react-vite.md sha256: 23caaa61a0bf -->
 
 # Bắt đầu: React + Vite
 
@@ -292,7 +292,7 @@ const bg = createVariantMapper("bg", tokens.colors);
 const rounded = createVariantMapper("rounded", tokens.borderRadius);
 const type = createVariantMapper("", tokens.typography);
 
-/** A filled intent: state backgrounds, `on<Intent>` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
+/** A filled intent: state backgrounds, `<intent>Foreground` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
 const fill = (intent: ButtonIntent): string[] => {
   const classes = [
     pick(bgStates, intent),

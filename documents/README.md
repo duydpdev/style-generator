@@ -84,19 +84,20 @@ Glossary (prose only; identifiers, commands and code stay English):
 
 ## Migration
 
-| File                                                                                       | Contents                                                                                             |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)                                     | Breaking changes 7.x → 8.0.0: plugins take only `root`, generated `theme.tokens.ts`, `backdropBlurs` |
-| [`migration/6.x-to-7.0.md`](./migration/6.x-to-7.0.md)                                     | Breaking changes 6.x → 7.0.0: no `extraSources`, no `axes` option                                    |
-| [`migration/5.x-to-6.0.md`](./migration/5.x-to-6.0.md)                                     | Breaking changes 5.x → 6.0.0: generator-only root, no `plugin` config key                            |
-| [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)                                     | Breaking changes 4.x → 5.0.0, grep recipes and the generated CSS diff                                |
-| [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md)                                     | Breaking changes 3.x → 4.0.0 and the rollback runbook                                                |
-| [`migration/4.0-to-4.1.md`](./migration/4.0-to-4.1.md)                                     | Stricter validation in 4.1.0 (options, config, CSS variables, brackets)                              |
-| [`migration/5.3-to-5.4.md`](./migration/5.3-to-5.4.md)                                     | Color prefixes, opacity steps and new validation in 5.4.0                                            |
-| [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md)                   | History of the 3.x subpath exports                                                                   |
-| [`migration/v4-ac4-letterspacing-proof.md`](./migration/v4-ac4-letterspacing-proof.md)     | Proof that adding a category touches exactly 3 files                                                 |
-| [`migration/v4-schema-autocomplete-proof.md`](./migration/v4-schema-autocomplete-proof.md) | Proof that `theme.schema.json` rejects unknown keys (AC6)                                            |
-| [`migration/poc-custom-variant.md`](./migration/poc-custom-variant.md)                     | PoC of `@custom-variant` for the state palette                                                       |
+| File                                                                                       | Contents                                                                                                                |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| [`migration/8.x-to-9.0.md`](./migration/8.x-to-9.0.md)                                     | Breaking changes 8.x → 9.0.0: `contrastText` reads only `<intent>Foreground`, `COLOR_STATES` table with `aria-selected` |
+| [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)                                     | Breaking changes 7.x → 8.0.0: plugins take only `root`, generated `theme.tokens.ts`, `backdropBlurs`                    |
+| [`migration/6.x-to-7.0.md`](./migration/6.x-to-7.0.md)                                     | Breaking changes 6.x → 7.0.0: no `extraSources`, no `axes` option                                                       |
+| [`migration/5.x-to-6.0.md`](./migration/5.x-to-6.0.md)                                     | Breaking changes 5.x → 6.0.0: generator-only root, no `plugin` config key                                               |
+| [`migration/4.x-to-5.0.md`](./migration/4.x-to-5.0.md)                                     | Breaking changes 4.x → 5.0.0, grep recipes and the generated CSS diff                                                   |
+| [`migration/3.x-to-4.0.md`](./migration/3.x-to-4.0.md)                                     | Breaking changes 3.x → 4.0.0 and the rollback runbook                                                                   |
+| [`migration/4.0-to-4.1.md`](./migration/4.0-to-4.1.md)                                     | Stricter validation in 4.1.0 (options, config, CSS variables, brackets)                                                 |
+| [`migration/5.3-to-5.4.md`](./migration/5.3-to-5.4.md)                                     | Color prefixes, opacity steps and new validation in 5.4.0                                                               |
+| [`migration/3.x-subpath-exports.md`](./migration/3.x-subpath-exports.md)                   | History of the 3.x subpath exports                                                                                      |
+| [`migration/v4-ac4-letterspacing-proof.md`](./migration/v4-ac4-letterspacing-proof.md)     | Proof that adding a category touches exactly 3 files                                                                    |
+| [`migration/v4-schema-autocomplete-proof.md`](./migration/v4-schema-autocomplete-proof.md) | Proof that `theme.schema.json` rejects unknown keys (AC6)                                                               |
+| [`migration/poc-custom-variant.md`](./migration/poc-custom-variant.md)                     | PoC of `@custom-variant` for the state palette                                                                          |
 
 ## Local notes (not published)
 

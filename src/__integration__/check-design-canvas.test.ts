@@ -1056,6 +1056,17 @@ describe("integration: style-gen canvas check", () => {
       expect(check({ boards: true })).toEqual([]);
     });
 
+    it("component pages pass a c-* board that repeats its source, one instance per state", () => {
+      writeBoards(withToast, {
+        "c-toast.dc.html": padded(
+          '<dc-import name="s-toast" preset="added"></dc-import>' +
+            '<dc-import name="Icon"></dc-import>' +
+            '<dc-import name="s-toast" preset="error"></dc-import>',
+        ),
+      });
+      expect(check({ boards: true })).toEqual([]);
+    });
+
     it.each<[string, Record<string, string>, string]>([
       [
         "no source",
@@ -1065,6 +1076,11 @@ describe("integration: style-gen canvas check", () => {
       [
         "two sources",
         { "c-toast.dc.html": imports("s-toast", "s-other") },
+        "c-toast.dc.html:1 board must import exactly s-toast, found s-toast, s-other",
+      ],
+      [
+        "its source repeated next to another one",
+        { "c-toast.dc.html": imports("s-toast", "s-toast", "s-other") },
         "c-toast.dc.html:1 board must import exactly s-toast, found s-toast, s-other",
       ],
       [

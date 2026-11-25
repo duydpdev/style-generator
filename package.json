@@ -1,6 +1,6 @@
 {
   "name": "@duydpdev/style-generator",
-  "version": "9.0.2",
+  "version": "9.1.0",
   "description": "Compile one theme JSON into Tailwind CSS v4 utilities, typed design tokens and a JSON Schema.",
   "keywords": [
     "tailwindcss",

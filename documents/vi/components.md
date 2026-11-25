@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 57f144d6b66c -->
+<!-- source: documents/components.md sha256: 01902c062a93 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -440,7 +440,7 @@ const root = () => {
 1. Cài đặt các dependency cần thiết:
 
    ```bash
-   yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge
    ```
 
 2. Nối dây `theme.css` cho bundler của bạn ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
@@ -451,7 +451,7 @@ const root = () => {
 
 ### Chuẩn component
 
-Một component khai báo các trục áp dụng cho nó (checkbox có `color` và `size`, field không có trục nào) và chỉ dùng bộ từ vựng này:
+Một component khai báo các trục áp dụng cho nó (checkbox có `color` và `size`, field không có trục nào); với ba trục này, nó chỉ dùng bộ từ vựng sau:
 
 <!-- component-axes:start -->
 
@@ -467,7 +467,9 @@ Một component khai báo các trục áp dụng cho nó (checkbox có `color` v
 - `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`) ở control một dòng (button, input, select, slider, nút của pagination), còn avatar là hình vuông cao đúng chiều cao đó; checkbox, radio và switch lấy kích thước ô từ `iconSize` (`size-icon-<key>`), còn field nhiều dòng (textarea) chỉ đổi padding và kiểu chữ. Component chỉ báo cũng chia như vậy: spinner lấy kích thước ô từ `iconSize`, còn track của progress chỉ đặt độ dày của chính nó (`h-1`/`h-2`/`h-3`). `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
 - Trạng thái: hover và active lấy từ các key `<role>Hover`/`<role>Active` qua `COLOR_STATES` (thiếu chúng thì dùng `hover:opacity-90`); focus là outline `focus-visible:` (viền với field) theo key `focus`; disabled là `disabled:opacity-disabled` (token `opacity.disabled`) cùng `cursor-not-allowed`; selected là `<role>Selected` qua `COLOR_STATES` (`aria-selected:`) ở component có trạng thái chọn (một tab), và mọi component khác map vai trò đó qua `COLOR_STATES` (button solid, link) cũng mang class `aria-selected:`, class này không khớp gì cho đến khi một phần tử đặt `aria-selected="true"`; invalid là `aria-invalid:` với vai trò `danger` trên field của form.
 - Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`). Component tự style nhiều phần tử thì đặt tên slot thêm theo phần tử đó: `root` cho phần bọc của field, `track` và `thumb` cho switch.
-- Lớp phủ dùng hai key `zIndex`: `z-overlay` cho lớp nền mờ (scrim), `z-modal` cho mọi panel (dialog, drawer, popover, tooltip, menu). Các panel chung một lớp nên panel render sau nằm trên: menu mà ứng dụng render sau panel của dialog (một portal ở cuối `body`) sẽ mở phía trên nó. Panel xuất hiện bằng một transition `starting:` có thời lượng và easing từ các key `motionDuration`/`motionEasing`, và dừng dưới `motion-reduce:`; scrim là màu `background` ở một bậc opacity cùng một key `backdropBlurs`. Các phần mang role và class, riêng menu còn chuyển focus giữa các item đang bật (ArrowUp, ArrowDown, Home, End); mở và đóng, giữ và trả focus, `Escape`, định vị và portal thuộc về ứng dụng.
+- Lớp phủ dùng hai key `zIndex`: `z-overlay` cho lớp nền mờ (scrim), `z-modal` cho mọi panel (dialog, drawer, popover, tooltip, menu). Các panel chung một lớp nên panel render sau nằm trên: menu mà ứng dụng render sau panel của dialog (một portal ở cuối `body`) sẽ mở phía trên nó. Panel xuất hiện bằng một transition `starting:` có thời lượng và easing từ các key `motionDuration`/`motionEasing`, và dừng dưới `motion-reduce:`; scrim tô bằng key `scrim`, hoặc bằng màu `background` ở một bậc opacity khi theme không có key đó, và làm mờ bằng một key `backdropBlurs`. Các phần mang role và class, riêng menu còn chuyển focus giữa các item đang bật (ArrowUp, ArrowDown, Home, End); mở và đóng, giữ và trả focus, `Escape`, định vị và portal thuộc về ứng dụng.
+
+<!-- component-rules:end -->
 
 ### Các component
 

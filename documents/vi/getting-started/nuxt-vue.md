@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: e472e86756c3 -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: 71716386535e -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -9,7 +9,7 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Nu
 Bắt đầu từ một ứng dụng Nuxt 4 (`npx nuxi@latest init my-app --template minimal`, rồi `yarn install`). Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`; phần thiết lập Vite bên dưới import `@tailwindcss/vite`, và package cần `tailwindcss` (template minimal không có cái nào):
 
 ```bash
-yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite
+yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite
 yarn add -D typescript@^5.9.0
 ```
 

@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 943de3cd8b86 -->
+<!-- source: documents/architecture.md sha256: b5454c5e29ba -->
 
 # Kiến trúc
 
@@ -378,7 +378,7 @@ giá trị luôn là `var(--sg-sp-<key>)`). Chỉ các breakpoint trong `options
 ## API export
 
 Danh sách export theo từng subpath, kèm chữ ký và ví dụ, nằm trong [`reference/`](./reference/core.md#toàn-bộ-export-theo-subpath);
-`node scripts/check-doc-exports.mjs` đảm bảo mọi export đều có một heading ở đó. Các thay đổi phá vỡ giữa các bản major nằm trong các hướng dẫn dưới `migration/` (bản mới nhất là [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
+`node scripts/check-doc-exports.mjs` đảm bảo mọi export đều có một heading ở đó. Các thay đổi phá vỡ giữa các bản major nằm trong các hướng dẫn dưới `migration/` (bản mới nhất là [`migration/8.x-to-9.0.md`](./migration/8.x-to-9.0.md)).
 
 ---
 

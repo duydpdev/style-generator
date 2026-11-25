@@ -55,6 +55,7 @@ theme.schema.json  → editor autocomplete for the theme           (optional)
 | copy ready-made components                   | [Components](./components.md)                                                                          |
 | let a coding agent follow the conventions    | [Agent contract](./agent-contract.md)                                                                  |
 | look up the peer dependency ranges           | [Core API → Peer dependencies](./reference/core.md#peer-dependencies)                                  |
+| upgrade from 8.x                             | [Migration 8.x → 9.0](./migration/8.x-to-9.0.md)                                                       |
 | upgrade from 7.x                             | [Migration 7.x → 8.0](./migration/7.x-to-8.0.md)                                                       |
 
 ## Rules that hold everywhere

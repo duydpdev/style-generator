@@ -374,7 +374,7 @@ for example `{ inset: ["top", "bottom"] }`; the value is always `var(--sg-sp-<ke
 ## Exports API
 
 The export list per subpath, with signatures and examples, lives in [`reference/`](./reference/core.md#all-exports-by-subpath);
-`node scripts/check-doc-exports.mjs` guarantees that every export has a heading there. Breaking changes between majors are in the guides under `migration/` (the latest is [`migration/7.x-to-8.0.md`](./migration/7.x-to-8.0.md)).
+`node scripts/check-doc-exports.mjs` guarantees that every export has a heading there. Breaking changes between majors are in the guides under `migration/` (the latest is [`migration/8.x-to-9.0.md`](./migration/8.x-to-9.0.md)).
 
 ---
 

@@ -89,7 +89,7 @@ Imports allowed inside `src/ui/<folder>/`:
 
 ## 3. New component checklist
 
-A component declares the axes that apply to it (a checkbox has `color` and `size`, a field has none) and uses only this vocabulary:
+A component declares the axes that apply to it (a checkbox has `color` and `size`, a field has none); for these three axes it uses only this vocabulary:
 
 <!-- component-axes:start -->
 
@@ -102,9 +102,12 @@ A component declares the axes that apply to it (a checkbox has `color` and `size
 <!-- component-axes:end -->
 
 - `solid` fills with `<role>` and `<role>Foreground` text (`background` text when the theme has no `<role>Foreground`); `soft` fills with `<role>Subtle` and `<role>SubtleForeground` text and dims on hover (`hover:opacity-90`); `outline` is a `<role>` border and text on the `background` fill, with a `<role>Subtle` hover fill; `ghost` is `<role>` text with a `<role>Subtle` hover fill; `link` is `<role>` text, underlined on hover.
-- `size` sets the height from `controlHeight` (`h-control-<key>`). `icon` is a square at the `md` height; only button-like components declare it.
-- States: hover and active come from the `<role>Hover`/`<role>Active` keys through `COLOR_STATES` (`hover:opacity-90` without them); focus is a `focus-visible:` outline (a border on a field) in the `focus` key; disabled is `disabled:opacity-disabled` (the `opacity.disabled` token) with `cursor-not-allowed`; selected is `<role>Selected` through `COLOR_STATES` (`aria-selected:`) where the component has a selected state; invalid is `aria-invalid:` with the `danger` role on a form field.
-- Anatomy slots are named `prefix`, `suffix`, `label`, `hint` and `error`; a component has the ones it needs (Button: `prefix`, `suffix`; a field: `label`, `hint`, `error`).
+- `size` sets the height from `controlHeight` (`h-control-<key>`) on a single-line control (button, input, select, slider, a pagination button), and an avatar is a square of that height; a checkbox, radio or switch takes its box from `iconSize` (`size-icon-<key>`), and a multi-line field (textarea) changes only its padding and type style. An indicator follows the same split: a spinner takes its box from `iconSize`, and a progress track sets only its own thickness (`h-1`/`h-2`/`h-3`). `icon` is a square at the `md` height; only button-like components declare it.
+- States: hover and active come from the `<role>Hover`/`<role>Active` keys through `COLOR_STATES` (`hover:opacity-90` without them); focus is a `focus-visible:` outline (a border on a field) in the `focus` key; disabled is `disabled:opacity-disabled` (the `opacity.disabled` token) with `cursor-not-allowed`; selected is `<role>Selected` through `COLOR_STATES` (`aria-selected:`) where the component has a selected state (a tab), and every other component that maps that role through `COLOR_STATES` (a solid button, a link) also carries the `aria-selected:` class, which matches nothing until an element sets `aria-selected="true"`; invalid is `aria-invalid:` with the `danger` role on a form field.
+- Anatomy slots are named `prefix`, `suffix`, `label`, `hint` and `error`; a component has the ones it needs (Button: `prefix`, `suffix`; a field: `label`, `hint`, `error`). A component that styles several elements of its own names the extra slots after the element: `root` for the field's wrapper, `track` and `thumb` for a switch.
+- Overlays sit on two `zIndex` keys: `z-overlay` for a scrim, `z-modal` for every panel (dialog, drawer, popover, tooltip, menu). Panels share one layer, so the one rendered later stacks on top: a menu the app renders after a dialog panel (a portal at the end of `body`) opens above it. A panel enters with a `starting:` transition timed by the `motionDuration`/`motionEasing` keys and stops under `motion-reduce:`; a scrim fills with the `scrim` key, or with the `background` colour at an opacity step in a theme without one, and blurs with a `backdropBlurs` key. The parts carry roles and classes, and the menu also moves the focus between its enabled items (ArrowUp, ArrowDown, Home, End); opening and closing, focus trapping and return, `Escape`, positioning and portals belong to the app.
+
+<!-- component-rules:end -->
 
 1. Pick the roles the component needs and add the missing keys to the theme JSON (with `<intent>Hover`/`<intent>Foreground` siblings if wanted, and `<intent>Subtle`/`<intent>SubtleForeground` when the component has a `soft` variant).
 2. Create `src/ui/<kebab-name>/` with `style.ts`, `types.ts`, `<Name>.tsx`, `index.ts`.
@@ -140,15 +143,20 @@ export const cn = createCn(tokens);
 - Intent lists use `ColorVariant` from `@duydpdev/style-generator/types` against `typeof theme`. Do not derive your own `ColorKey` from `tokens.colors`.
 - Every class that names a theme key comes from a mapper, one per category; the class carries the **kebab-cased** key (`text16Medium` → `text-16-medium`):
 
-  | Category        | Mapper                                                                     | Class             |
-  | --------------- | -------------------------------------------------------------------------- | ----------------- |
-  | `colors`        | `createVariantMapper("bg", tokens.colors)` (also `text`, `border`, `ring`) | `bg-<key>`        |
-  | `typography`    | `createVariantMapper("", tokens.typography)`                               | `<key>`           |
-  | `borderRadius`  | `createVariantMapper("rounded", tokens.borderRadius)`                      | `rounded-<key>`   |
-  | `fontFamily`    | `createVariantMapper("font", tokens.fontFamily)`                           | `font-<key>`      |
-  | `borderWidth`   | `createVariantMapper("border", tokens.borderWidth)`                        | `border-<key>`    |
-  | `shadows`       | `createVariantMapper("shadow", tokens.shadows)`                            | `shadow-<key>`    |
-  | `controlHeight` | `createVariantMapper("h-control", tokens.controlHeight)`                   | `h-control-<key>` |
+  | Category         | Mapper                                                                     | Class                 |
+  | ---------------- | -------------------------------------------------------------------------- | --------------------- |
+  | `colors`         | `createVariantMapper("bg", tokens.colors)` (also `text`, `border`, `ring`) | `bg-<key>`            |
+  | `typography`     | `createVariantMapper("", tokens.typography)`                               | `<key>`               |
+  | `borderRadius`   | `createVariantMapper("rounded", tokens.borderRadius)`                      | `rounded-<key>`       |
+  | `fontFamily`     | `createVariantMapper("font", tokens.fontFamily)`                           | `font-<key>`          |
+  | `borderWidth`    | `createVariantMapper("border", tokens.borderWidth)`                        | `border-<key>`        |
+  | `shadows`        | `createVariantMapper("shadow", tokens.shadows)`                            | `shadow-<key>`        |
+  | `controlHeight`  | `createVariantMapper("h-control", tokens.controlHeight)`                   | `h-control-<key>`     |
+  | `iconSize`       | `createVariantMapper("size-icon", tokens.iconSize)`                        | `size-icon-<key>`     |
+  | `zIndex`         | `createVariantMapper("z", tokens.zIndex)`                                  | `z-<key>`             |
+  | `motionDuration` | `createVariantMapper("duration", tokens.motionDuration)`                   | `duration-<key>`      |
+  | `motionEasing`   | `createVariantMapper("ease", tokens.motionEasing)`                         | `ease-<key>`          |
+  | `backdropBlurs`  | `createVariantMapper("backdrop-blur", tokens.backdropBlurs)`               | `backdrop-blur-<key>` |
 
   Read a mapper with `mapper.<key>` (a compile-time check) or `pick(mapper, key)` (throws at import when the theme lacks the key). Never type `rounded-pill`, `font-sans` or a typography class by hand.
 
@@ -262,10 +270,10 @@ A theme sets the look; these limits hold under every theme and every `themeAxes`
 
 Which rules a tool enforces, and where:
 
-| Level      | What                                                                                                                | Where it runs                                    |
-| :--------- | :------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
-| Hard       | The theme schema: key names, aliases, `themeAxes` overrides, collisions                                             | Every `generate()`, `style-gen generate`, plugin |
-| Opt-in     | `style-gen canvas check`: one theme per canvas, plus `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Only when it is called (a script, CI)            |
-| Convention | Everything else in this contract (layout, component checklist, forbidden app code, interface floor)                 | Review                                           |
+| Level      | What                                                                                                                                          | Where it runs                                    |
+| :--------- | :-------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| Hard       | The theme schema: key names, aliases, `themeAxes` overrides, collisions                                                                       | Every `generate()`, `style-gen generate`, plugin |
+| Opt-in     | `style-gen canvas check`: one theme per canvas, plus `--naming`, `--boards` (with `--recipes <file>`), `--stamp`, `--intents`, `--ds-version` | Only when it is called (a script, CI)            |
+| Convention | Everything else in this contract (layout, component checklist, forbidden app code, interface floor)                                           | Review                                           |
 
 [Components](./components.md) holds the example components, the harness and the recipe factories; [UI kit](./reference/ui.md) documents `recipeFromTables`, `pick`, `contrastText`, `createCn` and the spacing helpers.

@@ -438,7 +438,7 @@ const root = () => {
 1. Install the required dependencies:
 
    ```bash
-   yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
+   yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge
    ```
 
 2. Wire `theme.css` for your bundler ([React + Vite](./getting-started/react-vite.md), [Next.js](./getting-started/next.md), [Nuxt](./getting-started/nuxt-vue.md)).
@@ -449,7 +449,7 @@ const root = () => {
 
 ### Component standard
 
-A component declares the axes that apply to it (a checkbox has `color` and `size`, a field has none) and uses only this vocabulary:
+A component declares the axes that apply to it (a checkbox has `color` and `size`, a field has none); for these three axes it uses only this vocabulary:
 
 <!-- component-axes:start -->
 
@@ -465,7 +465,9 @@ A component declares the axes that apply to it (a checkbox has `color` and `size
 - `size` sets the height from `controlHeight` (`h-control-<key>`) on a single-line control (button, input, select, slider, a pagination button), and an avatar is a square of that height; a checkbox, radio or switch takes its box from `iconSize` (`size-icon-<key>`), and a multi-line field (textarea) changes only its padding and type style. An indicator follows the same split: a spinner takes its box from `iconSize`, and a progress track sets only its own thickness (`h-1`/`h-2`/`h-3`). `icon` is a square at the `md` height; only button-like components declare it.
 - States: hover and active come from the `<role>Hover`/`<role>Active` keys through `COLOR_STATES` (`hover:opacity-90` without them); focus is a `focus-visible:` outline (a border on a field) in the `focus` key; disabled is `disabled:opacity-disabled` (the `opacity.disabled` token) with `cursor-not-allowed`; selected is `<role>Selected` through `COLOR_STATES` (`aria-selected:`) where the component has a selected state (a tab), and every other component that maps that role through `COLOR_STATES` (a solid button, a link) also carries the `aria-selected:` class, which matches nothing until an element sets `aria-selected="true"`; invalid is `aria-invalid:` with the `danger` role on a form field.
 - Anatomy slots are named `prefix`, `suffix`, `label`, `hint` and `error`; a component has the ones it needs (Button: `prefix`, `suffix`; a field: `label`, `hint`, `error`). A component that styles several elements of its own names the extra slots after the element: `root` for the field's wrapper, `track` and `thumb` for a switch.
-- Overlays sit on two `zIndex` keys: `z-overlay` for a scrim, `z-modal` for every panel (dialog, drawer, popover, tooltip, menu). Panels share one layer, so the one rendered later stacks on top: a menu the app renders after a dialog panel (a portal at the end of `body`) opens above it. A panel enters with a `starting:` transition timed by the `motionDuration`/`motionEasing` keys and stops under `motion-reduce:`; a scrim is the `background` colour at an opacity step with a `backdropBlurs` key. The parts carry roles and classes, and the menu also moves the focus between its enabled items (ArrowUp, ArrowDown, Home, End); opening and closing, focus trapping and return, `Escape`, positioning and portals belong to the app.
+- Overlays sit on two `zIndex` keys: `z-overlay` for a scrim, `z-modal` for every panel (dialog, drawer, popover, tooltip, menu). Panels share one layer, so the one rendered later stacks on top: a menu the app renders after a dialog panel (a portal at the end of `body`) opens above it. A panel enters with a `starting:` transition timed by the `motionDuration`/`motionEasing` keys and stops under `motion-reduce:`; a scrim fills with the `scrim` key, or with the `background` colour at an opacity step in a theme without one, and blurs with a `backdropBlurs` key. The parts carry roles and classes, and the menu also moves the focus between its enabled items (ArrowUp, ArrowDown, Home, End); opening and closing, focus trapping and return, `Escape`, positioning and portals belong to the app.
+
+<!-- component-rules:end -->
 
 ### The components
 

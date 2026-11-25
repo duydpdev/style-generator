@@ -9,7 +9,7 @@ To skip the setup, copy the starter: `npx degit duydpdev/style-generator/starter
 Start from a Vite React TypeScript app (`yarn create vite my-app --template react-ts`, then `yarn install`). Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`; the Vite setup below also imports `tailwindcss`, `@tailwindcss/vite` and `@vitejs/plugin-react` (the template already lists the last one).
 
 ```bash
-yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
+yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
 ```
 
 ## Create the theme

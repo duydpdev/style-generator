@@ -13,6 +13,7 @@ export const tokens = {
     "primary",
     "primaryHover",
     "primaryActive",
+    "primarySelected",
     "primaryForeground",
     "secondary",
     "accent",
@@ -117,6 +118,7 @@ export const tokens = {
     "2xl": "1536px"
   },
   "aliasedColors": [
+    "primarySelected",
     "primaryForeground",
     "accent",
     "primarySubtleForeground",

@@ -1,3 +1,23 @@
+# [9.0.1](https://github.com/duydpdev/style-generator/compare/v9.0.0...v9.0.1) (2026-11-25)
+
+### Bug Fixes
+
+- warn on on<Intent><State> keys whose bare intent is a colour ([239fc75](https://github.com/duydpdev/style-generator/commit/239fc75d325dd561724defbf6d1428236aabc2e2))
+
+  style-gen doctor skipped onPrimaryHover when the theme had primary but no
+  primaryHover, so that hover text sibling was lost silently after renaming
+  onPrimary. The check now also accepts the intent without its trailing
+  grammar state. The warning says the key is no longer read by contrastText
+  (text-on-<key> is still generated); a state key names its stateless key
+  and says the state goes last. A test pins the canvas grammar states to the
+  COLOR_STATES suffixes. The 8.x-to-9.0 guide notes that the 8.x doctor
+  misses such a key.
+
+
+### Refactor
+
+- build badge soft and outline from theme roles; drop toPascalCase ([72934ab](https://github.com/duydpdev/style-generator/commit/72934abc2184dff8648fc9a3a7ab72e14cf22dca))
+
 # [9.0.0](https://github.com/duydpdev/style-generator/compare/v8.3.0...v9.0.0) (2026-11-25)
 
 ### Release

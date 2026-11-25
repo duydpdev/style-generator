@@ -1,3 +1,13 @@
+# [9.1.0](https://github.com/duydpdev/style-generator/compare/v9.0.2...v9.1.0) (2026-11-25)
+
+### Features
+
+- allow the xl radius key in the canvas standard ([d6c5388](https://github.com/duydpdev/style-generator/commit/d6c53882e1053d65f45af20aefb97f72dd3ea1a5))
+
+  The radius list is an allow-list; a fifth step for large surfaces (device
+  frames, sheets, panels) keeps a 24px radius from snapping to lg. The list
+  stays closed at sm, md, lg, xl and full.
+
 # [9.0.2](https://github.com/duydpdev/style-generator/compare/v9.0.1...v9.0.2) (2026-11-25)
 
 ### Bug Fixes

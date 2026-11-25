@@ -6,7 +6,7 @@ There are two sets. The plain examples are what you copy: one folder per compone
 
 ### Where they live
 
-`examples/plain-react` (Vite + React, Storybook, parity gate) and `examples/plain-nuxt` (Nuxt 4, Storybook). Both render the same landing page from the same ten components, and each component folder carries a story (add one with every new component, in both plain apps).
+`examples/plain-react` (Vite + React, Storybook, parity gate) and `examples/plain-nuxt` (Nuxt 4, Storybook). Both render the same landing page from the same ten components; `plain-react` also holds the seven form components (`field`, `textarea`, `select`, `checkbox`, `radio`, `switch`, `slider`). Each component folder carries a story (add one with every new component, in every plain app that has the folder).
 
 ### One folder per component
 
@@ -462,26 +462,33 @@ A component declares the axes that apply to it (a checkbox has `color` and `size
 <!-- component-axes:end -->
 
 - `solid` fills with `<role>` and `<role>Foreground` text (`background` text when the theme has no `<role>Foreground`); `soft` fills with `<role>Subtle` and `<role>SubtleForeground` text and dims on hover (`hover:opacity-90`); `outline` is a `<role>` border and text on the `background` fill, with a `<role>Subtle` hover fill; `ghost` is `<role>` text with a `<role>Subtle` hover fill; `link` is `<role>` text, underlined on hover.
-- `size` sets the height from `controlHeight` (`h-control-<key>`). `icon` is a square at the `md` height; only button-like components declare it.
+- `size` sets the height from `controlHeight` (`h-control-<key>`) on a single-line control (button, input, select, slider); a checkbox, radio or switch takes its box from `iconSize` (`size-icon-<key>`), and a multi-line field (textarea) changes only its padding and type style. `icon` is a square at the `md` height; only button-like components declare it.
 - States: hover and active come from the `<role>Hover`/`<role>Active` keys through `COLOR_STATES` (`hover:opacity-90` without them); focus is a `focus-visible:` outline (a border on a field) in the `focus` key; disabled is `disabled:opacity-disabled` (the `opacity.disabled` token) with `cursor-not-allowed`; selected is `<role>Selected` through `COLOR_STATES` (`aria-selected:`) where the component has a selected state; invalid is `aria-invalid:` with the `danger` role on a form field.
-- Anatomy slots are named `prefix`, `suffix`, `label`, `hint` and `error`; a component has the ones it needs (Button: `prefix`, `suffix`; a field: `label`, `hint`, `error`).
+- Anatomy slots are named `prefix`, `suffix`, `label`, `hint` and `error`; a component has the ones it needs (Button: `prefix`, `suffix`; a field: `label`, `hint`, `error`). A component that styles several elements of its own names the extra slots after the element: `root` for the field's wrapper, `track` and `thumb` for a switch.
 
-### The ten components
+### The components
 
-| Folder   | Component | Parity gate |
-| -------- | --------- | ----------- |
-| `box`    | Box       | yes         |
-| `text`   | Text      | yes         |
-| `stack`  | Stack     | yes         |
-| `flex`   | Flex      | yes         |
-| `grid`   | Grid      | yes         |
-| `button` | Button    | yes         |
-| `card`   | Card      | no          |
-| `badge`  | Badge     | no          |
-| `input`  | Input     | no          |
-| `link`   | Link      | no          |
+| Folder     | Component | Parity gate |
+| ---------- | --------- | ----------- |
+| `box`      | Box       | yes         |
+| `text`     | Text      | yes         |
+| `stack`    | Stack     | yes         |
+| `flex`     | Flex      | yes         |
+| `grid`     | Grid      | yes         |
+| `button`   | Button    | yes         |
+| `card`     | Card      | no          |
+| `badge`    | Badge     | no          |
+| `input`    | Input     | no          |
+| `link`     | Link      | no          |
+| `field`    | Field     | tables      |
+| `textarea` | Textarea  | tables      |
+| `select`   | Select    | tables      |
+| `checkbox` | Checkbox  | tables      |
+| `radio`    | Radio     | tables      |
+| `switch`   | Switch    | tables      |
+| `slider`   | Slider    | tables      |
 
-"yes" means `yarn workspace plain-react-example test` fails when the plain React classes differ from the harness component's.
+"yes" means `yarn workspace plain-react-example test` fails when the plain React classes differ from the harness component's. "tables" means it fails when the plain `<name>Tables` differ from the design-system factory's tables for the same theme and preset (`tests/parity/<name>.tables.parity.test.ts`); the harness has no counterpart to render against. The seven form components live in `plain-react` only. `tests/parity/axes.parity.test.ts` fails when any plain component's `variant` or `size` value is missing from the component standard table.
 
 ### Rules
 

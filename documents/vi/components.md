@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 7b5c8267d2a9 -->
+<!-- source: documents/components.md sha256: 66324d213501 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -8,7 +8,7 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 
 ### Nơi chứa các ví dụ
 
-`examples/plain-react` (Vite + React, Storybook, gate đối sánh) và `examples/plain-nuxt` (Nuxt 4, Storybook). Cả hai đều render cùng một landing page từ mười component giống nhau, và mỗi thư mục component có một story (hãy thêm một story với mỗi component mới, trong cả hai ứng dụng plain).
+`examples/plain-react` (Vite + React, Storybook, gate đối sánh) và `examples/plain-nuxt` (Nuxt 4, Storybook). Cả hai đều render cùng một landing page từ mười component giống nhau; `plain-react` còn có thêm bảy component form (`field`, `textarea`, `select`, `checkbox`, `radio`, `switch`, `slider`). Mỗi thư mục component có một story (hãy thêm một story với mỗi component mới, trong mọi ứng dụng plain có thư mục đó).
 
 ### Mỗi component một thư mục
 
@@ -464,26 +464,33 @@ Một component khai báo các trục áp dụng cho nó (checkbox có `color` v
 <!-- component-axes:end -->
 
 - `solid` tô nền `<role>` với chữ `<role>Foreground` (chữ `background` khi theme không có `<role>Foreground`); `soft` tô nền `<role>Subtle` với chữ `<role>SubtleForeground` và mờ đi khi hover (`hover:opacity-90`); `outline` là viền và chữ `<role>` trên nền `background`, với nền hover `<role>Subtle`; `ghost` là chữ `<role>` với nền hover `<role>Subtle`; `link` là chữ `<role>`, gạch chân khi hover.
-- `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`). `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
+- `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`) ở control một dòng (button, input, select, slider); checkbox, radio và switch lấy kích thước ô từ `iconSize` (`size-icon-<key>`), còn field nhiều dòng (textarea) chỉ đổi padding và kiểu chữ. `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
 - Trạng thái: hover và active lấy từ các key `<role>Hover`/`<role>Active` qua `COLOR_STATES` (thiếu chúng thì dùng `hover:opacity-90`); focus là outline `focus-visible:` (viền với field) theo key `focus`; disabled là `disabled:opacity-disabled` (token `opacity.disabled`) cùng `cursor-not-allowed`; selected là `<role>Selected` qua `COLOR_STATES` (`aria-selected:`) ở component có trạng thái chọn; invalid là `aria-invalid:` với vai trò `danger` trên field của form.
-- Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`).
+- Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`). Component tự style nhiều phần tử thì đặt tên slot thêm theo phần tử đó: `root` cho phần bọc của field, `track` và `thumb` cho switch.
 
-### Mười component
+### Các component
 
-| Thư mục  | Component | Gate đối sánh |
-| -------- | --------- | ------------- |
-| `box`    | Box       | có            |
-| `text`   | Text      | có            |
-| `stack`  | Stack     | có            |
-| `flex`   | Flex      | có            |
-| `grid`   | Grid      | có            |
-| `button` | Button    | có            |
-| `card`   | Card      | không         |
-| `badge`  | Badge     | không         |
-| `input`  | Input     | không         |
-| `link`   | Link      | không         |
+| Thư mục    | Component | Gate đối sánh |
+| ---------- | --------- | ------------- |
+| `box`      | Box       | có            |
+| `text`     | Text      | có            |
+| `stack`    | Stack     | có            |
+| `flex`     | Flex      | có            |
+| `grid`     | Grid      | có            |
+| `button`   | Button    | có            |
+| `card`     | Card      | không         |
+| `badge`    | Badge     | không         |
+| `input`    | Input     | không         |
+| `link`     | Link      | không         |
+| `field`    | Field     | bảng          |
+| `textarea` | Textarea  | bảng          |
+| `select`   | Select    | bảng          |
+| `checkbox` | Checkbox  | bảng          |
+| `radio`    | Radio     | bảng          |
+| `switch`   | Switch    | bảng          |
+| `slider`   | Slider    | bảng          |
 
-"có" nghĩa là `yarn workspace plain-react-example test` sẽ thất bại khi các class của React plain khác với component tương ứng của harness.
+"có" nghĩa là `yarn workspace plain-react-example test` sẽ thất bại khi các class của React plain khác với component tương ứng của harness. "bảng" nghĩa là lệnh đó thất bại khi `<name>Tables` của bản plain khác với các bảng do factory của design-system tạo ra cho cùng theme và preset (`tests/parity/<name>.tables.parity.test.ts`); harness không có component tương ứng để render đối sánh. Bảy component form chỉ có trong `plain-react`. `tests/parity/axes.parity.test.ts` thất bại khi một giá trị `variant` hoặc `size` của component plain nào đó không có trong bảng chuẩn component.
 
 ### Các quy tắc
 

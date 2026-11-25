@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 94c5133e61e1 -->
+<!-- source: documents/agent-contract.md sha256: e2ff093ebe05 -->
 
 # Hợp đồng cho agent
 
@@ -270,4 +270,4 @@ Quy tắc nào được công cụ kiểm tra, và ở đâu:
 | Tự chọn  | `style-gen canvas check`: một theme cho mỗi canvas, cùng `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Chỉ khi được gọi (một script, CI)              |
 | Quy ước  | Mọi thứ khác trong hợp đồng này (layout, checklist component, code bị cấm trong app, mức sàn giao diện)                 | Review                                         |
 
-[Component](./components.md) chứa mười component ví dụ, harness và các recipe factory; [UI kit](./reference/ui.md) mô tả `recipeFromTables`, `pick`, `contrastText`, `createCn` và các helper spacing.
+[Component](./components.md) chứa các component ví dụ, harness và các recipe factory; [UI kit](./reference/ui.md) mô tả `recipeFromTables`, `pick`, `contrastText`, `createCn` và các helper spacing.

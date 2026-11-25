@@ -69,6 +69,22 @@ export interface TokenCategoryDescriptor<K extends string = string> {
    * `var(--sg-shadow-<key>)` and stay unchanged.
    */
   opacityModifier?: boolean;
+  /**
+   * `true` for a scale category (`motionDuration`, `zIndex`, …): its values
+   * follow one typed grammar and hold no `$` alias, and it has a single
+   * class prefix, so `coverage.<key>` is only `false`, `true` or
+   * `{ keys: "all" }` (no `keys: "aliased"`, no `prefixes`).
+   */
+  literalScale?: boolean;
+  /**
+   * How the `@theme inline` mapping reads the `--sg-*` variable. Absent:
+   * `var(--sg-…)` as it is. `"percent"`: `calc(var(--sg-…) * 100%)`, for a
+   * 0–1 number whose namespace Tailwind also uses as a percentage (`opacity`:
+   * `--opacity-<key>` feeds both `opacity-<key>` and the colour modifier
+   * `bg-primary/<key>`, whose `color-mix()` takes only a percentage). The
+   * `--sg-*` variable itself keeps the theme's number.
+   */
+  themeValue?: "percent";
   /** Fallback values used when the theme config omits this category. */
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];
 }

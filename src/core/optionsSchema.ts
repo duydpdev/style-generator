@@ -4,7 +4,10 @@ import {
   builtInCategories,
   isCssVarCategory,
 } from "../features/registry/builtInCategories";
-import type { CategoryKey } from "../features/registry/builtInCategories";
+import type {
+  BuiltInCategory,
+  CategoryKey,
+} from "../features/registry/builtInCategories";
 
 import { mergeScreens } from "./resolveTokenOptions";
 import { TOKEN_KEY_RE } from "./tokenGrammar";
@@ -79,6 +82,45 @@ const OpacityGroup = z.strictObject({
 });
 
 /**
+ * Issues of a coverage rule that a category without `$` aliases cannot
+ * honour: `keys: "aliased"` (it would drop every key) and, on a literal scale
+ * (one class prefix), `prefixes`.
+ * @param {BuiltInCategory} descriptor - The rule's category
+ * @param {object} rule - The category's coverage rule
+ * @param {string} [rule.keys] - `"aliased"` or `"all"`
+ * @param {readonly string[]} [rule.prefixes] - Kept class prefixes
+ * @param {z.RefinementCtx} ctx - Refinement context that receives the issues
+ * @returns {boolean} `true` when `prefixes` was reported on a literal scale
+ */
+const checkAliasFreeRule = (
+  descriptor: BuiltInCategory,
+  rule: {
+    readonly keys?: string | undefined;
+    readonly prefixes?: readonly string[] | undefined;
+  },
+  ctx: z.RefinementCtx,
+): boolean => {
+  const literalScale = "literalScale" in descriptor;
+  if (
+    (literalScale || !isCssVarCategory(descriptor)) &&
+    rule.keys === "aliased"
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      path: [descriptor.key, "keys"],
+      message: `"${descriptor.key}" has no \`$\` aliases, so \`keys: "aliased"\` would drop all its coverage; use \`false\` to drop it deliberately`,
+    });
+  }
+  if (!literalScale || !rule.prefixes) return false;
+  ctx.addIssue({
+    code: "custom",
+    path: [descriptor.key, "prefixes"],
+    message: `"${descriptor.key}" has one class prefix (${descriptor.classPrefixes.join(", ")}), so \`prefixes\` can only keep or drop all of it; use \`true\` or \`false\``,
+  });
+  return true;
+};
+
+/**
  * Per-category `@source inline` coverage. A bare boolean switches the
  * category on/off; the object form narrows it to some class prefixes
  * and/or to the alias holders. Every `prefixes` entry must be a real class
@@ -124,13 +166,7 @@ const CoverageSchema = z
       const rule = coverage[descriptor.key];
       if (typeof rule !== "object") continue;
 
-      if (!isCssVarCategory(descriptor) && rule.keys === "aliased") {
-        ctx.addIssue({
-          code: "custom",
-          path: [descriptor.key, "keys"],
-          message: `"${descriptor.key}" has no \`$\` aliases, so \`keys: "aliased"\` would drop all its coverage; use \`false\` to drop it deliberately`,
-        });
-      }
+      const prefixesReported = checkAliasFreeRule(descriptor, rule, ctx);
       if (rule.opacities && !("opacityModifier" in descriptor)) {
         ctx.addIssue({
           code: "custom",
@@ -169,7 +205,7 @@ const CoverageSchema = z
           ]);
         });
       }
-      if (rule.prefixes) {
+      if (rule.prefixes && !prefixesReported) {
         checkPrefixes(rule.prefixes, [descriptor.key, "prefixes"]);
       }
     }

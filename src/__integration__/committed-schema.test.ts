@@ -26,7 +26,7 @@ describe("integration: committed theme.schema.json files match ThemeSchema", () 
     );
     expect(
       actual,
-      `${file} is stale; regenerate with: yarn build:cli && node dist/cli/index.mjs schema --out ${file}`,
+      `${file} is stale; regenerate every committed schema with: yarn schema:refresh`,
     ).toEqual(expected);
   });
 });
@@ -49,7 +49,7 @@ describe("integration: committed style-gen.config.schema.json files match buildC
     );
     expect(
       actual,
-      `${file} is stale; regenerate from the repository root with: yarn build:cli && node dist/cli/index.mjs schema --out examples/theme.schema.json --config-out ${file}`,
+      `${file} is stale; regenerate every committed schema with: yarn schema:refresh`,
     ).toEqual(expected);
   });
 });

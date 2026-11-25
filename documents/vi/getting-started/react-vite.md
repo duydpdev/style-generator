@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: 5e8ad63650f2 -->
+<!-- source: documents/getting-started/react-vite.md sha256: 326427cf1721 -->
 
 # Bắt đầu: React + Vite
 
@@ -26,7 +26,7 @@ Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
     "primary": "#2647D9",
     "primaryHover": "#1F3BB8",
     "primaryActive": "#19319A",
-    "onPrimary": "$surface",
+    "primaryForeground": "$surface",
     "secondary": "#6E5BFF",
     "accent": "$secondary",
     "success": "#2E7D5B",
@@ -126,7 +126,7 @@ Tạo `src/theme/theme.json`. `Button` bên dưới đọc các màu `primary`, 
 }
 ```
 
-`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi một theme khởi đầu nhỏ hơn vào `src/styles/theme.json` và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `src/theme/`: hoặc bỏ qua `init`, hoặc xóa thư mục `src/styles/` mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
+`yarn style-gen init` ([Bắt đầu nhanh](../README.md#bắt-đầu-nhanh)) ghi theme khởi đầu riêng của nó vào `src/styles/theme.json` và một `style-gen.config.json` trỏ tới đó. Hướng dẫn này giữ theme trong `src/theme/`: hoặc bỏ qua `init`, hoặc xóa thư mục `src/styles/` mà nó đã ghi và thay `style-gen.config.json` bằng file hiển thị bên dưới.
 
 ## Tự quản lý theme
 
@@ -204,7 +204,11 @@ import {
   COLOR_STATES,
   createVariantMapper,
 } from "@duydpdev/style-generator/cva";
-import type { ColorVariant } from "@duydpdev/style-generator/types";
+import type {
+  ColorVariant,
+  RoundedVariant,
+  TextVariant,
+} from "@duydpdev/style-generator/types";
 import {
   contrastText,
   pick,
@@ -264,13 +268,18 @@ const tint = {
   },
 } as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
-} as const;
+} as const satisfies {
+  background: ColorVariant<typeof theme>;
+  radius: RoundedVariant<typeof theme>;
+  type: TextVariant<typeof theme>;
+  typeLg: TextVariant<typeof theme>;
+};
 
 export type ButtonIntent = (typeof buttonIntents)[number];
 

@@ -14,7 +14,7 @@ const themeFieldNames = (): string[] =>
   Object.keys(ThemeSchema.def.out.def.shape);
 
 describe("builtInCategories", () => {
-  it("registers all 7 built-in categories", () => {
+  it("registers all 13 built-in categories", () => {
     expect(builtInCategories.map((c) => c.key)).toEqual([
       "colors",
       "typography",
@@ -23,6 +23,12 @@ describe("builtInCategories", () => {
       "borderRadius",
       "fontFamily",
       "borderWidth",
+      "motionDuration",
+      "motionEasing",
+      "controlHeight",
+      "iconSize",
+      "opacity",
+      "zIndex",
     ]);
   });
 

@@ -8,6 +8,7 @@ import {
   expect,
   beforeEach,
   afterEach,
+  onTestFinished,
   vi,
   type MockInstance,
 } from "vitest";
@@ -86,6 +87,13 @@ describe("doctorCommand", () => {
   });
 
   it("points at `generate` when the output has not been generated yet", () => {
+    vi.stubEnv(
+      "npm_config_user_agent",
+      "bun/1.1.30 npm/? node/v22.6.0 darwin arm64",
+    );
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
     writeProject(tmp, {
       "styles/theme.json": { colors: { primary: "#3B82F6" } },
     });
@@ -93,7 +101,7 @@ describe("doctorCommand", () => {
     expect(doctorCommand(tmp)).toBe(0);
 
     expect(lines()).toMatch(/Not generated yet/);
-    expect(lines()).toMatch(/yarn style-gen generate/);
+    expect(lines()).toContain("bun run style-gen generate");
   });
 
   it("a config that has a `plugin` key stops with a config error and prints no Script line", () => {
@@ -428,6 +436,41 @@ describe("doctorCommand", () => {
       expect(out.match(/colors\.3 →/g)).toHaveLength(2);
     });
 
+    it.each([
+      ["zIndex", { zIndex: { auto: 0, "10": 10, modal: 50 } }, ["auto", "10"]],
+      [
+        "motionDuration",
+        { motionDuration: { initial: "0s", "150": "150ms", fast: "100ms" } },
+        ["initial", "150"],
+      ],
+      [
+        "motionEasing",
+        {
+          motionEasing: {
+            linear: "linear",
+            in: "ease-in",
+            inOut: "ease-in-out",
+            standard: "ease-out",
+          },
+        },
+        ["linear", "in", "inOut"],
+      ],
+    ] as const)(
+      "warns on the %s keys whose class Tailwind ships",
+      (category, scale, colliding) => {
+        runWithTheme({ colors: { primary: "#000" }, ...scale });
+
+        expect(doctorCommand(tmp)).toBe(0);
+        const out = lines();
+        const reported = Object.keys(
+          Object.values<object>(scale)[0] ?? {},
+        ).filter((key) => out.includes(`${category}.${key} → class `));
+        // Integer-like keys enumerate first, so compare as sets.
+        const byName = (a: string, b: string): number => a.localeCompare(b);
+        expect([...reported].sort(byName)).toEqual([...colliding].sort(byName));
+      },
+    );
+
     it("prints no collision warning for a clean theme", () => {
       runWithTheme({
         colors: { primary: "#3B82F6" },
@@ -448,6 +491,28 @@ describe("doctorCommand", () => {
 
       expect(doctorCommand(tmp)).toBe(1);
       expect(lines()).not.toContain("colors.none →");
+    });
+  });
+
+  describe("deprecated on<Intent> keys", () => {
+    it("warns without changing the exit code", () => {
+      writeProject(tmp, {
+        "style-gen.config.json": {
+          theme: "styles/theme.json",
+          output: "styles/theme.css",
+        },
+        "styles/theme.json": {
+          colors: { primary: "#000", onPrimary: "#fff", onboarding: "#111" },
+        },
+        "styles/theme.css": "x",
+      });
+
+      expect(doctorCommand(tmp)).toBe(0);
+
+      expect(lines()).toContain(
+        "Theme   ⚠️  colors.onPrimary is deprecated: contrastText reads primaryForeground first and drops on<Intent> in 9.0; rename to primaryForeground",
+      );
+      expect(lines()).not.toContain("onboarding");
     });
   });
 

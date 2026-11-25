@@ -286,7 +286,9 @@ export function emitTheme(target: EmitTarget): EmitResult {
 /**
  * Report whether `tokensFile` is the module the theme and options generate,
  * without writing anything (`style-gen generate --check`). A missing file and
- * a different one are both `stage: "stale"`; line endings are ignored on the
+ * a different one are both `stage: "stale"` (the CLI adds the command that
+ * fixes it, for the project's package manager); a tokens file that exists but
+ * cannot be read is `stage: "read"`. Line endings are ignored on the
  * disk side, so a checkout with `core.autocrlf` is not stale. Validation
  * failures carry the stage and message {@link emitTheme} would report. Never
  * throws.
@@ -317,21 +319,17 @@ export function checkTokensModule(
     existing = fs.readFileSync(tokensFile, "utf8");
   } catch (error) {
     const code = (error as NodeJS.ErrnoException | undefined)?.code;
-    return fail(
-      "stale",
-      code === "ENOENT"
-        ? `${tokensFile} does not exist. Run: style-gen generate`
-        : `Cannot read ${tokensFile}: ${errorMessage(error)}`,
-      error,
-    );
+    return code === "ENOENT"
+      ? fail("stale", `${tokensFile} does not exist.`, error)
+      : fail(
+          "read",
+          `Cannot read ${tokensFile}: ${errorMessage(error)}`,
+          error,
+        );
   }
 
   if (!tokensModuleCurrent(existing, expected)) {
-    return fail(
-      "stale",
-      `${tokensFile} is out of date. Run: style-gen generate`,
-      undefined,
-    );
+    return fail("stale", `${tokensFile} is out of date.`, undefined);
   }
   return { ok: true };
 }

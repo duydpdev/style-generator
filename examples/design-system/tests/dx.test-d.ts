@@ -28,14 +28,14 @@ describe("design-system types", () => {
   });
 
   it("the state siblings are theme colors", () => {
-    expectTypeOf<"primaryHover" | "primaryActive" | "onPrimary">().toExtend<
-      ColorVariant<Theme>
-    >();
+    expectTypeOf<
+      "primaryHover" | "primaryActive" | "primaryForeground"
+    >().toExtend<ColorVariant<Theme>>();
     expectTypeOf<"primaryFocus">().not.toExtend<ColorVariant<Theme>>();
   });
 
   it("the alt theme rejects the sample theme's intents", () => {
-    expectTypeOf<"brand" | "onBrand">().toExtend<AltColor>();
+    expectTypeOf<"brand" | "brandForeground">().toExtend<AltColor>();
     // @ts-expect-error "primary" is not a color of the alt theme
     const bad = ["primary"] as const satisfies readonly AltColor[];
     expectTypeOf(bad).toEqualTypeOf<readonly ["primary"]>();

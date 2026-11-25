@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { getBundlerSnippet, getCssImport } from "./templates";
+import {
+  getBundlerSnippet,
+  getCssImport,
+  themeTemplate,
+  themeTemplateDark,
+} from "./templates";
 
 /**
  * The bodies of the `ts` code fences in a repository doc.
@@ -51,5 +56,51 @@ describe("getCssImport", () => {
     expect(getCssImport(cwd, entry, output, ".claude").split("\n")[2]).toBe(
       `@source not "${excluded}";`,
     );
+  });
+});
+
+describe("starter colour pairs", () => {
+  interface Starter {
+    colors: Record<string, string>;
+    themeAxes?: { theme: { dark: { colors: Record<string, string> } } };
+  }
+  /**
+   * WCAG relative luminance of a `#RRGGBB` colour.
+   * @param {string} hex - The colour
+   * @returns {number} 0 (black) to 1 (white)
+   */
+  const luminance = (hex: string): number => {
+    const [r = 0, g = 0, b = 0] = [1, 3, 5].map((i) => {
+      const c = Number.parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.040_45 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  /**
+   * @param {Record<string, string>} colors - Colours with `$` aliases
+   * @param {string} key - A key to resolve
+   * @returns {string} Its literal
+   */
+  const literal = (colors: Record<string, string>, key: string): string => {
+    const value = colors[key] ?? "";
+    return value.startsWith("$") ? literal(colors, value.slice(1)) : value;
+  };
+  const dark = JSON.parse(themeTemplateDark) as Starter;
+  const variants = [
+    ["light", (JSON.parse(themeTemplate) as Starter).colors],
+    ["dark", { ...dark.colors, ...dark.themeAxes?.theme.dark.colors }],
+  ] as const;
+
+  it.each(
+    variants.flatMap(([name, colors]) =>
+      ["muted", "primary"].map((fill) => [name, fill, colors] as const),
+    ),
+  )("%s: the %s pair reaches 4.5:1", (_name, fill, colors) => {
+    const [a, b] = [fill, `${fill}Foreground`].map((k) =>
+      luminance(literal(colors, k)),
+    );
+    const ratio =
+      (Math.max(a ?? 0, b ?? 0) + 0.05) / (Math.min(a ?? 0, b ?? 0) + 0.05);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 });

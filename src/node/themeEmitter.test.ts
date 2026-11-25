@@ -396,7 +396,7 @@ describe("checkTokensModule", () => {
     expect(r).toMatchObject({
       ok: false,
       stage: "stale",
-      message: `${tokensFile} is out of date. Run: style-gen generate`,
+      message: `${tokensFile} is out of date.`,
     });
     expect(fs.readFileSync(tokensFile, "utf8")).toBe(bytes);
     expect(fs.statSync(tokensFile).mtimeMs).toBe(before.mtimeMs);
@@ -406,7 +406,7 @@ describe("checkTokensModule", () => {
     expect(checkTokensModule({ themeFile, tokensFile })).toMatchObject({
       ok: false,
       stage: "stale",
-      message: `${tokensFile} does not exist. Run: style-gen generate`,
+      message: `${tokensFile} does not exist.`,
     });
     expect(fs.existsSync(tokensFile)).toBe(false);
   });

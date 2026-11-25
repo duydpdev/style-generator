@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import type { Rule } from "postcss";
 import postcss from "postcss";
 
+import { findUtilityCollisions } from "../cli/commands/utilityCollisions";
 import { generate } from "../core/generate";
+import { ThemeSchema } from "../core/themeSchema";
 
 import { fixtureTheme } from "./__fixtures__/fixtureTheme";
 import { compileFixtureCss, selectorTargetsClass } from "./compileFixtureCss";
@@ -307,5 +309,94 @@ describe("integration: Tailwind v4 compile pipeline", () => {
       "var(--sg-color-primary)",
     );
     expect(compiled).toContain(".sp-p");
+  });
+});
+
+describe("primitive colour keys against Tailwind's palette", () => {
+  const theme = { colors: { blue500: "#123456", primary: "$blue500" } };
+  const candidates = ["bg-blue-500", "bg-red-500", "bg-primary"];
+
+  it("the theme's blue500 replaces Tailwind's; the rest of the palette stays", async () => {
+    const out = await compileFixtureCss(generate(theme).css, candidates);
+    expect(declsOf(out, ".bg-blue-500").get("background-color")).toBe(
+      "var(--sg-color-blue-500)",
+    );
+    expect(declsOf(out, ".bg-red-500").get("background-color")).toBe(
+      "var(--color-red-500)",
+    );
+  });
+
+  it('resetTailwindDefaults: ["colors"] drops the rest of the palette', async () => {
+    const out = await compileFixtureCss(
+      generate(theme, { resetTailwindDefaults: ["colors"] }).css,
+      candidates,
+    );
+    expect(declsOf(out, ".bg-red-500").size).toBe(0);
+    expect(declsOf(out, ".bg-blue-500").get("background-color")).toBe(
+      "var(--sg-color-blue-500)",
+    );
+    expect(declsOf(out, ".bg-primary").get("background-color")).toBe(
+      "var(--sg-color-primary)",
+    );
+  });
+
+  it('coverage keys: "aliased" emits the semantic holder, not the primitive', async () => {
+    const out = await compileFixtureCss(
+      generate(theme, { coverage: { colors: { keys: "aliased" } } }).css,
+      [],
+    );
+    expect(declsOf(out, ".bg-primary").get("background-color")).toBe(
+      "var(--sg-color-primary)",
+    );
+    expect(declsOf(out, ".bg-blue-500").size).toBe(0);
+  });
+
+  it("alpha primitives and value-named typography keys build their classes", async () => {
+    const keyTheme = {
+      colors: {
+        blue600: "#2563eb",
+        blue600Alpha10: "rgba(37, 99, 235, 0.10)",
+        scrim: "$blue600Alpha10",
+      },
+      typography: {
+        text16Regular: {
+          fontSize: "16px",
+          lineHeight: "24px",
+          fontWeight: 400,
+        },
+        text56Regular: {
+          fontSize: "56px",
+          lineHeight: "100%",
+          fontWeight: 400,
+        },
+      },
+      fontFamily: { display: "Georgia, serif" },
+    };
+    const out = await compileFixtureCss(generate(keyTheme).css, [
+      "bg-scrim",
+      "bg-blue-600-alpha-10",
+      "text-16-regular",
+      "text-56-regular",
+      "font-display",
+    ]);
+
+    expect(declsOf(out, ".bg-scrim").get("background-color")).toBe(
+      "var(--sg-color-scrim)",
+    );
+    expect(declsOf(out, ".bg-blue-600-alpha-10").get("background-color")).toBe(
+      "var(--sg-color-blue-600-alpha-10)",
+    );
+    expect(Object.fromEntries(declsOf(out, ".text-16-regular"))).toEqual({
+      "font-size": "16px",
+      "line-height": "24px",
+      "font-weight": "400",
+    });
+    const display = declsOf(out, ".text-56-regular");
+    expect(display.get("font-size")).toBe("56px");
+    expect(display.has("font-family")).toBe(false);
+    expect(Object.fromEntries(declsOf(out, ".font-display"))).toEqual({
+      "font-family": "var(--sg-font-display)",
+    });
+    expect(findUtilityCollisions(ThemeSchema.parse(keyTheme))).toEqual([]);
   });
 });

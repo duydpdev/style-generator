@@ -6,18 +6,63 @@ The rules an agent (or a person) follows to write a theme and components with `@
 
 ## 1. Role contract (theme shape, not theme names)
 
-Name the keys after the app's own roles. The library derives every type and class from the keys you write; it never expects a particular name.
+Name the semantic keys after the app's own roles; name primitive colours and typography after their values (see [Naming convention](#naming-convention)). The library derives every type and class from the keys you write; it never expects a particular name.
 
 - `colors` is required and **flat camelCase**: `brand`, `brandHover`, `surfaceRaised`. No nested object, no `DEFAULT`, no `_`, no leading run of two or more capitals (`CTA`, `HTMLText`); a single capital or an inner run (`primaryCTA`) is fine. The schema rejects the rest.
 - An intent may declare state siblings `<intent>Hover` and `<intent>Active`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` from `@duydpdev/style-generator/cva`) turns `brand` into `bg-brand hover:bg-brand-hover active:bg-brand-active` when they exist and into `bg-brand` when they do not.
-- An intent may declare an `on<Intent>` text colour (`brand` → `onBrand`). `contrastText(tokens.colors, intent, fallback)` returns `text-on-brand` when it exists, else `text-<fallback>`.
+- An intent may declare a `<intent>Foreground` text colour (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` returns `text-brand-foreground` when it exists, else `text-<fallback>`. The older `on<Intent>` name (`text-on-brand`) still works but is deprecated: `contrastText` stops reading it in 9.0, and `style-gen doctor` warns on it.
 - A value `"$<key>"` aliases another key **of the same category** (`"brandHover": "$brandActive"` in `colors`). Not in `typography`. Unknown targets and cycles are schema errors.
 - Dark mode and palettes go in `themeAxes.<axis>.<variant>`; an override may only redefine keys that exist in the base category. Activation is `html[data-<axis>="<variant>"]` (use `themeAxisAttributes` from `@duydpdev/style-generator/recipes`). `base` is reserved as a variant name.
 - Every other category (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) is optional and follows the same key grammar. Typography entries need `fontSize`, `lineHeight` and a numeric `fontWeight`.
-- Avoid keys whose class equals a Tailwind utility (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` warns; rename to `clear`, `flat`, `heading1`.
-- `style-gen init` writes a starter theme. Rename its keys to the app's roles and set every value for this app; a starter key left with its starter value is a copy, not a choice.
+- Avoid keys whose class equals a Tailwind utility (`none` → `bg-none`, typography `textSm` → `text-sm`, `h1` → `h-1`). `style-gen doctor` warns; rename to `clear`, `flat`, or a value-named typography key such as `text32Bold`.
+- `style-gen init` writes a starter theme that already follows the [Naming convention](#naming-convention): gray, blue, red, green and amber primitives, the semantic core aliasing them, and value-named typography. Its keys are a shape to start from and its values are placeholders: rename or add semantic keys after the app's roles and set every value for this app; a starter value left as it is is a copy, not a choice.
 
 Each rule above is enforced by the theme schema (`generate()`, `style-gen generate`, the Vite/Next plugins) or reported by `style-gen doctor`. Keep `"$schema"` pointing at the generated `theme.schema.json` for editor validation.
+
+**One theme per UI set.** Every UI set — an app, a design canvas, a design-system artifact — has its own `theme.json` in the product's repository, with semantic keys named after that product's roles. A design system or a canvas is built from that theme and declares no token values of its own. No tool enforces this; it is a review rule.
+
+### Naming convention
+
+This convention applies to new themes and new design canvases. Never rename a key an existing app already uses to follow it: every class literal that uses the old key would stop matching. The library accepts any key that passes the schema; the convention is a recommendation, not a schema rule.
+
+- Colours come in two layers: primitives hold every literal value, semantic keys point at primitives.
+- A primitive key is a hue and a step, or `black`/`white`: it matches `^(?:[a-z]+(?:50|[1-9]00|950)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray50`, `white`; `gray150` is not one). Its value is a literal, never `$…`. The hue is lowercase letters only; the steps are 50, 100 to 900 and 950, and a scale may skip steps.
+- A translucent colour is a primitive with an alpha suffix in percent (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
+- Every other colour key is semantic. Its value is `"$<primitive>"` in the base `colors` and in every `themeAxes` override that redefines it; a semantic key never aliases another semantic key, and an override never redefines a primitive.
+
+Semantic core: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.
+`muted` is a quiet fill and `mutedForeground` the secondary text on it (and on `background`), like every `<intent>`/`<intent>Foreground` pair.
+Product keys (`domainNutrition`) sit beside them.
+
+- A semantic key is a neutral key (`background`, `foreground`, `surface`, `surfaceRaised`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`) or `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: a core or product role, then the suffixes in that order, then at most one state, always last. `primaryForegroundHover` is the hover sibling of `primaryForeground`; `successSubtleForeground` is the text on a `successSubtle` fill. A product role is camelCase with one capital per segment (`domainNutrition`, not `primaryCTA`). Its first segment is not `on`, `ok`, `bad`, `warn` or `line`, and a role of several segments does not end in a suffix, a state, `Ink`, `Soft`, `Line`, `Ok`, `Bad` or `Warn` (`chartLine` reads as a v1 name).
+- `style-gen canvas check --naming` reports the v1 names with their v2 rename: `on<Role>` → `<role>Foreground`, `…Ink` → `…Foreground`, `…Soft` → `…Subtle`, `…Line` → `…Border`, `ok`/`bad`/`warn` → `success`/`danger`/`warning`, `line`/`lineStrong` → `border`/`borderStrong`. When the new name already exists, it says `merge manually` instead.
+
+- A typography key is `text<size><Weight>`: it matches `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. The digits are `fontSize` in px (a rem value counts as rem × 16) and the word is `fontWeight` 400/500/600/700. Every key with the same size has the same `lineHeight`. The scale is 12, 14, 16, 20, 24, 32, 40, 56.
+- A typography entry never sets `fontFamily`. A different face is the `font-<fontFamily key>` class next to the typography class: `class="text-56-regular font-display"`.
+- Radius keys are `sm`, `md`, `lg` and `full`.
+
+<!-- prettier-ignore -->
+```json
+{
+  "colors": {
+    "blue400": "#60a5fa",
+    "blue600": "#2563eb",
+    "blue600Alpha10": "rgba(37, 99, 235, 0.10)",
+    "primary": "$blue600",
+    "primaryHover": "$blue400",
+    "scrim": "$blue600Alpha10"
+  },
+  "themeAxes": {
+    "theme": { "dark": { "colors": { "primary": "$blue400" } } }
+  },
+  "typography": {
+    "text16Regular": { "fontSize": "16px", "lineHeight": "24px", "fontWeight": 400 },
+    "text32Bold": { "fontSize": "32px", "lineHeight": "40px", "fontWeight": 700 }
+  }
+}
+```
+
+Components and artboards use semantic keys only. Every colour key has a class by default; `coverage: { colors: { keys: "aliased" } }` in `style-gen.config.json` (recommended) drops the generated coverage of the primitives, so only the semantic keys are always built. Add `resetTailwindDefaults: ["colors"]` only for a new app that uses no Tailwind palette classes: it removes Tailwind's palette, so an existing `bg-red-500` stops being emitted.
 
 ## 2. Layout
 
@@ -32,7 +77,7 @@ src/ui/<kebab-name>/        # one folder per component, never a loose src/compon
   index.ts                  # re-exports the component and its types
 ```
 
-All generator options live in `style-gen.config.json` (`theme`, `output`, `tokensOutput` and every `generate()` option); the plugin takes only `root`. Run `yarn style-gen generate` once and commit the `theme.tokens.ts` it writes.
+All generator options live in `style-gen.config.json` (`theme`, `output`, `tokensOutput` and every `generate()` option); the plugin takes only `root`. Run `style-gen generate` once through the project's package manager (`yarn style-gen generate`, `npm exec --no -- style-gen generate`) and commit the `theme.tokens.ts` it writes.
 
 Imports allowed inside `src/ui/<folder>/`:
 
@@ -44,14 +89,14 @@ Imports allowed inside `src/ui/<folder>/`:
 
 ## 3. New component checklist
 
-1. Pick the roles the component needs and add the missing keys to the theme JSON (with `<intent>Hover`/`on<Intent>` siblings if wanted).
+1. Pick the roles the component needs and add the missing keys to the theme JSON (with `<intent>Hover`/`<intent>Foreground` siblings if wanted).
 2. Create `src/ui/<kebab-name>/` with `style.ts`, `types.ts`, `<Name>.tsx`, `index.ts`.
 3. In `style.ts`, declare the intents as `as const satisfies readonly ColorVariant<typeof theme>[]`.
 4. Build every class that names a theme key from a mapper over `tokens.*` (section 4); literals only for the cases section 4 allows, with a comment.
 5. Export `<name>Tables` (`satisfies RecipeTables`) and `<name>Recipe = recipeFromTables(<name>Tables)`.
 6. In `types.ts`, type `color` as `(typeof <name>Intents)[number]` and wrap the props with `Polymorphic`.
 7. In `<Name>.tsx`, render `cn(<name>Recipe({ … }), className)`; `index.ts` re-exports the component and its types.
-8. Run `yarn style-gen doctor` and `yarn tsc --noEmit`; after a production build, `yarn style-gen budget <css dir> --max-gzip <bytes>`.
+8. Run `style-gen doctor` and `tsc --noEmit` through the project's package manager (`yarn style-gen doctor`, `npm exec --no -- style-gen doctor`); after a production build, `style-gen budget <css dir> --max-gzip <bytes>`.
 
 ## 4. Type contract
 
@@ -141,13 +186,18 @@ const tint = {
   },
 } as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
-} as const;
+} as const satisfies {
+  background: ColorVariant<typeof theme>;
+  radius: RoundedVariant<typeof theme>;
+  type: TextVariant<typeof theme>;
+  typeLg: TextVariant<typeof theme>;
+};
 ```
 
 The component file applies the recipe through `cn` and takes `className` last:
@@ -189,7 +239,30 @@ export function Badge<T extends ElementType = "span">({
 - `data-*` attributes as CSS hooks. The only data attributes the library reads are the `themeAxes` ones on `<html>`.
 - Theme values (hex codes, colour functions, pixel sizes) in TypeScript. Values live in the theme JSON; code names keys.
 - Keys copied from an example theme. Derive intents from the roles of the app you are building.
+- A second token namespace beside `--sg-*`: custom properties (such as `--app-ink`) that hold colour, radius, shadow, font or type values. Layout sizes that no theme category covers (a sidebar width) are not tokens.
+- A `font-size` or `font` shorthand written outside a typography key — inline, in CSS or on a canvas.
 
-## 6. More
+## 6. Interface floor (any theme)
+
+A theme sets the look; these limits hold under every theme and every `themeAxes` variant. Each one is a number or a state you can measure, not a matter of taste.
+
+- Text reaches 4.5:1 against the surface it sits on, 3:1 when it is 24px or larger (or about 19px bold), in every variant of every axis (WCAG 1.4.3). Check the pairs your components actually render, not only `foreground` on `background`.
+- Control borders, focus outlines and icons that carry meaning reach 3:1 against their surroundings (WCAG 1.4.11).
+- Every interactive element shows a visible focus state for keyboard users: a `focus-visible:` outline in a theme colour, never `outline: none` alone (WCAG 2.4.7).
+- A pointer target is at least 24×24 CSS px (WCAG 2.5.8) and 44×44 on touch screens. Grow the hit area with padding, not the icon.
+- Colour is never the only signal: an error, a status or a selected state also has a word, an icon or a shape (WCAG 1.4.1).
+- Motion that is not essential stops under `prefers-reduced-motion` (`motion-reduce:` variants).
+- An icon inside a component goes in that component's icon slot (`Button`'s `prefix`/`suffix`), never in the children beside the label and never pushed with a margin: the slot centres it, a label line puts it on the text baseline. An icon-only button has no children and an `aria-label`; the slot makes it square.
+- One icon set, one stroke width and one declared size scale by role (for example 12 for chevrons, 16 beside text, 20 for icon-only touch controls, 24 for illustrations). No emoji or pictograph stands in for an icon.
+
+## 7. More
+
+Which rules a tool enforces, and where:
+
+| Level      | What                                                                                                                | Where it runs                                    |
+| :--------- | :------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------- |
+| Hard       | The theme schema: key names, aliases, `themeAxes` overrides, collisions                                             | Every `generate()`, `style-gen generate`, plugin |
+| Opt-in     | `style-gen canvas check`: one theme per canvas, plus `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Only when it is called (a script, CI)            |
+| Convention | Everything else in this contract (layout, component checklist, forbidden app code, interface floor)                 | Review                                           |
 
 [Components](./components.md) holds the ten example components, the harness and the recipe factories; [UI kit](./reference/ui.md) documents `recipeFromTables`, `pick`, `contrastText`, `createCn` and the spacing helpers.

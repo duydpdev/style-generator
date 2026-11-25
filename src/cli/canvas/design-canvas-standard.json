@@ -1,0 +1,161 @@
+{
+  "semanticCore": [
+    "background",
+    "foreground",
+    "surface",
+    "muted",
+    "mutedForeground",
+    "border",
+    "focus",
+    "scrim",
+    "primary",
+    "primaryForeground",
+    "primaryHover",
+    "primaryActive",
+    "danger",
+    "success",
+    "warning"
+  ],
+  "grammar": {
+    "neutral": [
+      "background",
+      "foreground",
+      "surface",
+      "surfaceRaised",
+      "muted",
+      "mutedForeground",
+      "border",
+      "borderStrong",
+      "focus",
+      "scrim"
+    ],
+    "roles": [
+      "primary",
+      "secondary",
+      "accent",
+      "danger",
+      "success",
+      "warning",
+      "info"
+    ],
+    "suffixes": ["Subtle", "Border", "Foreground"],
+    "states": ["Hover", "Active", "Selected"],
+    "renames": {
+      "Ink": "Foreground",
+      "Soft": "Subtle",
+      "Line": "Border",
+      "ok": "success",
+      "bad": "danger",
+      "warn": "warning",
+      "line": "border",
+      "lineStrong": "borderStrong"
+    }
+  },
+  "radius": ["sm", "md", "lg", "full"],
+  "weights": {
+    "400": "Regular",
+    "500": "Medium",
+    "600": "Semibold",
+    "700": "Bold"
+  },
+  "typeScale": [12, 14, 16, 20, 24, 32, 40, 56],
+  "pages": [
+    {
+      "id": "bia",
+      "name": "00 · Bìa"
+    },
+    {
+      "id": "ds",
+      "name": "01 · Design system"
+    },
+    {
+      "id": "cl",
+      "name": "02 · Component"
+    },
+    {
+      "id": "src",
+      "name": "03 · Nguồn component"
+    }
+  ],
+  "boards": [
+    {
+      "file": "Main.dc.html",
+      "page": "bia",
+      "title": "Board / Bìa / Tổng quan board / v2"
+    },
+    {
+      "file": "ds-mau.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Màu sắc / Light + Dark"
+    },
+    {
+      "file": "ds-chu.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Typography & định dạng số"
+    },
+    {
+      "file": "ds-khung.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Spacing · Radius · Shadow · Icon"
+    },
+    {
+      "file": "ds-luoi.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Lưới & breakpoint"
+    },
+    {
+      "file": "ds-token.dc.html",
+      "page": "ds",
+      "title": "Board / Design system / Xuất token CSS · JSON"
+    }
+  ],
+  "componentBoards": {
+    "page": "cl",
+    "titlePrefix": "Component / ",
+    "maxWidth": 1440,
+    "maxHeight": 1600,
+    "minPaddingSteps": 8
+  },
+  "sourceBoards": {
+    "page": "src",
+    "prefix": "s-"
+  },
+  "dsComponents": ["box", "text", "stack", "flex", "grid", "button"],
+  "primitiveBoards": ["ds-mau.dc.html", "ds-token.dc.html"],
+  "content": {
+    "Main.dc.html": {
+      "sections": ["product", "provenance", "structure", "toc"],
+      "literals": []
+    },
+    "ds-mau.dc.html": {
+      "sections": ["primitives", "semantic", "contrast"],
+      "literals": ["colors", "themeAxes"]
+    },
+    "ds-chu.dc.html": {
+      "sections": ["typography", "font-family"],
+      "literals": ["typography", "fontFamily"]
+    },
+    "ds-khung.dc.html": {
+      "sections": ["spacing", "radius", "shadow", "icon"],
+      "literals": [
+        "borderRadius",
+        "shadows",
+        "motionDuration",
+        "motionEasing",
+        "controlHeight",
+        "iconSize",
+        "opacity",
+        "zIndex"
+      ]
+    },
+    "ds-luoi.dc.html": {
+      "sections": ["breakpoints", "columns"],
+      "literals": []
+    },
+    "ds-token.dc.html": {
+      "sections": ["css", "json"],
+      "literals": []
+    }
+  },
+  "provenanceBoard": "Main.dc.html"
+}

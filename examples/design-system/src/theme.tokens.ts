@@ -13,7 +13,7 @@ export const tokens = {
     "primary",
     "primaryHover",
     "primaryActive",
-    "onPrimary",
+    "primaryForeground",
     "secondary",
     "accent",
     "success",
@@ -49,6 +49,12 @@ export const tokens = {
     "lg",
     "pill"
   ],
+  "motionDuration": [],
+  "motionEasing": [],
+  "controlHeight": [],
+  "iconSize": [],
+  "opacity": [],
+  "zIndex": [],
   "spacingProperties": [
     "p",
     "px",
@@ -84,7 +90,7 @@ export const tokens = {
     "2xl": "1536px"
   },
   "aliasedColors": [
-    "onPrimary",
+    "primaryForeground",
     "accent"
   ],
   "opacities": [

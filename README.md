@@ -16,7 +16,7 @@ Published on the public npm registry as `@duydpdev/style-generator`; installing 
 - ⚡ **One call, one file** — `generate(theme)` returns the CSS you `@import` next to `@import "tailwindcss"`; no `@plugin`, no safelist file.
 - 🚀 **CSS-variable spacing** — `.sp-*` utilities with `var()` fallback chains instead of thousands of safelisted classes.
 - 🧩 **Typed design tokens + CVA helper** — `createVariantMapper` maps token keys to class names (including `hover:`/`active:` state classes).
-- 🖥️ **CLI + plugins** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`), `styleGenVite`, `styleGenNext`.
+- 🖥️ **CLI + plugins** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`, `canvas check`), `styleGenVite`, `styleGenNext`.
 
 ## Install
 
@@ -86,22 +86,28 @@ Import `./theme.css` next to `@import "tailwindcss";` in a CSS file of `styles/`
 
 ### The theme
 
-Colors are a **flat object**; only `colors` is required:
+Colors are a **flat object**; only `colors` is required. Primitives named after their values hold the literals, and semantic keys named after their role alias them with `$` ([naming convention](https://github.com/duydpdev/style-generator/blob/main/documents/agent-contract.md#naming-convention)):
 
 ```json
 {
   "$schema": "./theme.schema.json",
   "colors": {
-    "primary": "#3B82F6",
-    "secondary": "#6366F1",
-    "background": "#FFFFFF",
-    "foreground": "#111827",
-    "muted": "#6B7280"
+    "white": "#FFFFFF",
+    "gray100": "#F3F4F6",
+    "gray600": "#4B5563",
+    "gray900": "#111827",
+    "blue600": "#2563EB",
+    "background": "$white",
+    "foreground": "$gray900",
+    "muted": "$gray100",
+    "mutedForeground": "$gray600",
+    "primary": "$blue600",
+    "primaryForeground": "$white"
   }
 }
 ```
 
-That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`heading1` → `.heading-1`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available. Opacity modifiers such as `bg-primary/10` need steps in `coverage.colors.opacities` ([`options`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md)).
+That is the whole wiring: no `@plugin`, no safelist file. `bg-primary`, `text-primary`, `border-primary`, typography utilities named after the kebab-cased keys (`text32Bold` → `.text-32-bold`), `shadow-sm`, `rounded-md`, `.sp-*` spacing utilities and the rest are available. Opacity modifiers such as `bg-primary/10` need steps in `coverage.colors.opacities` ([`options`](https://github.com/duydpdev/style-generator/blob/main/documents/reference/options.md)).
 
 ## Used in
 
@@ -115,7 +121,7 @@ Every snag and what became of it: [Adopting 8.x in two real apps](https://github
 ## Documentation
 
 - [Documents index](https://github.com/duydpdev/style-generator/blob/main/documents/README.md)
-- [CLI](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, flags and the configuration file
+- [CLI](https://github.com/duydpdev/style-generator/blob/main/documents/reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, `canvas`, flags and the configuration file
 - [Subpaths](https://github.com/duydpdev/style-generator/blob/main/documents/reference/core.md#all-exports-by-subpath): the root entry point holds the generator; tokens, CVA, spacing, recipes, plugins and the UI kit live in `./tokens`, `./cva`, `./spacing`, `./recipes`, `./vite`, `./next`, `./ui`, `./ui-react`, `./types`
 - [Getting started](https://github.com/duydpdev/style-generator/blob/main/documents/getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
 - [Guide](https://github.com/duydpdev/style-generator/blob/main/documents/guide.md), [troubleshooting](https://github.com/duydpdev/style-generator/blob/main/documents/troubleshooting.md) and [cookbook](https://github.com/duydpdev/style-generator/blob/main/documents/cookbook.md)

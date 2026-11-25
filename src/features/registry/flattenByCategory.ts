@@ -18,21 +18,22 @@ import type { TokenCategoryDescriptor } from "./TokenCategoryDescriptor";
  * Categories without a `cssVarPrefix` (e.g. `typography`, which has no
  * CSS variable at all) flatten to `{}`.
  * @param {TokenCategoryDescriptor} descriptor - Category descriptor
- * @param {Record<string, string> | undefined} data - Flat key-value theme data for this category
+ * @param {Readonly<Record<string, string | number>> | undefined} data - Flat key-value theme data for this category (numbers for `opacity`/`zIndex`)
  * @returns {Record<string, string>} CSS variable map, e.g. `{ "--sg-color-primary": "#fff" }`
  */
 export const flattenByCategory = (
   descriptor: TokenCategoryDescriptor,
-  data: Record<string, string> | undefined,
+  data: Readonly<Record<string, string | number>> | undefined,
 ): Record<string, string> => {
   if (!data || !descriptor.cssVarPrefix) return {};
 
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(data)) {
-    const aliasTarget = parseAlias(value);
+    const aliasTarget =
+      typeof value === "string" ? parseAlias(value) : undefined;
     const resolvedValue =
       aliasTarget === undefined
-        ? value
+        ? String(value)
         : `var(--${descriptor.cssVarPrefix}-${toKebabCase(aliasTarget)})`;
     result[`--${descriptor.cssVarPrefix}-${toKebabCase(key)}`] = resolvedValue;
   }

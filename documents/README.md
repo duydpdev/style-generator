@@ -77,9 +77,10 @@ Glossary (prose only; identifiers, commands and code stay English):
 
 ## Standards (not shown on the site)
 
-| File                                                               | Contents                                                                                                            |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| [`standards/git-workflow-app.md`](./standards/git-workflow-app.md) | Git standard for apps with 4 environment branches (`develop` → `staging` → `pre-release` → `release`), for team use |
+| File                                                               | Contents                                                                                                              |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| [`standards/git-workflow-app.md`](./standards/git-workflow-app.md) | Git standard for apps with 4 environment branches (`develop` → `staging` → `pre-release` → `release`), for team use   |
+| [`standards/design-canvas.md`](./standards/design-canvas.md)       | Internal maintainer guide: one theme per UI set, building a design system with the producer, checking a design canvas |
 
 ## Migration
 

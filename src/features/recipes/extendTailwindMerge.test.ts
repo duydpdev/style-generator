@@ -11,7 +11,13 @@ import {
   backdropBlursCategory,
   borderRadiusCategory,
   borderWidthCategory,
+  controlHeightCategory,
+  iconSizeCategory,
+  motionDurationCategory,
+  motionEasingCategory,
+  opacityCategory,
   shadowsCategory,
+  zIndexCategory,
 } from "../registry/builtInCategories";
 
 import { createTailwindMergeExtension } from "./extendTailwindMerge";
@@ -149,6 +155,50 @@ describe("createTailwindMergeExtension — real twMerge", () => {
   });
 });
 
+describe("createTailwindMergeExtension — scale tokens", () => {
+  const scaleTokens = createDesignTokens({
+    colors: { primary: "#111" },
+    motionDuration: { fast: "150ms" },
+    motionEasing: { standard: "ease-out" },
+    controlHeight: { md: "40px" },
+    iconSize: { sm: "16px" },
+    opacity: { muted: 0.64 },
+    zIndex: { modal: 50 },
+  }).DesignTokens.Web;
+  const scaleMerge = extendTailwindMerge(
+    createTailwindMergeExtension(scaleTokens),
+  );
+
+  it.each([
+    ["h-10 h-control-md", "h-control-md"],
+    ["h-control-md h-10", "h-10"],
+    ["min-h-10 min-h-control-md", "min-h-control-md"],
+    ["max-h-full max-h-control-md", "max-h-control-md"],
+    ["h-control-md min-h-control-sm", "h-control-md min-h-control-sm"],
+    ["size-4 size-icon-sm", "size-icon-sm"],
+    ["w-4 size-icon-sm", "size-icon-sm"],
+    ["opacity-50 opacity-muted", "opacity-muted"],
+    ["backdrop-opacity-50 backdrop-opacity-muted", "backdrop-opacity-muted"],
+    ["opacity-muted backdrop-opacity-50", "opacity-muted backdrop-opacity-50"],
+    ["z-10 z-modal", "z-modal"],
+    ["duration-300 duration-fast", "duration-fast"],
+    ["ease-in ease-standard", "ease-standard"],
+    ["hover:opacity-50 hover:opacity-muted", "hover:opacity-muted"],
+  ])("%s → %s", (input, expected) => {
+    expect(scaleMerge(input)).toBe(expected);
+  });
+
+  it("is not what the default twMerge does for the same classes", () => {
+    expect(defaultTwMerge("h-10 h-control-md")).toBe("h-10 h-control-md");
+  });
+
+  it("skips an absent scale field", () => {
+    expect(
+      Object.keys(createTailwindMergeExtension(tokens).extend.classGroups),
+    ).not.toContain("z");
+  });
+});
+
 describe("createTailwindMergeExtension — shape", () => {
   it("kebab-cases the camelCased token keys and never lists colors or font families", () => {
     const { classGroups } = createTailwindMergeExtension(tokens).extend;
@@ -263,6 +313,22 @@ describe("local prefix table is pinned to the registry", () => {
     }
   });
 
+  it.each([
+    ["motionDuration", motionDurationCategory],
+    ["motionEasing", motionEasingCategory],
+    ["controlHeight", controlHeightCategory],
+    ["iconSize", iconSizeCategory],
+    ["opacity", opacityCategory],
+    ["zIndex", zIndexCategory],
+  ] as const)("%s prefixes start with its category's", (key, category) => {
+    const extra =
+      {
+        controlHeight: ["min-h-control", "max-h-control"],
+        opacity: ["backdrop-opacity"],
+      }[key as string] ?? [];
+    expect(prefixesOf(key)).toEqual([...category.classPrefixes, ...extra]);
+  });
+
   it("border-width group ids are the tailwind-merge ids: border → border-w, divide-* unchanged", () => {
     const ids = Object.keys(
       createTailwindMergeExtension({
@@ -292,6 +358,16 @@ describe("local prefix table is pinned to the registry", () => {
 describe("types", () => {
   it("generate()/createDesignTokens() tokens are assignable to TailwindMergeTokens", () => {
     expectTypeOf(tokens).toExtend<TailwindMergeTokens>();
+  });
+
+  it("an object with only the five original fields is still assignable", () => {
+    expectTypeOf<{
+      typography: string[];
+      shadows: string[];
+      backdropBlurs: string[];
+      borderRadius: string[];
+      borderWidth: string[];
+    }>().toExtend<TailwindMergeTokens>();
   });
 
   it("the structural extension fits tailwind-merge's own ConfigExtension", () => {

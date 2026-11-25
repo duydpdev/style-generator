@@ -1,4 +1,9 @@
 import type { ThemeConfig } from "../../core/themeSchema";
+import {
+  motionDurationCategory,
+  motionEasingCategory,
+  zIndexCategory,
+} from "../../features/registry/builtInCategories";
 import { toKebabCase } from "../../shared/helpers";
 
 /**
@@ -178,6 +183,45 @@ const colorKeyCollisions = (key: string): string[] => {
   return warnings;
 };
 
+/**
+ * Scale categories whose class prefix Tailwind already owns, with the static
+ * class names it ships under that prefix and whether it also takes a bare
+ * integer (`z-10`, `duration-150`). Proven against the real compiler in
+ * `src/__integration__/utility-collisions.test.ts`. `opacity` is absent:
+ * the schema rejects a digit-only opacity key, and `opacity` has no static.
+ */
+export const TAILWIND_SCALE_COLLISIONS = [
+  { category: zIndexCategory, statics: ["auto"], numeric: true },
+  { category: motionDurationCategory, statics: ["initial"], numeric: true },
+  {
+    category: motionEasingCategory,
+    statics: ["linear", "in", "out", "in-out", "initial"],
+    numeric: false,
+  },
+] as const;
+
+/**
+ * Warnings for the scale keys whose class Tailwind already ships.
+ * @param {ThemeConfig} theme - A theme that already passed `ThemeSchema`
+ * @returns {string[]} `<category>.<key> → …` lines
+ */
+const scaleKeyCollisions = (theme: ThemeConfig): string[] => {
+  const warnings: string[] = [];
+  for (const { category, statics, numeric } of TAILWIND_SCALE_COLLISIONS) {
+    const owned: ReadonlySet<string> = new Set(statics);
+    for (const key of Object.keys(theme[category.key] ?? {})) {
+      const kebab = toKebabCase(key);
+      if (owned.has(kebab) || (numeric && /^\d+$/.test(kebab))) {
+        const cls = `${category.classPrefixes[0]}-${kebab}`;
+        warnings.push(
+          `${category.key}.${key} → class "${cls}" collides with Tailwind's built-in "${cls}" utility`,
+        );
+      }
+    }
+  }
+  return warnings;
+};
+
 /** Categories whose `none` key shadows Tailwind's `<prefix>-none` utility. */
 const NONE_COLLIDING_CATEGORIES = [
   "colors",
@@ -201,6 +245,8 @@ const NONE_COLLIDING_CATEGORIES = [
  * - `colors` keys whose `ring-`/`outline-`/`divide-` class is a Tailwind
  *   static (`ring-inset`, `outline-solid`, `divide-x-reverse`) or an integer
  *   width/offset (`ring-3`, `outline-offset-2`);
+ * - `zIndex`/`motionDuration`/`motionEasing` keys whose class is
+ *   a Tailwind static (`z-auto`, `ease-in`) or integer (`z-10`) utility;
  *
  * `themeAxes` overrides are not inspected separately: the schema requires
  * every override key to exist in the base theme, so a colliding key is always
@@ -232,6 +278,8 @@ export const findUtilityCollisions = (theme: ThemeConfig): string[] => {
       );
     }
   }
+
+  warnings.push(...scaleKeyCollisions(theme));
 
   for (const key of Object.keys(theme.typography ?? {})) {
     const kebab = toKebabCase(key);

@@ -9,6 +9,7 @@ import {
   expect,
   beforeEach,
   afterEach,
+  onTestFinished,
   vi,
   type MockInstance,
 } from "vitest";
@@ -454,8 +455,15 @@ describe("initCommand", () => {
       });
 
       it("none: prints the style-gen generate fallback and no bundler snippet", async () => {
+        vi.stubEnv(
+          "npm_config_user_agent",
+          "pnpm/9.12.0 npm/? node/v22.11.0 darwin arm64",
+        );
+        onTestFinished(() => {
+          vi.unstubAllEnvs();
+        });
         expect(await run({}, tmp)).toBe(0);
-        expect(out()).toContain("yarn style-gen generate");
+        expect(out()).toContain("pnpm exec style-gen generate");
         expect(out()).not.toContain("styleGen");
         expect(out()).toContain(
           '@import "tailwindcss";\n@import "./theme.css";',
@@ -1347,7 +1355,7 @@ describe("initCommand", () => {
 
       expect(readRules()).toBe("# edited\n");
       expect(out()).toContain(
-        "Run `style-gen init --rules-only` in an interactive terminal to replace it.",
+        "style-gen init --rules-only` in an interactive terminal to replace it.",
       );
       expect(out()).toContain('@source not "../.claude";');
     });

@@ -12,13 +12,18 @@
  * `npm install --ignore-scripts` against the public registry, `npm run build`
  * (the plugin writes src/theme.css and src/theme.tokens.ts at build start),
  * `npm run typecheck` and `npm exec --no -- style-gen generate --check`.
- * The built CSS must carry `--sg-color-primary` and `.bg-primary`. The scratch
+ * The built CSS must carry `--sg-color-primary` and `.bg-primary`, and
+ * the tarball must ship `dist/canvas/design-canvas-standard.json`, and
+ * `style-gen canvas check --boards` on an empty canvas must exit 1 with
+ * `canvas.json:1 no .dc.html files under empty-canvas` (the bundled manifest
+ * loads). The scratch
  * directory is removed in every case; the exit code is 1 on any failure.
  */
 import { spawnSync } from "node:child_process";
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -180,6 +185,42 @@ try {
       if (problem === undefined)
         console.log(
           "✓ starter: the built CSS carries the theme and its utilities",
+        );
+    }
+
+    // The manifest `canvas check` applies is bundled into the installed CLI:
+    // `--boards` reads it and reports the empty canvas (exit 1, not 2).
+    const bundledManifest = join(
+      app,
+      "node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json",
+    );
+    if (problem === undefined && !existsSync(bundledManifest))
+      problem = `the packed tarball has no dist/canvas/design-canvas-standard.json`;
+    if (problem === undefined) {
+      mkdirSync(join(app, "empty-canvas"));
+      const canvasArgs = [
+        "canvas",
+        "check",
+        "--canvas",
+        "empty-canvas",
+        "--theme",
+        "styles/theme.json",
+      ];
+      const canvas = spawnSync(
+        // eslint-disable-next-line sonarjs/no-os-command-from-path -- npm is resolved from PATH like every other step of this smoke; the arguments are fixed
+        "npm",
+        ["exec", "--no", "--", "style-gen", ...canvasArgs, "--boards"],
+        { cwd: app, encoding: "utf8", env: childEnv },
+      );
+      const expected = "canvas.json:1 no .dc.html files under empty-canvas";
+      if (
+        canvas.status !== 1 ||
+        !canvas.stdout.split(/\r?\n/).includes(expected)
+      )
+        problem = `style-gen canvas check --boards on an empty canvas: expected exit 1 and "${expected}", got ${String(canvas.status)}:\n${canvas.stdout}${canvas.stderr}`;
+      else
+        console.log(
+          "✓ starter: style-gen canvas check loads the bundled manifest",
         );
     }
   }

@@ -1,4 +1,4 @@
-<!-- source: README.md sha256: bee5656572a8 -->
+<!-- source: README.md sha256: 8f786894c42e -->
 
 # @duydpdev/style-generator
 
@@ -18,7 +18,7 @@ Thư viện TypeScript + CLI biến một file theme JSON thành một **design 
 - ⚡ **Một lệnh gọi, một file** — `generate(theme)` trả về CSS để bạn `@import` cạnh `@import "tailwindcss"`; không cần `@plugin`, không cần file safelist.
 - 🚀 **Spacing bằng biến CSS** — các utility `.sp-*` với chuỗi giá trị dự phòng `var()` thay cho hàng nghìn class trong safelist.
 - 🧩 **Design token có kiểu + helper CVA** — `createVariantMapper` ánh xạ key của token sang tên class (gồm cả class trạng thái `hover:`/`active:`).
-- 🖥️ **CLI + plugin** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`), `styleGenVite`, `styleGenNext`.
+- 🖥️ **CLI + plugin** — `style-gen` (`init`, `generate`, `schema`, `tokens`, `doctor`, `budget`, `canvas check`), `styleGenVite`, `styleGenNext`.
 
 ## Cài đặt
 
@@ -88,22 +88,28 @@ Import `./theme.css` cạnh `@import "tailwindcss";` trong một file CSS của 
 
 ### Theme
 
-Màu là một **object phẳng**; chỉ `colors` là bắt buộc:
+Màu là một **object phẳng**; chỉ `colors` là bắt buộc. Các primitive đặt tên theo giá trị giữ giá trị literal, còn các key ngữ nghĩa đặt tên theo vai trò alias tới chúng bằng `$` ([quy ước đặt tên](./agent-contract.md#quy-ước-đặt-tên)):
 
 ```json
 {
   "$schema": "./theme.schema.json",
   "colors": {
-    "primary": "#3B82F6",
-    "secondary": "#6366F1",
-    "background": "#FFFFFF",
-    "foreground": "#111827",
-    "muted": "#6B7280"
+    "white": "#FFFFFF",
+    "gray100": "#F3F4F6",
+    "gray600": "#4B5563",
+    "gray900": "#111827",
+    "blue600": "#2563EB",
+    "background": "$white",
+    "foreground": "$gray900",
+    "muted": "$gray100",
+    "mutedForeground": "$gray600",
+    "primary": "$blue600",
+    "primaryForeground": "$white"
   }
 }
 ```
 
-Chỉ vậy là xong phần nối dây: không có `@plugin`, không có file safelist. Bạn có sẵn `bg-primary`, `text-primary`, `border-primary`, các utility typography đặt theo tên kebab-case của key (`heading1` → `.heading-1`), `shadow-sm`, `rounded-md`, các utility spacing `.sp-*` và những thứ còn lại. Các modifier độ mờ như `bg-primary/10` cần các mức trong `coverage.colors.opacities` ([`options`](./reference/options.md)).
+Chỉ vậy là xong phần nối dây: không có `@plugin`, không có file safelist. Bạn có sẵn `bg-primary`, `text-primary`, `border-primary`, các utility typography đặt theo tên kebab-case của key (`text32Bold` → `.text-32-bold`), `shadow-sm`, `rounded-md`, các utility spacing `.sp-*` và những thứ còn lại. Các modifier độ mờ như `bg-primary/10` cần các mức trong `coverage.colors.opacities` ([`options`](./reference/options.md)).
 
 ## Được dùng trong
 
@@ -117,7 +123,7 @@ Mọi vướng mắc và kết cục của từng cái: [Adopting 8.x in two rea
 ## Tài liệu
 
 - [Chỉ mục tài liệu](https://github.com/duydpdev/style-generator/blob/main/documents/README.md)
-- [CLI](./reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, các flag và file cấu hình
+- [CLI](./reference/cli.md): `init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, `canvas`, các flag và file cấu hình
 - [Subpath](./reference/core.md#toàn-bộ-export-theo-subpath): entry point gốc chứa generator; token, CVA, spacing, recipe, plugin và bộ component nằm trong `./tokens`, `./cva`, `./spacing`, `./recipes`, `./vite`, `./next`, `./ui`, `./ui-react`, `./types`
 - [Bắt đầu](./getting-started/react-vite.md): React + Vite, Next.js, Nuxt + Vue
 - [Hướng dẫn](./guide.md), [khắc phục sự cố](./troubleshooting.md) và [cookbook](./cookbook.md)

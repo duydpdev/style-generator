@@ -60,9 +60,12 @@ const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
     const varPrefix = `--${category.cssVarPrefix}-`;
     const vars = flattenByCategory(category, config[category.key]);
 
+    const percent = category.themeValue === "percent";
     for (const varName of Object.keys(vars)) {
       const key = varName.slice(varPrefix.length);
-      mapping[`${category.themeNamespace}${key}`] = `var(${varName})`;
+      mapping[`${category.themeNamespace}${key}`] = percent
+        ? `calc(var(${varName}) * 100%)`
+        : `var(${varName})`;
     }
   }
 

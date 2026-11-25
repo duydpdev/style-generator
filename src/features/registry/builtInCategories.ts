@@ -130,6 +130,84 @@ export const borderWidthCategory = {
   classPrefixes: BORDER_PREFIXES,
 } as const satisfies TokenCategoryDescriptor;
 
+/**
+ * `motionDuration` — named transition durations. Maps into
+ * `--transition-duration-*`, the namespace Tailwind v4's `duration-*`
+ * utility reads (`--duration-*` produces no class).
+ */
+export const motionDurationCategory = {
+  key: "motionDuration",
+  tokenKeyName: "motionDurationKey",
+  cssVarPrefix: "sg-duration",
+  themeNamespace: "--transition-duration-",
+  classPrefixes: ["duration"],
+  literalScale: true,
+} as const satisfies TokenCategoryDescriptor;
+
+/** `motionEasing` — named timing functions, feeds `ease-*` (`--ease-*`). */
+export const motionEasingCategory = {
+  key: "motionEasing",
+  tokenKeyName: "motionEasingKey",
+  cssVarPrefix: "sg-ease",
+  themeNamespace: "--ease-",
+  classPrefixes: ["ease"],
+  literalScale: true,
+} as const satisfies TokenCategoryDescriptor;
+
+/**
+ * `controlHeight` — heights of interactive controls. Maps into
+ * `--height-control-*`, so Tailwind's `h-*` utility yields `h-control-<key>`.
+ */
+export const controlHeightCategory = {
+  key: "controlHeight",
+  tokenKeyName: "controlHeightKey",
+  cssVarPrefix: "sg-control",
+  themeNamespace: "--height-control-",
+  classPrefixes: ["h-control"],
+  literalScale: true,
+} as const satisfies TokenCategoryDescriptor;
+
+/**
+ * `iconSize` — icon box sizes. Maps into `--size-icon-*`, so Tailwind's
+ * `size-*` utility (width and height) yields `size-icon-<key>`.
+ */
+export const iconSizeCategory = {
+  key: "iconSize",
+  tokenKeyName: "iconSizeKey",
+  cssVarPrefix: "sg-icon",
+  themeNamespace: "--size-icon-",
+  classPrefixes: ["size-icon"],
+  literalScale: true,
+} as const satisfies TokenCategoryDescriptor;
+
+/**
+ * `opacity` — named element opacities, feeds `opacity-*` (`--opacity-*`).
+ * Unrelated to `coverage.colors.opacities`, which adds `/<n>` colour
+ * modifiers.
+ */
+export const opacityCategory = {
+  key: "opacity",
+  tokenKeyName: "opacityKey",
+  cssVarPrefix: "sg-opacity",
+  themeNamespace: "--opacity-",
+  classPrefixes: ["opacity"],
+  literalScale: true,
+  themeValue: "percent",
+} as const satisfies TokenCategoryDescriptor;
+
+/**
+ * `zIndex` — named stacking levels. Maps into `--z-index-*`, the namespace
+ * Tailwind v4's `z-*` utility reads (`--z-*` produces no class).
+ */
+export const zIndexCategory = {
+  key: "zIndex",
+  tokenKeyName: "zIndexKey",
+  cssVarPrefix: "sg-z",
+  themeNamespace: "--z-index-",
+  classPrefixes: ["z"],
+  literalScale: true,
+} as const satisfies TokenCategoryDescriptor;
+
 /** All built-in token category descriptors, in theme-key declaration order. */
 export const builtInCategories = [
   colorsCategory,
@@ -139,9 +217,15 @@ export const builtInCategories = [
   borderRadiusCategory,
   fontFamilyCategory,
   borderWidthCategory,
+  motionDurationCategory,
+  motionEasingCategory,
+  controlHeightCategory,
+  iconSizeCategory,
+  opacityCategory,
+  zIndexCategory,
 ] as const satisfies readonly TokenCategoryDescriptor[];
 
-/** One built-in category descriptor (a union of the seven literal descriptors). */
+/** One built-in category descriptor (a union of the literal descriptors). */
 export type BuiltInCategory = (typeof builtInCategories)[number];
 
 /** Every built-in category key — the `ThemeConfig` field of each descriptor. */

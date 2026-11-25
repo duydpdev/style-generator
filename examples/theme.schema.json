@@ -62,6 +62,80 @@
         "type": "string"
       }
     },
+    "motionDuration": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:ms|s)$"
+      }
+    },
+    "motionEasing": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "controlHeight": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px|rem)$"
+      }
+    },
+    "iconSize": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px|rem)$"
+      }
+    },
+    "opacity": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "allOf": [
+          {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+          },
+          {
+            "pattern": "\\D"
+          }
+        ]
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "zIndex": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
     "$schema": {
       "type": "string"
     },
@@ -172,6 +246,80 @@
               },
               "additionalProperties": {
                 "type": "string"
+              }
+            },
+            "motionDuration": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:ms|s)$"
+              }
+            },
+            "motionEasing": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "controlHeight": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px|rem)$"
+              }
+            },
+            "iconSize": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px|rem)$"
+              }
+            },
+            "opacity": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "allOf": [
+                  {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+                  },
+                  {
+                    "pattern": "\\D"
+                  }
+                ]
+              },
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "zIndex": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
               }
             }
           },

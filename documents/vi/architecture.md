@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 944b94e5851a -->
+<!-- source: documents/architecture.md sha256: 484f89807f61 -->
 
 # Kiến trúc
 
@@ -28,14 +28,14 @@ Mã nguồn là nguồn chân lý cho việc _hoạt động như thế nào_; t
 
 ## Khái niệm cốt lõi
 
-| Khái niệm         | Mô tả                                                                                                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Theme Config**  | Đầu vào duy nhất: một JSON/object khai báo `colors` (bắt buộc), `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`.       |
-| **ThemeSchema**   | Một `strictObject` của Zod, là nguồn chân lý cho cả JSON lẫn TypeScript: key lạ, giá trị không an toàn và alias bị hỏng đều bị từ chối trước khi sinh bất kỳ CSS nào.     |
-| **Registry**      | Mỗi nhóm token (colors, typography, …) là một descriptor trong `builtInCategories`; mọi bước sinh CSS/`@source inline` đều đi qua registry thay vì lặp lại danh sách key. |
-| **`generate()`**  | Hàm duy nhất sinh ra các artifact: `{ css, tokens, schema }`. CLI, `styleGenVite` và `styleGenNext` đều gọi nó.                                                           |
-| **Design Tokens** | Một object chứa các mảng key của token (`DesignTokens.Web.*`), dùng trong các UI component (CVA, kiểu của prop).                                                          |
-| **Consumer**      | Một dự án dùng thư viện: nó `@import` file CSS được sinh ra cạnh `@import "tailwindcss"`. Không có `@plugin`, không có safelist.                                          |
+| Khái niệm         | Mô tả                                                                                                                                                                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Theme Config**  | Đầu vào duy nhất: một JSON/object khai báo `colors` (bắt buộc), `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, các nhóm thang đo `motionDuration`, `motionEasing`, `controlHeight`, `iconSize`, `opacity`, `zIndex`, và `themeAxes`. |
+| **ThemeSchema**   | Một `strictObject` của Zod, là nguồn chân lý cho cả JSON lẫn TypeScript: key lạ, giá trị không an toàn và alias bị hỏng đều bị từ chối trước khi sinh bất kỳ CSS nào.                                                                                                        |
+| **Registry**      | Mỗi nhóm token (colors, typography, …) là một descriptor trong `builtInCategories`; mọi bước sinh CSS/`@source inline` đều đi qua registry thay vì lặp lại danh sách key.                                                                                                    |
+| **`generate()`**  | Hàm duy nhất sinh ra các artifact: `{ css, tokens, schema }`. CLI, `styleGenVite` và `styleGenNext` đều gọi nó.                                                                                                                                                              |
+| **Design Tokens** | Một object chứa các mảng key của token (`DesignTokens.Web.*`), dùng trong các UI component (CVA, kiểu của prop).                                                                                                                                                             |
+| **Consumer**      | Một dự án dùng thư viện: nó `@import` file CSS được sinh ra cạnh `@import "tailwindcss"`. Không có `@plugin`, không có safelist.                                                                                                                                             |
 
 ---
 
@@ -76,7 +76,7 @@ src/
 │   └── next/                   # styleGenNext
 ├── shared/                     # helpers (kebab/camel), defaults, COLOR_STATES, class prefixes, cssBlock
 ├── node/                       # shared Node-only runner: loadStyleGenConfig, resolveProjectPath, sameFile, configSource, resolveEmitTarget, themeEmitter, watchThemeFile, resolvePluginTarget, writeFileAtomic, errorMessage, isPlainObject
-├── cli/                        # commands: init, generate, doctor, schema, tokens, budget
+├── cli/                        # commands: init, generate, doctor, schema, tokens, budget, canvas
 ├── exports/                    # one file per public subpath
 ├── __integration__/            # tests that compile CSS through the real Tailwind engine
 └── index.ts                    # root barrel
@@ -202,11 +202,11 @@ Tùy chọn duy nhất của nó là `root` (`StyleGenNextOptions`, mặc địn
 ### CLI
 
 `style-gen` (được build riêng bằng `tsdown` → `dist/cli/index.mjs`, JSDoc bị loại khỏi bundle qua `outputOptions.comments.jsdoc = false` và các marker module `//#region` qua `inputOptions.experimental.attachDebugInfo = "none"`;
-ngân sách gzip trong `scripts/check-sizes.mjs`): `init`, `generate [--watch]`, `doctor`, `schema`, `tokens`, `budget`.
+ngân sách gzip trong `scripts/check-sizes.mjs`): `init`, `generate [--watch]`, `doctor`, `schema`, `tokens`, `budget`, `canvas check`.
 `src/cli/run.ts` chứa một **registry** gồm các `CliCommand` (`name`, `description`, `usage`, `options`, `run`);
 `runCli(args, cwd)` phân tích cú pháp qua hai lượt (lượt toàn cục tìm `--help`/`--version` và tên lệnh, lượt của lệnh phân tích các flag của lệnh đó ở chế độ nghiêm ngặt,
 nên một flag lạ là lỗi) rồi trả về một **mã thoát** thay vì gọi `process.exit` — `src/cli/index.ts` chỉ gán `process.exitCode`,
-nên mọi lệnh đều có thể được kiểm thử trực tiếp mà không cần giả lập `process`. Các mã: `0` thành công / `--help` / `--version` / người dùng hủy prompt, `1` thất bại (`budget`:
+nên mọi lệnh đều có thể được kiểm thử trực tiếp mà không cần giả lập `process`. Các mã: `0` thành công / `--help` / `--version` / người dùng hủy prompt, `1` thất bại (`budget` và `canvas`:
 `2` cho lỗi cách dùng). Thứ tự phân giải config: flag → `style-gen.config.json` → `package.json["style-gen"]` → giá trị mặc định;
 `loadStyleGenConfig`/`readConfigFile` (`src/node/loadStyleGenConfig.ts`, dùng chung với Vite/Next) kiểm tra hợp lệ file config bằng `StyleGenConfigSchema` (Shape và các refinement
 của nó dùng chung với `generate()` từ `src/core/optionsSchema.ts`), trả về `issues` khi schema bị vi phạm (không gộp gì cả) và `error` khi file là JSON hỏng (`generate`, `tokens` và `schema` cảnh báo `Ignoring … using defaults` rồi dùng giá trị mặc định; `generate --check`, `doctor` và các plugin thất bại);

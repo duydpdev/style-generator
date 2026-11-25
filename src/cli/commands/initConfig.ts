@@ -7,6 +7,7 @@ import {
 } from "../../node/loadStyleGenConfig";
 import { configSchemaRef } from "../configJsonSchema";
 import { logger } from "../logger";
+import { styleGenCommand } from "../packageManager";
 
 import type { InitArgs } from "./init";
 import { besideTheme, samePath, writeFile } from "./initFiles";
@@ -108,7 +109,7 @@ export function usableConfig(
   if (args.yes === true) {
     if (found.problem !== undefined) {
       throw new Error(
-        `${found.source} is invalid, so --yes cannot tell where its theme lives:\n${found.problem}\n💡 Fix it first: yarn style-gen doctor`,
+        `${found.source} is invalid, so --yes cannot tell where its theme lives:\n${found.problem}\n💡 Fix it first: ${styleGenCommand(cwd, "doctor")}`,
       );
     }
     if (args.theme !== undefined && !samePath(cwd, args.theme, found.theme)) {
@@ -121,7 +122,7 @@ export function usableConfig(
   if (found.themeReadable) return found;
   if (args.theme === undefined && !isInteractive) {
     throw new Error(
-      `${found.source} is invalid and its "theme" cannot be read:\n${found.problem ?? ""}\n💡 Fix it first: yarn style-gen doctor, or pass --theme <path>`,
+      `${found.source} is invalid and its "theme" cannot be read:\n${found.problem ?? ""}\n💡 Fix it first: ${styleGenCommand(cwd, "doctor")}, or pass --theme <path>`,
     );
   }
   return undefined;
@@ -131,18 +132,20 @@ export function usableConfig(
  * Say so when init leaves a config that `generate` rejects, so a success
  * message does not hide it: kept as it is, or with only the theme merged in
  * (the keys that make it invalid stay).
+ * @param {string} cwd - The project root, for the package manager of the hint
  * @param {string} source - The config file init kept or merged into
  * @param {string | undefined} problem - Why `generate` rejects that config, if it does
  * @param {boolean} merged - Whether init merged a new theme into it
  */
 export function warnInvalidConfig(
+  cwd: string,
   source: string,
   problem: string | undefined,
   merged: boolean,
 ): void {
   if (problem === undefined) return;
   logger.warn(
-    `${source} is invalid and init ${merged ? "only merged the theme into it" : "left it as it is"}; generate rejects it:\n${problem}\n💡 Fix it: yarn style-gen doctor`,
+    `${source} is invalid and init ${merged ? "only merged the theme into it" : "left it as it is"}; generate rejects it:\n${problem}\n💡 Fix it: ${styleGenCommand(cwd, "doctor")}`,
   );
 }
 
@@ -168,7 +171,7 @@ export function updateConfig(
 ): { layout: { theme: string; output: string }; changed: boolean } {
   if (config !== undefined && samePath(cwd, themeLoc, config.theme)) {
     logger.info(`Kept ${config.source}: theme and output stay as configured.`);
-    warnInvalidConfig(config.source, problem, false);
+    warnInvalidConfig(cwd, config.source, problem, false);
     return { layout: config, changed: false };
   }
   const { content } = mergeBase;
@@ -194,7 +197,7 @@ export function updateConfig(
       'Copied package.json["style-gen"] into style-gen.config.json, which takes precedence from now on; remove the package.json section.',
     );
   }
-  warnInvalidConfig("style-gen.config.json", problem, true);
+  warnInvalidConfig(cwd, "style-gen.config.json", problem, true);
   return {
     layout: {
       theme: themeLoc,

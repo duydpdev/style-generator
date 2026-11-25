@@ -4,7 +4,7 @@ import { describe, expectTypeOf, it } from "vitest";
 import { mergeStyle, type StyleRecord, type ThemeSpacingProps } from "./layout";
 
 interface W {
-  readonly colors: readonly ("primary" | "onPrimary")[];
+  readonly colors: readonly ("primary" | "primaryForeground")[];
   readonly typography: readonly "body"[];
   readonly shadows: readonly "card"[];
   readonly backdropBlurs: readonly "glass"[];

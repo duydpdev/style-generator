@@ -39,7 +39,7 @@ Product keys (`domainNutrition`) sit beside them.
 
 - A typography key is `text<size><Weight>`: it matches `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. The digits are `fontSize` in px (a rem value counts as rem × 16) and the word is `fontWeight` 400/500/600/700. Every key with the same size has the same `lineHeight`. The scale is 12, 14, 16, 20, 24, 32, 40, 56.
 - A typography entry never sets `fontFamily`. A different face is the `font-<fontFamily key>` class next to the typography class: `class="text-56-regular font-display"`.
-- Radius keys are `sm`, `md`, `lg` and `full`.
+- Radius keys are `sm`, `md`, `lg`, `xl` and `full`. The list is closed; a theme may declare any subset of it, and xl is for large surfaces (device frames, sheets, panels).
 
 <!-- prettier-ignore -->
 ```json

@@ -51,7 +51,7 @@
       "lineStrong": "borderStrong"
     }
   },
-  "radius": ["sm", "md", "lg", "full"],
+  "radius": ["sm", "md", "lg", "xl", "full"],
   "weights": {
     "400": "Regular",
     "500": "Medium",

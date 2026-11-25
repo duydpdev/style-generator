@@ -193,6 +193,7 @@ describe("integration: style-gen canvas check", () => {
       boards?: boolean | undefined;
       standard?: string | undefined;
       dsVersion?: { namespace: string; version: string } | undefined;
+      recipes?: string | undefined;
     } = {},
   ) => checkCanvas({ canvasDir: canvas, theme, ...extra });
   const useTheme = (value: object): void => {
@@ -903,6 +904,131 @@ describe("integration: style-gen canvas check", () => {
         'ds-mau.dc.html:2 literal colors.primary is "#000\\nOK: 1 files", theme has "#000"',
       ]);
       expect(out.join("\n").split("\n")).toHaveLength(1);
+    });
+  });
+
+  describe("variant grid (--recipes)", () => {
+    const cells = (...values: string[]): string =>
+      padded(
+        values.map((v) => `<span data-sg-cell="${v}">${v}</span>`).join(""),
+      );
+    const recipes = (value: object | string): string =>
+      writeTmpFile(dir, "recipes.json", value);
+
+    it("passes a c-* board that marks every axis value of its recipe", () => {
+      writeBoards(undefined, { "c-box.dc.html": cells("size:sm", "size:md") });
+      expect(
+        check({
+          boards: true,
+          recipes: recipes({ box: { size: ["sm", "md"] } }),
+        }),
+      ).toEqual([]);
+    });
+
+    it("reports each missing cell at line 1 of the board", () => {
+      writeBoards(undefined, { "c-box.dc.html": cells("size:sm", "tone:md") });
+      expect(
+        check({
+          boards: true,
+          recipes: recipes({ box: { size: ["sm", "md"], tone: ["md"] } }),
+        }),
+      ).toEqual(["c-box.dc.html:1 missing cell size:md"]);
+    });
+
+    it("reads a marker in any case, single-quoted, with its entities decoded", () => {
+      writeBoards(undefined, {
+        "c-box.dc.html": padded(`<span DATA-SG-CELL='tone:a&amp;b'>x</span>`),
+      });
+      expect(
+        check({ boards: true, recipes: recipes({ box: { tone: ["a&b"] } }) }),
+      ).toEqual([]);
+    });
+
+    it("reports a value repeated in the recipe once", () => {
+      writeBoards();
+      expect(
+        check({
+          boards: true,
+          recipes: recipes({ box: { size: ["sm", "sm"] } }),
+        }),
+      ).toEqual(["c-box.dc.html:1 missing cell size:sm"]);
+    });
+
+    it("checks no cell without --recipes", () => {
+      writeBoards();
+      expect(check({ boards: true })).toEqual([]);
+    });
+
+    it("reports a recipe whose c-* board is missing once", () => {
+      writeBoards((c) => {
+        delete c.boards["c-box.dc.html"];
+        c.order = c.order.filter((f) => f !== "c-box.dc.html");
+      });
+      const file = recipes({ box: { size: ["sm"] }, toast: { size: ["sm"] } });
+      expect(check({ boards: true, recipes: file })).toEqual([
+        "canvas.json:1 missing component board c-box.dc.html",
+        "canvas.json:1 missing component board c-toast.dc.html for recipe toast",
+      ]);
+    });
+
+    it("keeps a __proto__ axis as an axis", () => {
+      writeBoards();
+      const file = recipes('{"box": {"__proto__": ["x"]}}');
+      expect(check({ boards: true, recipes: file })).toEqual([
+        "c-box.dc.html:1 missing cell __proto__:x",
+      ]);
+    });
+
+    it.each<[string, object | string, string]>([
+      ["a list", [], "must map component names to their axes"],
+      ["a non-kebab name", { Box: {} }, "component name Box is not kebab-case"],
+      [
+        "a non-object recipe",
+        { box: [] },
+        "box must map axis names to their values",
+      ],
+      [
+        "a non-string value",
+        { box: { size: ["sm", 1] } },
+        "box.size must be an array of non-empty strings",
+      ],
+      [
+        "an axis name with a colon",
+        { box: { "a:b": ["c"] } },
+        'box."a:b" must be an array of non-empty strings',
+      ],
+      [
+        "an empty axis name",
+        { box: { "": ["sm"] } },
+        'box."" must be an array of non-empty strings',
+      ],
+      [
+        "an empty value",
+        { box: { size: [""] } },
+        "box.size must be an array of non-empty strings",
+      ],
+    ])(
+      "rejects a recipes file with %s as an input error",
+      (_name, value, why) => {
+        writeBoards();
+        const file = recipes(value);
+        expect(() => check({ boards: true, recipes: file })).toThrow(
+          `${file}: ${why}`,
+        );
+      },
+    );
+
+    it("CLI: exit 1 on a missing cell, exit 2 on a malformed recipes file", async () => {
+      writeBoards();
+      recipes({ box: { size: ["sm"] } });
+      expect(await cli("--boards", "--recipes", "recipes.json")).toMatchObject({
+        status: 1,
+        stdout: "c-box.dc.html:1 missing cell size:sm\n1 violation(s)",
+      });
+      recipes("{");
+      expect((await cli("--boards", "--recipes", "recipes.json")).status).toBe(
+        2,
+      );
     });
   });
 

@@ -309,6 +309,8 @@ Options:
   --naming                        Theme naming, inline weights and hand-written values
   --boards                        canvas.json pages and boards, board content, component pages, frames
   --ds-version <namespace>=<ver>  canvas.json installs this design-system version
+  --recipes <file>                With --boards: each c-<name> board marks every axis value
+                                  of its recipe (data-sg-cell="<axis>:<value>")
   --standard <file>               Manifest replacing the bundled one
   --inventory                     Print what the canvas uses (JSON) instead of checking
 
@@ -316,7 +318,7 @@ Output: one "<file>:<line> <message>" line per violation, then "<n> violation(s)
 or "OK: <n> files".
 
 Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
-(canvas, theme, stamp, canvas.json) or an invalid --standard.`,
+(canvas, theme, stamp, canvas.json, recipes) or an invalid --standard.`,
   options: {
     canvas: { type: "string" },
     theme: { type: "string" },
@@ -324,6 +326,7 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
     intents: { type: "string" },
     standard: { type: "string" },
     "ds-version": { type: "string" },
+    recipes: { type: "string" },
     naming: { type: "boolean" },
     boards: { type: "boolean" },
     inventory: { type: "boolean" },

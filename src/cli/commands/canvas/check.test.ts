@@ -193,7 +193,7 @@ describe("style-gen canvas check", () => {
       expect(stdout().filter((line) => result.test(line))).toEqual([]);
     });
 
-    it.each(["stamp", "standard"])(
+    it.each(["stamp", "standard", "recipes"])(
       "rejects an empty --%s instead of skipping its check",
       async (flag) => {
         const args = ["--canvas", "canvas", "--theme", "theme.json"];
@@ -201,6 +201,20 @@ describe("style-gen canvas check", () => {
         expect(stderr()).toBe(`--${flag} must not be empty`);
       },
     );
+
+    it("rejects --recipes without --boards instead of skipping it", async () => {
+      writeTmpFile(dir, "recipes.json", {});
+      const args = ["--canvas", "canvas", "--theme", "theme.json"];
+      expect(await canvas(...args, "--recipes", "recipes.json")).toBe(2);
+      expect(stderr()).toBe("--recipes needs --boards");
+    });
+
+    it("names an unreadable recipes file", async () => {
+      writeTmpFile(dir, "canvas/a.dc.html", "<p>x</p>");
+      const args = ["--canvas", "canvas", "--theme", "theme.json", "--boards"];
+      expect(await canvas(...args, "--recipes", "nope.json")).toBe(2);
+      expect(stderr()).toBe("nope.json: cannot read (ENOENT)");
+    });
 
     it("names an unreadable theme", async () => {
       expect(await canvas("--canvas", "canvas", "--theme", "nope.json")).toBe(

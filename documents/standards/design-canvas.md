@@ -84,6 +84,7 @@ A literal is a `<script type="application/json" data-sg-literal="colors">` block
 - No board imports a `c-*` board: a screen imports the `s-*` source.
 - A `c-*` frame is at most 1440×1600, and its root element has `padding: calc(var(--spacing) * n)` with n ≥ 8, written as one value (a two- to four-value shorthand is reported).
 - `cl-*` group boards are retired: split each into one `c-*` board per component.
+- With `--recipes <file>`, a `c-<name>` board shows its variant grid: every axis value of the component's recipe sits on an element marked `data-sg-cell="<axis>:<value>"` (`data-sg-cell="size:md"`). The file is a JSON map `{ "<kebab name>": { "<axis>": ["<value>", …] } }`, e.g. `{ "button": { "variant": ["solid", "outline"], "size": ["sm", "md", "lg"] } }`, that the product writes from its `<name>Tables` by hand or with its own script; this package ships no producer for it. Write each marker value as a quoted literal: a `{{binding}}` value is not resolved, and a marker inside a comment or another attribute's value still counts. A value repeated in the file is checked once, and an axis name holds no `:`.
 
 ## Frames
 
@@ -103,13 +104,14 @@ The component-page and frame rules run only when the manifest has `sourceBoards`
 ## Checking a canvas
 
 ```bash
-style-gen canvas check --canvas <dir> --theme <theme.json> [--stamp <ds-stamp.json>] [--intents primary,danger] [--naming] [--boards] [--standard <file>] [--ds-version <namespace>=<version>]
+style-gen canvas check --canvas <dir> --theme <theme.json> [--stamp <ds-stamp.json>] [--intents primary,danger] [--naming] [--boards] [--standard <file>] [--ds-version <namespace>=<version>] [--recipes <file>]
 ```
 
 `--standard` points at another manifest (default: the one bundled into the CLI, shipped as `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json`), so a product with other board titles keeps its own file. Flags and exit codes: [CLI reference](../reference/cli.md#style-gen-canvas).
 `--naming` checks the theme's keys against the naming convention, inline `font-weight`, hand-written `border-radius`/`line-height`/`font-family` and primitive colour variables on screens; without it those rules are off.
 `--boards` checks the pages, the core boards and their order, and one board per design-system component in `canvas.json`, plus the board content, component-page and frame rules above.
 `--ds-version <namespace>=<version>` checks that `canvas.json` installs that design-system version.
+`--recipes <file>` needs `--boards` and checks the variant grid of the `c-*` boards (see [Component pages](#component-pages)); a file it cannot read, parse or that has another shape is an input error.
 
 Boards are top-level files of `--canvas`. The board rules match `canvas.json` and the manifest by file name, so a `.dc.html` in a subfolder is scanned by the token rules but never checked as a board.
 
@@ -177,6 +179,8 @@ It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` a
 | `board … is on page …, expected …`                                                                   | With `--boards`: a core or component board sits on another page.                                                                             |
 | `board … title "…", expected "…"`                                                                    | With `--boards`: a core board has another title.                                                                                             |
 | `missing component board …`                                                                          | With `--boards`: a design-system component has no `c-<kebab>.dc.html` board.                                                                 |
+| `missing cell <axis>:<value>`                                                                        | With `--boards --recipes`: a `c-*` board has no `data-sg-cell` element for that axis value of its recipe.                                    |
+| `missing component board … for recipe …`                                                             | With `--boards --recipes`: the recipes file names a component that has no `c-<name>.dc.html` board.                                          |
 | `board … title must start with "Component / "`                                                       | With `--boards`: a component board title lacks the prefix.                                                                                   |
 | `core boards out of order in canvas.json#order (expected …)`                                         | With `--boards`: the core boards are not in manifest order in `canvas.json#order`.                                                           |
 | `missing canvas.json`                                                                                | With `--boards` or `--ds-version`: the canvas has no `canvas.json`.                                                                          |

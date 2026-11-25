@@ -2,7 +2,7 @@
  * `--boards` and `--ds-version` rules over `canvas.json` and the board files:
  * pages, core boards and their order, one `c-*` board per design-system
  * component, board content (sections, theme literals, provenance), component
- * pages and frames.
+ * pages, frames and, with `--recipes`, the variant grid of `c-*` boards.
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -10,6 +10,7 @@ import { join } from "node:path";
 import {
   asArray,
   asRecord,
+  cellMarkers,
   dcImports,
   isPlainObject,
   jsonBlocks,
@@ -19,7 +20,7 @@ import {
   sectionIds,
   styleDeclarations,
 } from "./parseHtml";
-import { canvasFiles, readJson, readText } from "./scan";
+import { CanvasInputError, canvasFiles, readJson, readText } from "./scan";
 import type { Standard } from "./standardSchema";
 
 /** `--ds-version <namespace>=<version>`. */
@@ -40,9 +41,14 @@ interface ComponentSources {
   prefix: string;
 }
 
+/** `--recipes`: the axis values of each component, by kebab-cased name. */
+export type Recipes = Record<string, Record<string, string[]>>;
+
 /** What the board rules read from the check options; paths are absolute. */
 export interface BoardOptions {
   boards: boolean;
+  /** Each `c-<name>` board shows every axis value of its recipe. */
+  recipes?: Recipes | undefined;
   stamp?: string | undefined;
   dsVersion?: DsVersion | undefined;
   /** The canvas directory as the user wrote it, for input errors. */
@@ -651,9 +657,83 @@ function orderGroupViolation(
   return null;
 }
 
+/** A kebab-cased component name, the `<name>` of `c-<name>.dc.html`. */
+const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * Reads the `--recipes` file: `{ "<kebab name>": { "<axis>": ["<value>", …] } }`.
+ * @param {string} file - Recipes JSON file
+ * @param {string} label - The path as the user wrote it, for messages
+ * @returns {Recipes} The recipes
+ * @throws {CanvasInputError} When the file cannot be read or parsed, or has another shape
+ */
+export function loadRecipes(file: string, label: string): Recipes {
+  const parsed = readJson(file, label);
+  const fail = (what: string): never => {
+    throw new CanvasInputError(`${label}: ${what}`);
+  };
+  if (!isPlainObject(parsed)) fail("must map component names to their axes");
+  // Object.fromEntries defines own keys, so a "__proto__" axis stays an axis.
+  return Object.fromEntries(
+    Object.entries(asRecord(parsed)).map(([name, axes]) => {
+      if (!KEBAB.test(name))
+        fail(`component name ${token(name)} is not kebab-case`);
+      if (!isPlainObject(axes))
+        fail(`${token(name)} must map axis names to their values`);
+      // A cell is "<axis>:<value>", so an axis name holds no ":".
+      const grid = Object.entries(asRecord(axes)).map(([axis, values]) =>
+        /^[^:]+$/.test(axis) &&
+        Array.isArray(values) &&
+        values.every((v) => typeof v === "string" && v !== "")
+          ? [axis, [...new Set(values as string[])]]
+          : fail(
+              `${token(name)}.${token(axis)} must be an array of non-empty strings under an axis name without ":"`,
+            ),
+      );
+      return [name, Object.fromEntries(grid)];
+    }),
+  ) as Recipes;
+}
+
+/**
+ * The variant grid (`--boards --recipes`): every `c-<name>` board marks each
+ * axis value of its recipe with a `data-sg-cell="<axis>:<value>"` element.
+ * @param {ReadBoard} read - Reads a board of the canvas
+ * @param {Set<string>} files - `*.dc.html` paths present in the canvas
+ * @param {Recipes} recipes - The recipes
+ * @param {Standard} standard - Manifest
+ * @returns {string[]} Located messages
+ */
+function recipeViolations(
+  read: ReadBoard,
+  files: Set<string>,
+  recipes: Recipes,
+  standard: Standard,
+): string[] {
+  const out: string[] = [];
+  for (const [name, axes] of Object.entries(recipes)) {
+    const file = `c-${name}.dc.html`;
+    if (!files.has(file)) {
+      // A design-system component's missing board is reported by the board rules.
+      if (!standard.dsComponents.includes(name))
+        out.push(
+          `canvas.json:1 missing component board ${file} for recipe ${name}`,
+        );
+      continue;
+    }
+    const cells = new Set(cellMarkers(read(file)));
+    for (const [axis, values] of Object.entries(axes))
+      for (const value of values)
+        if (!cells.has(`${axis}:${value}`))
+          out.push(`${file}:1 missing cell ${token(axis)}:${token(value)}`);
+  }
+  return out;
+}
+
 /**
  * The `--boards` rules that read board contents: content, component pages
- * and frames. Empty unless `--boards` is asked for and `canvas.json` exists.
+ * frames and, with `--recipes`, the variant grid. Empty unless `--boards` is
+ * asked for and `canvas.json` exists.
  * @param {string} canvasDir - Canvas directory
  * @param {unknown} theme - Parsed theme JSON
  * @param {BoardOptions} options - Which checks to run
@@ -679,5 +759,8 @@ export function boardContentViolations(
     ...contentViolations(read, files, theme, standard, options),
     ...componentPageViolations(read, canvasJson, files, standard),
     ...frameViolations(read, canvasJson, files, standard),
+    ...(options.recipes === undefined
+      ? []
+      : recipeViolations(read, files, options.recipes, standard)),
   ];
 }

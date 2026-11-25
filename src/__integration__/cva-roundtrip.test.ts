@@ -11,7 +11,8 @@ import {
   type RegistryPrefix,
 } from "../features/registry/builtInCategories";
 import { createVariantMapper } from "../features/cva/createVariantMapper";
-import { toCamelCase, toKebabCase, toPascalCase } from "../shared/helpers";
+import type { ColorState } from "../shared/colorStates";
+import { toCamelCase, toKebabCase } from "../shared/helpers";
 
 import { fixtureTheme, fixtureOptions } from "./__fixtures__/fixtureTheme";
 import { kebabParityCases } from "./__fixtures__/kebabParityCases";
@@ -128,7 +129,7 @@ interface StateRoundTripCase {
   prefix: RegistryPrefix | "";
   key: string;
   keys: readonly string[];
-  states: readonly string[];
+  states: readonly ColorState[];
   cssVarPrefix: string | undefined;
 }
 
@@ -142,7 +143,7 @@ const buildStateRoundTripCases = (): StateRoundTripCase[] => {
 
   for (const descriptor of builtInCategories) {
     const prefixes: readonly (RegistryPrefix | "")[] = descriptor.classPrefixes;
-    const states: readonly string[] =
+    const states: readonly ColorState[] =
       "states" in descriptor ? descriptor.states : [];
     if (states.length === 0) continue;
 
@@ -257,7 +258,7 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
 
       const keySet = new Set(keys);
       const expectedStates = states.filter((state) =>
-        keySet.has(`${key}${toPascalCase(state)}`),
+        keySet.has(`${key}${state.suffix}`),
       );
       expect(classes.length).toBe(1 + expectedStates.length);
 
@@ -274,12 +275,12 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
       }
 
       expectedStates.forEach((state, i) => {
-        const siblingKey = `${key}${toPascalCase(state)}`;
+        const siblingKey = `${key}${state.suffix}`;
         const prefixPart = prefix === "" ? "" : `${prefix}-`;
-        const expectedCls = `${state}:${prefixPart}${toKebabCase(siblingKey)}`;
+        const expectedCls = `${state.variant}:${prefixPart}${toKebabCase(siblingKey)}`;
         const cls = classes[1 + i];
         if (cls === undefined) {
-          throw new Error(`missing state class for state ${state}`);
+          throw new Error(`missing state class for state ${state.variant}`);
         }
         expect(cls).toBe(expectedCls);
 

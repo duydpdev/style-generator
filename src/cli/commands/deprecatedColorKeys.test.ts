@@ -14,8 +14,8 @@ describe("findDeprecatedColorKeys", () => {
         },
       }),
     ).toEqual([
-      "colors.onPrimary is deprecated: contrastText reads primaryForeground first and drops on<Intent> in 9.0; rename to primaryForeground",
-      "colors.onDomainX is deprecated: contrastText reads domainXForeground first and drops on<Intent> in 9.0; rename to domainXForeground",
+      "colors.onPrimary no longer produces a text colour in 9.0; rename to primaryForeground",
+      "colors.onDomainX no longer produces a text colour in 9.0; rename to domainXForeground",
     ]);
   });
 
@@ -29,7 +29,7 @@ describe("findDeprecatedColorKeys", () => {
         },
       }),
     ).toEqual([
-      "colors.onPrimary is deprecated: contrastText reads primaryForeground first and drops on<Intent> in 9.0; primaryForeground exists: merge onPrimary into it and remove onPrimary",
+      "colors.onPrimary no longer produces a text colour in 9.0; primaryForeground exists: merge onPrimary into it and remove onPrimary",
     ]);
   });
 
@@ -47,8 +47,8 @@ describe("findDeprecatedColorKeys", () => {
         },
       }),
     ).toEqual([
-      "colors.onPrimaryHover is deprecated: on<Intent> keys are dropped in 9.0 and a state comes last in the v2 name; rename to primaryForegroundHover",
-      "colors.onDangerActive is deprecated: on<Intent> keys are dropped in 9.0 and a state comes last in the v2 name; dangerForegroundActive exists: merge onDangerActive into it and remove onDangerActive",
+      "colors.onPrimaryHover no longer produces a text colour in 9.0; rename to primaryForegroundHover",
+      "colors.onDangerActive no longer produces a text colour in 9.0; dangerForegroundActive exists: merge onDangerActive into it and remove onDangerActive",
     ]);
   });
 

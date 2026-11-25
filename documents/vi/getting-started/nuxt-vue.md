@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/nuxt-vue.md sha256: c27d917dd195 -->
+<!-- source: documents/getting-started/nuxt-vue.md sha256: a634c62863b5 -->
 
 # Bắt đầu: Nuxt + Vue
 
@@ -325,7 +325,7 @@ const bg = createVariantMapper("bg", tokens.colors);
 const rounded = createVariantMapper("rounded", tokens.borderRadius);
 const type = createVariantMapper("", tokens.typography);
 
-/** A filled intent: state backgrounds, `on<Intent>` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
+/** A filled intent: state backgrounds, `<intent>Foreground` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
 const fill = (intent: ButtonIntent): string[] => {
   const classes = [
     pick(bgStates, intent),

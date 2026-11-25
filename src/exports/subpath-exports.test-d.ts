@@ -109,7 +109,11 @@ describe("subpath exports — symbols match their implementations", () => {
       ]
     >().not.toBeAny();
     expectTypeOf(cva.COLOR_STATES).toEqualTypeOf<
-      readonly ["hover", "active"]
+      readonly [
+        { readonly suffix: "Hover"; readonly variant: "hover" },
+        { readonly suffix: "Active"; readonly variant: "active" },
+        { readonly suffix: "Selected"; readonly variant: "aria-selected" },
+      ]
     >();
     expectTypeOf<types.DefaultBreakpointKeys>().toEqualTypeOf<"md" | "lg">();
     expectTypeOf<types.ResponsiveValueStrict<number, "md">>().toEqualTypeOf<

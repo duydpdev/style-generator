@@ -282,6 +282,19 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     );
   });
 
+  it("a Selected sibling builds aria-selected:bg-primary-selected on [aria-selected=true] (build([]))", async () => {
+    const { css: themeCss } = generate({
+      colors: { primary: "#007AFF", primarySelected: "#0050B3" },
+    });
+    expect(themeCss).toContain(
+      '@source inline("aria-selected:{bg,text,border,ring,outline,divide,placeholder}-{primary-selected}");',
+    );
+    const compiled = await compileFixtureCss(themeCss, []);
+    expect(compiled).toContain(
+      '.aria-selected\\:bg-primary-selected[aria-selected="true"] {',
+    );
+  });
+
   it("negative control: without @source inline, build([]) never emits classes", async () => {
     const { css: themeCss } = generate(theme);
     expect(themeCss).toMatch(/@source inline\(/);

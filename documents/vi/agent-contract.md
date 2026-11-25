@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 53830694cf9c -->
+<!-- source: documents/agent-contract.md sha256: 8654595d9505 -->
 
 # Hợp đồng cho agent
 
@@ -11,8 +11,8 @@ Các quy tắc mà một agent (hoặc một người) tuân theo khi viết the
 Đặt tên key ngữ nghĩa theo các vai trò của chính app; đặt tên màu primitive và typography theo giá trị của chúng (xem [Quy ước đặt tên](#quy-ước-đặt-tên)). Thư viện suy ra mọi type và class từ những key bạn viết; nó không bao giờ đòi một tên cụ thể.
 
 - `colors` là bắt buộc và là **camelCase phẳng**: `brand`, `brandHover`, `surfaceRaised`. Không object lồng nhau, không `DEFAULT`, không `_`, không mở đầu bằng một chuỗi từ hai chữ hoa trở lên (`CTA`, `HTMLText`); một chữ hoa đơn hoặc chuỗi hoa ở giữa (`primaryCTA`) thì được. Schema từ chối phần còn lại.
-- Một intent có thể khai báo các sibling trạng thái `<intent>Hover` và `<intent>Active`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` từ `@duydpdev/style-generator/cva`) biến `brand` thành `bg-brand hover:bg-brand-hover active:bg-brand-active` khi chúng tồn tại và thành `bg-brand` khi không có.
-- Một intent có thể khai báo màu chữ `<intent>Foreground` (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` trả về `text-brand-foreground` khi màu đó tồn tại, nếu không thì `text-<fallback>`. Tên cũ `on<Intent>` (`text-on-brand`) vẫn chạy nhưng đã deprecated: `contrastText` thôi đọc nó từ 9.0, và `style-gen doctor` cảnh báo về nó.
+- Một intent có thể khai báo các sibling trạng thái `<intent>Hover`, `<intent>Active` và `<intent>Selected`. `createVariantMapper("bg", tokens.colors, { states: COLOR_STATES })` (`COLOR_STATES` từ `@duydpdev/style-generator/cva`) biến `brand` thành `bg-brand hover:bg-brand-hover active:bg-brand-active aria-selected:bg-brand-selected` khi chúng tồn tại và thành `bg-brand` khi không có.
+- Một intent có thể khai báo màu chữ `<intent>Foreground` (`brand` → `brandForeground`). `contrastText(tokens.colors, intent, fallback)` trả về `text-brand-foreground` khi màu đó tồn tại, nếu không thì `text-<fallback>`. `contrastText` không đọc key `on<Intent>`; `style-gen doctor` chỉ ra tên `<intent>Foreground` cần đổi sang cho từng key như vậy.
 - Giá trị `"$<key>"` là alias tới một key khác **trong cùng category** (`"brandHover": "$brandActive"` trong `colors`). Không dùng trong `typography`. Đích không tồn tại và vòng lặp là lỗi schema.
 - Dark mode và palette nằm trong `themeAxes.<axis>.<variant>`; một override chỉ được định nghĩa lại các key đã có trong category gốc. Kích hoạt bằng `html[data-<axis>="<variant>"]` (dùng `themeAxisAttributes` từ `@duydpdev/style-generator/recipes`). `base` là tên variant dành riêng.
 - Mọi category khác (`typography`, `shadows`, `borderRadius`, `borderWidth`, `fontFamily`, `backdropBlurs`) là tùy chọn và theo cùng ngữ pháp key. Mỗi mục typography cần `fontSize`, `lineHeight` và `fontWeight` dạng số.
@@ -136,7 +136,7 @@ export const cn = createCn(tokens);
 
   Đọc mapper bằng `mapper.<key>` (kiểm tra lúc compile) hoặc `pick(mapper, key)` (ném lỗi lúc import khi theme thiếu key). Không bao giờ gõ tay `rounded-pill`, `font-sans` hay một class typography.
 
-- Một class literal có tên một key của theme chỉ được phép cho tổ hợp mà generator không emit với option của bạn: một variant khác `hover:`/`active:` (`focus-visible:outline-<key>`), một bước opacity không có trong `coverage.colors.opacities`, hoặc một trạng thái kèm opacity (`hover:bg-<key>/10`). Tailwind tìm thấy nó khi quét file. Mỗi bảng như vậy có một comment một dòng giải thích lý do. Utility bố cục không có key của theme (`inline-flex`, `gap-1.5`, `tabular-nums`) là literal bình thường.
+- Một class literal có tên một key của theme chỉ được phép cho tổ hợp mà generator không emit với option của bạn: một variant khác `hover:`/`active:`/`aria-selected:` (`focus-visible:outline-<key>`), một bước opacity không có trong `coverage.colors.opacities`, hoặc một trạng thái kèm opacity (`hover:bg-<key>/10`). Tailwind tìm thấy nó khi quét file. Mỗi bảng như vậy có một comment một dòng giải thích lý do. Utility bố cục không có key của theme (`inline-flex`, `gap-1.5`, `tabular-nums`) là literal bình thường.
 - Key của theme được gom trong một khối duy nhất mỗi `style.ts`. Trong button ví dụ, region này là **phần duy nhất thay đổi theo theme**:
 
 <!-- embed: examples/plain-react/src/ui/button/style.ts#button-preset -->

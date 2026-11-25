@@ -6,4 +6,5 @@
  */
 export { createVariantMapper } from "../features/cva/createVariantMapper";
 export { COLOR_STATES } from "../shared/colorStates";
+export type { ColorState } from "../shared/colorStates";
 export { toKebabCase } from "../shared/helpers";

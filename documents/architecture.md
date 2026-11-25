@@ -306,8 +306,9 @@ so `createVariantMapper` would generate `bg-primary-active` — a class that doe
 axis and variant names); loosening later is not breaking, tightening later is. `formatZodError` opens up Zod's `invalid_key` layer so the CLI/plugin prints the camelCase/kebab hint
 right on the correct path.
 
-**Kebab-case states:** state names are kebab-cased in both `createVariantMapper` and `generateSourceInline` (`focusVisible` → `focus-visible:`) because Tailwind only accepts
-kebab-form variant names; sibling lookup still uses the Pascal form (`primary` + `primaryFocusVisible`).
+**State table:** each `COLOR_STATES` row carries the sibling suffix and the Tailwind variant (`{ suffix: "Selected", variant: "aria-selected" }`); `createVariantMapper` and
+`generateSourceInline` read the same row and emit `variant` as written, because a variant name need not derive from the suffix (`Selected` → `aria-selected:`).
+Sibling lookup is the token plus `suffix` (`primary` + `Selected` → `primarySelected`).
 
 ---
 

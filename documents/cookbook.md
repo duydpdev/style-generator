@@ -189,4 +189,4 @@ const button = recipeFromTables({
 export const className = cn(button({ color: "danger" }), "px-4");
 ```
 
-`COLOR_STATES` chains `hover:` and `active:` classes onto a color that has `…Hover` and `…Active` siblings; `createCn(tokens)` makes a later `rounded-pill` replace an earlier `rounded-md`. `recipeFromTables` returns a typed recipe, so a misspelled variant value is a type error; leave the result un-annotated. See [UI kit](./reference/ui.md) and [Build components](./getting-started/build-components.md).
+`COLOR_STATES` chains `hover:`, `active:` and `aria-selected:` classes onto a color that has `…Hover`, `…Active` and `…Selected` siblings; `createCn(tokens)` makes a later `rounded-pill` replace an earlier `rounded-md`. `recipeFromTables` returns a typed recipe, so a misspelled variant value is a type error; leave the result un-annotated. See [UI kit](./reference/ui.md) and [Build components](./getting-started/build-components.md).

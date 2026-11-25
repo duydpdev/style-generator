@@ -190,14 +190,14 @@ export declare const contrastText: (
 ```
 
 The text colour that sits on an intent's fill: `text-<intent>-foreground`
-when the theme declares `<intent>Foreground`, else `text-on-<intent>`
-when it declares `on<Intent>` (deprecated: 9.0 drops this lookup),
-else `text-<fallback>`.
+when the theme declares `<intent>Foreground`, else `text-<fallback>`.
+An `on<Intent>` key is not read; `style-gen doctor` names its
+`<intent>Foreground` rename.
 
 <!-- /signature -->
 
 - `pick` throws, naming the token, instead of returning `undefined`, so a renamed theme token fails at the first render.
-- `contrastText` looks up, in order: `<intent>Foreground` (`text-primary-foreground`), the deprecated `on<Intent>` (`text-on-primary`), then `fallback`. 9.0 removes the `on<Intent>` step; `style-gen doctor` warns on each `on<Intent>` key whose `<intent>` is a colour. A theme that declares `<intent>Foreground` gets `text-<intent>-foreground`, even when it also declares `on<Intent>` or had relied on `fallback` before.
+- `contrastText` returns `text-<intent>-foreground` when the theme declares `<intent>Foreground` (`text-primary-foreground`), else `text-<fallback>`. An `on<Intent>` key is not read (see [8.x → 9.0](../migration/8.x-to-9.0.md)); `style-gen doctor` names the rename for each `on<Intent>` key whose `<intent>` is a colour.
 
 ## `createCn`, `Cn`
 

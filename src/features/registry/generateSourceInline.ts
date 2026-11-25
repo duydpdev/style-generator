@@ -6,7 +6,8 @@ import type {
 } from "../../core/resolveOptions";
 import type { ThemeConfig } from "../../core/themeSchema";
 import { parseAlias } from "../../core/tokenGrammar";
-import { toCamelCase, toKebabCase, toPascalCase } from "../../shared/helpers";
+import type { ColorState } from "../../shared/colorStates";
+import { toCamelCase, toKebabCase } from "../../shared/helpers";
 
 import {
   builtInCategories,
@@ -204,7 +205,7 @@ const buildStateLines = (
   theme: ThemeConfig,
   rule: ResolvedCoverageRule | undefined,
 ): string[] => {
-  const states: readonly string[] =
+  const states: readonly ColorState[] =
     "states" in descriptor ? descriptor.states : [];
   const prefixes = coveredPrefixes(descriptor, rule);
   if (states.length === 0 || prefixes.length === 0) {
@@ -219,16 +220,15 @@ const buildStateLines = (
   const prefixPart = prefixPartOf(descriptor, prefixes);
 
   const lines: string[] = [];
-  for (const state of states) {
-    const siblingSuffix = toPascalCase(state);
+  for (const { suffix, variant } of states) {
     const siblingKebabKeys = camelKeys
-      .filter((key) => camelKeySet.has(`${key}${siblingSuffix}`))
-      .map((key) => toKebabCase(`${key}${siblingSuffix}`));
+      .filter((key) => camelKeySet.has(`${key}${suffix}`))
+      .map((key) => toKebabCase(`${key}${suffix}`));
 
     if (siblingKebabKeys.length === 0) continue;
 
     lines.push(
-      `@source inline("${toKebabCase(state)}:${prefixPart}{${siblingKebabKeys.join(",")}}");`,
+      `@source inline("${variant}:${prefixPart}{${siblingKebabKeys.join(",")}}");`,
     );
   }
 

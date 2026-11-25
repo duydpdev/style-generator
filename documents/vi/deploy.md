@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 970ab3324f1c -->
+<!-- source: documents/deploy.md sha256: 7f78fc5073df -->
 
 # Triển khai & CI/CD
 
@@ -307,7 +307,7 @@ Bước `Publish to npm` xanh chưa chứng minh phiên bản đã công khai. M
 | `fix`, `perf`, `revert`                                                            | Patch (`1.0.1`) | `[fix] correct spacing var fallback` |
 | `refactor`, `style`, `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp`, `wip` | Không tăng      | `[refactor] simplify registry walk`  |
 
-Ghi chú release dùng preset `conventionalcommits` (khai báo trong `devDependencies`) với template `changelog-template.hbs`; các mục theo thứ tự này: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp` và `wip` không bao giờ xuất hiện trong ghi chú; `refactor` và `style` không tăng phiên bản nhưng được liệt kê dưới `Refactor` và `Style` khi cùng bản release được cắt vì một commit khác. Phần body của các commit `[feat]` và `[fix]` được in thụt lề ngay dưới mục tương ứng (`finalizeContext` trong `release.config.cjs`). Vì `[fix]` thường siết chặt việc kiểm tra hợp lệ, hãy viết một body nói rõ điều gì giờ bị từ chối và cách nâng cấp; body của một `[feat]` liệt kê các thay đổi hành vi mà người dùng cần biết (giá trị mặc định mới, ngữ nghĩa mới). Body của các type khác không xuất hiện trong ghi chú.
+Ghi chú release dùng preset `conventionalcommits` (khai báo trong `devDependencies`) với template `changelog-template.hbs`; các mục theo thứ tự này: `Release`, `Features`, `Bug Fixes`, `Performance Improvements`, `Refactor`, `Style`, `Reverts`. `docs`, `chore`, `test`, `build`, `ci`, `conf`, `temp` và `wip` không bao giờ xuất hiện trong ghi chú; `refactor` và `style` không tăng phiên bản nhưng được liệt kê dưới `Refactor` và `Style` khi cùng bản release được cắt vì một commit khác. Phần body của các commit `[release]`, `[feat]` và `[fix]` được in thụt lề ngay dưới mục tương ứng (`finalizeContext` trong `release.config.cjs`). Body của một `[release]` liệt kê các breaking change và nêu tên hướng dẫn migration; một dòng bắt đầu bằng `BREAKING CHANGE:` sẽ chuyển phần body còn lại sang một mục `BREAKING CHANGES` riêng. Vì `[fix]` thường siết chặt việc kiểm tra hợp lệ, hãy viết một body nói rõ điều gì giờ bị từ chối và cách nâng cấp; body của một `[feat]` liệt kê các thay đổi hành vi mà người dùng cần biết (giá trị mặc định mới, ngữ nghĩa mới). Body của các type khác không xuất hiện trong ghi chú.
 
 ### Cấu hình
 

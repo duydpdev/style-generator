@@ -4,6 +4,18 @@
 
 - read only <intent>Foreground in contrastText and map Selected to aria-selected ([ad1eaac](https://github.com/duydpdev/style-generator/commit/ad1eaac10d4a165588ed3938711339d0341f1b2d))
 
+  BREAKING CHANGES (documents/migration/8.x-to-9.0.md):
+
+  - B1: contrastText reads only <intent>Foreground; an on<Intent> key is no
+    longer read. style-gen doctor names the rename for each such key.
+  - B2: COLOR_STATES is a { suffix, variant } table (Hover -> hover,
+    Active -> active, Selected -> aria-selected), exported from ./cva with the
+    ColorState type. createVariantMapper states and
+    TokenCategoryDescriptor.states take readonly ColorState[]; a plain string
+    list is a type error.
+  - B3: scripts/check-design-canvas.mjs is removed; use style-gen canvas check.
+
+
 ### Features
 
 - add feedback example components ([58f7a75](https://github.com/duydpdev/style-generator/commit/58f7a75a380982b2fe93dd6bc8d7b92968cb31b0))

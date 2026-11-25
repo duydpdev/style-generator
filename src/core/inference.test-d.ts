@@ -239,6 +239,13 @@ describe("DesignTokensWeb", () => {
     >();
   });
 
+  it("aliasedColors counts a translucent `$key/<n>` holder", () => {
+    type Alpha = DesignTokensWeb<{
+      colors: { navy700: "#1f2a44"; border: "$navy700/8" };
+    }>;
+    expectTypeOf<Alpha["aliasedColors"]>().toEqualTypeOf<readonly "border"[]>();
+  });
+
   it("options default: md/lg breakpoints, default spacing keys, default screens", () => {
     expectTypeOf<Web["breakpoints"]>().toEqualTypeOf<
       readonly DefaultBreakpointKeys[]

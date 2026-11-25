@@ -72,3 +72,81 @@ test.describe("named opacity key as a colour modifier", () => {
     expect(alpha).toBe(0);
   });
 });
+
+/**
+ * A translucent alias `$ink/60` is a real `color-mix()` over a base that
+ * differs per mode (`ink` is black in light and white under
+ * `html[data-theme="dark"]`), and Tailwind's `/50` modifier stacks a second
+ * `color-mix()` on the holder. Colours are compared as numbers, per channel,
+ * because Chromium and WebKit serialise a computed `color-mix()` differently.
+ */
+test.describe("translucent alias $key/<n> in a real engine", () => {
+  const { css } = generate(
+    {
+      colors: { ink: "#000000", scrim: "$ink/60" },
+      themeAxes: { theme: { dark: { colors: { ink: "#ffffff" } } } },
+    },
+    { spacing: { enabled: false }, coverage: { colors: { keys: "aliased" } } },
+  );
+
+  type Channels = [number, number, number, number];
+
+  /**
+   * @param {Page} page - The page to render into
+   * @returns {Promise<void>} Resolves once the fixture is mounted
+   */
+  const mount = async (page: Page) => {
+    const compiled = await compileFixtureCss(css, ["bg-scrim", "bg-scrim/50"]);
+    await page.setContent(`<!DOCTYPE html>
+<html>
+  <head><style>${compiled}</style></head>
+  <body>
+    <div id="holder" class="bg-scrim">holder</div>
+    <div id="half" class="bg-scrim/50">half</div>
+  </body>
+</html>`);
+  };
+
+  /**
+   * @param {Page} page - The mounted page
+   * @param {string} id - Element id
+   * @returns {Promise<Channels>} Computed background as r, g, b (0–255) and alpha (0–1)
+   */
+  const channels = (page: Page, id: string): Promise<Channels> =>
+    page.evaluate((elementId) => {
+      const probe = document.createElement("canvas").getContext("2d");
+      const element = document.getElementById(elementId);
+      if (!probe || !element) throw new Error("fixture not mounted");
+      probe.fillStyle = getComputedStyle(element).backgroundColor;
+      probe.clearRect(0, 0, 1, 1);
+      probe.fillRect(0, 0, 1, 1);
+      const [r = 0, g = 0, b = 0, a = 0] = probe.getImageData(0, 0, 1, 1).data;
+      return [r, g, b, a / 255];
+    }, id);
+
+  const expectChannels = (actual: Channels, expected: Channels) => {
+    for (const index of [0, 1, 2]) {
+      expect(
+        Math.abs((actual[index] ?? 0) - (expected[index] ?? 0)),
+      ).toBeLessThanOrEqual(1);
+    }
+    expect(Math.abs(actual[3] - expected[3])).toBeLessThanOrEqual(0.01);
+  };
+
+  test("light: black at 60%, and 30% under /50", async ({ page }) => {
+    await mount(page);
+    expectChannels(await channels(page, "holder"), [0, 0, 0, 0.6]);
+    expectChannels(await channels(page, "half"), [0, 0, 0, 0.3]);
+  });
+
+  test("dark: the same alias is white at 60%, and 30% under /50", async ({
+    page,
+  }) => {
+    await mount(page);
+    await page.evaluate(() => {
+      document.documentElement.setAttribute("data-theme", "dark");
+    });
+    expectChannels(await channels(page, "holder"), [255, 255, 255, 0.6]);
+    expectChannels(await channels(page, "half"), [255, 255, 255, 0.3]);
+  });
+});

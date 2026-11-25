@@ -2,6 +2,8 @@
  * `--naming` rules over the theme: primitive and semantic colours, `themeAxes`
  * overrides, value-named typography on the type scale and the radius keys.
  */
+import { parseAliasRef } from "../../../core/tokenGrammar";
+
 import { asRecord } from "./parseHtml";
 import type { Standard } from "./standardSchema";
 
@@ -179,12 +181,11 @@ function takenTargets(
 
 /**
  * @param {unknown} value - A colour value
- * @returns {string | null} The alias target (`"$blue600"` → `blue600`), or null for a literal
+ * @returns {string | null} The alias target (`"$blue600"` and `"$blue600/8"` → `blue600`), or null for a literal
  */
 function aliasTarget(value: unknown): string | null {
-  return typeof value === "string" && value.startsWith("$")
-    ? value.slice(1)
-    : null;
+  if (typeof value !== "string" || !value.startsWith("$")) return null;
+  return parseAliasRef(value)?.key ?? value.slice(1);
 }
 
 /**

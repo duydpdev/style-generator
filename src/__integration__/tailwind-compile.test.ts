@@ -379,6 +379,33 @@ describe("primitive colour keys against Tailwind's palette", () => {
     expect(declsOf(out, ".bg-blue-500").size).toBe(0);
   });
 
+  it("a `$key/<n>` holder builds `bg-scrim` and `bg-scrim/50` through the real engine", async () => {
+    const alphaTheme = {
+      colors: { ink: "#000000", scrim: "$ink/60" },
+      themeAxes: { theme: { dark: { colors: { ink: "#ffffff" } } } },
+    };
+    const { css } = generate(alphaTheme, {
+      coverage: { colors: { keys: "aliased" } },
+    });
+    expect(css).toContain(
+      "--sg-color-scrim: color-mix(in srgb, var(--sg-color-ink) 60%, transparent);",
+    );
+
+    const covered = await compileFixtureCss(css, []);
+    expect(declsOf(covered, ".bg-scrim").get("background-color")).toBe(
+      "var(--sg-color-scrim)",
+    );
+    expect(declsOf(covered, ".bg-ink").size).toBe(0);
+
+    const out = await compileFixtureCss(css, ["bg-scrim", "bg-scrim/50"]);
+    expect(declsOf(out, ".bg-scrim").get("background-color")).toBe(
+      "var(--sg-color-scrim)",
+    );
+    expect(declsOf(out, ".bg-scrim\\/50").get("background-color")).toMatch(
+      /color-mix\(in (?:srgb|oklab), var\(--sg-color-scrim\) 50%, transparent\)/,
+    );
+  });
+
   it("alpha primitives and value-named typography keys build their classes", async () => {
     const keyTheme = {
       colors: {

@@ -285,6 +285,62 @@ describe("themeToDsTokens — rules", () => {
     });
   });
 
+  describe("translucent alias `$<key>/<n>`", () => {
+    const find = (t: DsTokens, name: string) =>
+      t.color.tokens.find((x) => x.name === name)?.value;
+
+    it("resolves to a literal rgba of the target hex, in the base record and in a dark override", () => {
+      const t = unwrap(
+        map(
+          {
+            colors: {
+              navy700: "#1f2a44",
+              ink: "#000000",
+              border: "$navy700/8",
+              scrim: "$ink/60",
+            },
+            themeAxes: {
+              theme: {
+                dark: { colors: { ink: "#ffffff", border: "$ink/12" } },
+              },
+            },
+          },
+          { name: "Alpha" },
+        ),
+      );
+      expect(find(t, "border")).toEqual({
+        light: "rgba(31, 42, 68, 0.08)",
+        dark: "rgba(255, 255, 255, 0.12)",
+      });
+      expect(find(t, "scrim")).toEqual({
+        light: "rgba(0, 0, 0, 0.6)",
+        dark: "rgba(255, 255, 255, 0.6)",
+      });
+    });
+
+    it("follows a plain alias chain and reads 3-digit hex", () => {
+      const t = unwrap(
+        map(
+          { colors: { red: "#f00", brand: "$red", veil: "$brand/50" } },
+          { name: "Alpha" },
+        ),
+      );
+      expect(find(t, "veil")).toEqual({ light: "rgba(255, 0, 0, 0.5)" });
+    });
+
+    it("keeps color-mix(...) when the target is not a hex", () => {
+      const t = unwrap(
+        map(
+          { colors: { navy700: "rgb(1 2 3)", border: "$navy700/8" } },
+          { name: "Alpha" },
+        ),
+      );
+      expect(find(t, "border")).toEqual({
+        light: "color-mix(in srgb, var(--sg-color-navy-700) 8%, transparent)",
+      });
+    });
+  });
+
   it("adds each variant as a theme with its override, else the base value", () => {
     const t = unwrap(map(alt, { name: "Alt" }));
     expect(t.color.themes).toEqual([

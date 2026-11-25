@@ -85,6 +85,7 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-11-24 (starter theme that follows the naming convention: 16 primitives, the 14-key semantic core, value-named typography, a dark axis; CLI hints for the project's package manager; user-approved): cli measured 31727 B (starter theme ~670 B, package-manager detection and the hints that use it ~338 B; rewriting the typography as compact tuples was tried and grew it by 8 B, so the starter stays a plain object); budget raised 31100 -> 32000 (+273 B over the measurement). No other budget changed.
 // 2026-11-25 (`style-gen canvas check`: the design-canvas checker moves from a repository script into the CLI, with its manifest inlined; user-approved 2026-11-24, measured 43873 B): cli budget raised 32000 -> 48270 (measured + ~10 %, rounded up to 10 B). No other budget changed.
 // 2026-11-25 (six scale token groups: motionDuration, motionEasing, controlHeight, iconSize, opacity, zIndex; six descriptors, their value grammar and schema shapes; user-approved): vite measured 15525 B (101 %), next 15716 B (98 %); budgets raised to measured + ~10 %, rounded up to 10 B: vite 15430 -> 17080, next 16100 -> 17290. Shortening the easing error message saved 51 B and was not enough. index 11181 (82 %), tokens 1752 (95 %), recipes 1933, ui 2889, cli 45187 stay within their budgets.
+// 2026-11-26 (colour alias `$key/<n>`: alias grammar parser, its error messages and the `color-mix` emission land in the CLI through `generate()`; user-approved): cli measured 48392 B (develop 48100 B, +292 B; merging the two grammar messages and replacing a `Set` saved 19 B and was not enough); budget raised to measured + ~10 %, rounded up to 10 B: 48270 -> 53240. index, tokens, cva, vite, next and the other budgets stay within theirs.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -98,7 +99,7 @@ const budgets = {
   "ui-react": 70,
   vite: 17_080,
   next: 17_290,
-  cli: 48_270,
+  cli: 53_240,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.

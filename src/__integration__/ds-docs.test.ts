@@ -118,6 +118,26 @@ describe("buildReadme", () => {
     expect(readme).toContain("| `muted` | $gray500 | — |");
   });
 
+  it("prints a translucent alias as `$<key> at <n>%`, never the raw `/<n>` form", () => {
+    const alpha = mod.buildReadme({
+      name: "Fixture",
+      themeFile: "theme.json",
+      theme: {
+        ...theme,
+        colors: { ...theme.colors, navy700: "#1f2a44", border: "$navy700/8" },
+        themeAxes: {
+          theme: { dark: { colors: { border: "$navy700/16" } } },
+        },
+      },
+      namespace: "Fixture",
+      intents: ["primary", "danger"],
+    });
+    expect(alpha).toContain("| `border` | $navy700 at 8% | $navy700 at 16% |");
+    expect(
+      alpha.split("\n").filter((l) => l.includes("$navy700/")).length,
+    ).toBe(0);
+  });
+
   it.each([
     ["absent", undefined],
     ["empty", {}],

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/theme.md sha256: 42d18c92e0e4 -->
+<!-- source: documents/reference/theme.md sha256: e1cc60ff5dc7 -->
 
 # Cấu hình theme
 
@@ -161,6 +161,28 @@ Mục tiêu là key thô (`$blue500`, không phải `$blue-500`), nó phải t�
   --sg-color-primary: var(--sg-color-blue-500);
   --sg-shadow-base: 0 1px 2px rgb(0 0 0 / 0.1);
   --sg-shadow-card: var(--sg-shadow-base);
+}
+```
+
+### Alias mờ (`$key/n`)
+
+Trong `colors`, giá trị `"$<key>/<n>"` (`<n>` là số nguyên phần trăm từ 1 đến 100, không có số 0 đứng đầu) là màu của key đích ở độ mờ `<n>%` và được phát ra thành `color-mix(in srgb, var(--sg-color-<kebab-key>) <n>%, transparent)`. Key đích phải tồn tại và đồ thị alias vẫn không được có chu trình, giống như với `"$<key>"`; các nhóm token khác từ chối dạng này. Nó cũng dùng được trong một override `themeAxes`, và kết quả đi theo key đích ở chế độ đang bật. Key giữ alias này là một key màu bình thường, nên modifier `/<n>` của Tailwind vẫn dùng được trên nó (`bg-scrim/50` chồng thêm một `color-mix()`: 50% của 60% là 30%).
+
+```json
+{
+  "colors": { "ink": "#000000", "scrim": "$ink/60" },
+  "themeAxes": { "theme": { "dark": { "colors": { "ink": "#ffffff" } } } }
+}
+```
+
+```css
+:root {
+  --sg-color-ink: #000000;
+  --sg-color-scrim: color-mix(in srgb, var(--sg-color-ink) 60%, transparent);
+}
+
+html[data-theme="dark"] {
+  --sg-color-ink: #ffffff;
 }
 ```
 

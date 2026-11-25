@@ -180,3 +180,24 @@ describe("primitive colour keys", () => {
     ).toEqual([]);
   });
 });
+
+describe("translucent alias `$<key>/<n>`", () => {
+  const messages = (value: string): string[] =>
+    namingViolations(
+      { colors: { navy700: "#1f2a44", border: value } },
+      DEFAULT_STANDARD,
+    ).filter((line) => line.includes("alias"));
+
+  it("accepts an alias of a primitive with a percent", () => {
+    expect(messages("$navy700/8")).toEqual([]);
+  });
+
+  it("still reports an alias of a semantic key, with or without a percent", () => {
+    expect(messages("$primary/8")).toEqual([
+      "colors.border aliases semantic key primary (alias a primitive)",
+    ]);
+    expect(messages("$primary")).toEqual([
+      "colors.border aliases semantic key primary (alias a primitive)",
+    ]);
+  });
+});

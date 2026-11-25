@@ -32,6 +32,7 @@ Find the start of the message the CLI, `styleGenVite()` or `styleGenNext()` prin
 
 - A name contains `_`, or starts with two or more capitals (`CTA`): use camelCase or kebab-case ([Key rules](./reference/theme.md#key-rules)).
 - A `$alias` points at a key that is not in the same category, or aliases form a cycle ([Aliases](./reference/theme.md#aliases-key)).
+- A translucent alias `"$<key>/<n>"` sits outside `colors`, or `<n>` is not an integer from 1 to 100 without a leading zero (`$ink/60`, not `$ink/060` or `$ink/0.6`) ([Translucent alias](./reference/theme.md#translucent-alias-keyn)).
 - An override in `themeAxes` names a key that the base category does not have: override keys must already exist in the base.
 - Two keys become the same class once kebab-cased (`blue500` and `blue-500`).
 - A value is unsafe or unbalanced (an unmatched `(` or `[`).

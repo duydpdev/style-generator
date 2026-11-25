@@ -45,12 +45,58 @@ function sentenceCase(key) {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+const ALPHA_ALIAS = /^\$([A-Za-z0-9][A-Za-z0-9-]*)\/(100|[1-9]\d?)$/;
+
 /**
- * A `$alias` becomes the type's alias form; a hex color is lowercased.
+ * The literal `rgba(...)` of a hex colour at a percent, or undefined when `hex` is not a 3, 6 or 8 digit hex.
+ * @param {string} hex - A hex colour
+ * @param {number} percent - The alias percent (1–100)
+ * @returns {string | undefined} `rgba(r, g, b, a)`
+ */
+function hexAtPercent(hex, percent) {
+  const digits = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(hex)?.[1];
+  if (!digits) return undefined;
+  const full =
+    digits.length === 3 ? [...digits].map((d) => d + d).join("") : digits;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  const own = full.length === 8 ? parseInt(full.slice(6, 8), 16) / 255 : 1;
+  return `rgba(${r}, ${g}, ${b}, ${Number(((percent / 100) * own).toFixed(4))})`;
+}
+
+/**
+ * The hex a colour key ends at in one theme, following plain `$alias` chains; undefined when the chain ends in a non-hex or a translucent alias.
+ * @param {string} key - A colour key
+ * @param {Record<string, string>} colors - The colours of that theme (base merged with the variant's override)
+ * @returns {string | undefined} The hex
+ */
+function hexOf(key, colors) {
+  let value = colors[key];
+  for (let hops = 0; hops <= Object.keys(colors).length; hops += 1) {
+    if (value === undefined || ALPHA_ALIAS.test(value)) return undefined;
+    if (!value.startsWith("$")) return /^#/.test(value) ? value : undefined;
+    value = colors[value.slice(1)];
+  }
+  return undefined;
+}
+
+/**
+ * A `$alias` becomes the type's alias form; `$<key>/<n>` becomes a literal `rgba(...)` of the target's hex in this theme
+ * (the Design System page reads no `color-mix`), or stays `color-mix(...)` when the target is not a hex; a hex colour is lowercased.
  * @param {string} value - A theme color value
+ * @param {Record<string, string>} colors - The colours of the theme the value is read in
  * @returns {string} The Design System color value
  */
-function colorValue(value) {
+function colorValue(value, colors) {
+  const alpha = ALPHA_ALIAS.exec(value);
+  if (alpha) {
+    const [, key = "", percent = "0"] = alpha;
+    const hex = hexOf(key, colors);
+    const literal = hex && hexAtPercent(hex, Number(percent));
+    return (
+      literal ||
+      `color-mix(in srgb, var(--sg-color-${toKebabCase(key)}) ${percent}%, transparent)`
+    );
+  }
   if (value.startsWith("$")) return `{${toKebabCase(value.slice(1))}}`;
   return /^#[0-9a-f]+$/i.test(value) ? value.toLowerCase() : value;
 }
@@ -94,15 +140,18 @@ function collectVariants(themeAxes) {
  * @returns {{ themes: { id: string, name: string }[], tokens: DsToken[] }} The color family
  */
 function colorFamily(theme, variants, usage) {
+  const baseColors = theme.colors;
+  /** @type {(variant: Variant) => Record<string, string>} */
+  const colorsOf = (variant) => ({ ...baseColors, ...variant.override.colors });
   return {
     themes: [BASE_THEME, ...variants.map(({ id, name }) => ({ id, name }))],
     tokens: Object.entries(theme.colors).map(([key, base]) => ({
       name: toKebabCase(key),
       value: Object.fromEntries([
-        [BASE_THEME.id, colorValue(base)],
+        [BASE_THEME.id, colorValue(base, baseColors)],
         ...variants.map((v) => [
           v.id,
-          colorValue(v.override.colors?.[key] ?? base),
+          colorValue(v.override.colors?.[key] ?? base, colorsOf(v)),
         ]),
       ]),
       usage: usage[key] ?? "",

@@ -300,6 +300,7 @@ and `coverage.colors.opacities` opts into one extra `/<n>` opacity-modifier line
 
 **`$key` aliases:** `flattenByCategory` turns `"$blue500"` into `var(--sg-color-blue-500)` (using the category's own `cssVarPrefix`).
 `ThemeSchema` has already proven that the target exists and the graph has no cycles before emitting.
+In `colors`, `"$blue500/8"` becomes `color-mix(in srgb, var(--sg-color-blue-500) 8%, transparent)` (`parseAliasRef`: the percent is an integer 1–100 and is rejected in every other category).
 
 **Why `_` is forbidden in keys:** `toKebabCase` keeps `_` as is (`primary_active` → `bg-primary_active`) while the camelCase in `createDesignTokens` drops `_` (`primaryActive`),
 so `createVariantMapper` would generate `bg-primary-active` — a class that does not exist. The schema rejects `_` in every token-name position (color/typography/…,

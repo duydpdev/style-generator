@@ -73,6 +73,26 @@ function themeWithout(key: string): string {
   return file;
 }
 
+/**
+ * Writes the fixture theme with a translucent alias in the base record and in a dark override to a scratch file.
+ * @returns {string} The theme file's path
+ */
+function themeWithAlphaAliases(): string {
+  const dir = mkdtempSync(join(tmpdir(), "build-ds-alpha-"));
+  scratch.push(dir);
+  const file = join(dir, "theme.json");
+  const colors = fixtureTheme.colors as Record<string, string>;
+  writeFileSync(
+    file,
+    JSON.stringify({
+      ...fixtureTheme,
+      colors: { ...colors, hairline: "$gray900/8" },
+      themeAxes: { theme: { dark: { colors: { hairline: "$white/16" } } } },
+    }),
+  );
+  return file;
+}
+
 describe("scripts/build-ds.mjs end to end", () => {
   it(
     "builds a design system with a README and a cover from a theme that follows the standard",
@@ -130,4 +150,28 @@ describe("scripts/build-ds.mjs end to end", () => {
     );
     expect(existsSync(out)).toBe(false);
   });
+
+  it(
+    "resolves a translucent alias to a literal rgba in tokens.json and prints it as `$<key> at <n>%` in the README",
+    { timeout: 180_000 },
+    () => {
+      const { run, out } = runProducer(themeWithAlphaAliases());
+      expect(run.status, run.stderr).toBe(0);
+      expect(run.stderr).not.toContain("hairline");
+
+      const tokens = JSON.parse(
+        readFileSync(join(out, "tokens.json"), "utf8"),
+      ) as { color: { tokens: { name: string; value: unknown }[] } };
+      expect(
+        tokens.color.tokens.find((t) => t.name === "hairline")?.value,
+      ).toEqual({
+        light: "rgba(17, 24, 39, 0.08)",
+        dark: "rgba(255, 255, 255, 0.16)",
+      });
+
+      const readme = readFileSync(join(out, "README.md"), "utf8");
+      expect(readme).toContain("$gray900 at 8%");
+      expect(readme).not.toContain("$gray900/8");
+    },
+  );
 });

@@ -162,6 +162,28 @@ The target is the raw key (`$blue500`, not `$blue-500`), it must exist, and the 
 }
 ```
 
+### Translucent alias (`$key/n`)
+
+In `colors`, a value `"$<key>/<n>"` (`<n>` an integer percent from 1 to 100, no leading zero) is the target colour at `<n>%` opacity and is emitted as `color-mix(in srgb, var(--sg-color-<kebab-key>) <n>%, transparent)`. The target must exist and the graph must stay acyclic, exactly as for `"$<key>"`; any other category rejects the form. It also works inside a `themeAxes` override, and the result follows the target in the active mode. The key holding it is an ordinary colour key, so Tailwind's `/<n>` modifier still works on it (`bg-scrim/50` stacks a second `color-mix()`: 60% of 50% is 30%).
+
+```json
+{
+  "colors": { "ink": "#000000", "scrim": "$ink/60" },
+  "themeAxes": { "theme": { "dark": { "colors": { "ink": "#ffffff" } } } }
+}
+```
+
+```css
+:root {
+  --sg-color-ink: #000000;
+  --sg-color-scrim: color-mix(in srgb, var(--sg-color-ink) 60%, transparent);
+}
+
+html[data-theme="dark"] {
+  --sg-color-ink: #ffffff;
+}
+```
+
 ## Interactive states (`primaryHover`, `primaryActive`)
 
 Declare flat sibling keys next to a color and the registry emits the state utilities for them:

@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: 835eac8deaab -->
+<!-- source: documents/agent-contract.md sha256: e449a25c0477 -->
 
 # Hợp đồng cho agent
 
@@ -30,6 +30,7 @@ Quy ước này áp dụng cho theme mới và design canvas mới. Đừng bao 
 - Màu gồm hai lớp: primitive giữ mọi giá trị literal, key ngữ nghĩa trỏ tới primitive.
 - Key primitive là một sắc độ kèm một bậc, hoặc `black`/`white`: nó khớp `^(?:[a-z]+(?:50|[1-9]00|950)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray50`, `white`; `gray150` thì không). Giá trị của nó là literal, không bao giờ là `$…`. Sắc độ chỉ gồm chữ thường; các bậc là 50, từ 100 đến 900 và 950, và một thang có thể bỏ trống bậc.
 - Màu trong suốt là một primitive có hậu tố alpha tính theo phần trăm (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
+- Một key màu ngữ nghĩa cũng có thể là alias `"$<primitive>/<n>"` (`<n>` là số nguyên phần trăm, 1–100): `border: "$navy700/8"` phát ra `color-mix(in srgb, var(--sg-color-navy-700) 8%, transparent)`. Đây là dạng bổ sung bên cạnh hậu tố alpha ở trên, và nó vẫn là alias của một primitive; các key alpha vẫn hợp lệ.
 - Mọi key màu khác là key ngữ nghĩa. Giá trị của nó là `"$<primitive>"` trong `colors` gốc và trong mọi override `themeAxes` định nghĩa lại nó; key ngữ nghĩa không bao giờ là alias của key ngữ nghĩa khác, và override không bao giờ định nghĩa lại primitive.
 
 Lõi ngữ nghĩa: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.

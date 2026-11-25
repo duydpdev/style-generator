@@ -28,6 +28,7 @@ This convention applies to new themes and new design canvases. Never rename a ke
 - Colours come in two layers: primitives hold every literal value, semantic keys point at primitives.
 - A primitive key is a hue and a step, or `black`/`white`: it matches `^(?:[a-z]+(?:50|[1-9]00|950)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray50`, `white`; `gray150` is not one). Its value is a literal, never `$…`. The hue is lowercase letters only; the steps are 50, 100 to 900 and 950, and a scale may skip steps.
 - A translucent colour is a primitive with an alpha suffix in percent (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
+- A semantic colour may also alias `"$<primitive>/<n>"` (`<n>` an integer percent, 1–100): `border: "$navy700/8"` emits `color-mix(in srgb, var(--sg-color-navy-700) 8%, transparent)`. It is an additional form next to the alpha suffix above, and it still aliases a primitive; the alpha keys stay valid.
 - Every other colour key is semantic. Its value is `"$<primitive>"` in the base `colors` and in every `themeAxes` override that redefines it; a semantic key never aliases another semantic key, and an override never redefines a primitive.
 
 Semantic core: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.

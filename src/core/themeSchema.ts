@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { builtInCategories } from "../features/registry/builtInCategories";
+import type { TokenCategoryDescriptor } from "../features/registry/TokenCategoryDescriptor";
 import { UTILITY_NAME_RE, toKebabCase } from "../shared/helpers";
 
 import {
@@ -152,6 +154,17 @@ const CSS_VAR_CATEGORIES = ThemeCssVarShape.keyof().options;
 const ALIAS_CATEGORIES = ThemeAliasShape.keyof().options;
 
 /**
+ * Whether a category's aliases may carry the `/<n>` percent (it has `opacityModifier`).
+ * @param {string} category - Category key
+ * @returns {boolean} True for the colour category
+ */
+const allowsAlpha = (category: string): boolean =>
+  builtInCategories.some(
+    (descriptor: TokenCategoryDescriptor) =>
+      descriptor.key === category && descriptor.opacityModifier === true,
+  );
+
+/**
  * Theme override configuration. Contains partial overrides for every
  * CSS-var category (colors, shadows, backdrop blurs, border radius, font
  * family, border width) — everything but `typography`, matching
@@ -178,7 +191,13 @@ const validateBaseCategories = (
   for (const category of ALIAS_CATEGORIES) {
     const record = theme[category];
     if (record) {
-      validateCategoryAliasGraph(ctx, record, record, (key) => [category, key]);
+      validateCategoryAliasGraph(
+        ctx,
+        record,
+        record,
+        allowsAlpha(category),
+        (key) => [category, key],
+      );
     }
   }
 };
@@ -228,11 +247,13 @@ const validateThemeOverride = (
     const overrideRecord = override[category];
     if (!overrideRecord) continue;
     const merged = { ...baseTheme[category], ...overrideRecord };
-    validateCategoryAliasGraph(ctx, merged, overrideRecord, (key) => [
-      ...pathPrefix,
-      category,
-      key,
-    ]);
+    validateCategoryAliasGraph(
+      ctx,
+      merged,
+      overrideRecord,
+      allowsAlpha(category),
+      (key) => [...pathPrefix, category, key],
+    );
   }
 };
 

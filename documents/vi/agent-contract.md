@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: db89c9154698 -->
+<!-- source: documents/agent-contract.md sha256: 835eac8deaab -->
 
 # Hợp đồng cho agent
 
@@ -41,7 +41,7 @@ Key riêng của sản phẩm (`domainNutrition`) đứng cạnh chúng.
 
 - Key typography có dạng `text<size><Weight>`: nó khớp `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. Phần số là `fontSize` tính bằng px (giá trị rem tính là rem × 16) và từ phía sau là `fontWeight` 400/500/600/700. Mọi key cùng cỡ chữ có cùng `lineHeight`. Thang cỡ chữ là 12, 14, 16, 20, 24, 32, 40, 56.
 - Một mục typography không bao giờ đặt `fontFamily`. Một kiểu chữ khác là class `font-<fontFamily key>` đặt cạnh class typography: `class="text-56-regular font-display"`.
-- Key radius là `sm`, `md`, `lg` và `full`.
+- Key radius là `sm`, `md`, `lg`, `xl` và `full`. Danh sách là đóng; theme có thể khai báo bất kỳ tập con nào, và xl dành cho bề mặt lớn (khung thiết bị, sheet, panel).
 
 <!-- prettier-ignore -->
 ```json

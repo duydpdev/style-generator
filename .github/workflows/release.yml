@@ -72,6 +72,11 @@ jobs:
           HUSKY: "0"
         run: yarn install --immutable
 
+      # The design-system script tests run scripts/build-ds.mjs, which
+      # imports the built library, so build before testing (as ci.yml does).
+      - name: Build
+        run: yarn build:all
+
       # Nothing blocks a merge while CI is red (GitHub Free, no branch
       # protection), so test the pushed commit before a tag is cut for it.
       - name: Test

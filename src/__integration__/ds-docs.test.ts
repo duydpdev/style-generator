@@ -6,10 +6,13 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { generate } from "../index";
 
+import { buttonPreset } from "./__fixtures__/ds-build/ds.preset";
+
 interface Theme {
   colors: Record<string, string>;
   typography?: Record<string, { fontSize: string }> | undefined;
   borderRadius?: Record<string, string> | undefined;
+  controlHeight?: Record<string, string> | undefined;
   themeAxes?: Record<
     string,
     Record<string, { colors?: Record<string, string> }>
@@ -33,7 +36,11 @@ interface DsDocsModule {
       titleClass: string;
     },
   ) => string;
-  dsInputFailures: (input: { theme: Theme; coverTemplate: string }) => string[];
+  dsInputFailures: (input: {
+    theme: Theme;
+    coverTemplate: string;
+    buttonPreset: typeof buttonPreset;
+  }) => string[];
   verifyDsOutput: (output: {
     readme: string;
     cover: string;
@@ -238,6 +245,7 @@ describe("dsInputFailures", () => {
     mod.dsInputFailures({
       theme: { ...theme, ...edit },
       coverTemplate: template,
+      buttonPreset,
     });
   const noTypography =
     "theme has no typography: a design system needs at least one typography key (the cover title and the Text component use one)";
@@ -263,6 +271,39 @@ describe("dsInputFailures", () => {
     );
     expect(inputs({ colors })).toEqual([
       'theme has no colour key "success": the cover reads background, primary, foreground, success, warning',
+    ]);
+  });
+
+  it("names a controlHeight key a Button size reads and the theme lacks", () => {
+    expect(inputs({ controlHeight: { sm: "1.75rem", md: "2.25rem" } })).toEqual(
+      [
+        'theme has no controlHeight key "lg": the Button preset\'s size lg reads it',
+      ],
+    );
+    expect(inputs({ controlHeight: undefined })).toHaveLength(3);
+  });
+
+  it("names a Button preset without a height map instead of throwing", () => {
+    const oldShape = Object.fromEntries(
+      Object.entries(buttonPreset).filter(([key]) => key !== "height"),
+    );
+    expect(
+      mod.dsInputFailures({
+        theme,
+        coverTemplate: template,
+        buttonPreset: oldShape as unknown as typeof buttonPreset,
+      }),
+    ).toEqual([
+      "button preset has no height map: it needs one controlHeight key per size (height: { sm, md, lg })",
+    ]);
+  });
+
+  it("names a Subtle colour a Button intent needs and the theme lacks", () => {
+    const colors = Object.fromEntries(
+      Object.entries(theme.colors).filter(([key]) => key !== "dangerSubtle"),
+    );
+    expect(inputs({ colors })).toEqual([
+      'theme has no colour key "dangerSubtle": the Button\'s soft variant reads <intent>Subtle and <intent>SubtleForeground; outline and ghost hover on <intent>Subtle',
     ]);
   });
 });

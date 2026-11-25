@@ -85,7 +85,7 @@ export const JsonDrawer = ({ open, onClose, palette }: JsonDrawerProps) => {
         align="center"
         justify="between"
         borderB="thin"
-        borderColor="line"
+        borderColor="border"
       >
         <Box as="h3" className="x-sg-font-display x-drawer-title">
           theme.json

@@ -2,13 +2,13 @@ import {
   createCn,
   mergeStyle,
   splitSpacing,
-  type RecipeTokens,
   type ThemeSpacingProps,
 } from "@duydpdev/style-generator/ui";
 import type { Polymorphic } from "@duydpdev/style-generator/ui-react";
 import {
   createButtonRecipe,
   type ButtonPreset,
+  type ButtonTokens,
 } from "design-system-example/recipes";
 import {
   Fragment,
@@ -20,13 +20,19 @@ import {
 } from "react";
 
 type ButtonOwnProps<
-  W extends RecipeTokens,
+  W extends ButtonTokens,
   B extends string,
 > = ThemeSpacingProps<W> & {
-  readonly variant?: "fill" | "outline" | "soft" | "ghost" | "link" | undefined;
+  readonly variant?:
+    | "solid"
+    | "outline"
+    | "soft"
+    | "ghost"
+    | "link"
+    | undefined;
   /** One of `preset.intents`. */
   readonly color?: B | undefined;
-  readonly size?: "sm" | "md" | "lg" | undefined;
+  readonly size?: "sm" | "md" | "lg" | "icon" | undefined;
   readonly prefix?: ReactNode;
   readonly suffix?: ReactNode;
   readonly children?: ReactNode;
@@ -60,7 +66,7 @@ const present = (node: ReactNode): boolean => {
  * no label span is rendered, so `gap` cannot push the icon off centre, and the button is square.
  */
 export const createButton = <
-  W extends RecipeTokens,
+  W extends ButtonTokens,
   B extends W["colors"][number],
 >(
   tokens: W,

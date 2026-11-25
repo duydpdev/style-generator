@@ -19,6 +19,7 @@ import { toKebabCase } from "../dist/cva.js";
  * @property {Record<string, string>} [borderRadius] Radius values.
  * @property {Record<string, string>} [fontFamily] Font family stacks.
  * @property {Record<string, string>} [borderWidth] Border width values.
+ * @property {Record<string, string>} [controlHeight] Control height values.
  * @property {Record<string, Record<string, ThemeOverride>>} [themeAxes] Axis → variant → override.
  */
 /** @typedef {{ id: string, name: string, override: ThemeOverride }} Variant */

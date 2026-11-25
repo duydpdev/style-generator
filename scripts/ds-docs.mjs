@@ -104,7 +104,7 @@ function componentLines(namespace, firstType, intent) {
   /** @type {(name: string) => string} */
   const example = (name) => {
     if (name === "Button")
-      return `<Button color="${intent ?? ""}" variant="fill">Save</Button>`;
+      return `<Button color="${intent ?? ""}" variant="solid">Save</Button>`;
     if (name === "Text") return `<Text${typeProp}>Body copy</Text>`;
     return `<${name}>\n  <Text>One</Text>\n  <Text>Two</Text>\n</${name}>`;
   };
@@ -193,13 +193,15 @@ const coverColourKeys = (template) => [
 
 /**
  * The producer's input requirements, checked before the build: at least one typography key (the cover title and
- * the Text component read one) and every colour the cover reads. `borderRadius` is optional.
+ * the Text component read one), every colour the cover reads, and the keys the Button preset reads (one
+ * `controlHeight` key per size, `<intent>Subtle` and `<intent>SubtleForeground` per intent). `borderRadius` is optional.
  * @param {object} input - The inputs
  * @param {ThemeInput} input.theme - The theme, already accepted by `generate()`
  * @param {string} input.coverTemplate - `scripts/ds-cover.html.tmpl`
+ * @param {{ intents: string[], height?: Record<string, string> }} input.buttonPreset - The preset module's `buttonPreset`
  * @returns {string[]} One failure per missing input; empty when the theme can build a design system
  */
-export function dsInputFailures({ theme, coverTemplate }) {
+export function dsInputFailures({ theme, coverTemplate, buttonPreset }) {
   const keys = coverColourKeys(coverTemplate);
   const typography =
     Object.keys(theme.typography ?? {}).length === 0
@@ -213,7 +215,24 @@ export function dsInputFailures({ theme, coverTemplate }) {
       (key) =>
         `theme has no colour key "${key}": the cover reads ${keys.join(", ")}`,
     );
-  return [...typography, ...colours];
+  const heights = !buttonPreset.height
+    ? [
+        "button preset has no height map: it needs one controlHeight key per size (height: { sm, md, lg })",
+      ]
+    : Object.entries(buttonPreset.height)
+        .filter(([, key]) => !Object.hasOwn(theme.controlHeight ?? {}, key))
+        .map(
+          ([size, key]) =>
+            `theme has no controlHeight key "${key}": the Button preset's size ${size} reads it`,
+        );
+  const subtle = buttonPreset.intents
+    .flatMap((intent) => [`${intent}Subtle`, `${intent}SubtleForeground`])
+    .filter((key) => !Object.hasOwn(theme.colors, key))
+    .map(
+      (key) =>
+        `theme has no colour key "${key}": the Button's soft variant reads <intent>Subtle and <intent>SubtleForeground; outline and ghost hover on <intent>Subtle`,
+    );
+  return [...typography, ...colours, ...heights, ...subtle];
 }
 
 /**

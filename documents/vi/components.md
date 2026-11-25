@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: c998e88452b7 -->
+<!-- source: documents/components.md sha256: 7b5c8267d2a9 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -89,6 +89,7 @@ type ButtonTint = (typeof BUTTON_TINTS)[number];
 /**
  * The intents `color` offers. `satisfies` is the DX anchor: rename or
  * remove one of these colors in theme.json and the compiler fails here.
+ * Each needs `<intent>Subtle` and `<intent>SubtleForeground` for `soft`.
  */
 export const buttonIntents = [
   "primary",
@@ -97,52 +98,36 @@ export const buttonIntents = [
   "danger",
 ] as const satisfies readonly ColorVariant<typeof theme>[];
 
-/** Literal classes, so Tailwind's scanner sees them: the registry emits no `focus-visible:` variant, no `/15` step and no state × opacity (`hover:bg-<key>/10`). */
-const focusRing = {
-  primary: "focus-visible:outline-primary",
-  secondary: "focus-visible:outline-secondary",
-  success: "focus-visible:outline-success",
-  danger: "focus-visible:outline-danger",
+/** Literal classes, so Tailwind's scanner sees them: the registry emits no `hover:` variant of a `Subtle` key. */
+const hoverTint = {
+  primary: "hover:bg-primary-subtle",
+  secondary: "hover:bg-secondary-subtle",
+  success: "hover:bg-success-subtle",
+  danger: "hover:bg-danger-subtle",
 } as const satisfies Record<ButtonIntent, string>;
 
-const tint = {
-  primary: {
-    outline: "border-primary text-primary hover:bg-primary/10",
-    soft: "bg-primary/10 text-primary hover:bg-primary/15",
-    ghost: "text-primary hover:bg-primary/10",
-    link: "text-primary",
-  },
-  secondary: {
-    outline: "border-secondary text-secondary hover:bg-secondary/10",
-    soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
-    ghost: "text-secondary hover:bg-secondary/10",
-    link: "text-secondary",
-  },
-  success: {
-    outline: "border-success text-success hover:bg-success/10",
-    soft: "bg-success/10 text-success hover:bg-success/15",
-    ghost: "text-success hover:bg-success/10",
-    link: "text-success",
-  },
-  danger: {
-    outline: "border-danger text-danger hover:bg-danger/10",
-    soft: "bg-danger/10 text-danger hover:bg-danger/15",
-    ghost: "text-danger hover:bg-danger/10",
-    link: "text-danger",
-  },
-} as const satisfies Record<ButtonIntent, Record<ButtonTint, string>>;
+/** Literal classes keyed by the theme key they name: the generator emits no `focus-visible:`/`disabled:` variant of a theme key, so Tailwind finds these by scanning this file. `satisfies` fails when a key leaves the theme. */
+const stateClasses = {
+  focus: { focus: "focus-visible:outline-focus" },
+  disabled: { disabled: "disabled:opacity-disabled" },
+} as const satisfies {
+  focus: Partial<Record<ColorVariant<typeof theme>, string>>;
+  disabled: Partial<Record<keyof (typeof theme)["opacity"], string>>;
+};
 
-/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
+/** The other theme keys the recipe reads: outline fill and fallback text colour, radius, type styles, one `controlHeight` key per size. `pick` throws on a missing key when the module loads, so `satisfies` moves that failure to the compiler. */
 const themeKeys = {
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
+  height: { sm: "sm", md: "md", lg: "lg" },
 } as const satisfies {
   background: ColorVariant<typeof theme>;
   radius: RoundedVariant<typeof theme>;
   type: TextVariant<typeof theme>;
   typeLg: TextVariant<typeof theme>;
+  height: Record<"sm" | "md" | "lg", keyof (typeof theme)["controlHeight"]>;
 };
 
 export type ButtonIntent = (typeof buttonIntents)[number];
@@ -153,11 +138,14 @@ const bgStates = createVariantMapper("bg", tokens.colors, {
   states: COLOR_STATES,
 });
 const bg = createVariantMapper("bg", tokens.colors);
+const text = createVariantMapper("text", tokens.colors);
+const border = createVariantMapper("border", tokens.colors);
 const rounded = createVariantMapper("rounded", tokens.borderRadius);
+const height = createVariantMapper("h-control", tokens.controlHeight);
 const type = createVariantMapper("", tokens.typography);
 
-/** A filled intent: state backgrounds, `<intent>Foreground` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
-const fill = (intent: ButtonIntent): string[] => {
+/** A solid intent: state backgrounds, `<intent>Foreground` text (else `text-background`), `hover:opacity-90` without an `<intent>Hover` color. */
+const solid = (intent: ButtonIntent): string[] => {
   const classes = [
     pick(bgStates, intent),
     contrastText(colors, intent, themeKeys.background),
@@ -166,44 +154,60 @@ const fill = (intent: ButtonIntent): string[] => {
   return classes;
 };
 
+/** The other variants: `outline`/`ghost` hover on `<intent>Subtle`, `soft` is `<intent>Subtle` with `<intent>SubtleForeground` text. */
+const tint = (intent: ButtonIntent): Record<ButtonTint, string[]> => ({
+  outline: [pick(border, intent), pick(text, intent), hoverTint[intent]],
+  soft: [
+    pick(bg, `${intent}Subtle`),
+    pick(text, `${intent}SubtleForeground`),
+    "hover:opacity-90",
+  ],
+  ghost: [pick(text, intent), hoverTint[intent]],
+  link: [pick(text, intent)],
+});
+
 /** Button as data: variant × intent × size. */
 export const buttonTables = {
   base: [
     "inline-flex shrink-0 items-center justify-center gap-1.5",
     `${pick(rounded, themeKeys.radius)} border`,
     `cursor-pointer ${pick(type, themeKeys.type)} whitespace-nowrap outline-hidden select-none`,
-    "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2",
+    `focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 ${stateClasses.focus.focus}`,
     "transition-[background-color,color,opacity] duration-150",
-    "disabled:cursor-not-allowed disabled:opacity-50",
+    `disabled:cursor-not-allowed ${stateClasses.disabled.disabled}`,
   ],
   variants: {
     variant: {
-      fill: "border-transparent active:scale-[0.98]",
+      solid: "border-transparent active:scale-[0.98]",
       outline: `${pick(bg, themeKeys.background)} active:scale-[0.98]`,
       soft: "border-transparent active:scale-[0.98]",
       ghost: "border-transparent active:scale-[0.98]",
       link: "border-transparent underline-offset-4 hover:underline",
     },
-    color: focusRing,
+    color: Object.fromEntries(buttonIntents.map((intent) => [intent, ""])),
     size: {
-      sm: "h-7 px-2.5",
-      md: "h-9 px-3.5",
-      lg: `h-11 px-5 ${pick(type, themeKeys.typeLg)}`,
+      sm: `${pick(height, themeKeys.height.sm)} px-2.5`,
+      md: `${pick(height, themeKeys.height.md)} px-3.5`,
+      lg: `${pick(height, themeKeys.height.lg)} px-5 ${pick(type, themeKeys.typeLg)}`,
+      icon: `${pick(height, themeKeys.height.md)} aspect-square px-0`,
     },
     // Set by the components when there is no label and exactly one icon slot.
     // `px-0` must beat the size's `px-*`: the components pass the recipe through `cn` (tailwind-merge), which keeps the later class, so `iconOnly` stays after `size`.
     iconOnly: { true: "aspect-square px-0" },
   },
-  compoundVariants: buttonIntents.flatMap((intent) => [
-    { color: intent, variant: "fill", class: fill(intent) },
-    ...BUTTON_TINTS.map((variant) => ({
-      color: intent,
-      variant,
-      class: tint[intent][variant],
-    })),
-  ]),
+  compoundVariants: buttonIntents.flatMap((intent) => {
+    const tints = tint(intent);
+    return [
+      { color: intent, variant: "solid", class: solid(intent) },
+      ...BUTTON_TINTS.map((variant) => ({
+        color: intent,
+        variant,
+        class: tints[variant],
+      })),
+    ];
+  }),
   defaultVariants: {
-    variant: "fill",
+    variant: "solid",
     color: buttonIntents[0],
     size: "md",
   },
@@ -224,10 +228,16 @@ import type { tokens } from "../../theme";
 import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
-  readonly variant?: "fill" | "outline" | "soft" | "ghost" | "link" | undefined;
+  readonly variant?:
+    | "solid"
+    | "outline"
+    | "soft"
+    | "ghost"
+    | "link"
+    | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
-  readonly size?: "sm" | "md" | "lg" | undefined;
+  readonly size?: "sm" | "md" | "lg" | "icon" | undefined;
   readonly prefix?: ReactNode;
   readonly suffix?: ReactNode;
   readonly children?: ReactNode;
@@ -335,10 +345,10 @@ export interface ButtonProps extends /* @vue-ignore */ ThemeSpacingProps<
   typeof tokens
 > {
   as?: string;
-  variant?: "fill" | "outline" | "soft" | "ghost" | "link";
+  variant?: "solid" | "outline" | "soft" | "ghost" | "link";
   /** One of `buttonIntents`. */
   color?: ButtonIntent;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "icon";
 }
 ```
 
@@ -439,6 +449,25 @@ const root = () => {
 
 4. Chép thư mục component. Không cần làm gì thêm: một thư mục chỉ import các file của chính nó, `../../theme` và các package.
 
+### Chuẩn component
+
+Một component khai báo các trục áp dụng cho nó (checkbox có `color` và `size`, field không có trục nào) và chỉ dùng bộ từ vựng này:
+
+<!-- component-axes:start -->
+
+| Trục      | Giá trị                                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `color`   | một key vai trò: `primary`, `secondary`, `accent`, `danger`, `success`, `warning`, `info` hoặc một vai trò của sản phẩm |
+| `variant` | `solid`, `soft`, `outline`, `ghost`, `link`                                                                             |
+| `size`    | `sm`, `md`, `lg`, `icon`                                                                                                |
+
+<!-- component-axes:end -->
+
+- `solid` tô nền `<role>` với chữ `<role>Foreground` (chữ `background` khi theme không có `<role>Foreground`); `soft` tô nền `<role>Subtle` với chữ `<role>SubtleForeground` và mờ đi khi hover (`hover:opacity-90`); `outline` là viền và chữ `<role>` trên nền `background`, với nền hover `<role>Subtle`; `ghost` là chữ `<role>` với nền hover `<role>Subtle`; `link` là chữ `<role>`, gạch chân khi hover.
+- `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`). `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
+- Trạng thái: hover và active lấy từ các key `<role>Hover`/`<role>Active` qua `COLOR_STATES` (thiếu chúng thì dùng `hover:opacity-90`); focus là outline `focus-visible:` (viền với field) theo key `focus`; disabled là `disabled:opacity-disabled` (token `opacity.disabled`) cùng `cursor-not-allowed`; selected là `<role>Selected` qua `COLOR_STATES` (`aria-selected:`) ở component có trạng thái chọn; invalid là `aria-invalid:` với vai trò `danger` trên field của form.
+- Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`).
+
 ### Mười component
 
 | Thư mục  | Component | Gate đối sánh |
@@ -522,7 +551,7 @@ Mọi component đều chấp nhận các prop spacing của theme (`p`, `px`, `
 | `Stack`   | không có                                                                | `align`, `justify`, `wrap`, `divideColor`, cùng các prop bố cục của `Box`; mặc định theo chiều dọc                                                                                                                                                                                                                                         |
 | `Flex`    | không có                                                                | `direction`, `align`, `justify`, `wrap`, `divideColor`, `grow`, `shrink`, `basis`, cùng các prop bố cục của `Box`                                                                                                                                                                                                                          |
 | `Grid`    | không có                                                                | `columns` (số lượng, một track list CSS như `"80px 1fr 80px"`, hoặc record `{ base, md, lg }` cho một trong hai kiểu), `align`, `justify`, `flow`, `rows` (`1`-`6` hoặc `"none"`; với `as="textarea"` đây là prop của grid, không phải thuộc tính HTML), cùng các prop bố cục của `Box`                                                    |
-| `Button`  | `button`                                                                | `variant` (`fill`, `outline`, `soft`, `ghost`, `link`), `color`, `size`, `prefix`, `suffix`                                                                                                                                                                                                                                                |
+| `Button`  | `button`                                                                | `variant` (`solid`, `outline`, `soft`, `ghost`, `link`), `color`, `size`, `prefix`, `suffix`                                                                                                                                                                                                                                               |
 
 Mỗi prop bố cục tĩnh nhận hậu tố class của Tailwind viết theo camelCase (`display="inlineFlex"` → `inline-flex`, `cursor="notAllowed"` → `cursor-not-allowed`); `zIndex` (`0`-`50` theo bước 10, `"auto"`) và `opacity` (`0`-`100` theo bước 10) nhận số; các bước màu là `coverage.colors.opacities`; `Input` thuần cũng nhận `placeholderColor` (mặc định `muted`).
 

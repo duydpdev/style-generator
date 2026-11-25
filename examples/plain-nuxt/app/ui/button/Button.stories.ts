@@ -12,7 +12,10 @@ type ButtonVariant = keyof typeof buttonTables.variants.variant;
 type ButtonSize = keyof typeof buttonTables.variants.size;
 
 const variants = Object.keys(buttonTables.variants.variant) as ButtonVariant[];
-const sizes = Object.keys(buttonTables.variants.size) as ButtonSize[];
+// `icon` is square: it has its own story.
+const sizes = (Object.keys(buttonTables.variants.size) as ButtonSize[]).filter(
+  (size) => size !== "icon",
+);
 
 interface ButtonArgs extends ButtonProps {
   default?: string;
@@ -48,7 +51,7 @@ type Story = StoryObj<ButtonArgs>;
 
 /** Default variant, intent and size; the play check proves the fill is the theme's `primary` colour, read from a probe that uses the CSS variable directly. */
 export const Default: Story = {
-  args: { variant: "fill", color: "primary", size: "md" },
+  args: { variant: "solid", color: "primary", size: "md" },
   play: async ({ canvas, canvasElement }) => {
     const button = canvas.getByRole("button", { name: "Button" });
     const probe = canvasElement.ownerDocument.createElement("span");
@@ -70,18 +73,19 @@ export const Clickable: Story = {
   },
 };
 
-/** `disabled` blocks the click: the handler is never called. */
+/** `disabled` blocks the click (the handler is never called) and dims the button through the theme's `opacity.disabled`. */
 export const Disabled: Story = {
   args: { disabled: true, onClick: fn() },
   play: async ({ args, canvas }) => {
     const button = canvas.getByRole("button", { name: "Button" });
     await expect(button).toBeDisabled();
+    await expect(getComputedStyle(button).opacity).toBe("0.5");
     await userEvent.click(button);
     await expect(args.onClick).not.toHaveBeenCalled();
   },
 };
 
-export const Fill: Story = { args: { variant: "fill" } };
+export const Solid: Story = { args: { variant: "solid" } };
 export const Outline: Story = { args: { variant: "outline" } };
 export const Soft: Story = { args: { variant: "soft" } };
 export const Ghost: Story = { args: { variant: "ghost" } };
@@ -95,6 +99,32 @@ export const Danger: Story = { args: { color: "danger" } };
 export const Small: Story = { args: { size: "sm" } };
 export const Medium: Story = { args: { size: "md" } };
 export const Large: Story = { args: { size: "lg" } };
+
+/** `size="icon"`: a square at the `md` control height. The glyph is the label (no `prefix`), so `iconOnly` stays off and only the `icon` size makes it square; the `md` button beside it is the height reference. */
+export const IconSize: Story = {
+  render: (args) => ({
+    components: { Button, Flex },
+    setup() {
+      return { args };
+    },
+    template: `
+      <Flex align="center" :gap="2">
+        <Button v-bind="args" size="icon" aria-label="Close">×</Button>
+        <Button v-bind="args" size="md">md</Button>
+      </Flex>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const icon = canvas
+      .getByRole("button", { name: "Close" })
+      .getBoundingClientRect();
+    const md = canvas
+      .getByRole("button", { name: "md" })
+      .getBoundingClientRect();
+    await expect(icon.width).toBe(icon.height);
+    await expect(icon.height).toBe(md.height);
+  },
+};
 
 /** Every variant × every intent (the compound classes). */
 export const VariantsByIntent: Story = {

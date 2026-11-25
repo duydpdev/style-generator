@@ -18,11 +18,20 @@ export const tokens = {
     "accent",
     "success",
     "danger",
+    "primarySubtle",
+    "primarySubtleForeground",
+    "secondarySubtle",
+    "secondarySubtleForeground",
+    "successSubtle",
+    "successSubtleForeground",
+    "dangerSubtle",
+    "dangerSubtleForeground",
     "background",
     "surface",
     "foreground",
     "muted",
-    "line"
+    "border",
+    "focus"
   ],
   "shadows": [
     "sm",
@@ -51,9 +60,19 @@ export const tokens = {
   ],
   "motionDuration": [],
   "motionEasing": [],
-  "controlHeight": [],
-  "iconSize": [],
-  "opacity": [],
+  "controlHeight": [
+    "sm",
+    "md",
+    "lg"
+  ],
+  "iconSize": [
+    "sm",
+    "md",
+    "lg"
+  ],
+  "opacity": [
+    "disabled"
+  ],
   "zIndex": [],
   "spacingProperties": [
     "p",
@@ -91,7 +110,12 @@ export const tokens = {
   },
   "aliasedColors": [
     "primaryForeground",
-    "accent"
+    "accent",
+    "primarySubtleForeground",
+    "secondarySubtleForeground",
+    "successSubtleForeground",
+    "dangerSubtleForeground",
+    "focus"
   ],
   "opacities": [
     10,

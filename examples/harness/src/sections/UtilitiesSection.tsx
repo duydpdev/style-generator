@@ -31,7 +31,7 @@ const UtilTitle = ({ children }: { children: string }) => (
 
 export const UtilitiesSection = () => {
   return (
-    <Box as="section" borderT="thin" py={14} borderColor="line">
+    <Box as="section" borderT="thin" py={14} borderColor="border">
       <SectionHead
         num="03 — Spacing, radius & shadow"
         title="A measured cadence."
@@ -55,7 +55,7 @@ export const UtilitiesSection = () => {
             borderT="thin"
             py={3}
             className="x-dashed"
-            borderColor="line"
+            borderColor="border"
           >
             <Text type="text12Mono" color="muted">
               {name}
@@ -111,7 +111,7 @@ export const UtilitiesSection = () => {
                 justify="center"
                 pb={3}
                 className="x-sg-glass-target x-grow-1"
-                borderColor="line"
+                borderColor="border"
               >
                 <Text type="text12Mono" color="muted">
                   {key}

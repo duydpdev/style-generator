@@ -26,52 +26,29 @@ export const intents = [
 export type Intent = (typeof intents)[number];
 // #endregion docs:intents
 
-/** Design-system button roles. */
+/** Design-system button roles. `focusRing`, `disabled` and `hoverTint` are literal classes, so Tailwind's scanner sees them. */
 export const buttonPreset = {
   intents,
   background: "background",
   radius: "md",
   type: "text16Medium",
   typeLg: "text20Semibold",
-  focusRing: {
-    primary: "focus-visible:outline-primary",
-    secondary: "focus-visible:outline-secondary",
-    success: "focus-visible:outline-success",
-    danger: "focus-visible:outline-danger",
-  },
-  tint: {
-    primary: {
-      outline: "border-primary text-primary hover:bg-primary/10",
-      soft: "bg-primary/10 text-primary hover:bg-primary/15",
-      ghost: "text-primary hover:bg-primary/10",
-      link: "text-primary",
-    },
-    secondary: {
-      outline: "border-secondary text-secondary hover:bg-secondary/10",
-      soft: "bg-secondary/10 text-secondary hover:bg-secondary/15",
-      ghost: "text-secondary hover:bg-secondary/10",
-      link: "text-secondary",
-    },
-    success: {
-      outline: "border-success text-success hover:bg-success/10",
-      soft: "bg-success/10 text-success hover:bg-success/15",
-      ghost: "text-success hover:bg-success/10",
-      link: "text-success",
-    },
-    danger: {
-      outline: "border-danger text-danger hover:bg-danger/10",
-      soft: "bg-danger/10 text-danger hover:bg-danger/15",
-      ghost: "text-danger hover:bg-danger/10",
-      link: "text-danger",
-    },
+  height: { sm: "sm", md: "md", lg: "lg" },
+  focusRing: "focus-visible:outline-focus",
+  disabled: "disabled:opacity-disabled",
+  hoverTint: {
+    primary: "hover:bg-primary-subtle",
+    secondary: "hover:bg-secondary-subtle",
+    success: "hover:bg-success-subtle",
+    danger: "hover:bg-danger-subtle",
   },
 } as const satisfies ButtonPreset;
 
 /** Props of the bound button recipe. */
 export type ButtonRecipeProps = Readonly<{
-  variant?: "fill" | ButtonTint | null | undefined;
+  variant?: "solid" | ButtonTint | null | undefined;
   color?: Intent | null | undefined;
-  size?: "sm" | "md" | "lg" | null | undefined;
+  size?: "sm" | "md" | "lg" | "icon" | null | undefined;
   iconOnly?: boolean | null | undefined;
 }>;
 

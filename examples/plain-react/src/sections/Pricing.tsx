@@ -55,7 +55,7 @@ export function Pricing(): JSX.Element {
             <Button
               as="a"
               href={plan.href}
-              variant={plan.featured ? "fill" : "outline"}
+              variant={plan.featured ? "solid" : "outline"}
               className="mt-auto"
             >
               {plan.action}

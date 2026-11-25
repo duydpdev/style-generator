@@ -49,7 +49,7 @@ export const BorderColors: Story = {
 };
 
 export const Bordered: Story = {
-  args: { border: "thin", borderColor: "line" },
+  args: { border: "thin", borderColor: "border" },
 };
 export const BorderX: Story = {
   args: { borderX: "thick", borderColor: "primary" },
@@ -113,7 +113,7 @@ export const Positioned: Story = {
       height={128}
       rounded="md"
       border="thin"
-      borderColor="line"
+      borderColor="border"
     >
       <Box {...args} />
     </Box>

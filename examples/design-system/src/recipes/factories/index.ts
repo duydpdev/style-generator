@@ -22,3 +22,8 @@ export * from "./separator";
 export * from "./accordion";
 export * from "./table";
 export * from "./avatar";
+export * from "./dialog";
+export * from "./drawer";
+export * from "./popover";
+export * from "./tooltip";
+export * from "./menu";

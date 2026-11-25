@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 4f4fedb0d9ad -->
+<!-- source: documents/components.md sha256: 57f144d6b66c -->
 
 # Component: các ví dụ, không phải một API
 
@@ -8,7 +8,7 @@ Có hai bộ component. Các ví dụ plain là phần bạn chép dùng: mỗi 
 
 ### Nơi chứa các ví dụ
 
-`examples/plain-react` (Vite + React, Storybook, gate đối sánh) và `examples/plain-nuxt` (Nuxt 4, Storybook). Cả hai đều render cùng một landing page từ mười component giống nhau; `plain-react` còn có thêm bảy component form (`field`, `textarea`, `select`, `checkbox`, `radio`, `switch`, `slider`), năm component phản hồi (`alert`, `toast`, `progress`, `spinner`, `skeleton`) và bảy component cấu trúc và điều hướng (`tabs`, `breadcrumb`, `pagination`, `separator`, `accordion`, `table`, `avatar`). Mỗi thư mục component có một story (hãy thêm một story với mỗi component mới, trong mọi ứng dụng plain có thư mục đó).
+`examples/plain-react` (Vite + React, Storybook, gate đối sánh) và `examples/plain-nuxt` (Nuxt 4, Storybook). Cả hai đều render cùng một landing page từ mười component giống nhau; `plain-react` còn có thêm bảy component form (`field`, `textarea`, `select`, `checkbox`, `radio`, `switch`, `slider`), năm component phản hồi (`alert`, `toast`, `progress`, `spinner`, `skeleton`) và bảy component cấu trúc và điều hướng (`tabs`, `breadcrumb`, `pagination`, `separator`, `accordion`, `table`, `avatar`) cùng năm component lớp phủ (`dialog`, `drawer`, `popover`, `tooltip`, `menu`). Mỗi thư mục component có một story (hãy thêm một story với mỗi component mới, trong mọi ứng dụng plain có thư mục đó).
 
 ### Mỗi component một thư mục
 
@@ -467,6 +467,7 @@ Một component khai báo các trục áp dụng cho nó (checkbox có `color` v
 - `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`) ở control một dòng (button, input, select, slider, nút của pagination), còn avatar là hình vuông cao đúng chiều cao đó; checkbox, radio và switch lấy kích thước ô từ `iconSize` (`size-icon-<key>`), còn field nhiều dòng (textarea) chỉ đổi padding và kiểu chữ. Component chỉ báo cũng chia như vậy: spinner lấy kích thước ô từ `iconSize`, còn track của progress chỉ đặt độ dày của chính nó (`h-1`/`h-2`/`h-3`). `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
 - Trạng thái: hover và active lấy từ các key `<role>Hover`/`<role>Active` qua `COLOR_STATES` (thiếu chúng thì dùng `hover:opacity-90`); focus là outline `focus-visible:` (viền với field) theo key `focus`; disabled là `disabled:opacity-disabled` (token `opacity.disabled`) cùng `cursor-not-allowed`; selected là `<role>Selected` qua `COLOR_STATES` (`aria-selected:`) ở component có trạng thái chọn (một tab), và mọi component khác map vai trò đó qua `COLOR_STATES` (button solid, link) cũng mang class `aria-selected:`, class này không khớp gì cho đến khi một phần tử đặt `aria-selected="true"`; invalid là `aria-invalid:` với vai trò `danger` trên field của form.
 - Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`). Component tự style nhiều phần tử thì đặt tên slot thêm theo phần tử đó: `root` cho phần bọc của field, `track` và `thumb` cho switch.
+- Lớp phủ dùng hai key `zIndex`: `z-overlay` cho lớp nền mờ (scrim), `z-modal` cho mọi panel (dialog, drawer, popover, tooltip, menu). Các panel chung một lớp nên panel render sau nằm trên: menu mà ứng dụng render sau panel của dialog (một portal ở cuối `body`) sẽ mở phía trên nó. Panel xuất hiện bằng một transition `starting:` có thời lượng và easing từ các key `motionDuration`/`motionEasing`, và dừng dưới `motion-reduce:`; scrim là màu `background` ở một bậc opacity cùng một key `backdropBlurs`. Các phần mang role và class, riêng menu còn chuyển focus giữa các item đang bật (ArrowUp, ArrowDown, Home, End); mở và đóng, giữ và trả focus, `Escape`, định vị và portal thuộc về ứng dụng.
 
 ### Các component
 
@@ -501,8 +502,13 @@ Một component khai báo các trục áp dụng cho nó (checkbox có `color` v
 | `accordion`  | Accordion  | bảng          |
 | `table`      | Table      | bảng          |
 | `avatar`     | Avatar     | bảng          |
+| `dialog`     | Dialog     | bảng          |
+| `drawer`     | Drawer     | bảng          |
+| `popover`    | Popover    | bảng          |
+| `tooltip`    | Tooltip    | bảng          |
+| `menu`       | Menu       | bảng          |
 
-"có" nghĩa là `yarn workspace plain-react-example test` sẽ thất bại khi các class của React plain khác với component tương ứng của harness. "bảng" nghĩa là lệnh đó thất bại khi `<name>Tables` của bản plain khác với các bảng do factory của design-system tạo ra cho cùng theme và preset (`tests/parity/<name>.tables.parity.test.ts`); harness không có component tương ứng để render đối sánh. Các component nhóm form, nhóm phản hồi (feedback) và nhóm cấu trúc và điều hướng chỉ có trong `plain-react`. `tests/parity/axes.parity.test.ts` thất bại khi một giá trị `variant` hoặc `size` của component plain nào đó không có trong bảng chuẩn component.
+"có" nghĩa là `yarn workspace plain-react-example test` sẽ thất bại khi các class của React plain khác với component tương ứng của harness. "bảng" nghĩa là lệnh đó thất bại khi `<name>Tables` của bản plain khác với các bảng do factory của design-system tạo ra cho cùng theme và preset (`tests/parity/<name>.tables.parity.test.ts`); harness không có component tương ứng để render đối sánh. Các component nhóm form, nhóm phản hồi (feedback), nhóm cấu trúc và điều hướng, và nhóm lớp phủ (overlay) chỉ có trong `plain-react`. `tests/parity/axes.parity.test.ts` thất bại khi một giá trị `variant` hoặc `size` của component plain nào đó không có trong bảng chuẩn component.
 
 ### Các quy tắc
 

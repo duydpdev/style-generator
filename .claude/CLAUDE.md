@@ -138,7 +138,7 @@ pin it or restructure the import instead of raising their budgets (`scripts/chec
 Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/check-sizes.mjs`.
 
 Source layout: `documents/architecture.md`; public exports per subpath and CLI: `documents/reference/`.
-Internal helpers (`toCamelCase`, `toPascalCase`) are not exported from any barrel; `toKebabCase` is public (from `./cva`) because it is the function the registry and
+The internal helper `toCamelCase` is not exported from any barrel; `toKebabCase` is public (from `./cva`) because it is the function the registry and
 `createVariantMapper` share. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`; from 4.x: `documents/migration/4.x-to-5.0.md`; from 5.x:
 `documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`; from 7.x: `documents/migration/7.x-to-8.0.md`; from 8.x: `documents/migration/8.x-to-9.0.md`.
 

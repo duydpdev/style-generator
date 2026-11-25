@@ -375,7 +375,7 @@ function rootPaddingViolation(
 }
 
 /**
- * The sources a component board imports.
+ * The sources a component board imports: only its own, as often as it needs.
  * @param {string} file - `c-<stem>.dc.html`
  * @param {string} text - Its contents
  * @param {Set<string>} dsNames - Kebab-cased design-system component names
@@ -392,7 +392,9 @@ function componentImportViolation(
   const imports = dcImports(text, lineIndex(text)).filter(
     (i) => i.name !== "Icon",
   );
-  const names = imports.map((i) => token(i.name));
+  // A board shows one instance per state, so the same source may repeat:
+  // the rule pins which source it renders, not how often.
+  const names = [...new Set(imports.map((i) => token(i.name)))];
   if (dsNames.has(stem))
     return imports.length === 0
       ? null

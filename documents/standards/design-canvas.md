@@ -80,7 +80,7 @@ A literal is a `<script type="application/json" data-sg-literal="colors">` block
 ## Component pages
 
 - Page `cl` ("02 · Component") holds only showcase boards `c-<name>.dc.html`. Page `src` ("03 · Nguồn component") holds the source boards `s-<name>.dc.html`.
-- A `c-<name>` board imports exactly one source, `<dc-import name="s-<name>">` (an `Icon` import does not count). A design-system component's board (`c-box`, `c-button`, …) renders from the bundle and imports nothing.
+- A `c-<name>` board imports only its own source, `<dc-import name="s-<name>">`, once per state it shows (an `Icon` import does not count). A design-system component's board (`c-box`, `c-button`, …) renders from the bundle and imports nothing.
 - No board imports a `c-*` board: a screen imports the `s-*` source.
 - A `c-*` frame is at most 1440×1600, and its root element has `padding: calc(var(--spacing) * n)` with n ≥ 8, written as one value (a two- to four-value shorthand is reported).
 - `cl-*` group boards are retired: split each into one `c-*` board per component.
@@ -162,7 +162,7 @@ It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` a
 | `cl-* boards are retired (split into one c-* board per component)`                                   | With `--boards`: a `cl-*.dc.html` file is in the canvas.                                                                                     |
 | `board … on page cl is not a c-* board`                                                              | With `--boards`: a board on the component page is not a `c-*` board.                                                                         |
 | `board … is on page …, expected src`                                                                 | With `--boards`: an `s-*` source board sits on another page.                                                                                 |
-| `board must import exactly s-…, found …`                                                             | With `--boards`: a `c-*` board imports no source, several, or another one.                                                                   |
+| `board must import exactly s-…, found …`                                                             | With `--boards`: a `c-*` board imports no source, or a source other than its own.                                                            |
 | `design-system component boards render from the bundle; remove dc-import …`                          | With `--boards`: a design-system component board imports a source.                                                                           |
 | `imports showcase board c-… (import s-…)`                                                            | With `--boards`: a board imports a `c-*` board.                                                                                              |
 | `root has no padding (…)` / `root padding "…" (…)`                                                   | With `--boards`: a `c-*` root's padding is missing, below `calc(var(--spacing) * 8)`, or not a single value.                                 |

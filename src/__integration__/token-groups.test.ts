@@ -54,8 +54,8 @@ const EXPECTED: readonly [string, string, string][] = [
   ["h-control-md", "height", "var(--sg-control-md)"],
   ["size-icon-sm", "width", "var(--sg-icon-sm)"],
   ["size-icon-md", "height", "var(--sg-icon-md)"],
-  ["opacity-disabled", "opacity", "var(--sg-opacity-disabled)"],
-  ["opacity-muted", "opacity", "var(--sg-opacity-muted)"],
+  ["opacity-disabled", "opacity", "calc(var(--sg-opacity-disabled) * 100%)"],
+  ["opacity-muted", "opacity", "calc(var(--sg-opacity-muted) * 100%)"],
   ["z-overlay", "z-index", "var(--sg-z-overlay)"],
   ["z-modal", "z-index", "var(--sg-z-modal)"],
 ];
@@ -93,6 +93,15 @@ describe("integration: scale token groups through Tailwind v4", () => {
     }
   });
 
+  it("feeds backdrop-opacity-* from the opacity namespace too", async () => {
+    const compiled = await compileFixtureCss(themeCss, [
+      "backdrop-opacity-muted",
+    ]);
+    expect(
+      declsOf(compiled, ".backdrop-opacity-muted").get("--tw-backdrop-opacity"),
+    ).toBe("opacity(calc(var(--sg-opacity-muted) * 100%))");
+  });
+
   it("feeds min-h-* and max-h-* from the controlHeight namespace too", async () => {
     const compiled = await compileFixtureCss(themeCss, [
       "min-h-control-md",
@@ -112,6 +121,45 @@ describe("integration: scale token groups through Tailwind v4", () => {
       "color-mix(in oklab, var(--sg-color-primary) 40%, transparent)",
     );
   });
+
+  it("turns a named opacity into a percentage for a colour modifier", async () => {
+    const compiled = await compileFixtureCss(themeCss, ["bg-primary/muted"]);
+    expect(
+      declsOf(compiled, ".bg-primary\\/muted").get("background-color"),
+    ).toBe(
+      "color-mix(in oklab, var(--sg-color-primary) calc(var(--sg-opacity-muted) * 100%), transparent)",
+    );
+  });
+
+  it.each([
+    ["z-10", { zIndex: { "10": 5 } }, "z-index", "var(--sg-z-10)"],
+    ["z-auto", { zIndex: { auto: 5 } }, "z-index", "var(--sg-z-auto)"],
+    [
+      "duration-150",
+      { motionDuration: { "150": "1s" } },
+      "transition-duration",
+      "var(--sg-duration-150)",
+    ],
+  ] as const)(
+    "lets the theme value of %s override Tailwind's built-in rule",
+    async (cls, group, prop, value) => {
+      const { css } = generate(
+        { colors: {}, ...group },
+        { spacing: { enabled: false } },
+      );
+      const compiled = await compileFixtureCss(css, [cls]);
+      const rules: string[] = [];
+      postcss.parse(compiled).walkRules((rule) => {
+        if (
+          rule.selectors.some((x) => selectorTargetsClass(x.trim(), `.${cls}`))
+        )
+          rule.walkDecls(prop, (decl) => {
+            rules.push(decl.value);
+          });
+      });
+      expect(rules).toEqual([value]);
+    },
+  );
 
   it("yields no class from the --duration-* and --z-* namespaces", async () => {
     const compiled = await compileFixtureCss(

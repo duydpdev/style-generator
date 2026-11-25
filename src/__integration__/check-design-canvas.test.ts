@@ -1047,6 +1047,20 @@ describe("integration: style-gen canvas check", () => {
         "canvas.json:1 board c-box.dc.html frame 1441×300 exceeds 1440×1600",
       ]);
     });
+
+    it("component pages check a manifest that sets only maxWidth", () => {
+      const manifest = JSON.parse(readFileSync(standardFile, "utf8")) as {
+        componentBoards: Record<string, unknown>;
+      };
+      delete manifest.componentBoards.maxHeight;
+      const standard = writeTmpFile(dir, "width-only.json", manifest);
+      writeBoards((c) => {
+        entry(c.boards, "c-box.dc.html").w = 1441;
+      });
+      expect(check({ boards: true, standard })).toEqual([
+        "canvas.json:1 board c-box.dc.html frame 1441×300 exceeds 1440×any",
+      ]);
+    });
   });
 
   describe("hand-written values", () => {
@@ -1090,6 +1104,18 @@ describe("integration: style-gen canvas check", () => {
       expect(
         check({ naming: true }).filter((l) => !l.includes("unknown token")),
       ).toEqual([]);
+    });
+
+    it("hand-written values read a single-quoted style attribute", () => {
+      board(
+        [
+          "<div style='line-height: inherit; font-family: inherit'>a</div>",
+          "<div style='border-radius: 4px'>b</div>",
+        ].join("\n"),
+      );
+      expect(check({ naming: true })).toEqual([
+        "a.dc.html:2 border-radius 4px (use var(--sg-radius-*) or a rounded-* class)",
+      ]);
     });
 
     it("hand-written values are ignored without naming", () => {

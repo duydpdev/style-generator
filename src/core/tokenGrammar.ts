@@ -188,7 +188,8 @@ const STEP_POSITIONS = new Set([
 /**
  * Whether `value` is one CSS easing function: a keyword,
  * `cubic-bezier(x1, y1, x2, y2)` (x1 and x2 in 0–1) or
- * `steps(n[, position])` (n a positive integer).
+ * `steps(n[, position])` (n a positive integer, at least 2 with `jump-none`,
+ * which the CSS Easing spec requires).
  * @param {string} value - Candidate easing
  * @returns {boolean} `true` for a valid easing function
  */
@@ -202,7 +203,8 @@ const isEasing = (value: string): boolean => {
     return (
       rest.length === 0 &&
       /^[1-9]\d*$/.test(count ?? "") &&
-      (position === undefined || STEP_POSITIONS.has(position))
+      (position === undefined || STEP_POSITIONS.has(position)) &&
+      !(position === "jump-none" && count === "1")
     );
   }
   if (args.length !== 4 || !args.every((arg) => SIGNED_NUMBER_RE.test(arg))) {

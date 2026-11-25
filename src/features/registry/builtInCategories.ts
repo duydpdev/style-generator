@@ -192,6 +192,7 @@ export const opacityCategory = {
   themeNamespace: "--opacity-",
   classPrefixes: ["opacity"],
   literalScale: true,
+  themeValue: "percent",
 } as const satisfies TokenCategoryDescriptor;
 
 /**

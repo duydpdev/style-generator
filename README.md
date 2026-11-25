@@ -93,12 +93,14 @@ Colors are a **flat object**; only `colors` is required. Primitives named after 
   "$schema": "./theme.schema.json",
   "colors": {
     "white": "#FFFFFF",
-    "gray500": "#6B7280",
+    "gray100": "#F3F4F6",
+    "gray600": "#4B5563",
     "gray900": "#111827",
     "blue600": "#2563EB",
     "background": "$white",
     "foreground": "$gray900",
-    "muted": "$gray500",
+    "muted": "$gray100",
+    "mutedForeground": "$gray600",
     "primary": "$blue600",
     "primaryForeground": "$white"
   }

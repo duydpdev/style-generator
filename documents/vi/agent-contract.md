@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: def0f3e297d8 -->
+<!-- source: documents/agent-contract.md sha256: 53830694cf9c -->
 
 # Hợp đồng cho agent
 
@@ -33,6 +33,7 @@ Quy ước này áp dụng cho theme mới và design canvas mới. Đừng bao 
 - Mọi key màu khác là key ngữ nghĩa. Giá trị của nó là `"$<primitive>"` trong `colors` gốc và trong mọi override `themeAxes` định nghĩa lại nó; key ngữ nghĩa không bao giờ là alias của key ngữ nghĩa khác, và override không bao giờ định nghĩa lại primitive.
 
 Lõi ngữ nghĩa: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.
+`muted` là một màu nền nhẹ và `mutedForeground` là màu chữ phụ trên nó (và trên `background`), giống mọi cặp `<intent>`/`<intent>Foreground`.
 Key riêng của sản phẩm (`domainNutrition`) đứng cạnh chúng.
 
 - Một key ngữ nghĩa là key trung tính (`background`, `foreground`, `surface`, `surfaceRaised`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`) hoặc `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: một role lõi hoặc role sản phẩm, rồi các hậu tố theo đúng thứ tự đó, rồi tối đa một trạng thái, luôn đứng cuối. `primaryForegroundHover` là sibling hover của `primaryForeground`; `successSubtleForeground` là màu chữ trên nền `successSubtle`. Role sản phẩm là camelCase, mỗi segment một chữ hoa (`domainNutrition`, không phải `primaryCTA`). Segment đầu không phải `on`, `ok`, `bad`, `warn` hay `line`, và role nhiều segment không kết thúc bằng một hậu tố, một trạng thái, `Ink`, `Soft`, `Line`, `Ok`, `Bad` hay `Warn` (`chartLine` bị đọc là tên v1).

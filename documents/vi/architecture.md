@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: a3dc893e65a3 -->
+<!-- source: documents/architecture.md sha256: 484f89807f61 -->
 
 # Kiến trúc
 
@@ -28,14 +28,14 @@ Mã nguồn là nguồn chân lý cho việc _hoạt động như thế nào_; t
 
 ## Khái niệm cốt lõi
 
-| Khái niệm         | Mô tả                                                                                                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Theme Config**  | Đầu vào duy nhất: một JSON/object khai báo `colors` (bắt buộc), `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`.       |
-| **ThemeSchema**   | Một `strictObject` của Zod, là nguồn chân lý cho cả JSON lẫn TypeScript: key lạ, giá trị không an toàn và alias bị hỏng đều bị từ chối trước khi sinh bất kỳ CSS nào.     |
-| **Registry**      | Mỗi nhóm token (colors, typography, …) là một descriptor trong `builtInCategories`; mọi bước sinh CSS/`@source inline` đều đi qua registry thay vì lặp lại danh sách key. |
-| **`generate()`**  | Hàm duy nhất sinh ra các artifact: `{ css, tokens, schema }`. CLI, `styleGenVite` và `styleGenNext` đều gọi nó.                                                           |
-| **Design Tokens** | Một object chứa các mảng key của token (`DesignTokens.Web.*`), dùng trong các UI component (CVA, kiểu của prop).                                                          |
-| **Consumer**      | Một dự án dùng thư viện: nó `@import` file CSS được sinh ra cạnh `@import "tailwindcss"`. Không có `@plugin`, không có safelist.                                          |
+| Khái niệm         | Mô tả                                                                                                                                                                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Theme Config**  | Đầu vào duy nhất: một JSON/object khai báo `colors` (bắt buộc), `typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, các nhóm thang đo `motionDuration`, `motionEasing`, `controlHeight`, `iconSize`, `opacity`, `zIndex`, và `themeAxes`. |
+| **ThemeSchema**   | Một `strictObject` của Zod, là nguồn chân lý cho cả JSON lẫn TypeScript: key lạ, giá trị không an toàn và alias bị hỏng đều bị từ chối trước khi sinh bất kỳ CSS nào.                                                                                                        |
+| **Registry**      | Mỗi nhóm token (colors, typography, …) là một descriptor trong `builtInCategories`; mọi bước sinh CSS/`@source inline` đều đi qua registry thay vì lặp lại danh sách key.                                                                                                    |
+| **`generate()`**  | Hàm duy nhất sinh ra các artifact: `{ css, tokens, schema }`. CLI, `styleGenVite` và `styleGenNext` đều gọi nó.                                                                                                                                                              |
+| **Design Tokens** | Một object chứa các mảng key của token (`DesignTokens.Web.*`), dùng trong các UI component (CVA, kiểu của prop).                                                                                                                                                             |
+| **Consumer**      | Một dự án dùng thư viện: nó `@import` file CSS được sinh ra cạnh `@import "tailwindcss"`. Không có `@plugin`, không có safelist.                                                                                                                                             |
 
 ---
 

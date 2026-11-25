@@ -68,6 +68,8 @@ const BORDER_WIDTH_PREFIXES = [
  * `--height-control-*` also feeds Tailwind's `min-h-*`/`max-h-*`, so
  * `controlHeight` has two extra rows the registry does not cover (an app
  * that writes `min-h-control-md` gets it from its own source scan).
+ * `--opacity-*` also feeds `backdrop-opacity-*`, an extra `opacity` row
+ * for the same reason.
  */
 const SCALE_GROUPS = [
   ["motionDuration", "duration", "duration"],
@@ -77,6 +79,7 @@ const SCALE_GROUPS = [
   ["controlHeight", "max-h", "max-h-control"],
   ["iconSize", "size", "size-icon"],
   ["opacity", "opacity", "opacity"],
+  ["opacity", "backdrop-opacity", "backdrop-opacity"],
   ["zIndex", "z", "z"],
 ] as const;
 

@@ -129,7 +129,9 @@ export function checkCanvas(options: CheckOptions): string[] {
     ),
     primitiveBoards: naming ? standard.primitiveBoards : [],
   };
-  const out = scanCanvas(canvasDir).flatMap((s) => fileViolations(s, rules));
+  const out = scanCanvas(canvasDir, options.canvasDir).flatMap((s) =>
+    fileViolations(s, rules),
+  );
   if (naming)
     for (const message of namingViolations(parsed, standard))
       out.push(`${theme}:1 ${message}`);
@@ -137,6 +139,8 @@ export function checkCanvas(options: CheckOptions): string[] {
     boards,
     stamp: stampFile,
     dsVersion: options.dsVersion,
+    canvasLabel: options.canvasDir,
+    stampLabel: stamp,
   };
   out.push(...canvasJsonViolations(canvasDir, boardOptions, standard));
   out.push(
@@ -193,12 +197,17 @@ type FlagValues = Record<
 export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
   const str = (key: string) =>
     typeof values[key] === "string" ? values[key] : undefined;
-  const canvas = str("canvas");
-  const theme = str("theme");
+  // An empty path would resolve to the working directory itself.
+  const path = (key: string) => (str(key) === "" ? undefined : str(key));
+  const canvas = path("canvas");
+  const theme = path("theme");
   const inventory = values.inventory === true;
   if (canvas === undefined) return "--canvas is required";
   if (theme === undefined && !inventory)
     return "--theme is required (unless --inventory)";
+  // Dropping an empty optional path would skip its check silently.
+  for (const key of ["stamp", "standard"])
+    if (str(key) === "") return `--${key} must not be empty`;
   const dsVersionText = str("ds-version");
   const dsVersion =
     dsVersionText === undefined ? undefined : parseDsVersion(dsVersionText);
@@ -221,6 +230,24 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
   };
 }
 
+/** C0 and C1 controls plus the two Unicode line terminators. */
+// eslint-disable-next-line no-control-regex -- control characters are what oneLine escapes
+const CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g;
+
+/**
+ * Escapes line breaks and other control characters as `\uXXXX`, so a value
+ * copied from a board, `canvas.json` or a path never starts an output line
+ * of its own (such as a forged `OK:` line).
+ * @param {string} text - One output line
+ * @returns {string} The same line, printable on one terminal line
+ */
+function oneLine(text: string): string {
+  return text.replace(
+    CONTROL,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
 /**
  * Runs the check (or the inventory) and prints the result.
  * @param {CanvasArgs} args - Validated arguments
@@ -230,20 +257,22 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
 function runCheck(args: CanvasArgs, cwd: string): number {
   const canvasDir = resolve(cwd, args.canvas);
   if (args.inventory || args.theme === undefined) {
-    logger.log(JSON.stringify(inventoryCanvas(canvasDir), null, 2));
+    logger.log(
+      JSON.stringify(inventoryCanvas(canvasDir, args.canvas), null, 2),
+    );
     return 0;
   }
   const violations = checkCanvas({
     ...args,
-    canvasDir,
+    canvasDir: args.canvas,
     theme: args.theme,
     cwd,
   });
-  const files = canvasFiles(canvasDir);
+  const files = canvasFiles(canvasDir, args.canvas);
   if (args.boards && !files.some((f) => f.endsWith(".dc.html")))
-    violations.push(`no .dc.html files under ${args.canvas}`);
+    violations.push(`canvas.json:1 no .dc.html files under ${args.canvas}`);
   if (violations.length > 0) {
-    for (const v of violations) logger.log(v);
+    for (const v of violations) logger.log(oneLine(v));
     logger.log(`${String(violations.length)} violation(s)`);
     return 1;
   }
@@ -262,16 +291,18 @@ function runCheck(args: CanvasArgs, cwd: string): number {
 export function canvasCheckCommand(values: FlagValues, cwd: string): number {
   const args = parseCanvasArgs(values);
   if (typeof args === "string") {
-    logger.error(args);
+    logger.error(oneLine(args));
     return 2;
   }
   try {
     return runCheck(args, cwd);
   } catch (error) {
     logger.error(
-      error instanceof CanvasInputError
-        ? error.message
-        : `canvas check failed: ${errorMessage(error)}`,
+      oneLine(
+        error instanceof CanvasInputError
+          ? error.message
+          : `canvas check failed: ${errorMessage(error)}`,
+      ),
     );
     return 2;
   }

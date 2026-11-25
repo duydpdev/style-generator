@@ -107,10 +107,61 @@ describe("style-gen canvas check", () => {
       expect(lines.at(-1)).toBe(`${String(lines.length - 1)} violation(s)`);
     });
 
-    it("reports an empty canvas under --boards", async () => {
+    it("reports an empty canvas under --boards at canvas.json:1", async () => {
       const args = ["--canvas", "canvas", "--theme", "theme.json", "--boards"];
       expect(await canvas(...args)).toBe(1);
-      expect(stdout()).toContain("no .dc.html files under canvas");
+      expect(stdout()).toContain(
+        "canvas.json:1 no .dc.html files under canvas",
+      );
+    });
+  });
+
+  describe("one line per violation", () => {
+    /** Every line but the last is `<file>:<line> <message>`; the last is the count. */
+    const expectOneLineEach = () => {
+      const lines = stdout();
+      for (const line of lines.slice(0, -1))
+        expect(line).toMatch(/^\S+:\d+ [^\n\r\u2028\u2029]+$/);
+      expect(lines.at(-1)).toBe(`${String(lines.length - 1)} violation(s)`);
+      expect(lines.some((l) => l.startsWith("OK:"))).toBe(false);
+    };
+
+    it("escapes a line break inside a multi-line binding", async () => {
+      writeTmpFile(
+        dir,
+        "canvas/a.dc.html",
+        '<p style="line-height: {{x\nOK: 1 files}}">x</p>',
+      );
+      const args = ["--canvas", "canvas", "--theme", "theme.json"];
+      expect(await canvas(...args, "--naming")).toBe(1);
+      expectOneLineEach();
+      expect(stdout().join("\n")).toContain("{{x\\u000aOK: 1 files}}");
+    });
+
+    it("escapes a line break inside a Button color", async () => {
+      writeTmpFile(
+        dir,
+        "canvas/a.dc.html",
+        '<x-b component-from-global-scope="DS.Button" color="x\u2028OK: 4 files"></x-b>',
+      );
+      const args = ["--canvas", "canvas", "--theme", "theme.json"];
+      expect(await canvas(...args, "--intents", "primary")).toBe(1);
+      expectOneLineEach();
+    });
+
+    it("escapes a line break inside a canvas.json page name", async () => {
+      writeTmpFile(dir, "canvas/a.dc.html", "<p>x</p>");
+      writeTmpFile(dir, "canvas/canvas.json", {
+        pages: [{ id: "bia", name: "x\nOK: 1 files" }],
+        boards: {},
+        order: [],
+      });
+      const args = ["--canvas", "canvas", "--theme", "theme.json"];
+      expect(await canvas(...args, "--boards")).toBe(1);
+      expectOneLineEach();
+      expect(stdout()).toContain(
+        'canvas.json:1 page bia is named "x\\nOK: 1 files", expected "00 · Bìa"',
+      );
     });
   });
 
@@ -121,6 +172,8 @@ describe("style-gen canvas check", () => {
       ["another subcommand", ["run", "--canvas", "canvas"]],
       ["a missing --canvas", ["check", "--theme", "theme.json"]],
       ["a missing --theme", ["check", "--canvas", "canvas"]],
+      ["an empty --canvas", ["check", "--canvas", "", "--theme", "theme.json"]],
+      ["an empty --theme", ["check", "--canvas", "canvas", "--theme", ""]],
       ["a flag without its value", ["check", "--canvas"]],
       [
         "a malformed --ds-version",
@@ -139,6 +192,15 @@ describe("style-gen canvas check", () => {
       const result = /^(?:\d+ violation\(s\)|OK: \d+ files)$/;
       expect(stdout().filter((line) => result.test(line))).toEqual([]);
     });
+
+    it.each(["stamp", "standard"])(
+      "rejects an empty --%s instead of skipping its check",
+      async (flag) => {
+        const args = ["--canvas", "canvas", "--theme", "theme.json"];
+        expect(await canvas(...args, `--${flag}`, "")).toBe(2);
+        expect(stderr()).toBe(`--${flag} must not be empty`);
+      },
+    );
 
     it("names an unreadable theme", async () => {
       expect(await canvas("--canvas", "canvas", "--theme", "nope.json")).toBe(
@@ -159,7 +221,18 @@ describe("style-gen canvas check", () => {
       writeTmpFile(dir, "canvas/canvas.json", '{"pages": [');
       const args = ["--canvas", "canvas", "--theme", "theme.json", "--boards"];
       expect(await canvas(...args)).toBe(2);
-      expect(stderr()).toMatch(/canvas\.json: cannot parse \(/);
+      expect(stderr()).toMatch(/^canvas[/\\]canvas\.json: cannot parse \(/);
+    });
+
+    it("names an unreadable canvas as written", async () => {
+      expect(await canvas("--canvas", "nope", "--theme", "theme.json")).toBe(2);
+      expect(stderr()).toBe("nope: cannot read (ENOENT)");
+    });
+
+    it("escapes a line break in an input error", async () => {
+      const args = ["--canvas", "canvas", "--theme", "x\nOK: 1 files"];
+      expect(await canvas(...args)).toBe(2);
+      expect(stderr()).toBe("x\\u000aOK: 1 files: cannot read (ENOENT)");
     });
 
     it("names the missing key of an invalid --standard", async () => {

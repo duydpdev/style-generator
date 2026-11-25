@@ -159,9 +159,11 @@ const PRODUCER_FILES = [
 /**
  * Every scanned file under `dir`, as sorted POSIX paths relative to `dir`.
  * @param {string} dir - Canvas directory
+ * @param {string} label - The directory as the user wrote it, for messages
  * @returns {string[]} Sorted paths
+ * @throws {CanvasInputError} `<label>[/<sub>]: cannot read (<reason>)`
  */
-export function canvasFiles(dir: string): string[] {
+export function canvasFiles(dir: string, label = dir): string[] {
   const out: string[] = [];
   /** @param {string} at - Directory to read */
   const walk = (at: string) => {
@@ -169,7 +171,10 @@ export function canvasFiles(dir: string): string[] {
     try {
       entries = readdirSync(at, { withFileTypes: true });
     } catch (error) {
-      throw new CanvasInputError(`${at}: cannot read (${readReason(error)})`);
+      const shown = at === dir ? label : join(label, relative(dir, at));
+      throw new CanvasInputError(
+        `${shown}: cannot read (${readReason(error)})`,
+      );
     }
     for (const entry of entries) {
       const full = join(at, entry.name);
@@ -440,11 +445,15 @@ export function scanText(file: string, text: string): ScannedFile {
 
 /**
  * @param {string} canvasDir - Canvas directory
+ * @param {string} label - The directory as the user wrote it, for messages
  * @returns {ScannedFile[]} One entry per scanned file
  */
-export function scanCanvas(canvasDir: string): ScannedFile[] {
-  return canvasFiles(canvasDir).map((file) =>
-    scanText(file, readText(join(canvasDir, file))),
+export function scanCanvas(
+  canvasDir: string,
+  label = canvasDir,
+): ScannedFile[] {
+  return canvasFiles(canvasDir, label).map((file) =>
+    scanText(file, readText(join(canvasDir, file), join(label, file))),
   );
 }
 
@@ -469,10 +478,14 @@ const OCCURRENCE_COUNTER = {
  * What a canvas uses: variables, classes, blob links, font declarations,
  * design-system mounts and button intents.
  * @param {string} canvasDir - Canvas directory
+ * @param {string} label - The directory as the user wrote it, for messages
  * @returns {Inventory} Counts and declarations over every scanned file
  */
-export function inventoryCanvas(canvasDir: string): Inventory {
-  const scanned = scanCanvas(canvasDir);
+export function inventoryCanvas(
+  canvasDir: string,
+  label = canvasDir,
+): Inventory {
+  const scanned = scanCanvas(canvasDir, label);
   const inv: Inventory = {
     files: scanned.length,
     vars: {},

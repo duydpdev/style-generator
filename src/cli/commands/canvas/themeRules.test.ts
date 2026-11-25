@@ -147,6 +147,15 @@ describe("manifest grammar", () => {
   });
 });
 
+describe("manifest weights", () => {
+  it.each([["Regular("], ["A|B"], ["regular"]])("rejects %s", (word) => {
+    const weights = { ...DEFAULT_STANDARD.weights, "400": word };
+    expect(
+      StandardSchema.safeParse({ ...DEFAULT_STANDARD, weights }).success,
+    ).toBe(false);
+  });
+});
+
 describe("primitive colour keys", () => {
   it.each(["blue50", "blue950", "whiteAlpha12", "gray500", "black"])(
     "%s is a primitive",

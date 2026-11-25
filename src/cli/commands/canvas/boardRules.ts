@@ -45,7 +45,14 @@ export interface BoardOptions {
   boards: boolean;
   stamp?: string | undefined;
   dsVersion?: DsVersion | undefined;
+  /** The canvas directory as the user wrote it, for input errors. */
+  canvasLabel?: string | undefined;
+  /** The stamp file as the user wrote it, for input errors. */
+  stampLabel?: string | undefined;
 }
+
+/** Reads one board by its path relative to the canvas directory. */
+type ReadBoard = (file: string) => string;
 
 /**
  * A value copied from a board, `canvas.json` or a stamp into a message: JSON,
@@ -91,7 +98,7 @@ function boardViolations(
     if (!found) return `missing page ${page.id}`;
     return found.name === page.name
       ? null
-      : `page ${page.id} is named "${String(found.name)}", expected "${page.name}"`;
+      : `page ${page.id} is named ${echo(found.name)}, expected "${page.name}"`;
   });
   const boards = asRecord(canvasJson.boards);
   /**
@@ -105,7 +112,7 @@ function boardViolations(
       boardMessage(file, present(file), page, "core", (t) =>
         t === title
           ? null
-          : `board ${file} title "${String(t)}", expected "${title}"`,
+          : `board ${file} title ${echo(t)}, expected "${title}"`,
       ),
     );
   const order = asArray(canvasJson.order);
@@ -152,7 +159,7 @@ function boardMessage(
 ): string | null {
   if (!board) return `missing ${kind} board ${file}`;
   if (board.page !== page)
-    return `board ${file} is on page ${String(board.page)}, expected ${page}`;
+    return `board ${file} is on page ${token(board.page)}, expected ${page}`;
   return titleMessage(board.title);
 }
 
@@ -172,7 +179,7 @@ function dsVersionViolation(
   if (!ds) return `design system ${expected.namespace} is not installed`;
   return ds.version === expected.version
     ? null
-    : `design system ${expected.namespace} version ${String(ds.version)}, expected ${expected.version}`;
+    : `design system ${expected.namespace} version ${token(ds.version)}, expected ${expected.version}`;
 }
 
 /**
@@ -191,9 +198,10 @@ export function canvasJsonViolations(
   if (!boards && dsVersion === undefined) return [];
   const file = join(canvasDir, "canvas.json");
   if (!existsSync(file)) return ["canvas.json:1 missing canvas.json"];
-  const canvasJson = asRecord(readJson(file));
+  const label = options.canvasLabel ?? canvasDir;
+  const canvasJson = asRecord(readJson(file, join(label, "canvas.json")));
   const files = new Set(
-    canvasFiles(canvasDir).filter((f) => f.endsWith(".dc.html")),
+    canvasFiles(canvasDir, label).filter((f) => f.endsWith(".dc.html")),
   );
   const messages = boards ? boardViolations(canvasJson, files, standard) : [];
   const version =
@@ -257,7 +265,7 @@ function provenanceViolations(
   if (typeof built !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(built))
     out.push(`${at} provenance built ${echo(built)} is not YYYY-MM-DD`);
   if (options.stamp !== undefined) {
-    const stamp = asRecord(readJson(options.stamp));
+    const stamp = asRecord(readJson(options.stamp, options.stampLabel));
     const sha = String(stamp.themeSha256).slice(0, 12);
     if (theme !== sha)
       out.push(`${at} provenance theme ${echo(theme)}, stamp has ${echo(sha)}`);
@@ -311,7 +319,7 @@ function boardContentMessages(
  * Board content (`--boards`): every core board carries its `data-sg-section`
  * ids and its `data-sg-literal` blocks, the blocks equal the theme, and the
  * provenance block matches the stamp and the installed design system.
- * @param {string} canvasDir - Canvas directory
+ * @param {ReadBoard} read - Reads a board of the canvas
  * @param {Set<string>} files - `*.dc.html` paths present in the canvas
  * @param {unknown} theme - Parsed theme JSON
  * @param {Standard} standard - Manifest
@@ -319,7 +327,7 @@ function boardContentMessages(
  * @returns {string[]} Located messages
  */
 function contentViolations(
-  canvasDir: string,
+  read: ReadBoard,
   files: Set<string>,
   theme: unknown,
   standard: Standard,
@@ -329,19 +337,10 @@ function contentViolations(
   const out: string[] = [];
   for (const [file, content] of Object.entries(standard.content ?? {}))
     if (files.has(file))
-      out.push(
-        ...boardContentMessages(
-          file,
-          readText(join(canvasDir, file)),
-          content,
-          record,
-        ),
-      );
+      out.push(...boardContentMessages(file, read(file), content, record));
   const board = standard.provenanceBoard;
   if (board !== undefined && files.has(board))
-    out.push(
-      ...provenanceViolations(board, readText(join(canvasDir, board)), options),
-    );
+    out.push(...provenanceViolations(board, read(board), options));
   return out;
 }
 
@@ -458,9 +457,11 @@ function componentBoardViolations(
   const { w, h } = board;
   const tooWide = typeof w === "number" && w > (maxWidth ?? Infinity);
   const tooTall = typeof h === "number" && h > (maxHeight ?? Infinity);
-  if (maxWidth !== undefined && maxHeight !== undefined && (tooWide || tooTall))
+  const limit = (max: number | undefined) =>
+    max === undefined ? "any" : String(max);
+  if (tooWide || tooTall)
     out.push(
-      `canvas.json:1 board ${file} frame ${token(w)}×${token(h)} exceeds ${String(maxWidth)}×${String(maxHeight)}`,
+      `canvas.json:1 board ${file} frame ${token(w)}×${token(h)} exceeds ${limit(maxWidth)}×${limit(maxHeight)}`,
     );
   return out.filter((m) => m !== null);
 }
@@ -471,14 +472,14 @@ function componentBoardViolations(
  * imports exactly its `s-*` source (a design-system component renders from
  * the bundle and imports none), inside a padded frame no larger than the
  * manifest's; `s-*` boards live on their page; no board imports a `c-*` board.
- * @param {string} canvasDir - Canvas directory
+ * @param {ReadBoard} read - Reads a board of the canvas
  * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
  * @param {Set<string>} files - `*.dc.html` paths present in the canvas
  * @param {Standard} standard - Manifest
  * @returns {string[]} Located messages
  */
 function componentPageViolations(
-  canvasDir: string,
+  read: ReadBoard,
   canvasJson: Record<string, unknown>,
   files: Set<string>,
   standard: Standard,
@@ -497,7 +498,7 @@ function componentPageViolations(
     sources,
   );
   for (const file of files) {
-    const text = readText(join(canvasDir, file));
+    const text = read(file);
     for (const i of dcImports(text, lineIndex(text)))
       if (i.name.startsWith("c-"))
         out.push(
@@ -535,14 +536,14 @@ function orderRank(file: string, standard: Standard, prefix: string): number {
  * `$preview` equals its `canvas.json` frame; core and `c-*` roots neither fix
  * their height nor hide overflow; the manifest pages come first, in order;
  * `canvas.json#order` lists core, `c-*`, `s-*`, then screens.
- * @param {string} canvasDir - Canvas directory
+ * @param {ReadBoard} read - Reads a board of the canvas
  * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
  * @param {Set<string>} files - `*.dc.html` paths present in the canvas
  * @param {Standard} standard - Manifest
  * @returns {string[]} Located messages
  */
 function frameViolations(
-  canvasDir: string,
+  read: ReadBoard,
   canvasJson: Record<string, unknown>,
   files: Set<string>,
   standard: Standard,
@@ -553,7 +554,7 @@ function frameViolations(
   const out: (string | null)[] = [];
   for (const file of files) {
     if (!(file in boards)) continue;
-    const text = readText(join(canvasDir, file));
+    const text = read(file);
     out.push(previewViolation(file, text, asRecord(boards[file])));
     if (orderRank(file, standard, sources.prefix) <= 1)
       out.push(...rootFrameViolations(file, text));
@@ -667,13 +668,16 @@ export function boardContentViolations(
 ): string[] {
   const file = join(canvasDir, "canvas.json");
   if (!options.boards || !existsSync(file)) return [];
-  const canvasJson = asRecord(readJson(file));
+  const label = options.canvasLabel ?? canvasDir;
+  const read: ReadBoard = (board) =>
+    readText(join(canvasDir, board), join(label, board));
+  const canvasJson = asRecord(readJson(file, join(label, "canvas.json")));
   const files = new Set(
-    canvasFiles(canvasDir).filter((f) => f.endsWith(".dc.html")),
+    canvasFiles(canvasDir, label).filter((f) => f.endsWith(".dc.html")),
   );
   return [
-    ...contentViolations(canvasDir, files, theme, standard, options),
-    ...componentPageViolations(canvasDir, canvasJson, files, standard),
-    ...frameViolations(canvasDir, canvasJson, files, standard),
+    ...contentViolations(read, files, theme, standard, options),
+    ...componentPageViolations(read, canvasJson, files, standard),
+    ...frameViolations(read, canvasJson, files, standard),
   ];
 }

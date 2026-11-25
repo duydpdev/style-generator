@@ -100,7 +100,7 @@ Two paths are one file when they reach the same inode (a symlink, a hard link, o
 
 ## Tokens file missing or stale
 
-`<file> does not exist. Run: … style-gen generate` and `<file> is out of date. Run: … style-gen generate` come from `style-gen generate --check`: the committed `theme.tokens.ts` does not match the theme and config. Run `yarn style-gen generate` (or start the dev server, where the plugin writes it) and commit the file. The file holds token keys, so editing only a color value leaves it current.
+`<file> does not exist. Run: … style-gen generate` and `<file> is out of date. Run: … style-gen generate` come from `style-gen generate --check`: the committed `theme.tokens.ts` does not match the theme and config. Run `yarn style-gen generate` (or start the dev server, where the plugin writes it) and commit the file. The file holds token keys, so editing only a color value leaves it current. Right after a library upgrade, `--check` can fail with no theme change: a minor release may add token fields (8.x adds the six scale-group arrays, empty when unused). Run `generate` once and commit the file.
 
 A file that is out of date right after a clean `generate` was rewritten by another tool. Only Prettier honours the `// prettier-ignore` line the file carries before each export; exclude `theme.tokens.ts` from Biome, dprint, oxfmt, ESLint stylistic `--fix` and any lint-staged glob that rewrites files. A checkout with CRLF line endings is not a cause: the comparison ignores them.
 

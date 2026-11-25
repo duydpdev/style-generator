@@ -82,7 +82,7 @@ A literal is a `<script type="application/json" data-sg-literal="colors">` block
 - Page `cl` ("02 · Component") holds only showcase boards `c-<name>.dc.html`. Page `src` ("03 · Nguồn component") holds the source boards `s-<name>.dc.html`.
 - A `c-<name>` board imports exactly one source, `<dc-import name="s-<name>">` (an `Icon` import does not count). A design-system component's board (`c-box`, `c-button`, …) renders from the bundle and imports nothing.
 - No board imports a `c-*` board: a screen imports the `s-*` source.
-- A `c-*` frame is at most 1440×1600, and its root element has `padding: calc(var(--spacing) * 8)` or more.
+- A `c-*` frame is at most 1440×1600, and its root element has `padding: calc(var(--spacing) * n)` with n ≥ 8, written as one value (a two- to four-value shorthand is reported).
 - `cl-*` group boards are retired: split each into one `c-*` board per component.
 
 ## Frames
@@ -92,7 +92,7 @@ A literal is a `<script type="application/json" data-sg-literal="colors">` block
 - The manifest pages come first in `canvas.json#pages`, in manifest order (`bia`, `ds`, `cl`, `src`), then the screens.
 - `canvas.json#order` lists the core boards, then the `c-*` boards, then the `s-*` boards, then the screens.
 
-The component-page and frame rules run only when the manifest has `sourceBoards`; the content rules only when it has `content` and `provenanceBoard`. A manifest passed with `--standard` that predates them skips them.
+The component-page and frame rules run only when the manifest has `sourceBoards`; the section and literal rules only when it has `content`, and the provenance rule only when it has `provenanceBoard`. A manifest passed with `--standard` that predates them skips them.
 
 ## What is not a token
 
@@ -111,7 +111,9 @@ style-gen canvas check --canvas <dir> --theme <theme.json> [--stamp <ds-stamp.js
 `--boards` checks the pages, the core boards and their order, and one board per design-system component in `canvas.json`, plus the board content, component-page and frame rules above.
 `--ds-version <namespace>=<version>` checks that `canvas.json` installs that design-system version.
 
-It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` and the producer's own `ds/<namespace>/tokens.css` and `ds/<namespace>/components/bundle.css`, and prints `OK: <n> files` (exit 0) or one line per violation followed by `<n> violation(s)` (exit 1). A usage error, an input it cannot read or parse, or an invalid `--standard` exits 2.
+Boards are top-level files of `--canvas`. The board rules match `canvas.json` and the manifest by file name, so a `.dc.html` in a subfolder is scanned by the token rules but never checked as a board.
+
+It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` and the producer's own `ds/<namespace>/tokens.css` and `ds/<namespace>/components/bundle.css`, and prints `OK: <n> files` (exit 0) or one `<file>:<line> <message>` line per violation followed by `<n> violation(s)` (exit 1). A value copied into a line (board text, a `canvas.json` name, a path) has its line breaks and other control characters escaped as `\uXXXX`, so a violation never spans two lines. A usage error, an input it cannot read or parse, or an invalid `--standard` exits 2.
 
 | Message                                                                                              | Meaning                                                                                                                                      |
 | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -161,7 +163,7 @@ It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` a
 | `board must import exactly s-…, found …`                                                             | With `--boards`: a `c-*` board imports no source, several, or another one.                                                                   |
 | `design-system component boards render from the bundle; remove dc-import …`                          | With `--boards`: a design-system component board imports a source.                                                                           |
 | `imports showcase board c-… (import s-…)`                                                            | With `--boards`: a board imports a `c-*` board.                                                                                              |
-| `root has no padding (…)` / `root padding "…" (…)`                                                   | With `--boards`: a `c-*` root's padding is missing or below `calc(var(--spacing) * 8)`.                                                      |
+| `root has no padding (…)` / `root padding "…" (…)`                                                   | With `--boards`: a `c-*` root's padding is missing, below `calc(var(--spacing) * 8)`, or not a single value.                                 |
 | `board … frame …×… exceeds 1440×1600`                                                                | With `--boards`: a `c-*` frame in `canvas.json` is larger than the manifest allows.                                                          |
 | `missing $preview`                                                                                   | With `--boards`: a listed board declares no `$preview`.                                                                                      |
 | `$preview …×…, canvas.json frame …×…`                                                                | With `--boards`: `$preview` differs from the board's `canvas.json` `w`×`h`.                                                                  |
@@ -178,6 +180,7 @@ It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` a
 | `board … title must start with "Component / "`                                                       | With `--boards`: a component board title lacks the prefix.                                                                                   |
 | `core boards out of order in canvas.json#order (expected …)`                                         | With `--boards`: the core boards are not in manifest order in `canvas.json#order`.                                                           |
 | `missing canvas.json`                                                                                | With `--boards` or `--ds-version`: the canvas has no `canvas.json`.                                                                          |
+| `no .dc.html files under <dir>`                                                                      | With `--boards`: the canvas has no board. The line is located at `canvas.json:1`.                                                            |
 | `design system … version …, expected …`                                                              | With `--ds-version`: `canvas.json#designSystems` installs another version.                                                                   |
 | `design system … is not installed`                                                                   | With `--ds-version`: no design system with that namespace is installed.                                                                      |
 

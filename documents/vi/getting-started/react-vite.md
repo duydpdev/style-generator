@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: 5e1c7e6b9edf -->
+<!-- source: documents/getting-started/react-vite.md sha256: b009264795be -->
 
 # Bắt đầu: React + Vite
 
@@ -11,7 +11,7 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào một ứng dụng Vi
 Bắt đầu từ một ứng dụng Vite React TypeScript (`yarn create vite my-app --template react-ts`, rồi `yarn install`). Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`; phần thiết lập Vite bên dưới còn import `tailwindcss`, `@tailwindcss/vite` và `@vitejs/plugin-react` (template đã có sẵn cái cuối cùng).
 
 ```bash
-yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
+yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite @vitejs/plugin-react
 ```
 
 ## Tạo theme

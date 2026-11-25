@@ -8,7 +8,7 @@ import {
 
 import { tokens, type theme } from "../../theme";
 
-/** Badge intents; renaming one in theme.json fails here. */
+/** Badge intents; renaming one in theme.json fails here. Each needs `<intent>Subtle` and `<intent>SubtleForeground` for `soft`. */
 export const badgeIntents = [
   "primary",
   "secondary",
@@ -22,13 +22,11 @@ const bg = createVariantMapper("bg", tokens.colors);
 const text = createVariantMapper("text", tokens.colors);
 const border = createVariantMapper("border", tokens.colors);
 
-// Opacity-modified classes stay literal: Tailwind finds them by scanning this file.
-const soft = {
-  primary: "bg-primary/10 text-primary",
-  secondary: "bg-secondary/10 text-secondary",
-  success: "bg-success/10 text-success",
-  danger: "bg-danger/10 text-danger",
-} as const satisfies Record<BadgeIntent, string>;
+/** `soft` is `<intent>Subtle` with `<intent>SubtleForeground` text; indexing the mappers fails the compiler when the theme lacks one. */
+const soft = (intent: BadgeIntent): string[] => [
+  bg[`${intent}Subtle` as const],
+  text[`${intent}SubtleForeground` as const],
+];
 
 export const badgeTables = {
   base: [
@@ -42,11 +40,11 @@ export const badgeTables = {
     variant: {
       soft: "border-transparent",
       solid: "border-transparent",
-      outline: "bg-transparent",
+      outline: bg.background,
     },
   },
   compoundVariants: badgeIntents.flatMap((intent) => [
-    { color: intent, variant: "soft", class: soft[intent] },
+    { color: intent, variant: "soft", class: soft(intent) },
     {
       color: intent,
       variant: "solid",

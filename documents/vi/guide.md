@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: 02f3217c8c93 -->
+<!-- source: documents/guide.md sha256: 7efaac4e19ed -->
 
 # Hướng dẫn sử dụng
 
@@ -57,6 +57,7 @@ theme.schema.json  → editor autocomplete for the theme           (optional)
 | sao chép các component dựng sẵn           | [Component](./components.md)                                                                                |
 | để một coding agent tuân theo các quy ước | [Hợp đồng cho agent](./agent-contract.md)                                                                   |
 | tra các khoảng phiên bản peer dependency  | [API lõi → Các peer dependency](./reference/core.md#các-peer-dependency)                                    |
+| nâng cấp từ 8.x                           | [Nâng cấp 8.x → 9.0](./migration/8.x-to-9.0.md)                                                             |
 | nâng cấp từ 7.x                           | [Nâng cấp 7.x → 8.0](./migration/7.x-to-8.0.md)                                                             |
 
 ## Các quy tắc luôn đúng

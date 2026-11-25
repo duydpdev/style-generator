@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { toKebabCase, toCamelCase, toPascalCase } from "./helpers";
+import { toKebabCase, toCamelCase } from "./helpers";
 
 describe("toKebabCase", () => {
   it("camelCase → kebab", () => {
@@ -26,20 +26,5 @@ describe("toCamelCase", () => {
   });
   it("trailing separator produces no-op on tail", () => {
     expect(toCamelCase("primary-")).toBe("primary");
-  });
-});
-
-describe("toPascalCase", () => {
-  it("kebab → pascal", () => {
-    expect(toPascalCase("sidebar-foreground")).toBe("SidebarForeground");
-  });
-  it("snake → pascal", () => {
-    expect(toPascalCase("sidebar_foreground")).toBe("SidebarForeground");
-  });
-  it("already-cased first letter stays uppercase", () => {
-    expect(toPascalCase("Primary")).toBe("Primary");
-  });
-  it("lowercase → capitalised", () => {
-    expect(toPascalCase("primary")).toBe("Primary");
   });
 });

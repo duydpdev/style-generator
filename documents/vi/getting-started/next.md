@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/next.md sha256: c51d10d5bd8d -->
+<!-- source: documents/getting-started/next.md sha256: d57fd8a7a05d -->
 
 # Bắt đầu: Next.js
 
@@ -9,7 +9,7 @@ Hướng dẫn này nối `@duydpdev/style-generator` vào Next.js (webpack ho�
 Bắt đầu từ một ứng dụng Next.js được tạo cùng Tailwind (`yarn create next-app my-app --ts --tailwind --src-dir --app`), lệnh này cài `tailwindcss` và phần tích hợp bundler của nó. Cài package và các peer dependency của nó như mô tả trong [Cài đặt](../README.md#cài-đặt). Các component còn cần `class-variance-authority`, `clsx` và `tailwind-merge`.
 
 ```bash
-yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Tạo theme

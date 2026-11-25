@@ -36,12 +36,14 @@ const parserOpts = {
 
 const FIX_SECTION = "Bug Fixes";
 const FEAT_SECTION = "Features";
+const RELEASE_SECTION = "Release";
 
 // A `[fix]` often tightens validation, so its body says what is now rejected
 // and how to migrate; a `[feat]` body lists behaviour notes (changed
-// defaults, new semantics). Attach it to the entry as `details`, indented to
-// stay inside the Markdown list item (changelog-template.hbs).
-const DETAIL_SECTIONS = new Set([FEAT_SECTION, FIX_SECTION]);
+// defaults, new semantics); a `[release]` body lists the breaking changes
+// and names the migration guide. Attach it to the entry as `details`,
+// indented to stay inside the Markdown list item (changelog-template.hbs).
+const DETAIL_SECTIONS = new Set([RELEASE_SECTION, FEAT_SECTION, FIX_SECTION]);
 
 const finalizeContext = (context) => {
   for (const group of context.commitGroups) {
@@ -98,7 +100,7 @@ module.exports = {
         },
         presetConfig: {
           types: [
-            { type: "release", section: "Release" },
+            { type: "release", section: RELEASE_SECTION },
             { type: "feat", section: "Features" },
             { type: "fix", section: FIX_SECTION },
             { type: "perf", section: "Performance Improvements" },

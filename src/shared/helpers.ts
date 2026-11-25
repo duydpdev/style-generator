@@ -17,12 +17,6 @@ export const toCamelCase = (str: string) => {
     .replace(/^(.)/, (_, c: string) => c.toLowerCase());
 };
 
-export const toPascalCase = (str: string) => {
-  return str
-    .replaceAll(/[-_\s]+(.)?/g, (_, c: string) => (c ? c.toUpperCase() : ""))
-    .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-};
-
 /**
  * Tailwind v4 `@utility` names must be a single CSS-ident-safe lowercase
  * token: start with a lowercase letter, then any run of lowercase

@@ -7,7 +7,7 @@ This tutorial wires `@duydpdev/style-generator` into Next.js (webpack or Turbopa
 Start from a Next.js app created with Tailwind (`yarn create next-app my-app --ts --tailwind --src-dir --app`), which installs `tailwindcss` and its bundler integration. Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`.
 
 ```bash
-yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge
+yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge
 ```
 
 ## Create the theme

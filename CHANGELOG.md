@@ -1,3 +1,18 @@
+# [9.0.0](https://github.com/duydpdev/style-generator/compare/v8.3.0...v9.0.0) (2026-11-25)
+
+### Release
+
+- read only <intent>Foreground in contrastText and map Selected to aria-selected ([ad1eaac](https://github.com/duydpdev/style-generator/commit/ad1eaac10d4a165588ed3938711339d0341f1b2d))
+
+### Features
+
+- add feedback example components ([58f7a75](https://github.com/duydpdev/style-generator/commit/58f7a75a380982b2fe93dd6bc8d7b92968cb31b0))
+- add overlay example components ([a1f626a](https://github.com/duydpdev/style-generator/commit/a1f626adbbaec6081ea98c44bf0dcacd1b6a37a3))
+- add structure and navigation example components ([f4970ca](https://github.com/duydpdev/style-generator/commit/f4970ca6f856268f6fc06bf8307354845ec2e7ba))
+- add the component standard and align the button and input examples ([6d702a2](https://github.com/duydpdev/style-generator/commit/6d702a2ca52429cead8112b78f33c8fe0ca3e41e))
+- add the form example components on the component standard ([9e3d80f](https://github.com/duydpdev/style-generator/commit/9e3d80f8f74158d2d8e5bd3f1e02166176b40f74))
+- check the variant grid of c-* boards with --recipes ([17f8837](https://github.com/duydpdev/style-generator/commit/17f8837f5a3f2308a470fac912db9159fc44bf5f))
+
 # [8.3.0](https://github.com/duydpdev/style-generator/compare/v8.2.3...v8.3.0) (2026-11-25)
 
 ### Features

@@ -60,3 +60,8 @@ export { separatorPreset, separatorRecipe } from "./recipes/separator";
 export { accordionPreset, accordionRecipe } from "./recipes/accordion";
 export { tablePreset, tableRecipe } from "./recipes/table";
 export { avatarPreset, avatarRecipe } from "./recipes/avatar";
+export { dialogPreset, dialogRecipe } from "./recipes/dialog";
+export { drawerPreset, drawerRecipe } from "./recipes/drawer";
+export { popoverPreset, popoverRecipe } from "./recipes/popover";
+export { tooltipPreset, tooltipRecipe } from "./recipes/tooltip";
+export { menuPreset, menuRecipe } from "./recipes/menu";

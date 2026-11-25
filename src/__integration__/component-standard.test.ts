@@ -71,6 +71,22 @@ const matchesStandard = (text: string): boolean => {
   );
 };
 
+/**
+ * The rules between the `component-axes` table and `<!-- component-rules:end -->`, one entry per non-blank line.
+ * @param {string} text - Markdown
+ * @returns {string[]} The rule lines; empty when a marker is missing
+ */
+const standardRules = (text: string): string[] => {
+  const start = text.indexOf("<!-- component-axes:end -->");
+  const end = text.indexOf("<!-- component-rules:end -->");
+  if (start === -1 || end < start) return [];
+  return text
+    .slice(start, end)
+    .split("\n")
+    .slice(1)
+    .filter((line) => line.trim() !== "");
+};
+
 describe("component standard", () => {
   it.each(DOCS)(
     "%s lists the color axis, five variants and four sizes",
@@ -109,5 +125,30 @@ describe("component standard", () => {
     expect(
       matchesStandard(mutate(text, "<!-- component-axes:start -->", "")),
     ).toBe(false);
+  });
+
+  it.each([
+    ["documents/components.md", "documents/agent-contract.md"],
+    ["documents/vi/components.md", "documents/vi/agent-contract.md"],
+  ])("%s and %s state the same rules under the table", (guide, contract) => {
+    const rules = standardRules(read(guide));
+    expect(rules.length).toBeGreaterThan(0);
+    expect(standardRules(read(contract))).toEqual(rules);
+  });
+
+  it("fails when the agent contract drops or edits a rule", () => {
+    const guide = standardRules(read("documents/components.md"));
+    const contract = read("documents/agent-contract.md");
+    const overlay = guide.find((line) => line.startsWith("- Overlays"));
+    expect(overlay).toBeDefined();
+    expect(
+      standardRules(mutate(contract, `${overlay ?? ""}\n`, "")),
+    ).not.toEqual(guide);
+    expect(
+      standardRules(mutate(contract, "`size-icon-<key>`", "`h-control-<key>`")),
+    ).not.toEqual(guide);
+    expect(
+      standardRules(mutate(contract, "<!-- component-rules:end -->", "")),
+    ).toEqual([]);
   });
 });

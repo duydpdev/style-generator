@@ -7,7 +7,7 @@ This tutorial wires `@duydpdev/style-generator` into a Nuxt 4 app and renders a 
 Start from a Nuxt 4 app (`npx nuxi@latest init my-app --template minimal`, then `yarn install`). Install the package and its peer dependencies as described in [Install](../../README.md#install). The components also need `class-variance-authority`, `clsx` and `tailwind-merge`; the Vite setup below imports `@tailwindcss/vite`, and the package needs `tailwindcss` (the minimal template has neither):
 
 ```bash
-yarn add @duydpdev/style-generator@^8.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite
+yarn add @duydpdev/style-generator@^9.0.0 class-variance-authority clsx tailwind-merge tailwindcss @tailwindcss/vite
 yarn add -D typescript@^5.9.0
 ```
 

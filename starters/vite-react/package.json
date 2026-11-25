@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@duydpdev/style-generator": "^8.1.1",
+    "@duydpdev/style-generator": "^9.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

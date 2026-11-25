@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: e2ff093ebe05 -->
+<!-- source: documents/agent-contract.md sha256: db89c9154698 -->
 
 # Hợp đồng cho agent
 
@@ -91,7 +91,7 @@ Import được phép bên trong `src/ui/<folder>/`:
 
 ## 3. Checklist cho component mới
 
-Một component khai báo các trục áp dụng cho nó (checkbox có `color` và `size`, field không có trục nào) và chỉ dùng bộ từ vựng này:
+Một component khai báo các trục áp dụng cho nó (checkbox có `color` và `size`, field không có trục nào); với ba trục này, nó chỉ dùng bộ từ vựng sau:
 
 <!-- component-axes:start -->
 
@@ -104,9 +104,12 @@ Một component khai báo các trục áp dụng cho nó (checkbox có `color` v
 <!-- component-axes:end -->
 
 - `solid` tô nền `<role>` với chữ `<role>Foreground` (chữ `background` khi theme không có `<role>Foreground`); `soft` tô nền `<role>Subtle` với chữ `<role>SubtleForeground` và mờ đi khi hover (`hover:opacity-90`); `outline` là viền và chữ `<role>` trên nền `background`, với nền hover `<role>Subtle`; `ghost` là chữ `<role>` với nền hover `<role>Subtle`; `link` là chữ `<role>`, gạch chân khi hover.
-- `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`). `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
-- Trạng thái: hover và active lấy từ các key `<role>Hover`/`<role>Active` qua `COLOR_STATES` (thiếu chúng thì dùng `hover:opacity-90`); focus là outline `focus-visible:` (viền với field) theo key `focus`; disabled là `disabled:opacity-disabled` (token `opacity.disabled`) cùng `cursor-not-allowed`; selected là `<role>Selected` qua `COLOR_STATES` (`aria-selected:`) ở component có trạng thái chọn; invalid là `aria-invalid:` với vai trò `danger` trên field của form.
-- Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`).
+- `size` đặt chiều cao từ `controlHeight` (`h-control-<key>`) ở control một dòng (button, input, select, slider, nút của pagination), còn avatar là hình vuông cao đúng chiều cao đó; checkbox, radio và switch lấy kích thước ô từ `iconSize` (`size-icon-<key>`), còn field nhiều dòng (textarea) chỉ đổi padding và kiểu chữ. Component chỉ báo cũng chia như vậy: spinner lấy kích thước ô từ `iconSize`, còn track của progress chỉ đặt độ dày của chính nó (`h-1`/`h-2`/`h-3`). `icon` là một hình vuông cao bằng `md`; chỉ các component dạng nút khai báo nó.
+- Trạng thái: hover và active lấy từ các key `<role>Hover`/`<role>Active` qua `COLOR_STATES` (thiếu chúng thì dùng `hover:opacity-90`); focus là outline `focus-visible:` (viền với field) theo key `focus`; disabled là `disabled:opacity-disabled` (token `opacity.disabled`) cùng `cursor-not-allowed`; selected là `<role>Selected` qua `COLOR_STATES` (`aria-selected:`) ở component có trạng thái chọn (một tab), và mọi component khác map vai trò đó qua `COLOR_STATES` (button solid, link) cũng mang class `aria-selected:`, class này không khớp gì cho đến khi một phần tử đặt `aria-selected="true"`; invalid là `aria-invalid:` với vai trò `danger` trên field của form.
+- Các slot giải phẫu tên là `prefix`, `suffix`, `label`, `hint` và `error`; component có những slot nó cần (Button: `prefix`, `suffix`; field: `label`, `hint`, `error`). Component tự style nhiều phần tử thì đặt tên slot thêm theo phần tử đó: `root` cho phần bọc của field, `track` và `thumb` cho switch.
+- Lớp phủ dùng hai key `zIndex`: `z-overlay` cho lớp nền mờ (scrim), `z-modal` cho mọi panel (dialog, drawer, popover, tooltip, menu). Các panel chung một lớp nên panel render sau nằm trên: menu mà ứng dụng render sau panel của dialog (một portal ở cuối `body`) sẽ mở phía trên nó. Panel xuất hiện bằng một transition `starting:` có thời lượng và easing từ các key `motionDuration`/`motionEasing`, và dừng dưới `motion-reduce:`; scrim tô bằng key `scrim`, hoặc bằng màu `background` ở một bậc opacity khi theme không có key đó, và làm mờ bằng một key `backdropBlurs`. Các phần mang role và class, riêng menu còn chuyển focus giữa các item đang bật (ArrowUp, ArrowDown, Home, End); mở và đóng, giữ và trả focus, `Escape`, định vị và portal thuộc về ứng dụng.
+
+<!-- component-rules:end -->
 
 1. Chọn các vai trò component cần và thêm các key còn thiếu vào theme JSON (kèm sibling `<intent>Hover`/`<intent>Foreground` nếu muốn, và `<intent>Subtle`/`<intent>SubtleForeground` khi component có variant `soft`).
 2. Tạo `src/ui/<kebab-name>/` với `style.ts`, `types.ts`, `<Name>.tsx`, `index.ts`.
@@ -142,15 +145,20 @@ export const cn = createCn(tokens);
 - Danh sách intent dùng `ColorVariant` từ `@duydpdev/style-generator/types` với `typeof theme`. Không tự suy ra một `ColorKey` từ `tokens.colors`.
 - Mọi class có tên một key của theme đến từ một mapper, mỗi category một mapper; class mang key đã **kebab-case** (`text16Medium` → `text-16-medium`):
 
-  | Category        | Mapper                                                                   | Class             |
-  | --------------- | ------------------------------------------------------------------------ | ----------------- |
-  | `colors`        | `createVariantMapper("bg", tokens.colors)` (cả `text`, `border`, `ring`) | `bg-<key>`        |
-  | `typography`    | `createVariantMapper("", tokens.typography)`                             | `<key>`           |
-  | `borderRadius`  | `createVariantMapper("rounded", tokens.borderRadius)`                    | `rounded-<key>`   |
-  | `fontFamily`    | `createVariantMapper("font", tokens.fontFamily)`                         | `font-<key>`      |
-  | `borderWidth`   | `createVariantMapper("border", tokens.borderWidth)`                      | `border-<key>`    |
-  | `shadows`       | `createVariantMapper("shadow", tokens.shadows)`                          | `shadow-<key>`    |
-  | `controlHeight` | `createVariantMapper("h-control", tokens.controlHeight)`                 | `h-control-<key>` |
+  | Category         | Mapper                                                                   | Class                 |
+  | ---------------- | ------------------------------------------------------------------------ | --------------------- |
+  | `colors`         | `createVariantMapper("bg", tokens.colors)` (cả `text`, `border`, `ring`) | `bg-<key>`            |
+  | `typography`     | `createVariantMapper("", tokens.typography)`                             | `<key>`               |
+  | `borderRadius`   | `createVariantMapper("rounded", tokens.borderRadius)`                    | `rounded-<key>`       |
+  | `fontFamily`     | `createVariantMapper("font", tokens.fontFamily)`                         | `font-<key>`          |
+  | `borderWidth`    | `createVariantMapper("border", tokens.borderWidth)`                      | `border-<key>`        |
+  | `shadows`        | `createVariantMapper("shadow", tokens.shadows)`                          | `shadow-<key>`        |
+  | `controlHeight`  | `createVariantMapper("h-control", tokens.controlHeight)`                 | `h-control-<key>`     |
+  | `iconSize`       | `createVariantMapper("size-icon", tokens.iconSize)`                      | `size-icon-<key>`     |
+  | `zIndex`         | `createVariantMapper("z", tokens.zIndex)`                                | `z-<key>`             |
+  | `motionDuration` | `createVariantMapper("duration", tokens.motionDuration)`                 | `duration-<key>`      |
+  | `motionEasing`   | `createVariantMapper("ease", tokens.motionEasing)`                       | `ease-<key>`          |
+  | `backdropBlurs`  | `createVariantMapper("backdrop-blur", tokens.backdropBlurs)`             | `backdrop-blur-<key>` |
 
   Đọc mapper bằng `mapper.<key>` (kiểm tra lúc compile) hoặc `pick(mapper, key)` (ném lỗi lúc import khi theme thiếu key). Không bao giờ gõ tay `rounded-pill`, `font-sans` hay một class typography.
 
@@ -264,10 +272,10 @@ Theme quyết định vẻ ngoài; các giới hạn dưới đây đúng với 
 
 Quy tắc nào được công cụ kiểm tra, và ở đâu:
 
-| Mức      | Nội dung                                                                                                                | Chạy ở đâu                                     |
-| :------- | :---------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------- |
-| Bắt buộc | Schema của theme: tên key, alias, override `themeAxes`, xung đột                                                        | Mọi `generate()`, `style-gen generate`, plugin |
-| Tự chọn  | `style-gen canvas check`: một theme cho mỗi canvas, cùng `--naming`, `--boards`, `--stamp`, `--intents`, `--ds-version` | Chỉ khi được gọi (một script, CI)              |
-| Quy ước  | Mọi thứ khác trong hợp đồng này (layout, checklist component, code bị cấm trong app, mức sàn giao diện)                 | Review                                         |
+| Mức      | Nội dung                                                                                                                                         | Chạy ở đâu                                     |
+| :------- | :----------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------- |
+| Bắt buộc | Schema của theme: tên key, alias, override `themeAxes`, xung đột                                                                                 | Mọi `generate()`, `style-gen generate`, plugin |
+| Tự chọn  | `style-gen canvas check`: một theme cho mỗi canvas, cùng `--naming`, `--boards` (kèm `--recipes <file>`), `--stamp`, `--intents`, `--ds-version` | Chỉ khi được gọi (một script, CI)              |
+| Quy ước  | Mọi thứ khác trong hợp đồng này (layout, checklist component, code bị cấm trong app, mức sàn giao diện)                                          | Review                                         |
 
 [Component](./components.md) chứa các component ví dụ, harness và các recipe factory; [UI kit](./reference/ui.md) mô tả `recipeFromTables`, `pick`, `contrastText`, `createCn` và các helper spacing.

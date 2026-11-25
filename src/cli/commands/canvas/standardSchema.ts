@@ -37,7 +37,7 @@ export const StandardSchema = z.object({
     })
     .optional(),
   radius: z.array(z.string()),
-  weights: z.record(z.string(), z.string()),
+  weights: z.record(z.string(), segment),
   typeScale: z.array(z.number()),
   pages: z.array(pageSchema),
   boards: z.array(coreBoardSchema),

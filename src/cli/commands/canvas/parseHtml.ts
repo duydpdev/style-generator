@@ -127,16 +127,19 @@ export interface StyleAttr {
 }
 
 /**
- * Every `style="…"` attribute with the range of its value.
+ * Every `style="…"` and `style='…'` attribute with the range of its value.
  * @param {string} text - File contents
  * @returns {StyleAttr[]} In document order
  */
 export function styleAttributes(text: string): StyleAttr[] {
-  return [...text.matchAll(/\bstyle\s*=\s*"([^"]*)"/g)].map((m) => {
-    const value = m[1] ?? "";
-    const start = m.index + m[0].indexOf('"') + 1;
-    return { start, end: start + value.length, value };
-  });
+  return [...text.matchAll(/\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map(
+    (m) => {
+      const value = m[1] ?? m[2] ?? "";
+      // The value ends right before the closing quote, the last character.
+      const start = m.index + m[0].length - 1 - value.length;
+      return { start, end: start + value.length, value };
+    },
+  );
 }
 
 /**

@@ -11,7 +11,7 @@ import { Container } from "./Section";
 /** The page footer: licence line and three links. */
 export function Footer(): JSX.Element {
   return (
-    <Box as="footer" id="footer" borderT="thin" borderColor="line" py={10}>
+    <Box as="footer" id="footer" borderT="thin" borderColor="border" py={10}>
       <Container>
         <Flex wrap align="center" justify="between" gap={4}>
           <Text type="text12Mono" color="muted">

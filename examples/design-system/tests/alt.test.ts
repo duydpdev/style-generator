@@ -48,20 +48,24 @@ describe("a second theme through the same factories", () => {
   it("binds button, text and box recipes to the alt keys", () => {
     const button = altIntents.map((color) => ({
       color,
-      fill: altButtonRecipe({ variant: "fill", color }),
+      solid: altButtonRecipe({ variant: "solid", color }),
       soft: altButtonRecipe({ variant: "soft", color, size: "lg" }),
     }));
     const text = altTextRecipe({ type: "caption", color: "ink" });
     const box = altBoxRecipe({ backgroundColor: "panel", rounded: "soft" });
 
-    const all = [...button.flatMap((b) => [b.fill, b.soft]), text, box].join(
+    const all = [...button.flatMap((b) => [b.solid, b.soft]), text, box].join(
       " ",
     );
     expect(all).toContain("bg-brand");
     expect(all).toMatch(/\bhover:bg-brand-hover\b/);
     expect(all).toMatch(/\btext-brand-foreground\b/);
     expect(all).toMatch(/\brounded-soft\b/);
-    expect(all).not.toMatch(/primary|text16Medium|text-16-medium/);
+    expect(all).toMatch(/\bbg-brand-subtle\b/);
+    expect(all).toMatch(/\bh-control-roomy\b/);
+    expect(all).not.toMatch(
+      /primary|text16Medium|text-16-medium|outline-focus|opacity-disabled|h-control-(sm|md|lg)\b/,
+    );
     expect({ button, text, box }).toMatchSnapshot();
   });
 });

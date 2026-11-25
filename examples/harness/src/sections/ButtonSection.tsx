@@ -4,7 +4,7 @@ import { SectionHead } from "./SectionHead";
 
 const COLORS = ["primary", "secondary", "success", "danger"] as const;
 const VARIANTS = [
-  { id: "fill", label: "Fill" },
+  { id: "solid", label: "Solid" },
   { id: "outline", label: "Outline" },
   { id: "soft", label: "Soft" },
   { id: "link", label: "Link" },
@@ -13,7 +13,7 @@ const SIZES = ["sm", "md", "lg"] as const;
 
 export const ButtonSection = () => {
   return (
-    <Box as="section" borderT="thin" py={14} borderColor="line">
+    <Box as="section" borderT="thin" py={14} borderColor="border">
       {/* #region docs:usage */}
       <SectionHead
         num="04 — Button"
@@ -66,14 +66,14 @@ export const ButtonSection = () => {
         pt={7}
         borderT="thin"
         className="x-dashed"
-        borderColor="line"
+        borderColor="border"
       >
         <Text type="text12Mono" color="muted" mb={4} className="x-caps-wide">
           Sizes
         </Text>
         <Flex wrap align="center" gap={3}>
           {SIZES.map((s) => (
-            <Button key={s} variant="fill" color="primary" size={s}>
+            <Button key={s} variant="solid" color="primary" size={s}>
               size · {s}
             </Button>
           ))}

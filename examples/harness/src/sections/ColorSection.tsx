@@ -13,7 +13,7 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
   const set = colorsFor(palette, theme);
 
   return (
-    <Box as="section" borderT="thin" py={14} borderColor="line">
+    <Box as="section" borderT="thin" py={14} borderColor="border">
       <SectionHead
         num="01 — Color"
         title="A four-role palette."
@@ -36,7 +36,7 @@ export const ColorSection = ({ palette, theme }: ColorSectionProps) => {
               rounded="lg"
               border="thin"
               className="x-sg-color-card x-sg-glass-target x-color-card"
-              borderColor="line"
+              borderColor="border"
             >
               <Box height={96} backgroundColor={key}>
                 <Box className="x-sg-tone-strip">

@@ -10,7 +10,13 @@
     "panel": "#f5f5f4",
     "hairline": "#d6d3d1",
     "positive": "#15803d",
-    "alert": "#b91c1c"
+    "alert": "#b91c1c",
+    "brandSubtle": "color-mix(in srgb, var(--sg-color-brand) 10%, transparent)",
+    "brandSubtleForeground": "$brand",
+    "positiveSubtle": "color-mix(in srgb, var(--sg-color-positive) 10%, transparent)",
+    "positiveSubtleForeground": "$positive",
+    "alertSubtle": "color-mix(in srgb, var(--sg-color-alert) 10%, transparent)",
+    "alertSubtleForeground": "$alert"
   },
   "typography": {
     "body": { "fontSize": "15px", "lineHeight": "160%", "fontWeight": 400 },
@@ -19,6 +25,11 @@
   },
   "borderRadius": {
     "soft": "10px"
+  },
+  "controlHeight": {
+    "compact": "1.75rem",
+    "regular": "2.25rem",
+    "roomy": "2.75rem"
   },
   "themeAxes": {
     "mode": {

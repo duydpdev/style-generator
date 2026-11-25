@@ -29,8 +29,8 @@ export const cardTables = {
   ],
   variants: {
     tone: {
-      surface: [bg.surface, borderColor.line],
-      muted: [bg.background, borderColor.line],
+      surface: [bg.surface, borderColor.border],
+      muted: [bg.background, borderColor.border],
       outline: ["bg-transparent", borderColor.muted],
     },
     padding: { none: "p-0", sm: "p-3", md: "p-5", lg: "p-8" },

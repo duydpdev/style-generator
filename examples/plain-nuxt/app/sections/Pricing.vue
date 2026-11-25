@@ -51,7 +51,7 @@ import Text from "~/ui/text/Text.vue";
         <Button
           as="a"
           :href="plan.href"
-          :variant="plan.featured ? 'fill' : 'outline'"
+          :variant="plan.featured ? 'solid' : 'outline'"
           class="mt-auto"
         >
           {{ plan.action }}

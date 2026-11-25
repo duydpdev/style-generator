@@ -2,7 +2,7 @@ import { Box, Flex, Text } from "../ui";
 
 export const Footer = () => {
   return (
-    <Box as="footer" mt={6} borderT="thin" pt={16} pb={20} borderColor="line">
+    <Box as="footer" mt={6} borderT="thin" pt={16} pb={20} borderColor="border">
       <Flex wrap align="end" justify="between" gap={6}>
         <Box>
           <Box as="p" mb={3} className="x-sg-font-display x-footer-quote">

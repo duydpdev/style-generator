@@ -16,7 +16,7 @@ const Caption = ({ children }: { children: string }) => (
 
 export const ResponsiveSpacingSection = () => {
   return (
-    <Box as="section" borderT="thin" py={14} borderColor="line">
+    <Box as="section" borderT="thin" py={14} borderColor="border">
       <SectionHead
         num="05 — Responsive"
         title="Spacing reacts to breakpoints."
@@ -31,7 +31,7 @@ export const ResponsiveSpacingSection = () => {
             rounded="md"
             backgroundColor="surface"
             p={{ base: 4, md: 8, lg: 12 }}
-            borderColor="line"
+            borderColor="border"
           >
             <Box
               rounded="sm"
@@ -59,7 +59,7 @@ export const ResponsiveSpacingSection = () => {
             backgroundColor="surface"
             p={4}
             gap={{ base: 2, md: 6 }}
-            borderColor="line"
+            borderColor="border"
           >
             {[1, 2, 3, 4].map((i) => (
               <Box
@@ -88,7 +88,7 @@ export const ResponsiveSpacingSection = () => {
             p={4}
             gapX={{ base: 2, md: 6 }}
             gapY={2}
-            borderColor="line"
+            borderColor="border"
           >
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Box

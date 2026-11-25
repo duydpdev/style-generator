@@ -19,7 +19,7 @@ export const TweakGroup = <T extends string>({
   onPick,
   first,
 }: TweakGroupProps<T>) => (
-  <Box pt={4} mt={first ? 0 : 4} borderT="thin" borderColor="line">
+  <Box pt={4} mt={first ? 0 : 4} borderT="thin" borderColor="border">
     <Flex mb={2} align="center" justify="between">
       <Text type="text12Mono" color="muted" className="x-caps-wide">
         {label}

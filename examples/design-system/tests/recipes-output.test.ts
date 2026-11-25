@@ -56,7 +56,7 @@ const run = (recipe: unknown, combos: Combo[]): string[] => {
   ];
 };
 
-const sizes = ["sm", "md", "lg"] as const;
+const sizes = ["sm", "md", "lg", "icon"] as const;
 
 describe("bound recipe output (frozen before the factory refactor)", () => {
   it("buttonRecipe", () => {
@@ -64,7 +64,7 @@ describe("bound recipe output (frozen before the factory refactor)", () => {
       run(
         buttonRecipe,
         cartesian({
-          variant: ["fill", "outline", "soft", "ghost", "link"],
+          variant: ["solid", "outline", "soft", "ghost", "link"],
           color: intents,
           size: sizes,
         }),

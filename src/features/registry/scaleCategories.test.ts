@@ -42,7 +42,7 @@ describe("scale categories (motion, control height, icon size, opacity, z-index)
       "--ease-standard: var(--sg-ease-standard);",
       "--height-control-md: var(--sg-control-md);",
       "--size-icon-sm: var(--sg-icon-sm);",
-      "--opacity-muted: var(--sg-opacity-muted);",
+      "--opacity-muted: calc(var(--sg-opacity-muted) * 100%);",
       "--z-index-modal: var(--sg-z-modal);",
     ]) {
       expect(css).toContain(line);
@@ -126,6 +126,7 @@ describe("scale category values", () => {
       { motionEasing: { a: "cubic-bezier(0.3, -0.5, 1, 1.4)" } },
     ],
     ["steps with a position", { motionEasing: { a: "steps(4, jump-end)" } }],
+    ["steps(2, jump-none)", { motionEasing: { a: "steps(2, jump-none)" } }],
     ["a px height", { controlHeight: { a: "40px" } }],
     ["a rem icon size", { iconSize: { a: "1.5rem" } }],
     ["opacity 0 and 1", { opacity: { a: 0, b: 1 } }],
@@ -147,6 +148,7 @@ describe("scale category values", () => {
       { motionEasing: { a: "cubic-bezier(0, 0, 1)" } },
     ],
     ["steps(0)", { motionEasing: { a: "steps(0)" } }],
+    ["steps(1, jump-none)", { motionEasing: { a: "steps(1, jump-none)" } }],
     ["a height in em", { controlHeight: { a: "2em" } }],
     ["an icon size with calc()", { iconSize: { a: "calc(1rem + 2px)" } }],
     ["opacity above 1", { opacity: { a: 1.5 } }],
@@ -188,6 +190,24 @@ describe("scale category values", () => {
       parses({ colors: {}, opacity: { "50": 0.5 }, zIndex: { "50": 50 } }),
     ).toBe(false);
     expect(parses({ colors: {}, opacity: { o50: 0.5 } })).toBe(true);
+  });
+
+  it("carries the digit-only opacity rule into the editor JSON Schema", () => {
+    const { schema } = generate({ colors: {} });
+    interface Pattern {
+      pattern: string;
+    }
+    const { opacity } = JSON.parse(JSON.stringify(schema.properties)) as {
+      opacity: { propertyNames: Pattern | { allOf: Pattern[] } };
+    };
+    const names = opacity.propertyNames;
+    const patterns = ("allOf" in names ? names.allOf : [names]).map(
+      (p) => new RegExp(p.pattern),
+    );
+    const accepted = (key: string) => patterns.every((re) => re.test(key));
+    expect(accepted("50")).toBe(false);
+    expect(accepted("muted")).toBe(true);
+    expect(accepted("o50")).toBe(true);
   });
 
   it("rejects two scale keys that kebab-case to the same class", () => {

@@ -113,11 +113,12 @@ const ThemeAliasShape = z.strictObject({
  */
 /**
  * `opacity` key: Tailwind reads `--opacity-<key>` for the colour `/<key>`
- * modifier too, and `color-mix()` needs a percentage there, so a digit-only
- * key (`50`) would break the `/50` step of every colour class.
+ * modifier too, so a digit-only key (`50`) would replace the `/50` step of
+ * every colour class with the theme value.
  */
-const OpacityKey = TokenKey.refine(
-  (key) => !/^\d+$/.test(key),
+const OpacityKey = TokenKey.regex(
+  // A pattern, not a refine, so the editor JSON Schema carries the rule.
+  /^(?!\d+$)/,
   "A digit-only opacity key would replace the colour modifier step of the same number (bg-primary/50 reads --opacity-50); name it by role (disabled, muted)",
 );
 

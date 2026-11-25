@@ -31,6 +31,7 @@ This convention applies to new themes and new design canvases. Never rename a ke
 - Every other colour key is semantic. Its value is `"$<primitive>"` in the base `colors` and in every `themeAxes` override that redefines it; a semantic key never aliases another semantic key, and an override never redefines a primitive.
 
 Semantic core: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.
+`muted` is a quiet fill and `mutedForeground` the secondary text on it (and on `background`), like every `<intent>`/`<intent>Foreground` pair.
 Product keys (`domainNutrition`) sit beside them.
 
 - A semantic key is a neutral key (`background`, `foreground`, `surface`, `surfaceRaised`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`) or `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: a core or product role, then the suffixes in that order, then at most one state, always last. `primaryForegroundHover` is the hover sibling of `primaryForeground`; `successSubtleForeground` is the text on a `successSubtle` fill. A product role is camelCase with one capital per segment (`domainNutrition`, not `primaryCTA`). Its first segment is not `on`, `ok`, `bad`, `warn` or `line`, and a role of several segments does not end in a suffix, a state, `Ink`, `Soft`, `Line`, `Ok`, `Bad` or `Warn` (`chartLine` reads as a v1 name).

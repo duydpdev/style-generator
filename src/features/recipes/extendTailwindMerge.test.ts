@@ -178,6 +178,8 @@ describe("createTailwindMergeExtension — scale tokens", () => {
     ["size-4 size-icon-sm", "size-icon-sm"],
     ["w-4 size-icon-sm", "size-icon-sm"],
     ["opacity-50 opacity-muted", "opacity-muted"],
+    ["backdrop-opacity-50 backdrop-opacity-muted", "backdrop-opacity-muted"],
+    ["opacity-muted backdrop-opacity-50", "opacity-muted backdrop-opacity-50"],
     ["z-10 z-modal", "z-modal"],
     ["duration-300 duration-fast", "duration-fast"],
     ["ease-in ease-standard", "ease-standard"],
@@ -320,7 +322,10 @@ describe("local prefix table is pinned to the registry", () => {
     ["zIndex", zIndexCategory],
   ] as const)("%s prefixes start with its category's", (key, category) => {
     const extra =
-      key === "controlHeight" ? ["min-h-control", "max-h-control"] : [];
+      {
+        controlHeight: ["min-h-control", "max-h-control"],
+        opacity: ["backdrop-opacity"],
+      }[key as string] ?? [];
     expect(prefixesOf(key)).toEqual([...category.classPrefixes, ...extra]);
   });
 

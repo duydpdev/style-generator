@@ -109,7 +109,14 @@
       "type": "object",
       "propertyNames": {
         "type": "string",
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+        "allOf": [
+          {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+          },
+          {
+            "pattern": "^(?!\\d+$)"
+          }
+        ]
       },
       "additionalProperties": {
         "type": "number",
@@ -288,7 +295,14 @@
               "type": "object",
               "propertyNames": {
                 "type": "string",
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+                "allOf": [
+                  {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+                  },
+                  {
+                    "pattern": "^(?!\\d+$)"
+                  }
+                ]
               },
               "additionalProperties": {
                 "type": "number",

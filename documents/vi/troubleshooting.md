@@ -1,4 +1,4 @@
-<!-- source: documents/troubleshooting.md sha256: cc55caaeb206 -->
+<!-- source: documents/troubleshooting.md sha256: 54170ea4c5c2 -->
 
 # Khắc phục sự cố
 
@@ -102,7 +102,7 @@ Hai đường dẫn là một file khi chúng tới cùng một inode (symlink, 
 
 ## File tokens bị thiếu hoặc lỗi thời
 
-`<file> does not exist. Run: … style-gen generate` và `<file> is out of date. Run: … style-gen generate` đến từ `style-gen generate --check`: file `theme.tokens.ts` đã commit không khớp với theme và config. Hãy chạy `yarn style-gen generate` (hoặc khởi động dev server, nơi plugin ghi file đó) rồi commit file. File chỉ chứa các key token, nên chỉ sửa một giá trị màu thì nó vẫn còn mới.
+`<file> does not exist. Run: … style-gen generate` và `<file> is out of date. Run: … style-gen generate` đến từ `style-gen generate --check`: file `theme.tokens.ts` đã commit không khớp với theme và config. Hãy chạy `yarn style-gen generate` (hoặc khởi động dev server, nơi plugin ghi file đó) rồi commit file. File chỉ chứa các key token, nên chỉ sửa một giá trị màu thì nó vẫn còn mới. Ngay sau khi nâng cấp thư viện, `--check` có thể fail dù theme không đổi: một bản minor có thể thêm field token (8.x thêm sáu mảng của các nhóm thang đo, rỗng khi không dùng). Chạy `generate` một lần rồi commit file.
 
 Một file lỗi thời ngay sau một lần `generate` sạch đã bị một công cụ khác ghi lại. Chỉ Prettier tôn trọng dòng `// prettier-ignore` mà file mang trước mỗi export; hãy loại `theme.tokens.ts` khỏi Biome, dprint, oxfmt, `--fix` stylistic của ESLint và mọi glob lint-staged có ghi lại file. Một bản checkout có kết thúc dòng CRLF không phải nguyên nhân: phép so sánh bỏ qua chúng.
 

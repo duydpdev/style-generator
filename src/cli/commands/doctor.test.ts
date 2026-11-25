@@ -510,7 +510,7 @@ describe("doctorCommand", () => {
       expect(doctorCommand(tmp)).toBe(0);
 
       expect(lines()).toContain(
-        "Theme   ⚠️  colors.onPrimary no longer produces a text colour in 9.0; rename to primaryForeground",
+        "Theme   ⚠️  colors.onPrimary is no longer read by contrastText in 9.0; rename to primaryForeground",
       );
       expect(lines()).not.toContain("onboarding");
     });

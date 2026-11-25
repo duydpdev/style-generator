@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { COLOR_STATES } from "../../shared/colorStates";
+
+import { DEFAULT_STANDARD } from "./canvas/standardSchema";
 import { findDeprecatedColorKeys } from "./deprecatedColorKeys";
 
 describe("findDeprecatedColorKeys", () => {
@@ -14,8 +17,8 @@ describe("findDeprecatedColorKeys", () => {
         },
       }),
     ).toEqual([
-      "colors.onPrimary no longer produces a text colour in 9.0; rename to primaryForeground",
-      "colors.onDomainX no longer produces a text colour in 9.0; rename to domainXForeground",
+      "colors.onPrimary is no longer read by contrastText in 9.0; rename to primaryForeground",
+      "colors.onDomainX is no longer read by contrastText in 9.0; rename to domainXForeground",
     ]);
   });
 
@@ -29,7 +32,7 @@ describe("findDeprecatedColorKeys", () => {
         },
       }),
     ).toEqual([
-      "colors.onPrimary no longer produces a text colour in 9.0; primaryForeground exists: merge onPrimary into it and remove onPrimary",
+      "colors.onPrimary is no longer read by contrastText in 9.0; primaryForeground exists: merge onPrimary into it and remove onPrimary",
     ]);
   });
 
@@ -47,8 +50,8 @@ describe("findDeprecatedColorKeys", () => {
         },
       }),
     ).toEqual([
-      "colors.onPrimaryHover no longer produces a text colour in 9.0; rename to primaryForegroundHover",
-      "colors.onDangerActive no longer produces a text colour in 9.0; dangerForegroundActive exists: merge onDangerActive into it and remove onDangerActive",
+      "colors.onPrimaryHover is a state of onPrimary, which contrastText no longer reads in 9.0 (the state goes last); rename to primaryForegroundHover",
+      "colors.onDangerActive is a state of onDanger, which contrastText no longer reads in 9.0 (the state goes last); dangerForegroundActive exists: merge onDangerActive into it and remove onDangerActive",
     ]);
   });
 
@@ -58,9 +61,29 @@ describe("findDeprecatedColorKeys", () => {
         colors: {
           onboarding: "#000",
           onCard: "#fff",
+          onHover: "#fff",
+          onSelected: "#fff",
+          onSecondaryHover: "#fff",
           primaryForeground: "#fff",
         },
       }),
     ).toEqual([]);
+  });
+
+  it("warns on an on<Intent><State> key when only the bare intent is a colour", () => {
+    expect(
+      findDeprecatedColorKeys({
+        colors: { primary: "#000", onPrimary: "#fff", onPrimaryHover: "#eee" },
+      }),
+    ).toEqual([
+      "colors.onPrimary is no longer read by contrastText in 9.0; rename to primaryForeground",
+      "colors.onPrimaryHover is a state of onPrimary, which contrastText no longer reads in 9.0 (the state goes last); rename to primaryForegroundHover",
+    ]);
+  });
+
+  it("uses the same states as COLOR_STATES", () => {
+    expect(DEFAULT_STANDARD.grammar?.states).toEqual(
+      COLOR_STATES.map((row) => row.suffix),
+    );
   });
 });

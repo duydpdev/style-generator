@@ -1,3 +1,64 @@
+# [8.3.0](https://github.com/duydpdev/style-generator/compare/v8.2.3...v8.3.0) (2026-11-25)
+
+### Features
+
+- add an interface floor to the agent contract ([8d0121c](https://github.com/duydpdev/style-generator/commit/8d0121c30a795b4608ed3fa56715361caf841bcf))
+
+  A new section lists the measurable limits every theme and themeAxes variant must keep: text and non-text contrast, visible focus, target size, colour never the only signal, reduced motion, and icons through the Button prefix/suffix slots on one size scale. The rules file style-gen init writes picks it up from the contract.
+
+- add motion, control height, icon size, opacity and z-index token groups ([93d5c72](https://github.com/duydpdev/style-generator/commit/93d5c721d2688fe23edb0308ff4543f2beed0a16))
+- add style-gen canvas check with board content, component page and frame rules ([ffc3c86](https://github.com/duydpdev/style-generator/commit/ffc3c8660f67d83bf92f17ca7ee6c0006670d0c5))
+- add the theme naming convention to the agent contract ([8cd4f23](https://github.com/duydpdev/style-generator/commit/8cd4f23d4fa2c67beddd3dc152e02602954b5024))
+- check the v2 colour grammar and prefer <intent>Foreground in contrastText ([0f72cc0](https://github.com/duydpdev/style-generator/commit/0f72cc017e8691b2817df5a338fea737064e5346))
+- require one theme per UI set in the agent contract ([d6f9ba6](https://github.com/duydpdev/style-generator/commit/d6f9ba63dd0bea7013dc18bed66a7b039819d467))
+
+### Bug Fixes
+
+- check the button recipe's theme keys at compile time ([1d3acc6](https://github.com/duydpdev/style-generator/commit/1d3acc663b339d677c6d0b300b627e34f2785f38))
+
+  themeKeys now satisfies ColorVariant, RoundedVariant and TextVariant of the theme, so a renamed key fails tsc instead of pick() throwing when the module loads. The embedded copies and the Vietnamese source hashes follow.
+
+- keep canvas check violations on one line and name inputs as written ([d8cacd2](https://github.com/duydpdev/style-generator/commit/d8cacd261d98a02a5a8f7da4b528a1a39523373f))
+
+  - Escape control characters and Unicode line terminators in every printed
+    line, and echo canvas.json values through token()/echo().
+  - Read single-quoted style attributes.
+  - Locate the empty-canvas violation at canvas.json:1.
+  - Name the canvas, canvas.json and boards as the user wrote --canvas.
+  - Validate manifest weights as single capitalised segments.
+  - Check each frame dimension against its own manifest limit.
+  - Treat an empty --canvas or --theme as missing (exit 2).
+  - Assert the packed tarball ships dist/canvas/design-canvas-standard.json.
+  - Document rule gating, top-level boards and single-value root padding.
+
+- map named opacity keys to a percentage and correct the doctor v2 name ([75f653a](https://github.com/duydpdev/style-generator/commit/75f653a6ea1bde9d540b65c1e47746fbf36cef50))
+
+  - Map --opacity-<key> to calc(var(--sg-opacity-<key>) * 100%) through a
+    themeValue descriptor marker, so bg-primary/<key> mixes the colour
+    instead of turning it transparent (Chromium and WebKit e2e).
+  - Put the state after Foreground in the doctor on<Intent> suggestion
+    (onPrimaryHover -> primaryForegroundHover).
+  - Reject steps(1, jump-none).
+  - Group backdrop-opacity-<key> for tailwind-merge.
+  - Express the digit-only opacity key rule as a pattern, so the editor
+    JSON Schema carries it.
+  - Make the starter muted a fill and mutedForeground its 4.5:1 text.
+  - Document the scale overrides, the doctor warnings, the scale groups
+    and the token file refresh after an upgrade.
+
+- print CLI hints for the project's package manager ([3a2d5e1](https://github.com/duydpdev/style-generator/commit/3a2d5e1349e06c676ffd922d3229c55105951e8c))
+- print every CLI hint with the project's package manager ([01e1542](https://github.com/duydpdev/style-generator/commit/01e15423ce66d0fdaebba1a25d55c6abdc311f75))
+- reject empty canvas stamp and standard paths and drop the schema lookahead ([2b1cfd8](https://github.com/duydpdev/style-generator/commit/2b1cfd880e21209cca9fce872fc5fe05f16d778f))
+
+  - An empty --stamp or --standard is a usage error: it used to resolve to
+    the working directory, and dropping it would skip its check silently.
+  - The digit-only opacity key pattern is \D, which RE2-based JSON Schema
+    validators accept.
+  - The README theme pairs muted with mutedForeground, as the naming
+    convention describes.
+
+- write a starter theme that follows the naming convention ([5f4a95c](https://github.com/duydpdev/style-generator/commit/5f4a95c25990c7f688f0c34e9cf4dbba39cdc958))
+
 # [8.2.3](https://github.com/duydpdev/style-generator/compare/v8.2.2...v8.2.3) (2026-11-22)
 
 ### Bug Fixes

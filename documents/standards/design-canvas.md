@@ -93,7 +93,7 @@ A literal is a `<script type="application/json" data-sg-literal="colors">` block
 - The manifest pages come first in `canvas.json#pages`, in manifest order (`bia`, `ds`, `cl`, `src`), then the screens.
 - `canvas.json#order` lists the core boards, then the `c-*` boards, then the `s-*` boards, then the screens.
 
-The component-page and frame rules run only when the manifest has `sourceBoards`; the section and literal rules only when it has `content`, and the provenance rule only when it has `provenanceBoard`. A manifest passed with `--standard` that predates them skips them.
+The component-page and frame rules run only when the manifest has `sourceBoards`; the section and literal rules only when it has `content`, and the provenance rule only when it has `provenanceBoard`. They always apply: a `--standard` file adds to the bundled standard and cannot remove them.
 
 ## What is not a token
 
@@ -107,7 +107,7 @@ The component-page and frame rules run only when the manifest has `sourceBoards`
 style-gen canvas check --canvas <dir> --theme <theme.json> [--stamp <ds-stamp.json>] [--intents primary,danger] [--naming] [--boards] [--standard <file>] [--ds-version <namespace>=<version>] [--recipes <file>]
 ```
 
-`--standard` points at another manifest (default: the one bundled into the CLI, shipped as `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json`), so a product with other board titles keeps its own file. Flags and exit codes: [CLI reference](../reference/cli.md#style-gen-canvas).
+`--standard` points at an additions file layered over the bundled standard (shipped for reading as `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json`), so a product with other board titles adds them without copying the manifest; `style-gen canvas standard init|migrate` creates and converts that file. Flags and exit codes: [CLI reference](../reference/cli.md#style-gen-canvas).
 `--naming` checks the theme's keys against the naming convention, inline `font-weight`, hand-written `border-radius`/`line-height`/`font-family` and primitive colour variables on screens; without it those rules are off.
 `--boards` checks the pages, the core boards and their order, and one board per design-system component in `canvas.json`, plus the board content, component-page and frame rules above.
 `--ds-version <namespace>=<version>` checks that `canvas.json` installs that design-system version.

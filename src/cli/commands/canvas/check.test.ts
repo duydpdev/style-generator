@@ -249,29 +249,38 @@ describe("style-gen canvas check", () => {
       expect(stderr()).toBe("x\\u000aOK: 1 files: cannot read (ENOENT)");
     });
 
-    it("names the missing key of an invalid --standard", async () => {
-      const older: Record<string, unknown> = { ...defaultManifest };
-      delete older.dsComponents;
-      writeTmpFile(dir, "standard.json", older);
+    it("names the path of an empty reason in --standard", async () => {
+      writeTmpFile(dir, "standard.json", {
+        scaleSteps: { borderRadius: { huge: { reason: " " } } },
+      });
       const args = ["--canvas", "canvas", "--theme", "theme.json"];
       expect(await canvas(...args, "--standard", "standard.json")).toBe(2);
-      expect(stderr()).toMatch(/^standard\.json: dsComponents /);
+      expect(stderr()).toBe(
+        "standard.json: scaleSteps.borderRadius.huge.reason must not be empty",
+      );
+    });
+
+    it("names an unknown key of --standard", async () => {
+      writeTmpFile(dir, "standard.json", { disabledrules: {} });
+      const args = ["--canvas", "canvas", "--theme", "theme.json"];
+      expect(await canvas(...args, "--standard", "standard.json")).toBe(2);
+      expect(stderr()).toMatch(/^standard\.json: \(root\) Unrecognized key/);
     });
   });
 
-  it("skips the content rule for a --standard without content", async () => {
+  it("applies the packaged content rule to a full-copy --standard without content", async () => {
     const older: Record<string, unknown> = { ...defaultManifest };
     delete older.content;
     delete older.provenanceBoard;
     writeTmpFile(dir, "standard.json", older);
     const args = ["--canvas", BROKEN, "--theme", BROKEN_THEME, "--boards"];
     expect(await canvas(...args)).toBe(1);
-    const all = stdout().join("\n");
-    expect(all).toMatch(/missing section|provenance/);
+    const packaged = stdout().join("\n");
+    expect(packaged).toMatch(/missing section|provenance/);
     logSpy.mockClear();
     expect(await canvas(...args, "--standard", "standard.json")).toBe(1);
-    const older_ = stdout().join("\n");
-    expect(older_).not.toMatch(/missing section|literal |provenance/);
-    expect(older_).toContain("cl-* boards are retired");
+    const copy = stdout();
+    expect(copy[0]).toContain("is a full copy");
+    expect(copy.slice(1).join("\n")).toBe(packaged);
   });
 });

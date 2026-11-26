@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 1ad91342153c -->
+<!-- source: documents/reference/cli.md sha256: e9fd7c11e6e8 -->
 
 # CLI
 
@@ -242,31 +242,46 @@ Mỗi dòng là một nhóm (`<category>/<class prefix>`): số byte gzip tiết
 
 ### `style-gen canvas`
 
-Kiểm tra một design canvas (một thư mục gồm các artboard `*.dc.html`, stylesheet của chúng và `canvas.json`) theo MỘT theme và chuẩn design canvas ([`documents/standards/design-canvas.md`](../../standards/design-canvas.md)). Lệnh con duy nhất là `check`.
+Kiểm tra một design canvas (một thư mục gồm các artboard `*.dc.html`, stylesheet của chúng và `canvas.json`) theo MỘT theme và chuẩn design canvas ([`documents/standards/design-canvas.md`](../../standards/design-canvas.md)). Các lệnh con: `check` và `standard init|migrate` (file bổ sung của sản phẩm, bên dưới).
 
 ```bash
 yarn style-gen canvas check --canvas design/canvas --theme styles/theme.json --naming --boards
 yarn style-gen canvas check --inventory --canvas design/canvas
 ```
 
-| Cờ                               | Kiểu      | Mặc định | Mô tả                                                                                                                   |
-| :------------------------------- | :-------- | :------- | :---------------------------------------------------------------------------------------------------------------------- |
-| `--canvas <dir>`                 | `string`  | bắt buộc | Thư mục canvas; mọi `*.dc.html` và `*.css` bên trong đều được kiểm tra                                                  |
-| `--theme <file>`                 | `string`  | bắt buộc | File theme JSON mà canvas lấy token; không cần khi dùng `--inventory`                                                   |
-| `--stamp <file>`                 | `string`  | không có | `ds-stamp.json`: design system được build từ đúng các byte theme này; với `--boards`, khối provenance khớp với nó       |
-| `--intents <a,b,c>`              | `string`  | không có | Các giá trị `color` được phép của mọi `*.Button`                                                                        |
-| `--naming`                       | `boolean` | tắt      | Quy ước đặt tên theme, không có `font-weight` inline, không viết tay radius, line height hay font family                |
-| `--boards`                       | `boolean` | tắt      | Page và board trong `canvas.json`, nội dung core board, page component, frame; canvas rỗng là một vi phạm               |
-| `--ds-version <namespace>=<ver>` | `string`  | không có | `canvas.json` cài đúng phiên bản design system này; với `--boards`, khối provenance ghi đúng nó                         |
-| `--recipes <file>`               | `string`  | không có | Với `--boards`: mỗi board `c-<name>` đánh dấu mọi giá trị trục trong recipe của nó bằng `data-sg-cell="<axis>:<value>"` |
-| `--standard <file>`              | `string`  | đi kèm   | Manifest thay cho manifest đi kèm (cùng cấu trúc; file không hợp lệ là lỗi input)                                       |
-| `--inventory`                    | `boolean` | tắt      | In ra những gì canvas dùng (biến, cỡ chữ và độ đậm, intent) dưới dạng JSON thay vì kiểm tra                             |
+| Cờ                               | Kiểu      | Mặc định | Mô tả                                                                                                                    |
+| :------------------------------- | :-------- | :------- | :----------------------------------------------------------------------------------------------------------------------- |
+| `--canvas <dir>`                 | `string`  | bắt buộc | Thư mục canvas; mọi `*.dc.html` và `*.css` bên trong đều được kiểm tra                                                   |
+| `--theme <file>`                 | `string`  | bắt buộc | File theme JSON mà canvas lấy token; không cần khi dùng `--inventory`                                                    |
+| `--stamp <file>`                 | `string`  | không có | `ds-stamp.json`: design system được build từ đúng các byte theme này; với `--boards`, khối provenance khớp với nó        |
+| `--intents <a,b,c>`              | `string`  | không có | Các giá trị `color` được phép của mọi `*.Button`                                                                         |
+| `--naming`                       | `boolean` | tắt      | Quy ước đặt tên theme, không có `font-weight` inline, không viết tay radius, line height hay font family                 |
+| `--boards`                       | `boolean` | tắt      | Page và board trong `canvas.json`, nội dung core board, page component, frame; canvas rỗng là một vi phạm                |
+| `--ds-version <namespace>=<ver>` | `string`  | không có | `canvas.json` cài đúng phiên bản design system này; với `--boards`, khối provenance ghi đúng nó                          |
+| `--recipes <file>`               | `string`  | không có | Với `--boards`: mỗi board `c-<name>` đánh dấu mọi giá trị trục trong recipe của nó bằng `data-sg-cell="<axis>:<value>"`  |
+| `--standard <file>`              | `string`  | đi kèm   | File bổ sung xếp chồng lên chuẩn đi kèm; bản sao đầy đủ được chuyển trong bộ nhớ kèm thông báo (không hợp lệ: lỗi input) |
+| `--inventory`                    | `boolean` | tắt      | In ra những gì canvas dùng (biến, cỡ chữ và độ đậm, intent) dưới dạng JSON thay vì kiểm tra                              |
 
 Đường dẫn được resolve theo thư mục hiện tại; các dòng vi phạm ghi file canvas tương đối với `--canvas`, còn theme và stamp giữ nguyên như khi truyền vào. Lỗi input cũng ghi canvas, theme, stamp và file recipes đúng như khi truyền vào. Board là các file nằm ngay trong `--canvas`: một `.dc.html` trong thư mục con chỉ được kiểm tra bằng các rule token, không bằng các rule board.
 
-Output: mỗi vi phạm một dòng `<file>:<line> <message>`, sau đó là `<n> violation(s)`; hoặc `OK: <n> files` khi không có vi phạm nào. Canvas rỗng khi dùng `--boards` là vi phạm `canvas.json:1 no .dc.html files under <dir>`. Ký tự xuống dòng và các ký tự điều khiển khác bị chép vào một dòng (chữ trong board, một tên trong `canvas.json`, một đường dẫn) được escape thành `\uXXXX`, nên mỗi vi phạm luôn nằm trên một dòng. Hợp đồng là format dòng đó, hai dòng tóm tắt và các mã thoát; câu chữ của từng message thì không, và có thể đổi trong một bản minor. Một bản minor chỉ được thêm key mới vào manifest dưới dạng optional, nên file `--standard` vẫn dùng được. Các mã thoát: `0` không có vi phạm (hoặc `--inventory`), `1` có vi phạm, `2` lỗi cách dùng (cờ lạ, lệnh con khác `check`, thiếu hoặc để trống `--canvas` hay `--theme`, để trống `--stamp`, `--standard` hay `--recipes`, `--ds-version` sai dạng, `--recipes` mà không có `--boards`), một input không đọc hoặc không parse được (thư mục canvas, theme, stamp, một `canvas.json` không parse được, một file recipes không có dạng `{ "<kebab name>": { "<axis>": ["<value>", …] } }`; thông báo nêu tên file và lý do, ví dụ `theme.json: cannot read (ENOENT)`; thiếu `canvas.json` khi dùng `--boards` hoặc `--ds-version` là vi phạm `canvas.json:1 missing canvas.json`, mã `1`), hoặc `--standard` không hợp lệ (thông báo nêu key, ví dụ `standard.json: dsComponents …`).
+Output: mỗi vi phạm một dòng `<file>:<line> <message>`, sau đó là `<n> violation(s)`; hoặc `OK: <n> files` khi không có vi phạm nào. Canvas rỗng khi dùng `--boards` là vi phạm `canvas.json:1 no .dc.html files under <dir>`. Ký tự xuống dòng và các ký tự điều khiển khác bị chép vào một dòng (chữ trong board, một tên trong `canvas.json`, một đường dẫn) được escape thành `\uXXXX`, nên mỗi vi phạm luôn nằm trên một dòng. Hợp đồng là format dòng đó, hai dòng tóm tắt và các mã thoát; câu chữ của từng message thì không, và có thể đổi trong một bản minor. Một bản minor có thể thêm key vào chuẩn đi kèm, và file bổ sung `--standard` thừa hưởng chúng mà không cần sửa. Các mã thoát: `0` không có vi phạm (hoặc `--inventory`), `1` có vi phạm, `2` lỗi cách dùng (cờ lạ, lệnh con lạ, cờ mà lệnh con không nhận, thiếu hoặc để trống `--canvas` hay `--theme`, để trống `--stamp`, `--standard` hay `--recipes`, `--ds-version` sai dạng, `--recipes` mà không có `--boards`), một input không đọc hoặc không parse được (thư mục canvas, theme, stamp, một `canvas.json` không parse được, một file recipes không có dạng `{ "<kebab name>": { "<axis>": ["<value>", …] } }`; thông báo nêu tên file và lý do, ví dụ `theme.json: cannot read (ENOENT)`; thiếu `canvas.json` khi dùng `--boards` hoặc `--ds-version` là vi phạm `canvas.json:1 missing canvas.json`, mã `1`), hoặc `--standard` không hợp lệ (thông báo nêu key, ví dụ `standard.json: dsComponents …`).
 
-Manifest mặc định được đóng gói trong CLI; một bản sao nằm ở `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json` để làm điểm bắt đầu cho file `--standard`.
+Chuẩn được đóng gói trong CLI và không thể gỡ hay thay thế: file `--standard` chỉ bổ sung role, bước scale, ngoại lệ, board và nội dung lên trên nó, mỗi mục nới lỏng một rule đều có `reason`. Một bản sao của chuẩn đi kèm nằm ở `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json` để đọc; tạo file của riêng bạn bằng `canvas standard init`.
+
+#### `style-gen canvas standard`
+
+```bash
+yarn style-gen canvas standard init
+yarn style-gen canvas standard migrate --theme styles/theme.json --dry-run
+```
+
+`init` ghi một file bổ sung rỗng (`{}`) và thoát `1` mà không đụng vào file khi nó đã tồn tại. `migrate` ghi lại một bản sao đầy đủ của chuẩn thành file bổ sung chỉ chứa phần theme và bản sao thêm vào chuẩn đi kèm (role, bước scale thừa với `reason` rỗng để điền, board, `alphaScale`); file bổ sung được giữ nguyên. Mã `2` khi thiếu `--theme`, file không đọc được hoặc chuẩn không hợp lệ.
+
+| Flag                | Type      | Default                | Description                                              |
+| :------------------ | :-------- | :--------------------- | :------------------------------------------------------- |
+| `--theme <file>`    | `string`  | bắt buộc với `migrate` | Theme JSON mà `migrate` đọc role màu và bước scale từ đó |
+| `--standard <file>` | `string`  | `canvas-standard.json` | File bổ sung để tạo (`init`) hoặc ghi lại (`migrate`)    |
+| `--dry-run`         | `boolean` | tắt                    | `migrate` in JSON bổ sung ra và không ghi gì             |
 
 ### `style-gen --version`
 

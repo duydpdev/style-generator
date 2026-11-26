@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_STANDARD, StandardSchema } from "./standardSchema";
+import { packagedStandard, StandardSchema } from "./standardSchema";
 import { namingViolations, PRIMITIVE } from "./themeRules";
+
+const DEFAULT_STANDARD = packagedStandard();
 
 const FORM = "<role>[Subtle][Border][Foreground][Hover|Active|Selected]";
 
@@ -82,6 +84,15 @@ describe("v2 colour grammar", () => {
       ]);
     },
   );
+
+  it("applies a multi-segment rename only to a whole key", () => {
+    expect(grammarLines(["primaryForegroundSoft"])).toEqual([
+      expect.stringContaining("(rename to primarySubtleForeground)"),
+    ]);
+    expect(grammarLines(["foregroundSoft"])).toEqual([
+      expect.stringContaining("(rename to foregroundSecondary)"),
+    ]);
+  });
 
   it("suggests only names that follow the grammar", () => {
     const keys = [

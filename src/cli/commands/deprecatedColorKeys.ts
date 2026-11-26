@@ -1,13 +1,10 @@
 import type { ThemeConfig } from "../../core/themeSchema";
 
-import { DEFAULT_STANDARD } from "./canvas/standardSchema";
+import { packagedStandard } from "./canvas/standardSchema";
 
-/** The v2 grammar states (`Hover`, `Active`, `Selected`), always last in a key. */
-const STATES = DEFAULT_STANDARD.grammar?.states ?? [];
-
-// `primaryHover` → `primary`; the input when it ends in no state.
+// `primaryHover` → `primary`; the input when it ends in no state (the grammar states: `Hover`, `Active`, `Selected`).
 const withoutState = (intent: string): string => {
-  const state = STATES.find(
+  const state = (packagedStandard().grammar?.states ?? []).find(
     (name) => intent.endsWith(name) && intent.length > name.length,
   );
   return state === undefined ? intent : intent.slice(0, -state.length);

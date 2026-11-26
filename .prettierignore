@@ -33,3 +33,7 @@ next-env.d.ts
 
 # Google Fonts responses pinned verbatim for the site screenshots (e2e-site/site.spec.ts)
 e2e-site/fixtures/
+
+# Copy of a product's canvas-standard.json, pinned by sha256 in
+# src/cli/commands/canvas/standardCommands.test.ts; must stay byte-identical.
+src/__integration__/__fixtures__/canvas-standard/bodylog-standard.json

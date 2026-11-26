@@ -20,8 +20,10 @@
     "neutral": [
       "background",
       "foreground",
+      "foregroundSecondary",
       "surface",
       "surfaceRaised",
+      "surfaceStrong",
       "muted",
       "mutedForeground",
       "border",
@@ -48,10 +50,11 @@
       "bad": "danger",
       "warn": "warning",
       "line": "border",
-      "lineStrong": "borderStrong"
+      "lineStrong": "borderStrong",
+      "foregroundSoft": "foregroundSecondary",
+      "foregroundSubtle": "foregroundSecondary"
     }
   },
-  "radius": ["sm", "md", "lg", "xl", "full"],
   "weights": {
     "400": "Regular",
     "500": "Medium",
@@ -157,5 +160,172 @@
       "literals": []
     }
   },
-  "provenanceBoard": "Main.dc.html"
+  "provenanceBoard": "Main.dc.html",
+  "scales": {
+    "controlHeight": {
+      "kind": "size",
+      "steps": ["xs", "sm", "md", "lg", "xl"]
+    },
+    "iconSize": {
+      "kind": "size",
+      "steps": ["xs", "sm", "md", "lg", "xl"]
+    },
+    "borderRadius": {
+      "kind": "size",
+      "steps": ["sm", "md", "lg", "xl", "full"]
+    },
+    "borderWidth": {
+      "kind": "size",
+      "steps": ["thin", "thick"]
+    },
+    "motionDuration": {
+      "kind": "size",
+      "steps": ["fast", "base", "slow"]
+    },
+    "zIndex": {
+      "kind": "ordinal",
+      "steps": ["dropdown", "sticky", "overlay", "modal", "toast"]
+    },
+    "shadows": {
+      "kind": "name",
+      "steps": ["xs", "sm", "md", "lg", "xl"]
+    },
+    "fontFamily": {
+      "kind": "name",
+      "steps": ["sans", "display", "mono"]
+    },
+    "opacity": {
+      "kind": "name",
+      "steps": ["disabled"]
+    },
+    "motionEasing": {
+      "kind": "name",
+      "steps": ["standard", "entrance", "exit"]
+    }
+  },
+  "descriptions": {
+    "background": "Page background behind every surface.",
+    "foreground": "Primary text and icons on background and surface.",
+    "foregroundSecondary": "Secondary text: captions and supporting copy, quieter than foreground but still readable.",
+    "surface": "Card, panel and popover fill resting on background.",
+    "surfaceRaised": "Fill of a layer that floats above surface, such as a menu.",
+    "surfaceStrong": "Emphasised fill for a region that must stand apart from surface, such as a table header.",
+    "muted": "Quiet fill for disabled areas, tracks and subtle containers.",
+    "mutedForeground": "Text and icons on muted and surface that stay readable but recede.",
+    "border": "Default hairline between surfaces and around inputs.",
+    "borderStrong": "Emphasised border: active inputs and dividers that must show.",
+    "focus": "Focus ring colour; needs 3:1 against the background.",
+    "scrim": "Translucent layer behind modals and drawers.",
+    "primary": "Brand action fill: the main button and selected controls.",
+    "primaryForeground": "Text and icons on primary.",
+    "primaryHover": "Primary fill while the pointer is over it.",
+    "primaryActive": "Primary fill while it is pressed.",
+    "danger": "Destructive action fill and error emphasis.",
+    "success": "Positive outcome fill and confirmation emphasis.",
+    "warning": "Caution fill and warning emphasis."
+  },
+  "rules": {
+    "name-vocabulary": {
+      "basis": {
+        "type": "choice",
+        "source": "colour keys follow one grammar so tokens read the same across products"
+      }
+    },
+    "description-empty": {
+      "basis": {
+        "type": "choice",
+        "source": "a token without a stated purpose is guessed at by every consumer"
+      }
+    },
+    "description-unknown-key": {
+      "basis": {
+        "type": "technical",
+        "source": "a usage entry for a missing token documents nothing"
+      }
+    },
+    "scale-name": {
+      "basis": {
+        "type": "choice",
+        "source": "closed step names keep scales comparable across products"
+      }
+    },
+    "scale-order": {
+      "basis": {
+        "type": "technical",
+        "source": "step names promise an order; values must keep it"
+      }
+    },
+    "scale-unit": {
+      "basis": {
+        "type": "technical",
+        "source": "mixed units cannot be compared or ordered"
+      }
+    },
+    "scale-duplicate": {
+      "basis": {
+        "type": "technical",
+        "source": "two steps with one value make a step meaningless"
+      }
+    },
+    "order-text": {
+      "basis": {
+        "type": "choice",
+        "source": "a text tier must not read stronger than the tier above it"
+      }
+    },
+    "order-border": {
+      "basis": {
+        "type": "choice",
+        "source": "borderStrong exists to be stronger than border"
+      }
+    },
+    "order-surface": {
+      "basis": {
+        "type": "choice",
+        "source": "surfaceStrong exists to stand apart from surface"
+      }
+    },
+    "contrast-text": {
+      "basis": {
+        "type": "wcag",
+        "source": "WCAG 2.2 SC 1.4.3 Contrast (Minimum)"
+      }
+    },
+    "contrast-focus": {
+      "basis": {
+        "type": "wcag",
+        "source": "WCAG 2.2 SC 1.4.11 Non-text Contrast"
+      }
+    },
+    "ds-name-collision": {
+      "basis": {
+        "type": "technical",
+        "source": "two token families that kebab-case to one class prefix emit one class"
+      }
+    },
+    "ref-class": {
+      "basis": {
+        "type": "technical",
+        "source": "a class with no token behind it renders nothing"
+      }
+    },
+    "ref-var": {
+      "basis": {
+        "type": "technical",
+        "source": "a var() with no declaration resolves to nothing"
+      }
+    },
+    "token-bypass": {
+      "basis": {
+        "type": "choice",
+        "source": "a raw value in a family the theme defines forks the design from its tokens"
+      }
+    },
+    "token-unused": {
+      "basis": {
+        "type": "choice",
+        "source": "an unused token is dead weight in every export"
+      }
+    }
+  }
 }

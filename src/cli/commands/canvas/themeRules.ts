@@ -27,10 +27,14 @@ const joinSegments = (segments: string[]): string =>
     )
     .join("");
 
-// A core role, or a camelCase product role that is not `on<Role>`, does not start with a
-// deprecated name (`ok`) and, with several segments, does not end in a suffix, state or `Ink`.
-function roleAllowed(role: string, grammar: Grammar): boolean {
-  if (grammar.roles.includes(role)) return true;
+/**
+ * Whether a name is a valid product role: camelCase, not `on<Role>`, not starting with a
+ * deprecated name (`ok`) and, with several segments, not ending in a suffix, state or `Ink`.
+ * @param {string} role - A candidate role name
+ * @param {Grammar} grammar - The colour grammar
+ * @returns {boolean} True when the shape is allowed
+ */
+export function roleShapeAllowed(role: string, grammar: Grammar): boolean {
   const segments = segmentsOf(role);
   const first = (segments[0] ?? "").toLowerCase();
   const renamed = Object.keys(grammar.renames).filter(
@@ -48,15 +52,29 @@ function roleAllowed(role: string, grammar: Grammar): boolean {
   return segments.length === 1 || !reserved.includes(last);
 }
 
-// Whether a semantic key follows `<role>[suffixes][state]` or is neutral.
-function followsGrammar(key: string, grammar: Grammar): boolean {
-  if (grammar.neutral.includes(key)) return true;
+/**
+ * The role of a semantic colour key: what remains after its suffixes and state.
+ * @param {string} key - A theme colour key
+ * @param {Grammar} grammar - The colour grammar
+ * @returns {string | null} The role, or null for a neutral or primitive key
+ */
+export function roleOf(key: string, grammar: Grammar): string | null {
+  if (PRIMITIVE.test(key) || grammar.neutral.includes(key)) return null;
   const suffixes = grammar.suffixes.map((s) => "(?:" + s + ")?").join("");
   const shape = new RegExp(
     `^(.+?)${suffixes}(?:${grammar.states.join("|")})?$`,
   );
-  const role = shape.exec(key)?.[1];
-  return role !== undefined && roleAllowed(role, grammar);
+  return shape.exec(key)?.[1] ?? null;
+}
+
+const roleAllowed = (role: string, grammar: Grammar): boolean =>
+  grammar.roles.includes(role) || roleShapeAllowed(role, grammar);
+
+// Whether a semantic key follows `<role>[suffixes][state]` or is neutral.
+function followsGrammar(key: string, grammar: Grammar): boolean {
+  if (grammar.neutral.includes(key)) return true;
+  const role = roleOf(key, grammar);
+  return role !== null && roleAllowed(role, grammar);
 }
 
 // The v2 name: whole deprecated segments renamed (longest first), `on` prefix to `Foreground`,
@@ -68,10 +86,12 @@ function suggestName(key: string, grammar: Grammar): string {
   const input = segmentsOf(key);
   const words: string[] = [];
   for (let i = 0; i < input.length;) {
-    const hit = renames.find(([from]) =>
-      from.every(
-        (word, j) => input[i + j]?.toLowerCase() === word.toLowerCase(),
-      ),
+    const hit = renames.find(
+      ([from]) =>
+        (from.length === 1 || (i === 0 && from.length === input.length)) &&
+        from.every(
+          (word, j) => input[i + j]?.toLowerCase() === word.toLowerCase(),
+        ),
     );
     words.push(...(hit ? hit[1] : [input[i] ?? ""]));
     i += hit ? hit[0].length : 1;
@@ -283,10 +303,9 @@ export function namingViolations(theme: unknown, standard: Standard): string[] {
     ...colourViolations(record, standard),
     ...typographyViolations(record, standard),
   ];
+  const radius = standard.scales?.borderRadius?.steps ?? [];
   for (const key of Object.keys(asRecord(record.borderRadius)))
-    if (!standard.radius.includes(key))
-      out.push(
-        `borderRadius.${key} is not one of ${standard.radius.join(", ")}`,
-      );
+    if (!radius.includes(key))
+      out.push(`borderRadius.${key} is not one of ${radius.join(", ")}`);
   return out;
 }

@@ -169,7 +169,7 @@ Tests sit next to the code (`*.test.ts`). The main groups:
   `generate` (including `--watch` with a real chokidar and a test that edits the config while watching), `schema`,
   `tokens` (the generated module is re-imported and compared with `createDesignTokens`), `budget` (measures gzip on temporary files/directories, three exit codes,
   the two `OK:`/`OVER BUDGET:` lines), `doctor` (utility collision warnings, `aliasHints`, theme × options errors, an invalid config stops early),
-  `canvas check` (`src/cli/commands/canvas/check.test.ts`: exit codes 0/1/2 through `runCli`, the input-error messages, a `--standard` without the content keys).
+  `canvas check` (`src/cli/commands/canvas/check.test.ts`: exit codes 0/1/2 through `runCli`, the input-error messages, a `--standard` additions file layered over the bundled standard).
 - `src/shared/*` — `helpers` (kebab/camel), `axisAttributeName`, `cssBlock`.
 
 Coverage uses the v8 provider with `include: ["src/**/*.ts"]`, so a file that no test imports (e.g. `src/cli/index.ts`) still shows up at 0 % instead of being skipped.

@@ -1,0 +1,363 @@
+{
+  "$schema": "./theme.schema.json",
+  "colors": {
+    "amber50": "#fef3c7",
+    "amber100": "#fde047",
+    "amber200": "#fcd34d",
+    "amber300": "#facc15",
+    "amber400": "#e6b84a",
+    "amber500": "#eda100",
+    "amber600": "#ca8a04",
+    "amber700": "#80631c",
+    "amber800": "#854d0e",
+    "amber900": "#3a2e10",
+    "black": "#000000",
+    "green50": "#dcfce7",
+    "green100": "#e6f2ec",
+    "green200": "#86efac",
+    "green300": "#8fd4ae",
+    "green400": "#4ade80",
+    "green500": "#6bbf93",
+    "green600": "#22c55e",
+    "green700": "#2e7d5b",
+    "green800": "#15803d",
+    "green900": "#25684b",
+    "green950": "#12301f",
+    "indigo50": "#c2ceff",
+    "indigo100": "#a9bbff",
+    "indigo200": "#8fa6ff",
+    "indigo300": "#60a5fa",
+    "indigo400": "#3b82f6",
+    "indigo500": "#2647d9",
+    "indigo600": "#1f3bb8",
+    "indigo700": "#19319a",
+    "navy50": "#e2e8f0",
+    "navy100": "#c9c6d6",
+    "navy200": "#94a3b8",
+    "navy300": "#8a8fa8",
+    "navy400": "#6b7194",
+    "navy500": "#475569",
+    "navy600": "#2a3150",
+    "navy700": "#262c47",
+    "navy800": "#1d2238",
+    "navy900": "#0f1530",
+    "navy950": "#0b0e1d",
+    "orange400": "#fb923c",
+    "orange500": "#f97316",
+    "orange600": "#ea580c",
+    "orange800": "#b45309",
+    "orange900": "#c2410c",
+    "pink300": "#e87ba4",
+    "pink400": "#d55181",
+    "red100": "#fbeae5",
+    "red200": "#f6a08c",
+    "red300": "#f08369",
+    "red500": "#c8462c",
+    "red600": "#a8381f",
+    "red700": "#90311d",
+    "sand100": "#faf7f2",
+    "sand200": "#f2efe9",
+    "sand400": "#ebe6dc",
+    "sky100": "#f8fafc",
+    "sky200": "#e0f2fe",
+    "sky300": "#7dd3fc",
+    "sky400": "#6fb8e3",
+    "sky600": "#0369a1",
+    "sky700": "#2c6386",
+    "sky900": "#0f2a3d",
+    "violet300": "#9085e9",
+    "violet400": "#6250d6",
+    "white": "#ffffff",
+    "background": "$sand100",
+    "cellAutoBorder": "$navy50",
+    "cellAuto": "$sky100",
+    "cellAutoForeground": "$navy800",
+    "dangerSubtleForeground": "$red600",
+    "dangerSubtle": "$red100",
+    "domainBody": "$indigo500",
+    "domainBodySubtleForeground": "$indigo500",
+    "domainBodySubtle": "$indigo400/12",
+    "borderStrong": "$navy300",
+    "macroCarb": "$amber500",
+    "macroFat": "$pink300",
+    "focus": "$indigo500",
+    "foregroundSubtle": "$navy600",
+    "cellInputBorder": "$sky400",
+    "cellInput": "$sky200",
+    "cellInputForeground": "$sky600",
+    "domainNutrition": "$green700",
+    "domainNutritionSubtleForeground": "$green800",
+    "domainNutritionSubtle": "$green600/12",
+    "successSubtleForeground": "$green900",
+    "successSubtle": "$green100",
+    "macroProtein": "$violet400",
+    "scrim": "$navy900/45",
+    "domainSettings": "$navy200",
+    "domainSettingsSubtleForeground": "$navy500",
+    "domainSettingsSubtle": "$navy200/16",
+    "cellSetupBorder": "$amber400",
+    "cellSetup": "$amber50",
+    "cellSetupForeground": "$orange800",
+    "muted": "$sand200",
+    "surfaceStrong": "$sand400",
+    "cellTargetBorder": "$green500",
+    "cellTarget": "$green50",
+    "cellTargetForeground": "$green950",
+    "cellTotal": "$navy50",
+    "cellTotalForeground": "$navy900",
+    "domainTraining": "$orange600",
+    "domainTrainingSubtleForeground": "$orange900",
+    "domainTrainingSubtle": "$orange600/8",
+    "warningSubtleForeground": "$amber800",
+    "warningSubtle": "$amber50",
+    "foreground": "$navy900",
+    "mutedForeground": "$navy400",
+    "primary": "$indigo500",
+    "primaryActive": "$indigo700",
+    "primarySubtle": "$indigo500/12",
+    "primarySubtleForeground": "$indigo500",
+    "primaryHover": "$indigo600",
+    "surface": "$white",
+    "danger": "$red500",
+    "dangerHover": "$red600",
+    "dangerActive": "$red700",
+    "border": "$navy900/8",
+    "primaryForeground": "$white",
+    "success": "$green700",
+    "warning": "$amber600"
+  },
+  "typography": {
+    "text12Regular": {
+      "fontSize": "12px",
+      "fontWeight": 400,
+      "lineHeight": "150%"
+    },
+    "text12Semibold": {
+      "fontSize": "12px",
+      "fontWeight": 600,
+      "lineHeight": "150%"
+    },
+    "text12Bold": {
+      "fontSize": "12px",
+      "fontWeight": 700,
+      "lineHeight": "150%"
+    },
+    "text14Regular": {
+      "fontSize": "14px",
+      "fontWeight": 400,
+      "lineHeight": "150%"
+    },
+    "text14Medium": {
+      "fontSize": "14px",
+      "fontWeight": 500,
+      "lineHeight": "150%"
+    },
+    "text14Semibold": {
+      "fontSize": "14px",
+      "fontWeight": 600,
+      "lineHeight": "150%"
+    },
+    "text14Bold": {
+      "fontSize": "14px",
+      "fontWeight": 700,
+      "lineHeight": "150%"
+    },
+    "text16Regular": {
+      "fontSize": "16px",
+      "fontWeight": 400,
+      "lineHeight": "150%"
+    },
+    "text16Semibold": {
+      "fontSize": "16px",
+      "fontWeight": 600,
+      "lineHeight": "150%"
+    },
+    "text16Bold": {
+      "fontSize": "16px",
+      "fontWeight": 700,
+      "lineHeight": "150%"
+    },
+    "text20Regular": {
+      "fontSize": "20px",
+      "fontWeight": 400,
+      "lineHeight": "125%"
+    },
+    "text20Semibold": {
+      "fontSize": "20px",
+      "fontWeight": 600,
+      "lineHeight": "125%"
+    },
+    "text20Bold": {
+      "fontSize": "20px",
+      "fontWeight": 700,
+      "lineHeight": "125%"
+    },
+    "text24Regular": {
+      "fontSize": "24px",
+      "fontWeight": 400,
+      "lineHeight": "125%"
+    },
+    "text24Bold": {
+      "fontSize": "24px",
+      "fontWeight": 700,
+      "lineHeight": "125%"
+    },
+    "text32Regular": {
+      "fontSize": "32px",
+      "fontWeight": 400,
+      "lineHeight": "125%"
+    },
+    "text32Bold": {
+      "fontSize": "32px",
+      "fontWeight": 700,
+      "lineHeight": "125%"
+    },
+    "text40Regular": {
+      "fontSize": "40px",
+      "fontWeight": 400,
+      "lineHeight": "120%"
+    },
+    "text40Medium": {
+      "fontSize": "40px",
+      "fontWeight": 500,
+      "lineHeight": "120%"
+    },
+    "text40Semibold": {
+      "fontSize": "40px",
+      "fontWeight": 600,
+      "lineHeight": "120%"
+    },
+    "text40Bold": {
+      "fontSize": "40px",
+      "fontWeight": 700,
+      "lineHeight": "120%"
+    },
+    "text56Regular": {
+      "fontSize": "56px",
+      "fontWeight": 400,
+      "lineHeight": "120%"
+    }
+  },
+  "shadows": {
+    "lg": "0px 20px 48px -16px rgba(15, 21, 48, 0.18), 0px 4px 12px rgba(15, 21, 48, 0.06)",
+    "md": "0px 8px 24px -8px rgba(15, 21, 48, 0.12), 0px 2px 6px rgba(15, 21, 48, 0.05)",
+    "sm": "0px 1px 2px rgba(15, 21, 48, 0.06), 0px 1px 1px rgba(15, 21, 48, 0.04)"
+  },
+  "borderRadius": {
+    "lg": "16px",
+    "md": "10px",
+    "full": "999px",
+    "sm": "6px",
+    "xl": "24px"
+  },
+  "fontFamily": {
+    "sans": "\"Geist\", ui-sans-serif, system-ui, sans-serif",
+    "mono": "\"JetBrains Mono\", ui-monospace, monospace",
+    "serif": "\"Newsreader\", Georgia, serif"
+  },
+  "controlHeight": {
+    "sm": "1.75rem",
+    "md": "2.25rem",
+    "lg": "2.75rem",
+    "pill": "24px",
+    "chip": "28px"
+  },
+  "borderWidth": {
+    "hairline": "1px",
+    "strong": "2px"
+  },
+  "iconSize": {
+    "xs": "12px",
+    "sm": "16px",
+    "md": "20px",
+    "lg": "24px"
+  },
+  "opacity": {
+    "disabled": 0.5
+  },
+  "zIndex": {
+    "dropdown": 10,
+    "sticky": 20,
+    "overlay": 30,
+    "modal": 40,
+    "toast": 50
+  },
+  "motionDuration": {
+    "fast": "150ms",
+    "base": "200ms",
+    "slow": "300ms"
+  },
+  "motionEasing": {
+    "standard": "cubic-bezier(0.2, 0, 0, 1)",
+    "exit": "cubic-bezier(0.4, 0, 1, 1)"
+  },
+  "themeAxes": {
+    "theme": {
+      "dark": {
+        "colors": {
+          "background": "$navy950",
+          "cellAutoBorder": "$navy600",
+          "cellAuto": "$navy800",
+          "cellAutoForeground": "$navy50",
+          "dangerSubtleForeground": "$red200",
+          "dangerSubtle": "$red300/16",
+          "domainBody": "$indigo400",
+          "domainBodySubtleForeground": "$indigo300",
+          "domainBodySubtle": "$indigo400/16",
+          "borderStrong": "$navy400",
+          "macroCarb": "$amber600",
+          "macroFat": "$pink400",
+          "focus": "$indigo200",
+          "foregroundSubtle": "$navy100",
+          "cellInputBorder": "$sky700",
+          "cellInput": "$sky900",
+          "cellInputForeground": "$sky300",
+          "domainNutrition": "$green600",
+          "domainNutritionSubtleForeground": "$green400",
+          "domainNutritionSubtle": "$green600/16",
+          "successSubtleForeground": "$green300",
+          "successSubtle": "$green500/16",
+          "macroProtein": "$violet300",
+          "scrim": "$black/60",
+          "domainSettingsSubtleForeground": "$navy200",
+          "domainSettingsSubtle": "$navy200/16",
+          "cellSetupBorder": "$amber700",
+          "cellSetup": "$amber900",
+          "cellSetupForeground": "$amber200",
+          "muted": "$navy800",
+          "surfaceStrong": "$navy700",
+          "cellTargetBorder": "$green900",
+          "cellTarget": "$green950",
+          "cellTargetForeground": "$green200",
+          "cellTotal": "$navy600",
+          "cellTotalForeground": "$sky100",
+          "domainTraining": "$orange500",
+          "domainTrainingSubtleForeground": "$orange400",
+          "domainTrainingSubtle": "$orange500/16",
+          "warningSubtleForeground": "$amber100",
+          "warningSubtle": "$amber300/12",
+          "foreground": "$sand200",
+          "mutedForeground": "$navy300",
+          "primary": "$indigo200",
+          "primaryActive": "$indigo50",
+          "primarySubtle": "$indigo200/12",
+          "primarySubtleForeground": "$indigo200",
+          "primaryHover": "$indigo100",
+          "surface": "$navy900",
+          "danger": "$red300",
+          "dangerHover": "$red200",
+          "dangerActive": "$red100",
+          "border": "$sand200/8",
+          "primaryForeground": "$navy900",
+          "success": "$green500",
+          "warning": "$amber300"
+        },
+        "shadows": {
+          "lg": "0px 20px 48px -16px rgba(0, 0, 0, 0.6)",
+          "md": "0px 8px 24px -8px rgba(0, 0, 0, 0.5), 0px 2px 6px rgba(0, 0, 0, 0.3)",
+          "sm": "0px 1px 2px rgba(0, 0, 0, 0.4)"
+        }
+      }
+    }
+  }
+}

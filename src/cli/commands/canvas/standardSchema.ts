@@ -113,7 +113,14 @@ function readPackagedManifest(): unknown {
   throw new Error(`${MANIFEST_FILE} is missing from the installed package`);
 }
 
-/** The manifest shipped with the package (also readable by products at `dist/canvas/`). */
-export const DEFAULT_STANDARD: Standard = StandardSchema.parse(
-  readPackagedManifest(),
-);
+let packaged: Standard | undefined;
+
+/**
+ * The manifest shipped with the package (also readable by products at `dist/canvas/`),
+ * read on first use so a command that never checks a canvas never touches the file.
+ * @returns {Standard} The validated packaged standard
+ */
+export function packagedStandard(): Standard {
+  packaged ??= StandardSchema.parse(readPackagedManifest());
+  return packaged;
+}

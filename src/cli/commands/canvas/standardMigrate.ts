@@ -1,11 +1,12 @@
 import { asRecord } from "./parseHtml";
 import { additionsFromFullCopy, type Additions } from "./standardLayer";
 import type { Standard } from "./standardSchema";
-import { roleOf } from "./themeRules";
+import { roleOf, roleShapeAllowed } from "./themeRules";
 
 /**
  * Colour roles the theme uses that the packaged grammar does not declare,
- * each without a description (the next check reports that).
+ * each without a description (the next check reports that). A key whose role
+ * breaks the grammar (`okInk`, `onPrimary`) stays a rename finding instead.
  * @param {unknown} theme - Parsed theme JSON
  * @param {Standard} base - The packaged standard
  * @returns {string[]} Role names, sorted
@@ -17,7 +18,8 @@ function themeRoles(theme: unknown, base: Standard): string[] {
   const roles = new Set<string>();
   for (const key of Object.keys(asRecord(asRecord(theme).colors))) {
     const role = roleOf(key, grammar);
-    if (role !== null && !declared.has(role)) roles.add(role);
+    if (role !== null && !declared.has(role) && roleShapeAllowed(role, grammar))
+      roles.add(role);
   }
   return [...roles].sort((a, b) => a.localeCompare(b));
 }
@@ -49,14 +51,16 @@ function themeScaleSteps(
  * @param {unknown} raw - The parsed full copy
  * @param {unknown} theme - Parsed theme JSON of the product
  * @param {Standard} base - The packaged standard
+ * @param {string} label - The full copy as the user wrote it, for messages
  * @returns {Additions} The additions: roles, extra scale steps, product boards, `alphaScale`
  */
 export function migrateAdditions(
   raw: unknown,
   theme: unknown,
   base: Standard,
+  label: string,
 ): Additions {
-  const copy = additionsFromFullCopy(raw, base);
+  const copy = additionsFromFullCopy(raw, base, label);
   const roles = {
     ...Object.fromEntries(
       themeRoles(theme, base).map((r) => [r, { description: "" }]),

@@ -154,16 +154,29 @@ describe("style-gen canvas standard", () => {
         expect(additions).not.toHaveProperty(key);
     });
 
-    it("leaves the next check to report the empty reasons", async () => {
+    it("leaves the next check to report every empty reason at once", async () => {
       await runCli(
         ["canvas", "standard", "migrate", "--theme", "theme.json"],
         dir,
       );
-      expect(() =>
-        loadStandard(standardFile(), "canvas-standard.json"),
-      ).toThrow(
-        /^canvas-standard\.json: scaleSteps\.\w+\.\w+\.reason must not be empty$/,
-      );
+      let message = "";
+      try {
+        loadStandard(standardFile(), "canvas-standard.json");
+      } catch (error) {
+        message = (error as Error).message;
+      }
+      const paths = message
+        .replace("canvas-standard.json: ", "")
+        .split("; ")
+        .map((part) => part.replace(" must not be empty", ""));
+      paths.sort((a, b) => a.localeCompare(b));
+      expect(paths).toEqual([
+        "scaleSteps.borderWidth.hairline.reason",
+        "scaleSteps.borderWidth.strong.reason",
+        "scaleSteps.controlHeight.chip.reason",
+        "scaleSteps.controlHeight.pill.reason",
+        "scaleSteps.fontFamily.serif.reason",
+      ]);
     });
 
     it("--dry-run prints the JSON and leaves the file byte for byte", async () => {
@@ -193,6 +206,37 @@ describe("style-gen canvas standard", () => {
       expect(JSON.parse(stdout())).toEqual({ alphaScale: [8] });
       expect(await runCli(args, dir)).toBe(0);
       expect(readFileSync(standardFile(), "utf8")).toBe('{"alphaScale":[8]}\n');
+    });
+
+    it("leaves a role that breaks the grammar as a rename finding, not a declared role", async () => {
+      const theme = JSON.parse(
+        readFileSync(join(dir, "theme.json"), "utf8"),
+      ) as { colors: Record<string, string> };
+      theme.colors.okInk = "#000";
+      theme.colors.onPrimary = "#fff";
+      writeFileSync(join(dir, "theme.json"), JSON.stringify(theme));
+      await runCli(
+        ["canvas", "standard", "migrate", "--theme", "theme.json"],
+        dir,
+      );
+      const roles = Object.keys(readAdditions().roles as object);
+      expect(roles).not.toContain("okInk");
+      expect(roles).not.toContain("onPrimary");
+      expect(roles).toContain("domainBody");
+    });
+
+    it("leaves a malformed full copy untouched and exits 2", async () => {
+      writeFileSync(standardFile(), '{"semanticCore":[],"boards":"no"}');
+      expect(
+        await runCli(
+          ["canvas", "standard", "migrate", "--theme", "theme.json"],
+          dir,
+        ),
+      ).toBe(2);
+      expect(stderr()).toMatch(/^canvas-standard\.json: boards /);
+      expect(readFileSync(standardFile(), "utf8")).toBe(
+        '{"semanticCore":[],"boards":"no"}',
+      );
     });
 
     it("requires --theme", async () => {

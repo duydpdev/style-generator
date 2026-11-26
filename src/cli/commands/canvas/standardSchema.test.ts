@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 
 import defaultManifest from "../../canvas/design-canvas-standard.json";
 
-import { DEFAULT_STANDARD, StandardSchema } from "./standardSchema";
+import { packagedStandard, StandardSchema } from "./standardSchema";
+
+const DEFAULT_STANDARD = packagedStandard();
 
 const repoRoot = join(__dirname, "..", "..", "..", "..");
 const legacy: unknown = JSON.parse(
@@ -91,6 +93,12 @@ describe("packaged canvas standard", () => {
       "foregroundSecondary",
     );
     expect(standard.grammar?.renames.Soft).toBe("Subtle");
+  });
+});
+
+describe("packagedStandard", () => {
+  it("reads the manifest once and returns the same object", () => {
+    expect(packagedStandard()).toBe(packagedStandard());
   });
 });
 

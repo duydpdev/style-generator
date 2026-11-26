@@ -11,8 +11,11 @@ import {
   additionsFromFullCopy,
   layerStandard,
   loadStandard,
+  type LoadedStandard,
 } from "./standardLayer";
-import { DEFAULT_STANDARD } from "./standardSchema";
+import { packagedStandard } from "./standardSchema";
+
+const DEFAULT_STANDARD = packagedStandard();
 
 const base = DEFAULT_STANDARD;
 
@@ -82,7 +85,7 @@ describe("AdditionsSchema", () => {
     ],
     [
       "exceptions.bypass",
-      { exceptions: { bypass: [{ class: "p-3", files: [], reason: "" }] } },
+      { exceptions: { bypass: [{ class: "p-3", files: ["a"], reason: "" }] } },
     ],
   ])("rejects an empty reason in %s", (_name, value) => {
     const result = AdditionsSchema.safeParse(value);
@@ -177,11 +180,99 @@ describe("additionsFromFullCopy", () => {
       additionsFromFullCopy(
         { semanticCore: [...base.semanticCore], boards: base.boards },
         base,
+        "s.json",
       ),
     ).toEqual({});
   });
 
-  it("ignores an unreadable copy", () => {
-    expect(additionsFromFullCopy({ boards: "no" }, base)).toEqual({});
+  it("throws, naming the path, for a copy whose surviving parts are malformed", () => {
+    expect(() =>
+      additionsFromFullCopy({ boards: "no" }, base, "s.json"),
+    ).toThrow(CanvasInputError);
+    expect(() =>
+      additionsFromFullCopy({ boards: "no" }, base, "s.json"),
+    ).toThrow(/^s\.json: boards /);
+  });
+});
+
+describe("loadStandard validation", () => {
+  let dir: string;
+  const load = (value: unknown): LoadedStandard => {
+    const file = join(dir, "s.json");
+    writeFileSync(file, JSON.stringify(value));
+    return loadStandard(file, "s.json");
+  };
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "sg-standard-valid-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("rejects a file that mixes manifest-only and additions-only keys, naming both", () => {
+    expect(() =>
+      load({ descriptions: {}, roles: { domain: { description: "x" } } }),
+    ).toThrow(
+      "s.json: descriptions belong to a full copy and roles to an additions file; keep one form",
+    );
+  });
+
+  it("rejects a malformed full copy instead of reading it as empty", () => {
+    expect(() => load({ semanticCore: [], boards: "no" })).toThrow(
+      /^s\.json: boards /,
+    );
+  });
+
+  it.each([
+    ["a packaged role", "primary", /is a packaged name/],
+    ["a neutral key", "border", /is a packaged name/],
+    ["a deprecated name", "okInk", /is not a valid role name/],
+    ["an on-prefix", "onPrimary", /is not a valid role name/],
+    ["a trailing state", "brandHover", /is not a valid role name/],
+  ])("rejects %s as a declared role", (_n, role, message) => {
+    expect(() => load({ roles: { [role]: { description: "x" } } })).toThrow(
+      message,
+    );
+  });
+
+  it("rejects an unknown scale family, rule id and exemption rule", () => {
+    expect(() =>
+      load({ scaleSteps: { padding: { huge: { reason: "r" } } } }),
+    ).toThrow(/scaleSteps\.padding is not a scale family/);
+    expect(() =>
+      load({ disabledRules: { "no-such-rule": { reason: "r" } } }),
+    ).toThrow(/disabledRules\.no-such-rule is not a rule id/);
+    expect(() =>
+      load({ exemptions: [{ rule: "nope", name: "n", reason: "r" }] }),
+    ).toThrow(/exemptions\.0\.rule nope is not a rule id/);
+  });
+
+  it("accepts a known family, rule id and a declared role", () => {
+    expect(() =>
+      load({
+        roles: { domainNutrition: { description: "" } },
+        scaleSteps: { controlHeight: { pill: { reason: "r" } } },
+        disabledRules: { "token-unused": { reason: "r" } },
+        exemptions: [{ rule: "scale-name", name: "n", reason: "r" }],
+      }),
+    ).not.toThrow();
+  });
+
+  it("requires a bypass exception to name a file", () => {
+    expect(() =>
+      load({
+        exceptions: { bypass: [{ class: "p-3", files: [], reason: "r" }] },
+      }),
+    ).toThrow(/exceptions\.bypass\.0\.files must name a file/);
+  });
+
+  it("reports every problem, not only the first", () => {
+    expect(() =>
+      load({
+        scaleSteps: { a: { b: { reason: "" } }, c: { d: { reason: "" } } },
+      }),
+    ).toThrow(
+      "s.json: scaleSteps.a.b.reason must not be empty; scaleSteps.c.d.reason must not be empty",
+    );
   });
 });

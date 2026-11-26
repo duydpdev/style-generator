@@ -27,10 +27,14 @@ const joinSegments = (segments: string[]): string =>
     )
     .join("");
 
-// A core role, or a camelCase product role that is not `on<Role>`, does not start with a
-// deprecated name (`ok`) and, with several segments, does not end in a suffix, state or `Ink`.
-function roleAllowed(role: string, grammar: Grammar): boolean {
-  if (grammar.roles.includes(role)) return true;
+/**
+ * Whether a name is a valid product role: camelCase, not `on<Role>`, not starting with a
+ * deprecated name (`ok`) and, with several segments, not ending in a suffix, state or `Ink`.
+ * @param {string} role - A candidate role name
+ * @param {Grammar} grammar - The colour grammar
+ * @returns {boolean} True when the shape is allowed
+ */
+export function roleShapeAllowed(role: string, grammar: Grammar): boolean {
   const segments = segmentsOf(role);
   const first = (segments[0] ?? "").toLowerCase();
   const renamed = Object.keys(grammar.renames).filter(
@@ -63,6 +67,9 @@ export function roleOf(key: string, grammar: Grammar): string | null {
   return shape.exec(key)?.[1] ?? null;
 }
 
+const roleAllowed = (role: string, grammar: Grammar): boolean =>
+  grammar.roles.includes(role) || roleShapeAllowed(role, grammar);
+
 // Whether a semantic key follows `<role>[suffixes][state]` or is neutral.
 function followsGrammar(key: string, grammar: Grammar): boolean {
   if (grammar.neutral.includes(key)) return true;
@@ -79,10 +86,12 @@ function suggestName(key: string, grammar: Grammar): string {
   const input = segmentsOf(key);
   const words: string[] = [];
   for (let i = 0; i < input.length;) {
-    const hit = renames.find(([from]) =>
-      from.every(
-        (word, j) => input[i + j]?.toLowerCase() === word.toLowerCase(),
-      ),
+    const hit = renames.find(
+      ([from]) =>
+        (from.length === 1 || (i === 0 && from.length === input.length)) &&
+        from.every(
+          (word, j) => input[i + j]?.toLowerCase() === word.toLowerCase(),
+        ),
     );
     words.push(...(hit ? hit[1] : [input[i] ?? ""]));
     i += hit ? hit[0].length : 1;

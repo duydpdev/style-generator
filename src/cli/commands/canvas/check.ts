@@ -34,7 +34,7 @@ import {
   scanCanvas,
 } from "./scan";
 import { loadStandard, type LoadedStandard } from "./standardLayer";
-import { DEFAULT_STANDARD } from "./standardSchema";
+import { packagedStandard } from "./standardSchema";
 import { namingViolations, PRIMITIVE } from "./themeRules";
 
 /** What `checkCanvas` checks. Relative paths resolve against `cwd`. */
@@ -86,7 +86,7 @@ export function checkCanvas(options: CheckOptions): string[] {
   const parsed = parseJson(themeBytes.toString("utf8"), theme);
   const loaded: LoadedStandard =
     options.standard === undefined
-      ? { standard: DEFAULT_STANDARD, notices: [] }
+      ? { standard: packagedStandard(), notices: [] }
       : loadStandard(at(options.standard), options.standard);
   const standard = loaded.standard;
   for (const notice of loaded.notices) options.onNotice?.(notice);

@@ -25,7 +25,7 @@ export {
   type LayeredStandard,
 } from "./standardLayer";
 export {
-  DEFAULT_STANDARD,
+  packagedStandard,
   StandardSchema,
   type Standard,
 } from "./standardSchema";

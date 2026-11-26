@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { CanvasInputError, readJson } from "./scan";
-import { DEFAULT_STANDARD, type Standard } from "./standardSchema";
+import { packagedStandard, type Standard } from "./standardSchema";
+import { roleShapeAllowed } from "./themeRules";
 
 /** A justification the user wrote: never empty, so a deviation always says why. */
 const reason = z.string().trim().min(1, "must not be empty");
@@ -38,7 +39,7 @@ export const AdditionsSchema = z.strictObject({
         .array(
           z.object({
             class: z.string(),
-            files: z.array(z.string()),
+            files: z.array(z.string()).min(1, "must name a file"),
             reason,
           }),
         )
@@ -123,16 +124,34 @@ export function isFullCopy(raw: unknown): boolean {
 }
 
 /**
- * Converts a full copy into additions in memory: product roles (its roles the
- * package lacks, with an empty description), boards, pages and content the
- * package lacks, and `alphaScale`. Rules, lists and scales are dropped.
+ * Issue texts of a failed parse, `<path> <message>` each, to be joined after the file label.
+ * @param {z.core.$ZodIssue[]} issues - The Zod issues
+ * @returns {string[]} One text per issue
+ */
+const issueTexts = (issues: readonly z.core.$ZodIssue[]): string[] =>
+  issues.map(
+    (i) =>
+      `${i.path.join(".") === "" ? "(root)" : i.path.join(".")} ${i.message}`,
+  );
+
+/**
+ * Converts a full copy into additions in memory (roles, boards, pages, content, `alphaScale`).
  * @param {unknown} raw - The parsed full copy
  * @param {Standard} base - The packaged standard
+ * @param {string} label - The file as written, for messages
  * @returns {Additions} What the copy adds
+ * @throws {CanvasInputError} When a part that survives is malformed
  */
-export function additionsFromFullCopy(raw: unknown, base: Standard): Additions {
+export function additionsFromFullCopy(
+  raw: unknown,
+  base: Standard,
+  label: string,
+): Additions {
   const copy = FullCopySchema.safeParse(raw);
-  if (!copy.success) return {};
+  if (!copy.success)
+    throw new CanvasInputError(
+      `${label}: ${issueTexts(copy.error.issues).join("; ")}`,
+    );
   const { grammar, pages, boards, content, alphaScale } = copy.data;
   const packagedRoles = new Set(base.grammar?.roles ?? []);
   const roleNames = (grammar?.roles ?? []).filter((r) => !packagedRoles.has(r));
@@ -199,33 +218,106 @@ export interface LoadedStandard {
   notices: string[];
 }
 
+/** A key only an additions file carries. */
+const ADDITIONS_ONLY_KEYS = [
+  "roles",
+  "scaleSteps",
+  "exemptions",
+  "reserved",
+  "exceptions",
+  "disabledRules",
+] as const;
+
+const keysIn = (raw: unknown, keys: readonly string[]): string[] =>
+  typeof raw === "object" && raw !== null
+    ? keys.filter((key) => key in raw)
+    : [];
+
+const roleIssues = (additions: Additions, base: Standard): string[] => {
+  const grammar = base.grammar;
+  if (grammar === undefined) return [];
+  return Object.keys(additions.roles ?? {}).flatMap((role) => {
+    if (grammar.roles.includes(role) || grammar.neutral.includes(role))
+      return [
+        `roles.${role} is a packaged name; the package already declares it`,
+      ];
+    return roleShapeAllowed(role, grammar)
+      ? []
+      : [
+          `roles.${role} is not a valid role name (camelCase, no on-prefix, no deprecated name, no trailing suffix or state)`,
+        ];
+  });
+};
+
+const familyAndRuleIssues = (
+  additions: Additions,
+  base: Standard,
+): string[] => {
+  const out: string[] = [];
+  const families = Object.keys(base.scales ?? {});
+  for (const family of Object.keys(additions.scaleSteps ?? {}))
+    if (base.scales !== undefined && !families.includes(family))
+      out.push(
+        `scaleSteps.${family} is not a scale family (${families.join(", ")})`,
+      );
+  const ruleIds = Object.keys(base.rules ?? {});
+  const unknownRule = (rule: string): boolean =>
+    base.rules !== undefined && !ruleIds.includes(rule);
+  for (const id of Object.keys(additions.disabledRules ?? {}))
+    if (unknownRule(id)) out.push(`disabledRules.${id} is not a rule id`);
+  for (const [i, e] of (additions.exemptions ?? []).entries())
+    if (unknownRule(e.rule))
+      out.push(`exemptions.${String(i)}.rule ${e.rule} is not a rule id`);
+  return out;
+};
+
+/**
+ * Problems an additions file has against the packaged standard that the schema cannot see:
+ * a role named like a packaged one or shaped against the grammar, and a family or rule id the package lacks.
+ * @param {Additions} additions - The parsed additions
+ * @param {Standard} base - The packaged standard
+ * @returns {string[]} `<path> <message>`, one per problem
+ */
+export function additionsIssues(
+  additions: Additions,
+  base: Standard,
+): string[] {
+  return [
+    ...roleIssues(additions, base),
+    ...familyAndRuleIssues(additions, base),
+  ];
+}
+
 /**
  * Reads a `--standard` file and layers it over the packaged standard (a full copy is converted, with a notice).
  * @param {string} file - Absolute path of the file
  * @param {string} label - The path as the user wrote it, for messages
  * @param {Standard} base - The packaged standard
  * @returns {LoadedStandard} The standard and any notices
- * @throws {CanvasInputError} `<label>: <path> <message>` for the first schema issue
+ * @throws {CanvasInputError} `<label>: <path> <message>; …` for every problem found
  */
 export function loadStandard(
   file: string,
   label: string,
-  base: Standard = DEFAULT_STANDARD,
+  base: Standard = packagedStandard(),
 ): LoadedStandard {
   const raw = readJson(file, label);
   if (isFullCopy(raw)) {
+    const mixed = keysIn(raw, ADDITIONS_ONLY_KEYS);
+    if (mixed.length > 0)
+      throw new CanvasInputError(
+        `${label}: ${keysIn(raw, FULL_COPY_KEYS).join(", ")} belong to a full copy and ${mixed.join(", ")} to an additions file; keep one form`,
+      );
     return {
-      standard: layerStandard(base, additionsFromFullCopy(raw, base)),
+      standard: layerStandard(base, additionsFromFullCopy(raw, base, label)),
       notices: [FULL_COPY_NOTICE],
     };
   }
   const result = AdditionsSchema.safeParse(raw);
-  if (!result.success) {
-    const issue = result.error.issues[0];
-    const path = issue?.path.join(".") ?? "";
-    throw new CanvasInputError(
-      `${label}: ${path === "" ? "(root)" : path} ${issue?.message ?? "invalid"}`,
-    );
-  }
+  const problems = result.success
+    ? additionsIssues(result.data, base)
+    : issueTexts(result.error.issues);
+  if (!result.success || problems.length > 0)
+    throw new CanvasInputError(`${label}: ${problems.join("; ")}`);
   return { standard: layerStandard(base, result.data), notices: [] };
 }

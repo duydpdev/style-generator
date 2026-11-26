@@ -12,7 +12,7 @@ import { logger } from "../../logger";
 import { CanvasInputError, readJson } from "./scan";
 import { isFullCopy } from "./standardLayer";
 import { migrateAdditions } from "./standardMigrate";
-import { DEFAULT_STANDARD } from "./standardSchema";
+import { packagedStandard } from "./standardSchema";
 
 /** Flag values as `parseArgs` returns them. */
 type FlagValues = Record<
@@ -72,7 +72,7 @@ export function standardMigrateCommand(
     const theme = readJson(resolve(cwd, themeLabel), themeLabel);
     const migrated = isFullCopy(raw);
     const text = `${JSON.stringify(
-      migrated ? migrateAdditions(raw, theme, DEFAULT_STANDARD) : raw,
+      migrated ? migrateAdditions(raw, theme, packagedStandard(), label) : raw,
       null,
       2,
     )}\n`;

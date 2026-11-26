@@ -115,6 +115,7 @@ style-gen canvas check --canvas <dir> --theme <theme.json> [--stamp <ds-stamp.js
 `--usage <file>` needs `--naming`; it is the `ds.usage.json` the design-system build also reads, so a colour description is written once. A description comes from the usage file, else from the role the additions file declares, else from the bundled standard.
 `--preset <file>` and `--config <file>` need `--boards` and feed the class rules below: `--preset` is the product's recipe file (`ds.preset.ts`), whose class strings are checked like a board's and whose keys count as reads; `--config` is the `style-gen.config.json` whose `resetTailwindDefaults` and coverage decide which Tailwind classes still exist. Without `--config` the generator defaults apply: the file is not discovered. The preset is read as text and never run, and a quoted object key in it (`"text-link": …`) is not a class; Tailwind itself compiles the classes (the product's `tailwindcss`, else this package's copy), so no preset code executes.
 `--no-rule <id>` switches one rule off for a run. The id must be a rule of the standard and the additions file must record `disabledRules.<id>.reason`; the run prints `rules disabled: <ids>` before its last line.
+The additions file only appends or declares. Its keys are `roles` (product colour roles, each with a description), `scaleSteps` (extra steps of a closed scale, each with a `reason`), `exemptions` (`{ rule, name, reason }` silences one rule for one name; an exemption that matches nothing is reported as a finding, `exemption-unused`), `reserved` (tokens kept on purpose), `exceptions.bypass` and `exceptions.contrast`, `disabledRules` (see `--no-rule`), `alphaScale` (the percent steps a board may write as `$key/<n>`), and `pages`, `boards` and `content`. Every key that relaxes a rule needs a `reason`, and a rule id the package does not have is rejected.
 `--ds-version <namespace>=<version>` checks that `canvas.json` installs that design-system version.
 `--recipes <file>` needs `--boards` and checks the variant grid of the `c-*` boards (see [Component pages](#component-pages)); a file it cannot read, parse or that has another shape is an input error.
 
@@ -204,6 +205,34 @@ It scans every `*.dc.html` and `*.css` under `--canvas`, except `node_modules` a
 `--inventory` prints what the canvas uses (JSON) instead of checking it; it still needs `--theme`. Its `varText` list is a starting point, not a complete list of boards that show token names: a documentation board that builds names at runtime does not appear there.
 
 Run the check on a fresh read of the live canvas, not on the local copy alone. For a large canvas, comparing the artifact's file listing (sha256 per file) with the local files is an accepted read when there are 0 mismatches, no local-only file, and at least one file downloaded for real and compared byte for byte; the check then runs on that verified copy.
+
+## Rules of the standard
+
+Every rule of the bundled standard has an id, which `--no-rule <id>` and an exemption name, and a basis that says why the rule exists: `wcag` cites a success criterion, `technical` a failure the tools themselves produce, `choice` a decision of this standard. A violation line ends with `[<id>; <basis type>: <source>]`. Whether a rule reports an error or a finding depends on the case, as the messages above say.
+
+<!-- standard-table: rules -->
+
+| Rule                      | Basis     | Source                                                                     |
+| ------------------------- | --------- | -------------------------------------------------------------------------- |
+| `name-vocabulary`         | choice    | colour keys follow one grammar so tokens read the same across products     |
+| `description-empty`       | choice    | a token without a stated purpose is guessed at by every consumer           |
+| `description-unknown-key` | technical | a usage entry for a missing token documents nothing                        |
+| `scale-name`              | choice    | closed step names keep scales comparable across products                   |
+| `scale-order`             | technical | step names promise an order; values must keep it                           |
+| `scale-unit`              | technical | mixed units cannot be compared or ordered                                  |
+| `scale-duplicate`         | technical | two steps with one value make a step meaningless                           |
+| `order-text`              | choice    | a text tier must not read stronger than the tier above it                  |
+| `order-border`            | choice    | borderStrong exists to be stronger than border                             |
+| `order-surface`           | choice    | surfaceStrong exists to stand apart from surface                           |
+| `contrast-text`           | wcag      | WCAG 2.2 SC 1.4.3 Contrast (Minimum)                                       |
+| `contrast-focus`          | wcag      | WCAG 2.2 SC 1.4.11 Non-text Contrast                                       |
+| `ds-name-collision`       | technical | two token families that kebab-case to one class prefix emit one class      |
+| `ref-class`               | technical | a class with no token behind it renders nothing                            |
+| `ref-var`                 | technical | a var() with no declaration resolves to nothing                            |
+| `token-bypass`            | choice    | a raw value in a family the theme defines forks the design from its tokens |
+| `token-unused`            | choice    | an unused token is dead weight in every export                             |
+
+<!-- /standard-table -->
 
 ## Changing the theme
 

@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 0688a482462f -->
+<!-- source: documents/reference/cli.md sha256: 1ad91342153c -->
 
 # CLI
 
@@ -85,12 +85,15 @@ Sau khi nâng cấp, chạy `style-gen init --rules-only` để làm mới file:
 
 Theme nằm ở `styles/theme.json` (`src/styles/theme.json` nếu có thư mục `src/`). Tailwind chạy qua `@tailwindcss/postcss` (`postcss.config.mjs`), như trong `create-next-app --tailwind`. Hãy bọc config của bạn; `styleGenNext()` đọc `style-gen.config.json` và chạy được với cả webpack lẫn Turbopack:
 
+<!-- prettier-ignore -->
 ```ts
 // next.config.ts
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 
-const nextConfig: NextConfig = {/* config options here */};
+const nextConfig: NextConfig = {
+  /* config options here */
+};
 
 // No arguments: reads style-gen.config.json (theme, output, options).
 export default styleGenNext()(nextConfig);

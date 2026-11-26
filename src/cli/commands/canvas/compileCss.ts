@@ -95,21 +95,37 @@ async function loadTailwind(
   return { compile, version: versionOf(entry) };
 }
 
+// The text in front of each `{`: what follows the previous `{`, `}` or `;`.
+function preludes(css: string): string[] {
+  const found: string[] = [];
+  let start = 0;
+  for (let i = 0; i < css.length; i++) {
+    const char = css[i];
+    if (char === "{") found.push(css.slice(start, i));
+    if (char === "{" || char === "}" || char === ";") start = i + 1;
+  }
+  return found;
+}
+
 /**
- * The class names a stylesheet selects, unescaped (`.hover\:bg-x` is `hover:bg-x`).
+ * The class names a stylesheet's selectors name, unescaped (`.hover\:bg-x` is `hover:bg-x`). Only the text before a
+ * `{` counts, and at-rule preludes and comments do not, so `.25em` in a value or `.com` in a licence line is no class.
  * @param {string} css - A compiled stylesheet
  * @returns {Set<string>} Distinct class names
  */
 export function selectedClasses(css: string): Set<string> {
   const names = new Set<string>();
-  for (const m of css.matchAll(/\.((?:\\[\da-f]{1,6} ?|\\.|[\w-])+)/gi))
-    names.add(
-      (m[1] ?? "")
-        .replace(/\\([\da-f]{1,6}) ?/gi, (_whole, hex: string) =>
-          String.fromCodePoint(Number.parseInt(hex, 16)),
-        )
-        .replace(/\\(.)/g, "$1"),
-    );
+  for (const prelude of preludes(css.replaceAll(/\/\*[\s\S]*?\*\//g, ""))) {
+    if (prelude.trimStart().startsWith("@")) continue;
+    for (const m of prelude.matchAll(/\.((?:\\[\da-f]{1,6} ?|\\.|[\w-])+)/gi))
+      names.add(
+        (m[1] ?? "")
+          .replace(/\\([\da-f]{1,6}) ?/gi, (_whole, hex: string) =>
+            String.fromCodePoint(Number.parseInt(hex, 16)),
+          )
+          .replace(/\\(.)/g, "$1"),
+      );
+  }
   return names;
 }
 

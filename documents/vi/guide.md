@@ -1,4 +1,4 @@
-<!-- source: documents/guide.md sha256: 7efaac4e19ed -->
+<!-- source: documents/guide.md sha256: 8392826723bd -->
 
 # Hướng dẫn sử dụng
 
@@ -67,3 +67,5 @@ theme.schema.json  → editor autocomplete for the theme           (optional)
 - **Đường dẫn**: `theme` có thể nằm ngoài dự án (một package theme dùng chung); `output` và `tokensOutput` phải nằm trong dự án.
 - **Theme chuyển trên `<html>`**: selector được ghim vào `html` và attribute là `data-<axis-kebab>`; cả hai đều không cấu hình được.
 - **Commit `theme.tokens.ts`, bỏ qua `theme.css`.**
+
+Dòng thăm dò cho kiểm tra chỉ đổi tài liệu.

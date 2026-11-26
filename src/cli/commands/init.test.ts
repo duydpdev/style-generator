@@ -34,6 +34,9 @@ vi.mock("@clack/prompts", () => ({
   isCancel: (value: unknown) => value === prompts.cancelled,
 }));
 
+/** The faked cancel signal, typed as the cancel symbol the real prompts resolve to. */
+const cancelled = prompts.cancelled as never;
+
 /**
  * Pretend stdin is (not) a terminal; `init` prompts only on a TTY.
  * @param {boolean} value - The `process.stdin.isTTY` value
@@ -542,7 +545,7 @@ describe("initCommand", () => {
     });
 
     it("returns 0 and writes nothing when a prompt is cancelled", async () => {
-      vi.mocked(p.text).mockResolvedValueOnce(prompts.cancelled);
+      vi.mocked(p.text).mockResolvedValueOnce(cancelled);
 
       expect(await run({}, tmp)).toBe(0);
 
@@ -578,7 +581,7 @@ describe("initCommand", () => {
       vi.mocked(p.text).mockResolvedValueOnce("styles/theme.json");
       vi.mocked(p.confirm)
         .mockResolvedValueOnce(false)
-        .mockResolvedValueOnce(prompts.cancelled);
+        .mockResolvedValueOnce(cancelled);
 
       expect(await run({}, tmp)).toBe(0);
 
@@ -1473,7 +1476,7 @@ describe("initCommand", () => {
     it("keeps a changed copy and still prints the next steps when the confirm is cancelled", async () => {
       setTty(true);
       writeRules("# edited\n");
-      vi.mocked(p.confirm).mockResolvedValueOnce(prompts.cancelled);
+      vi.mocked(p.confirm).mockResolvedValueOnce(cancelled);
 
       expect(await run({ theme: "src/styles/theme.json" }, tmp)).toBe(0);
 

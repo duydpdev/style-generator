@@ -1,4 +1,4 @@
-<!-- source: documents/reference/recipes.md sha256: 6aad0a7ca3d2 -->
+<!-- source: documents/reference/recipes.md sha256: 8dddaf6ceaef -->
 
 # Recipe (./recipes)
 
@@ -184,8 +184,7 @@ export declare type SpacingProps<
   K extends string = SpacingKey,
 > = {
   readonly [P in SpacingPropKeys<K> as CamelCase<P>]?:
-    | ResponsiveValueStrict<number, BKeys>
-    | undefined;
+    ResponsiveValueStrict<number, BKeys> | undefined;
 };
 ```
 

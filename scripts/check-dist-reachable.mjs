@@ -18,7 +18,7 @@ const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 
 /** A relative specifier in any import form a bundler emits. */
 const RELATIVE_REFERENCE_RE =
-  // eslint-disable-next-line sonarjs/slow-regex -- runs on our own build output, never on untrusted input
+  // eslint-disable-next-line sonarjs/super-linear-regex -- runs on our own build output, never on untrusted input
   /(?:from|import|require)\s*\(?\s*["'](\.{1,2}\/[^"']+\.[cm]?js)["']/g;
 
 /**

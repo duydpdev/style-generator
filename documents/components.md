@@ -227,12 +227,7 @@ import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
   readonly variant?:
-    | "solid"
-    | "outline"
-    | "soft"
-    | "ghost"
-    | "link"
-    | undefined;
+    "solid" | "outline" | "soft" | "ghost" | "link" | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
   readonly size?: "sm" | "md" | "lg" | "icon" | undefined;
@@ -789,11 +784,7 @@ type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly align?: "left" | "center" | "right" | undefined;
   readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
   readonly transform?:
-    | "uppercase"
-    | "lowercase"
-    | "capitalize"
-    | "normalCase"
-    | undefined;
+    "uppercase" | "lowercase" | "capitalize" | "normalCase" | undefined;
   readonly italic?: boolean | undefined;
   readonly truncate?: boolean | undefined;
   readonly lineClamp?: 1 | 2 | 3 | 4 | 5 | 6 | "none" | undefined;

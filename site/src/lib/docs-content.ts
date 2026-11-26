@@ -4,12 +4,7 @@ import { docPath, enSourceOf, localeOfRepoPath } from "./locale";
 import { stripHtmlComments } from "./strip-html-comments";
 
 export type DocGroup =
-  | "Start"
-  | "Guides"
-  | "Reference"
-  | "Overview"
-  | "Operations"
-  | "Migration";
+  "Start" | "Guides" | "Reference" | "Overview" | "Operations" | "Migration";
 
 export interface DocEntry {
   slug: string;

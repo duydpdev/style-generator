@@ -88,9 +88,7 @@ The theme goes to `styles/theme.json` (`src/styles/theme.json` with a `src/` dir
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const nextConfig: NextConfig = {/* config options here */};
 
 // No arguments: reads style-gen.config.json (theme, output, options).
 export default styleGenNext()(nextConfig);

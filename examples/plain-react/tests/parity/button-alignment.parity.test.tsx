@@ -22,8 +22,8 @@ const icon = (): ReactNode => (
 type AnyButton = ComponentType<Record<string, unknown>>;
 
 const buttons: [string, AnyButton][] = [
-  ["plain", Button as unknown as AnyButton],
-  ["harness", HarnessButton as unknown as AnyButton],
+  ["plain", Button],
+  ["harness", HarnessButton],
 ];
 
 const centre = (r: DOMRect): { x: number; y: number } => ({

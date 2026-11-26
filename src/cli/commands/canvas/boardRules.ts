@@ -676,7 +676,7 @@ export function loadRecipes(file: string, label: string): Recipes {
   };
   if (!isPlainObject(parsed)) fail("must map component names to their axes");
   // Object.fromEntries defines own keys, so a "__proto__" axis stays an axis.
-  return Object.fromEntries(
+  return Object.fromEntries<Record<string, string[]>>(
     Object.entries(asRecord(parsed)).map(([name, axes]) => {
       if (!KEBAB.test(name))
         fail(`component name ${token(name)} is not kebab-case`);
@@ -694,7 +694,7 @@ export function loadRecipes(file: string, label: string): Recipes {
       );
       return [name, Object.fromEntries(grid)];
     }),
-  ) as Recipes;
+  );
 }
 
 /**

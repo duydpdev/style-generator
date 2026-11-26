@@ -97,7 +97,7 @@ function suggestName(key: string, grammar: Grammar): string {
     .sort((a, b) => b[0].length - a[0].length);
   const input = segmentsOf(key);
   const words: string[] = [];
-  for (let i = 0; i < input.length; ) {
+  for (let i = 0; i < input.length;) {
     const hit = renames.find(([from]) =>
       from.every(
         (word, j) => input[i + j]?.toLowerCase() === word.toLowerCase(),

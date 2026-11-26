@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/react-vite.md sha256: b009264795be -->
+<!-- source: documents/getting-started/react-vite.md sha256: b73ac8e4328c -->
 
 # Bắt đầu: React + Vite
 
@@ -401,12 +401,7 @@ import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
   readonly variant?:
-    | "solid"
-    | "outline"
-    | "soft"
-    | "ghost"
-    | "link"
-    | undefined;
+    "solid" | "outline" | "soft" | "ghost" | "link" | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
   readonly size?: "sm" | "md" | "lg" | "icon" | undefined;

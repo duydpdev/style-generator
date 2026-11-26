@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: aec5159c22dd -->
+<!-- source: documents/reference/cli.md sha256: 0688a482462f -->
 
 # CLI
 
@@ -90,9 +90,7 @@ Theme nằm ở `styles/theme.json` (`src/styles/theme.json` nếu có thư mụ
 import type { NextConfig } from "next";
 import { styleGenNext } from "@duydpdev/style-generator/next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const nextConfig: NextConfig = {/* config options here */};
 
 // No arguments: reads style-gen.config.json (theme, output, options).
 export default styleGenNext()(nextConfig);

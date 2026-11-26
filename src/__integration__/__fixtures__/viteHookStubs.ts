@@ -33,8 +33,7 @@ export interface StubServer {
 // Hooks on Vite Plugin are typed as `T | ObjectHook<T>`. The plugin we build
 // uses function form for every hook — extract them as callables here.
 type HookFn<P, K extends keyof P> = P[K] extends
-  | ((...args: never[]) => unknown)
-  | undefined
+  ((...args: never[]) => unknown) | undefined
   ? Extract<P[K], (...args: never[]) => unknown>
   : never;
 

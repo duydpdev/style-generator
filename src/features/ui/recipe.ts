@@ -29,11 +29,9 @@ export interface RecipeTables {
   readonly base: ClassValue;
   readonly variants: VariantTable;
   readonly compoundVariants?:
-    | readonly Readonly<Record<string, ClassValue>>[]
-    | undefined;
+    readonly Readonly<Record<string, ClassValue>>[] | undefined;
   readonly defaultVariants?:
-    | Readonly<Record<string, string | number | boolean | undefined>>
-    | undefined;
+    Readonly<Record<string, string | number | boolean | undefined>> | undefined;
 }
 
 /** Recipe call props: variant name → option (`true`/`false` for boolean variants, a number for a numeric option such as `zIndex: 10`). */
@@ -62,9 +60,7 @@ type VariantOptionValue<O> = string extends O
 /** Call props of a recipe: every variant name of `T`, only the option keys of its table as values (`"true"`/`"false"` keys mean boolean, a numeric key also takes its number or string form). */
 export type RecipeVariantProps<T extends RecipeTables> = Readonly<{
   [K in keyof T["variants"]]?:
-    | VariantOptionValue<keyof T["variants"][K]>
-    | null
-    | undefined;
+    VariantOptionValue<keyof T["variants"][K]> | null | undefined;
 }>;
 
 /** A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows the variant names of its tables `T`. */

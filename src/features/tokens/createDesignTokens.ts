@@ -40,8 +40,7 @@ type ColorRecord = Readonly<Record<string, unknown>> | undefined;
 interface ColorSource {
   readonly colors?: ColorRecord;
   readonly themeAxes?:
-    | Readonly<Record<string, Readonly<Record<string, ColorSource>>>>
-    | undefined;
+    Readonly<Record<string, Readonly<Record<string, ColorSource>>>> | undefined;
 }
 
 /**
@@ -86,6 +85,7 @@ const aliasedColorKeys = (theme: ColorSource): string[] =>
  */
 export const buildDesignTokens = <
   TTheme extends ThemeConfig,
+  // eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- `{}` is the "no extra options" default of the options type parameter
   O = Record<never, never>,
 >(
   config: TTheme,

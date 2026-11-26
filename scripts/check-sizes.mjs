@@ -109,7 +109,7 @@ const extraFiles = { cli: "dist/cli/index.mjs" };
 // `import "./x.js"` of a sibling build chunk (`.js`, `.mjs` or `.cjs`).
 // Package imports are externals (see `check:externals`) and not counted.
 const RELATIVE_IMPORT_RE =
-  // eslint-disable-next-line sonarjs/slow-regex -- runs on our own build output, never on untrusted input
+  // eslint-disable-next-line sonarjs/super-linear-regex -- runs on our own build output, never on untrusted input
   /(?:^|[\s;])(?:import|export)\s*(?:[^'"`;]*?\s*from\s*)?["'](\.{1,2}\/[^"']+\.[cm]?js)["']/g;
 
 /**

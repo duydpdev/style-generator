@@ -466,5 +466,5 @@ async function dispatch(args: string[], cwd: string): Promise<number> {
     return command.usageExitCode ?? 1;
   }
 
-  return command.run(parsed.values as CliValues, parsed.positionals, { cwd });
+  return command.run(parsed.values, parsed.positionals, { cwd });
 }

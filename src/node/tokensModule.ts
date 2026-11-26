@@ -13,8 +13,7 @@
 export function renderTokensModule(
   web: object,
   themeAxes:
-    | Readonly<Record<string, Readonly<Record<string, unknown>>>>
-    | undefined,
+    Readonly<Record<string, Readonly<Record<string, unknown>>>> | undefined,
 ): string {
   const axes: Record<string, string[]> = {};
   for (const [axis, variants] of Object.entries(themeAxes ?? {})) {

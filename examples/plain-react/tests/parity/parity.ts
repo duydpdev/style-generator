@@ -16,8 +16,7 @@ export interface CaseTables {
     Record<string, Readonly<Record<string, unknown>>>
   >;
   readonly compoundVariants?:
-    | readonly Readonly<Record<string, unknown>>[]
-    | undefined;
+    readonly Readonly<Record<string, unknown>>[] | undefined;
 }
 
 /** cva option keys are strings; a boolean variant's options are "true"/"false". */

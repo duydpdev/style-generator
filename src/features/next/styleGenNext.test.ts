@@ -130,7 +130,7 @@ describe("styleGenNext", () => {
 
   it("rejects the former plugin options when the wrapper is created, naming the key and the migration guide", () => {
     for (const removed of ["themePath", "outDir", "options"]) {
-      expect(() => styleGenNext({ [removed]: "x" } as never)).toThrow(
+      expect(() => styleGenNext({ [removed]: "x" })).toThrow(
         new RegExp(
           `^\\[style-gen-next\\] Invalid options:\\n[^]*${removed}[^]*7\\.x-to-8\\.0`,
         ),

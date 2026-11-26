@@ -84,7 +84,7 @@ function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   for (const key of CONFIG_KEYS) {
     if (flags[key] !== undefined) sanitized[key] = flags[key];
   }
-  return sanitized as Partial<StyleGenConfig>;
+  return sanitized;
 }
 
 /**
@@ -260,7 +260,7 @@ export function toGeneratorOptions(
   for (const key of GENERATOR_OPTION_KEYS) {
     if (config[key] !== undefined) picked[key] = config[key];
   }
-  return picked as StyleGeneratorOptions;
+  return picked;
 }
 
 /**

@@ -193,14 +193,12 @@ describe("watchThemeFile", () => {
 
   describe("config reload", () => {
     it("re-emits with the reloaded options and keeps them for later theme edits", () => {
-      const reloadTarget = vi.fn(
-        (): EmitTarget => ({
-          themeFile,
-          outFile,
-          tokensFile,
-          options: { resetTailwindDefaults: ["colors"] },
-        }),
-      );
+      const reloadTarget = vi.fn((): EmitTarget => ({
+        themeFile,
+        outFile,
+        tokensFile,
+        options: { resetTailwindDefaults: ["colors"] },
+      }));
       const w = start({}, { configFiles: [configFile], reloadTarget });
 
       w.emit("change", configFile);
@@ -221,9 +219,11 @@ describe("watchThemeFile", () => {
     });
 
     it("reloads once when the config and the theme change in the same burst", () => {
-      const reloadTarget = vi.fn(
-        (): EmitTarget => ({ themeFile, outFile, tokensFile }),
-      );
+      const reloadTarget = vi.fn((): EmitTarget => ({
+        themeFile,
+        outFile,
+        tokensFile,
+      }));
       const w = start({}, { configFiles: [configFile], reloadTarget });
 
       w.emit("change", configFile);
@@ -368,9 +368,11 @@ describe("watchThemeFile", () => {
     });
 
     it("reloads when the config file is removed, but a removed theme triggers nothing", () => {
-      const reloadTarget = vi.fn(
-        (): EmitTarget => ({ themeFile, outFile, tokensFile }),
-      );
+      const reloadTarget = vi.fn((): EmitTarget => ({
+        themeFile,
+        outFile,
+        tokensFile,
+      }));
       const w = start({}, { configFiles: [configFile], reloadTarget });
 
       fs.rmSync(themeFile);
@@ -556,14 +558,12 @@ describe("watchThemeFile", () => {
         "re-arms %s with unwatch then add and reloads once",
         (name) => {
           const file = path.join(dir, name);
-          const reloadTarget = vi.fn(
-            (): EmitTarget => ({
-              themeFile,
-              outFile,
-              tokensFile,
-              options: { resetTailwindDefaults: ["colors"] },
-            }),
-          );
+          const reloadTarget = vi.fn((): EmitTarget => ({
+            themeFile,
+            outFile,
+            tokensFile,
+            options: { resetTailwindDefaults: ["colors"] },
+          }));
           const w = start({}, { configFiles: candidates(), reloadTarget });
 
           w.emit("unlink", file);
@@ -587,9 +587,11 @@ describe("watchThemeFile", () => {
       it("re-arms the new theme after a config moved it, not the old one", () => {
         const moved = path.join(dir, "moved.json");
         fs.writeFileSync(moved, theme("#222"));
-        const reloadTarget = vi.fn(
-          (): EmitTarget => ({ themeFile: moved, outFile, tokensFile }),
-        );
+        const reloadTarget = vi.fn((): EmitTarget => ({
+          themeFile: moved,
+          outFile,
+          tokensFile,
+        }));
         const w = start({}, { configFiles: candidates(), reloadTarget });
         w.emit("change", configFile);
         vi.advanceTimersByTime(50);
@@ -687,14 +689,12 @@ describe("watchThemeFile with the real chokidar", () => {
       const configFile = path.join(dir, "style-gen.config.json");
       const packageFile = path.join(dir, "package.json");
       fs.writeFileSync(themeFile, theme("#111"));
-      const reloadTarget = vi.fn(
-        (): EmitTarget => ({
-          themeFile,
-          outFile,
-          tokensFile,
-          options: { resetTailwindDefaults: ["colors"] },
-        }),
-      );
+      const reloadTarget = vi.fn((): EmitTarget => ({
+        themeFile,
+        outFile,
+        tokensFile,
+        options: { resetTailwindDefaults: ["colors"] },
+      }));
       const handle = watchThemeFile(
         { themeFile, outFile, tokensFile },
         () => undefined,
@@ -800,9 +800,11 @@ describe("watchThemeFile with the real chokidar: removed and recreated files (M3
     fs.writeFileSync(packageFile, JSON.stringify({ name: "x" }));
     results = [];
     counter = 0;
-    reloadTarget = vi.fn(
-      (): EmitTarget => ({ themeFile, outFile, tokensFile }),
-    );
+    reloadTarget = vi.fn((): EmitTarget => ({
+      themeFile,
+      outFile,
+      tokensFile,
+    }));
     handle = undefined;
   });
 

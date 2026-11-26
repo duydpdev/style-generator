@@ -260,7 +260,7 @@ describe("integration: createVariantMapper round-trip through cva + compiled Tai
       const expectedStates = states.filter((state) =>
         keySet.has(`${key}${state.suffix}`),
       );
-      expect(classes.length).toBe(1 + expectedStates.length);
+      expect(classes).toHaveLength(1 + expectedStates.length);
 
       const base = classes[0];
       if (base === undefined) {

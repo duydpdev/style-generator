@@ -160,7 +160,7 @@ export function declarationContext(
     const close = text.indexOf(">", attr.end);
     const after = close === -1 ? "" : text.slice(close + 1, close + 1 + 400);
     const plain = after
-      // eslint-disable-next-line sonarjs/slow-regex -- the input is a slice of at most 400 characters
+      // eslint-disable-next-line sonarjs/super-linear-regex -- the input is a slice of at most 400 characters
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
       .trim();

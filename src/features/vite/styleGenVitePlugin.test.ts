@@ -183,7 +183,7 @@ describe("styleGenVite plugin", () => {
 
   it("rejects the former plugin options when the plugin is created, naming the key and the migration guide", () => {
     for (const removed of ["themePath", "outDir", "options"]) {
-      expect(() => styleGenVite({ [removed]: "x" } as never)).toThrow(
+      expect(() => styleGenVite({ [removed]: "x" })).toThrow(
         new RegExp(
           `^\\[style-gen-vite\\] Invalid options:\\n[^]*${removed}[^]*7\\.x-to-8\\.0`,
         ),

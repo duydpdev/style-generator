@@ -294,6 +294,7 @@ describe("integration: style-gen canvas check", () => {
       ...fields,
     });
 
+  // eslint-disable-next-line sonarjs/parameterized-tests -- each case builds its own fixture and asserts a different message, so a table would hide the scenario names
   it("passes a board that reads only theme tokens", () => {
     board(
       '<div style="color:var(--sg-color-primary-foreground);border-radius:var(--sg-radius-md)">x</div>',
@@ -309,6 +310,7 @@ describe("integration: style-gen canvas check", () => {
     expect(out[0]).toContain(":1 ");
   });
 
+  // eslint-disable-next-line sonarjs/parameterized-tests -- each case builds its own fixture and asserts a different message, so a table would hide the scenario names
   it("reports any unprefixed variable, not only --bl-*", () => {
     board('<p style="color:var(--muted)">x</p>');
     const out = check();

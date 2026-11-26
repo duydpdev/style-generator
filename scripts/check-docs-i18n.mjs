@@ -46,7 +46,7 @@ const USAGE =
 const META = "site/src/lib/docs-meta.json";
 const MARKER =
   /^(?:<!-- (?:embed:|signature:|\/signature -->|snippet:)|> ?\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\])/;
-// eslint-disable-next-line sonarjs/slow-regex -- runs on this repo's own markdown, never on untrusted input
+// eslint-disable-next-line sonarjs/super-linear-regex -- runs on this repo's own markdown, never on untrusted input
 const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*)$/;
 const SIGNATURE_OPEN = "<!-- signature:";
 const SIGNATURE_CLOSE = "<!-- /signature -->";

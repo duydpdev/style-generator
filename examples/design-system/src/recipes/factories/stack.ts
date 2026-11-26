@@ -9,14 +9,7 @@ export type FlexAlign = "start" | "center" | "end" | "stretch";
 export type FlexJustify = "start" | "center" | "end" | "between";
 /** `basis` values (Flex items): `0` is `basis-0`, a fraction is `basis-1/2`. */
 export type FlexBasis =
-  | 0
-  | "auto"
-  | "full"
-  | "1/2"
-  | "1/3"
-  | "2/3"
-  | "1/4"
-  | "3/4";
+  0 | "auto" | "full" | "1/2" | "1/3" | "2/3" | "1/4" | "3/4";
 
 /**
  * Flex layout of `Stack` (column): `direction`, `align`, `justify`, `wrap` and

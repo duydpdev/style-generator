@@ -253,6 +253,7 @@ type AliasedColorKey<TTheme extends ThemeConfig> =
  */
 export interface DesignTokensWeb<
   TTheme extends ThemeConfig,
+  // eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- `{}` is the "no extra options" default of the options type parameter
   O = Record<never, never>,
 > extends CategoryTokenArrays<TTheme> {
   readonly spacingProperties: readonly SpacingKeys<O>[];
@@ -272,6 +273,7 @@ export interface DesignTokensWeb<
 /** Return type of `createDesignTokens(theme, options)`: the typed token arrays under `DesignTokens.Web`. `generate()` returns the same `DesignTokens` object as `tokens`. */
 export interface DesignTokensResult<
   TTheme extends ThemeConfig,
+  // eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- `{}` is the "no extra options" default of the options type parameter
   O = Record<never, never>,
 > {
   DesignTokens: {

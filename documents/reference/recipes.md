@@ -182,8 +182,7 @@ export declare type SpacingProps<
   K extends string = SpacingKey,
 > = {
   readonly [P in SpacingPropKeys<K> as CamelCase<P>]?:
-    | ResponsiveValueStrict<number, BKeys>
-    | undefined;
+    ResponsiveValueStrict<number, BKeys> | undefined;
 };
 ```
 

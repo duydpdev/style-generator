@@ -76,11 +76,9 @@ export declare interface RecipeTables {
   readonly base: ClassValue;
   readonly variants: VariantTable;
   readonly compoundVariants?:
-    | readonly Readonly<Record<string, ClassValue>>[]
-    | undefined;
+    readonly Readonly<Record<string, ClassValue>>[] | undefined;
   readonly defaultVariants?:
-    | Readonly<Record<string, string | number | boolean | undefined>>
-    | undefined;
+    Readonly<Record<string, string | number | boolean | undefined>> | undefined;
 }
 ```
 
@@ -127,9 +125,7 @@ A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows 
 ```ts
 export declare type RecipeVariantProps<T extends RecipeTables> = Readonly<{
   [K in keyof T["variants"]]?:
-    | VariantOptionValue<keyof T["variants"][K]>
-    | null
-    | undefined;
+    VariantOptionValue<keyof T["variants"][K]> | null | undefined;
 }>;
 ```
 

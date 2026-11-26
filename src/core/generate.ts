@@ -16,6 +16,7 @@ const themeJsonSchema = z.toJSONSchema(ThemeSchema);
 /** What {@link generate} returns for theme `TTheme` and options `O`. */
 export interface GenerateResult<
   TTheme extends ThemeConfig,
+  // eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- `{}` is the "no extra options" default of the options type parameter
   O = Record<never, never>,
 > {
   css: string;

@@ -196,6 +196,7 @@ describe("integration: check-docs-i18n", { timeout: 60_000 }, () => {
     expect(i18n(t.dir).status).toBe(0);
   });
 
+  // eslint-disable-next-line sonarjs/parameterized-tests -- each case builds its own fixture and asserts a different message, so a table would hide the scenario names
   it("fails on a heading level mismatch", () => {
     mirrored(t.dir);
     rewriteVi(t.dir, VI_GUIDE.replace("## Cách dùng", "### Cách dùng"));
@@ -410,6 +411,7 @@ describe(
       expect(links(t.dir).status).toBe(0);
     });
 
+    // eslint-disable-next-line sonarjs/parameterized-tests -- each case builds its own fixture and asserts a different message, so a table would hide the scenario names
     it("rejects a link from a twin to an English doc", () => {
       linkTree(t.dir, true);
       writeTmpFile(

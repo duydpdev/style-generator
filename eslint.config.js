@@ -219,7 +219,16 @@ export default pluginTs.config(
     ],
     rules: {
       "sonarjs/void-use": "off",
+      "@typescript-eslint/no-meaningless-void-operator": "off",
       "sonarjs/assertions-in-tests": "off",
+    },
+  },
+
+  // Type-level fixtures: `{}` is a deliberate input shape there (an empty theme or options object).
+  {
+    files: ["**/*.test-d.ts"],
+    rules: {
+      "@typescript-eslint/no-generated-empty-object-type": "off",
     },
   },
 

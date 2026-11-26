@@ -6,8 +6,7 @@ export type BundlerStack = "nuxt" | "next" | "vite";
 
 /** What `detectStack` found in the project root. */
 export type DetectedStack =
-  | { stack: BundlerStack; configFile: string }
-  | { stack: "none" };
+  { stack: BundlerStack; configFile: string } | { stack: "none" };
 
 /**
  * Checked in this order: Next.js and Nuxt apps often keep a

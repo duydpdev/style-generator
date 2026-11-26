@@ -42,12 +42,7 @@ export type BoxPointerEvents = "none" | "auto";
 export type BoxSelect = "none" | "text" | "all" | "auto";
 /** `transition` values (`transition-<value>`). */
 export type BoxTransition =
-  | "none"
-  | "all"
-  | "colors"
-  | "opacity"
-  | "shadow"
-  | "transform";
+  "none" | "all" | "colors" | "opacity" | "shadow" | "transform";
 /** `aspect` values (`aspect-<value>`). */
 export type BoxAspect = "auto" | "square" | "video";
 /** `objectFit` values (`scaleDown` → `object-scale-down`). */

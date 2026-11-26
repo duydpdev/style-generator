@@ -221,6 +221,7 @@ function selfCheck(code, namespace, intents) {
   };
   ctx.window = ctx;
   vm.createContext(ctx);
+  // eslint-disable-next-line sonarjs/code-eval -- runs the design-system bundle this script just built, never external input
   vm.runInContext(code, ctx);
   const lib =
     /** @type {Record<string, (props: object) => unknown> | undefined} */ (

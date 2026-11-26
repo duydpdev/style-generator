@@ -19,9 +19,7 @@ export const GRID_COLUMN_CLASSES = {
 
 /** `3`, `"72px 1fr"`, or `{ base: 1, md: "220px 1fr" }` (breakpoint keys checked by the sample components' types). */
 export type GridColumnsValue =
-  | number
-  | string
-  | Readonly<Record<string, number | string | undefined>>;
+  number | string | Readonly<Record<string, number | string | undefined>>;
 
 export interface GridColumns {
   readonly className: string;

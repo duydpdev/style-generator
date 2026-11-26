@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 4437d850c596 -->
+<!-- source: documents/testing.md sha256: e1fbb82ea651 -->
 
 # Hướng dẫn kiểm thử
 
@@ -50,7 +50,7 @@ Các bước kiểm tra có hai lớp:
    - job `tailwind-floor`: ghim các package Tailwind về `~4.1.0` (chỉ trong bản checkout của runner) rồi chạy `yarn test` + `yarn test:e2e`,
      để peer `tailwindcss ^4.1.0` thực sự được kiểm tra — lockfile hiện resolve tới 4.3.x, nên nếu không có job này thì cận dưới sẽ không bao giờ được chạm tới.
    - job `node-floor`: build và chạy `check:smoke` cùng `check:next-build` (một lần `next build` thật qua `styleGenNext`, `scripts/next-build-smoke.mjs`) trên Node `20.19.0`,
-     mức sàn của `engines.node` (các job khác chạy Node 22);
+     mức sàn của `engines.node`, trên artifact được biên dịch bằng Node 22 (tsdown không chạy trên Node 20; các job khác chạy Node 22 từ đầu đến cuối);
    - job `peer-matrix` (5 nhánh): build thư viện bằng toolchain đã commit (Vite 8), rồi ép **một** peer về phiên bản mới nhất của **một** major qua `resolutions` (`vite` 5/6/7/8,
      `typescript` 6), khẳng định phiên bản được resolve là `N.x`, rồi build `examples/harness`, (nhánh `vite`) smoke test dev server, kiểm tra kiểu ví dụ và `yarn typecheck:dist`,
      (nhánh `typescript`) `yarn test:types`. Mọi nhánh đều phải xanh (đỏ nghĩa là CI đỏ); không còn nhánh `experimental` nào nữa.

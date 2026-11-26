@@ -90,8 +90,10 @@ const NO_ARGUMENT_NOTE =
  * edits the file. Vite and Next.js read style-gen.config.json themselves
  * (no arguments). Nuxt 4 sets Vite's root to `app/`, so the Nuxt snippet
  * passes `root`, the project folder that holds the config file. The text is
- * Prettier-formatted: the README (Vite) and `documents/reference/cli.md`
- * (Next.js, Nuxt) show these blocks byte for byte (`templates.test.ts`).
+ * Prettier-formatted, except the Next.js config object, which keeps the
+ * create-next-app form (its doc fence is `prettier-ignore`d). The README
+ * (Vite) and `documents/reference/cli.md` (Next.js, Nuxt) show these blocks
+ * byte for byte (`templates.test.ts`).
  * @param {Extract<DetectedStack, { configFile: string }>} detected - The detected stack and its config file
  * @returns {string} The snippet, first line `// <config file>`
  */

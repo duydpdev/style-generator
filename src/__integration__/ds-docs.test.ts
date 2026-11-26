@@ -134,8 +134,8 @@ describe("buildReadme", () => {
     });
     expect(alpha).toContain("| `border` | $navy700 at 8% | $navy700 at 16% |");
     expect(
-      alpha.split("\n").filter((l) => l.includes("$navy700/")).length,
-    ).toBe(0);
+      alpha.split("\n").filter((l) => l.includes("$navy700/")),
+    ).toHaveLength(0);
   });
 
   it.each([

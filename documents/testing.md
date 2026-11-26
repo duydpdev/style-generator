@@ -49,7 +49,7 @@ The checks have two layers:
    - job `tailwind-floor`: pins the Tailwind packages to `~4.1.0` (only in the runner's checkout) and then runs `yarn test` + `yarn test:e2e`,
      so the peer `tailwindcss ^4.1.0` is really checked — the lockfile currently resolves to 4.3.x, so without this job the lower bound would never be reached.
    - job `node-floor`: builds and runs `check:smoke` and `check:next-build` (a real `next build` through `styleGenNext`, `scripts/next-build-smoke.mjs`) on Node `20.19.0`,
-     the floor of `engines.node` (the other jobs run Node 22);
+     the floor of `engines.node`, over an artifact compiled on Node 22 (tsdown does not run on Node 20; the other jobs run Node 22 throughout);
    - job `peer-matrix` (5 legs): builds the lib with the committed toolchain (Vite 8), then forces **one** peer to the latest version of **one** major through `resolutions` (`vite` 5/6/7/8,
      `typescript` 6), asserts that the resolved version is `N.x`, then builds `examples/harness`, (the `vite` leg) dev-server smoke, example typecheck and `yarn typecheck:dist`,
      (the `typescript` leg) `yarn test:types`. Every leg must be green (red means CI is red); there is no `experimental` leg any more.

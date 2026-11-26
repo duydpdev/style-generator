@@ -68,10 +68,7 @@ describe("generate consumer shape", () => {
   it("DesignTokens.Web.colors is literal camelCase union", () => {
     expectTypeOf(result.tokens.Web.colors).toEqualTypeOf<
       readonly (
-        | "primary"
-        | "primaryForeground"
-        | "sidebarForeground"
-        | "blue500"
+        "primary" | "primaryForeground" | "sidebarForeground" | "blue500"
       )[]
     >();
   });

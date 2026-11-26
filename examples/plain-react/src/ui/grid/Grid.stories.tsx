@@ -82,7 +82,7 @@ export const RowValues: Story = {
       if (value === "none") {
         await expect(rows).toBe("none");
       } else {
-        await expect(rows.trim().split(/\s+/).length).toBe(value);
+        await expect(rows.trim().split(/\s+/)).toHaveLength(value);
       }
     }
   },

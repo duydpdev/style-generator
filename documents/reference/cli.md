@@ -83,6 +83,7 @@ These are the snippets `init` prints for Next.js and Nuxt (the Vite one is in th
 
 The theme goes to `styles/theme.json` (`src/styles/theme.json` with a `src/` directory). Tailwind runs through `@tailwindcss/postcss` (`postcss.config.mjs`), as in `create-next-app --tailwind`. Wrap your config; `styleGenNext()` reads `style-gen.config.json` and works with webpack and Turbopack:
 
+<!-- prettier-ignore -->
 ```ts
 // next.config.ts
 import type { NextConfig } from "next";

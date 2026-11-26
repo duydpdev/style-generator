@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: a923c36e3d09 -->
+<!-- source: documents/testing.md sha256: 53947fbf8e5c -->
 
 # Hướng dẫn kiểm thử
 
@@ -171,7 +171,7 @@ Test nằm cạnh mã (`*.test.ts`). Các nhóm chính:
   `generate` (kể cả `--watch` với chokidar thật và một test sửa config trong khi đang theo dõi), `schema`,
   `tokens` (module được sinh ra được import lại và so sánh với `createDesignTokens`), `budget` (đo gzip trên các file/thư mục tạm, ba mã thoát, hai dòng `OK:`/`OVER BUDGET:`),
   `doctor` (cảnh báo xung đột utility, `aliasHints`, lỗi theme × options, một config không hợp lệ dừng sớm),
-  `canvas check` (`src/cli/commands/canvas/check.test.ts`: mã thoát 0/1/2 qua `runCli`, các thông báo lỗi input, một `--standard` không có các key content).
+  `canvas check` (`src/cli/commands/canvas/check.test.ts`: mã thoát 0/1/2 qua `runCli`, các thông báo lỗi input, một file bổ sung `--standard` xếp chồng lên chuẩn đi kèm).
 - `src/shared/*` — `helpers` (kebab/camel), `axisAttributeName`, `cssBlock`.
 
 Coverage dùng provider v8 với `include: ["src/**/*.ts"]`, nên một file mà không test nào import (ví dụ `src/cli/index.ts`) vẫn hiện ở mức 0 % thay vì bị bỏ qua.

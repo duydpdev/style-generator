@@ -265,6 +265,7 @@
     "@joshwooding/vite-plugin-react-docgen-typescript/glob": "^14.0.4",
     "@nuxt/vite-builder/vite": "^8.3.5",
     "vite-node/vite": "^8.3.5",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "eslint-plugin-sonarjs/typescript": "^5.9.3"
   }
 }

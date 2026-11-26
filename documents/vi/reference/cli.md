@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: a74b3939ddcd -->
+<!-- source: documents/reference/cli.md sha256: a5870fc0d528 -->
 
 # CLI
 
@@ -249,24 +249,28 @@ yarn style-gen canvas check --canvas design/canvas --theme styles/theme.json --n
 yarn style-gen canvas check --inventory --canvas design/canvas
 ```
 
-| Cờ                               | Kiểu      | Mặc định | Mô tả                                                                                                                    |
-| :------------------------------- | :-------- | :------- | :----------------------------------------------------------------------------------------------------------------------- |
-| `--canvas <dir>`                 | `string`  | bắt buộc | Thư mục canvas; mọi `*.dc.html` và `*.css` bên trong đều được kiểm tra                                                   |
-| `--theme <file>`                 | `string`  | bắt buộc | File theme JSON mà canvas lấy token; không cần khi dùng `--inventory`                                                    |
-| `--stamp <file>`                 | `string`  | không có | `ds-stamp.json`: design system được build từ đúng các byte theme này; với `--boards`, khối provenance khớp với nó        |
-| `--intents <a,b,c>`              | `string`  | không có | Các giá trị `color` được phép của mọi `*.Button`                                                                         |
-| `--naming`                       | `boolean` | tắt      | Quy ước đặt tên theme, không có `font-weight` inline, không viết tay radius, line height hay font family                 |
-| `--boards`                       | `boolean` | tắt      | Page và board trong `canvas.json`, nội dung core board, page component, frame; canvas rỗng là một vi phạm                |
-| `--ds-version <namespace>=<ver>` | `string`  | không có | `canvas.json` cài đúng phiên bản design system này; với `--boards`, khối provenance ghi đúng nó                          |
-| `--recipes <file>`               | `string`  | không có | Với `--boards`: mỗi board `c-<name>` đánh dấu mọi giá trị trục trong recipe của nó bằng `data-sg-cell="<axis>:<value>"`  |
-| `--usage <file>`                 | `string`  | không    | Với `--naming`: `ds.usage.json`, mỗi key màu một câu mô tả và tên token spacing mà bản build design system đọc           |
-| `--no-rule <id>`                 | `string`  | không    | Lặp được. Tắt một rule cho lần chạy này; file `--standard` phải có `disabledRules.<id>.reason`                           |
-| `--standard <file>`              | `string`  | đi kèm   | File bổ sung xếp chồng lên chuẩn đi kèm; bản sao đầy đủ được chuyển trong bộ nhớ kèm thông báo (không hợp lệ: lỗi input) |
-| `--inventory`                    | `boolean` | tắt      | In ra những gì canvas dùng (biến, cỡ chữ và độ đậm, intent) dưới dạng JSON thay vì kiểm tra                              |
+| Cờ                               | Kiểu      | Mặc định | Mô tả                                                                                                                                                       |
+| :------------------------------- | :-------- | :------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--canvas <dir>`                 | `string`  | bắt buộc | Thư mục canvas; mọi `*.dc.html` và `*.css` bên trong đều được kiểm tra                                                                                      |
+| `--theme <file>`                 | `string`  | bắt buộc | File theme JSON mà canvas lấy token; không cần khi dùng `--inventory`                                                                                       |
+| `--stamp <file>`                 | `string`  | không có | `ds-stamp.json`: design system được build từ đúng các byte theme này; với `--boards`, khối provenance khớp với nó                                           |
+| `--intents <a,b,c>`              | `string`  | không có | Các giá trị `color` được phép của mọi `*.Button`                                                                                                            |
+| `--naming`                       | `boolean` | tắt      | Quy ước đặt tên theme, không có `font-weight` inline, không viết tay radius, line height hay font family                                                    |
+| `--boards`                       | `boolean` | tắt      | Page và board trong `canvas.json`, nội dung core board, page component, frame; canvas rỗng là một vi phạm                                                   |
+| `--ds-version <namespace>=<ver>` | `string`  | không có | `canvas.json` cài đúng phiên bản design system này; với `--boards`, khối provenance ghi đúng nó                                                             |
+| `--recipes <file>`               | `string`  | không có | Với `--boards`: mỗi board `c-<name>` đánh dấu mọi giá trị trục trong recipe của nó bằng `data-sg-cell="<axis>:<value>"`                                     |
+| `--usage <file>`                 | `string`  | không    | Với `--naming`: `ds.usage.json`, mỗi key màu một câu mô tả và tên token spacing mà bản build design system đọc                                              |
+| `--preset <file>`                | `string`  | không    | Với `--boards`: file recipe (`ds.preset.ts`); các chuỗi class trong đó chịu các rule class và key của nó được tính là có dùng (đọc như văn bản, không chạy) |
+| `--config <file>`                | `string`  | không    | Với `--boards`: `style-gen.config.json`, để rule class biết Tailwind mặc định nào bị reset và phần nào được phủ                                             |
+| `--no-rule <id>`                 | `string`  | không    | Lặp được. Tắt một rule cho lần chạy này; file `--standard` phải có `disabledRules.<id>.reason`                                                              |
+| `--standard <file>`              | `string`  | đi kèm   | File bổ sung xếp chồng lên chuẩn đi kèm; bản sao đầy đủ được chuyển trong bộ nhớ kèm thông báo (không hợp lệ: lỗi input)                                    |
+| `--inventory`                    | `boolean` | tắt      | In ra những gì canvas dùng (biến, cỡ chữ và độ đậm, intent) dưới dạng JSON thay vì kiểm tra                                                                 |
 
 Đường dẫn được resolve theo thư mục hiện tại; các dòng vi phạm ghi file canvas tương đối với `--canvas`, còn theme và stamp giữ nguyên như khi truyền vào. Lỗi input cũng ghi canvas, theme, stamp và file recipes đúng như khi truyền vào. Board là các file nằm ngay trong `--canvas`: một `.dc.html` trong thư mục con chỉ được kiểm tra bằng các rule token, không bằng các rule board.
 
 Output: mỗi vi phạm một dòng `<file>:<line> <message> [<rule-id>; <type>: <source>]` (trong ngoặc là rule và lý do nó tồn tại: `wcag`, `technical`, `choice`), sau đó là `<n> violation(s)`. Một dòng `finding: <file>:<line> <message> [<rule-id>]` được báo nhưng không làm lần chạy fail; lần chạy chỉ có finding và không có vi phạm kết thúc bằng `FINDINGS: <k> in <n> files` và thoát `0`. Lần chạy sạch in `OK: <n> files`. Với `--no-rule`, dòng `rules disabled: <ids>` được in trước dòng cuối, nên rule bị tắt không bao giờ qua mặt âm thầm. Canvas rỗng khi dùng `--boards` là vi phạm `canvas.json:1 no .dc.html files under <dir>`. Ký tự xuống dòng và các ký tự điều khiển khác bị chép vào một dòng (chữ trong board, một tên trong `canvas.json`, một đường dẫn) được escape thành `\uXXXX`, nên mỗi vi phạm luôn nằm trên một dòng. Hợp đồng là format dòng đó, các dòng tóm tắt và các mã thoát; câu chữ của từng message thì không, và có thể đổi trong một bản minor. Một bản minor có thể thêm key vào chuẩn đi kèm, và file bổ sung `--standard` thừa hưởng chúng mà không cần sửa. Các mã thoát: `0` không có vi phạm (hoặc `--inventory`), `1` có vi phạm, `2` lỗi cách dùng (cờ lạ, lệnh con lạ, cờ mà lệnh con không nhận, thiếu hoặc để trống `--canvas` hay `--theme`, để trống `--stamp`, `--standard` hay `--recipes`, `--ds-version` sai dạng, `--recipes` mà không có `--boards`, `--usage` mà không có `--naming`, một id `--no-rule` không phải rule, hoặc id mà file `--standard` không tắt kèm lý do), một input không đọc hoặc không parse được (thư mục canvas, theme, stamp, một `canvas.json` không parse được, một file recipes không có dạng `{ "<kebab name>": { "<axis>": ["<value>", …] } }`; thông báo nêu tên file và lý do, ví dụ `theme.json: cannot read (ENOENT)`; thiếu `canvas.json` khi dùng `--boards` hoặc `--ds-version` là vi phạm `canvas.json:1 missing canvas.json`, mã `1`), hoặc `--standard` không hợp lệ (thông báo nêu key, ví dụ `standard.json: dsComponents …`).
+
+Với `--boards`, các rule class thêm `ref-class` và `token-bypass` (vi phạm) cùng `token-unused` (một finding); `unknown token` mang `ref-var`. Từng rule và các miễn trừ: [chuẩn design-canvas](../../standards/design-canvas.md#checking-a-canvas).
 
 Chuẩn được đóng gói trong CLI và không thể gỡ hay thay thế: file `--standard` chỉ bổ sung role, bước scale, ngoại lệ, board và nội dung lên trên nó, mỗi mục nới lỏng một rule đều có `reason`. Một bản sao của chuẩn đi kèm nằm ở `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json` để đọc; tạo file của riêng bạn bằng `canvas standard init`.
 

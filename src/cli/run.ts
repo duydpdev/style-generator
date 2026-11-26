@@ -301,6 +301,8 @@ const CANVAS_FLAGS: Record<string, readonly string[]> = {
     "ds-version",
     "recipes",
     "usage",
+    "preset",
+    "config",
     "no-rule",
     "naming",
     "boards",
@@ -336,6 +338,10 @@ Options:
                                   of its recipe (data-sg-cell="<axis>:<value>")
   --usage <file>                  With --naming: ds.usage.json, the colour descriptions and
                                   spacing token names the design system build reads
+  --preset <file>                 With --boards: the preset source; its class names are read as
+                                  text (never run) and checked like a board's
+  --config <file>                 With --boards: the product's style-gen.config.json, the
+                                  options its theme CSS is generated with
   --standard <file>               Additions file layered over the bundled standard
                                   (init, migrate: the file to write; default canvas-standard.json)
   --no-rule <id>                  Switch one rule off for this run (repeatable); the --standard
@@ -359,6 +365,8 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
     "ds-version": { type: "string" },
     recipes: { type: "string" },
     usage: { type: "string" },
+    preset: { type: "string" },
+    config: { type: "string" },
     "no-rule": { type: "string", multiple: true },
     naming: { type: "boolean" },
     boards: { type: "boolean" },

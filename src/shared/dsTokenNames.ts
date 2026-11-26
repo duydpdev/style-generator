@@ -15,6 +15,18 @@ export const DS_FAMILY_PREFIX = {
 
 type ThemeFamily = keyof typeof DS_FAMILY_PREFIX;
 
+/**
+ * The colour keys the design-system cover page reads (`{{v:<key>}}` in
+ * `scripts/ds-cover.html.tmpl`), so a theme that holds them is not unused.
+ */
+export const DS_COVER_KEYS: readonly string[] = [
+  "background",
+  "foreground",
+  "primary",
+  "success",
+  "warning",
+];
+
 /** One token name on the design-system page and where it comes from. */
 export interface DsTokenName {
   name: string;

@@ -22,14 +22,14 @@ afterEach(() => {
  * @param {string} text - The theme JSON
  * @returns {string[]} One line per violation
  */
-function namingViolations(text: string): string[] {
+async function namingViolations(text: string): Promise<string[]> {
   const dir = mkdtempSync(join(tmpdir(), "starter-naming-"));
   scratch.push(dir);
   const theme = join(dir, "theme.json");
   writeFileSync(theme, text);
   const canvasDir = join(dir, "canvas");
   mkdirSync(canvasDir);
-  const result = checkCanvas({ canvasDir, theme, naming: true });
+  const result = await checkCanvas({ canvasDir, theme, naming: true });
   return [...result.errors, ...result.findings];
 }
 
@@ -37,17 +37,17 @@ describe("the theme style-gen init writes", () => {
   it.each([
     ["light", themeTemplate],
     ["dark", themeTemplateDark],
-  ])("the %s starter follows the naming convention", (_name, text) => {
-    expect(namingViolations(text)).toEqual([]);
+  ])("the %s starter follows the naming convention", async (_name, text) => {
+    expect(await namingViolations(text)).toEqual([]);
   });
 
-  it("reports a semantic key that holds a literal (control)", () => {
+  it("reports a semantic key that holds a literal (control)", async () => {
     const literal = themeTemplate.replace(
       '"primary": "$blue600"',
       '"primary": "#2563EB"',
     );
     expect(literal).not.toBe(themeTemplate);
-    expect(namingViolations(literal)).not.toEqual([]);
+    expect(await namingViolations(literal)).not.toEqual([]);
   });
 
   it.each([

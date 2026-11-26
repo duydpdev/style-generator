@@ -37,14 +37,13 @@ export function themeVariableNames(theme: unknown): Set<string> {
 }
 
 export interface FileRules {
-  known: Set<string>;
   intents: readonly string[] | undefined;
   naming: boolean;
   primitiveVars: Set<string>;
   primitiveBoards: readonly string[];
 }
 
-function occurrenceViolation(o: Occurrence, known: Set<string>): string | null {
+function occurrenceViolation(o: Occurrence): string | null {
   switch (o.kind) {
     case "var":
       return ALLOWED_VAR.test(o.value)
@@ -57,11 +56,26 @@ function occurrenceViolation(o: Occurrence, known: Set<string>): string | null {
     case "blobRef":
       return `unchecked blob link /_blob/${o.value}`;
     default:
-      return o.value.startsWith("--sg-sp-") || known.has(o.value)
-        ? null
-        : `unknown token ${o.value}`;
+      return null;
   }
 }
+
+/**
+ * The `var(--sg-…)` reads of a token the theme does not produce (`--sg-sp-*` is always known).
+ * @param {ScannedFile} s - From `scanText`
+ * @param {ReadonlySet<string>} known - From {@link themeVariableNames}
+ * @returns {Occurrence[]} In file order
+ */
+export const unknownTokenReads = (
+  s: ScannedFile,
+  known: ReadonlySet<string>,
+): Occurrence[] =>
+  s.occurrences.filter(
+    (o) =>
+      o.kind === "sgVar" &&
+      !o.value.startsWith("--sg-sp-") &&
+      !known.has(o.value),
+  );
 
 /**
  * Violations of one scanned file, each `<file>:<line> <message>`.
@@ -70,13 +84,13 @@ function occurrenceViolation(o: Occurrence, known: Set<string>): string | null {
  * @returns {string[]} In check order
  */
 export function fileViolations(s: ScannedFile, rules: FileRules): string[] {
-  const { known, intents } = rules;
+  const { intents } = rules;
   const out: string[] = [];
   const report = (where: Where, message: string) => {
     out.push(`${where.file}:${String(where.line)} ${message}`);
   };
   for (const o of s.occurrences) {
-    const message = occurrenceViolation(o, known);
+    const message = occurrenceViolation(o);
     if (message !== null) report(o, message);
   }
   for (const f of s.fontSizes.filter((x) => x.value !== "inherit"))

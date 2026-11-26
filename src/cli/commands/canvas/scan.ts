@@ -8,6 +8,7 @@ import { join, relative, sep } from "node:path";
 
 import { errorMessage } from "../../../node/errorMessage";
 
+import { boardClassUses, type ClassUse } from "./classCandidates";
 import {
   ANY_LITERAL,
   BINDING,
@@ -138,6 +139,8 @@ export interface ScannedFile {
   dsGlobals: string[];
   dsPaths: string[];
   intents: Located[];
+  /** The `class="…"` names of a board; none for a stylesheet. */
+  classUses: ClassUse[];
 }
 
 /** Files a design-system producer writes; they declare the theme's own aliases. */
@@ -377,6 +380,7 @@ export function scanText(file: string, text: string): ScannedFile {
     ].map((m) => m[1] ?? ""),
     dsPaths: [...text.matchAll(/(?<![\w-])ds\/[^"' )]+/g)].map((m) => m[0]),
     intents: collectIntents(file, text, lineOf),
+    classUses: file.endsWith(".dc.html") ? boardClassUses(file, text) : [],
   };
 }
 

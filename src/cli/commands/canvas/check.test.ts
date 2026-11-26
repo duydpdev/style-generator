@@ -92,7 +92,7 @@ describe("style-gen canvas check", () => {
         1,
       );
       expect(stdout()).toEqual([
-        "a.css:4 unknown token --sg-z-nope",
+        "a.css:4 unknown token --sg-z-nope [ref-var; technical: a var() with no declaration resolves to nothing]",
         "1 violation(s)",
       ]);
     });
@@ -104,7 +104,10 @@ describe("style-gen canvas check", () => {
       expect(lines).toContain(
         "cl-moi.dc.html:1 cl-* boards are retired (split into one c-* board per component)",
       );
-      expect(lines.at(-1)).toBe(`${String(lines.length - 1)} violation(s)`);
+      const violations = lines
+        .slice(0, -1)
+        .filter((l) => !l.startsWith("finding: "));
+      expect(lines.at(-1)).toBe(`${String(violations.length)} violation(s)`);
     });
 
     it("reports an empty canvas under --boards at canvas.json:1", async () => {

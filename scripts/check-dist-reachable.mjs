@@ -43,7 +43,15 @@ const scriptsBelow = (dir) =>
     .filter((entry) => entry.isFile() && /\.[cm]?js$/.test(entry.name))
     .map((entry) => join(entry.parentPath, entry.name));
 
-const entries = [...targetFiles(pkg.exports), ...targetFiles(pkg.bin)]
+// `style-gen ds build` reads `dist/ds/runtime.js` as text and embeds it in the
+// bundle it writes, so no published entry imports it.
+const READ_AS_TEXT = ["dist/ds/runtime.js"];
+
+const entries = [
+  ...targetFiles(pkg.exports),
+  ...targetFiles(pkg.bin),
+  ...READ_AS_TEXT,
+]
   .filter((file) => /\.[cm]?js$/.test(file))
   .map((file) => resolve(root, file));
 

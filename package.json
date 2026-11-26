@@ -138,7 +138,7 @@
   ],
   "scripts": {
     "build": "tsc && vite build && node scripts/emit-cts-types.mjs && node scripts/emit-agent-rules.mjs",
-    "build:cli": "tsdown && node scripts/emit-canvas-standard.mjs",
+    "build:cli": "tsdown && node scripts/emit-canvas-standard.mjs && node scripts/emit-ds-runtime.mjs",
     "build:all": "yarn build && yarn build:cli",
     "schema:refresh": "yarn build:cli && node dist/cli/index.mjs schema --out examples/theme.schema.json --config-out examples/style-gen.config.schema.json && node dist/cli/index.mjs schema --out examples/design-system/src/theme.schema.json --config-out examples/design-system/style-gen.config.schema.json && node dist/cli/index.mjs schema --out site/src/theme/theme.schema.json --config-out site/style-gen.config.schema.json && prettier --write --log-level warn examples/theme.schema.json examples/style-gen.config.schema.json examples/design-system/src/theme.schema.json examples/design-system/style-gen.config.schema.json site/src/theme/theme.schema.json site/style-gen.config.schema.json",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",

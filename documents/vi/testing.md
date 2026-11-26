@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: a6baf2a718a2 -->
+<!-- source: documents/testing.md sha256: 6443d40ff931 -->
 
 # Hướng dẫn kiểm thử
 
@@ -86,7 +86,7 @@ chạy cho các PR không phải draft có đổi `site/**`, `examples/**`, `e2e
 ## Bảng gate
 
 Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:all`, `check:tokens`, `lint`, `prettier:check`, `tsc`, `test`, `test:types`, `typecheck:scripts`, `typecheck:dist`,
-`check:externals`, `check:sizes`, `check:browser-safe`, `check:comments:core`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); chuỗi gate của tài liệu nằm trong bảng.
+`check:externals`, `check:sizes`, `check:browser-safe`, `check:comments`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); chuỗi gate của tài liệu nằm trong bảng.
 
 | Lệnh                                                                            | Chặn cái gì                                                                                                            | Chạy ở (workflow: bước)                                        | Cần sau khi đổi                                                               |
 | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------- |
@@ -103,6 +103,7 @@ Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:al
 | `yarn check:externals`                                                          | một module bên thứ ba bị inline vào `dist`, hoặc một UI peer bị chạm tới ngoài `./ui`                                  | `check`: Check externals; `deploy.yml`                         | `src/**`, config build                                                        |
 | `yarn check:sizes`                                                              | một subpath hoặc CLI vượt ngân sách gzip                                                                               | `check`: Check size budgets; `deploy.yml` (qua `prepublish`)   | `src/**`, config build                                                        |
 | `yarn check:browser-safe`                                                       | một subpath trình duyệt chạm tới Zod, một builtin của Node hoặc một runtime dependency                                 | `check`: Check browser-safe subpaths; `deploy.yml`             | `src/**`, config build                                                        |
+| `yarn check:comments`                                                           | một khối JSDoc quá 8 dòng, một chuỗi comment quá 3 dòng, hoặc dòng chỉ có comment chiếm từ 20 % trở lên của `src/**`   | `check`: Comment ceiling                                       | `src/**`                                                                      |
 | `yarn check:publish-target`                                                     | registry publish khác npmjs.org, hoặc access khác `public`                                                             | `deploy.yml`: Verify publish target; `prepublish`              | `package.json`, `.yarnrc.yml`                                                 |
 | `yarn check:smoke`                                                              | thiếu file `dist`, một subpath không nạp được bằng `import` hoặc `require`, CLI hỏng                                   | `check`: Smoke-run built artifacts; `node-floor`; `deploy.yml` | `src/**`, config build                                                        |
 | `node scripts/starter-smoke.mjs`                                                | starter Vite + React không còn cài hoặc build được với package đã đóng gói                                             | `check`: Starter smoke                                         | `starters/**`, `src/**`, config build                                         |

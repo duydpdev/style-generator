@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: 156c1c31a366 -->
+<!-- source: documents/architecture.md sha256: 680a67a21a67 -->
 
 # Kiến trúc
 
@@ -487,6 +487,106 @@ Gọi `unwatch` trước sẽ xoá mục bỏ qua của chokidar, nên lệnh `a
 Lệnh `add()` gắn lại được tính là một lần thêm ban đầu mà `ignoreInitial` bỏ qua, và một theme được tạo lại trong vài chục mili giây thì đã có mặt trở lại, nên lượt chạy được lên lịch ngay từ sự kiện `unlink`.
 `run` bỏ qua một theme vẫn còn vắng mặt khi bộ hẹn giờ kích hoạt; một theme quay lại muộn hơn sẽ tự báo một sự kiện `add`.
 Xoá một tệp cấu hình nghĩa là "dùng ứng viên kế tiếp, nếu không thì dùng mặc định", nên nó kích hoạt việc nạp lại.
+
+### `TokenCategoryDescriptor`: bất biến về namespace, opacity và phần trăm
+
+Mỗi `cssVarPrefix` dựng sẵn mở một namespace `--sg-<category>-` riêng: không cái nào là tiền tố của cái khác, kể cả `--sg-sp-` của spacing, nên hai category không bao giờ sinh ra cùng một biến.
+`themeNamespace` bị bỏ qua với category mà thư viện tự sinh rule `@utility` (typography) hoặc category không có biến CSS nào.
+Chỉ utility màu đặt `opacityModifier`: `shadow-<key>/<n>` có đặt `--tw-shadow-alpha`, nhưng màu của shadow nằm trong `var(--sg-shadow-<key>)` đục nên không đổi.
+`themeValue: "percent"` tồn tại cho `opacity`: `--opacity-<key>` cấp cho cả `opacity-<key>` lẫn modifier màu `bg-primary/<key>`, mà `color-mix()` của nó chỉ nhận phần trăm, nên ánh xạ `@theme inline` là `calc(var(--sg-…) * 100%)` còn biến `--sg-*` giữ nguyên số của theme.
+
+### `categoryTokenMeta`: vì sao giá trị mặc định nằm tách khỏi descriptor
+
+Token có kiểu (`createDesignTokens`) chỉ cần giá trị mặc định của category lúc chạy. Đặt chúng trong một module riêng, không kèm nửa CSS của descriptor (tiền tố class, trạng thái, cách đặt tên `--sg-*`), giúp entry `./tokens` an toàn cho trình duyệt luôn nhỏ.
+Các descriptor dựng sẵn spread những object này, nên giá trị mặc định của một category vẫn chỉ được khai báo đúng một lần.
+
+### `backdropBlursCategory`: vì sao không dùng namespace blur
+
+Category này ánh xạ vào `--backdrop-blur-*`, namespace mà utility `backdrop-blur-*` của Tailwind v4 đọc (`.backdrop-blur-sm` biên dịch thành `blur(var(--sg-backdrop-blur-sm))`).
+Cố ý không dùng `--blur-*`: nó sẽ định nghĩa lại cả thang filter `blur-*` và ghi đè các giá trị mặc định `--blur-sm`/`md`/`lg` của Tailwind.
+
+### `borderWidthCategory`: namespace border-width không có trong tài liệu
+
+`borderWidth` thay cho category `border` cũ. Nó ánh xạ vào `--border-width-*`, namespace mà các utility `border-*`, `border-{x,y,t,r,b,l,s,e}-*` và `divide-{x,y}-*` của Tailwind v4 đọc độ dày, nên `@theme inline` sinh đủ mọi class theo cạnh và theo hướng logic mà không cần `@utility` riêng.
+`--border-width-*` không phải namespace theme có trong tài liệu Tailwind (chạy được trên 4.1–4.3); assertion với engine thật trong `src/__integration__/tailwind-compile.test.ts` là chốt báo động khi Tailwind thay đổi.
+
+### `buildStateLines`: mỗi trạng thái một dòng source
+
+Registry sinh một dòng `@source inline` cho mỗi trạng thái, không bao giờ gộp thành một directive: các trạng thái có thể có tập sibling khác nhau (một token có thể khai báo `primaryHover` mà không có `primaryActive`), và một nhóm ngoặc nhọn kiểu shell sẽ nhân chéo ra những cặp sai như `hover:bg-primary-active`.
+Sibling được dò trên key dạng camelCase, đúng dạng mà `createDesignTokens` đưa vào `createVariantMapper` (`primary-hover` và `primaryHover` đều thành `primaryHover`), và dòng sinh ra dùng sibling dạng kebab-case, đúng class mà mapper nối vào token gốc.
+Trạng thái được viết dạng kebab-case (`focusVisible` → `focus-visible:`) để là tên variant hợp lệ của Tailwind, và trạng thái không có sibling thì không sinh dòng nào thay vì sinh ngoặc rỗng.
+
+### `generateSourceInline`: mỗi category một dòng
+
+Mỗi category có dòng `@source inline` riêng thay vì một directive gộp khổng lồ, nên một category vượt quá kích thước brace-expansion hợp lý không ảnh hưởng tới các category khác.
+Phần phủ `sp-*` dùng một directive brace-expansion thay vì một directive cho mỗi key.
+
+### `generateSpacingCss`: khối `@utility`, chuỗi fallback và `@property`
+
+Utility của spacing và typography được sinh dưới dạng khối `@utility`, không bao giờ là rule `.class {}` trần: một selector thường đưa vào dưới dạng văn bản CSS thô thì bộ so khớp candidate của Tailwind không thấy, nên variant `hover:`/`md:` sẽ không áp dụng.
+Mỗi mức breakpoint của một utility spacing mang trọn chuỗi fallback `var()` tích lũy: các media query dạng khoảng (`width >= X`) có thể cùng đúng một lúc, khối `@media` khớp cuối cùng thắng theo thứ tự trong mã nguồn, và nếu chỉ mang giá trị ghi đè của riêng nó thì viewport rộng hơn có thể rơi qua mất giá trị của breakpoint hẹp hơn.
+Các khai báo `@property` cố ý không có `initial-value`: một property `syntax: "*"` không có nó sẽ là guaranteed-invalid khi chưa đặt, nhờ vậy chuỗi `var(--x, fallback)` rơi xuống fallback thay vì thành chuỗi rỗng.
+
+### `buildDesignTokens`: vì sao dùng object literal thay vì vòng lặp descriptor
+
+`buildDesignTokens` liệt kê từng category trong một object literal thay vì lặp qua các descriptor, vì vòng lặp sẽ kéo các descriptor vào ngân sách kích thước của `./tokens`.
+Tên property vẫn được compiler kiểm tra với `key` của từng descriptor (`CategoryTokenArrays`), và `cva-roundtrip.test.ts` ghim key và giá trị mặc định của từng mảng vào các key `@source inline` của descriptor tương ứng.
+
+### `createTailwindMergeExtension`: mỗi category mở rộng nhóm nào
+
+`shadows`, `backdropBlurs` và `borderWidth` (gồm cả tiền tố theo cạnh, theo hướng logic và `divide-*`) mở rộng các nhóm sẵn có của tailwind-merge (`border-w`, `border-w-x`, …); `borderRadius` mở rộng thang theme `radius` mà mọi nhóm `rounded-*` đọc.
+Key typography là tên class trọn vẹn và tạo thành nhóm `sg-typography`, xung đột với `font-size`, `font-weight`, `leading` và `tracking`; một utility đơn thuộc tính đứng sau sẽ tinh chỉnh nó và cả hai đều được giữ.
+Các token dạng thang mở rộng `duration`, `ease`, `h`, `min-h`, `max-h`, `size`, `opacity`/`backdrop-opacity` và `z`; các dòng `min-h`/`max-h`/`backdrop-opacity` tồn tại vì cùng biến `@theme` cấp cho các utility đó, dù các dòng `@source inline` của registry không phủ chúng.
+`colors` và `fontFamily` vắng mặt vì nhóm `color` và `font-family` mặc định đã nhận mọi giá trị, và tailwind-merge bỏ variant trước khi tra nhóm nên chỉ liệt kê phần class trần.
+
+### `styleGenNext`: vì sao watcher dev là singleton không persistent
+
+`next.config.*` có thể được đánh giá nhiều lần trong một process (dò phase, chính dev server, đôi khi mỗi worker một lần), nên watcher dev nằm ở phạm vi module và lần gọi lặp lại sẽ dùng lại nó; lần gọi cho theme, file output hay bộ tùy chọn generator khác sẽ thay nó.
+Watcher dùng `persistent: false` để không bao giờ là thứ giữ process Node sống: trong `next dev`, chính HTTP server của Next giữ event loop mở, còn một watcher persistent sẽ treo mãi một process ngắn hạn chỉ đánh giá config.
+
+### `styleGenVite`: vòng đời dev server và sổ đăng ký output trùng
+
+Sổ đăng ký `activeOutFiles` ở phạm vi module ghi lại `owner` (file config, nếu không có thì root) và `instance` của plugin, nên một lần khởi động lại dev server (instance mới đăng ký trước khi server cũ đóng) và các instance theo từng environment của cùng một config không bị báo là trùng; hai lần gọi `styleGenVite()` trong cùng một config không phân biệt được với những trường hợp đó nên không bị cảnh báo.
+Chỗ đăng ký được giải phóng bằng cách bọc `server.close()`, và `release()` chỉ xóa nó khi instance này vẫn còn sở hữu. `closeBundle`/`buildEnd` không dùng được vì chúng cũng chạy sau mỗi lần rebuild của `vite build --watch` trong khi đăng ký phải tồn tại lâu hơn; `httpServer` là null ở chế độ middleware.
+
+### `run.ts`: vì sao `runCli` trả về mã thoát và phân tích cờ qua hai lượt
+
+`runCli` không bao giờ ném lỗi và không bao giờ gọi `process.exit`, nên test gọi trực tiếp nó và `src/cli/index.ts` chỉ gán `process.exitCode`.
+Việc phân tích diễn ra qua hai lượt: lượt toàn cục dễ dãi tìm `--help`/`--version` và tên lệnh, sau đó cờ riêng của lệnh được phân tích nghiêm ngặt, nên một cờ gõ sai (`--them`) là lỗi thay vì bị bỏ qua trong im lặng.
+Mã thoát: 0 khi thành công, `--help`, `--version`, không có lệnh hoặc prompt bị huỷ; 1 khi thất bại hoặc lệnh hay cờ không xác định; 2 cho lỗi cờ của `budget` và `canvas`.
+
+### `schema.ts`: vì sao config không hợp lệ vẫn được ghi schema
+
+Một config có lỗi schema vẫn được ghi JSON Schema của config, vì đó chính là lúc người nâng cấp cần gợi ý từ trình soạn thảo.
+Khi không có `--out`, các lỗi sẽ được báo, mã thoát là 1 và schema của theme không được ghi, vì chỉ `theme` của một config hợp lệ mới quyết định nơi đặt schema theme; khi có `--out`, cả hai schema đều được ghi, không báo gì và mã thoát là 0.
+Theme mà một config không hợp lệ khai báo vẫn được bảo vệ khỏi bị ghi đè, vì `readConfigFile` giữ lại object thô.
+Một file config sai cú pháp được cảnh báo và đọc như giá trị mặc định, giống cách `generate` làm.
+
+### `utilityCollisions.ts`: vì sao xung đột chỉ là cảnh báo
+
+Bước kiểm tra báo các key hợp lệ theo schema mà output `@theme`/`@utility` sinh ra âm thầm ghi đè, hoặc bị ghi đè bởi, một class có sẵn của Tailwind.
+Xung đột có thể là cố ý (một key `borderWidth` chỉ gồm chữ số thay thế độ rộng của Tailwind, một sự ghi đè cần xác nhận), nên nó không bao giờ trở thành lỗi schema.
+Các override trong `themeAxes` không được kiểm tra riêng: schema bắt buộc mọi key override phải tồn tại trong theme gốc, nên một key xung đột luôn được báo đúng một lần qua record gốc.
+
+### `aliasHints.ts`: vì sao không bao giờ gợi ý một key gốc đã bị định nghĩa lại
+
+Một key gốc mà bất kỳ biến thể nào của bất kỳ trục nào định nghĩa lại trong category đó sẽ không bao giờ được gợi ý làm đích alias.
+Các trục xếp chồng trên `html`, nên biến của nó nhận giá trị override dưới biến thể đang hoạt động (`var(--sg-color-text)` là giá trị dark dưới `data-theme="dark"`), và alias tới nó sẽ đổi màu thay vì lặp lại giá trị literal.
+Một override bằng chính key gốc của nó là override thừa, không phải ứng viên alias, và chỉ key gốc khớp đầu tiên được nêu tên.
+
+### `configJsonSchema.ts`: vì sao phần thu hẹp chặt hơn và có thể lùi về bản gốc
+
+`uniqueItems` trên `opacities` cũng đánh dấu hai nhóm giống hệt nhau, điều mà CLI chấp nhận: JSON Schema không thể chỉ so sánh riêng các số thuần, và việc trình soạn thảo chặt hơn ở đây là có chủ ý.
+Các quy tắc so sánh hai key (`breakpoints` phải gọi tên một screen, `screens` phải dùng chung một đơn vị sau khi gộp với mặc định) nằm ngoài JSON Schema, và mô tả của các key đó nói rõ điều này.
+`zod` là dependency lúc chạy với phạm vi `^4`, nên một bản 4.x khác có thể định hình output JSON khác với phiên bản mà phần thu hẹp được viết cho; khi đó phần thu hẹp bị bỏ qua và output `z.toJSONSchema` thuần (lỏng hơn, vẫn hợp lệ) được trả về, để `schema` và `init` vẫn hoạt động.
+
+### `templates.ts`: vì sao các đoạn mã bundler có dạng như vậy
+
+`init` in ra đoạn mã bundler và không bao giờ sửa file cấu hình bundler; Vite và Next.js tự đọc `style-gen.config.json`, nên plugin của chúng không nhận tham số.
+Nuxt 4 đặt root của Vite là `app/`, nên đoạn mã Nuxt truyền `root`, tức thư mục dự án chứa file config.
+Văn bản được định dạng bằng Prettier, trừ object cấu hình Next.js vẫn giữ dạng của create-next-app (khối code trong tài liệu được `prettier-ignore`).
+README (Vite) và `documents/reference/cli.md` (Next.js, Nuxt) hiển thị các khối này đúng từng byte, điều mà `templates.test.ts` kiểm tra.
+`getCssImport` tính đường dẫn tương đối từ đường dẫn tuyệt đối dưới `cwd`, không bao giờ từ `process.cwd()`, và ghi mỗi specifier dưới dạng chuỗi JSON, cũng là một chuỗi CSS hợp lệ.
 
 ---
 

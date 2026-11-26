@@ -15,10 +15,7 @@ type MultiVariantMap<T extends string, P extends string> = {
   [Px in P]: VariantMap<T, Px>;
 };
 
-/**
- * The chained ` variant:class` suffixes of token `K`: one per state in `S`
- * whose sibling token (`K` + the state's `suffix`) is declared in `T`.
- */
+// The chained ` variant:class` suffixes of `K`: one per state whose sibling `K<suffix>` is in `T`.
 type JoinStates<
   K extends string,
   P extends string,
@@ -31,13 +28,7 @@ type JoinStates<
   ? `${`${K}${H["suffix"]}` extends T ? ` ${H["variant"]}:${MappedVariant<`${K}${H["suffix"]}`, P>}` : ""}${JoinStates<K, P, R, T>}`
   : "";
 
-/**
- * Result of the `{ states }` overloads: each token maps to its own literal
- * class, followed by one `state:class` per sibling state. A non-tuple
- * `states` (`readonly ColorState[]`), a row whose `suffix` or `variant` is a
- * wide `string` (`[row]` with `row: ColorState`) or a non-literal token type
- * cannot be resolved statically and falls back to `string`.
- */
+// `{ states }` result: a non-tuple `states`, a wide row or a non-literal token falls back to `string`.
 type StateVariantMap<
   T extends string,
   P extends string,
@@ -52,11 +43,7 @@ type StateVariantMap<
         : `${MappedVariant<K, P>}${JoinStates<K, P, S, T>}`;
 };
 
-/**
- * Result of the `{ opacities }` overloads: every token keeps its
- * `StateVariantMap` class, and each token × step adds a `token/step` key
- * mapped to `class/step`. State classes are never crossed with a step.
- */
+// `{ opacities }` result: each token × step adds `token/step` → `class/step`, never crossed with states.
 type OpacityVariantMap<
   T extends string,
   P extends string,
@@ -70,7 +57,7 @@ type OpacityVariantMap<
       : never;
 };
 
-/** Runtime shape of the optional third argument (the overloads narrow it). */
+// Runtime shape of the optional third argument (the overloads narrow it).
 interface VariantMapperRuntimeOptions {
   readonly states?: readonly ColorState[];
   readonly opacities?: readonly number[];
@@ -78,58 +65,11 @@ interface VariantMapperRuntimeOptions {
 }
 
 /**
- * Creates a mapping of tokens to their corresponding prefixed CSS classes.
- * Classes are always kebab-cased with the SAME `toKebabCase` used by the
- * registry (`flattenByCategory`/`generateSourceInline`), so a mapper's
- * output is guaranteed to match a class the registry emits `@source
- * inline(...)` for.
- *
- * The optional `{ states }` argument (e.g. `COLOR_STATES`) is a table of
- * `{ suffix, variant }` states to look up as sibling RAW tokens. For a raw
- * token `t`, a state is appended to `t`'s class as `<variant>:<class>` only
- * when `tokens` also contains `t` + `suffix` (`primary` + `Hover` ->
- * `primaryHover` -> `hover:bg-primary-hover`; `Selected` maps to
- * `aria-selected:`). A token with no matching sibling keeps its plain
- * single class; sibling tokens themselves are plain single classes. The
- * result is a literal chained string when `states` is a literal tuple
- * (`as const`, `COLOR_STATES`) and `string` when it is typed
- * `readonly ColorState[]`. `{ allowUnregisteredPrefix: true }` accepts any
- * prefix string instead of only registry prefixes.
- *
- * `{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
- * and step mapped to `class/step` (`primary/10` -> `bg-primary/10`); combined
- * with `{ states }`, the state classes stay on the base key only
- * (`primary/10` never carries `hover:`). Not combinable with
- * `allowUnregisteredPrefix`.
- * @template {string} T
- * @template {RegistryPrefix | ""} P
- * @param {P} prefix - A utility prefix the registry emits `@source inline` for (`bg`, `text`, `border`, `ring`, `rounded-t`, …); `""` yields the bare kebab-case token (typography). An unregistered prefix (`fill`) is a type error — it would map to classes no `@source inline` line covers; pass `{ allowUnregisteredPrefix: true }` to opt out.
- * @param {readonly T[]} tokens - An array of token keys (e.g. ['primary', 'secondary'])
- * @returns {VariantMap<T, P>} An object mapping each token to its full class name
- * @example
- * const colors = ["primary", "secondary"] as const;
- * const bgVariants = createVariantMapper("bg", colors);
- * // Result: { primary: "bg-primary", secondary: "bg-secondary" }
- * @example
- * // Multiple prefixes at once
- * const border = createVariantMapper(["border-x", "border-y"] as const, ["sm", "md"] as const);
- * // Result: { "border-x": { sm: "border-x-sm", md: "border-x-md" }, "border-y": { sm: "border-y-sm", md: "border-y-md" } }
- * @example
- * // Flat sibling state tokens collapse into one chained class string per
- * // base token — feed straight into cva's variants. `COLOR_STATES` is the
- * // same list the registry's `@source inline` state lines are built from.
- * const tokens = ["primary", "primaryHover", "primaryActive", "danger"] as const;
- * const bg = createVariantMapper("bg", tokens, { states: COLOR_STATES });
- * // Result: {
- * //   primary: "bg-primary hover:bg-primary-hover active:bg-primary-active",
- * //   primaryHover: "bg-primary-hover",
- * //   primaryActive: "bg-primary-active",
- * //   danger: "bg-danger",
- * // }
- * @example
- * // Opacity steps (`tokens.opacities`): one `token/step` key per token and step
- * const bg = createVariantMapper("bg", ["primary"] as const, { opacities: [10] });
- * // Result: { primary: "bg-primary", "primary/10": "bg-primary/10" }
+ * Maps tokens to prefixed classes kebab-cased like the registry's, so each class has an `@source inline` line.
+ * `{ states }` chains `variant:class` for sibling tokens (`primaryHover`); `{ opacities }` adds `token/step` keys.
+ * @param {string} prefix - A registry prefix (`bg`, `rounded-t`, …), an array of them, or `""` for bare tokens; others need `{ allowUnregisteredPrefix: true }`
+ * @param {readonly string[]} tokens - Token keys (e.g. `["primary", "secondary"]`)
+ * @returns {Record<string, string>} Token → class map (one map per prefix for an array)
  */
 export function createVariantMapper<
   const T extends string,

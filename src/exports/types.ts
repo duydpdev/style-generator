@@ -1,4 +1,5 @@
-/** Subpath `@duydpdev/style-generator/types`: type-only re-exports. Rationale: documents/architecture.md#typests-why-breakpoint-is-not-re-exported */
+// Rationale: documents/architecture.md#typests-why-breakpoint-is-not-re-exported
+/** Subpath `@duydpdev/style-generator/types`: type-only re-exports. */
 export type {
   ThemeConfig,
   ThemeOverride,

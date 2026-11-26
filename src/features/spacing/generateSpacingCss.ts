@@ -5,20 +5,7 @@ import type {
 } from "../../core/resolveOptions";
 import { cssBlock } from "../../shared/cssBlock";
 
-/**
- * Build the ascending `var(--sg-sp-<key>-<bp>, ...)` fallback chain for a
- * spacing key up to (and including) `uptoIndex` in `sortedBreakpoints`.
- * Every level accumulates every narrower breakpoint on top of the base
- * value: range media queries (`width >= X`) can be simultaneously true at
- * a given viewport width, so the LAST matching `@media` block wins by
- * source order — its declaration must therefore carry the full chain
- * rather than only its own override, or a wider viewport could silently
- * fall back past a narrower breakpoint's value.
- * @param {string} key - Spacing property key (e.g. `"p"`)
- * @param {readonly ResolvedBreakpoint[]} sortedBreakpoints - Ascending breakpoints
- * @param {number} uptoIndex - Inclusive index into `sortedBreakpoints`
- * @returns {string} `var(--sg-sp-<key>...)` fallback chain
- */
+// Ascending `var(--sg-sp-<key>-<bp>, …)` chain up to `uptoIndex`, accumulating every narrower breakpoint.
 const buildFallbackChain = (
   key: string,
   sortedBreakpoints: readonly ResolvedBreakpoint[],
@@ -33,17 +20,7 @@ const buildFallbackChain = (
   return chain;
 };
 
-/**
- * Build one `@utility sp-<key> { ... }` block: base declarations reference
- * `var(--sg-sp-<key>)` directly, followed by one nested `@media (width >=
- * ...)` per declared breakpoint holding the accumulated fallback chain.
- * No bare selector is ever emitted — Tailwind's variant engine only picks
- * up `hover:`/`md:` modifiers on classes defined via `@utility`.
- * @param {string} key - Spacing property key
- * @param {readonly string[]} cssProps - CSS properties this key sets
- * @param {readonly ResolvedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
- * @returns {string} `@utility sp-<key> { ... }` block
- */
+// One `@utility sp-<key>` block: base declarations plus one `@media` per breakpoint.
 const buildUtilityBlock = (
   key: string,
   cssProps: readonly string[],
@@ -67,18 +44,7 @@ const buildUtilityBlock = (
   );
 };
 
-/**
- * Build `@property --sg-sp-<key>[-<bp>] { syntax: "*"; inherits: false; }`
- * for a spacing key: the base var plus every declared breakpoint variant.
- * Deliberately has no `initial-value` — an unregistered custom property
- * with `syntax: "*"` and no `initial-value` is guaranteed-invalid at
- * computed-value time when unset, which is what makes the `var(--x,
- * fallback)` chain fall through to its fallback instead of resolving to
- * an empty string (the root cause of the pre-fix bug this block replaces).
- * @param {string} key - Spacing property key
- * @param {readonly ResolvedBreakpoint[]} sortedBreakpoints - Ascending breakpoints (empty when responsive is disabled)
- * @returns {string[]} One `@property` block per (key, base|breakpoint) pair
- */
+// `@property` blocks for the base var and each breakpoint var, deliberately without `initial-value`.
 const buildPropertyBlocks = (
   key: string,
   sortedBreakpoints: readonly ResolvedBreakpoint[],
@@ -93,19 +59,12 @@ const buildPropertyBlocks = (
 };
 
 /**
- * Generate static CSS for `.sp-*` spacing utilities.
- * Each `.sp-<key>` is emitted as `@utility sp-<key> { ... }` (never a bare
- * `.class {}` rule) so Tailwind's variant engine still applies
- * `hover:`/`md:` modifiers to it from raw CSS-text input.
- *
- * No global `*` rule / `@layer base`: each utility owns its full breakpoint
- * fallback chain inline, and every `--sg-sp-<key>[-<bp>]` var is registered
- * via `@property` so it takes part in the cascade instead of leaking a
- * parent's value into children through unregistered custom-property
- * inheritance.
- * @param {Pick<ResolvedOptions, "spacing" | "sortedBreakpoints">} [options] - Resolved generator options (`spacing`, ascending `sortedBreakpoints`)
+ * Generates the `.sp-*` spacing utilities as `@utility` blocks with their
+ * breakpoint fallback chains, plus an `@property` registration per variable.
+ * @param {Pick<ResolvedOptions, "spacing" | "sortedBreakpoints">} [options] - Resolved generator options
  * @returns {string} CSS string, empty when spacing generation is disabled
  */
+// Rationale: documents/architecture.md#generatespacingcss-utility-blocks-fallback-chains-and-property
 export const generateSpacingCss = (
   options: Pick<
     ResolvedOptions,

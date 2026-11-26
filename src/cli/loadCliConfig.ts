@@ -17,10 +17,7 @@ export interface CliConfig {
 }
 
 /**
- * Reads `style-gen.config.json` (else `package.json#style-gen`) from `cwd`
- * and merges it under `flags`. A malformed file is ignored with a warning
- * (defaults apply); a file with schema issues is reported and yields
- * `undefined` so the caller exits 1 before doing anything else.
+ * Reads the config under `flags`: a malformed file warns (defaults apply), schema issues yield `undefined`.
  * @param {string} cwd - Project root
  * @param {StyleGenConfigFlags} flags - Command-line flags, which win over the file
  * @returns {CliConfig | undefined} The configuration, or `undefined` after logging config issues

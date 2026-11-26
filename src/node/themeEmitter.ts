@@ -188,11 +188,11 @@ export function emitTokensModule(
   };
 }
 
+// Rationale: documents/architecture.md#emittheme-one-synchronous-pipeline-that-writes-only-on-change
 /**
  * Read and validate the theme, then generate and write the CSS and tokens module. Never throws.
  * @param {EmitTarget} target - Theme file, output files and generator options
  * @returns {EmitResult} `{ ok: true, outFile, tokensFile, changed, cssChanged, tokensChanged }` or the failing stage
- * Rationale: documents/architecture.md#emittheme-one-synchronous-pipeline-that-writes-only-on-change
  */
 export function emitTheme(target: EmitTarget): EmitResult {
   const { themeFile, outFile, tokensFile, options } = target;

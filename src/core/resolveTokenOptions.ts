@@ -6,9 +6,9 @@ import {
 import { defaultScreens } from "./Options";
 import type { SpacingPropertyMap, StyleGeneratorOptions } from "./Options";
 
+// Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
 /**
  * The options the typed tokens read, with their defaults applied.
- * Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
  */
 export interface ResolvedTokenOptions {
   breakpoints: readonly string[];

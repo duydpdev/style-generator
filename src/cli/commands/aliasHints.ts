@@ -2,28 +2,14 @@ import { forEachAxisVariant } from "../../core/forEachAxisVariant";
 import type { ThemeConfig, ThemeOverride } from "../../core/themeSchema";
 import { cssVarCategories } from "../../features/registry/builtInCategories";
 
-/**
- * A comparable literal: trimmed and lowercased, `undefined` for a non-string
- * or a `$alias`.
- * @param {unknown} value - A category value
- * @returns {string | undefined} The comparable form
- */
+// Trimmed and lowercased (`#FFF` ≡ `#fff`); `undefined` for a non-string or a `$alias`.
 const literalOf = (value: unknown): string | undefined =>
   typeof value === "string" && !value.trim().startsWith("$")
     ? value.trim().toLowerCase()
     : undefined;
 
-/**
- * The first key of `base`, other than `key`, whose literal equals `literal`
- * and that no override redefines. A redefined candidate would resolve to its
- * override value under the active axis (`var(--sg-color-text)` is the dark
- * value under `data-theme="dark"`), so aliasing it would change the colour.
- * @param {Record<string, unknown>} base - The base record of the category
- * @param {string} key - The overridden key (never its own alias target)
- * @param {string} literal - The comparable override value
- * @param {ReadonlySet<string>} redefined - Keys any variant of any axis overrides in this category
- * @returns {string | undefined} The base key to alias, if any
- */
+// The first other base key holding `literal` that no override of any axis redefines.
+// Rationale: documents/architecture.md#aliashintsts-why-a-redefined-base-key-is-never-suggested
 const aliasTarget = (
   base: Record<string, unknown>,
   key: string,
@@ -38,20 +24,9 @@ const aliasTarget = (
   );
 
 /**
- * Hints for `themeAxes` overrides that repeat, as a literal, the value a
- * **different** key of the same base category already holds — the override
- * could point at that key with a `$alias` instead (`"$blue500"`), so a later
- * palette change in the base reaches the variant too. Covers every category
- * that emits a `--sg-*` variable and takes `$` aliases, not only colors (a
- * literal scale such as `motionDuration` takes none, so it is skipped).
- *
- * An override equal to its own base key is a redundant override, not an alias
- * candidate, and is skipped. Values are compared trimmed and lowercased
- * (`#FFF` ≡ `#fff`); only the first matching base key is named. A base key
- * that ANY variant of ANY axis redefines (in that category) is never
- * suggested: axes stack on `html`, so its variable would change under the
- * active variant and the alias would not repeat the literal. Warnings
- * only: they never change `doctor`'s exit code.
+ * Hints for `themeAxes` overrides that repeat as a literal the value another
+ * base key of an alias-taking category holds, so a `$alias` would track it.
+ * Warnings only: they never change `doctor`'s exit code.
  * @param {ThemeConfig} theme - A theme that already passed `ThemeSchema`
  * @returns {string[]} One message per redundant literal, in declaration order
  */

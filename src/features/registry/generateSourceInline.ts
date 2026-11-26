@@ -16,31 +16,14 @@ import {
 } from "./builtInCategories";
 import { defaultKeysOf } from "./categoryTokenMeta";
 
-/**
- * The theme's flat token record for a category (the descriptor's `key` is
- * its `ThemeConfig` field). Typography's records hold style objects, so
- * values are `unknown`.
- * @param {ThemeConfig} theme - Theme configuration
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @returns {Readonly<Record<string, unknown>> | undefined} The record, when declared
- */
+// The theme record of a category; typography holds style objects, so values are `unknown`.
 const categoryRecord = (
   theme: ThemeConfig,
   descriptor: BuiltInCategory,
 ): Readonly<Record<string, unknown>> | undefined => theme[descriptor.key];
 
-/**
- * Kebab-cased keys of `descriptor`'s category that HOLD a `$<key>` alias
- * value (the semantic tokens, e.g. `primary: "$blue600"`) — in the base
- * record or in any `themeAxes.<axis>.<variant>` override of the same
- * category. The primitives they point to are consumed through
- * `var(--sg-<target>)` and need no class, so they are not included. Walks
- * the records (no JSON stringification). Typography has no alias support,
- * so it never has any.
- * @param {ThemeConfig} theme - Theme configuration
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @returns {Set<string>} Kebab-cased alias holder keys
- */
+// Kebab-cased keys that hold a `$` alias in the base record or any axis override;
+// the primitives they point to are read through `var()` and need no class.
 const aliasedKeys = (
   theme: ThemeConfig,
   descriptor: BuiltInCategory,
@@ -62,14 +45,7 @@ const aliasedKeys = (
   return holders;
 };
 
-/**
- * The declared keys of a category that survive `coverage.keys`: every key
- * for `"all"` (the default), only alias holders for `"aliased"`.
- * @param {ThemeConfig} theme - Theme configuration
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @param {ResolvedCoverageRule | undefined} rule - The category's coverage rule
- * @returns {string[]} Raw (un-cased) surviving keys
- */
+// Declared keys surviving `coverage.keys` (all, or only alias holders for `"aliased"`).
 const declaredKeys = (
   theme: ThemeConfig,
   descriptor: BuiltInCategory,
@@ -82,13 +58,7 @@ const declaredKeys = (
   return keys.filter((key) => aliased.has(toKebabCase(key)));
 };
 
-/**
- * The class prefixes of a category that `coverage.prefixes` keeps, in the
- * descriptor's own order.
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @param {ResolvedCoverageRule | undefined} rule - The category's coverage rule
- * @returns {readonly string[]} Prefixes to emit
- */
+// Class prefixes `coverage.prefixes` keeps, in the descriptor's order.
 const coveredPrefixes = (
   descriptor: BuiltInCategory,
   rule: ResolvedCoverageRule | undefined,
@@ -98,32 +68,14 @@ const coveredPrefixes = (
   return kept ? all.filter((prefix) => kept.includes(prefix)) : all;
 };
 
-/**
- * The `{a,b}-` class-prefix part of a directive; empty for a
- * `bareClassName` category, where the key itself is the class.
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @param {readonly string[]} prefixes - Prefixes being emitted
- * @returns {string} Prefix part with its trailing dash, or `""`
- */
+// The `{a,b}-` prefix part; empty for a `bareClassName` category.
 const prefixPartOf = (
   descriptor: BuiltInCategory,
   prefixes: readonly string[],
 ): string => ("bareClassName" in descriptor ? "" : `{${prefixes.join(",")}}-`);
 
-/**
- * Resolve the ordered list of class-name-suffix keys a category should
- * emit `@source inline` coverage for: the theme's own declared keys
- * (kebab-cased) when present — an empty `{}` counts as absent, exactly as
- * in `createDesignTokens` — else the descriptor's `defaultValues` (already
- * the literal class-suffix form — a number array stringified, a string
- * array used as-is, a record's own keys otherwise). With
- * `coverage.keys: "aliased"` only declared alias holders survive and the
- * defaults are never used (they cannot be aliased).
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @param {ThemeConfig} theme - Theme configuration
- * @param {ResolvedCoverageRule | undefined} rule - The category's coverage rule
- * @returns {string[]} Kebab-cased keys, or the literal default-value suffixes
- */
+// Declared keys (an empty `{}` counts as absent, as in `createDesignTokens`), else the
+// category defaults; `keys: "aliased"` never falls back to defaults (they hold no alias).
 const resolveCategoryKeys = (
   descriptor: BuiltInCategory,
   theme: ThemeConfig,
@@ -140,20 +92,7 @@ const resolveCategoryKeys = (
   );
 };
 
-/**
- * Build one `@source inline("...")` directive covering every
- * `<breakpoint><prefix>-<key>` combination for a single category (or, for
- * a `bareClassName` category such as typography, every bare `<key>`), using
- * Tailwind's shell-style sequential brace-expansion syntax. Returns
- * `undefined` when the category has nothing to emit (no class prefixes or
- * no keys).
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @param {string[]} keys - Resolved keys (see `resolveCategoryKeys`)
- * @param {readonly string[]} prefixes - Class prefixes to emit
- * @param {readonly string[]} breakpointKeys - Breakpoint keys to alternate with when `descriptor.responsive` is set
- * @param {string} [modifierPart] - Appended after the keys group, e.g. the opacity line's `/{10,20}`
- * @returns {string | undefined} `@source inline(...)` directive, or `undefined`
- */
+// One brace-expanded `@source inline` line for a category, or `undefined` with nothing to emit.
 const buildCategoryLine = (
   descriptor: BuiltInCategory,
   keys: string[],
@@ -175,31 +114,8 @@ const buildCategoryLine = (
   return `@source inline("${bpPart}${prefixPart}${keysPart}${modifierPart}");`;
 };
 
-/**
- * Build one `@source inline("...")` state-variant directive PER configured
- * state (`descriptor.states`) — never a single merged directive across
- * states, since different states can have different sibling sets (e.g. a
- * token might declare `primaryHover` but not `primaryActive`). Mixing both
- * into one shell-style brace group would cross-multiply into invalid
- * pairings like `hover:bg-primary-active`.
- *
- * Siblings are detected on the CAMEL-cased keys — the exact form
- * `createDesignTokens` feeds to `createVariantMapper` (`primary-hover` and
- * `primaryHover` both become `primaryHover`). For a state `s`, a camel key
- * `k` contributes when `k` + Pascal-cased `s` (e.g. `primary` +
- * `primaryHover`) is also present, and it emits the kebab-cased sibling
- * (`primary-hover`) — the same class the mapper chains onto the base token.
- * The state itself is emitted kebab-cased (`focusVisible` → `focus-visible:`)
- * so it is a valid Tailwind variant name; the sibling lookup still uses the
- * Pascal-cased state.
- * A category with no sibling for a given state emits no line for it at all
- * (never `{}` empty braces). Keys are the ones that survive
- * `coverage.keys`, and prefixes the ones `coverage.prefixes` keeps.
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @param {ThemeConfig} theme - Theme configuration
- * @param {ResolvedCoverageRule | undefined} rule - The category's coverage rule
- * @returns {string[]} Zero or more `@source inline(...)` directives, one per state that has at least one sibling pair
- */
+// One state-variant line per state that has a sibling pair.
+// Rationale: documents/architecture.md#buildstatelines-one-source-line-per-state
 const buildStateLines = (
   descriptor: BuiltInCategory,
   theme: ThemeConfig,
@@ -235,17 +151,7 @@ const buildStateLines = (
   return lines;
 };
 
-/**
- * The opacity-modifier lines of one category: the plain steps (the rule's
- * covered prefixes and keys), then one line per opacity group in
- * declaration order (its own prefixes and keys where given).
- * @param {BuiltInCategory} descriptor - Category descriptor
- * @param {string[]} keys - The rule's resolved keys
- * @param {readonly string[]} prefixes - The rule's covered prefixes
- * @param {readonly string[]} breakpointKeys - Breakpoint keys
- * @param {ResolvedCoverageRule | undefined} rule - The category's coverage rule
- * @returns {string[]} The directives that are not empty
- */
+// The plain-step opacity line, then one line per opacity group in declaration order.
 const buildOpacityLines = (
   descriptor: BuiltInCategory,
   keys: string[],
@@ -269,32 +175,14 @@ const buildOpacityLines = (
   });
 
 /**
- * Generate the `@source inline(...)` directives that cover classes
- * Tailwind's static candidate scan can never see on its own: one line per
- * built-in category (colors, typography, shadows, backdrop blurs, border
- * radius, font family, border width) — see `buildCategoryLine` — one
- * further line per category `states` entry that has at least one sibling
- * (`hover:{bg,text,border,ring,outline,divide,placeholder}-{primary-hover}`, see `buildStateLines`) —
- * every `sp-*` utility the spacing pipeline can produce.
- *
- * `options.coverage` trims the per-category lines: `false` drops a
- * category's lines (state lines included), `prefixes` keeps only the listed
- * class prefixes and `keys: "aliased"` only the alias holders (keys whose
- * value is a `$` alias; the primitives they point to need no class).
- * `opacities` (colors only) adds one line right after the category line:
- * the same prefixes and keys with a `/{10,20}` modifier group, never
- * crossed with the state lines; each opacity group adds one further line
- * with its own steps and, when given, its own prefixes and keys. Absent
- * (or `true`, `{}`) leaves the output unchanged.
- *
- * Each category gets its OWN line (not one giant merged directive) so a
- * single category exceeding a reasonable brace-expansion size never
- * threatens the others; the `sp-*` line uses one brace-expansion directive
- * rather than one directive per key.
+ * Generates the `@source inline(...)` directives for classes Tailwind's scan
+ * cannot see: one line per built-in category, its opacity and state lines,
+ * then the `sp-*` line. `options.coverage` trims or extends the category lines.
  * @param {ThemeConfig} theme - Theme configuration
  * @param {ResolvedOptions} [options] - Resolved generator options
- * @returns {string} One `@source inline(...)` directive per line, empty when there is nothing to emit
+ * @returns {string} One directive per line, empty when there is nothing to emit
  */
+// Rationale: documents/architecture.md#generatesourceinline-one-line-per-category
 export const generateSourceInline = (
   theme: ThemeConfig,
   options: ResolvedOptions = resolveOptions(),

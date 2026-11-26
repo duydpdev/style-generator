@@ -4,10 +4,7 @@ import path from "node:path";
 /** The package managers the CLI prints commands for. */
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
 
-/**
- * Lockfiles in priority order, for a directory that holds more than one.
- * The first match while walking up from the project root decides.
- */
+/** Lockfiles in priority order; the first match walking up from the root decides. */
 const LOCKFILES: readonly (readonly [string, PackageManager])[] = [
   ["pnpm-lock.yaml", "pnpm"],
   ["yarn.lock", "yarn"],
@@ -18,10 +15,8 @@ const LOCKFILES: readonly (readonly [string, PackageManager])[] = [
 ];
 
 /**
- * How each manager runs the locally installed `style-gen` bin. None of these
- * downloads a package when `style-gen` is not installed: the name is unclaimed
- * on the public npm registry, so `npx`, `pnpm dlx`, `bunx` and `yarn dlx`
- * could fetch an unrelated one.
+ * How each manager runs the local `style-gen` bin without downloading: the name
+ * is unclaimed on npm, so `npx`/`dlx`/`bunx` could fetch an unrelated package.
  */
 const RUNNERS: Record<PackageManager, string> = {
   npm: "npm exec --no -- style-gen",
@@ -30,13 +25,7 @@ const RUNNERS: Record<PackageManager, string> = {
   bun: "bun run style-gen",
 };
 
-/**
- * The manager that launched this run, from `npm_config_user_agent`
- * (`yarn/4.5.0 npm/? node/v22…`); undefined when it is unset or names
- * another tool.
- * @param {string | undefined} userAgent - The `npm_config_user_agent` value
- * @returns {PackageManager | undefined} The manager, if known
- */
+// The launching manager from `npm_config_user_agent` (`yarn/4.5.0 npm/? node/v22…`).
 function fromUserAgent(
   userAgent: string | undefined,
 ): PackageManager | undefined {
@@ -46,13 +35,8 @@ function fromUserAgent(
     : undefined;
 }
 
-/**
- * The nearest lockfile's manager, walking up from `cwd` and stopping at the
- * first directory that holds `.git` (a stray lockfile above the repository,
- * in the home directory say, does not count).
- * @param {string} cwd - The project root
- * @returns {PackageManager | undefined} The manager, if a lockfile was found
- */
+// The nearest lockfile's manager, stopping at the first `.git` directory so a stray
+// lockfile above the repository (in the home directory, say) does not count.
 function fromLockfile(cwd: string): PackageManager | undefined {
   let dir = path.resolve(cwd);
   for (;;) {
@@ -68,8 +52,7 @@ function fromLockfile(cwd: string): PackageManager | undefined {
 }
 
 /**
- * The project's package manager: the one that launched this run, else the
- * nearest lockfile's, else npm.
+ * The project's package manager: the launching one, else the nearest lockfile's, else npm.
  * @param {string} cwd - The project root
  * @param {Record<string, string | undefined>} [env] - The environment (defaults to `process.env`)
  * @returns {PackageManager} The manager
@@ -82,9 +65,7 @@ export function detectPackageManager(
 }
 
 /**
- * The command that runs `style-gen <args>` with the project's package manager,
- * for the hints the CLI prints (`yarn style-gen init`,
- * `npm exec --no -- style-gen init`, …).
+ * The command that runs `style-gen <args>` with the project's package manager.
  * @param {string} cwd - The project root
  * @param {string} args - The subcommand and its flags
  * @param {Record<string, string | undefined>} [env] - The environment (defaults to `process.env`)

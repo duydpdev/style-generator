@@ -381,18 +381,10 @@ Options:
 
 /* ------------------ Entry ------------------ */
 
+// Rationale: documents/architecture.md#runts-why-runcli-returns-codes-and-parses-flags-in-two-passes
 /**
  * The CLI, minus the process: parses `args`, runs the command and returns the
- * exit code. Never throws and never calls `process.exit`, so tests drive it
- * directly and `index.ts` just assigns `process.exitCode`.
- *
- * Parsing is two-pass. A lenient global pass finds `--help`/`--version` and
- * the command name; the command's own flags are then parsed strictly, so a
- * misspelled flag (`--them`) is an error instead of being silently ignored.
- *
- * Exit codes: 0 success, `--help`, `--version`, no command, or a cancelled
- * prompt; 1 failure, unknown command or flag (2 for `budget`'s and `canvas`'s
- * flag errors).
+ * exit code (0 ok/help/version/cancel, 1 failure, 2 for `budget`/`canvas` usage).
  * @param {string[]} args - Arguments after `style-gen`
  * @param {string} cwd - The project root
  * @returns {Promise<number>} The process exit code

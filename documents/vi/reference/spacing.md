@@ -1,4 +1,4 @@
-<!-- source: documents/reference/spacing.md sha256: ed5b635d7d0b -->
+<!-- source: documents/reference/spacing.md sha256: 0ca2629eec50 -->
 
 # Spacing (./spacing)
 
@@ -89,10 +89,7 @@ export declare const resolveSpacing: <
 };
 ```
 
-Resolve a single spacing prop into className + inline style CSS variables.
-Breakpoint keys default to the ones the spacing CSS emits (`md`/`lg`); pass
-`BKeys` when `options.breakpoints` adds others. `BKeys` is never inferred
-from the value ({@link NoInferBKeys}), so a typo such as `{ tablet: 4 }` stays an error.
+Resolves one spacing prop to its `sp-<prop>` class and `--sg-sp-*` style variables.
 
 <!-- /signature -->
 

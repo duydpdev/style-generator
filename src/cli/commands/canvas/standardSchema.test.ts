@@ -26,6 +26,7 @@ describe("packaged canvas standard", () => {
     ...new Set([
       ...standard.semanticCore,
       ...(standard.grammar?.neutral ?? []),
+      ...(standard.grammar?.roles ?? []),
     ]),
   ];
 
@@ -33,7 +34,7 @@ describe("packaged canvas standard", () => {
     expect(standard.descriptions?.[key]?.trim()).toBeTruthy();
   });
 
-  it("has no description for a key outside the core and neutral lists", () => {
+  it("has no description for a key outside the core, neutral and role lists", () => {
     expect(
       Object.keys(standard.descriptions ?? {}).sort((a, b) =>
         a.localeCompare(b),

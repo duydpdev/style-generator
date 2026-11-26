@@ -79,6 +79,9 @@ function writeCleanBuild(root: string) {
     '#!/usr/bin/env node\nimport { z } from "zod";\n',
     ["../../src/cli/index.ts"],
   );
+  bundle(root, "dist/cli/canvas.mjs", "export const canvas = 1;\n", [
+    "../../src/cli/commands/canvas/check.ts",
+  ]);
 }
 
 /**
@@ -325,6 +328,28 @@ describe("integration: publish gates reject bad builds", () => {
 
       expect(status).toBe(1);
       expect(output).toContain("✗ dist/cli/index.mjs");
+    });
+
+    it("fails when the canvas chunk exceeds its budget", () => {
+      writeTmpFile(
+        dir,
+        "dist/cli/canvas.mjs",
+        `const s = "${noise(200_000)}";\n`,
+      );
+
+      const { status, output } = runGate(dir, "check-sizes");
+
+      expect(status).toBe(1);
+      expect(output).toContain("✗ dist/cli/canvas.mjs");
+    });
+
+    it("fails when the canvas chunk is missing", () => {
+      rmSync(join(dir, "dist/cli/canvas.mjs"));
+
+      const { status, output } = runGate(dir, "check-sizes");
+
+      expect(status).toBe(1);
+      expect(output).toContain("missing: dist/cli/canvas.mjs");
     });
 
     it("fails when the CLI bundle is missing", () => {

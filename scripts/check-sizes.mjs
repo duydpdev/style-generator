@@ -86,6 +86,8 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-11-25 (`style-gen canvas check`: the design-canvas checker moves from a repository script into the CLI, with its manifest inlined; user-approved 2026-11-24, measured 43873 B): cli budget raised 32000 -> 48270 (measured + ~10 %, rounded up to 10 B). No other budget changed.
 // 2026-11-25 (six scale token groups: motionDuration, motionEasing, controlHeight, iconSize, opacity, zIndex; six descriptors, their value grammar and schema shapes; user-approved): vite measured 15525 B (101 %), next 15716 B (98 %); budgets raised to measured + ~10 %, rounded up to 10 B: vite 15430 -> 17080, next 16100 -> 17290. Shortening the easing error message saved 51 B and was not enough. index 11181 (82 %), tokens 1752 (95 %), recipes 1933, ui 2889, cli 45187 stay within their budgets.
 // 2026-11-26 (colour alias `$key/<n>`: alias grammar parser, its error messages and the `color-mix` emission land in the CLI through `generate()`; user-approved): cli measured 48392 B (develop 48100 B, +292 B; merging the two grammar messages and replacing a `Set` saved 19 B and was not enough); budget raised to measured + ~10 %, rounded up to 10 B: 48270 -> 53240. index, tokens, cva, vite, next and the other budgets stay within theirs.
+// 2026-11-26 (canvas commands load through `import()` from their own entry `dist/cli/canvas.mjs`, so `generate`, `init` and `--version` stop paying for them; user-approved plan): cli measured 36968 B transitive (was 50264 B before the split; the `standardSchema` chunk it shares with `canvas` is counted in both), new `cli-canvas` measured 19872 B transitive. Budgets set to measured + ~10 %, rounded up to 10 B: cli 53240 -> 40670, cli-canvas 21860.
+// 2026-11-26 (rules chunk owns its budget under the user-approved plan: the theme rules land in `dist/cli/canvas.mjs`: closed scales, contrast, descriptions, design-system name collisions, rule reports): `cli-canvas` provisional 21860 (measured 19872 B before the rules existed) -> measured 25564 B transitive; budget 28130 (measured + ~10 %, rounded up to 10 B). `cli` stays 40670 (37210 B measured, 91 %).
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -99,11 +101,15 @@ const budgets = {
   "ui-react": 70,
   vite: 17_080,
   next: 17_290,
-  cli: 53_240,
+  cli: 40_670,
+  "cli-canvas": 28_130,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.
-const extraFiles = { cli: "dist/cli/index.mjs" };
+const extraFiles = {
+  cli: "dist/cli/index.mjs",
+  "cli-canvas": "dist/cli/canvas.mjs",
+};
 
 // Static `import … from "./x.js"`, `export … from "./x.js"` and bare
 // `import "./x.js"` of a sibling build chunk (`.js`, `.mjs` or `.cjs`).

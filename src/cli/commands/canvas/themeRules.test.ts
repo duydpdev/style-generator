@@ -1,9 +1,46 @@
 import { describe, expect, it } from "vitest";
 
 import { packagedStandard, StandardSchema } from "./standardSchema";
-import { namingViolations, PRIMITIVE } from "./themeRules";
+import { namingIssues, namingViolations, PRIMITIVE } from "./themeRules";
 
 const DEFAULT_STANDARD = packagedStandard();
+
+/** The packaged standard plus the product roles the rename fixtures build on. */
+const PRODUCT_STANDARD = {
+  ...DEFAULT_STANDARD,
+  roles: Object.fromEntries(
+    [
+      "statusSuccess",
+      "tab",
+      "chart",
+      "domainNutrition",
+      "outline",
+      "notebook",
+    ].map((role) => [role, { description: `${role} surfaces` }]),
+  ),
+};
+
+/**
+ * Every line `--naming` prints about the given semantic keys, grammar and role lines alike.
+ * @param {string[]} keys - Semantic colour keys
+ * @param {typeof DEFAULT_STANDARD} standard - Manifest, layered or packaged
+ * @returns {string[]} The lines that mention one of the keys
+ */
+const linesAbout = (
+  keys: string[],
+  standard: typeof DEFAULT_STANDARD,
+): string[] =>
+  namingIssues(
+    {
+      colors: {
+        blue600: "#2563eb",
+        ...Object.fromEntries(keys.map((key) => [key, "$blue600"])),
+      },
+    },
+    standard,
+  )
+    .map((issue) => issue.message)
+    .filter((line) => keys.some((key) => line.includes(key)));
 
 const FORM = "<role>[Subtle][Border][Foreground][Hover|Active|Selected]";
 
@@ -33,7 +70,7 @@ describe("v2 colour grammar", () => {
     "outline",
     "notebook",
   ])("accepts %s", (key) => {
-    expect(grammarLines([key])).toEqual([]);
+    expect(linesAbout([key], PRODUCT_STANDARD)).toEqual([]);
   });
 
   it.each([
@@ -43,7 +80,7 @@ describe("v2 colour grammar", () => {
     ["statusOk", "statusSuccess"],
     ["primaryHoverForeground", "primaryForegroundHover"],
   ])("reports %s and suggests %s", (key, suggestion) => {
-    expect(grammarLines([key])).toEqual([
+    expect(grammarLines([key], PRODUCT_STANDARD)).toEqual([
       `colors.${key} does not follow ${FORM} (rename to ${suggestion})`,
     ]);
   });
@@ -109,19 +146,53 @@ describe("v2 colour grammar", () => {
       "primaryBorderSubtle",
       "tabActiveBorder",
       "statusOkSubtle",
-      "onInk",
-      "onLine",
-      "soft",
       "chartLine",
       "onDomainNutritionHover",
     ];
     const suggestions = keys
-      .flatMap((key) => grammarLines([key]))
+      .flatMap((key) => grammarLines([key], PRODUCT_STANDARD))
       .map((line) => /\(rename to (\w+)\)$/.exec(line)?.[1])
       .filter((target) => target !== undefined);
     expect(suggestions).toHaveLength(keys.length);
     for (const target of suggestions)
-      expect(grammarLines([target])).toEqual([]);
+      expect(grammarLines([target], PRODUCT_STANDARD)).toEqual([]);
+  });
+
+  it("reports one finding per undeclared role, naming every key built on it", () => {
+    expect(
+      linesAbout(
+        ["domainNutritionSubtle", "domainNutritionBorder"],
+        DEFAULT_STANDARD,
+      ),
+    ).toEqual([
+      expect.stringContaining(
+        "role domainNutrition is not declared (colors.domainNutritionSubtle, colors.domainNutritionBorder)",
+      ),
+    ]);
+  });
+
+  it("reports no line for the same keys once the role is declared", () => {
+    expect(
+      linesAbout(
+        ["domainNutritionSubtle", "domainNutritionBorder"],
+        PRODUCT_STANDARD,
+      ),
+    ).toEqual([]);
+  });
+
+  it.each(["onInk", "onLine", "soft"])(
+    "suggests nothing for %s, whose rename is not a name of the vocabulary",
+    (key) => {
+      expect(grammarLines([key], PRODUCT_STANDARD)).toEqual([
+        `colors.${key} does not follow ${FORM}`,
+      ]);
+    },
+  );
+
+  it("suggests no rename into a role the product has not declared", () => {
+    expect(grammarLines(["statusOk"])).toEqual([
+      `colors.statusOk does not follow ${FORM}`,
+    ]);
   });
 
   it("reports a themeAxes override key, checked against the base colors", () => {

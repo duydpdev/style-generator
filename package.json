@@ -145,6 +145,7 @@
     "check:comments": "node scripts/check-comments.mjs",
     "check:docs": "node scripts/docs-embed.mjs --check && node scripts/check-docs-i18n.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-exports.mjs && node scripts/check-doc-reference.mjs",
     "check:externals": "node scripts/check-externals.mjs",
+    "check:ds-build": "node scripts/ds-build-smoke.mjs",
     "check:next-build": "node scripts/next-build-smoke.mjs",
     "check:plain-ui": "node scripts/check-plain-ui.mjs",
     "check:publish-target": "node scripts/check-publish-target.mjs",

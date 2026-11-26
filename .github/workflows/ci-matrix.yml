@@ -235,6 +235,43 @@ jobs:
       - name: Type-check the packed package with TypeScript 5.0 to 7
         run: yarn check:ts-peer
 
+  # `style-gen ds build` in the product's own install: the packed tarball next
+  # to `tailwindcss`, its only peer (no Vite, React or oxide), on each OS and
+  # on the peer floor and the release the lockfile resolves
+  # (scripts/ds-build-smoke.mjs; an empty `tailwind` means the lockfile's).
+  ds-smoke:
+    name: ds build (${{ matrix.os }}, tailwindcss ${{ matrix.tailwind == '' && 'lockfile' || matrix.tailwind }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        tailwind: ["4.1.0", ""]
+    env:
+      DS_SMOKE_TAILWIND: ${{ matrix.tailwind }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Build a design system from the packed tarball
+        run: yarn check:ds-build
+
   # The floors of the four optional UI-kit peer ranges (`./ui`,
   # `./ui-react`). `peer-matrix` tests latest majors of vite/typescript;
   # nothing else would ever install the OLDEST version a consumer may

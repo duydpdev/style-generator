@@ -72,8 +72,8 @@ jobs:
           HUSKY: "0"
         run: yarn install --immutable
 
-      # The design-system script tests run scripts/build-ds.mjs, which
-      # imports the built library, so build before testing (as ci.yml does).
+      # The design-system build tests load the precompiled components from the
+      # built library, so build before testing (as ci.yml does).
       - name: Build
         run: yarn build:all
 

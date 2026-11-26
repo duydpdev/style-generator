@@ -1,48 +1,12 @@
 // window.Fixture — the harness's six sample components bound to
 // `theme.json` (examples/harness/src/ui.ts). Types are documentation:
 // token unions spell this theme's keys (camelCase, as in theme.json).
-import type {
-  CSSProperties,
-  ElementType,
-  ReactNode,
-  JSX,
-  ComponentPropsWithoutRef,
-} from "react";
+import type { CSSProperties, ElementType, ReactNode, JSX, ComponentPropsWithoutRef } from "react";
 
-export type ColorToken =
-  | "white"
-  | "gray100"
-  | "gray500"
-  | "gray900"
-  | "blue600"
-  | "blue700"
-  | "blue800"
-  | "red600"
-  | "green600"
-  | "amber500"
-  | "blackAlpha40"
-  | "background"
-  | "surface"
-  | "foreground"
-  | "muted"
-  | "border"
-  | "primary"
-  | "primaryHover"
-  | "primaryActive"
-  | "primaryForeground"
-  | "primarySubtle"
-  | "primarySubtleForeground"
-  | "danger"
-  | "dangerSubtle"
-  | "dangerSubtleForeground"
-  | "success"
-  | "warning"
-  | "focus"
-  | "scrim";
+export type ColorToken = "white" | "gray100" | "gray500" | "gray900" | "blue600" | "blue700" | "blue800" | "red600" | "green600" | "amber500" | "blackAlpha40" | "background" | "surface" | "foreground" | "muted" | "border" | "primary" | "primaryHover" | "primaryActive" | "primaryForeground" | "primarySubtle" | "primarySubtleForeground" | "danger" | "dangerSubtle" | "dangerSubtleForeground" | "success" | "warning" | "focus" | "scrim";
 /** A colour token, or `token/step` with a step from `coverage.colors.opacities`. */
 export type ColorValue = ColorToken;
-export type TypographyToken =
-  "text14Medium" | "text16Regular" | "text20Semibold" | "text32Bold";
+export type TypographyToken = "text14Medium" | "text16Regular" | "text20Semibold" | "text32Bold";
 export type RadiusToken = "sm" | "md" | "lg" | "full";
 export type ShadowToken = never;
 export type BlurToken = never;
@@ -50,7 +14,7 @@ export type BorderWidthToken = never;
 export type Breakpoint = "md" | "lg";
 
 /** A Tailwind spacing step (`4` = 1rem), or one per breakpoint: `{ base: 2, md: 4 }`. */
-export type SpacingValue = number | { base?: number; md?: number; lg?: number };
+export type SpacingValue = number | { base?: number; md?: number; lg?: number; };
 /** Spacing props: compile to `.sp-*` utilities over `--sg-sp-*` variables. */
 export interface SpacingProps {
   p?: SpacingValue;
@@ -77,10 +41,7 @@ export interface SpacingProps {
 }
 
 /** `as` picks the element; the element's own props pass through. */
-export type Polymorphic<T extends ElementType, P> = P & { as?: T } & Omit<
-    ComponentPropsWithoutRef<T>,
-    keyof P | "as"
-  >;
+export type Polymorphic<T extends ElementType, P> = P & { as?: T } & Omit<ComponentPropsWithoutRef<T>, keyof P | "as">;
 
 export interface LayoutProps extends SpacingProps {
   backgroundColor?: ColorValue;
@@ -102,27 +63,11 @@ export interface LayoutProps extends SpacingProps {
   shadow?: ShadowToken;
   backdropBlur?: BlurToken;
   position?: "absolute" | "relative" | "fixed" | "sticky";
-  display?:
-    | "block"
-    | "inlineBlock"
-    | "inline"
-    | "flex"
-    | "inlineFlex"
-    | "grid"
-    | "contents"
-    | "hidden";
+  display?: "block" | "inlineBlock" | "inline" | "flex" | "inlineFlex" | "grid" | "contents" | "hidden";
   overflow?: "auto" | "hidden" | "clip" | "visible" | "scroll";
   zIndex?: 0 | 10 | 20 | 30 | 40 | 50 | "auto";
   opacity?: 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
-  cursor?:
-    | "auto"
-    | "default"
-    | "pointer"
-    | "notAllowed"
-    | "grab"
-    | "grabbing"
-    | "text"
-    | "move";
+  cursor?: "auto" | "default" | "pointer" | "notAllowed" | "grab" | "grabbing" | "text" | "move";
   pointerEvents?: "none" | "auto";
   select?: "none" | "text" | "all" | "auto";
   transition?: "none" | "all" | "colors" | "opacity" | "shadow" | "transform";
@@ -180,12 +125,7 @@ export interface FlexProps extends StackProps {
 }
 export interface GridProps extends LayoutProps {
   /** A count or a track list, per breakpoint (`base`, `sm`, `md`, `lg`, `xl`, `2xl`). */
-  columns?:
-    | number
-    | string
-    | Partial<
-        Record<"base" | "sm" | "md" | "lg" | "xl" | "2xl", number | string>
-      >;
+  columns?: number | string | Partial<Record<"base" | "sm" | "md" | "lg" | "xl" | "2xl", number | string>>;
   align?: FlexAlign;
   justify?: FlexJustify;
   flow?: "row" | "column" | "dense";
@@ -208,22 +148,10 @@ export interface ButtonProps extends SpacingProps {
   children?: ReactNode;
 }
 
-export declare function Box<T extends ElementType = "div">(
-  props: Polymorphic<T, BoxProps>,
-): JSX.Element;
-export declare function Text<T extends ElementType = "p">(
-  props: Polymorphic<T, TextProps>,
-): JSX.Element;
-export declare function Stack<T extends ElementType = "div">(
-  props: Polymorphic<T, StackProps>,
-): JSX.Element;
-export declare function Flex<T extends ElementType = "div">(
-  props: Polymorphic<T, FlexProps>,
-): JSX.Element;
-export declare function Grid<T extends ElementType = "div">(
-  props: Polymorphic<T, GridProps>,
-): JSX.Element;
+export declare function Box<T extends ElementType = "div">(props: Polymorphic<T, BoxProps>): JSX.Element;
+export declare function Text<T extends ElementType = "p">(props: Polymorphic<T, TextProps>): JSX.Element;
+export declare function Stack<T extends ElementType = "div">(props: Polymorphic<T, StackProps>): JSX.Element;
+export declare function Flex<T extends ElementType = "div">(props: Polymorphic<T, FlexProps>): JSX.Element;
+export declare function Grid<T extends ElementType = "div">(props: Polymorphic<T, GridProps>): JSX.Element;
 /** A `<button>` gets `type="button"` unless one is passed. */
-export declare function Button<T extends ElementType = "button">(
-  props: Polymorphic<T, ButtonProps>,
-): JSX.Element;
+export declare function Button<T extends ElementType = "button">(props: Polymorphic<T, ButtonProps>): JSX.Element;

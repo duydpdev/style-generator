@@ -509,7 +509,7 @@ A component declares the axes that apply to it (a checkbox has `color` and `size
 
 - `className`/`class` and `style` are allowed on tags.
 - A pattern that has a rule or repeats becomes a component with typed props.
-- No `data-*` attribute as a bespoke CSS hook (ESLint and the CI `check` job ban the old part-hook attribute repo-wide); bespoke CSS hooks in the plain apps are ordinary `className`s.
+- No `data-*` attribute as a bespoke CSS hook (ESLint and the CI `lint` job ban the old part-hook attribute repo-wide); bespoke CSS hooks in the plain apps are ordinary `className`s.
 - `src/**` (Nuxt `app/**`) never imports `design-system-example` or `harness-example` (ESLint).
 - A ui folder imports only `./…`, `../../theme` and packages.
 

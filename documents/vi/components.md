@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 207c891f74ad -->
+<!-- source: documents/components.md sha256: 9d1508b7c345 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -511,7 +511,7 @@ Một component khai báo các trục áp dụng cho nó (checkbox có `color` v
 
 - `className`/`class` và `style` được phép dùng trên các thẻ tag.
 - Một pattern có quy tắc riêng hoặc lặp lại sẽ trở thành một component có prop được định kiểu.
-- Không dùng thuộc tính `data-*` làm hook CSS riêng (ESLint và job `check` của CI cấm thuộc tính part-hook cũ toàn repo); các hook CSS riêng trong các app plain là `className` thông thường.
+- Không dùng thuộc tính `data-*` làm hook CSS riêng (ESLint và job `lint` của CI cấm thuộc tính part-hook cũ toàn repo); các hook CSS riêng trong các app plain là `className` thông thường.
 - `src/**` (Nuxt `app/**`) không bao giờ import `design-system-example` hoặc `harness-example` (ESLint).
 - Một thư mục ui chỉ import `./…`, `../../theme` và các package.
 

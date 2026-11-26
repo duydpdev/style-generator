@@ -19,7 +19,7 @@ yarn site:build     # lib build + landing site (renders documents/*.md)
 yarn schema:refresh # build:cli + rewrite the six committed theme/config JSON Schemas (examples/, examples/design-system/, site/) and prettier them
 yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
 yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
-yarn check:docs    # docs gates (after build:all; CI check job runs them as five steps): embed, i18n, snippets, exports, reference; doc-reference: CLI flags + config keys documented, no version history on pages
+yarn check:docs    # docs gates (after build:all; CI `docs` job runs them as five steps): embed, i18n, snippets, exports, reference; doc-reference: CLI flags + config keys documented, no version history on pages
 yarn check:plain-ui     # examples/plain-react/src/ui/<folder>/: style.ts, types.ts, <Name>.tsx, index.ts; relative imports only ./… and ../../theme; package allow-list (CI)
 ```
 

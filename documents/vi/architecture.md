@@ -1,4 +1,4 @@
-<!-- source: documents/architecture.md sha256: b5454c5e29ba -->
+<!-- source: documents/architecture.md sha256: f7323b305023 -->
 
 # Kiến trúc
 
@@ -306,6 +306,7 @@ các class dựng lúc runtime mà registry không bao phủ được app tự k
 
 **Alias `$key`:** `flattenByCategory` biến `"$blue500"` thành `var(--sg-color-blue-500)` (dùng `cssVarPrefix` riêng của nhóm token).
 `ThemeSchema` đã chứng minh rằng đích tồn tại và đồ thị không có chu trình trước khi emit.
+Trong `colors`, `"$blue500/8"` trở thành `color-mix(in srgb, var(--sg-color-blue-500) 8%, transparent)` (`parseAliasRef`: phần trăm là số nguyên 1–100 và bị từ chối ở mọi nhóm token khác).
 
 **Vì sao `_` bị cấm trong key:** `toKebabCase` giữ nguyên `_` (`primary_active` → `bg-primary_active`) trong khi camelCase trong `createDesignTokens` bỏ `_` (`primaryActive`),
 nên `createVariantMapper` sẽ sinh ra `bg-primary-active` — một class không tồn tại. Schema từ chối `_` ở mọi vị trí tên token (color/typography/…, tên trục và tên variant);

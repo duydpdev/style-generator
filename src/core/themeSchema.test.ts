@@ -420,3 +420,58 @@ describe("bracket balance in values (X-02)", () => {
     );
   });
 });
+
+describe("ThemeSchema — translucent alias `$<key>/<n>`", () => {
+  const messages = (theme: unknown): string[] => {
+    const result = ThemeSchema.safeParse(theme);
+    return result.success ? [] : result.error.issues.map((i) => i.message);
+  };
+
+  it("accepts a colour alias with a percent and keeps it verbatim", () => {
+    const result = ThemeSchema.safeParse({
+      colors: { navy700: "#1f2a44", scrim: "$navy700/45" },
+    });
+    expect(result.success).toBe(true);
+    expect(result.data?.colors.scrim).toBe("$navy700/45");
+  });
+
+  it("reports an unknown target of `$x/8` with the written value", () => {
+    expect(messages({ colors: { a: "$x/8" } })).toEqual([
+      'Alias "$x/8" references unknown key "x"',
+    ]);
+  });
+
+  it("reports a cycle that goes through a percent alias", () => {
+    const found = messages({ colors: { a: "$b/50", b: "$a" } });
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatch(/Alias cycle detected/);
+  });
+
+  it("rejects `$k/n` outside colors", () => {
+    expect(
+      messages({
+        colors: { primary: "#000" },
+        shadows: { sm: "0 1px 2px #000", base: "$sm/50" },
+      }),
+    ).toEqual([
+      'Alias "$sm/50": the "$<key>/<n>" form is only allowed in colors',
+    ]);
+  });
+
+  it("accepts the percent alias inside a themeAxes override", () => {
+    expect(
+      ThemeSchema.safeParse({
+        colors: { navy700: "#1f2a44", border: "#ddd" },
+        themeAxes: {
+          theme: { dark: { colors: { border: "$navy700/8" } } },
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("alias grammar message names the percent form for a bad colour alias", () => {
+    const found = messages({ colors: { a: "#000", b: "$a/0" } });
+    expect(found).toHaveLength(1);
+    expect(found[0]).toContain("$<TokenKey>/<1-100>");
+  });
+});

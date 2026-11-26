@@ -1,11 +1,11 @@
 import type { z } from "zod";
 
-import { parseAlias } from "./tokenGrammar";
+import { parseAlias, parseAliasRef } from "./tokenGrammar";
 
 /**
  * Report a `ZodIssue` for every alias value in `ownEntries` that either
- * doesn't match `^\$<TokenKey>$`, or references a key absent from
- * `validKeys`. `ownEntries` is the record the value is actually *declared*
+ * doesn't match `^\$<TokenKey>$` (or `$<TokenKey>/<1-100>` when `allowAlpha`),
+ * or references a key absent from `validKeys`. `ownEntries` is the record the value is actually *declared*
  * in (the base record for the base pass, an override's own record for a
  * per-theme pass) — `validKeys` is the merged key set it may reference
  * (the override's own keys are always a subset of the base keys by the
@@ -14,6 +14,7 @@ import { parseAlias } from "./tokenGrammar";
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string>} ownEntries - Entries whose own grammar/target is checked
  * @param {ReadonlySet<string>} validKeys - Keys a `$` alias may legally reference
+ * @param {boolean} allowAlpha - Whether the category accepts the `/<n>` percent suffix
  * @param {(key: string) => (string | number)[]} pathFor - Issue path builder for a given key
  * @returns {void}
  */
@@ -21,17 +22,25 @@ const checkAliasGrammarAndTargets = (
   ctx: z.RefinementCtx,
   ownEntries: Record<string, string>,
   validKeys: ReadonlySet<string>,
+  allowAlpha: boolean,
   pathFor: (key: string) => (string | number)[],
 ): void => {
   for (const [key, value] of Object.entries(ownEntries)) {
     if (!value.startsWith("$")) continue;
 
-    const target = parseAlias(value);
-    if (target === undefined) {
+    const ref = parseAliasRef(value);
+    const target = ref?.key;
+    if (ref === undefined || target === undefined) {
       ctx.addIssue({
         code: "custom",
         path: pathFor(key),
-        message: `Alias value "${value}" must match ^\\$<TokenKey>$ (a "$" followed by a valid key)`,
+        message: `Alias value "${value}" must match ^\\$<TokenKey>$${allowAlpha ? " or ^\\$<TokenKey>/<1-100>$" : ""} (a "$" followed by a valid key)`,
+      });
+    } else if (ref.alpha !== undefined && !allowAlpha) {
+      ctx.addIssue({
+        code: "custom",
+        path: pathFor(key),
+        message: `Alias "${value}": the "$<key>/<n>" form is only allowed in colors`,
       });
     } else if (!validKeys.has(target)) {
       ctx.addIssue({
@@ -101,6 +110,7 @@ const findAliasCycle = (
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string>} merged - Full key→value map for this pass (base, or base ⊕ override)
  * @param {Record<string, string>} ownEntries - Entries whose own grammar/target is checked (= `merged` for the base pass, the override's own record for a themed pass)
+ * @param {boolean} allowAlpha - Whether the category accepts the `/<n>` percent suffix
  * @param {(key: string) => (string | number)[]} pathFor - Issue path builder for a given key
  * @returns {void}
  */
@@ -108,10 +118,11 @@ export const validateCategoryAliasGraph = (
   ctx: z.RefinementCtx,
   merged: Record<string, string>,
   ownEntries: Record<string, string>,
+  allowAlpha: boolean,
   pathFor: (key: string) => (string | number)[],
 ): void => {
   const keys = new Set(Object.keys(merged));
-  checkAliasGrammarAndTargets(ctx, ownEntries, keys, pathFor);
+  checkAliasGrammarAndTargets(ctx, ownEntries, keys, allowAlpha, pathFor);
 
   const cycle = findAliasCycle(merged, keys);
   if (!cycle) return;

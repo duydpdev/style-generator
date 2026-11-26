@@ -1,4 +1,4 @@
-<!-- source: documents/troubleshooting.md sha256: 54170ea4c5c2 -->
+<!-- source: documents/troubleshooting.md sha256: 97098eaaeed4 -->
 
 # Khắc phục sự cố
 
@@ -34,6 +34,7 @@ Tìm phần đầu của thông báo mà CLI, `styleGenVite()` hoặc `styleGenN
 
 - Một tên chứa `_`, hoặc bắt đầu bằng hai chữ hoa trở lên (`CTA`): hãy dùng camelCase hoặc kebab-case ([Quy tắc đặt key](./reference/theme.md#quy-tắc-đặt-key)).
 - Một `$alias` trỏ đến key không nằm trong cùng nhóm token, hoặc các alias tạo thành vòng ([Alias](./reference/theme.md#alias-key)).
+- Một alias mờ `"$<key>/<n>"` nằm ngoài `colors`, hoặc `<n>` không phải số nguyên từ 1 đến 100 hay có số 0 đứng đầu (`$ink/60`, không phải `$ink/060` hay `$ink/0.6`) ([Alias mờ](./reference/theme.md#alias-mờ-keyn)).
 - Một override trong `themeAxes` nêu tên một key mà nhóm base không có: key override phải đã tồn tại trong base.
 - Hai key trở thành cùng một class sau khi chuyển sang kebab-case (`blue500` và `blue-500`).
 - Một giá trị không an toàn hoặc không cân bằng (có `(` hoặc `[` không được đóng).

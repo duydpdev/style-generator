@@ -122,20 +122,40 @@ export const TokenValue = z
   });
 
 /**
- * Alias sigil grammar: a `"$"` followed by exactly one valid {@link TokenKey}.
- * A category value matching this pattern is resolved to
- * `var(--<cssVarPrefix>-<kebab-target>)` instead of being emitted literally
- * — see `flattenByCategory.ts`.
+ * Alias sigil grammar: `"$"` + one {@link TokenKey}, optionally followed by
+ * `/<n>` (n an integer percent 1–100, no leading zero). Resolved by
+ * `flattenByCategory.ts`: `var(--…)`, or `color-mix(…)` when `/<n>` is set.
  */
-const ALIAS_VALUE_RE = new RegExp(`^\\$(${TOKEN_KEY_SOURCE})$`);
+const ALIAS_VALUE_RE = new RegExp(
+  `^\\$(${TOKEN_KEY_SOURCE})(?:/(100|[1-9]\\d?))?$`,
+);
+
+/** A parsed alias value: the target key and the optional percent. */
+export interface AliasRef {
+  key: string;
+  alpha?: number;
+}
 
 /**
- * The key an alias value points at.
+ * Split an alias value into its target key and optional percent.
+ * @param {string} value - A category value, e.g. `"$blue500/8"`
+ * @returns {AliasRef | undefined} `{ key: "blue500", alpha: 8 }`, or `undefined` when `value` is not a well-formed alias
+ */
+export const parseAliasRef = (value: string): AliasRef | undefined => {
+  const match = ALIAS_VALUE_RE.exec(value);
+  if (match?.[1] === undefined) return undefined;
+  return match[2] === undefined
+    ? { key: match[1] }
+    : { key: match[1], alpha: Number(match[2]) };
+};
+
+/**
+ * The key an alias value points at (the `/<n>` percent is dropped).
  * @param {string} value - A category value, e.g. `"$blue500"`
  * @returns {string | undefined} `"blue500"`, or `undefined` when `value` is not a well-formed alias
  */
 export const parseAlias = (value: string): string | undefined =>
-  ALIAS_VALUE_RE.exec(value)?.[1];
+  parseAliasRef(value)?.key;
 
 /**
  * `TokenValue`, further restricted to reject a leading `$` — the alias

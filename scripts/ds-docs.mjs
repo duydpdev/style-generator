@@ -61,6 +61,14 @@ const colourVariants = (theme) =>
   );
 
 /**
+ * A colour value for the README: `$navy700/8` reads `$navy700 at 8%`, anything else is kept.
+ * @param {string | undefined} value - A theme colour value
+ * @returns {string | undefined} The README text
+ */
+const aliasLabel = (value) =>
+  value?.replace(/^(\$[A-Za-z0-9][A-Za-z0-9-]*)\/(\d+)$/, "$1 at $2%");
+
+/**
  * The `## Colours` lines: literal primitives, then the semantic aliases per theme variant.
  * @param {ThemeInput} theme - The theme
  * @returns {string[]} The section body
@@ -85,8 +93,8 @@ function colourLines(theme) {
         .filter(([, v]) => isAlias(v))
         .map(([k, v]) => [
           `\`${k}\``,
-          v,
-          ...variants.map((variant) => variant.colors[k]),
+          aliasLabel(v),
+          ...variants.map((variant) => aliasLabel(variant.colors[k])),
         ]),
     ),
   ];

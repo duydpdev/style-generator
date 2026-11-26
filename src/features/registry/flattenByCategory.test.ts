@@ -49,4 +49,30 @@ describe("flattenByCategory", () => {
   it("returns {} when data is undefined", () => {
     expect(flattenByCategory(colorsCategory, undefined)).toEqual({});
   });
+
+  it("resolves `$key/<n>` to a color-mix of the target variable", () => {
+    expect(
+      flattenByCategory(colorsCategory, {
+        navy700: "#1f2a44",
+        scrim: "$navy700/45",
+        hairline: "$navy700/1",
+        veil: "$navy700/100",
+      }),
+    ).toEqual({
+      "--sg-color-navy-700": "#1f2a44",
+      "--sg-color-scrim":
+        "color-mix(in srgb, var(--sg-color-navy-700) 45%, transparent)",
+      "--sg-color-hairline":
+        "color-mix(in srgb, var(--sg-color-navy-700) 1%, transparent)",
+      "--sg-color-veil":
+        "color-mix(in srgb, var(--sg-color-navy-700) 100%, transparent)",
+    });
+  });
+
+  it("keeps a plain `$key` alias as a var() reference", () => {
+    expect(flattenByCategory(colorsCategory, { a: "#000", b: "$a" })).toEqual({
+      "--sg-color-a": "#000",
+      "--sg-color-b": "var(--sg-color-a)",
+    });
+  });
 });

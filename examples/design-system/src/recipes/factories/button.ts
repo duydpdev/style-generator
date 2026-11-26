@@ -23,7 +23,7 @@ export interface ButtonTokens extends RecipeTokens {
   readonly controlHeight: readonly string[];
 }
 
-/** Button roles. `focusRing`, `disabled` and `hoverTint` are literal classes: the registry emits no `focus-visible:`, `disabled:` or `hover:bg-<key>-subtle` variant. */
+/** Button roles. `focusRing`, `disabled`, `hoverDim` and `hoverTint` are literal classes: the registry emits no `focus-visible:`, `disabled:`, `hover:opacity-<key>` or `hover:bg-<key>-subtle` variant. */
 export interface ButtonPreset {
   /** Colour keys offered as `color`; `<intent>Hover` / `<intent>Foreground` / `<intent>Subtle` / `<intent>SubtleForeground` siblings come from `tokens.colors`. */
   readonly intents: readonly string[];
@@ -38,9 +38,15 @@ export interface ButtonPreset {
   readonly disabled: string;
   /** Per intent: the `outline`/`ghost` hover fill. */
   readonly hoverTint: Readonly<Record<string, string>>;
+  /** Hover dimming of a solid intent without an `<intent>Hover` sibling and of `soft`; `hover:opacity-<key>` when the theme has `opacity` keys. Default `hover:opacity-90`. */
+  readonly hoverDim?: string;
+  /** Transition duration class; `duration-<key>` when the theme has `motionDuration` keys. Default `duration-150`. */
+  readonly duration?: string;
 }
 
 export const buttonTables = (t: ButtonTokens, preset: ButtonPreset) => {
+  const hoverDim = preset.hoverDim ?? "hover:opacity-90";
+  const duration = preset.duration ?? "duration-150";
   // `bg-primary hover:bg-primary-hover active:bg-primary-active` when the theme declares the state siblings.
   const bgStates = createVariantMapper("bg", t.colors, {
     states: COLOR_STATES,
@@ -56,7 +62,7 @@ export const buttonTables = (t: ButtonTokens, preset: ButtonPreset) => {
       pick(bgStates, intent),
       contrastText(t.colors, intent, preset.background),
     ];
-    if (!t.colors.includes(`${intent}Hover`)) classes.push("hover:opacity-90");
+    if (!t.colors.includes(`${intent}Hover`)) classes.push(hoverDim);
     return classes;
   };
   const tint = (intent: string): Record<ButtonTint, string[]> => {
@@ -66,7 +72,7 @@ export const buttonTables = (t: ButtonTokens, preset: ButtonPreset) => {
       soft: [
         pick(bg, `${intent}Subtle`),
         pick(text, `${intent}SubtleForeground`),
-        "hover:opacity-90",
+        hoverDim,
       ],
       ghost: [pick(text, intent), hover],
       link: [pick(text, intent)],
@@ -78,7 +84,7 @@ export const buttonTables = (t: ButtonTokens, preset: ButtonPreset) => {
       `${pick(rounded, preset.radius)} border`,
       `cursor-pointer ${pick(type, preset.type)} whitespace-nowrap outline-hidden select-none`,
       `focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 ${preset.focusRing}`,
-      "transition-[background-color,color,opacity] duration-150",
+      `transition-[background-color,color,opacity] ${duration}`,
       `disabled:cursor-not-allowed ${preset.disabled}`,
     ],
     variants: {

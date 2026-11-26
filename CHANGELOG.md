@@ -1,3 +1,11 @@
+# [9.2.0](https://github.com/duydpdev/style-generator/compare/v9.1.0...v9.2.0) (2026-11-26)
+
+### Features
+
+- accept a $key/<percent> colour alias ([e2935fc](https://github.com/duydpdev/style-generator/commit/e2935fc504a2b2c22516d5f66e89088ea81f4ea9))
+
+  A colour value $key/n (n an integer percent, 1-100) emits color-mix(in srgb, var(--sg-color-key) n%, transparent). Only colour categories accept it, it works inside themeAxes overrides, and the canvas naming rule and the design-system producer resolve it. The cli size budget is raised to fit the new grammar.
+
 # [9.1.0](https://github.com/duydpdev/style-generator/compare/v9.0.2...v9.1.0) (2026-11-25)
 
 ### Features

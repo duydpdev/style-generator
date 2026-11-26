@@ -767,7 +767,7 @@ describe("integration: style-gen canvas check", () => {
       ]);
     });
 
-    it("boards reads another manifest through the standard option", () => {
+    it("boards keeps the packaged titles when the standard option renames one", () => {
       const copy = structuredClone(STANDARD);
       const mau = copy.boards.find((b) => b.file === "ds-mau.dc.html");
       if (mau) mau.title = "X";
@@ -778,15 +778,24 @@ describe("integration: style-gen canvas check", () => {
       writeBoards((c) => {
         entry(c.boards, "ds-mau.dc.html").title = "X";
       });
-      expect(check({ boards: true, standard })).toEqual([]);
-      expect(check({ boards: true })).toEqual([
+      const expected = [
         'canvas.json:1 board ds-mau.dc.html title "X", expected "Board / Design system / Màu sắc / Light + Dark"',
-      ]);
+      ];
+      expect(check({ boards: true, standard })).toEqual(expected);
+      expect(check({ boards: true })).toEqual(expected);
     });
   });
 
-  describe("--boards: manifest without the content keys", () => {
-    it("boards skips the content, component-page and frame rules on an older manifest", () => {
+  describe("--boards: additions file", () => {
+    it("boards applies the packaged content rules to an empty additions file", () => {
+      writeBoards(undefined, {}, true);
+      const standard = writeTmpFile(dir, "standard.json", {});
+      const packaged = check({ boards: true });
+      expect(packaged).not.toEqual([]);
+      expect(check({ boards: true, standard })).toEqual(packaged);
+    });
+
+    it("boards applies the packaged content rules to a full copy without content", () => {
       const older = JSON.parse(readFileSync(standardFile, "utf8")) as Record<
         string,
         unknown
@@ -796,8 +805,9 @@ describe("integration: style-gen canvas check", () => {
       delete older.provenanceBoard;
       const standard = writeTmpFile(dir, "standard.json", older);
       writeBoards(undefined, {}, true);
-      expect(check({ boards: true, standard })).toEqual([]);
-      expect(check({ boards: true })).not.toEqual([]);
+      expect(check({ boards: true, standard })).toEqual(
+        check({ boards: true }),
+      );
     });
   });
 
@@ -1196,7 +1206,7 @@ describe("integration: style-gen canvas check", () => {
       ]);
     });
 
-    it("component pages check a manifest that sets only maxWidth", () => {
+    it("component pages keep the packaged height limit for a full copy without it", () => {
       const manifest = JSON.parse(readFileSync(standardFile, "utf8")) as {
         componentBoards: Record<string, unknown>;
       };
@@ -1206,7 +1216,7 @@ describe("integration: style-gen canvas check", () => {
         entry(c.boards, "c-box.dc.html").w = 1441;
       });
       expect(check({ boards: true, standard })).toEqual([
-        "canvas.json:1 board c-box.dc.html frame 1441×300 exceeds 1440×any",
+        "canvas.json:1 board c-box.dc.html frame 1441×300 exceeds 1440×1600",
       ]);
     });
   });
@@ -1446,7 +1456,7 @@ describe("integration: style-gen canvas check", () => {
       expect(run.stdout).toContain("canvas.json:1 missing canvas.json");
     });
 
-    it("CLI: --standard with --boards reads another manifest", async () => {
+    it("CLI: a full-copy --standard prints a notice and keeps the packaged rules", async () => {
       const copy = structuredClone(STANDARD);
       const mau = copy.boards.find((b) => b.file === "ds-mau.dc.html");
       if (mau) mau.title = "X";
@@ -1458,7 +1468,21 @@ describe("integration: style-gen canvas check", () => {
         entry(c.boards, "ds-mau.dc.html").title = "X";
       });
       const run = await cli("--boards", "--standard", standard);
+      expect(run.status).toBe(1);
+      expect(run.stdout.split("\n")[0]).toBe(
+        'canvas-standard.json is a full copy: rules from the package apply; run "style-gen canvas standard migrate"',
+      );
+      expect(run.stdout).toContain('title "X", expected "Board / Design');
+    });
+
+    it("CLI: an additions --standard passes a clean canvas without a notice", async () => {
+      writeBoards();
+      const standard = writeTmpFile(dir, "standard.json", {
+        alphaScale: [8, 12],
+      });
+      const run = await cli("--boards", "--standard", standard);
       expect(run.status).toBe(0);
+      expect(run.stdout).toBe(run.last);
       expect(run.last).toMatch(/^OK: /);
     });
 

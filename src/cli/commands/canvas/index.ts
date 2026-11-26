@@ -5,6 +5,10 @@ export {
   type CanvasArgs,
   type CheckOptions,
 } from "./check";
+export {
+  standardInitCommand,
+  standardMigrateCommand,
+} from "./standardCommands";
 export { jsonBlocks, sectionIds } from "./parseHtml";
 export {
   CanvasInputError,
@@ -13,6 +17,13 @@ export {
   scanText,
   type Inventory,
 } from "./scan";
+export {
+  AdditionsSchema,
+  layerStandard,
+  loadStandard,
+  type Additions,
+  type LayeredStandard,
+} from "./standardLayer";
 export {
   DEFAULT_STANDARD,
   StandardSchema,

@@ -3,7 +3,11 @@ import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { errorMessage } from "../node/errorMessage";
 
 import { BUDGET_USAGE, budgetCommand } from "./commands/budget";
-import { canvasCheckCommand } from "./commands/canvas";
+import {
+  canvasCheckCommand,
+  standardInitCommand,
+  standardMigrateCommand,
+} from "./commands/canvas";
 import { doctorCommand } from "./commands/doctor";
 import { generateCommand } from "./commands/generate";
 import { initCommand } from "./commands/init";
@@ -291,15 +295,37 @@ Exit codes: 0 within budget, 1 over budget, 2 usage error, no CSS found, or (wit
 const CANVAS_USAGE =
   "style-gen canvas check --canvas <dir> --theme <file> [options]";
 
+/** The flags each `canvas` subcommand accepts; any other given flag is a usage error. */
+const CANVAS_FLAGS: Record<string, readonly string[]> = {
+  check: [
+    "canvas",
+    "theme",
+    "stamp",
+    "intents",
+    "standard",
+    "ds-version",
+    "recipes",
+    "naming",
+    "boards",
+    "inventory",
+  ],
+  "standard init": ["standard"],
+  "standard migrate": ["theme", "standard", "dry-run"],
+};
+
 const canvasCli: CliCommand = {
   name: "canvas",
   description:
     "Check a design canvas against the theme and the canvas standard",
   usage: `Usage: ${CANVAS_USAGE}
        style-gen canvas check --inventory --canvas <dir>
+       style-gen canvas standard init [--standard <file>]
+       style-gen canvas standard migrate --theme <file> [--standard <file>] [--dry-run]
 
 Check every *.dc.html and *.css under the canvas directory against ONE theme
-and the design-canvas standard (the manifest bundled with the package).
+and the design-canvas standard (the manifest bundled with the package). A
+product's --standard file only adds to it (roles, extra scale steps, boards,
+exemptions with a reason); it never replaces a packaged rule.
 
 Options:
   --canvas <dir>                  Canvas directory (required)
@@ -311,7 +337,9 @@ Options:
   --ds-version <namespace>=<ver>  canvas.json installs this design-system version
   --recipes <file>                With --boards: each c-<name> board marks every axis value
                                   of its recipe (data-sg-cell="<axis>:<value>")
-  --standard <file>               Manifest replacing the bundled one
+  --standard <file>               Additions file layered over the bundled standard
+                                  (init, migrate: the file to write; default canvas-standard.json)
+  --dry-run                       migrate: print the result, write nothing
   --inventory                     Print what the canvas uses (JSON) instead of checking
 
 Output: one "<file>:<line> <message>" line per violation, then "<n> violation(s)";
@@ -330,14 +358,27 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
     naming: { type: "boolean" },
     boards: { type: "boolean" },
     inventory: { type: "boolean" },
+    "dry-run": { type: "boolean" },
   },
   allowPositionals: true,
   usageExitCode: 2,
   run: (values, positionals, ctx) => {
-    if (positionals.length !== 1 || positionals[0] !== "check") {
+    const sub = positionals.join(" ");
+    const allowed = CANVAS_FLAGS[sub];
+    if (allowed === undefined) {
       logger.error(`Usage: ${CANVAS_USAGE}`);
       return 2;
     }
+    const stray = Object.keys(values).find(
+      (key) => values[key] !== undefined && !allowed.includes(key),
+    );
+    if (stray !== undefined) {
+      logger.error(`--${stray} is not valid for canvas ${sub}`);
+      return 2;
+    }
+    if (sub === "standard init") return standardInitCommand(values, ctx.cwd);
+    if (sub === "standard migrate")
+      return standardMigrateCommand(values, ctx.cwd);
     return canvasCheckCommand(values, ctx.cwd);
   },
 };

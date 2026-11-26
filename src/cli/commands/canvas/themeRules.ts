@@ -48,15 +48,26 @@ function roleAllowed(role: string, grammar: Grammar): boolean {
   return segments.length === 1 || !reserved.includes(last);
 }
 
-// Whether a semantic key follows `<role>[suffixes][state]` or is neutral.
-function followsGrammar(key: string, grammar: Grammar): boolean {
-  if (grammar.neutral.includes(key)) return true;
+/**
+ * The role of a semantic colour key: what remains after its suffixes and state.
+ * @param {string} key - A theme colour key
+ * @param {Grammar} grammar - The colour grammar
+ * @returns {string | null} The role, or null for a neutral or primitive key
+ */
+export function roleOf(key: string, grammar: Grammar): string | null {
+  if (PRIMITIVE.test(key) || grammar.neutral.includes(key)) return null;
   const suffixes = grammar.suffixes.map((s) => "(?:" + s + ")?").join("");
   const shape = new RegExp(
     `^(.+?)${suffixes}(?:${grammar.states.join("|")})?$`,
   );
-  const role = shape.exec(key)?.[1];
-  return role !== undefined && roleAllowed(role, grammar);
+  return shape.exec(key)?.[1] ?? null;
+}
+
+// Whether a semantic key follows `<role>[suffixes][state]` or is neutral.
+function followsGrammar(key: string, grammar: Grammar): boolean {
+  if (grammar.neutral.includes(key)) return true;
+  const role = roleOf(key, grammar);
+  return role !== null && roleAllowed(role, grammar);
 }
 
 // The v2 name: whole deprecated segments renamed (longest first), `on` prefix to `Foreground`,
@@ -283,10 +294,9 @@ export function namingViolations(theme: unknown, standard: Standard): string[] {
     ...colourViolations(record, standard),
     ...typographyViolations(record, standard),
   ];
+  const radius = standard.scales?.borderRadius?.steps ?? [];
   for (const key of Object.keys(asRecord(record.borderRadius)))
-    if (!standard.radius.includes(key))
-      out.push(
-        `borderRadius.${key} is not one of ${standard.radius.join(", ")}`,
-      );
+    if (!radius.includes(key))
+      out.push(`borderRadius.${key} is not one of ${radius.join(", ")}`);
   return out;
 }

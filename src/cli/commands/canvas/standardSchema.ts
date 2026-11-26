@@ -1,8 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+
 import { z } from "zod";
-
-import defaultManifest from "../../canvas/design-canvas-standard.json";
-
-import { CanvasInputError, readJson } from "./scan";
 
 const pageSchema = z.object({ id: z.string(), name: z.string() });
 const coreBoardSchema = z.object({
@@ -14,11 +12,21 @@ const positiveInt = z.number().int().positive();
 /** A suffix or state: one capitalised camelCase segment, so it is safe inside a RegExp. */
 const segment = z.string().regex(/^[A-Z][a-z0-9]*$/);
 
-/**
- * The design-canvas manifest: an absent optional key skips its rule, and
- * unknown keys are ignored so a manifest for a later release still loads.
- */
-export const StandardSchema = z.object({
+/** What kind of value checks a scale family gets: `size` is ordered and unit-checked, `ordinal` only ordered, `name` only named. */
+const scaleSchema = z.object({
+  kind: z.enum(["size", "ordinal", "name"]),
+  steps: z.array(z.string()),
+});
+
+/** Why a rule exists: a WCAG section, a verified precedent, a technical constraint or a library choice. */
+const ruleSchema = z.object({
+  basis: z.object({
+    type: z.enum(["wcag", "precedent", "technical", "choice"]),
+    source: z.string().optional(),
+  }),
+});
+
+const manifestShape = z.object({
   semanticCore: z.array(z.string()),
   /** The v2 colour grammar; suffixes in order, states always last. */
   grammar: z
@@ -30,7 +38,14 @@ export const StandardSchema = z.object({
       renames: z.record(z.string(), z.string()),
     })
     .optional(),
-  radius: z.array(z.string()),
+  /** Closed step names per token family; the family name is the theme field. */
+  scales: z.record(z.string(), scaleSchema).optional(),
+  /** Default usage sentence per semantic colour key. */
+  descriptions: z.record(z.string(), z.string()).optional(),
+  /** Rule id → why the rule exists; printed with each violation. */
+  rules: z.record(z.string(), ruleSchema).optional(),
+  /** The radius list of manifests before `scales`; read as `scales.borderRadius`. */
+  radius: z.array(z.string()).optional(),
   weights: z.record(z.string(), segment),
   typeScale: z.array(z.number()),
   pages: z.array(pageSchema),
@@ -61,24 +76,44 @@ export const StandardSchema = z.object({
   provenanceBoard: z.string().optional(),
 });
 
-export type Standard = z.infer<typeof StandardSchema>;
+/**
+ * The design-canvas manifest: an absent optional key skips its rule, and
+ * unknown keys are ignored so a manifest for a later release still loads.
+ * A top-level `radius` list from an older manifest becomes `scales.borderRadius`.
+ */
+export const StandardSchema = manifestShape.transform(({ radius, ...rest }) => {
+  if (radius === undefined || rest.scales?.borderRadius !== undefined) {
+    return rest;
+  }
+  return {
+    ...rest,
+    scales: {
+      ...rest.scales,
+      borderRadius: { kind: "size" as const, steps: radius },
+    },
+  };
+});
 
-/** The manifest bundled into the CLI (also emitted next to it for products to read). */
-export const DEFAULT_STANDARD: Standard = StandardSchema.parse(defaultManifest);
+export type Standard = z.output<typeof StandardSchema>;
+
+const MANIFEST_FILE = "design-canvas-standard.json";
 
 /**
- * Reads and validates a `--standard` manifest.
- * @param {string} file - Absolute path of the manifest
- * @param {string} label - The path as the user wrote it, for messages
- * @returns {Standard} The validated manifest
- * @throws {CanvasInputError} `<label>: <path> <message>` for the first schema issue
+ * Reads the manifest emitted next to the CLI instead of inlining it, so its
+ * descriptions and rule text do not count against the CLI bundle budget.
+ * `dist/cli/index.mjs` finds it at `../canvas/`, the sources at `../../canvas/`.
+ * @returns {unknown} The parsed manifest
+ * @throws {Error} When neither layout holds the file
  */
-export function loadStandard(file: string, label: string): Standard {
-  const result = StandardSchema.safeParse(readJson(file, label));
-  if (result.success) return result.data;
-  const issue = result.error.issues[0];
-  const path = issue?.path.join(".") ?? "";
-  throw new CanvasInputError(
-    `${label}: ${path === "" ? "(root)" : path} ${issue?.message ?? "invalid"}`,
-  );
+function readPackagedManifest(): unknown {
+  for (const dir of ["../canvas/", "../../canvas/"]) {
+    const url = new URL(`${dir}${MANIFEST_FILE}`, import.meta.url);
+    if (existsSync(url)) return JSON.parse(readFileSync(url, "utf8"));
+  }
+  throw new Error(`${MANIFEST_FILE} is missing from the installed package`);
 }
+
+/** The manifest shipped with the package (also readable by products at `dist/canvas/`). */
+export const DEFAULT_STANDARD: Standard = StandardSchema.parse(
+  readPackagedManifest(),
+);

@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { budgetCommand } from "./commands/budget";
+import {
+  canvasCheckCommand,
+  standardInitCommand,
+  standardMigrateCommand,
+} from "./commands/canvas";
 import { doctorCommand } from "./commands/doctor";
 import { generateCommand } from "./commands/generate";
 import { initCommand } from "./commands/init";
@@ -12,6 +17,11 @@ import { commands, runCli } from "./run";
 vi.mock("./commands/budget", () => ({
   BUDGET_USAGE: "style-gen budget <file.css|dir> --max-gzip <bytes>",
   budgetCommand: vi.fn(() => 0),
+}));
+vi.mock("./commands/canvas", () => ({
+  canvasCheckCommand: vi.fn(() => 0),
+  standardInitCommand: vi.fn(() => 0),
+  standardMigrateCommand: vi.fn(() => 0),
 }));
 vi.mock("./commands/doctor", () => ({ doctorCommand: vi.fn(() => 0) }));
 vi.mock("./commands/generate", () => ({
@@ -291,6 +301,60 @@ describe("runCli", () => {
       ).toBe(2);
       expect(budgetCommand).not.toHaveBeenCalled();
     });
+  });
+
+  describe("canvas subcommands", () => {
+    it("routes check, standard init and standard migrate to their own commands", async () => {
+      await runCli(["canvas", "check", "--canvas", "c", "--theme", "t"], CWD);
+      await runCli(["canvas", "standard", "init"], CWD);
+      await runCli(
+        ["canvas", "standard", "migrate", "--theme", "t", "--dry-run"],
+        CWD,
+      );
+      expect(canvasCheckCommand).toHaveBeenCalledTimes(1);
+      expect(standardInitCommand).toHaveBeenCalledTimes(1);
+      expect(standardMigrateCommand).toHaveBeenCalledWith(
+        { theme: "t", "dry-run": true },
+        CWD,
+      );
+    });
+
+    it("rejects a migrate flag on check with exit 2", async () => {
+      expect(
+        await runCli(
+          ["canvas", "check", "--canvas", "c", "--theme", "t", "--dry-run"],
+          CWD,
+        ),
+      ).toBe(2);
+      expect(logger.error).toHaveBeenCalledWith(
+        "--dry-run is not valid for canvas check",
+      );
+      expect(canvasCheckCommand).not.toHaveBeenCalled();
+    });
+
+    it("rejects a check flag on standard init and migrate with exit 2", async () => {
+      expect(
+        await runCli(["canvas", "standard", "init", "--canvas", "c"], CWD),
+      ).toBe(2);
+      expect(
+        await runCli(
+          ["canvas", "standard", "migrate", "--theme", "t", "--boards"],
+          CWD,
+        ),
+      ).toBe(2);
+      expect(standardInitCommand).not.toHaveBeenCalled();
+      expect(standardMigrateCommand).not.toHaveBeenCalled();
+    });
+
+    it.each([[["canvas"]], [["canvas", "standard"]], [["canvas", "nope"]]])(
+      "prints the usage and exits 2 for %j",
+      async (args) => {
+        expect(await runCli(args, CWD)).toBe(2);
+        expect(logger.error).toHaveBeenCalledWith(
+          expect.stringContaining("Usage: style-gen canvas check"),
+        );
+      },
+    );
   });
 
   describe("failures", () => {

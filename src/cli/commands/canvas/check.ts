@@ -33,11 +33,8 @@ import {
   readJson,
   scanCanvas,
 } from "./scan";
-import {
-  DEFAULT_STANDARD,
-  loadStandard,
-  type Standard,
-} from "./standardSchema";
+import { loadStandard, type LoadedStandard } from "./standardLayer";
+import { DEFAULT_STANDARD } from "./standardSchema";
 import { namingViolations, PRIMITIVE } from "./themeRules";
 
 /** What `checkCanvas` checks. Relative paths resolve against `cwd`. */
@@ -51,8 +48,10 @@ export interface CheckOptions {
   intents?: readonly string[] | undefined;
   naming?: boolean | undefined;
   boards?: boolean | undefined;
-  /** Manifest file; the bundled manifest when absent. */
+  /** Additions file layered over the packaged standard; the packaged standard alone when absent. */
   standard?: string | undefined;
+  /** Receives a line to print before the result (a full-copy standard, for one). */
+  onNotice?: ((line: string) => void) | undefined;
   dsVersion?: DsVersion | undefined;
   /** Recipes JSON (`{ "<kebab name>": { "<axis>": [values] } }`); read only with `boards`. */
   recipes?: string | undefined;
@@ -85,10 +84,12 @@ export function checkCanvas(options: CheckOptions): string[] {
   const stampFile = stamp === undefined ? undefined : at(stamp);
   const themeBytes = readInput(at(theme), theme);
   const parsed = parseJson(themeBytes.toString("utf8"), theme);
-  const standard: Standard =
+  const loaded: LoadedStandard =
     options.standard === undefined
-      ? DEFAULT_STANDARD
+      ? { standard: DEFAULT_STANDARD, notices: [] }
       : loadStandard(at(options.standard), options.standard);
+  const standard = loaded.standard;
+  for (const notice of loaded.notices) options.onNotice?.(notice);
   const recipes =
     options.recipes === undefined || !boards
       ? undefined
@@ -235,6 +236,9 @@ function runCheck(args: CanvasArgs, cwd: string): number {
     canvasDir: args.canvas,
     theme: args.theme,
     cwd,
+    onNotice: (line) => {
+      logger.log(line);
+    },
   });
   const files = canvasFiles(canvasDir, args.canvas);
   if (args.boards && !files.some((f) => f.endsWith(".dc.html")))

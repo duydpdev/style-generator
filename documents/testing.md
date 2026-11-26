@@ -46,9 +46,9 @@ The checks have two layers:
    - job `unit` (`Unit tests`): `yarn test:coverage` (fails if coverage drops below `coverage.thresholds` in `vitest.config.ts`) → `yarn test:types`;
    - job `check` (check name `Build & Lint Check`, required by the `main-develop` ruleset): the aggregator. It `needs` `build`, `lint`, `docs`, `dist-checks` and `unit`, runs under `always()`
      and fails unless every result is `success`, so a skipped, cancelled or failed job can never read as a pass. Only this name is required, which is why the five jobs above
-     can be split, merged or renamed without touching the ruleset. The four jobs after `build` also start with a step that fails when `build` did not succeed;
+     can be split, merged or renamed without touching the ruleset. The seven jobs that download `dist/` (everything but `build` and the aggregator) also start with a step that fails when `build` did not succeed;
    - `docs_only`: the `build` job sets it to `true` only when the PR changes at least one file and every changed path starts with `documents/`
-     (`git diff --name-only --no-renames`, so moving a `src/` file into `documents/` is not docs-only; a failed fetch or diff, or an empty file list, leaves it `false`).
+     (`git diff --name-only --no-renames`, so moving a `src/` file into `documents/` is not docs-only; a failed diff or an empty file list leaves it `false`).
      When it is `true`, `plain-react`, `plain-nuxt` and `e2e` are skipped; they are the slow browser jobs and a documentation change cannot affect them.
      `ci.yml` has no path filter, so every other job still reports on a documentation-only PR;
    - job `plain-react` (a separate job of `ci.yml`, check name `Plain React (Storybook + parity)`, required by the `main-develop` ruleset;

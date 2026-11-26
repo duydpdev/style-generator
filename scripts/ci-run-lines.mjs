@@ -12,6 +12,9 @@
  *                building, for instance)
  * A job whose steps all moved elsewhere counts as split, not gone.
  *
+ * A step's condition is the job's `if:` and `continue-on-error` plus the step's own,
+ * so a job that stops running (or stops failing the run) shows up as if-changed.
+ *
  * Usage: node scripts/ci-run-lines.mjs --compare <rev> [--markdown] [--root dir]
  * Exit code: 1 when a step is missing, 2 on a usage error or an unreadable revision.
  */
@@ -41,8 +44,8 @@ const option = (name) => {
 function runSteps(text) {
   /** @type {Step[]} */
   const steps = [];
-  /** @type {{ jobs?: Record<string, { steps?: Record<string, unknown>[] }> }} */
-  const doc = text.trim() === "" ? {} : parse(text);
+  /** @type {{ jobs?: Record<string, { if?: unknown, "continue-on-error"?: unknown, steps?: Record<string, unknown>[] }> }} */
+  const doc = parse(text) ?? {};
   for (const [job, def] of Object.entries(doc.jobs ?? {})) {
     for (const step of def.steps ?? []) {
       if (typeof step.run !== "string") continue;
@@ -50,7 +53,14 @@ function runSteps(text) {
       steps.push({
         job,
         run,
-        cond: String(step.if ?? "").trim(),
+        cond: [
+          def.if,
+          def["continue-on-error"],
+          step.if,
+          step["continue-on-error"],
+        ]
+          .map((part) => String(part ?? "").trim())
+          .join(" | "),
         name: String(step.name ?? run.split("\n")[0]),
       });
     }

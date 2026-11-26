@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: a0953a590a55 -->
+<!-- source: documents/testing.md sha256: a923c36e3d09 -->
 
 # Hướng dẫn kiểm thử
 
@@ -47,9 +47,9 @@ Các bước kiểm tra có hai lớp:
    - job `unit` (`Unit tests`): `yarn test:coverage` (thất bại nếu coverage tụt dưới `coverage.thresholds` trong `vitest.config.ts`) → `yarn test:types`;
    - job `check` (tên check `Build & Lint Check`, được ruleset `main-develop` bắt buộc): job tổng hợp. Nó `needs` `build`, `lint`, `docs`, `dist-checks` và `unit`, chạy dưới `always()`
      và thất bại trừ khi mọi kết quả đều là `success`, nên một job bị bỏ qua, bị hủy hay thất bại không bao giờ được tính là đạt. Chỉ tên này là bắt buộc, vì vậy năm job trên
-     có thể được tách, gộp hay đổi tên mà không đụng tới ruleset. Bốn job sau `build` còn mở đầu bằng một bước thất bại khi `build` không thành công;
+     có thể được tách, gộp hay đổi tên mà không đụng tới ruleset. Bảy job tải `dist/` (mọi job trừ `build` và job tổng hợp) còn mở đầu bằng một bước thất bại khi `build` không thành công;
    - `docs_only`: job `build` đặt nó là `true` chỉ khi PR đổi ít nhất một file và mọi đường dẫn đã đổi đều bắt đầu bằng `documents/`
-     (`git diff --name-only --no-renames`, nên chuyển một file `src/` vào `documents/` không phải docs-only; fetch hay diff thất bại, hoặc danh sách file rỗng, đều để nó là `false`).
+     (`git diff --name-only --no-renames`, nên chuyển một file `src/` vào `documents/` không phải docs-only; diff thất bại hoặc danh sách file rỗng đều để nó là `false`).
      Khi nó là `true`, `plain-react`, `plain-nuxt` và `e2e` bị bỏ qua; đây là các job trình duyệt chậm và một thay đổi tài liệu không thể ảnh hưởng tới chúng.
      `ci.yml` không có path filter, nên mọi job còn lại vẫn báo kết quả trên một PR chỉ đổi tài liệu;
    - job `plain-react` (một job riêng của `ci.yml`, tên check `Plain React (Storybook + parity)`, được ruleset `main-develop` bắt buộc;

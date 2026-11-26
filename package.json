@@ -170,7 +170,7 @@
     "site:build": "yarn build:all && yarn workspace site build",
     "typecheck:dist": "tsc -p tsconfig.dts-check.json && tsc -p tsconfig.dts-check.cjs.json",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json",
-    "verify:fast": "lint-staged --diff=\"$(git merge-base HEAD origin/develop)...HEAD\"",
+    "verify:fast": "(git rev-parse --verify --quiet origin/develop > /dev/null || (echo \"verify:fast needs origin/develop: run git fetch origin develop\" >&2 && exit 1)) && lint-staged --diff=\"$(git merge-base HEAD origin/develop)...HEAD\"",
     "verify": "yarn build:all && yarn check:tokens && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types && yarn typecheck:scripts && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:comments && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs"
   },
   "devDependencies": {

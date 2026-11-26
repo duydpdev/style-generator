@@ -75,16 +75,17 @@ function run(extra: string[] = []) {
 /**
  * @param {[string, string?][]} steps - Step names with an optional `if:`
  * @param {string} id - Job id
+ * @param {string} extra - Job-level keys, one per line, already indented by 4
  * @returns {string} One job block whose steps run `echo <name>`
  */
-function job(steps: [string, string?][], id = "check") {
+function job(steps: [string, string?][], id = "check", extra = "") {
   const body = steps
     .map(([name, cond]) => {
       const condLine = cond ? `        if: ${cond}\n` : "";
       return `      - name: ${name}\n${condLine}        run: echo ${name}\n`;
     })
     .join("");
-  return `  ${id}:\n    runs-on: ubuntu-latest\n    steps:\n${body}`;
+  return `  ${id}:\n    runs-on: ubuntu-latest\n${extra}    steps:\n${body}`;
 }
 
 /**
@@ -117,6 +118,43 @@ describe("ci-run-lines", () => {
       workflow(job([["a"], ["b", "github.event_name == 'push'"]])),
     );
     expect(run().out).toContain("missing: 0 if-changed: 1 reordered: 0");
+  });
+
+  it("flags a changed job-level `if:` on every step of the job", () => {
+    setup(
+      workflow(job([["a"], ["b"]])),
+      workflow(
+        job([["a"], ["b"]], "check", "    if: needs.x.outputs.y != 'true'\n"),
+      ),
+    );
+    expect(run().out).toContain("missing: 0 if-changed: 2 reordered: 0");
+  });
+
+  it("flags a job that gains `continue-on-error`", () => {
+    setup(
+      workflow(job([["a"]])),
+      workflow(job([["a"]], "check", "    continue-on-error: true\n")),
+    );
+    expect(run().out).toContain("missing: 0 if-changed: 1 reordered: 0");
+  });
+
+  it("treats a workflow reduced to comments as every step missing", () => {
+    setup(workflow(job([["a"], ["b"]])), "# nothing left\n");
+    const { status, out } = run();
+    expect(out).toContain("missing: 2 if-changed: 0 reordered: 0");
+    expect(status).toBe(1);
+  });
+
+  it("treats a deleted workflow file as every step missing", () => {
+    setup(workflow(job([["a"]])), workflow(job([["a"]])));
+    rmSync(join(root, ".github", "workflows", "ci.yml"));
+    writeFileSync(
+      join(root, ".github", "workflows", "other.yml"),
+      workflow(job([["z"]])),
+    );
+    const { status, out } = run();
+    expect(out).toContain("ci.yml check: missing: a");
+    expect(status).toBe(1);
   });
 
   it("flags both steps of a swap as reordered", () => {

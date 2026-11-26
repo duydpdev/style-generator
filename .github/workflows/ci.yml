@@ -88,7 +88,7 @@ jobs:
         # docs_only=true only when the PR changes at least one file and every
         # path starts with documents/. `--no-renames` makes a rename a delete
         # plus an add, so moving a src/ file into documents/ is not docs-only.
-        # Any failure (fetch, diff, empty list) leaves docs_only=false: fail closed.
+        # Any failure (diff, empty list) leaves docs_only=false: fail closed.
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -96,7 +96,7 @@ jobs:
           docs_only=false
           if files=$(git diff --name-only --no-renames "$BASE_SHA"..."$HEAD_SHA") \
             && [ -n "$files" ] \
-            && ! printf '%s\n' "$files" | grep -qv '^documents/'; then
+            && [ -z "$(printf '%s\n' "$files" | grep -v '^documents/')" ]; then
             docs_only=true
           fi
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"

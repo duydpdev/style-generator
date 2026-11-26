@@ -65,3 +65,5 @@ theme.schema.json  → editor autocomplete for the theme           (optional)
 - **Paths**: `theme` may point outside the project (a shared theme package); `output` and `tokensOutput` must stay inside it.
 - **Themes switch on `<html>`**: the selector is pinned to `html` and the attribute is `data-<axis-kebab>`; neither is configurable.
 - **Commit `theme.tokens.ts`, ignore `theme.css`.**
+
+Control line for the docs-only path.

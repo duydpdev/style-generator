@@ -28,7 +28,11 @@ import { fileURLToPath } from "node:url";
 import { Scanner } from "@tailwindcss/oxide";
 import { build } from "vite";
 
-import { COMPONENTS } from "./ds-docs.mjs";
+// The components `ds build` binds, in the page's order (`COMPONENTS` in src/cli/commands/ds/dsDocs.ts; a name
+// missing here makes the parity test fail because the bundle would not define that component).
+const COMPONENTS = ["Box", "Text", "Stack", "Flex", "Grid", "Button"].map(
+  (name) => ({ name }),
+);
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const uiDir = join(root, "examples/harness/src/ui");

@@ -85,6 +85,12 @@ function writeCleanBuild(root: string) {
   bundle(root, "dist/cli/canvas-classes.mjs", "export const classes = 1;\n", [
     "../../src/cli/commands/canvas/boardTokenRules.ts",
   ]);
+  bundle(root, "dist/cli/ds.mjs", "export const ds = 1;\n", [
+    "../../src/cli/commands/ds/build.ts",
+  ]);
+  // The precompiled design-system runtime inlines third-party code on purpose: no sourcemap, licences in NOTICES.txt.
+  writeTmpFile(root, "dist/ds/runtime.js", "export const runtime = 1;\n");
+  writeTmpFile(root, "dist/ds/NOTICES.txt", "licences\n");
 }
 
 /**

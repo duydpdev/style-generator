@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
 import { PRIMITIVE } from "../cli/commands/canvas";
+import { COMPONENTS } from "../cli/commands/ds/dsDocs";
 import { toKebabCase } from "../shared/helpers";
 
 interface Standard {
@@ -176,10 +176,7 @@ describe("documents pin src/cli/canvas/design-canvas-standard.json", () => {
     },
   );
 
-  it("dsComponents equals the components scripts/ds-docs.mjs builds", async () => {
-    const { COMPONENTS } = (await import(
-      pathToFileURL(join(repoRoot, "scripts", "ds-docs.mjs")).href
-    )) as { COMPONENTS: { name: string }[] };
+  it("dsComponents equals the components ds build writes", () => {
     const built = COMPONENTS.map((c) => toKebabCase(c.name));
     expect(standard.dsComponents).toEqual(built);
     expect([...standard.dsComponents, "card"]).not.toEqual(built);

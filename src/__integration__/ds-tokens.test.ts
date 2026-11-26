@@ -1,14 +1,16 @@
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  themeToDsTokens,
+  type DsTokensOptions,
+  type ThemeInput,
+} from "../cli/commands/ds/dsTokens";
 import { generate } from "../index";
 
 const root = join(__dirname, "..", "..");
-const moduleUrl = pathToFileURL(join(root, "scripts", "ds-tokens.mjs")).href;
 const fixtureDir = join(__dirname, "__fixtures__", "ds-style-generator");
 
 interface DsToken {
@@ -34,7 +36,7 @@ interface DsTokens {
 }
 
 /**
- * Run `themeToDsTokens` in a Node child process (the script is plain ESM over the built `dist/`).
+ * Runs `themeToDsTokens`, returning the thrown message instead of throwing.
  * @param {unknown} theme - The theme object
  * @param {Record<string, unknown>} options - The mapper options
  * @returns {{ ok?: DsTokens, error?: string }} The tokens, or the thrown message
@@ -43,18 +45,16 @@ function map(
   theme: unknown,
   options: Record<string, unknown>,
 ): { ok?: DsTokens; error?: string } {
-  const code = `import { themeToDsTokens } from ${JSON.stringify(moduleUrl)};
-let input = "";
-for await (const chunk of process.stdin) input += chunk;
-const { theme, options } = JSON.parse(input);
-try { process.stdout.write(JSON.stringify({ ok: themeToDsTokens(theme, options) })); }
-catch (e) { process.stdout.write(JSON.stringify({ error: e.message })); }`;
-  const run = spawnSync(process.execPath, ["--input-type=module", "-e", code], {
-    input: JSON.stringify({ theme, options }),
-    encoding: "utf8",
-  });
-  if (run.status !== 0) throw new Error(run.stderr);
-  return JSON.parse(run.stdout) as { ok?: DsTokens; error?: string };
+  try {
+    return {
+      ok: themeToDsTokens(
+        theme as ThemeInput,
+        options as unknown as DsTokensOptions,
+      ) as unknown as DsTokens,
+    };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 /**

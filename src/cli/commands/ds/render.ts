@@ -1,3 +1,8 @@
+/**
+ * Runs a design-system bundle against a fake React and renders every component
+ * and variant, so the build can check the output it just wrote. `node:vm` here is
+ * a harness for our own assembled output, not a sandbox for the product preset.
+ */
 import vm from "node:vm";
 
 /** The element a fake `createElement` returns: enough to compare what a component renders. */
@@ -64,15 +69,16 @@ export function renderTrees(
   };
   ctx.window = ctx;
   vm.createContext(ctx);
-  // The bundle is this repo's own build output, run in an isolated context.
+  // The bundle this command just assembled, run in a separate context; never external input.
   // eslint-disable-next-line sonarjs/code-eval
   vm.runInContext(code, ctx);
-  const lib = ctx[namespace] as Record<string, Component>;
+  const lib = ctx[namespace] as Record<string, Component> | undefined;
+  if (lib === undefined) throw new Error(`window.${namespace} is not defined`);
   const trees: Record<string, unknown> = {};
   for (const [name, label, props] of cases(intents)) {
     const component = lib[name];
-    if (component === undefined)
-      throw new Error(`${name} is not in the bundle`);
+    if (typeof component !== "function")
+      throw new Error(`window.${namespace}.${name} is not a function`);
     trees[`${name}:${label}`] = JSON.parse(
       JSON.stringify(component(props), (_key, value: unknown) =>
         typeof value === "function" ? "[function]" : value,
@@ -83,30 +89,27 @@ export function renderTrees(
 }
 
 /**
- * Orders two strings by UTF-16 code unit, the order `Array#sort` uses by default.
- * @param {string} a - First string
- * @param {string} b - Second string
- * @returns {number} Negative, zero or positive
+ * Every class a rendered element tree names, split on whitespace.
+ * @param {Record<string, unknown>} trees - `renderTrees` output
+ * @returns {Set<string>} Distinct class names
  */
-function compareCodeUnits(a: string, b: string): number {
-  if (a === b) return 0;
-  return a < b ? -1 : 1;
-}
-
-/**
- * The class names a stylesheet selects, sorted: its selector set.
- * @param {string} css - A compiled stylesheet
- * @returns {string[]} Distinct class names, unescaped
- */
-export function selectorSet(css: string): string[] {
-  const names = new Set<string>();
-  for (const m of css.matchAll(/\.((?:\\[\da-f]{1,6} ?|\\.|[\w-])+)/gi))
-    names.add(
-      (m[1] ?? "")
-        .replace(/\\([\da-f]{1,6}) ?/gi, (_whole, hex: string) =>
-          String.fromCodePoint(Number.parseInt(hex, 16)),
-        )
-        .replace(/\\(.)/g, "$1"),
-    );
-  return [...names].sort(compareCodeUnits);
+export function renderedClasses(trees: Record<string, unknown>): Set<string> {
+  const classes = new Set<string>();
+  const visit = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (node === null || typeof node !== "object") return;
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "className" && typeof value === "string") {
+        for (const name of value.split(/\s+/))
+          if (name !== "") classes.add(name);
+      } else {
+        visit(value);
+      }
+    }
+  };
+  visit(Object.values(trees));
+  return classes;
 }

@@ -7,6 +7,8 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
+import { sameMinor } from "../ds/stamp";
+
 import {
   asArray,
   asRecord,
@@ -228,9 +230,9 @@ function provenanceViolations(
     const sha = String(stamp.themeSha256).slice(0, 12);
     if (theme !== sha)
       out.push(`${at} provenance theme ${echo(theme)}, stamp has ${echo(sha)}`);
-    if (lib !== stamp.libVersion)
+    if (typeof lib !== "string" || !sameMinor(lib, stamp.libVersion))
       out.push(
-        `${at} provenance lib ${echo(lib)}, stamp has ${echo(stamp.libVersion)}`,
+        `${at} provenance lib ${echo(lib)}, stamp has ${echo(stamp.libVersion)} (major.minor must match)`,
       );
   }
   if (options.dsVersion !== undefined && ds !== options.dsVersion.version)

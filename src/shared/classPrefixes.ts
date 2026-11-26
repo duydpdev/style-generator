@@ -1,8 +1,4 @@
-/**
- * Literal class prefixes of the rounded/border families — the single source
- * the registry descriptors (`as const`) and the public string arrays below
- * share.
- */
+/** Literal class prefixes of the rounded family, shared by the registry descriptors and `roundedProperties`. */
 export const ROUNDED_PREFIXES = [
   "rounded",
   "rounded-t",
@@ -11,13 +7,7 @@ export const ROUNDED_PREFIXES = [
   "rounded-l",
 ] as const;
 
-/**
- * Class prefixes of the `borderWidth` category. `border-s`/`border-e` are the
- * logical-side utilities and `divide-x`/`divide-y` the divider utilities; all
- * of them resolve `--border-width-*` in Tailwind, so `@source inline` covers a
- * dynamically built `border-s-thin` or `divide-x-thin`. Append-only: the order
- * is the order of the generated `@source inline` line.
- */
+/** Class prefixes resolving `--border-width-*`. Append-only: the order is the order of the generated `@source inline` line. */
 export const BORDER_PREFIXES = [
   "border",
   "border-x",
@@ -32,10 +22,7 @@ export const BORDER_PREFIXES = [
   "divide-y",
 ] as const;
 
-/**
- * Mutable copies of the prefix lists, typed with the literal unions so they
- * pass `createVariantMapper(borderProperties, keys)` as they are.
- */
+/** Rounded class prefixes as a mutable array, typed so it passes `createVariantMapper(roundedProperties, keys)` as is. */
 export const roundedProperties: (typeof ROUNDED_PREFIXES)[number][] = [
   ...ROUNDED_PREFIXES,
 ];

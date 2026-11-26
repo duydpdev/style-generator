@@ -2,11 +2,13 @@
 paths:
   - "src/cli/**"
   - "src/node/**"
+  - "src/features/vite/**"
+  - "src/features/next/**"
 ---
 
 # CLI and Node code rules
 
-Loaded when a file under `src/cli` or `src/node` is read.
+Loaded when a file under `src/cli`, `src/node`, `src/features/vite` or `src/features/next` is read.
 
 - **Node code lives in `src/node/`** (`loadStyleGenConfig`, `resolveProjectPath`, `sameFile`, `configSource`, `resolveEmitTarget`, `themeEmitter`, `watchThemeFile`, `resolvePluginTarget`,
   `writeFileAtomic`, `errorMessage`, `isPlainObject`) and is imported only by `src/cli/**`, `src/features/vite/**` and `src/features/next/**`; never from `src/core`,

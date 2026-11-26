@@ -5,13 +5,7 @@ import { toKebabCase } from "../shared/helpers";
 
 import type { ThemeConfig } from "./themeSchema";
 
-/**
- * Tailwind's built-in `font-<name>` font-weight utility suffixes. A
- * `theme.fontFamily` key that kebab-cases to one of these would produce a
- * `.font-<name>` class colliding with Tailwind's native font-weight
- * utility of the same name (both font-family and font-weight utilities
- * share the `font-` class prefix).
- */
+/** Tailwind's `font-<name>` font-weight suffixes, which a `fontFamily` key must not take. */
 export const TAILWIND_FONT_WEIGHT_UTILITY_NAMES = [
   "thin",
   "extralight",
@@ -25,15 +19,10 @@ export const TAILWIND_FONT_WEIGHT_UTILITY_NAMES = [
 ] as const;
 
 /**
- * Report one `ZodIssue` per pair of keys in `record` whose `toKebabCase`
- * form collides (e.g. `blue500` and `blue-500` both become `blue-500`) —
- * such a collision would silently overwrite one CSS variable/class with
- * another. Shared by every category record (colors, shadows, backdrop
- * blurs, border radius, font family, border width, typography).
+ * Report each key whose kebab-case form repeats an earlier key's (`blue500`/`blue-500`).
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, unknown> | undefined} record - Category record to check
  * @param {(string | number)[]} pathPrefix - Path segments to prepend to each issue
- * @returns {void}
  */
 export const reportKebabCollisions = (
   ctx: z.RefinementCtx,
@@ -61,15 +50,10 @@ export const reportKebabCollisions = (
 };
 
 /**
- * Reject a `theme.borderWidth` key that also names a `theme.colors` key —
- * both emit `border-<kebab-key>`, so the two utilities would share a class
- * (e.g. `borderWidth.primary` alongside `colors.primary`). Keys are
- * compared by kebab-case form, the class they emit: `thinLine` and
- * `thin-line` collide.
+ * Reject a `borderWidth` key whose `border-<kebab-key>` class a `colors` key also emits.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} colors - Base `colors` record
  * @param {Record<string, string> | undefined} borderWidth - Base `borderWidth` record
- * @returns {void}
  */
 export const checkBorderWidthColorCollision = (
   ctx: z.RefinementCtx,
@@ -90,15 +74,11 @@ export const checkBorderWidthColorCollision = (
 };
 
 /**
- * Reject a `theme.colors` key whose `divide-<kebab-key>` color class is
- * also one of Tailwind's divider-width utilities: `x`/`y` (`divide-x`),
- * `x-<n>`/`y-<n>` for any integer `n` (`divide-x-2`) and `x-<k>`/`y-<k>`
- * for a `borderWidth` key `k` (`divide-x-thin`). Tailwind would emit the
- * width and the color for that one class.
+ * Reject a `colors` key whose `divide-<kebab-key>` is a divider width
+ * (`x`, `y-2`, `x-<borderWidth key>`): Tailwind would emit width and color.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} colors - Base `colors` record
  * @param {Record<string, string> | undefined} borderWidth - Base `borderWidth` record
- * @returns {void}
  */
 export const checkDivideColorCollision = (
   ctx: z.RefinementCtx,
@@ -123,24 +103,13 @@ export const checkDivideColorCollision = (
   }
 };
 
-/**
- * `--font-weight-*` and `--font-size-*` live in the `--font-` theme
- * namespace Tailwind reads for font families, but it ignores them as
- * families and instead reads them as the weight/size scale — a
- * `fontFamily` key `weightBold` would overwrite `--font-weight-bold`
- * (`font-bold`) and `sizeLg` the `font-size-lg` variable.
- */
+// `fontFamily.weightBold` would overwrite Tailwind's `--font-weight-bold` scale.
 const FONT_SCALE_NAMESPACE_RE = /^(weight|size)(-|$)/;
 
 /**
- * Reject a `fontFamily` key whose kebab-case form matches one of
- * Tailwind's built-in font-weight utility suffixes (see
- * {@link TAILWIND_FONT_WEIGHT_UTILITY_NAMES}), or that starts with the
- * `weight`/`size` segment of Tailwind's `--font-weight-*`/`--font-size-*`
- * theme variables.
+ * Reject a `fontFamily` key named like a font weight or starting with `weight`/`size`.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} fontFamily - Base `fontFamily` record
- * @returns {void}
  */
 export const checkFontFamilyWeightNames = (
   ctx: z.RefinementCtx,
@@ -167,12 +136,6 @@ export const checkFontFamilyWeightNames = (
   }
 };
 
-/**
- * Map every class a CSS-var category emits (`<prefix>-<kebab key>`) to the
- * `category.key` that owns it.
- * @param {ThemeConfig} theme - Base theme
- * @returns {Map<string, string>} Class name → first owning `category.key`
- */
 const classOwners = (theme: ThemeConfig): Map<string, string> => {
   const owner = new Map<string, string>();
   for (const descriptor of cssVarCategories) {
@@ -189,14 +152,9 @@ const classOwners = (theme: ThemeConfig): Map<string, string> => {
 };
 
 /**
- * Reject a `typography` key whose kebab-case form equals the class another
- * category emits (`<prefix>-<kebab key>`, e.g. `colors.primary` →
- * `text-primary`, so `typography.textPrimary` → `@utility text-primary`
- * would collide). Typography emits the bare `@utility <kebab-key>`, so its
- * class set is just its keys; state classes are not considered.
+ * Reject a `typography` key equal to another category's class (`textPrimary` vs `colors.primary`).
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {ThemeConfig} theme - Base theme
- * @returns {void}
  */
 export const checkTypographyClassCollisions = (
   ctx: z.RefinementCtx,

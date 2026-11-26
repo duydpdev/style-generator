@@ -191,6 +191,14 @@ export default pluginTs.config(
     },
   },
 
+  // JSDoc is required on exports only; `yarn check:comments` caps its length.
+  {
+    files: ["src/**/*.ts"],
+    rules: {
+      "jsdoc/require-jsdoc": ["error", { publicOnly: true }],
+    },
+  },
+
   // Node scripts (publish gates, smoke run, site example build): plain JS
   // with Node globals. Type-aware rules are off because JSON.parse & co. are
   // `any` in JS. `yarn typecheck:scripts` (tsconfig.scripts.json, checkJs)

@@ -84,7 +84,7 @@ runs for non-draft PRs that change `site/**`, `examples/**`, `e2e-site/**`, `src
 ## Gate table
 
 Every gate once. `yarn verify` = base gate + `src/**` gate (`build:all`, `check:tokens`, `lint`, `prettier:check`, `tsc`, `test`, `test:types`, `typecheck:scripts`, `typecheck:dist`,
-`check:externals`, `check:sizes`, `check:browser-safe`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); the docs chain stays in the table.
+`check:externals`, `check:sizes`, `check:browser-safe`, `check:comments:core`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); the docs chain stays in the table.
 
 | Command                                                                         | What it blocks                                                                                                           | Runs in (workflow: step)                                       | Needed after changing                                                         |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------- |

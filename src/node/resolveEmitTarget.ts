@@ -10,12 +10,10 @@ import type { EmitTarget } from "./themeEmitter";
 export const TOKENS_FILE_NAME = "theme.tokens.ts";
 
 /**
- * The tokens module is TypeScript (`as const`, `export type`), so only a TS
- * file name fits; a declaration file cannot hold a runtime `export const`.
+ * Throw unless `file` is a `.ts`/`.mts`/`.cts` file that is not a declaration file.
  * @param {string} file - The tokens file path
  * @param {string} label - The option the path came from (`tokensOutput`, `--out`)
  * @param {string} [shown] - What the message prints for the path; defaults to `file`
- * @throws {Error} When `file` is not a `.ts`, `.mts` or `.cts` file or is a declaration file
  */
 export function assertTokensFile(
   file: string,
@@ -30,9 +28,7 @@ export function assertTokensFile(
 }
 
 /**
- * The config files no generated file may overwrite, as `assertDistinctFiles`
- * entries: both candidates (`style-gen.config.json`, `package.json`), whether
- * or not they exist yet.
+ * Both config candidates, existing or not, as `assertDistinctFiles` entries.
  * @param {string} root - Directory the config is read from
  * @returns {Array<[string, string]>} `[label, absolute file]` pairs
  */
@@ -44,10 +40,7 @@ export function configGuardEntries(root: string): [string, string][] {
 }
 
 /**
- * Reject two roles that name the same file: one write would silently
- * overwrite the other (the CSS over the tokens module, the CSS over the theme
- * JSON, a generated file over the config). "Same file" is `sameFile`'s rule,
- * so a different case, a symlink or a `.` segment does not hide it.
+ * Reject two roles naming the same file (by `sameFile`): one would overwrite the other.
  * @param {ReadonlyArray<readonly [string, string]>} entries - `[label, absolute file]` pairs, in the order they are reported
  * @param {string} [prefix] - Put once before the message (`"[style-gen-vite] "`)
  * @throws {Error} Naming the first two labels whose files are the same
@@ -69,11 +62,7 @@ export function assertDistinctFiles(
 }
 
 /**
- * The emit target a resolved configuration points at: the one place the
- * theme, CSS and tokens paths are derived, for the CLI and the bundler
- * integrations alike. The theme may live outside the project root (a theme
- * shared by a monorepo); the CSS and the tokens module may not. The tokens
- * module defaults to `theme.tokens.ts` beside the CSS.
+ * The emit target of a resolved config: the one place its paths are derived.
  * @param {string} root - Project root
  * @param {StyleGenConfig} config - Resolved configuration
  * @param {string} [labelPrefix] - Put before `theme`/`output`/`tokensOutput` in error messages (`"[style-gen-vite] "`)

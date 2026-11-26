@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: e1fbb82ea651 -->
+<!-- source: documents/testing.md sha256: a6baf2a718a2 -->
 
 # Hướng dẫn kiểm thử
 
@@ -86,7 +86,7 @@ chạy cho các PR không phải draft có đổi `site/**`, `examples/**`, `e2e
 ## Bảng gate
 
 Mỗi gate một lần. `yarn verify` = gate cơ sở + gate `src/**` (`build:all`, `check:tokens`, `lint`, `prettier:check`, `tsc`, `test`, `test:types`, `typecheck:scripts`, `typecheck:dist`,
-`check:externals`, `check:sizes`, `check:browser-safe`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); chuỗi gate của tài liệu nằm trong bảng.
+`check:externals`, `check:sizes`, `check:browser-safe`, `check:comments:core`, `check:publish-target`, `check:smoke`, `check:types-pack`, `vite-dev-smoke`); chuỗi gate của tài liệu nằm trong bảng.
 
 | Lệnh                                                                            | Chặn cái gì                                                                                                            | Chạy ở (workflow: bước)                                        | Cần sau khi đổi                                                               |
 | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------- |

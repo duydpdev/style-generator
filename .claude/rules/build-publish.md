@@ -10,11 +10,19 @@ paths:
   - ".husky/**"
   - "lint-staged.config.js"
   - ".github/dependabot.yml"
+  - "eslint.config.js"
+  - "tsconfig*.json"
+  - "vitest.config.ts"
+  - "playwright*.config.ts"
+  - "e2e/**"
+  - "e2e-site/**"
+  - "starters/**"
+  - "commitlint*.config.ts"
 ---
 
 # Build outputs, publish gates, tests and CI legs
 
-Loaded when a build, release, hook or workflow file is read. The always-loaded publishing rules are in `.claude/rules/publishing-guards.md`; the done-gate is in `.claude/rules/validation.md`.
+Loaded when a build, release, hook, workflow, lint, type-check or test config file, an e2e spec or a starter is read. The always-loaded publishing rules are in `.claude/rules/publishing-guards.md`; the done-gate is in `.claude/rules/validation.md`.
 
 ## Publish and smoke commands
 

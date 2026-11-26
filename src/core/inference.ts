@@ -9,8 +9,6 @@ import type { SpacingKey } from "../shared/defaultOption";
 import type { Breakpoint } from "./Options";
 import type { ThemeConfig } from "./themeSchema";
 
-// ---- Basic utilities ----
-
 /** Type-level camelCase of a kebab- or snake-case string: `"blue-500"` → `"blue500"`, `"text_sm"` → `"textSm"`. */
 export type CamelCase<S extends string> = S extends `${infer P1}-${infer P2}`
   ? `${Uncapitalize<P1>}${Capitalize<CamelCase<P2>>}`
@@ -27,11 +25,8 @@ type IsLower<C extends string> =
 type IsUpper<C extends string> =
   IsLetter<C> extends true ? (C extends Uppercase<C> ? true : false) : false;
 
-// Dash inserted between adjacent characters `T` then `N`. Mirrors the three
-// `toKebabCase` regexes in `shared/helpers.ts` exactly:
-//   ([a-z])([A-Z]) → dash   (lower→upper; NOT upper→upper, so "primaryFG" → "primary-fg")
-//   (\d)([A-Z])    → dash   (digit→upper)
-//   ([A-Za-z])(\d) → dash   (letter→digit; digit→digit and digit→lower get none)
+// Dash between `T` and `N`, mirroring `toKebabCase` in `shared/helpers.ts`:
+// lower→upper, digit→upper and letter→digit only ("primaryFG" → "primary-fg").
 type KebabBoundary<T extends string, N extends string> = N extends Digit
   ? IsLetter<T> extends true
     ? "-"
@@ -51,27 +46,15 @@ export type KebabCase<S extends string> = S extends `${infer T}${infer U}`
     : Lowercase<S>
   : S;
 
-// ---- Theme-based token keys ----
-
-/**
- * Literal class-suffix keys a category falls back to when the theme omits
- * it (or declares it as an empty record): the descriptor's `defaultValues`
- * (`DefaultRoundedValue`, `DefaultBorderValue`), stringified. `never` for a
- * category without defaults.
- */
+// Default keys a category falls back to when the theme omits it or leaves it empty.
 type CategoryDefaultKey<K extends CategoryKey> =
   K extends keyof typeof categoryTokenMeta
     ? `${(typeof categoryTokenMeta)[K]["defaultValues"][number]}`
     : never;
 
-/**
- * The keys the theme declares for category `K`. For a category with
- * defaults the property's optionality decides: a required property yields
- * its declared keys; an optional one (e.g. a `ThemeConfig`-annotated theme
- * whose `borderRadius?` a `JSON.parse` may or may not fill) yields `string`,
- * because either the declared keys or the defaults may apply at runtime; an
- * absent one yields `never`, so the caller falls back to the defaults.
- */
+// Declared keys of `K`; with defaults, an optional property widens to `string`
+// and an absent one is `never`.
+// Rationale: documents/architecture.md#declaredcategorykey-why-an-optional-category-widens-to-string
 type DeclaredCategoryKey<TTheme extends ThemeConfig, K extends CategoryKey> = [
   CategoryDefaultKey<K>,
 ] extends [never]
@@ -82,13 +65,7 @@ type DeclaredCategoryKey<TTheme extends ThemeConfig, K extends CategoryKey> = [
       ? string
       : never;
 
-/**
- * Un-cased token keys of category `K`: the declared keys, or the category's
- * defaults when none are declared. `keyof {}` is `never`, so an empty record
- * falls back to the defaults at the type level exactly like
- * `createDesignTokens` does at runtime. Distributes over a union theme, so
- * each member contributes its own declared keys or the defaults.
- */
+// Declared keys, else the defaults (an empty record too, like the runtime).
 type RawCategoryKey<
   TTheme extends ThemeConfig,
   K extends CategoryKey,
@@ -98,13 +75,7 @@ type RawCategoryKey<
     : DeclaredCategoryKey<TTheme, K>
   : never;
 
-/**
- * The camelCased token-key union of one built-in category — what the
- * matching `DesignTokens.Web` array holds and the matching `DesignTokenKeys`
- * alias exposes. Normalises kebab/snake keys → `"sidebarForeground"`. A
- * `string` key set (an annotated `ThemeConfig`) stays `string`: `CamelCase`
- * would turn it into the distinct `Uncapitalize<string>`.
- */
+/** The camelCased token-key union of one category; a `string` key set stays `string`. */
 export type CategoryTokenKey<
   TTheme extends ThemeConfig,
   K extends CategoryKey,
@@ -115,13 +86,11 @@ export type CategoryTokenKey<
       : CamelCase<R>
     : never;
 
-// ---- Tokens from defaults + theme ----
-
-/** The `borderWidth` keys of `TTheme` as written in the theme, or the default border widths when the theme omits the category. */
+/** The `borderWidth` keys as written, or the defaults. */
 export type InferBorderWidthOptions<TTheme extends ThemeConfig> =
   RawCategoryKey<TTheme, "borderWidth">;
 
-/** The `borderRadius` keys of `TTheme` as written in the theme, or the default radius keys when the theme omits the category. */
+/** The `borderRadius` keys as written, or the defaults. */
 export type InferRoundedOptions<TTheme extends ThemeConfig> = RawCategoryKey<
   TTheme,
   "borderRadius"
@@ -130,15 +99,7 @@ export type InferRoundedOptions<TTheme extends ThemeConfig> = RawCategoryKey<
 /** Alias of `SpacingKey`: every default spacing property key (`"p"`, `"px"`, …). */
 export type InferSpacingKeys = SpacingKey;
 
-// ---- Options-derived key types ----
-
-/**
- * The breakpoint keys `options.breakpoints` names. Literal when `O` carries a
- * literal list (`defineOptions`/`generate` infer `const O`); `string` when
- * `O` only declares the field optionally (an annotated
- * `StyleGeneratorOptions`); the library default (`md`/`lg`) when it is
- * absent.
- */
+/** `options.breakpoints` keys: literal, `string` when only optional, else the defaults. */
 export type BreakpointKeys<O> = O extends {
   readonly breakpoints: readonly (infer B extends string)[];
 }
@@ -147,7 +108,6 @@ export type BreakpointKeys<O> = O extends {
     ? string
     : DefaultBreakpointKeys;
 
-/** The plain opacity steps of one `coverage.colors` entry (groups are not typed): literal when the entry carries a literal `opacities` list, `number` when it only declares the field optionally, `never` otherwise. */
 type OpacityStepsOf<C> = C extends {
   readonly opacities: readonly (infer E)[];
 }
@@ -158,22 +118,14 @@ type OpacityStepsOf<C> = C extends {
       : never
     : never;
 
-/**
- * The opacity steps `options.coverage.colors.opacities` names. Literal when
- * `O` carries a literal list (`defineOptions`/`generate` infer `const O`);
- * `number` for an annotated `StyleGeneratorOptions`; `never` when the
- * option is absent, so `${T}/${OpacitySteps<O>}` adds no key.
- */
+/** Plain `coverage.colors.opacities` steps: literal, `number` when only optional, else `never`. */
 export type OpacitySteps<O> = O extends { readonly coverage?: infer V }
   ? V extends { readonly colors?: infer C }
     ? OpacityStepsOf<NonNullable<C>>
     : never
   : never;
 
-/**
- * The spacing keys `options.spacing.properties` names; `string` when `O`
- * only declares them optionally, the default `SpacingKey` union when absent.
- */
+/** `options.spacing.properties` keys: literal, `string` when only optional, else `SpacingKey`. */
 export type SpacingKeys<O> = O extends {
   readonly spacing: { readonly properties: infer P };
 }
@@ -191,13 +143,6 @@ export type ScreenKeys<O> = O extends { readonly screens: infer S }
     ? string
     : never;
 
-// ---- DesignTokens result types ----
-
-/**
- * One readonly token-key array per built-in category, named by the category
- * key (`colors`, `typography`, `borderRadius`, …) — the same names as the
- * `ThemeConfig` fields.
- */
 type CategoryTokenArrays<TTheme extends ThemeConfig> = {
   readonly [C in BuiltInCategory as C["key"]]: readonly CategoryTokenKey<
     TTheme,
@@ -205,9 +150,7 @@ type CategoryTokenArrays<TTheme extends ThemeConfig> = {
   >[];
 };
 
-// ---- aliased colors ----
-
-/** Keys of record `R` whose value may be a `$alias` (a plain `string` value may). */
+// Keys of `R` whose value may be a `$alias` (a plain `string` value may).
 type AliasHolderKeys<R> = {
   [K in keyof R]: string extends R[K]
     ? `${Extract<K, string | number>}`
@@ -216,7 +159,6 @@ type AliasHolderKeys<R> = {
       : never;
 }[keyof R];
 
-/** The `colors` records of every `themeAxes` variant override of `TTheme`. */
 type AxisColorRecords<TTheme extends ThemeConfig> = {
   [A in keyof NonNullable<TTheme["themeAxes"]>]: {
     [V in keyof NonNullable<TTheme["themeAxes"]>[A]]: NonNullable<
@@ -227,13 +169,8 @@ type AxisColorRecords<TTheme extends ThemeConfig> = {
   }[keyof NonNullable<TTheme["themeAxes"]>[A]];
 }[keyof NonNullable<TTheme["themeAxes"]>];
 
-/**
- * The camelCased color keys that may hold a `"$<key>"` alias: in the base
- * `colors` record or in any `themeAxes` variant override (the same set
- * `coverage.keys: "aliased"` keeps). A key counts when its literal value
- * starts with `$`; a `string`-typed value (JSON import, `ThemeConfig`
- * annotation) may be an alias, so its key stays.
- */
+// Color keys that may hold a `$` alias in the base or any override (the set
+// `keys: "aliased"` keeps).
 type AliasedColorKey<TTheme extends ThemeConfig> =
   | AliasHolderKeys<TTheme["colors"]>
   | (AxisColorRecords<TTheme> extends infer C
@@ -246,11 +183,7 @@ type AliasedColorKey<TTheme extends ThemeConfig> =
     : CamelCase<K>
   : never;
 
-/**
- * The typed token arrays. `O` is the options type the tokens were built
- * with (`generate`/`createDesignTokens` infer it from their `options`
- * argument); omitted, it is the no-options default.
- */
+/** The typed token arrays for theme `TTheme` built with options `O`. */
 export interface DesignTokensWeb<
   TTheme extends ThemeConfig,
   // eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- `{}` is the "no extra options" default of the options type parameter
@@ -260,11 +193,7 @@ export interface DesignTokensWeb<
   readonly breakpoints: readonly BreakpointKeys<O>[];
   /** The library `defaultScreens` plus the keys `options.screens` adds. */
   readonly screens: Readonly<Record<Breakpoint | ScreenKeys<O>, string>>;
-  /**
-   * Color keys (camelCased) whose value is a `$<key>` alias in the base
-   * record or in any `themeAxes` override, in declaration order. Runtime
-   * holds exactly those; the type keeps every key that may be one.
-   */
+  /** Color keys holding a `$<key>` alias (base or override), in declaration order. */
   readonly aliasedColors: readonly AliasedColorKey<TTheme>[];
   /** `options.coverage.colors.opacities`, ascending; `[]` without the option. Feed it to `createVariantMapper(prefix, colors, { opacities })`. */
   readonly opacities: readonly OpacitySteps<O>[];

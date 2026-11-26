@@ -8,9 +8,7 @@ import type { ExactOptions, StyleGeneratorOptions } from "./Options";
 import { prepareGenerate } from "./prepareGenerate";
 import { ThemeSchema, type ThemeConfig } from "./themeSchema";
 
-// Computed once at module scope — `z.toJSONSchema` walks the whole schema
-// tree, and `ThemeSchema` never changes at runtime, so recomputing it on
-// every `generate()` call would be pure waste.
+// Computed once: `ThemeSchema` never changes at runtime.
 const themeJsonSchema = z.toJSONSchema(ThemeSchema);
 
 /** What {@link generate} returns for theme `TTheme` and options `O`. */
@@ -25,49 +23,23 @@ export interface GenerateResult<
 }
 
 /**
- * Generate the complete registry-driven CSS string (breakpoint `@theme`
- * override + theme vars + `@theme inline` mapping + typography/spacing
- * `@utility` blocks) and typed design tokens for a theme. Returns a single
- * static CSS string meant to be written to a file and `@import`ed alongside
- * `@import "tailwindcss"` (Tailwind v4 only).
- *
- * Validates `options` first, then `theme` against `ThemeSchema` — independent
- * of whether the caller already went through `defineTheme()` — so CLI/Vite/
- * Next callers that hand it raw `JSON.parse()` output get the same
- * guarantees. Both failures are a `ZodError`.
- *
- * With `options`, their literal `breakpoints`, `screens` and
- * `spacing.properties` keys type `tokens`; options typed as
- * `StyleGeneratorOptions`, or an explicit `<typeof theme>` type argument
- * (which leaves `O` at its default), widen them to `string`. Without
- * `options` the tokens carry the library defaults.
+ * Validate options, then the theme; return the Tailwind v4 CSS, typed tokens and theme JSON Schema.
  * @template TTheme
  * @template O
- * @param {ThemeConfig} theme - Theme configuration (the optional second argument is the `StyleGeneratorOptions`)
- * @returns {GenerateResult<ThemeConfig, O>} `{ css, tokens, schema }` — generated CSS string, typed
- *   design tokens, and the theme's JSON Schema (`z.toJSONSchema(ThemeSchema)`)
- * @example
- * import { generate } from "@duydpdev/style-generator";
- *
- * const { css, tokens, schema } = generate({
- *   colors: { primary: "#3B82F6", primaryHover: "#2563EB" },
- * });
+ * @param {ThemeConfig} theme - Theme configuration
+ * @returns {GenerateResult<ThemeConfig, O>} `{ css, tokens, schema }`
+ * @throws {z.ZodError} On invalid options or an invalid theme
  */
 export function generate<const TTheme extends ThemeConfig>(
   theme: TTheme,
 ): GenerateResult<TTheme>;
 /**
- * `generate()` with `options`.
+ * `generate()` with `options`, whose literal keys type `tokens`.
  * @template TTheme
  * @template O
  * @param {ThemeConfig} theme - Theme configuration
- * @param {StyleGeneratorOptions | undefined} options - Validated first; their literal `breakpoints`, `screens` and `spacing.properties` keys type `tokens`
+ * @param {StyleGeneratorOptions | undefined} options - Generator options, validated first
  * @returns {GenerateResult<ThemeConfig, O>} `{ css, tokens, schema }`
- * @example
- * const { css } = generate(
- *   { colors: { primary: "#3B82F6" } },
- *   { breakpoints: ["md"] },
- * );
  */
 export function generate<
   const TTheme extends ThemeConfig,
@@ -80,9 +52,6 @@ export function generate(
   theme: ThemeConfig,
   options?: StyleGeneratorOptions,
 ): GenerateResult<ThemeConfig, StyleGeneratorOptions> {
-  // One shared prologue (options → resolve → theme → theme × options), each
-  // step throwing a `ZodError` before any CSS is generated. `parsed` is
-  // typed as `ThemeConfig` so downstream inference keeps the literal keys.
   const { parsed, resolved } = prepareGenerate(theme, options);
 
   const { DesignTokens } = buildDesignTokens<

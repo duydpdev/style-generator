@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 147fb9010d73 -->
+<!-- source: documents/deploy.md sha256: 0b9b10da4801 -->
 
 # Triển khai & CI/CD
 
@@ -265,7 +265,7 @@ Thất bại khi `git rev-list --count origin/develop..origin/main` > 0 và đ�
 
 ### Nhịp phát hành
 
-Chỉ mở PR release `develop` → `main` khi thay đổi đến tay người dùng package: cú pháp theme, CSS được sinh ra hoặc hợp đồng CLI. Tài liệu, test, rule cho agent (`.claude/**`) và refactor không đổi những thứ đó thì chờ trên `develop` và đi cùng bản release kế tiếp có thay đổi như vậy. Một ngoại lệ canvas của sản phẩm (một key radius, một board thêm, một thang chữ) là sửa file `--standard` của chính sản phẩm đó (`canvas-standard.json`), không bao giờ là một bản release thư viện.
+Chỉ mở PR release `develop` → `main` khi thay đổi đến tay người dùng package: cú pháp theme, CSS được sinh ra, hợp đồng CLI, hoặc bất kỳ export, kiểu hay khoảng phiên bản dependency nào được publish. Tài liệu, test, rule cho agent (`.claude/**`) và refactor không đổi những thứ đó thì chờ trên `develop` và đi cùng bản release kế tiếp có thay đổi như vậy; một bản sửa tài liệu mà site cần hiển thị ngay thì đi theo đường `docs/<slug>` → `main` ở mục [Hotfix](#hotfix). Một ngoại lệ canvas của sản phẩm (một key radius, một board thêm, một thang chữ) là sửa file `--standard` của chính sản phẩm đó (`canvas-standard.json`), không bao giờ là một bản release thư viện.
 
 ### DEV theo yêu cầu
 

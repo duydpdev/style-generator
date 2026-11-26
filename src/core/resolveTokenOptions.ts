@@ -7,28 +7,19 @@ import { defaultScreens } from "./Options";
 import type { SpacingPropertyMap, StyleGeneratorOptions } from "./Options";
 
 /**
- * The options the typed tokens read, with their defaults applied. A module of
- * its own so the browser-safe `./tokens` entry does not pull the rest of
- * `resolveOptions` (coverage, breakpoint sorting) into its bundle;
- * `ResolvedOptions` extends it.
+ * The options the typed tokens read, with their defaults applied.
+ * Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
  */
 export interface ResolvedTokenOptions {
-  // Option declared in 4 places: here, Options.ts (public type),
-  // optionsSchema.ts (zod shape) and resolveOptions.ts (the rest of the
-  // resolved options). Pinned by optionsSchema.test-d.ts. The two resolve
-  // files stay separate to keep `./tokens` small.
-  /** `options.breakpoints`, else `DEFAULT_BREAKPOINTS`. */
   breakpoints: readonly string[];
-  /** The px `defaultScreens` overridden/extended by `options.screens`. */
   screens: Readonly<Record<string, string>>;
   spacing: { enabled: boolean; properties: SpacingPropertyMap };
-  /** The plain steps of `options.coverage.colors.opacities` (groups are not typed) sorted ascending, else `[]`. */
+  /** Plain steps of `coverage.colors.opacities`, ascending (groups are not typed). */
   opacities: readonly number[];
 }
 
 /**
- * Merge the library's px `defaultScreens` with a custom screens map.
- * Generic so the options validator can merge a not-yet-validated map too.
+ * Merge `defaultScreens` with a custom map; generic so unvalidated maps merge too.
  * @template V Value type of the custom screens map
  * @param {Readonly<Record<string, V>> | undefined} screens - Custom screens
  * @returns {Record<string, string | V>} The merged map
@@ -38,8 +29,7 @@ export const mergeScreens = <V>(
 ): Record<string, string | V> => ({ ...defaultScreens, ...screens });
 
 /**
- * Resolve the defaults of the options the typed tokens read. Pure; expects
- * options that already passed `StyleGeneratorOptionsSchema`.
+ * Resolve the defaults of the options the typed tokens read; pure.
  * @param {StyleGeneratorOptions} [options] - Raw generator options
  * @returns {ResolvedTokenOptions} Breakpoints, screens, spacing and opacity steps with defaults applied
  */

@@ -1,11 +1,4 @@
-/**
- * Subpath: `@duydpdev/style-generator/types`
- *
- * Pure type re-exports. Zero runtime cost (erased at build). `Breakpoint` is
- * not re-exported here: it is also a runtime const (`./tokens`), and the
- * declaration rollup would turn a type-only re-export into a declared value
- * this entry never ships.
- */
+/** Subpath `@duydpdev/style-generator/types`: type-only re-exports. Rationale: documents/architecture.md#typests-why-breakpoint-is-not-re-exported */
 export type {
   ThemeConfig,
   ThemeOverride,

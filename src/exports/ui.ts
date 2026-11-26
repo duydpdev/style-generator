@@ -1,12 +1,6 @@
 /**
- * Subpath: `@duydpdev/style-generator/ui`
- *
- * The styleless kit for building components over a theme: recipes from
- * plain class tables (`class-variance-authority`), a theme-aware `cn`
- * (`clsx` + `tailwind-merge`) and the layout/spacing prop splitters.
- * Browser-safe and framework-free; React types live in `./ui-react`.
- * Its three runtime imports are optional peer dependencies the app
- * installs. Not re-exported from the root.
+ * Subpath `@duydpdev/style-generator/ui`: styleless, framework-free kit of recipes, a theme-aware `cn` and prop splitters.
+ * Its runtime imports (`class-variance-authority`, `clsx`, `tailwind-merge`) are optional peers; not re-exported from the root.
  */
 export { contrastText, pick, recipeFromTables } from "../features/ui/recipe";
 export type {

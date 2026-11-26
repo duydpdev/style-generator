@@ -5,11 +5,7 @@ import type {
   RegistryPrefix,
 } from "../features/registry/builtInCategories";
 
-/**
- * Tailwind's default breakpoint keys. A const object (not an enum) so the
- * runtime values and the string-literal type are one structural thing:
- * `Breakpoint.MD` is `"md"`, and `const b: Breakpoint = "md"` compiles.
- */
+/** Tailwind's default breakpoint keys; a const object, so `"md"` is assignable to `Breakpoint`. */
 export const Breakpoint = {
   SM: "sm",
   MD: "md",
@@ -28,38 +24,18 @@ export const defaultScreens: Record<Breakpoint, string> = {
   [Breakpoint.XXL]: "1536px",
 };
 
-/**
- * Mapping of spacing property keys to the CSS properties each `sp-<key>`
- * utility sets (e.g. `p: ["padding"]`, `mx: ["margin-left", "margin-right"]`).
- */
+/** Spacing key → the CSS properties its `sp-<key>` utility sets (`p: ["padding"]`). */
 export type SpacingPropertyMap = Readonly<Record<string, readonly string[]>>;
 
 /**
- * How much of one token category's `@source inline` coverage to emit.
- * `coverage` only changes the `@source inline(...)` lines (class-name
- * coverage for classes Tailwind cannot see in source files): it trims
- * them, and `coverage.colors.opacities` adds one opacity-modifier line. It
- * never changes the `@theme inline` mapping or the `@utility` blocks; of the
- * typed `DesignTokens` only `opacities` (from `coverage.colors.opacities`)
- * depends on it.
+ * How much of one token category's `@source inline` coverage to emit; it
+ * never changes the `@theme inline` mapping or the `@utility` blocks.
  * @template P Class prefixes the category accepts
  */
 export interface CoverageRule<P extends string = RegistryPrefix> {
-  /**
-   * Keep only these class prefixes of the category (e.g. `["bg"]` for
-   * `colors`, which feeds `bg`, `text`, `border`, `ring`, `outline`, `divide` and `placeholder`). Non-empty (the type
-   * is a non-empty tuple); each entry must be one of the category's own
-   * prefixes, and `typography` has none (its class is the bare key).
-   * Applies to the category's state lines too.
-   */
+  /** Keep only these class prefixes of the category (state lines included). */
   prefixes?: readonly [P, ...P[]];
-  /**
-   * `"all"` (default): every key of the category. `"aliased"`: only the
-   * alias holders — keys whose value is a `$<key>` alias, in the base record
-   * or in any `themeAxes` override of the same category (e.g. `primary:
-   * "$blue600"`). The primitives they point to are consumed through
-   * `var(--sg-*)` and need no class. Not accepted for `typography`.
-   */
+  /** `"aliased"` keeps only the keys holding a `$<key>` alias (base or any override); default `"all"`. */
   keys?: "aliased" | "all";
 }
 
@@ -69,12 +45,7 @@ type CategoryPrefix<K extends CategoryKey> = Exclude<
   ""
 >;
 
-/**
- * One `coverage.colors.opacities` entry: a plain step, or a group of steps
- * with its own prefixes and theme color keys. Private: groups never reach
- * the typed tokens.
- * @template P Class prefixes the category accepts
- */
+// A plain opacity step, or a group with its own prefixes and color keys.
 type OpacityEntry<P extends string> =
   | number
   | {
@@ -83,33 +54,17 @@ type OpacityEntry<P extends string> =
       keys?: readonly [string, ...string[]];
     };
 
-/**
- * The opacity-modifier part of a `coverage` rule, accepted only by the
- * categories whose utilities take Tailwind's `/<n>` modifier (`colors`).
- * @template P Class prefixes the category accepts
- */
+// The opacity-modifier part of a `coverage` rule (`colors` only).
 interface OpacityCoverage<P extends string> {
   /**
-   * Also cover `<prefix>-<key>/<n>` (`bg-primary/10`) for every kept
-   * prefix and key and each listed step, in one extra `@source inline`
-   * line after the category's own line. Distinct integers 1–100
-   * (non-empty), emitted ascending. An entry may also be a group
-   * `{ steps, prefixes?, keys? }` that adds its own line after
-   * that one (`{ steps: [32], prefixes: ["bg"], keys: ["foreground"] }`
-   * covers `bg-foreground/32` only); omitted `prefixes`/`keys` are the
-   * rule's. Not crossed with the state lines:
-   * `hover:bg-primary-hover/10` still needs a literal class in your own
-   * `@source inline(...)`. Every step adds `prefixes × keys` classes to the built CSS.
+   * Also cover `<prefix>-<key>/<n>` for each step (distinct integers 1–100),
+   * plus one line per `{ steps, prefixes?, keys? }` group. Not crossed with
+   * the state lines; every step adds `prefixes × keys` classes.
    */
   opacities?: readonly [OpacityEntry<P>, ...OpacityEntry<P>[]];
 }
 
-/**
- * The `coverage` rule of category `K`: its own prefixes only. A category
- * without class prefixes or `$` aliases (`typography`) takes neither
- * `prefixes` nor `keys: "aliased"`, and only an opacity-modifier category
- * (`colors`) takes `opacities` — `generate()` rejects the rest.
- */
+// The `coverage` rule of category `K`, limited to what that category supports.
 type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
   never,
 ]
@@ -121,111 +76,53 @@ type CategoryCoverageRule<K extends CategoryKey> = [CategoryPrefix<K>] extends [
 
 /** Options of `generate()` and `createDesignTokens()`; `defineOptions`, `style-gen.config.json` and the Vite/Next plugins take the same shape. Unknown keys are rejected. */
 export interface StyleGeneratorOptions {
-  // Option declared in 4 places: here, optionsSchema.ts (zod shape),
-  // resolveTokenOptions.ts and resolveOptions.ts (resolved defaults). The
-  // types are pinned to each other by optionsSchema.test-d.ts.
+  // Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
   /**
-   * Breakpoint keys to use for responsive class generation: a `Breakpoint`
-   * value (`"sm"` … `"2xl"`) or a custom key declared in `screens`.
+   * Breakpoint keys for responsive classes: a `Breakpoint` or a `screens` key.
    * @default ["md", "lg"]
    */
   breakpoints?: readonly (Breakpoint | (string & {}))[];
 
-  /**
-   * Custom screens map to override defaults or add new ones.
-   * Example: { md: "800px", "3xl": "1920px" }
-   * Each value must be one length in px, rem or em, and the map merged with
-   * the px `defaultScreens` must use a single unit (override every default
-   * screen to switch to rem).
-   */
+  /** Screens merged over `defaultScreens`: one px/rem/em length each, one unit overall. */
   screens?: Record<string, string>;
 
   /**
-   * Enable responsive class generation in spacing CSS rules.
-   * Set to false if your project only targets a single viewport.
+   * Responsive `@media` chains in the spacing utilities.
    * @default true
    */
   enableResponsive?: boolean;
 
-  /**
-   * Typography configuration.
-   */
   typography?: {
     /**
-     * When true, inject typography tokens as CSS vars into :root and have
-     * utility classes reference those vars instead of hard-coded values.
-     * Allows consumer to override a single token via CSS without touching JS.
+     * Emit typography tokens as `:root` vars that the utilities read.
      * @default false
      */
     cssVarDriven?: boolean;
   };
 
-  // --- Spacing (CSS custom properties) ---
-
-  /**
-   * Spacing configuration. `generate()` emits one static
-   * `@utility sp-<key>` block per spacing key; each declaration reads a
-   * `var(--sg-sp-<key>)` custom property, with a per-breakpoint `var()`
-   * fallback chain inside nested `@media` rules.
-   */
+  /** One `@utility sp-<key>` per spacing key, reading `var(--sg-sp-<key>)`. */
   spacing?: {
     /** Disable spacing CSS rule generation entirely. Defaults to true. */
     enabled?: boolean;
-    /**
-     * Spacing key → CSS properties, e.g. `{ p: ["padding"] }`. REPLACES the
-     * defaults: spread `DEFAULT_SPACING_PROPERTIES` to extend them.
-     */
+    /** Spacing key → CSS properties; REPLACES the defaults (spread `DEFAULT_SPACING_PROPERTIES`). */
     properties?: SpacingPropertyMap;
   };
 
   /**
-   * Trim or extend the `@source inline(...)` coverage per token category.
-   * Absent, `true` or `{}` keeps today's output (one line per category
-   * covering every key and prefix, plus the colors state lines). `false`
-   * omits the category's lines (and its state lines); a {@link CoverageRule}
-   * keeps only the listed `prefixes` and/or the alias holders
-   * (`keys: "aliased"`). `colors` also takes `opacities` (e.g. `[10, 20]`):
-   * one extra line covering `<prefix>-<key>/<n>` for the kept prefixes and
-   * keys (`bg-primary/10`), never crossed with the state lines. An
-   * `opacities` entry may be a group `{ steps, prefixes?, keys? }` that adds
-   * its own line (`bg-foreground/32` without the full line).
-   * The plain steps become `DesignTokens.Web.opacities` (groups never do);
-   * the other typed tokens and the `@theme`/`@utility` CSS are unaffected.
-   *
-   * Validated by `generate()`: keys must be built-in category names, every
-   * `prefixes` entry a class prefix of that category, `keys: "aliased"`
-   * is rejected for `typography` (it has no `$` aliases), and `opacities`
-   * must be a non-empty list of distinct integers 1–100 or groups (every
-   * group `keys` entry a `theme.colors` key), accepted only for `colors`.
+   * Trim or extend the `@source inline(...)` coverage per category: `false`
+   * drops it, a {@link CoverageRule} narrows it, `colors.opacities` adds
+   * `/<n>` classes (plain steps become `DesignTokens.Web.opacities`).
    */
   coverage?: { [K in CategoryKey]?: boolean | CategoryCoverageRule<K> };
 
   /**
-   * Tailwind default theme namespaces to clear before the theme's own values
-   * are mapped, as `--color-*: initial;` / `--radius-*: initial;` /
-   * `--shadow-*: initial;` lines at the top of `@theme inline`. After it,
-   * `bg-red-500`, `rounded-md` or `shadow-md` no longer compile unless the
-   * theme declares them.
-   *
-   * `"colors"` also removes `--color-white`/`--color-black`: declare them in
-   * `colors` if you use them. `rounded-full`, `rounded-none` and
-   * `shadow-none` are static utilities and stay. `inset-shadow-*`,
-   * `drop-shadow-*` and `text-shadow-*` are other namespaces and are not
-   * touched.
-   *
-   * Validated by `generate()`: `"radius"` needs a non-empty
-   * `theme.borderRadius` and `"shadow"` a non-empty `theme.shadows`, or the
-   * defaults would be wiped with nothing to replace them.
+   * Tailwind default namespaces to clear (`--color-*: initial;` …) at the top
+   * of `@theme inline`; each needs a non-empty replacement in the theme.
    * @default []
    */
   resetTailwindDefaults?: readonly ("colors" | "radius" | "shadow")[];
 }
 
-/**
- * `O` plus a `never` slot for every top-level key `StyleGeneratorOptions`
- * does not declare. A `const O extends StyleGeneratorOptions` type parameter
- * skips the excess-property check, so `generate(theme, { screnes })` would
- * compile; this restores it without losing `const` inference.
- */
+/** `O` with `never` for unknown keys: restores the excess-property check a `const O` parameter skips. */
 export type ExactOptions<O> = O &
   Readonly<Record<Exclude<keyof O, keyof StyleGeneratorOptions>, never>>;

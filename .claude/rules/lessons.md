@@ -73,7 +73,7 @@ When a new rule replaces an old entry, edit or merge it in place; never leave tw
 - **Context:** The Antigravity/Gemini agent framework (a root `.agent` directory plus copies of agents/commands/skills under `.claude`) was out of sync with the runtime and forced running Python scripts that are not part of a TypeScript library's workflow. Docs were scattered across root `docs/` and `plans/`; plans as flat files + a per-day `task.md` were hard to follow when one plan has several phases. Plans/brainstorms before 2026-09-28 describe the API removed in 4.0.0.
 - **New Rule:**
   1. The source of truth for agents is `.claude/CLAUDE.md` + `.claude/rules/*.md`. Do not add agent/command/skill directories back to the repo; use the runtime's skills.
-  2. All documentation lives under `documents/` following the layout in the "Documentation layout" section of `.claude/CLAUDE.md`; `.agentkit/config.yaml` points `paths.docs`/`paths.plans` there. If any tool creates a root `docs/` or `plans/`, move the files into `documents/` before committing and fix that tool's configuration.
+  2. All documentation lives under `documents/` following the layout in `.claude/rules/documentation-layout.md`; `.agentkit/config.yaml` points `paths.docs`/`paths.plans` there. If any tool creates a root `docs/` or `plans/`, move the files into `documents/` before committing and fix that tool's configuration.
   3. Look up pre-2026-09-28 history in git history; do not restore it into the tree.
 
 ### [2026-09-30] - "Local build green" is not proof when node_modules holds hand-made links

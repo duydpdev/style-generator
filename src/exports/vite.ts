@@ -1,12 +1,4 @@
-/**
- * Subpath: `@duydpdev/style-generator/vite`
- *
- * Vite plugin that auto-emits `theme.css` from a theme JSON. Eliminates
- * manual `predev`/`prebuild` scripts for Tailwind v4 consumers.
- *
- * Vite is an optional peer dependency — install separately:
- * `yarn add -D vite`
- */
+/** Subpath `@duydpdev/style-generator/vite`: Vite plugin that emits `theme.css` from a theme JSON (`vite` is an optional peer). */
 export {
   styleGenVite,
   type StyleGenViteOptions,

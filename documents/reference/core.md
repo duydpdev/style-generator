@@ -111,23 +111,8 @@ export declare function generate<
 ): GenerateResult<TTheme, O>;
 ```
 
-Generate the complete registry-driven CSS string (breakpoint `@theme`
-override + theme vars + `@theme inline` mapping + typography/spacing
-`@utility` blocks) and typed design tokens for a theme. Returns a single
-static CSS string meant to be written to a file and `@import`ed alongside
-`@import "tailwindcss"` (Tailwind v4 only).
-
-Validates `options` first, then `theme` against `ThemeSchema` — independent
-of whether the caller already went through `defineTheme()` — so CLI/Vite/
-Next callers that hand it raw `JSON.parse()` output get the same
-guarantees. Both failures are a `ZodError`.
-
-With `options`, their literal `breakpoints`, `screens` and
-`spacing.properties` keys type `tokens`; options typed as
-`StyleGeneratorOptions`, or an explicit `<typeof theme>` type argument
-(which leaves `O` at its default), widen them to `string`. Without
-`options` the tokens carry the library defaults.
-`generate()` with `options`.
+Validate options, then the theme; return the Tailwind v4 CSS, typed tokens and theme JSON Schema.
+`generate()` with `options`, whose literal keys type `tokens`.
 
 <!-- /signature -->
 
@@ -213,16 +198,7 @@ The type of what `generate()` returns for a theme and options type; it is export
 export declare function defineTheme<const T extends ThemeConfig>(config: T): T;
 ```
 
-Runtime-validated theme config helper — the only place `defineTheme` is
-exported from is the root barrel (`.`), never `./tokens`, so Zod never
-reaches the browser-safe subpaths. Parses `config` against `ThemeSchema`
-and returns the parsed result, throwing a `ZodError` (with a precise
-`path`) for unknown keys or CSS-injection-unsafe values.
-
-`generate()`, the CLI, and the Vite plugin all re-validate independently,
-so calling `defineTheme()` is optional — but doing so surfaces the same
-error as an IDE type error too, since `T` is checked against
-`ThemeConfig` at compile time.
+Validate a theme against `ThemeSchema` and keep its literal types.
 
 <!-- /signature -->
 
@@ -238,10 +214,7 @@ export declare function defineOptions<const O extends StyleGeneratorOptions>(
 ): O;
 ```
 
-Type-safe options helper. Zero runtime cost. `const O` keeps the literal
-`breakpoints`, `screens` and `spacing.properties` keys, which flow into
-`DesignTokensWeb<T, O>` when the same object is passed to `generate()` or
-`createDesignTokens()`.
+Type-only options helper: `const O` keeps the literal keys that type the tokens.
 
 <!-- /signature -->
 
@@ -255,13 +228,8 @@ Type-safe options helper with no runtime cost; it keeps literal `breakpoints`, `
 export declare const formatZodError: (error: z.ZodError) => string;
 ```
 
-Format every issue in a `ZodError` as one `"path → message"` line, safe to
-print to a terminal or throw as a plain `Error` message — every CLI/Vite
-consumer that catches a `ZodError` from `ThemeSchema.parse()` funnels it
-through this instead of dumping the raw (deeply nested) `ZodError` object.
-Record-key grammar failures arrive as `invalid_key` wrappers whose useful
-message (e.g. the `_` hint) lives in the nested issues, so those are
-surfaced instead of Zod's generic "Invalid key in record".
+Format every issue in a `ZodError` as one `"path → message"` line. Nested
+`invalid_key` issues are surfaced instead of Zod's generic record-key message.
 
 <!-- /signature -->
 

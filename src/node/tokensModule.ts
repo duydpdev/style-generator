@@ -1,11 +1,5 @@
 /**
- * Render the generated `theme.tokens.ts` module: the design-token keys
- * (`DesignTokens.Web`), their type, the `themeAxes` variant names and the
- * `ThemeAxesState` type that `themeAxisAttributes` takes.
- *
- * Each export statement is preceded by `// prettier-ignore`, so a project that
- * runs Prettier over the file never reformats it and `style-gen generate
- * --check` can compare bytes. Pure: the same inputs give the same text.
+ * Render `theme.tokens.ts`; each export is `// prettier-ignore`d so `--check` compares bytes.
  * @param {object} web - `DesignTokens.Web`, serialised as JSON
  * @param {Readonly<Record<string, Readonly<Record<string, unknown>>>> | undefined} themeAxes - The theme's `themeAxes`; only the axis and variant names are kept
  * @returns {string} The module source, ending in a newline

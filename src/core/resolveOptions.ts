@@ -5,7 +5,6 @@ import type { ResolvedTokenOptions } from "./resolveTokenOptions";
 /** A breakpoint resolved to its screen width. */
 export interface ResolvedBreakpoint {
   key: string;
-  /** The screen width as written (`"768px"`, `"48rem"`). */
   value: string;
   /** The leading number of `value`, unit ignored (`parseFloat`). */
   numericValue: number;
@@ -18,11 +17,10 @@ export interface ResolvedOpacityGroup {
   steps: readonly number[];
   /** `undefined`: the rule's covered prefixes. */
   prefixes: readonly string[] | undefined;
-  /** Theme color keys as written; `undefined`: the rule's covered keys. */
+  /** `undefined`: the rule's covered keys. */
   keys: readonly string[] | undefined;
 }
 
-/** One raw `opacities` entry as `resolveCoverage` reads it (any category's rule). */
 type RawOpacityEntry =
   | number
   | {
@@ -37,41 +35,22 @@ export interface ResolvedCoverageRule {
   enabled: boolean;
   /** Class prefixes to keep; `undefined` keeps every prefix of the category. */
   prefixes: readonly string[] | undefined;
-  /** `"aliased"` keeps only the keys whose value is a `$<key>` alias. */
   keys: "aliased" | "all";
-  /** Plain opacity-modifier steps to cover (`/10`), ascending; `[]`: none. */
+  /** Plain opacity-modifier steps, ascending. */
   opacities: readonly number[];
-  /** Opacity groups in declaration order (see `coverage.colors.opacities`). */
   opacityGroups: readonly ResolvedOpacityGroup[];
 }
 
-/**
- * `StyleGeneratorOptions` with every default applied once, so the CSS and
- * token pipelines read plain values instead of each repeating
- * `options.x ?? DEFAULT_X`.
- */
+/** `StyleGeneratorOptions` with every default applied once; never re-apply `?? DEFAULT_X` downstream. */
 export interface ResolvedOptions extends ResolvedTokenOptions {
-  // Option declared in 4 places: here, Options.ts (public type),
-  // optionsSchema.ts (zod shape) and resolveTokenOptions.ts (the options the
-  // typed tokens read). Pinned by optionsSchema.test-d.ts. The two resolve
-  // files stay separate to keep `./tokens` small.
-  /**
-   * `breakpoints` that have a screen width, ascending by width — the order of
-   * the spacing `@media` fallback chain. Empty when `enableResponsive` is
-   * `false`.
-   */
+  // Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
+  /** Breakpoints with a screen width, ascending; empty when `enableResponsive` is `false`. */
   sortedBreakpoints: readonly ResolvedBreakpoint[];
   enableResponsive: boolean;
   typographyCssVarDriven: boolean;
-  /**
-   * Only the categories `options.coverage` mentions, by category key; a
-   * category that is absent here uses the default (everything).
-   */
+  /** Only the categories `options.coverage` mentions; an absent one covers everything. */
   coverage: Readonly<Record<string, ResolvedCoverageRule>>;
-  /**
-   * The Tailwind default namespaces to clear (`[]`: none). Order and
-   * duplicates are kept as written; the CSS generator emits each name once.
-   */
+  /** As written (order and duplicates kept); the CSS generator emits each name once. */
   resetTailwindDefaults: readonly ("colors" | "radius" | "shadow")[];
 }
 
@@ -129,9 +108,7 @@ const resolveCoverage = (
 };
 
 /**
- * Resolve every default of the generator options exactly once. Pure: the
- * same options always give an equal result, and `options` is not mutated.
- * Expects options that already passed `StyleGeneratorOptionsSchema`.
+ * Resolve every option default once; pure, expects options that passed `StyleGeneratorOptionsSchema`.
  * @param {StyleGeneratorOptions} [options] - Raw generator options
  * @returns {ResolvedOptions} Options with every default applied
  */

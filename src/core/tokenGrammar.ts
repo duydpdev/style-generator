@@ -2,34 +2,14 @@ import { z } from "zod";
 
 import { toCamelCase, toKebabCase } from "../shared/helpers";
 
-/**
- * Bare regex source (no anchors) for a single theme record key: must start
- * with an alphanumeric character, then any run of alphanumerics and `-`.
- * `_` is rejected on purpose: `toKebabCase` preserves it (`bg-primary_active`)
- * while the typed tokens camelCase it away (`primaryActive`), so the class a
- * mapper emits would not exist. Relaxing this later is non-breaking.
- * Shared between {@link TokenKey} (key grammar) and {@link ALIAS_VALUE_RE}
- * (alias sigil target grammar) so both accept exactly the same key shape.
- */
+// Shared by `TokenKey` and the alias target so both accept the same key shape.
 const TOKEN_KEY_SOURCE = "[A-Za-z0-9][A-Za-z0-9-]*";
 export const TOKEN_KEY_RE = new RegExp(`^${TOKEN_KEY_SOURCE}$`);
 
 /**
- * Key grammar shared by every theme record (colors, typography, shadows,
- * backdrop blurs, border radius, border width, font family, theme override
- * names, theme axis and variant names): must start with an alphanumeric
- * character, then any run of alphanumerics and `-`. Rejects accidental typos like `"colours"` only
- * via `strictObject` unknown key checks — this regex instead guards
- * against structurally unsafe keys (spaces, leading dashes, semicolons,
- * ...) that could otherwise be echoed into `generate().css` as a CSS
- * custom-property name or selector.
- *
- * A key must also keep its class through the typed tokens: the registry
- * emits `toKebabCase(key)` while `createDesignTokens` exposes
- * `toCamelCase(key)`, which `createVariantMapper` kebab-cases again. A
- * leading uppercase run breaks that round trip (`CTA` → `bg-cta`, but token
- * `cTA` → `bg-c-ta`), so such keys are rejected with the rename that keeps
- * the registry class.
+ * Key grammar of every theme record, axis and variant name: no character that
+ * could be echoed unsafely into the CSS, and a class that survives the typed-token round trip.
+ * Rationale: documents/architecture.md#tokenkey-why-underscores-and-leading-uppercase-runs-are-rejected
  */
 export const TokenKey = z
   .string()
@@ -49,12 +29,6 @@ export const TokenKey = z
     }
   });
 
-/**
- * A `"` and `'` are only safe when balanced — an odd count means the value
- * can break out of a quoted CSS/HTML attribute context.
- * @param {string} v - Candidate token value
- * @returns {boolean} `true` when both quote characters appear an even number of times
- */
 const quotesBalanced = (v: string): boolean => {
   const doubleQuotes = (v.match(/"/g) ?? []).length;
   const singleQuotes = (v.match(/'/g) ?? []).length;
@@ -63,15 +37,7 @@ const quotesBalanced = (v: string): boolean => {
 
 const BRACKET_OPENER: Readonly<Record<string, string>> = { ")": "(", "]": "[" };
 
-/**
- * Find the first unbalanced `(`/`[` in a value, ignoring brackets inside a
- * quoted string (`"Brand (Display", serif` is balanced). An unbalanced
- * bracket otherwise reaches Tailwind as an unclosed block and fails far from
- * the theme key (`Missing closing } at :root`). Unbalanced quotes are left to
- * {@link quotesBalanced}.
- * @param {string} v - Candidate token value
- * @returns {string | undefined} The first problem found, or `undefined` when balanced
- */
+// First unbalanced `(`/`[` outside quoted strings, or `undefined`.
 const findUnbalancedBracket = (v: string): string | undefined => {
   const stack: string[] = [];
   let quote: string | undefined;
@@ -94,16 +60,9 @@ const findUnbalancedBracket = (v: string): string | undefined => {
 };
 
 /**
- * Token value grammar: rejects characters that could inject a new CSS rule,
- * an HTML tag, an at-rule, a comment, or a line break into `generate().css`
- * (`;`, `{`, `}`, `<`, `@`, `\`, `/ *`, `\n`, `\r`), rejects unbalanced
- * quotes, and rejects unbalanced `(`/`[` outside quoted strings
- * ({@link findUnbalancedBracket}). Balanced quotes stay valid because
- * `fontFamily` legitimately needs them (e.g. `"Plus Jakarta Sans",
- * system-ui`). A value of the form `"$<TokenKey>"` (see
- * {@link ALIAS_VALUE_RE}) is a valid `TokenValue` too — it is resolved into
- * `var(--<cssVarPrefix>-<key>)` by `flattenByCategory` once `ThemeSchema`'s
- * alias refinement has proven the reference exists and is acyclic.
+ * Token value grammar: no CSS/HTML injection characters, balanced quotes and
+ * balanced `(`/`[`. A `"$<key>"` alias is a valid value too.
+ * Rationale: documents/architecture.md#tokenvalue-what-the-value-grammar-blocks-and-why-quotes-stay-legal
  */
 export const TokenValue = z
   .string()
@@ -121,11 +80,7 @@ export const TokenValue = z
     }
   });
 
-/**
- * Alias sigil grammar: `"$"` + one {@link TokenKey}, optionally followed by
- * `/<n>` (n an integer percent 1–100, no leading zero). Resolved by
- * `flattenByCategory.ts`: `var(--…)`, or `color-mix(…)` when `/<n>` is set.
- */
+// `$<key>`, optionally `/<n>` with n an integer percent 1–100.
 const ALIAS_VALUE_RE = new RegExp(
   `^\\$(${TOKEN_KEY_SOURCE})(?:/(100|[1-9]\\d?))?$`,
 );
@@ -157,15 +112,7 @@ export const parseAliasRef = (value: string): AliasRef | undefined => {
 export const parseAlias = (value: string): string | undefined =>
   parseAliasRef(value)?.key;
 
-/**
- * `TokenValue`, further restricted to reject a leading `$` — the alias
- * sigil (`$<TokenKey>`, see {@link ALIAS_VALUE_RE}) is only resolved by
- * `flattenByCategory.ts` for the CSS-var categories (`cssVarCategories`);
- * `typography` has no CSS variable
- * representation of its own (`generateTypographyCss.ts` emits literal
- * property values), so a `$`-prefixed value would leak into the compiled
- * CSS unresolved (e.g. a literal `font-size: $primary;`).
- */
+/** `TokenValue` without a leading `$`: typography emits literal values, so an alias would leak unresolved. */
 export const TypographyValue = TokenValue.refine(
   (v) => !v.startsWith("$"),
   "aliases are not supported in typography",
@@ -205,14 +152,7 @@ const STEP_POSITIONS = new Set([
   "end",
 ]);
 
-/**
- * Whether `value` is one CSS easing function: a keyword,
- * `cubic-bezier(x1, y1, x2, y2)` (x1 and x2 in 0–1) or
- * `steps(n[, position])` (n a positive integer, at least 2 with `jump-none`,
- * which the CSS Easing spec requires).
- * @param {string} value - Candidate easing
- * @returns {boolean} `true` for a valid easing function
- */
+// CSS Easing requires at least 2 steps with `jump-none`.
 const isEasing = (value: string): boolean => {
   if (EASING_KEYWORDS.has(value)) return true;
   const call = /^(cubic-bezier|steps)\(([^()]*)\)$/.exec(value);
@@ -234,11 +174,7 @@ const isEasing = (value: string): boolean => {
   return [x1, x2].every((x) => x !== undefined && x >= 0 && x <= 1);
 };
 
-/**
- * `motionEasing` value: `linear`, `ease`, `ease-in`, `ease-out`,
- * `ease-in-out`, `step-start`, `step-end`, `cubic-bezier(x1, y1, x2, y2)` or
- * `steps(n[, position])`.
- */
+/** `motionEasing` value: a keyword, `cubic-bezier(…)` or `steps(…)`. */
 export const EasingValue = z
   .string()
   .refine(

@@ -10,7 +10,7 @@ import { defineConfig } from "tsdown";
 // `attachDebugInfo: "none"` drops rolldown's `//#region`/`//#endregion` module
 // markers (about 570 B gzip); the sourcemap still maps every module.
 export default defineConfig({
-  entry: ["src/cli/index.ts"],
+  entry: ["src/cli/missing-entry.ts"],
   format: "esm",
   platform: "node",
   outDir: "dist/cli",

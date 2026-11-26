@@ -1,4 +1,4 @@
-<!-- source: documents/reference/tokens.md sha256: 489d500ae7d8 -->
+<!-- source: documents/reference/tokens.md sha256: 2f28c9036ed4 -->
 
 # Design token (./tokens)
 
@@ -84,9 +84,7 @@ export declare const Breakpoint: {
 export declare type Breakpoint = (typeof Breakpoint)[keyof typeof Breakpoint];
 ```
 
-Tailwind's default breakpoint keys. A const object (not an enum) so the
-runtime values and the string-literal type are one structural thing:
-`Breakpoint.MD` is `"md"`, and `const b: Breakpoint = "md"` compiles.
+Tailwind's default breakpoint keys; a const object, so `"md"` is assignable to `Breakpoint`.
 
 <!-- /signature -->
 
@@ -154,8 +152,7 @@ Border class prefixes (`border`, `border-x` … `divide-y`) as a mutable array, 
 export declare const roundedProperties: (typeof ROUNDED_PREFIXES)[number][];
 ```
 
-Mutable copies of the prefix lists, typed with the literal unions so they
-pass `createVariantMapper(borderProperties, keys)` as they are.
+Rounded class prefixes as a mutable array, typed so it passes `createVariantMapper(roundedProperties, keys)` as is.
 
 <!-- /signature -->
 

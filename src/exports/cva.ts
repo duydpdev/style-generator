@@ -1,9 +1,4 @@
-/**
- * Subpath: `@duydpdev/style-generator/cva`
- *
- * `createVariantMapper` + the color-state list (`COLOR_STATES`) it consumes —
- * small surface for class-variance-authority users.
- */
+/** Subpath `@duydpdev/style-generator/cva`: `createVariantMapper` and the `COLOR_STATES` list it consumes. */
 export { createVariantMapper } from "../features/cva/createVariantMapper";
 export { COLOR_STATES } from "../shared/colorStates";
 export type { ColorState } from "../shared/colorStates";

@@ -3,11 +3,7 @@ import path from "node:path";
 
 /** Options of {@link sameFile}. */
 export interface SameFileOptions {
-  /**
-   * Whether the filesystem holding `dir` ignores case. Defaults to
-   * {@link isCaseInsensitiveDir}; a test injects it to cover both kinds of
-   * filesystem on one machine.
-   */
+  /** Whether `dir`'s filesystem ignores case; default {@link isCaseInsensitiveDir}. */
   caseInsensitive?: (dir: string) => boolean;
 }
 
@@ -20,9 +16,7 @@ const statBig = (file: string): fs.BigIntStats | undefined => {
 };
 
 /**
- * Whether the filesystem of an existing directory ignores case: stat it with
- * its basename's case flipped and compare `dev` + `ino`. Read-only. A
- * basename without a letter (`/`) proves nothing and reads as case-sensitive.
+ * Whether an existing directory's filesystem ignores case (flipped basename, same `dev` + `ino`).
  * @param {string} dir - An existing directory, as `realpath` returns it
  * @returns {boolean} True when the flipped name reaches the same directory
  */
@@ -66,15 +60,8 @@ const canonicalize = (file: string): Canonical => {
 };
 
 /**
- * Whether two paths name one file, so a write to one clobbers the other.
- * - Both exist: the same `dev` + `ino` (a symlink, a hard link or a
- *   case-insensitive spelling all qualify).
- * - Exactly one exists: different files.
- * - Neither exists: the same `realpath` of the deepest existing ancestor plus
- *   the remaining segments, ignoring case only when a read-only probe shows
- *   that ancestor's filesystem is case-insensitive.
- * An inode number of `0` (some Windows filesystems) is unknown and falls back
- * to the canonical-path rule.
+ * Whether two paths name one file: same `dev` + `ino` (inode `0` is unknown) when both exist, never
+ * when one does, else same `realpath`-ed ancestor + tail, case-folded only where the FS ignores case.
  * @param {string} a - One path, resolved against the working directory
  * @param {string} b - The other path
  * @param {SameFileOptions} [options] - Test seams

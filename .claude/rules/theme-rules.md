@@ -3,11 +3,14 @@ paths:
   - "src/core/**"
   - "src/features/**"
   - "src/shared/**"
+  - "src/exports/**"
+  - "src/index.ts"
+  - "src/__integration__/**"
 ---
 
 # Theme, registry and feature rules
 
-Loaded when a file under `src/core`, `src/features` or `src/shared` is read. Source layout and public exports: `documents/architecture.md`, `documents/reference/`.
+Loaded when a file under `src/core`, `src/features`, `src/shared`, `src/exports`, `src/__integration__` or `src/index.ts` is read. Source layout and public exports: `documents/architecture.md`, `documents/reference/`.
 
 ## Architecture
 

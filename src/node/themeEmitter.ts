@@ -16,13 +16,7 @@ import { errorMessage } from "./errorMessage";
 import { renderTokensModule } from "./tokensModule";
 import { writeFileAtomic } from "./writeFileAtomic";
 
-/**
- * Where an emit failed. `read` → `parse` → `options` → `theme` → `cross`
- * (theme × options) → `generate` → `write` are the steps of {@link emitTheme};
- * `stale` is reported by {@link checkTokensModule} only (the tokens file is
- * missing or differs); `config` (an invalid `style-gen.config.json` on reload)
- * and `watch` (a watcher error) are reported by `watchThemeFile` only.
- */
+/** Where an emit failed: {@link emitTheme}'s steps, `stale` (check), `config`/`watch` (watcher). */
 export type EmitStage =
   | "read"
   | "parse"
@@ -35,40 +29,28 @@ export type EmitStage =
   | "config"
   | "watch";
 
-/**
- * What {@link emitTheme} needs: the theme, where the CSS and the tokens module
- * go, the options.
- */
+/** What {@link emitTheme} needs; every path is absolute. */
 export interface EmitTarget {
-  /** Absolute path of the theme JSON. */
   themeFile: string;
-  /** Absolute path of the CSS file to write. */
   outFile: string;
-  /** Absolute path of the generated `theme.tokens.ts` to write. */
   tokensFile: string;
   /** `generate()` options, validated by the emitter. */
   options?: StyleGeneratorOptions;
 }
 
-/**
- * The outcome of one emit. A failure never throws: `message` is ready to
- * print (the same wording the CLI uses) and `cause` is the original error.
- */
+/** One emit's outcome; on failure `message` is ready to print, `cause` the original error. */
 export type EmitResult =
   | {
       ok: true;
       outFile: string;
       tokensFile: string;
-      /** `false`: both files already held exactly this content and were left alone. */
+      /** `false`: the file(s) already held exactly this content and were left alone. */
       changed: boolean;
-      /** `false`: the CSS file already held exactly this CSS. */
       cssChanged: boolean;
-      /** `false`: the tokens file already held exactly this module. */
       tokensChanged: boolean;
     }
   | { ok: false; stage: EmitStage; message: string; cause: unknown };
 
-/** The failure branch of {@link EmitResult}. */
 type EmitFailure = Extract<EmitResult, { ok: false }>;
 
 const fail = (
@@ -84,8 +66,6 @@ const readFailure = (themeFile: string, error: unknown): string => {
   return `Cannot read ${themeFile}: ${errorMessage(error)}`;
 };
 
-// The header line of a validation failure at `stage` (`themeFile` names the
-// theme in the `theme` header).
 const validationHeader = (stage: PrepareStage, themeFile: string): string => {
   switch (stage) {
     case "options":
@@ -103,11 +83,7 @@ export type PreparedTheme =
   | { ok: false; stage: EmitStage; message: string; cause: unknown };
 
 /**
- * The front half of {@link emitTheme}, for callers with another back half
- * (`style-gen tokens`): read the theme file, parse the JSON and run
- * `prepareGenerate` — the same validation `generate()` does, with the
- * stage labels and messages of {@link emitTheme}. Writes nothing and
- * never throws.
+ * The read-and-validate half of {@link emitTheme}; writes nothing, never throws.
  * @param {string} themeFile - Absolute path of the theme JSON
  * @param {StyleGeneratorOptions} [options] - `generate()` options
  * @returns {PreparedTheme} The validated theme and resolved options, or the failing stage
@@ -136,8 +112,7 @@ export function readAndPrepareTheme(
 
   let stage: PrepareStage = "options";
   try {
-    // `JSON.parse` output is unknown: `prepareGenerate` validates it before
-    // anything reads it as a theme.
+    // `prepareGenerate` validates the cast value before anything reads it.
     const { parsed, resolved } = prepareGenerate(
       json as ThemeConfig,
       options,
@@ -162,15 +137,12 @@ export function readAndPrepareTheme(
   }
 }
 
-// The committed tokens file may hold CRLF after a `core.autocrlf` checkout.
-// The ONE comparison `emitTokensModule` and `checkTokensModule` share, so a
-// checkout that `generate --check` accepts is never rewritten by an emit.
+// Ignores CRLF (`core.autocrlf`); shared by emit and check, so a checkout
+// that `generate --check` accepts is never rewritten.
 const tokensModuleCurrent = (existing: string, expected: string): boolean =>
   existing.replace(/\r\n/g, "\n") === expected;
 
-// `content` was written (atomically, creating the directory) unless the file
-// already held it (`isCurrent`, byte-exact by default). A missing or
-// unreadable file counts as changed; a real problem surfaces from the write.
+// A missing or unreadable file counts as changed; a real problem surfaces from the write.
 const writeIfChanged = (
   file: string,
   content: string,
@@ -189,7 +161,6 @@ const writeIfChanged = (
   return true;
 };
 
-/** A theme that passed {@link readAndPrepareTheme}. */
 type ValidTheme = Extract<PreparedTheme, { ok: true }>;
 
 const renderTokens = (prepared: ValidTheme): string =>
@@ -199,9 +170,7 @@ const renderTokens = (prepared: ValidTheme): string =>
   );
 
 /**
- * Write the generated `theme.tokens.ts` of a validated theme to `tokensFile`
- * (see {@link renderTokensModule}), only when its content changes. Throws on a
- * write error: callers wrap it into their own failure.
+ * Write a validated theme's `theme.tokens.ts` when it changes; throws on a write error.
  * @param {ValidTheme} prepared - What {@link readAndPrepareTheme} returned for the theme
  * @param {string} tokensFile - Absolute path of the module to write
  * @returns {{ changed: boolean }} `changed: false` when the file already held this module
@@ -220,19 +189,10 @@ export function emitTokensModule(
 }
 
 /**
- * Read the theme, validate it with the options, generate the CSS and the
- * tokens module and write both — the one pipeline behind the Vite plugin, the
- * Next.js integration, `style-gen generate` and `style-gen tokens`. Validation
- * is the same `prepareGenerate` that `generate()` runs, so the verdicts cannot
- * drift.
- *
- * A file is written only when its content changes (and atomically, so
- * Tailwind never reads a half-written file); the output directories are
- * created when missing. Never throws: every failure comes back as
- * `{ ok: false, stage, message, cause }`. Synchronous, so a bundler hook
- * can finish before the CSS is `@import`ed.
+ * Read and validate the theme, then generate and write the CSS and tokens module. Never throws.
  * @param {EmitTarget} target - Theme file, output files and generator options
  * @returns {EmitResult} `{ ok: true, outFile, tokensFile, changed, cssChanged, tokensChanged }` or the failing stage
+ * Rationale: documents/architecture.md#emittheme-one-synchronous-pipeline-that-writes-only-on-change
  */
 export function emitTheme(target: EmitTarget): EmitResult {
   const { themeFile, outFile, tokensFile, options } = target;
@@ -284,14 +244,7 @@ export function emitTheme(target: EmitTarget): EmitResult {
 }
 
 /**
- * Report whether `tokensFile` is the module the theme and options generate,
- * without writing anything (`style-gen generate --check`). A missing file and
- * a different one are both `stage: "stale"` (the CLI adds the command that
- * fixes it, for the project's package manager); a tokens file that exists but
- * cannot be read is `stage: "read"`. Line endings are ignored on the
- * disk side, so a checkout with `core.autocrlf` is not stale. Validation
- * failures carry the stage and message {@link emitTheme} would report. Never
- * throws.
+ * Whether `tokensFile` is current (`generate --check`): missing or different is `stale`. Never throws.
  * @param {Pick<EmitTarget, "themeFile" | "tokensFile" | "options">} target - Theme file, tokens file and generator options
  * @returns {{ ok: true } | { ok: false; stage: EmitStage; message: string; cause: unknown }} `{ ok: true }` when the file is current
  */

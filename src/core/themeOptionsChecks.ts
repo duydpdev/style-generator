@@ -3,28 +3,22 @@ import { z } from "zod";
 import type { ResolvedOptions } from "./resolveOptions";
 import type { ThemeConfig } from "./themeSchema";
 
-/** The one issue shape the theme × options checks report. */
 interface OptionsIssue {
   code: "custom";
   path: (string | number)[];
   message: string;
 }
 
-/** Where the checks report to: the plain collector `assertThemeOptions` uses. */
 interface OptionsIssueCtx {
   addIssue: (issue: OptionsIssue) => void;
 }
 
 /**
- * Check `resetTailwindDefaults` against the theme: clearing Tailwind's
- * `--color-*`, `--radius-*` or `--shadow-*` defaults while the theme declares
- * no replacement would leave `bg-red-500`/`rounded-md`/`shadow-md` compiling
- * to nothing with no theme value to take over. `ThemeSchema` accepts
- * `colors: {}`, so `"colors"` needs a non-empty record like the others.
+ * Each cleared Tailwind namespace needs a non-empty theme record to replace it
+ * (`ThemeSchema` accepts `colors: {}`).
  * @param {OptionsIssueCtx} ctx - Issue collector
  * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
  * @param {ResolvedOptions["resetTailwindDefaults"]} reset - Resolved `resetTailwindDefaults`
- * @returns {void}
  */
 export const checkResetTailwindDefaults = (
   ctx: OptionsIssueCtx,
@@ -49,13 +43,10 @@ export const checkResetTailwindDefaults = (
 };
 
 /**
- * Check every `coverage.colors.opacities` group `keys` entry against the
- * theme's `colors`: a key that is not one would emit a class no theme token
- * produces, so a typo is reported at its own path instead of dropped.
+ * Every opacity group `keys` entry must be a `theme.colors` key.
  * @param {OptionsIssueCtx} ctx - Issue collector
  * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
  * @param {ResolvedOptions["coverage"]} coverage - Resolved `coverage`
- * @returns {void}
  */
 export const checkOpacityGroupKeys = (
   ctx: OptionsIssueCtx,
@@ -76,13 +67,9 @@ export const checkOpacityGroupKeys = (
 };
 
 /**
- * Run every check that needs both the theme and the options and throw every
- * issue as one `ZodError`, like the other `generate()` option and theme
- * failures: today {@link checkResetTailwindDefaults} and
- * {@link checkOpacityGroupKeys}.
+ * Run every theme × options check and throw all issues as one `ZodError`.
  * @param {ThemeConfig} theme - Theme already parsed by `ThemeSchema`
  * @param {Pick<ResolvedOptions, "resetTailwindDefaults" | "coverage">} resolved - Resolved options
- * @returns {void}
  * @throws {z.ZodError} on a reset with no theme replacement or an unknown opacity group key
  */
 export const assertThemeOptions = (

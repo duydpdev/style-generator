@@ -2,22 +2,8 @@ import type { z } from "zod";
 
 import { parseAlias, parseAliasRef } from "./tokenGrammar";
 
-/**
- * Report a `ZodIssue` for every alias value in `ownEntries` that either
- * doesn't match `^\$<TokenKey>$` (or `$<TokenKey>/<1-100>` when `allowAlpha`),
- * or references a key absent from `validKeys`. `ownEntries` is the record the value is actually *declared*
- * in (the base record for the base pass, an override's own record for a
- * per-theme pass) — `validKeys` is the merged key set it may reference
- * (the override's own keys are always a subset of the base keys by the
- * time this runs, since the override validation rejects an override key
- * absent from the base record before reaching this check).
- * @param {z.RefinementCtx} ctx - Zod refinement context
- * @param {Record<string, string>} ownEntries - Entries whose own grammar/target is checked
- * @param {ReadonlySet<string>} validKeys - Keys a `$` alias may legally reference
- * @param {boolean} allowAlpha - Whether the category accepts the `/<n>` percent suffix
- * @param {(key: string) => (string | number)[]} pathFor - Issue path builder for a given key
- * @returns {void}
- */
+// Report each alias in `ownEntries` (the record it is declared in) that is
+// malformed or targets a key outside `validKeys` (the merged key set).
 const checkAliasGrammarAndTargets = (
   ctx: z.RefinementCtx,
   ownEntries: Record<string, string>,
@@ -52,15 +38,7 @@ const checkAliasGrammarAndTargets = (
   }
 };
 
-/**
- * DFS the alias graph of `merged` (every key resolves via `merged[key]`,
- * following `$`-alias chains restricted to `keys`) and return the first
- * cycle found as an ordered chain (e.g. `["a", "b", "a"]`), or `undefined`
- * when the graph is acyclic.
- * @param {Record<string, string>} merged - Full key→value map for this theme/category pass
- * @param {ReadonlySet<string>} keys - Keys participating in the graph (= `Object.keys(merged)`)
- * @returns {string[] | undefined} Ordered cycle chain, or `undefined`
- */
+// First alias cycle as an ordered chain (`["a", "b", "a"]`), or `undefined`.
 const findAliasCycle = (
   merged: Record<string, string>,
   keys: ReadonlySet<string>,
@@ -101,18 +79,12 @@ const findAliasCycle = (
 };
 
 /**
- * Validate one category's alias graph for one theme pass (base, or a
- * single `themeAxes.<axis>.<variant>` override merged on top of base): alias
- * grammar/target-existence for `ownEntries`, then a cycle check over the
- * full `merged` graph. Reports at most one cycle issue, anchored at
- * whichever cycle member is actually declared in `ownEntries` (falling
- * back to the first cycle member when none is).
+ * Validate one category's alias graph for one pass (base, or base ⊕ one override).
  * @param {z.RefinementCtx} ctx - Zod refinement context
- * @param {Record<string, string>} merged - Full key→value map for this pass (base, or base ⊕ override)
- * @param {Record<string, string>} ownEntries - Entries whose own grammar/target is checked (= `merged` for the base pass, the override's own record for a themed pass)
+ * @param {Record<string, string>} merged - Full key→value map for this pass
+ * @param {Record<string, string>} ownEntries - Entries declared in this pass
  * @param {boolean} allowAlpha - Whether the category accepts the `/<n>` percent suffix
  * @param {(key: string) => (string | number)[]} pathFor - Issue path builder for a given key
- * @returns {void}
  */
 export const validateCategoryAliasGraph = (
   ctx: z.RefinementCtx,
@@ -148,23 +120,12 @@ interface AxisVariantRecords {
 }
 
 /**
- * Every axis's `html[data-<axis>]` block applies to the same element at
- * once, so a `$`-alias in one axis and another in a second axis can chain
- * into a cycle that no single `base ⊕ variant` pass sees (`x.one: a→$b`
- * with `y.two: b→$a` makes both custom properties invalid). Walk every
- * combination of at most one variant per axis (an axis may also be off),
- * merge them over `base` in axis declaration order (the last declaring axis
- * wins a key, exactly like the emitted CSS) and report the first cycle whose
- * edges come from at least two different axes — a cycle drawn from base +
- * one axis is already reported by {@link validateCategoryAliasGraph}.
- *
- * Axes whose variants hold no `$` value are skipped, and nothing runs unless
- * two axes carry aliases in this category.
+ * Report the first alias cycle that needs variants of two or more axes active together.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} base - Base record of the category
- * @param {Record<string, Record<string, Record<string, string> | undefined>>} axes - `themeAxes` projected on this category (`axis → variant → record`)
+ * @param {Record<string, Record<string, Record<string, string> | undefined>>} axes - `themeAxes` projected on this category
  * @param {string} category - Category key, used in the issue path
- * @returns {void}
+ * Rationale: documents/architecture.md#validatecrossaxisaliascycles-why-alias-cycles-are-checked-across-axes
  */
 export const validateCrossAxisAliasCycles = (
   ctx: z.RefinementCtx,

@@ -10,9 +10,7 @@ Type-only exports; importing this subpath adds no runtime code.
 export declare type ThemeConfig = z.infer<typeof ThemeSchema>;
 ```
 
-Configuration for the theme, inferred from {@link ThemeSchema}.
-Only `colors` is required; every other field is optional and the library
-handles `undefined` gracefully.
+Theme configuration; only `colors` is required.
 
 <!-- /signature -->
 
@@ -22,7 +20,7 @@ handles `undefined` gracefully.
 export declare type ThemeOverride = z.infer<typeof ThemeOverrideSchema>;
 ```
 
-Theme override configuration, inferred from {@link ThemeOverrideSchema}.
+One `themeAxes` variant override.
 
 <!-- /signature -->
 
@@ -32,8 +30,7 @@ Theme override configuration, inferred from {@link ThemeOverrideSchema}.
 export declare type TypographyConfig = z.infer<typeof TypographyStyleSchema>;
 ```
 
-Configuration for a single typography variant, inferred from
-{@link TypographyStyleSchema}.
+A single typography variant.
 
 <!-- /signature -->
 
@@ -73,10 +70,7 @@ export declare type ExactOptions<O> = O &
   Readonly<Record<Exclude<keyof O, keyof StyleGeneratorOptions>, never>>;
 ```
 
-`O` plus a `never` slot for every top-level key `StyleGeneratorOptions`
-does not declare. A `const O extends StyleGeneratorOptions` type parameter
-skips the excess-property check, so `generate(theme, { screnes })` would
-compile; this restores it without losing `const` inference.
+`O` with `never` for unknown keys: restores the excess-property check a `const O` parameter skips.
 
 <!-- /signature -->
 
@@ -89,13 +83,8 @@ export declare interface CoverageRule<P extends string = RegistryPrefix> {
 }
 ```
 
-How much of one token category's `@source inline` coverage to emit.
-`coverage` only changes the `@source inline(...)` lines (class-name
-coverage for classes Tailwind cannot see in source files): it trims
-them, and `coverage.colors.opacities` adds one opacity-modifier line. It
-never changes the `@theme inline` mapping or the `@utility` blocks; of the
-typed `DesignTokens` only `opacities` (from `coverage.colors.opacities`)
-depends on it.
+How much of one token category's `@source inline` coverage to emit; it
+never changes the `@theme inline` mapping or the `@utility` blocks.
 
 <!-- /signature -->
 
@@ -216,10 +205,7 @@ export declare type ThemeAxesState<T extends ThemeConfig> = {
 };
 ```
 
-The active variant per axis — every axis optional, each `"base"` (no
-`html[data-<axis>]` override) or one of its declared variants. `"base"` is
-a sentinel that `ThemeSchema` reserves: no axis may declare a variant of
-that name, so the union never merges a real variant with it.
+The active variant per axis, or the reserved `"base"` for no override.
 
 <!-- /signature -->
 
@@ -231,8 +217,7 @@ export declare type ThemeAxisName<T extends ThemeConfig> = T extends unknown
   : never;
 ```
 
-Axis names of `theme.themeAxes` (`"theme"`, `"palette"`, …); `never`
-without it. Distributes over a union of themes.
+Axis names of `theme.themeAxes`; `never` without it.
 
 <!-- /signature -->
 
@@ -249,8 +234,7 @@ export declare type ThemeAxisVariant<
   : never;
 ```
 
-Variant names of one `themeAxes` axis (`"dark"`, `"forest"`, …).
-Distributes over a union of themes.
+Variant names of one `themeAxes` axis.
 
 <!-- /signature -->
 
@@ -270,11 +254,7 @@ export declare type BreakpointKeys<O> = O extends {
     : DefaultBreakpointKeys;
 ```
 
-The breakpoint keys `options.breakpoints` names. Literal when `O` carries a
-literal list (`defineOptions`/`generate` infer `const O`); `string` when
-`O` only declares the field optionally (an annotated
-`StyleGeneratorOptions`); the library default (`md`/`lg`) when it is
-absent.
+`options.breakpoints` keys: literal, `string` when only optional, else the defaults.
 
 <!-- /signature -->
 
@@ -350,10 +330,7 @@ export declare type OpacitySteps<O> = O extends {
   : never;
 ```
 
-The opacity steps `options.coverage.colors.opacities` names. Literal when
-`O` carries a literal list (`defineOptions`/`generate` infer `const O`);
-`number` for an annotated `StyleGeneratorOptions`; `never` when the
-option is absent, so `${T}/${OpacitySteps<O>}` adds no key.
+Plain `coverage.colors.opacities` steps: literal, `number` when only optional, else `never`.
 
 <!-- /signature -->
 
@@ -365,10 +342,7 @@ option is absent, so `${T}/${OpacitySteps<O>}` adds no key.
 export declare type SpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
 ```
 
-Literal union of every default spacing property key (e.g. `"p" | "px" |
-... | "left"`). The single spacing-key type used repo-wide — inferred
-from `DEFAULT_SPACING_PROPERTIES` via `as const satisfies` so it stays a
-literal union instead of widening to `string`.
+Literal union of the default spacing keys (`"p" | "px" | … | "left"`), the spacing-key type used repo-wide.
 
 <!-- /signature -->
 
@@ -390,8 +364,7 @@ export declare type SpacingKeys<O> = O extends {
     : SpacingKey;
 ```
 
-The spacing keys `options.spacing.properties` names; `string` when `O`
-only declares them optionally, the default `SpacingKey` union when absent.
+`options.spacing.properties` keys: literal, `string` when only optional, else `SpacingKey`.
 
 <!-- /signature -->
 
@@ -403,8 +376,7 @@ export declare type SpacingPropertyMap = Readonly<
 >;
 ```
 
-Mapping of spacing property keys to the CSS properties each `sp-<key>`
-utility sets (e.g. `p: ["padding"]`, `mx: ["margin-left", "margin-right"]`).
+Spacing key → the CSS properties its `sp-<key>` utility sets (`p: ["padding"]`).
 
 <!-- /signature -->
 
@@ -454,9 +426,7 @@ export declare interface DesignTokensWeb<
 }
 ```
 
-The typed token arrays. `O` is the options type the tokens were built
-with (`generate`/`createDesignTokens` infer it from their `options`
-argument); omitted, it is the no-options default.
+The typed token arrays for theme `TTheme` built with options `O`.
 
 <!-- /signature -->
 
@@ -468,13 +438,8 @@ export declare interface DesignTokenKeys<
 > extends CategoryTokenKeyMap<T> {}
 ```
 
-The derived design-token key unions for a theme, one per built-in category
-(`colorKey`, `textKey`, `roundedKey`, …).
-Distinct from `DesignTokensWeb` in `./inference` which describes the runtime
-token arrays returned by `createDesignTokens()`. Consumers can pluck individual
-variant unions via the semantic aliases below instead of writing
-`(typeof DesignTokens.Web.X)[number]` everywhere.
-Kept an interface so consumers can still augment it.
+The token key unions of a theme, one per category (`colorKey`, `textKey`, …);
+an interface so consumers can augment it.
 
 <!-- /signature -->
 
@@ -502,11 +467,7 @@ export declare type CategoryTokenKey<
     : never;
 ```
 
-The camelCased token-key union of one built-in category — what the
-matching `DesignTokens.Web` array holds and the matching `DesignTokenKeys`
-alias exposes. Normalises kebab/snake keys → `"sidebarForeground"`. A
-`string` key set (an annotated `ThemeConfig`) stays `string`: `CamelCase`
-would turn it into the distinct `Uncapitalize<string>`.
+The camelCased token-key union of one category; a `string` key set stays `string`.
 
 <!-- /signature -->
 
@@ -542,7 +503,7 @@ export declare type InferBorderWidthOptions<TTheme extends ThemeConfig> =
   RawCategoryKey<TTheme, "borderWidth">;
 ```
 
-The `borderWidth` keys of `TTheme` as written in the theme, or the default border widths when the theme omits the category.
+The `borderWidth` keys as written, or the defaults.
 
 <!-- /signature -->
 
@@ -553,7 +514,7 @@ export declare type InferRoundedOptions<TTheme extends ThemeConfig> =
   RawCategoryKey<TTheme, "borderRadius">;
 ```
 
-The `borderRadius` keys of `TTheme` as written in the theme, or the default radius keys when the theme omits the category.
+The `borderRadius` keys as written, or the defaults.
 
 <!-- /signature -->
 

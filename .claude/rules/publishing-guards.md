@@ -1,6 +1,7 @@
 # Publishing guards and release flow
 
 Always loaded (no `paths`): a publish can start from a session that never reads a build file. Never add an `NPM_TOKEN` secret and never keep an `npmScopes.duydpdev` block in `.yarnrc.yml`; npm publishing uses trusted publishing (OIDC).
+Whether a change warrants a release PR at all: `documents/deploy.md` → Release cadence.
 
 ## Release flow
 

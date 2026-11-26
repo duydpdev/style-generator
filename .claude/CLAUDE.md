@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code (claude.ai/code) in this repository. Area rules live in `.claude/rules/` and load when you read files of that area.
+Guidance for Claude Code (claude.ai/code) in this repository. Area rules live in `.claude/rules/` and load when you read files of that area; before editing or creating a file in an area you have not read a file of, Read that area's rule file.
 
 ## Project Overview
 
@@ -29,6 +29,7 @@ yarn verify                  # base gate + src gate (documents/testing.md → Ga
 yarn lint                    # ESLint, --max-warnings 0; `yarn lint --fix` writes
 yarn prettier:check          # CI gate; `yarn prettier:fix` writes
 yarn tsc --noEmit            # type check
+yarn check:comments          # comment ceiling for src/** (JSDoc <= 8 lines, runs <= 3, ratio < 20%)
 yarn site:build              # library build + landing site (renders documents/*.md)
 ```
 

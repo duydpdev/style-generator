@@ -263,7 +263,7 @@ Fails when `git rev-list --count origin/develop..origin/main` > 0 and the tip of
 
 ### Release cadence
 
-Open the `develop` → `main` release PR only when the change reaches consumers of the package: theme syntax, generated CSS or the CLI contract. Documentation, tests, agent rules (`.claude/**`) and refactors that change none of those wait on `develop` and ride the next release that does. A product's canvas allowance (a radius key, an extra board, a type scale) is an edit to that product's own `--standard` file (`canvas-standard.json`), never a library release.
+Open the `develop` → `main` release PR only when the change reaches consumers of the package: theme syntax, generated CSS, the CLI contract, or any published export, type or dependency range. Documentation, tests, agent rules (`.claude/**`) and refactors that change none of those wait on `develop` and ride the next release that does; a documentation fix the site must show now takes the `docs/<slug>` → `main` route in [Hotfix](#hotfix). A product's canvas allowance (a radius key, an extra board, a type scale) is an edit to that product's own `--standard` file (`canvas-standard.json`), never a library release.
 
 ### DEV on demand
 

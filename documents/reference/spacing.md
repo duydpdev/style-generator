@@ -126,10 +126,7 @@ export declare const DEFAULT_SPACING_PROPERTIES: {
 };
 ```
 
-Default spacing properties → CSS properties each utility sets.
-`generateSpacingCss` turns each entry into an `@utility sp-<key>` block
-whose declarations read `var(--sg-sp-<key>)`. Passing
-`options.spacing.properties` REPLACES this map; spread it to extend.
+Default spacing key → CSS properties of its `@utility sp-<key>`. `options.spacing.properties` REPLACES this map; spread it to extend.
 
 <!-- /signature -->
 

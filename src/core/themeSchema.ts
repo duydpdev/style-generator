@@ -27,18 +27,11 @@ import {
   ZIndexValue,
 } from "./tokenGrammar";
 
-/**
- * A single typography variant. `letterSpacing`, `fontFamily` and
- * `fontStyle` are optional because most variants inherit the base tracking,
- * font stack and style; an absent `letterSpacing` emits no declaration, so
- * inherited tracking is not reset. When present they follow the same
- * injection-safe `TypographyValue` grammar as every other value.
- */
+/** A single typography variant; an absent optional field emits no declaration, so inherited values stay. */
 export const TypographyStyleSchema = z.strictObject({
   fontSize: TypographyValue,
   lineHeight: TypographyValue,
-  // CSS Fonts 4: `font-weight` is a <number [1,1000]>; fractions are legal
-  // (variable fonts), so no `.int()`.
+  // CSS Fonts 4 allows fractional weights (variable fonts), so no `.int()`.
   fontWeight: z.number().min(1).max(1000),
   letterSpacing: TypographyValue.optional(),
   fontFamily: TypographyValue.optional(),
@@ -48,15 +41,8 @@ export const TypographyStyleSchema = z.strictObject({
 /** Utility families a typography `@utility` would shadow: `sp-*` and `font-*`. */
 const SHADOWED_UTILITY_FAMILIES = /^(sp|font)-/;
 
-/**
- * `theme.typography` keys become Tailwind v4 `@utility` names via
- * `toKebabCase` (see `generateTypographyCss.ts`) — a key whose kebab-case
- * form doesn't match `UTILITY_NAME_RE` (e.g. starts with a digit or a dash)
- * would otherwise only fail at CSS-generation time. Rejecting it here, at
- * parse time, surfaces a `ZodError` with the offending key in its `path`.
- * Keys kebab-casing to `sp-*` or `font-*` are rejected too: they would
- * shadow the generated spacing and font utilities.
- */
+// Typography keys become `@utility <kebab-key>`: reject invalid utility names
+// at parse time, and `sp-*`/`font-*` names that shadow generated utilities.
 const TypographyRecordSchema = z
   .record(TokenKey, TypographyStyleSchema)
   .superRefine((typography, ctx) => {
@@ -90,15 +76,8 @@ const TypographyRecordSchema = z
     }
   });
 
-/**
- * Shared shape of every "CSS-var category" — a theme record that
- * `flattenByCategory`/`generateThemeCss`'s `buildIntermediateVars` turns
- * into `--sg-*` intermediate variables. Single source of truth for both
- * {@link ThemeSchema} and {@link ThemeOverrideSchema}. Adding a new
- * CSS-var category (e.g. a future `letterSpacing`) is one line here and one
- * descriptor in `builtInCategories.ts`; `builtInCategories.test-d.ts` fails
- * the type check when the two disagree.
- */
+// CSS-var categories that accept `$` aliases. A new category is one line here
+// plus a descriptor in `builtInCategories.ts` (pinned by its `.test-d.ts`).
 const ThemeAliasShape = z.strictObject({
   colors: z.record(TokenKey, TokenValue),
   shadows: z.record(TokenKey, TokenValue).optional(),
@@ -108,19 +87,9 @@ const ThemeAliasShape = z.strictObject({
   borderWidth: z.record(TokenKey, TokenValue).optional(),
 });
 
-/**
- * The scale categories: CSS-var categories whose values follow one typed
- * grammar each (a time, an easing, a length, a 0–1 number, an integer), so
- * they hold no `$` alias. Their descriptors set `literalScale`.
- */
-/**
- * `opacity` key: Tailwind reads `--opacity-<key>` for the colour `/<key>`
- * modifier too, so a digit-only key (`50`) would replace the `/50` step of
- * every colour class with the theme value.
- */
+// A digit-only opacity key would replace the colour `/<n>` modifier step.
 const OpacityKey = TokenKey.regex(
-  // A pattern, not a refine, so the editor JSON Schema carries the rule;
-  // no lookahead, which RE2-based validators reject.
+  // A pattern (not a refine) reaches the JSON Schema; no lookahead for RE2.
   /\D/,
   "A digit-only opacity key would replace the colour modifier step of the same number (bg-primary/50 reads --opacity-50); name it by role (disabled, muted)",
 );
@@ -136,51 +105,22 @@ const ThemeScaleShape = z.strictObject({
 
 const ThemeCssVarShape = ThemeAliasShape.extend(ThemeScaleShape.shape);
 
-/**
- * The subset of `ThemeSchema`/`ThemeOverrideSchema` fields that carry
- * `--sg-*` CSS variable data, inferred from {@link ThemeCssVarShape}.
- */
+/** The theme fields that carry `--sg-*` CSS variable data. */
 export type ThemeCssVarSource = z.infer<typeof ThemeCssVarShape>;
 
-/**
- * Every category key with a `--sg-*` CSS variable representation, derived
- * from {@link ThemeCssVarShape} (`.keyof().options`) instead of repeating
- * the key list a second time — adding a category to `ThemeCssVarShape`
- * automatically extends kebab-collision and override-key validation to it.
- */
 const CSS_VAR_CATEGORIES = ThemeCssVarShape.keyof().options;
 
-/** The CSS-var categories whose values may be `$` aliases (every non-scale one). */
 const ALIAS_CATEGORIES = ThemeAliasShape.keyof().options;
 
-/**
- * Whether a category's aliases may carry the `/<n>` percent (it has `opacityModifier`).
- * @param {string} category - Category key
- * @returns {boolean} True for the colour category
- */
 const allowsAlpha = (category: string): boolean =>
   builtInCategories.some(
     (descriptor: TokenCategoryDescriptor) =>
       descriptor.key === category && descriptor.opacityModifier === true,
   );
 
-/**
- * Theme override configuration. Contains partial overrides for every
- * CSS-var category (colors, shadows, backdrop blurs, border radius, font
- * family, border width) — everything but `typography`, matching
- * `generateThemeCss.ts`'s `buildIntermediateVars`. Derived from
- * {@link ThemeCssVarShape} via `.partial()` — no category key list is
- * repeated here.
- */
+/** A `themeAxes` variant override: every CSS-var category, partial (no `typography`). */
 export const ThemeOverrideSchema = ThemeCssVarShape.partial();
 
-/**
- * Validate every CSS-var category on the base theme: kebab-key uniqueness
- * and the alias grammar/cycle graph (merged = base only).
- * @param {z.RefinementCtx} ctx - Zod refinement context
- * @param {ThemeCssVarSource} theme - Base theme (CSS-var categories only)
- * @returns {void}
- */
 const validateBaseCategories = (
   ctx: z.RefinementCtx,
   theme: ThemeCssVarSource,
@@ -202,25 +142,9 @@ const validateBaseCategories = (
   }
 };
 
-/**
- * Validate a single `themeAxes.<axis>.<variant>` override: that every
- * override key already exists in the matching base record (an override-only
- * key never maps into `@theme inline`/`@utility` output — it produces no
- * class, see `flattenByCategory.ts`/`generateThemeCss.ts`, both of which
- * only ever iterate base keys), and the alias grammar/cycle graph merged
- * with the base theme.
- *
- * The kebab-key, `borderWidth`/`colors` and `fontFamily` weight-name checks
- * are deliberately NOT repeated here: they run on the base theme, and since
- * every override key must exist in the base record (rejected above
- * otherwise), any collision between override keys is a collision between
- * base keys that the base pass already reports.
- * @param {z.RefinementCtx} ctx - Zod refinement context
- * @param {ThemeCssVarSource} baseTheme - Base theme (for the alias merge)
- * @param {(string | number)[]} pathPrefix - Issue path prefix for this override (`["themeAxes", axisName, variantName]`)
- * @param {Partial<ThemeCssVarSource>} override - The override's own records
- * @returns {void}
- */
+// One override: every key must exist in the base record, and its aliases are
+// checked merged over the base.
+// Rationale: documents/architecture.md#validatethemeoverride-why-override-keys-skip-the-collision-checks
 const validateThemeOverride = (
   ctx: z.RefinementCtx,
   baseTheme: ThemeCssVarSource,
@@ -257,47 +181,21 @@ const validateThemeOverride = (
   }
 };
 
-/**
- * Canonical array-index-like names (`0`, `7`, `100`, `2024` — no leading
- * zero, digits only). JS engines enumerate these own keys FIRST in
- * ascending numeric order, ahead of every string key regardless of the
- * order they were written in the JSON file, so they can't honour the
- * declaration-order precedence `themeAxes` relies on.
- */
+// Rationale: documents/architecture.md#themeaxesschema-why-integer-like-axis-and-variant-names-are-rejected
 const INTEGER_LIKE_NAME_RE = /^(0|[1-9]\d*)$/;
 
 const integerLikeNameMessage = (kind: "axis" | "variant", name: string) =>
   `themeAxes ${kind} name "${name}" is a canonical integer; JS object key order puts integer-like keys first (ascending) regardless of declaration order, which would silently break the "last declared wins" precedence — rename it (e.g. "contrast${name}" or "c${name}")`;
 
-/**
- * `"base"` is the "no override" sentinel of `ThemeAxesState` and
- * `themeAxisAttributes()`: a variant of that name could never be switched on
- * (it would emit no `data-<axis>` attribute), so it is rejected rather than
- * left as a block nothing can activate. An AXIS named `base` is fine: it is
- * only a key of the state object, and its own variants are not affected.
- */
+// "base" means "no override" in `ThemeAxesState`, so a variant of that name
+// could never be switched on; an axis named `base` is fine.
 const RESERVED_VARIANT_NAME = "base";
 
 const reservedVariantMessage = () =>
   `themeAxes variant name "${RESERVED_VARIANT_NAME}" is reserved: ThemeAxesState and themeAxisAttributes() read "${RESERVED_VARIANT_NAME}" as "no override" on the axis, so this variant could never be switched on — rename it (e.g. "default" or "standard"). The base theme already is what an axis shows without an override.`;
 
-/**
- * `themeAxes` — independent axes of variants. Outer key is the
- * axis name (e.g. `"theme"`, `"palette"`), inner key is the variant name
- * within that axis (e.g. `"dark"`, `"forest"`) — both use the
- * {@link TokenKey} grammar, so neither can inject an unsafe
- * selector/attribute-value character. Multiple axes can be declared and
- * toggled independently (`html[data-theme]` + `html[data-palette]`, ...);
- * `generateThemeCss.ts` emits one `html[data-<axis-kebab>="<variant-kebab>"]`
- * block per variant, in declaration order, after `:root`.
- *
- * Axis and variant names that are canonical integers (`/^(0|[1-9]\d*)$/`)
- * are rejected: `JSON.parse`/object enumeration hoists them ahead of all
- * other keys, so declaration order — and with it the emit-order precedence
- * contract — would be lost before this library ever sees the object.
- *
- * A variant named `base` is rejected too (see {@link RESERVED_VARIANT_NAME}).
- */
+// `axis → variant → override`, each variant emitted as one
+// `html[data-<axis>="<variant>"]` block in declaration order.
 const ThemeAxesSchema = z
   .record(TokenKey, z.record(TokenKey, ThemeOverrideSchema))
   .superRefine((axes, ctx) => {
@@ -329,31 +227,11 @@ const ThemeAxesSchema = z
     }
   });
 
-/**
- * Deepest nesting level whose object can hold a token name:
- * root (0) → `themeAxes` (1) → axis (2) → variant (3) → category (4).
- * Bounds the walk, so a cyclic object handed to `defineTheme` cannot
- * overflow the stack before the schema runs.
- */
+// root → themeAxes → axis → variant → category; bounds the walk on cyclic input.
 const MAX_KEY_SCAN_DEPTH = 4;
 
-/**
- * Report every own `__proto__` key of the RAW input at its exact path.
- *
- * Zod's `z.record` skips an input key `__proto__` before the key schema
- * runs (a prototype-pollution guard), so a `__proto__` colour, axis,
- * variant or override key would be dropped with no error, while `a_b` is
- * rejected. Only a parsed JSON document can carry it as an own key: the
- * literal `{ __proto__: x }` sets the prototype instead and has no key to
- * lose. Detecting it needs the raw input, so this runs in the `z.preprocess`
- * step; `z.preprocess` skips the right-hand schema once this step has added
- * an issue, so the issue suppresses every other one until the key is removed.
- * @param {unknown} node - Raw value at `path`
- * @param {(string | number)[]} path - Path of `node` from the theme root
- * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
- * @param {number} [depth] - Nesting level of `node`; the walk stops past {@link MAX_KEY_SCAN_DEPTH}
- * @returns {void}
- */
+// Report every own `__proto__` key of the RAW input at its exact path.
+// Rationale: documents/architecture.md#rejectprotokeys-why-prototype-key-names-are-scanned-on-the-raw-input
 const rejectProtoKeys = (
   node: unknown,
   path: (string | number)[],
@@ -375,34 +253,13 @@ const rejectProtoKeys = (
   }
 };
 
-/**
- * The `z.preprocess` step of {@link ThemeSchema}: every check that needs the
- * RAW input, before Zod's own parsing drops or rewrites it.
- * @param {unknown} raw - Raw (pre-Zod) input
- * @param {z.RefinementCtx} ctx - Refinement context, for `ctx.addIssue`
- * @returns {unknown} `raw`, unchanged
- */
 const checkRawTheme = (raw: unknown, ctx: z.RefinementCtx): unknown => {
   rejectProtoKeys(raw, [], ctx);
   return raw;
 };
 
-/**
- * Theme configuration — the single source of truth for both JSON and
- * TypeScript theme authoring. `z.strictObject` at every level rejects
- * unknown/typo'd keys (e.g. `colours`, or a stray metadata field) instead
- * of silently stripping them; `.parse()` is the only entry point that
- * produces a value consumers should trust.
- *
- * Cross-field validation (kebab-key uniqueness, `$key` alias grammar/cycle
- * detection, `borderWidth` vs `colors` key collisions, color keys that
- * collide with the `divide-x`/`divide-y` widths, `fontFamily` vs
- * Tailwind font-weight name collisions, per-axis-variant override
- * validation) runs in the trailing `.superRefine()`, after every
- * individual field has already passed its own `TokenKey`/`TokenValue`
- * grammar check. The checks themselves live in `themeCollisionChecks.ts` and
- * `aliasGraph.ts`.
- */
+// Strict at every level; cross-field checks run in `.superRefine()` after
+// every field passed its own grammar.
 const ThemeSchemaShape = ThemeCssVarShape.extend({
   $schema: z.string().optional(),
   typography: TypographyRecordSchema.optional(),
@@ -437,57 +294,32 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
   }
 });
 
-/**
- * Wraps {@link ThemeSchemaShape} in `z.preprocess` ({@link checkRawTheme}):
- * a `__proto__` key gets an error instead of vanishing — see
- * {@link rejectProtoKeys} for why that issue also suppresses every other
- * issue on the same input while it is present.
- */
+/** Theme configuration schema, the single source of truth for JSON and TypeScript themes. */
 export const ThemeSchema = z.preprocess(checkRawTheme, ThemeSchemaShape);
 
 /**
- * Validate `config` against `ThemeSchema` and hand it back typed as the
- * caller's own `T`. The one place the `ThemeSchema.parse(x) as T` cast lives.
- *
- * `ThemeSchema.parse` returns the widened `ThemeConfig`, not `T`; the cast
- * keeps the caller's literal key/value types for downstream inference
- * (`DesignTokensWeb<T, O>`). Safe: a successful parse is structurally
- * identical to `config` (the schema has no coercion or defaults), so the cast
- * cannot hide a shape mismatch. Throws a `ZodError` (with a precise `path`)
- * for unknown keys or CSS-injection-unsafe values.
+ * Validate `config` against `ThemeSchema` and return it typed as the caller's `T`.
  * @template T
  * @param {T} config - Theme config object
  * @returns {T} The validated theme, structurally identical to `config`
+ * @throws {z.ZodError} On unknown keys or CSS-injection-unsafe values
+ * Rationale: documents/architecture.md#parsetheme-why-the-cast-to-the-callers-type-is-safe
  */
 export const parseTheme = <T extends ThemeConfig>(config: T): T =>
   ThemeSchema.parse(config) as T;
 
-/**
- * Configuration for the theme, inferred from {@link ThemeSchema}.
- * Only `colors` is required; every other field is optional and the library
- * handles `undefined` gracefully.
- */
+/** Theme configuration; only `colors` is required. */
 export type ThemeConfig = z.infer<typeof ThemeSchema>;
 
-/**
- * Theme override configuration, inferred from {@link ThemeOverrideSchema}.
- */
+/** One `themeAxes` variant override. */
 export type ThemeOverride = z.infer<typeof ThemeOverrideSchema>;
 
-/**
- * Configuration for a single typography variant, inferred from
- * {@link TypographyStyleSchema}.
- */
+/** A single typography variant. */
 export type TypographyConfig = z.infer<typeof TypographyStyleSchema>;
 
 /**
- * Format every issue in a `ZodError` as one `"path → message"` line, safe to
- * print to a terminal or throw as a plain `Error` message — every CLI/Vite
- * consumer that catches a `ZodError` from `ThemeSchema.parse()` funnels it
- * through this instead of dumping the raw (deeply nested) `ZodError` object.
- * Record-key grammar failures arrive as `invalid_key` wrappers whose useful
- * message (e.g. the `_` hint) lives in the nested issues, so those are
- * surfaced instead of Zod's generic "Invalid key in record".
+ * Format every issue in a `ZodError` as one `"path → message"` line. Nested
+ * `invalid_key` issues are surfaced instead of Zod's generic record-key message.
  * @param {z.ZodError} error - The `ZodError` to format
  * @returns {string} One formatted line per issue, joined with `\n`
  */

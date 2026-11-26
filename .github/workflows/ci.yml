@@ -15,14 +15,17 @@ permissions:
   contents: read
 
 jobs:
-  check:
-    name: Build & Lint Check
+  # One install and one build; the other jobs download the result instead of
+  # rebuilding it. The audits, commitlint and the release-cycle guard need the
+  # full history and no built library, so they live here too.
+  build:
+    name: Build library
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    outputs:
+      docs_only: ${{ steps.scope.outputs.docs_only }}
     # Draft PRs run CI too (a pushed draft must not stay without a result;
-    # Actions minutes are free on this public repo). No paths filter here:
-    # the site build renders documents/*.md, so docs-only PRs still need
-    # this job, and the required check must always report.
+    # Actions minutes are free on this public repo).
 
     steps:
       - name: Checkout
@@ -80,8 +83,77 @@ jobs:
           fi
           echo "No [release] commit in the range."
 
+      - name: Detect a documentation-only change
+        id: scope
+        # docs_only=true only when the PR changes at least one file and every
+        # path starts with documents/. `--no-renames` makes a rename a delete
+        # plus an add, so moving a src/ file into documents/ is not docs-only.
+        # Any failure (fetch, diff, empty list) leaves docs_only=false: fail closed.
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          docs_only=false
+          if files=$(git diff --name-only --no-renames "$BASE_SHA"..."$HEAD_SHA") \
+            && [ -n "$files" ] \
+            && ! printf '%s\n' "$files" | grep -qv '^documents/'; then
+            docs_only=true
+          fi
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+
       - name: Build
         run: yarn build:all
+
+      - name: Upload the built library
+        # Whole dist/, source maps included: check:externals reads them.
+        # 7 days, so "Re-run failed jobs" on an older run still finds it.
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  # Type-aware ESLint also covers examples/**, which import the built library
+  # through `link:../..`, so this job needs dist/ from `build`.
+  lint:
+    name: Lint and types
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    if: ${{ !cancelled() }}
+
+    steps:
+      - name: Fail when the build job did not succeed
+        # A job whose dependency failed is skipped, and a skipped required
+        # check counts as passing; failing here keeps the result honest.
+        if: needs.build.result != 'success'
+        run: exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Download the built library
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Restore the CLI executable bit
+        # Artifacts do not keep file modes; the `style-gen` bin needs +x.
+        run: chmod +x dist/cli/index.mjs
 
       - name: Check committed tokens
         run: yarn check:tokens
@@ -114,6 +186,57 @@ jobs:
             node --check "$f"
           done
           yarn typecheck:scripts
+
+      - name: No data-part attributes
+        # Bespoke CSS hooks are namespaced classes (s- in site, x- in the examples).
+        run: "! git grep -n 'data-part' -- site examples src e2e-site documents"
+
+  # The site renders documents/*.md, so this job runs for docs-only PRs too.
+  # It is the only PR job that builds the site and the examples.
+  docs:
+    name: Docs and examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: build
+    if: ${{ !cancelled() }}
+
+    steps:
+      - name: Fail when the build job did not succeed
+        # A job whose dependency failed is skipped, and a skipped required
+        # check counts as passing; failing here keeps the result honest.
+        if: needs.build.result != 'success'
+        run: exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Download the built library
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Restore the CLI executable bit
+        # Artifacts do not keep file modes; the `style-gen` bin needs +x.
+        run: chmod +x dist/cli/index.mjs
+
+      - name: Prepare plain-nuxt types
+        # ESLint lints examples/plain-nuxt/app/**, whose tsconfig references
+        # .nuxt/tsconfig.*.json. `nuxt prepare` writes them and needs dist/
+        # (nuxt.config.ts imports the built library), so it runs after Build.
+        run: yarn workspace plain-nuxt-example prepare:nuxt
 
       - name: Build site
         # site/ and examples/harness dogfood the library through `link:` deps,
@@ -177,9 +300,46 @@ jobs:
         # apps (plain-react, plain-nuxt) are enforced by scripts/check-plain-ui.mjs.
         run: yarn check:plain-ui
 
-      - name: No data-part attributes
-        # Bespoke CSS hooks are namespaced classes (s- in site, x- in the examples).
-        run: "! git grep -n 'data-part' -- site examples src e2e-site documents"
+  # Everything that inspects the built package: externals, sizes, smoke runs,
+  # the packed tarball and the declaration files.
+  dist-checks:
+    name: Dist checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    if: ${{ !cancelled() }}
+
+    steps:
+      - name: Fail when the build job did not succeed
+        # A job whose dependency failed is skipped, and a skipped required
+        # check counts as passing; failing here keeps the result honest.
+        if: needs.build.result != 'success'
+        run: exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Download the built library
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Restore the CLI executable bit
+        # Artifacts do not keep file modes; the `style-gen` bin needs +x.
+        run: chmod +x dist/cli/index.mjs
 
       - name: Check externals
         run: yarn check:externals
@@ -215,12 +375,72 @@ jobs:
         # (above) never resolves peer types. The examples set skipLibCheck.
         run: yarn typecheck:dist
 
+  # Vitest with coverage thresholds, then the type tests.
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    if: ${{ !cancelled() }}
+
+    steps:
+      - name: Fail when the build job did not succeed
+        # A job whose dependency failed is skipped, and a skipped required
+        # check counts as passing; failing here keeps the result honest.
+        if: needs.build.result != 'success'
+        run: exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Download the built library
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Restore the CLI executable bit
+        # Artifacts do not keep file modes; the `style-gen` bin needs +x.
+        run: chmod +x dist/cli/index.mjs
+
       - name: Test (with coverage thresholds)
         # vitest.config.ts coverage.thresholds fail the step if coverage drops.
         run: yarn test:coverage
 
       - name: Type tests
         run: yarn test:types
+
+  # The required check keeps its name. A job it needs that failed, was skipped
+  # or was cancelled fails it; always() makes it report even then. No paths
+  # filter on this workflow: a required check must always report.
+  check:
+    name: Build & Lint Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [build, lint, docs, dist-checks, unit]
+    if: ${{ always() }}
+
+    steps:
+      - name: Require every job to succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for result in $RESULTS; do
+            [ "$result" = "success" ] || exit 1
+          done
 
   # examples/plain-react: the stories run as Vitest browser tests (project
   # `storybook`), the plain-vs-harness class parity gate (project `parity`)
@@ -234,10 +454,18 @@ jobs:
     name: Plain React (Storybook + parity)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: build
+    if: ${{ !cancelled() && needs.build.outputs.docs_only != 'true' }}
     env:
       STORYBOOK_DISABLE_TELEMETRY: "true"
 
     steps:
+      - name: Fail when the build job did not succeed
+        # A job whose dependency failed is skipped, and a skipped required
+        # check counts as passing; failing here keeps the result honest.
+        if: needs.build.result != 'success'
+        run: exit 1
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
@@ -253,8 +481,15 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build
-        run: yarn build:all
+      - name: Download the built library
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Restore the CLI executable bit
+        # Artifacts do not keep file modes; the `style-gen` bin needs +x.
+        run: chmod +x dist/cli/index.mjs
 
       - name: Install Playwright Chromium
         run: yarn playwright install --with-deps chromium
@@ -277,10 +512,18 @@ jobs:
     name: Plain Nuxt (Storybook)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: build
+    if: ${{ !cancelled() && needs.build.outputs.docs_only != 'true' }}
     env:
       STORYBOOK_DISABLE_TELEMETRY: "true"
 
     steps:
+      - name: Fail when the build job did not succeed
+        # A job whose dependency failed is skipped, and a skipped required
+        # check counts as passing; failing here keeps the result honest.
+        if: needs.build.result != 'success'
+        run: exit 1
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
@@ -296,8 +539,15 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build
-        run: yarn build:all
+      - name: Download the built library
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Restore the CLI executable bit
+        # Artifacts do not keep file modes; the `style-gen` bin needs +x.
+        run: chmod +x dist/cli/index.mjs
 
       - name: Prepare plain-nuxt types
         run: yarn workspace plain-nuxt-example prepare:nuxt
@@ -313,9 +563,16 @@ jobs:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.event.pull_request.draft == false
+    needs: build
+    if: ${{ !cancelled() && github.event.pull_request.draft == false && needs.build.outputs.docs_only != 'true' }}
 
     steps:
+      - name: Fail when the build job did not succeed
+        # A job whose dependency failed is skipped, and a skipped required
+        # check counts as passing; failing here keeps the result honest.
+        if: needs.build.result != 'success'
+        run: exit 1
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
@@ -331,8 +588,15 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build
-        run: yarn build:all
+      - name: Download the built library
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Restore the CLI executable bit
+        # Artifacts do not keep file modes; the `style-gen` bin needs +x.
+        run: chmod +x dist/cli/index.mjs
 
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium webkit

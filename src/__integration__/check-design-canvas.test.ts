@@ -931,7 +931,30 @@ describe("integration: style-gen canvas check", () => {
           boards: true,
           stamp: writeStamp({ libVersion: "9.0.0" }),
         }),
-      ).toContain('Main.dc.html:2 provenance lib "8.2.3", stamp has "9.0.0"');
+      ).toContain(
+        'Main.dc.html:2 provenance lib "8.2.3", stamp has "9.0.0" (major.minor must match)',
+      );
+    });
+
+    it("accepts a stamp that differs only in the patch version", async () => {
+      writeBoards();
+      const lines = await check({
+        boards: true,
+        stamp: writeStamp({ libVersion: "8.2.9" }),
+      });
+      expect(lines.filter((l) => l.includes("provenance lib"))).toEqual([]);
+    });
+
+    it("rejects a stamp from the next minor version", async () => {
+      writeBoards();
+      expect(
+        await check({
+          boards: true,
+          stamp: writeStamp({ libVersion: "8.3.0" }),
+        }),
+      ).toContain(
+        'Main.dc.html:2 provenance lib "8.2.3", stamp has "8.3.0" (major.minor must match)',
+      );
     });
 
     it("content reports a provenance ds other than --ds-version", async () => {

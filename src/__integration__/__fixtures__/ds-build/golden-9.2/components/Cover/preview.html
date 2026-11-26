@@ -3,7 +3,7 @@
   html,
   body {
     margin: 0;
-    background: var({{v:background}});
+    background: var(--sg-color-background);
   }
   .cover {
     position: relative;
@@ -16,16 +16,16 @@
     inset: 0;
   }
   .b-primary {
-    fill: var({{v:primary}});
+    fill: var(--sg-color-primary);
   }
   .b-ink {
-    fill: var({{v:foreground}});
+    fill: var(--sg-color-foreground);
   }
   .b-success {
-    fill: var({{v:success}});
+    fill: var(--sg-color-success);
   }
   .b-warning {
-    fill: var({{v:warning}});
+    fill: var(--sg-color-warning);
   }
   .name {
     position: absolute;
@@ -33,7 +33,7 @@
     bottom: 48px;
     max-width: 440px;
     margin: 0;
-    color: var({{v:foreground}});
+    color: var(--sg-color-foreground);
   }
 </style>
 <div class="cover">
@@ -49,5 +49,5 @@
     <rect class="b-success" x="720" y="144" width="128" height="160" />
     <rect class="b-warning" x="864" y="144" width="112" height="96" />
   </svg>
-  <p class="name {{titleClass}}">{{name}}</p>
+  <p class="name text-32-bold">Fixture</p>
 </div>

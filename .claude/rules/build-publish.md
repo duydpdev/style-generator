@@ -33,6 +33,7 @@ node scripts/starter-smoke.mjs   # after build:all, needs network: packed tarbal
 yarn check:tokens   # after build:all: `generate --check` in each app that commits a theme.tokens.ts (plain-react, plain-nuxt, design-system, site) — fails when one is stale (CI)
 yarn check:next-build   # after build:all, needs network: packed tarball + next@16.4.5 in a scratch project, init + `next build` (Turbopack) through styleGenNext (CI node-floor)
 yarn check:ts-peer   # after build:all: tarball + npm + TypeScript 5.0/5.2/5.9/6/7 in a scratch project, tsc on every subpath (CI ts-peer job; needs network)
+yarn check:ds-build   # after build:all, needs network: packed tarball + tailwindcss (the only peer) in a scratch project, `style-gen ds build` with a .mjs preset; DS_SMOKE_TAILWIND picks the release (CI ds-smoke job)
 yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
 ```
 
@@ -79,8 +80,8 @@ Two example apps have a Storybook (`plain-react`, `plain-nuxt`; component storie
 and each app's CSS has `@source not` for `*.stories.*`). `ci.yml` builds once (job `build`, which uploads `dist/`) and fans out to `lint`, `docs`, `dist-checks` and `unit`; the `check` job (`Build & Lint Check`, the required name) only aggregates them under `always()`.
 The `plain-react` job (Storybook stories and the plain-vs-harness parity gate) is separate and runs on drafts; `plain-react`, `plain-nuxt` and `e2e` are skipped only when `docs_only` (set by `build`: every changed path is under `documents/`) is `true`.
 The `plain-nuxt` job (its stories, not a required check) runs alongside `plain-react`. Layers and CI legs (including `tailwind-floor`, `node-floor`,
-`peer-matrix` (decides the `vite`/`typescript` peer ranges), `ts-peer` (proves the `typescript` range in a scratch npm project) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
-these 9 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main` (the `develop` → `main` release PR), not on PRs into `develop`;
+`peer-matrix` (decides the `vite`/`typescript` peer ranges), `ts-peer` (proves the `typescript` range in a scratch npm project) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges) and `ds-smoke` (`style-gen ds build` from the packed tarball with `tailwindcss` as the only peer); every leg must pass;
+these 10 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main` (the `develop` → `main` release PR), not on PRs into `develop`;
 it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` has no path filter and runs on every PR;
 every job but `e2e` also runs on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`; `node scripts/ci-run-lines.mjs --compare <rev>` lists the `run:` steps a workflow edit dropped, re-ordered or re-conditioned): `documents/testing.md`.
 `.github/workflows/nightly.yml` (not a required check) adds `yarn test` on `macos-latest` and `scripts/bun-smoke.mjs` (Bun installed with `npm install -g bun`, no third-party action) every night and on PRs into `main` that change it.

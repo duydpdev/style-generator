@@ -77,7 +77,10 @@ The checks have two layers:
      `@types/react`) to the floor of their `peerDependencies` ranges through `resolutions`, asserts the resolved versions,
      then runs `yarn typecheck:dist` and `yarn vitest run src/features/ui`. Two harness-only pins mirror what a consumer actually gets: cva 0.7.0 needs clsx 2.0.0 exactly,
      so it keeps its own nested copy, and `@types/scheduler` is held at 0.16.8, the last version with `scheduler/tracing`, which `@types/react` <=18.2.71 imports;
-   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` and `ui-peer-floor` are the heavy tier and live in `ci-matrix.yml` (9 jobs, `peer-matrix` has 5 legs; not a required check).
+   - job `ds-smoke` (6 legs: ubuntu, macos and windows, each with `tailwindcss` 4.1.0 and the release the lockfile resolves): `scripts/ds-build-smoke.mjs` (`yarn check:ds-build`) packs the built tarball,
+     installs it with `tailwindcss` as the only peer (no Vite, React or oxide) in a scratch project, runs `style-gen ds build` on the fixture theme with a `.mjs` preset
+     and checks `bundle.css` (a Tailwind utility, the preset's focus ring, a theme colour, a typography class), that `bundle.js` names no workspace package and that `ds-stamp.json` names the `tailwindcss` version;
+   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer`, `ui-peer-floor` and `ds-smoke` are the heavy tier and live in `ci-matrix.yml` (10 jobs, `peer-matrix` has 5 legs; not a required check).
      It runs nightly on `main` (cron `43 5 * * *`), on manual dispatch (`gh workflow run ci-matrix.yml --ref main`) and on PRs into `main` (the `develop` → `main` release PR), not on PRs into `develop`;
      every leg must be green before the PR into `main` is merged. It has `paths-ignore: ["documents/**"]` at the workflow level:
      a PR that only changes documentation does not run it. On PRs every job skips drafts and runs when the PR is marked ready (`ready_for_review`);

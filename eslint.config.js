@@ -390,6 +390,8 @@ export default pluginTs.config(
       // Git-ignored local working directories (plans, brainstorms); never committed or published.
       "documents/plans/**",
       "documents/brainstorm/**",
+      // Generated output pinned byte for byte as a build parity golden.
+      "src/__integration__/__fixtures__/ds-build/golden-*/**",
       "examples/**/.next/**",
       "examples/**/.nuxt/**",
       "examples/**/.output/**",

@@ -3,6 +3,8 @@
  * options, the CSS its theme compiles to, and how a class candidate splits
  * into variants and a utility.
  */
+import { basename } from "node:path";
+
 import { z } from "zod";
 
 import { generateFromParsed } from "../../../core/generateFromParsed";
@@ -22,7 +24,7 @@ import {
 import { CanvasInputError, readJson } from "./scan";
 
 /**
- * The `generate()` options a `style-gen.config.json` holds.
+ * The `generate()` options a `style-gen.config.json` holds, or a `package.json`'s `style-gen` key.
  * @param {string} file - Path to the config file
  * @param {string} label - The path as the user wrote it, for messages
  * @returns {StyleGeneratorOptions} Options without the config-only keys
@@ -32,7 +34,12 @@ export function loadGeneratorOptions(
   file: string,
   label: string,
 ): StyleGeneratorOptions {
-  const parsed = StyleGenConfigFileSchema.safeParse(readJson(file, label));
+  const raw = readJson(file, label);
+  const source =
+    basename(file) === "package.json"
+      ? ((raw as Record<string, unknown> | null)?.["style-gen"] ?? {})
+      : raw;
+  const parsed = StyleGenConfigFileSchema.safeParse(source);
   if (!parsed.success)
     throw new CanvasInputError(
       `${label}: invalid config (${formatZodError(parsed.error)})`,

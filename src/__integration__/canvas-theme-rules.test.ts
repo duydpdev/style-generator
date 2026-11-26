@@ -1,8 +1,6 @@
-import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +8,7 @@ import { checkCanvas } from "../cli/commands/canvas";
 import { contrastRatio, resolveColor } from "../cli/commands/canvas/contrast";
 import { mergeDescriptions } from "../cli/commands/canvas/descriptions";
 import { packagedStandard } from "../cli/commands/canvas/standardSchema";
+import { themeToDsTokens } from "../cli/commands/ds/dsTokens";
 import { logger } from "../cli/logger";
 import { runCli } from "../cli/run";
 import { dsNameCollisions, dsTokenNames } from "../shared/dsTokenNames";
@@ -383,7 +382,7 @@ describe("integration: canvas check theme rules", () => {
       expect(source).not.toMatch(/from ["'](?:node:|zod)/);
     });
 
-    it("names the same tokens as the design-system build script", () => {
+    it("names the same tokens as ds build", () => {
       const theme = {
         colors: { primary: "#000000", blue500: "#0000ff" },
         borderRadius: { md: "8px", fullPill: "9px" },
@@ -391,23 +390,7 @@ describe("integration: canvas check theme rules", () => {
         borderWidth: { thin: "1px" },
         backdropBlurs: { glassy: "4px" },
       };
-      const code = `import { themeToDsTokens } from ${JSON.stringify(
-        pathToFileURL(join(__dirname, "..", "..", "scripts", "ds-tokens.mjs"))
-          .href,
-      )};
-let input = "";
-for await (const chunk of process.stdin) input += chunk;
-process.stdout.write(JSON.stringify(themeToDsTokens(JSON.parse(input), { name: "x" })));`;
-      const run = spawnSync(
-        process.execPath,
-        ["--input-type=module", "-e", code],
-        {
-          input: JSON.stringify(theme),
-          encoding: "utf8",
-        },
-      );
-      expect(run.status, run.stderr).toBe(0);
-      const built = JSON.parse(run.stdout) as Record<
+      const built = themeToDsTokens(theme, { name: "x" }) as Record<
         string,
         { tokens?: { name: string }[] }
       >;

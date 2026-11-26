@@ -287,13 +287,34 @@ yarn style-gen canvas standard migrate --theme styles/theme.json --dry-run
 | `--standard <file>` | `string`  | `canvas-standard.json` | The additions file to create (`init`) or rewrite (`migrate`)  |
 | `--dry-run`         | `boolean` | off                    | `migrate` prints the additions JSON and writes nothing        |
 
+### `style-gen ds`
+
+Build the files of a claude.ai design-system artifact from a theme: `style-gen ds build`. The result is what [`canvas check --stamp`](#style-gen-canvas) later verifies.
+
+```bash
+yarn style-gen ds build --theme styles/theme.json --config style-gen.config.json --preset ds.preset.mjs --namespace Acme --out design/ds
+```
+
+| Flag                 | Type     | Default   | Description                                                                                   |
+| :------------------- | :------- | :-------- | :-------------------------------------------------------------------------------------------- |
+| `--theme <file>`     | `string` | required  | Theme JSON                                                                                    |
+| `--config <file>`    | `string` | required  | `style-gen.config.json`, or a `package.json` with a `style-gen` key                           |
+| `--preset <file>`    | `string` | required  | `.mjs`, `.js`, `.json` or `.ts` preset exporting `boxPreset`, `textPreset` and `buttonPreset` |
+| `--namespace <Name>` | `string` | required  | The global the bundle defines; a JavaScript identifier                                        |
+| `--out <dir>`        | `string` | required  | Output directory                                                                              |
+| `--name <title>`     | `string` | namespace | Title of the README and the cover                                                             |
+
+It writes `tokens.json`, `README.md`, `ds-stamp.json` and `components/` (`bundle.js`, `bundle.css`, `index.d.ts`, `Cover/preview.html`), everything computed in memory and written last. The six components (Box, Text, Stack, Flex, Grid, Button) are precompiled into the package; the preset is loaded as data and `bundle.css` is compiled with the product's `tailwindcss` (the package's own copy is the fallback), so nothing else needs to be installed. A `.ts` preset is imported natively and needs Node 22.18+ (rename it to `.mjs` otherwise). The preset is imported as code with your privileges, like a config file; keep it free of imports. `node:vm` only runs the self-check of the bundle the command assembled; it is not a sandbox.
+
+Exit codes: `0` written, `1` a gate failed (a missing theme key, an unfilled placeholder, a rendered class with no rule in `bundle.css`; nothing is written), `2` a usage or input error (a missing flag, a namespace that is not an identifier, an unreadable theme, config or preset, a preset that is not data).
+
 ### `style-gen --version`
 
 Print the installed CLI version.
 
 ### Help and exit codes
 
-`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` is rejected instead of silently using the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget` and `canvas` use `2` for usage errors, see above).
+`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` is rejected instead of silently using the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget`, `canvas` and `ds` use `2` for usage errors, see above).
 
 ## Configuration file
 

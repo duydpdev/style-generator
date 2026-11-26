@@ -1,20 +1,20 @@
-// window.{{namespace}} — the harness's six sample components bound to
-// {{themeFile}} (examples/harness/src/ui.ts). Types are documentation:
+// window.Fixture — the harness's six sample components bound to
+// `theme.json` (examples/harness/src/ui.ts). Types are documentation:
 // token unions spell this theme's keys (camelCase, as in theme.json).
 import type { CSSProperties, ElementType, ReactNode, JSX, ComponentPropsWithoutRef } from "react";
 
-export type ColorToken = {{ColorToken}};
+export type ColorToken = "white" | "gray100" | "gray500" | "gray900" | "blue600" | "blue700" | "blue800" | "red600" | "green600" | "amber500" | "blackAlpha40" | "background" | "surface" | "foreground" | "muted" | "border" | "primary" | "primaryHover" | "primaryActive" | "primaryForeground" | "primarySubtle" | "primarySubtleForeground" | "danger" | "dangerSubtle" | "dangerSubtleForeground" | "success" | "warning" | "focus" | "scrim";
 /** A colour token, or `token/step` with a step from `coverage.colors.opacities`. */
-export type ColorValue = {{ColorValue}};
-export type TypographyToken = {{TypographyToken}};
-export type RadiusToken = {{RadiusToken}};
-export type ShadowToken = {{ShadowToken}};
-export type BlurToken = {{BlurToken}};
-export type BorderWidthToken = {{BorderWidthToken}};
-export type Breakpoint = {{Breakpoint}};
+export type ColorValue = ColorToken;
+export type TypographyToken = "text14Medium" | "text16Regular" | "text20Semibold" | "text32Bold";
+export type RadiusToken = "sm" | "md" | "lg" | "full";
+export type ShadowToken = never;
+export type BlurToken = never;
+export type BorderWidthToken = never;
+export type Breakpoint = "md" | "lg";
 
 /** A Tailwind spacing step (`4` = 1rem), or one per breakpoint: `{ base: 2, md: 4 }`. */
-export type SpacingValue = number | { {{SpacingBreakpoints}} };
+export type SpacingValue = number | { base?: number; md?: number; lg?: number; };
 /** Spacing props: compile to `.sp-*` utilities over `--sg-sp-*` variables. */
 export interface SpacingProps {
   p?: SpacingValue;
@@ -94,9 +94,9 @@ export interface BoxProps extends LayoutProps {
   innerBorder?: boolean;
 }
 export interface TextProps extends SpacingProps {
-  /** Default `{{defaultType}}`. */
+  /** Default `text16Regular`. */
   type?: TypographyToken;
-  /** Default `{{defaultColor}}`. */
+  /** Default `foreground`. */
   color?: ColorValue;
   align?: "left" | "center" | "right";
   decoration?: "underline" | "lineThrough" | "none";
@@ -134,8 +134,8 @@ export interface GridProps extends LayoutProps {
 export interface ButtonProps extends SpacingProps {
   /** Default `solid`. */
   variant?: "solid" | "outline" | "soft" | "ghost" | "link";
-  /** Default `{{defaultIntent}}`. */
-  color?: {{Intent}};
+  /** Default `primary`. */
+  color?: "primary" | "danger";
   /** Default `md`. `icon` is a square at the `md` height, for an icon-only button with an `aria-label`. */
   size?: "sm" | "md" | "lg" | "icon";
   /** Icon before the label, in a flex slot that centres it. Put icons here, never in `children`. Icon only: `prefix` alone, no `children`, an `aria-label`; the button turns square. On a canvas pass a React node: `prefix="{{ic.plus}}"`. */

@@ -398,6 +398,51 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
   },
 };
 
+const DS_USAGE =
+  "style-gen ds build --theme <file> --config <file> --preset <file> --namespace <Name> --out <dir> [--name <title>]";
+
+const dsCli: CliCommand = {
+  name: "ds",
+  description: "Build the files of a claude.ai design-system artifact",
+  usage: `Usage: ${DS_USAGE}
+
+Writes tokens.json, README.md, ds-stamp.json and components/ (bundle.js,
+bundle.css, index.d.ts, Cover/preview.html) from a theme, its config and a
+preset module exporting boxPreset, textPreset and buttonPreset.
+
+Options:
+  --theme <file>       Theme JSON (required)
+  --config <file>      style-gen.config.json or a package.json (required)
+  --preset <file>      .mjs, .js, .json or .ts preset (.ts needs Node 22.18+)
+  --namespace <Name>   Global the bundle defines, a JS identifier (required)
+  --out <dir>          Output directory (required)
+  --name <title>       Title; defaults to the namespace
+
+The preset is imported as code with your privileges, like a config file; keep
+it free of imports. node:vm only runs the self-check of the bundle this command
+assembled; it is not a sandbox. Needs the tailwindcss package.
+
+Exit codes: 0 written, 1 a gate failed (nothing written), 2 usage or input error.`,
+  options: {
+    theme: { type: "string" },
+    config: { type: "string" },
+    preset: { type: "string" },
+    namespace: { type: "string" },
+    out: { type: "string" },
+    name: { type: "string" },
+  },
+  allowPositionals: true,
+  usageExitCode: 2,
+  run: async (values, positionals, ctx) => {
+    if (positionals.join(" ") !== "build") {
+      logger.error(`Usage: ${DS_USAGE}`);
+      return 2;
+    }
+    const ds = await import("./commands/ds");
+    return ds.dsBuildCommand(values, ctx.cwd);
+  },
+};
+
 /** Every command, in the order the help lists them. */
 export const commands: readonly CliCommand[] = [
   initCli,
@@ -407,6 +452,7 @@ export const commands: readonly CliCommand[] = [
   tokensCli,
   budgetCli,
   canvasCli,
+  dsCli,
 ];
 
 /* ------------------ Help ------------------ */

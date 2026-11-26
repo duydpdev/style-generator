@@ -89,6 +89,8 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-11-26 (canvas commands load through `import()` from their own entry `dist/cli/canvas.mjs`, so `generate`, `init` and `--version` stop paying for them; user-approved plan): cli measured 36968 B transitive (was 50264 B before the split; the `standardSchema` chunk it shares with `canvas` is counted in both), new `cli-canvas` measured 19872 B transitive. Budgets set to measured + ~10 %, rounded up to 10 B: cli 53240 -> 40670, cli-canvas 21860.
 // 2026-11-26 (rules chunk owns its budget under the user-approved plan: the theme rules land in `dist/cli/canvas.mjs`: closed scales, contrast, descriptions, design-system name collisions, rule reports): `cli-canvas` provisional 21860 (measured 19872 B before the rules existed) -> measured 25564 B transitive; budget 28130 (measured + ~10 %, rounded up to 10 B). `cli` stays 40670 (37210 B measured, 91 %).
 // 2026-11-26 (board class rules under the user-approved plan: `ref-class`, `token-bypass` and `token-unused` load from their own entry `dist/cli/canvas-classes.mjs` through `import()`, so only `canvas check --boards` pays for the Tailwind compile helper, the class lexer and the token reads): `cli-canvas-classes` new, 24487 B transitive (the chunks it shares with `canvas` are counted in both), budget 26940 (measured + ~10 %, rounded up to 10 B). `cli-canvas` 25564 -> 27967 B (class candidates now live in the shared scan chunk), budget 28130 -> 30770. `cli` stays 40670 (38630 B measured, 95 %).
+// 2026-11-26 (`style-gen ds build` runs from a precompiled runtime `dist/ds/runtime.js`: the six components with their recipes, `ui`, class-variance-authority, clsx and tailwind-merge inlined, so the product installs none of them; user-approved plan): `ds` new, 24636 B gzip transitive, budget 27100 (measured + ~10 %, rounded up to 10 B). `cli` stays 40670.
+// 2026-11-26 (`style-gen ds build` loads through `import()` from its own entry `dist/cli/ds.mjs`, so only that command pays for the preset loader, the docs and token mappers, the bundle assembly and the stylesheet compile; user-approved plan): `cli-ds` new, 40700 B gzip transitive (the chunks it shares with `canvas` are counted in both), budget 44770 (measured + ~10 %, rounded up to 10 B). `cli` 38630 -> 39700 B (the `ds` command registration and its help text), still under 40670 (98 %); `cli-canvas` 27967 -> 29441 B, under 30770.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -105,6 +107,8 @@ const budgets = {
   cli: 40_670,
   "cli-canvas": 30_770,
   "cli-canvas-classes": 26_940,
+  ds: 27_100,
+  "cli-ds": 44_770,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.
@@ -112,6 +116,8 @@ const extraFiles = {
   cli: "dist/cli/index.mjs",
   "cli-canvas": "dist/cli/canvas.mjs",
   "cli-canvas-classes": "dist/cli/canvas-classes.mjs",
+  ds: "dist/ds/runtime.js",
+  "cli-ds": "dist/cli/ds.mjs",
 };
 
 // Static `import … from "./x.js"`, `export … from "./x.js"` and bare

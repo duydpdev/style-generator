@@ -17,7 +17,7 @@ type ThemeFamily = keyof typeof DS_FAMILY_PREFIX;
 
 /**
  * The colour keys the design-system cover page reads (`{{v:<key>}}` in
- * `scripts/ds-cover.html.tmpl`), so a theme that holds them is not unused.
+ * the cover template in `src/cli/commands/ds/templates.ts`), so a theme that holds them is not unused.
  */
 export const DS_COVER_KEYS: readonly string[] = [
   "background",

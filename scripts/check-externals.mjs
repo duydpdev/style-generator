@@ -139,8 +139,32 @@ const isCodeFreeShim = (file) => {
     .every((statement) => SHIM_STATEMENTS.some((re) => re.test(statement)));
 };
 
+/**
+ * The one bundle that inlines third-party code on purpose: the design-system
+ * runtime carries class-variance-authority, clsx and tailwind-merge (licence
+ * texts in `dist/ds/NOTICES.txt`), because `ds build` assembles it as text and
+ * the product installs none of them. It has no sourcemap, so it is checked
+ * for the one private workspace name its sources import instead.
+ */
+const DS_RUNTIME = resolve(dist, "ds/runtime.js");
+
 const files = existsSync(dist) ? walk(dist) : [];
+if (existsSync(DS_RUNTIME)) {
+  if (readFileSync(DS_RUNTIME, "utf8").includes("design-system-example")) {
+    console.error(
+      "✗ dist/ds/runtime.js names the private workspace package design-system-example",
+    );
+    ok = false;
+  }
+  if (!existsSync(resolve(dist, "ds/NOTICES.txt"))) {
+    console.error(
+      "✗ dist/ds/NOTICES.txt (licences of the inlined packages) is missing",
+    );
+    ok = false;
+  }
+}
 for (const file of files.filter((f) => /\.[cm]?js$/.test(f))) {
+  if (file === DS_RUNTIME) continue;
   if (!existsSync(`${file}.map`) && !isCodeFreeShim(file)) {
     console.error(
       `✗ ${relative(root, file)} has no sourcemap — inlining cannot be checked`,

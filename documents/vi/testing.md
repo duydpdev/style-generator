@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 53947fbf8e5c -->
+<!-- source: documents/testing.md sha256: a5c30947d71c -->
 
 # Hướng dẫn kiểm thử
 
@@ -79,7 +79,10 @@ Các bước kiểm tra có hai lớp:
      rồi chạy `yarn typecheck:dist` và `yarn vitest run src/features/ui`. Hai bản ghim chỉ dành cho harness (bộ ví dụ dùng để kiểm thử DX) phản ánh những gì một consumer thực sự
      nhận được: cva 0.7.0 cần đúng clsx 2.0.0, nên nó giữ một bản sao lồng nhau riêng, và `@types/scheduler` được giữ ở 0.16.8, phiên bản cuối cùng có `scheduler/tracing`,
      thứ mà `@types/react` <=18.2.71 import;
-   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer` và `ui-peer-floor` là tầng nặng và nằm trong `ci-matrix.yml` (9 job, `peer-matrix` có 5 leg; không phải check bắt buộc).
+   - job `ds-smoke` (6 nhánh: ubuntu, macos và windows, mỗi nơi chạy với `tailwindcss` 4.1.0 và bản mà lockfile resolve): `scripts/ds-build-smoke.mjs` (`yarn check:ds-build`) đóng gói tarball đã build,
+     cài nó với `tailwindcss` là peer duy nhất (không có Vite, React hay oxide) trong một scratch project, chạy `style-gen ds build` trên theme fixture với một preset `.mjs`
+     và kiểm tra `bundle.css` (một utility của Tailwind, focus ring của preset, một màu của theme, một class typography), `bundle.js` không nhắc package workspace nào và `ds-stamp.json` ghi phiên bản `tailwindcss`;
+   - `tailwind-floor`, `node-floor`, `peer-matrix`, `ts-peer`, `ui-peer-floor` và `ds-smoke` là tầng nặng và nằm trong `ci-matrix.yml` (10 job, `peer-matrix` có 5 leg; không phải check bắt buộc).
      Nó chạy hằng đêm trên `main` (cron `43 5 * * *`), khi dispatch thủ công (`gh workflow run ci-matrix.yml --ref main`) và trên các PR vào `main` (PR release `develop` → `main`),
      không chạy trên PR vào `develop`; mọi leg phải xanh trước khi merge PR vào `main`. Nó có `paths-ignore: ["documents/**"]` ở cấp workflow:
      một PR chỉ đổi tài liệu không chạy nó. Trên PR, mọi job bỏ qua các PR draft và chạy khi PR được đánh dấu ready (`ready_for_review`);

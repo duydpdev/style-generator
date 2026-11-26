@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: 61a26630bd31 -->
+<!-- source: documents/reference/cli.md sha256: 7d1b7e33851e -->
 
 # CLI
 
@@ -306,7 +306,7 @@ yarn style-gen ds build --theme styles/theme.json --config style-gen.config.json
 | `--out <dir>`        | `string` | bắt buộc  | Thư mục đầu ra                                                                              |
 | `--name <title>`     | `string` | namespace | Tiêu đề của README và cover                                                                 |
 
-Lệnh ghi `tokens.json`, `README.md`, `ds-stamp.json` và `components/` (`bundle.js`, `bundle.css`, `index.d.ts`, `Cover/preview.html`); mọi thứ được tính trong bộ nhớ và ghi ở bước cuối. Sáu component (Box, Text, Stack, Flex, Grid, Button) được biên dịch sẵn trong package; preset được nạp như dữ liệu và `bundle.css` được compile bằng `tailwindcss` của sản phẩm (bản đi kèm package là phương án dự phòng), nên không cần cài thêm gì. Preset `.ts` được import trực tiếp và cần Node 22.18+ (nếu không, hãy đổi tên thành `.mjs`). Preset được import như code với quyền của bạn, giống một file config; hãy để nó không có import nào. `node:vm` chỉ chạy bước tự kiểm tra bundle mà lệnh vừa ráp; nó không phải sandbox.
+Lệnh ghi `tokens.json`, `README.md`, `ds-stamp.json` và `components/` (`bundle.js`, `bundle.css`, `index.d.ts`, `Cover/preview.html`); mọi thứ được tính trong bộ nhớ và ghi ở bước cuối. Sáu component (Box, Text, Stack, Flex, Grid, Button) được biên dịch sẵn trong package; preset được nạp như dữ liệu và `bundle.css` được compile bằng `tailwindcss` của sản phẩm (bản đi kèm package là phương án dự phòng), nên `tailwindcss` là peer duy nhất nó dùng và không cần cài thêm gì. Preset `.ts` được import trực tiếp và cần Node 22.18+ (nếu không, hãy đổi tên thành `.mjs`). Preset được import như code với quyền của bạn, giống một file config; hãy để nó không có import nào. `node:vm` chỉ chạy bước tự kiểm tra bundle mà lệnh vừa ráp; nó không phải sandbox.
 
 Mã thoát: `0` đã ghi, `1` một cổng kiểm tra fail (thiếu key theme, còn placeholder chưa điền, một class được render mà `bundle.css` không có rule; không ghi gì cả), `2` lỗi cách dùng hoặc input (thiếu cờ, namespace không phải identifier, theme, config hoặc preset không đọc được, preset không phải dữ liệu).
 

@@ -10,7 +10,11 @@ import { writeTmpFile } from "./__fixtures__/tmpProject";
 
 const repoRoot = join(__dirname, "..", "..");
 
-type Script = "docs-embed" | "check-doc-snippets" | "check-doc-exports";
+type Script =
+  | "docs-embed"
+  | "docs-standard-tables"
+  | "check-doc-snippets"
+  | "check-doc-exports";
 
 /**
  * Write `content` to `<root>/<rel>`, creating parent directories.
@@ -48,6 +52,96 @@ function useTempDir() {
   });
   return state;
 }
+
+describe("integration: docs-standard-tables", { timeout: 60_000 }, () => {
+  const t = useTempDir();
+  const standard = {
+    semanticCore: ["background", "primary"],
+    grammar: {
+      neutral: ["background"],
+      roles: ["primary"],
+      suffixes: ["Subtle"],
+      states: ["Hover"],
+      renames: { Soft: "Subtle" },
+    },
+    scales: { borderRadius: { kind: "size", steps: ["sm", "md"] } },
+    descriptions: { background: "The page behind everything." },
+    rules: {
+      "scale-name": {
+        basis: { type: "choice", source: "closed step names" },
+      },
+    },
+  };
+  const region = (name: string) =>
+    `<!-- standard-table: ${name} -->\n<!-- /standard-table -->\n`;
+  const setup = (markdown: string) => {
+    writeTmpFile(t.dir, "src/cli/canvas/design-canvas-standard.json", standard);
+    writeTmpFile(t.dir, "README.md", markdown);
+  };
+
+  it("flags an empty region, fills it from the standard, then passes", () => {
+    setup(`# T\n\n${region("rules")}\n${region("scales")}`);
+    const stale = run("docs-standard-tables", t.dir, ["--check"]);
+    expect(stale.status).toBe(1);
+    expect(stale.output).toContain(
+      "README.md: a standard table is out of date",
+    );
+    expect(run("docs-standard-tables", t.dir, ["--write"]).status).toBe(0);
+    const text = readFileSync(join(t.dir, "README.md"), "utf8");
+    expect(text).toContain("`scale-name`");
+    expect(text).toContain("closed step names");
+    expect(text).toContain("`sm`, `md`");
+    expect(run("docs-standard-tables", t.dir, ["--check"]).status).toBe(0);
+  });
+
+  it("fails when a generated row is edited by hand", () => {
+    setup(`# T\n\n${region("rules")}`);
+    run("docs-standard-tables", t.dir, ["--write"]);
+    const file = join(t.dir, "README.md");
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8").replace("closed step names", "a hand edit"),
+    );
+    const result = run("docs-standard-tables", t.dir, ["--check"]);
+    expect(result.status).toBe(1);
+    expect(result.output).toContain("out of date");
+  });
+
+  it("fails on an unknown table and on a region that never closes", () => {
+    setup("# T\n\n<!-- standard-table: nope -->\n<!-- /standard-table -->\n");
+    const unknown = run("docs-standard-tables", t.dir, ["--check"]);
+    expect(unknown.status).toBe(1);
+    expect(unknown.output).toContain("unknown standard table nope");
+    setup("# T\n\n<!-- standard-table: rules -->\n");
+    const open = run("docs-standard-tables", t.dir, ["--check"]);
+    expect(open.status).toBe(1);
+    expect(open.output).toContain("rules has no closing");
+  });
+
+  it("exits 2 without a mode", () => {
+    setup("# T\n");
+    expect(run("docs-standard-tables", t.dir).status).toBe(2);
+  });
+
+  it("covers every table in the repository's docs and finds them up to date", () => {
+    const docs = [
+      "documents/agent-contract.md",
+      "documents/standards/design-canvas.md",
+    ]
+      .map((doc) => readFileSync(join(repoRoot, doc), "utf8"))
+      .join("\n");
+    for (const name of [
+      "grammar",
+      "renames",
+      "descriptions",
+      "scales",
+      "rules",
+    ])
+      expect(docs).toContain(`<!-- standard-table: ${name} -->`);
+    const result = run("docs-standard-tables", repoRoot, ["--check"]);
+    expect(result.status, result.output).toBe(0);
+  });
+});
 
 describe("integration: docs-embed", { timeout: 60_000 }, () => {
   const t = useTempDir();

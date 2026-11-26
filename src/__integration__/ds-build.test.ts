@@ -203,6 +203,37 @@ describe("ds build output gate", () => {
   });
 });
 
+describe("button preset literals", () => {
+  it("carries the preset's hover dim and duration keys into a stylesheet that has rules for them", async () => {
+    const preset = join(tempDir("ds-build-preset-"), "ds.preset.mjs");
+    const fixturePreset = readFileSync(
+      join(fixtureDir, "ds.preset.ts"),
+      "utf8",
+    );
+    writeFileSync(
+      preset,
+      fixturePreset
+        .replaceAll(" as const", "")
+        .replace(
+          'disabled: "disabled:opacity-disabled",',
+          'disabled: "disabled:opacity-disabled", hoverDim: "hover:opacity-disabled", duration: "duration-base",',
+        ),
+    );
+    const theme = writeTheme((fixture) => ({
+      ...fixture,
+      motionDuration: { base: "150ms" },
+    }));
+    const { code, out } = await runDsBuild(theme, { preset });
+    expect(code, errors.join("\n")).toBe(0);
+
+    const css = readFileSync(join(out, "components", "bundle.css"), "utf8");
+    expect(css).toContain(String.raw`.hover\:opacity-disabled`);
+    expect(css).toContain(".duration-base");
+    const bundle = readFileSync(join(out, "components", "bundle.js"), "utf8");
+    expect(bundle).toContain('"hoverDim":"hover:opacity-disabled"');
+  });
+});
+
 describe("the stamp's version", () => {
   it.each([
     ["9.3.0", "9.3.1", true],

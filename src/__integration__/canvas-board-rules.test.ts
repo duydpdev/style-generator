@@ -181,6 +181,29 @@ describe("board class rules", () => {
       expect(await run("token-bypass", "flex", { preset: good })).toEqual([]);
     });
 
+    it("passes a preset whose hover dim and duration are tokens and flags the literals", async () => {
+      const theme: Theme = {
+        ...THEME,
+        opacity: { disabled: 0.4, hover: 0.9 },
+        motionDuration: { base: "150ms" },
+      };
+      const literals =
+        'export const b = { hoverDim: "hover:opacity-90", duration: "duration-150" };';
+      const bad = await run("token-bypass", "flex", {
+        theme,
+        preset: literals,
+      });
+      expect(bad.map((line) => line.split(" [")[0])).toEqual([
+        "ds.preset.ts:1 class hover:opacity-90 writes a raw opacity value (use a opacity token)",
+        "ds.preset.ts:1 class duration-150 writes a raw motionDuration value (use a motionDuration token)",
+      ]);
+      const tokens =
+        'export const b = { hoverDim: "hover:opacity-hover", duration: "duration-base" };';
+      expect(
+        await run("token-bypass", "flex", { theme, preset: tokens }),
+      ).toEqual([]);
+    });
+
     it("skips a class an exception names in that file", async () => {
       const standard = {
         exceptions: {

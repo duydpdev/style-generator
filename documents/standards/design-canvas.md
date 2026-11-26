@@ -18,12 +18,13 @@ Why:
 1. Write `theme.json` following the naming convention of the [agent contract](../agent-contract.md#naming-convention).
 2. Run `style-gen generate` and `style-gen doctor` in the product folder.
 3. Build the design system:
-   `node scripts/build-ds.mjs --theme <theme.json> --config <style-gen.config.json> --preset <ds.preset.ts> --namespace <Name> --out <dir> [--name <title>]`.
-   It writes `components/bundle.js`, `components/bundle.css`, `components/index.d.ts`, `components/Cover/preview.html`, `tokens.json`, `README.md` and `ds-stamp.json`.
+   `style-gen ds build --theme <theme.json> --config <style-gen.config.json> --preset <ds.preset.mjs> --namespace <Name> --out <dir> [--name <title>]`.
+   It writes `components/bundle.js`, `components/bundle.css`, `components/index.d.ts`, `components/Cover/preview.html`, `tokens.json`, `README.md` and `ds-stamp.json`. It needs only `tailwindcss` next to the library (no Vite, React or oxide).
+   The preset is data: an `.mjs`, `.js` or `.json` file (a `.ts` preset also works on Node 22.18+) exporting `boxPreset`, `textPreset` and `buttonPreset`. It is imported as code with your privileges, like a config file, so keep it free of imports.
    The theme needs at least one `typography` key (the cover title and the Text component use one) and the `background`, `primary`, `foreground`, `success` and `warning` colour keys the cover reads. The Button preset adds its own: one `controlHeight` key per size (`buttonPreset.height`) and `<intent>Subtle` and `<intent>SubtleForeground` for every intent.
-   The producer checks these keys before the build, names each missing one and exits 1 without writing anything. `borderRadius` is optional: without it the README's `## Radius` section says the theme defines no keys.
-   The producer also checks its own output (README sections, cover variables, no unfilled placeholder) and writes nothing when a check fails; theme drift after a build is the checker's `--stamp` check.
-   The stamp records the library version, the git SHA, `srcDirty`, the sha256 of the theme bytes and the namespace. Build from a clean checkout: when `srcDirty` is `true`, the SHA does not identify the code in the bundle.
+   The command checks these keys before the build, names each missing one and exits 1 without writing anything. `borderRadius` is optional: without it the README's `## Radius` section says the theme defines no keys.
+   It also checks its own output (README sections, cover variables, no unfilled placeholder, a rule in `bundle.css` for every class the components render) and writes nothing when a check fails; theme drift after a build is the checker's `--stamp` check.
+   The stamp records the library version, the sha256 of the theme bytes and of the preset bytes, and the `tailwindcss` version. The checker compares the library version by major and minor, so a patch release does not invalidate a stamp.
 4. Publish the output as a Design System artifact. Create it once and keep its URL; later builds update the same artifact.
 5. Copy `components/bundle.css` and `components/bundle.js` to the canvas as `ds/<namespace>/components/bundle.css` and `ds/<namespace>/components/bundle.js`, keeping the `components/` folder: the check skips the bundle stylesheet only at that path, and a flattened copy would be scanned for Tailwind's own variables. Do not copy `tokens.css`: it declares unprefixed variables, which is a second namespace on a canvas.
 6. Artboards use only `var(--sg-…)`, `calc(var(--spacing) * N)`, a few `--layout-*` variables and typography classes.

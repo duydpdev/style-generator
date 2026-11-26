@@ -1,4 +1,4 @@
-<!-- source: documents/reference/cli.md sha256: a5870fc0d528 -->
+<!-- source: documents/reference/cli.md sha256: 61a26630bd31 -->
 
 # CLI
 
@@ -289,13 +289,34 @@ yarn style-gen canvas standard migrate --theme styles/theme.json --dry-run
 | `--standard <file>` | `string`  | `canvas-standard.json` | File bổ sung để tạo (`init`) hoặc ghi lại (`migrate`)    |
 | `--dry-run`         | `boolean` | tắt                    | `migrate` in JSON bổ sung ra và không ghi gì             |
 
+### `style-gen ds`
+
+Build các file của một design-system artifact trên claude.ai từ một theme: `style-gen ds build`. Kết quả là thứ mà [`canvas check --stamp`](#style-gen-canvas) kiểm tra sau đó.
+
+```bash
+yarn style-gen ds build --theme styles/theme.json --config style-gen.config.json --preset ds.preset.mjs --namespace Acme --out design/ds
+```
+
+| Flag                 | Type     | Mặc định  | Mô tả                                                                                       |
+| :------------------- | :------- | :-------- | :------------------------------------------------------------------------------------------ |
+| `--theme <file>`     | `string` | bắt buộc  | Theme JSON                                                                                  |
+| `--config <file>`    | `string` | bắt buộc  | `style-gen.config.json`, hoặc một `package.json` có key `style-gen`                         |
+| `--preset <file>`    | `string` | bắt buộc  | Preset `.mjs`, `.js`, `.json` hoặc `.ts` export `boxPreset`, `textPreset` và `buttonPreset` |
+| `--namespace <Name>` | `string` | bắt buộc  | Biến global mà bundle định nghĩa; một identifier JavaScript                                 |
+| `--out <dir>`        | `string` | bắt buộc  | Thư mục đầu ra                                                                              |
+| `--name <title>`     | `string` | namespace | Tiêu đề của README và cover                                                                 |
+
+Lệnh ghi `tokens.json`, `README.md`, `ds-stamp.json` và `components/` (`bundle.js`, `bundle.css`, `index.d.ts`, `Cover/preview.html`); mọi thứ được tính trong bộ nhớ và ghi ở bước cuối. Sáu component (Box, Text, Stack, Flex, Grid, Button) được biên dịch sẵn trong package; preset được nạp như dữ liệu và `bundle.css` được compile bằng `tailwindcss` của sản phẩm (bản đi kèm package là phương án dự phòng), nên không cần cài thêm gì. Preset `.ts` được import trực tiếp và cần Node 22.18+ (nếu không, hãy đổi tên thành `.mjs`). Preset được import như code với quyền của bạn, giống một file config; hãy để nó không có import nào. `node:vm` chỉ chạy bước tự kiểm tra bundle mà lệnh vừa ráp; nó không phải sandbox.
+
+Mã thoát: `0` đã ghi, `1` một cổng kiểm tra fail (thiếu key theme, còn placeholder chưa điền, một class được render mà `bundle.css` không có rule; không ghi gì cả), `2` lỗi cách dùng hoặc input (thiếu cờ, namespace không phải identifier, theme, config hoặc preset không đọc được, preset không phải dữ liệu).
+
 ### `style-gen --version`
 
 In ra phiên bản CLI đã cài đặt.
 
 ### Trợ giúp và mã thoát
 
-`style-gen --help` liệt kê các lệnh; `style-gen <command> --help` in ra các tùy chọn của lệnh đó. Các cờ được phân tích nghiêm ngặt: **cờ lạ là một lỗi** (`--them` bị từ chối thay vì âm thầm dùng theme mặc định), và lệnh lạ cũng vậy. Mọi lệnh đều thoát với mã `0` khi thành công, khi gọi `--help`, `--version` hoặc khi hủy prompt, và thoát với mã `1` khi thất bại (`budget` và `canvas` dùng `2` cho lỗi sử dụng, xem ở trên).
+`style-gen --help` liệt kê các lệnh; `style-gen <command> --help` in ra các tùy chọn của lệnh đó. Các cờ được phân tích nghiêm ngặt: **cờ lạ là một lỗi** (`--them` bị từ chối thay vì âm thầm dùng theme mặc định), và lệnh lạ cũng vậy. Mọi lệnh đều thoát với mã `0` khi thành công, khi gọi `--help`, `--version` hoặc khi hủy prompt, và thoát với mã `1` khi thất bại (`budget`, `canvas` và `ds` dùng `2` cho lỗi sử dụng, xem ở trên).
 
 ## File cấu hình
 

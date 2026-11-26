@@ -1,6 +1,8 @@
 import { defineConfig } from "tsdown";
 
-// CLI bundle → dist/cli/index.mjs (the `bin`). Dependencies and peers stay
+// CLI bundle → dist/cli/index.mjs (the `bin`) and dist/cli/canvas.mjs, the
+// `canvas` commands that `run.ts` loads with `import()` so no other command
+// pays for them (`check:sizes` budgets the two apart). Dependencies and peers stay
 // external (tsdown reads them from package.json); `check:externals` enforces
 // that through the sourcemap. No declarations: the CLI has no import API.
 // `comments.jsdoc: false` drops the JSDoc blocks, which rolldown keeps
@@ -10,7 +12,10 @@ import { defineConfig } from "tsdown";
 // `attachDebugInfo: "none"` drops rolldown's `//#region`/`//#endregion` module
 // markers (about 570 B gzip); the sourcemap still maps every module.
 export default defineConfig({
-  entry: ["src/cli/index.ts"],
+  entry: {
+    index: "src/cli/index.ts",
+    canvas: "src/cli/commands/canvas/index.ts",
+  },
   format: "esm",
   platform: "node",
   outDir: "dist/cli",

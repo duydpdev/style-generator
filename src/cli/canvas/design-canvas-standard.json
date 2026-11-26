@@ -220,9 +220,12 @@
     "primaryForeground": "Text and icons on primary.",
     "primaryHover": "Primary fill while the pointer is over it.",
     "primaryActive": "Primary fill while it is pressed.",
+    "secondary": "Supporting action fill: the second button beside primary, less prominent than it.",
+    "accent": "Highlight fill for a feature, badge or callout that must stand out without being the main action.",
     "danger": "Destructive action fill and error emphasis.",
     "success": "Positive outcome fill and confirmation emphasis.",
-    "warning": "Caution fill and warning emphasis."
+    "warning": "Caution fill and warning emphasis.",
+    "info": "Neutral information fill and emphasis: notices that are neither success nor warning."
   },
   "rules": {
     "name-vocabulary": {

@@ -69,7 +69,19 @@ const NAMED: NamedTheme = {
     text16Regular: { fontSize: "16px", lineHeight: "24px", fontWeight: 400 },
   },
   borderRadius: { md: "8px" },
-  themeAxes: { theme: { dark: { colors: { background: "$gray900" } } } },
+  themeAxes: {
+    theme: {
+      dark: {
+        colors: {
+          background: "$gray900",
+          surface: "$gray900",
+          muted: "$gray900",
+          foreground: "$white",
+          mutedForeground: "$white",
+        },
+      },
+    },
+  },
 };
 
 /**
@@ -195,7 +207,7 @@ describe("integration: style-gen canvas check", () => {
       dsVersion?: { namespace: string; version: string } | undefined;
       recipes?: string | undefined;
     } = {},
-  ) => checkCanvas({ canvasDir: canvas, theme, ...extra });
+  ) => checkCanvas({ canvasDir: canvas, theme, ...extra }).errors;
   const useTheme = (value: object): void => {
     theme = writeTmpFile(dir, "theme.json", value);
   };
@@ -610,18 +622,13 @@ describe("integration: style-gen canvas check", () => {
       ],
       [
         "an override of a primitive",
-        (t) => (t.themeAxes.theme.dark.colors.blue600 = "#000"),
-        "themeAxes.theme.dark.colors.blue600 overrides a primitive",
+        (t) => (t.themeAxes.theme.dark.colors.red600 = "#000"),
+        "themeAxes.theme.dark.colors.red600 overrides a primitive",
       ],
       [
         "a literal override of a semantic key",
         (t) => (t.themeAxes.theme.dark.colors.surface = "#000"),
         "themeAxes.theme.dark.colors.surface is not an alias of a primitive",
-      ],
-      [
-        "a radius key off the list",
-        (t) => (t.borderRadius.huge = "32px"),
-        "borderRadius.huge is not one of sm, md, lg, xl, full",
       ],
       [
         "a typography entry that sets fontFamily",
@@ -642,6 +649,19 @@ describe("integration: style-gen canvas check", () => {
       ],
     ])("naming reports %s", (_name, edit, message) => {
       expect(grammar(named(edit))).toEqual([message]);
+    });
+
+    it("naming reports a radius key off the scale as a finding, not an error", () => {
+      useTheme(named((t) => (t.borderRadius.huge = "32px")));
+      board("<p>x</p>");
+      const result = checkCanvas({ canvasDir: canvas, theme, naming: true });
+      expect(result.errors).toEqual([]);
+      expect(result.findings).toEqual([
+        expect.stringContaining(
+          "borderRadius.huge is not a step of the closed scale (sm, md, lg, xl, full)",
+        ),
+      ]);
+      expect(result.findings[0]).toMatch(/\[scale-name\]$/);
     });
 
     it("naming reports a malformed theme instead of throwing", () => {
@@ -1365,7 +1385,7 @@ describe("integration: style-gen canvas check", () => {
         stamp: join(fixture, "ds-stamp.json"),
         naming: true,
         boards: true,
-      });
+      }).errors;
       for (const kind of [
         "literal colors",
         "provenance",
@@ -1386,7 +1406,7 @@ describe("integration: style-gen canvas check", () => {
         canvasDir: fixture,
         theme: join(fixture, "theme.json"),
         naming: true,
-      });
+      }).errors;
       const form = "<role>[Subtle][Border][Foreground][Hover|Active|Selected]";
       for (const [key, v2] of [
         ["okInk", "successForeground"],
@@ -1394,9 +1414,13 @@ describe("integration: style-gen canvas check", () => {
         ["line", "border"],
         ["onPrimary", "primaryForeground"],
       ] as const)
-        expect(out).toContain(
-          `${join(fixture, "theme.json")}:1 colors.${key} does not follow ${form} (rename to ${v2})`,
-        );
+        expect(
+          out.some((line) =>
+            line.startsWith(
+              `${join(fixture, "theme.json")}:1 colors.${key} does not follow ${form} (rename to ${v2}) [name-vocabulary; `,
+            ),
+          ),
+        ).toBe(true);
     });
   });
 

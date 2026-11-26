@@ -29,7 +29,8 @@ function namingViolations(text: string): string[] {
   writeFileSync(theme, text);
   const canvasDir = join(dir, "canvas");
   mkdirSync(canvasDir);
-  return checkCanvas({ canvasDir, theme, naming: true });
+  const result = checkCanvas({ canvasDir, theme, naming: true });
+  return [...result.errors, ...result.findings];
 }
 
 describe("the theme style-gen init writes", () => {

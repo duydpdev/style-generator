@@ -3,11 +3,6 @@ import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { errorMessage } from "../node/errorMessage";
 
 import { BUDGET_USAGE, budgetCommand } from "./commands/budget";
-import {
-  canvasCheckCommand,
-  standardInitCommand,
-  standardMigrateCommand,
-} from "./commands/canvas";
 import { doctorCommand } from "./commands/doctor";
 import { generateCommand } from "./commands/generate";
 import { initCommand } from "./commands/init";
@@ -305,6 +300,8 @@ const CANVAS_FLAGS: Record<string, readonly string[]> = {
     "standard",
     "ds-version",
     "recipes",
+    "usage",
+    "no-rule",
     "naming",
     "boards",
     "inventory",
@@ -337,13 +334,19 @@ Options:
   --ds-version <namespace>=<ver>  canvas.json installs this design-system version
   --recipes <file>                With --boards: each c-<name> board marks every axis value
                                   of its recipe (data-sg-cell="<axis>:<value>")
+  --usage <file>                  With --naming: ds.usage.json, the colour descriptions and
+                                  spacing token names the design system build reads
   --standard <file>               Additions file layered over the bundled standard
                                   (init, migrate: the file to write; default canvas-standard.json)
+  --no-rule <id>                  Switch one rule off for this run (repeatable); the --standard
+                                  file must hold disabledRules.<id>.reason, and the output
+                                  prints "rules disabled: <ids>"
   --dry-run                       migrate: print the result, write nothing
   --inventory                     Print what the canvas uses (JSON) instead of checking
 
-Output: one "<file>:<line> <message>" line per violation, then "<n> violation(s)";
-or "OK: <n> files".
+Output: one "<file>:<line> <message> [<rule>; <basis>]" line per violation, then
+"<n> violation(s)". A "finding: ..." line is reported without failing the run and
+ends with "FINDINGS: <k> in <n> files"; a clean run prints "OK: <n> files".
 
 Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
 (canvas, theme, stamp, canvas.json, recipes) or an invalid --standard.`,
@@ -355,6 +358,8 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
     standard: { type: "string" },
     "ds-version": { type: "string" },
     recipes: { type: "string" },
+    usage: { type: "string" },
+    "no-rule": { type: "string", multiple: true },
     naming: { type: "boolean" },
     boards: { type: "boolean" },
     inventory: { type: "boolean" },
@@ -362,7 +367,7 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
   },
   allowPositionals: true,
   usageExitCode: 2,
-  run: (values, positionals, ctx) => {
+  run: async (values, positionals, ctx) => {
     const sub = positionals.join(" ");
     const allowed = CANVAS_FLAGS[sub];
     if (allowed === undefined) {
@@ -376,10 +381,12 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
       logger.error(`--${stray} is not valid for canvas ${sub}`);
       return 2;
     }
-    if (sub === "standard init") return standardInitCommand(values, ctx.cwd);
+    const canvas = await import("./commands/canvas");
+    if (sub === "standard init")
+      return canvas.standardInitCommand(values, ctx.cwd);
     if (sub === "standard migrate")
-      return standardMigrateCommand(values, ctx.cwd);
-    return canvasCheckCommand(values, ctx.cwd);
+      return canvas.standardMigrateCommand(values, ctx.cwd);
+    return canvas.canvasCheckCommand(values, ctx.cwd);
   },
 };
 

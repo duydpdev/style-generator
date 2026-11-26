@@ -5,6 +5,7 @@
 import { parseAliasRef } from "../../../core/tokenGrammar";
 
 import { asRecord } from "./parseHtml";
+import type { LayeredStandard } from "./standardLayer";
 import type { Standard } from "./standardSchema";
 
 /** A primitive colour key: hue + step, or black/white, with an optional alpha. Both agent contracts print its source. */
@@ -67,14 +68,35 @@ export function roleOf(key: string, grammar: Grammar): string | null {
   return shape.exec(key)?.[1] ?? null;
 }
 
-const roleAllowed = (role: string, grammar: Grammar): boolean =>
-  grammar.roles.includes(role) || roleShapeAllowed(role, grammar);
+/** The grammar and the roles a theme may use: the packaged ones and the product's declared ones. */
+interface Vocabulary {
+  grammar: Grammar;
+  declared: ReadonlySet<string>;
+}
 
-// Whether a semantic key follows `<role>[suffixes][state]` or is neutral.
-function followsGrammar(key: string, grammar: Grammar): boolean {
-  if (grammar.neutral.includes(key)) return true;
-  const role = roleOf(key, grammar);
-  return role !== null && roleAllowed(role, grammar);
+/**
+ * The roles a colour key may be built on: the packaged roles and the product's declared roles.
+ * Declared roles were validated when the standard loaded, so this never widens the grammar.
+ * @param {Standard} standard - The standard, layered or packaged
+ * @returns {Set<string>} Role names
+ */
+export function declaredRoles(
+  standard: Standard | LayeredStandard,
+): Set<string> {
+  const added = "roles" in standard ? Object.keys(standard.roles ?? {}) : [];
+  return new Set([...(standard.grammar?.roles ?? []), ...added]);
+}
+
+/**
+ * Whether a semantic key follows `<role>[suffixes][state]` on a declared role, or is neutral.
+ * @param {string} key - A theme colour key
+ * @param {Vocabulary} vocab - Grammar and declared roles
+ * @returns {boolean} True when the key is in the vocabulary
+ */
+export function followsGrammar(key: string, vocab: Vocabulary): boolean {
+  if (vocab.grammar.neutral.includes(key)) return true;
+  const role = roleOf(key, vocab.grammar);
+  return role !== null && vocab.declared.has(role);
 }
 
 // The v2 name: whole deprecated segments renamed (longest first), `on` prefix to `Foreground`,
@@ -115,10 +137,21 @@ function suggestName(key: string, grammar: Grammar): string {
 }
 
 // The v2 name of a key that breaks the grammar, or null when none follows the grammar.
-function suggestionOf(key: string, grammar: Grammar): string | null {
-  if (PRIMITIVE.test(key) || followsGrammar(key, grammar)) return null;
-  const target = suggestName(key, grammar);
-  return target !== key && followsGrammar(target, grammar) ? target : null;
+function suggestionOf(key: string, vocab: Vocabulary): string | null {
+  if (PRIMITIVE.test(key) || followsGrammar(key, vocab)) return null;
+  const target = suggestName(key, vocab.grammar);
+  return target !== key && followsGrammar(target, vocab) ? target : null;
+}
+
+// A key built on a well-formed role nobody declared: reported once per role, not as a broken name.
+function undeclaredRole(key: string, vocab: Vocabulary): string | null {
+  if (PRIMITIVE.test(key) || followsGrammar(key, vocab)) return null;
+  const role = roleOf(key, vocab.grammar);
+  return role !== null &&
+    roleShapeAllowed(role, vocab.grammar) &&
+    suggestionOf(key, vocab) === null
+    ? role
+    : null;
 }
 
 // Grammar message of one colour key; `taken` says whether a suggestion would fold two colours.
@@ -126,12 +159,18 @@ function grammarMessage(
   path: string,
   key: string,
   taken: (target: string) => boolean,
-  grammar: Grammar,
+  vocab: Vocabulary,
 ): string | null {
-  if (PRIMITIVE.test(key) || followsGrammar(key, grammar)) return null;
+  if (
+    PRIMITIVE.test(key) ||
+    followsGrammar(key, vocab) ||
+    undeclaredRole(key, vocab) !== null
+  )
+    return null;
+  const { grammar } = vocab;
   const optional = grammar.suffixes.map((s) => "[" + s + "]").join("");
   const form = `<role>${optional}[${grammar.states.join("|")}]`;
-  const target = suggestionOf(key, grammar);
+  const target = suggestionOf(key, vocab);
   if (target === null) return `${path} does not follow ${form}`;
   return taken(target)
     ? `${path} does not follow ${form} (${target} exists: merge manually)`
@@ -141,11 +180,11 @@ function grammarMessage(
 // A target is taken when it is a base key or the suggestion of more than one base key.
 function takenTargets(
   colors: Record<string, unknown>,
-  grammar: Grammar,
+  vocab: Vocabulary,
 ): (target: string) => boolean {
   const claims = new Map<string, number>();
   for (const key of Object.keys(colors)) {
-    const target = suggestionOf(key, grammar);
+    const target = suggestionOf(key, vocab);
     if (target !== null) claims.set(target, (claims.get(target) ?? 0) + 1);
   }
   return (target) =>
@@ -158,39 +197,85 @@ function aliasTarget(value: unknown): string | null {
   return parseAliasRef(value)?.key ?? value.slice(1);
 }
 
-function grammarCheck(
-  colors: Record<string, unknown>,
-  grammar: Grammar | undefined,
-): (path: string, key: string) => string | null {
-  if (!grammar) return () => null;
-  const taken = takenTargets(colors, grammar);
-  return (path, key) => grammarMessage(path, key, taken, grammar);
+/** One naming problem: an error, or a finding when `finding` is set. */
+export interface NamingIssue {
+  message: string;
+  rule?: string;
+  /** What an exemption names to silence this issue. */
+  name?: string;
+  finding?: boolean;
+}
+
+// `a, b and 2 more` for a list longer than three.
+const listed = (items: readonly string[]): string =>
+  items.length <= 3
+    ? items.join(", ")
+    : `${items.slice(0, 3).join(", ")} and ${String(items.length - 3)} more`;
+
+// Grammar errors per key and one finding per undeclared role, over the base colours and the override keys.
+function vocabularyIssues(
+  theme: Record<string, unknown>,
+  standard: Standard | LayeredStandard,
+): NamingIssue[] {
+  const { grammar } = standard;
+  if (!grammar) return [];
+  const colors = asRecord(theme.colors);
+  const vocab = { grammar, declared: declaredRoles(standard) };
+  const taken = takenTargets(colors, vocab);
+  const issues: NamingIssue[] = [];
+  const undeclared = new Map<string, string[]>();
+  const visit = (path: string, key: string) => {
+    const role = undeclaredRole(key, vocab);
+    if (role !== null) {
+      undeclared.set(role, [...(undeclared.get(role) ?? []), path]);
+      return;
+    }
+    const message = grammarMessage(path, key, taken, vocab);
+    if (message !== null)
+      issues.push({ message, rule: "name-vocabulary", name: key });
+  };
+  for (const key of Object.keys(colors)) visit(`colors.${key}`, key);
+  for (const [axis, variants] of Object.entries(asRecord(theme.themeAxes)))
+    for (const [variant, override] of Object.entries(asRecord(variants)))
+      for (const key of Object.keys(asRecord(asRecord(override).colors)))
+        visit(`themeAxes.${axis}.${variant}.colors.${key}`, key);
+  for (const [role, paths] of undeclared)
+    issues.push({
+      message: `role ${role} is not declared (${listed([...new Set(paths)])}); add it to roles in the --standard file, or rename the keys to a declared role`,
+      rule: "name-vocabulary",
+      name: role,
+      finding: true,
+    });
+  return issues;
 }
 
 // Primitives hold literals, semantic keys alias primitives, overrides redefine semantic keys only.
-function colourViolations(
+function colourIssues(
   theme: Record<string, unknown>,
-  standard: Standard,
-): string[] {
+  standard: Standard | LayeredStandard,
+): NamingIssue[] {
   const colors = asRecord(theme.colors);
-  const grammarOf = grammarCheck(colors, standard.grammar);
-  const out: (string | null)[] = Object.entries(colors).flatMap(
-    ([key, value]) => [
-      baseColourMessage(`colors.${key}`, key, value),
-      grammarOf(`colors.${key}`, key),
-    ],
+  const out: (string | null)[] = Object.entries(colors).map(([key, value]) =>
+    baseColourMessage(`colors.${key}`, key, value),
   );
   for (const [axis, variants] of Object.entries(asRecord(theme.themeAxes)))
     for (const [variant, override] of Object.entries(asRecord(variants)))
       for (const [key, value] of Object.entries(
         asRecord(asRecord(override).colors),
-      )) {
-        const path = `themeAxes.${axis}.${variant}.colors.${key}`;
-        out.push(overrideColourMessage(path, key, value), grammarOf(path, key));
-      }
+      ))
+        out.push(
+          overrideColourMessage(
+            `themeAxes.${axis}.${variant}.colors.${key}`,
+            key,
+            value,
+          ),
+        );
   for (const name of standard.semanticCore)
     if (!(name in colors)) out.push(`missing semantic core key ${name}`);
-  return out.filter((m) => m !== null);
+  return [
+    ...out.filter((m) => m !== null).map((message) => ({ message })),
+    ...vocabularyIssues(theme, standard),
+  ];
 }
 
 function aliasTargetMessage(path: string, target: string): string | null {
@@ -292,20 +377,31 @@ function typographyEntryMessages(
 }
 
 /**
- * Every naming-convention message of a theme.
+ * Every naming-convention issue of a theme.
  * @param {unknown} theme - Parsed theme JSON
- * @param {Standard} standard - Manifest
+ * @param {Standard | LayeredStandard} standard - Manifest, with the product's additions when layered
+ * @returns {NamingIssue[]} Issues without a location
+ */
+export function namingIssues(
+  theme: unknown,
+  standard: Standard | LayeredStandard,
+): NamingIssue[] {
+  const record = asRecord(theme);
+  return [
+    ...colourIssues(record, standard),
+    ...typographyViolations(record, standard).map((message) => ({ message })),
+  ];
+}
+
+/**
+ * The message of every naming-convention issue of a theme, errors and findings alike.
+ * @param {unknown} theme - Parsed theme JSON
+ * @param {Standard | LayeredStandard} standard - Manifest
  * @returns {string[]} Messages without a location
  */
-export function namingViolations(theme: unknown, standard: Standard): string[] {
-  const record = asRecord(theme);
-  const out = [
-    ...colourViolations(record, standard),
-    ...typographyViolations(record, standard),
-  ];
-  const radius = standard.scales?.borderRadius?.steps ?? [];
-  for (const key of Object.keys(asRecord(record.borderRadius)))
-    if (!radius.includes(key))
-      out.push(`borderRadius.${key} is not one of ${radius.join(", ")}`);
-  return out;
+export function namingViolations(
+  theme: unknown,
+  standard: Standard | LayeredStandard,
+): string[] {
+  return namingIssues(theme, standard).map((issue) => issue.message);
 }

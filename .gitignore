@@ -112,3 +112,6 @@ site/public/examples/
 # Local working notes (never published): plans, brainstorm, reports, journals
 documents/plans/
 documents/brainstorm/
+
+# Local agent memory (never committed)
+.claude/agent-memory/

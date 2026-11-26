@@ -26,6 +26,7 @@ Deployment process for the `@duydpdev/style-generator` library.
   - [Release Process](#release-process)
     - [Correct process](#correct-process)
     - [Cutting a release](#cutting-a-release)
+    - [Release cadence](#release-cadence)
     - [DEV on demand](#dev-on-demand)
     - [Hotfix](#hotfix)
     - [Major cycle](#major-cycle)
@@ -259,6 +260,10 @@ Fails when `git rev-list --count origin/develop..origin/main` > 0 and the tip of
 3. `gh pr create --base main --head develop --title "[chore] release $(date +%F)" --body-file <file listing the changes>`. Do not put a version number in the title: semantic-release computes it.
 4. Wait for the three required checks and every heavy-tier job of `ci-matrix.yml` to pass.
 5. **Create a merge commit**, then `npm view @duydpdev/style-generator dist-tags` shows the new `latest` (it can take about 10 minutes).
+
+### Release cadence
+
+Open the `develop` → `main` release PR only when the change reaches consumers of the package: theme syntax, generated CSS or the CLI contract. Documentation, tests, agent rules (`.claude/**`) and refactors that change none of those wait on `develop` and ride the next release that does. A product's canvas allowance (a radius key, an extra board, a type scale) is an edit to that product's own `--standard` file (`canvas-standard.json`), never a library release.
 
 ### DEV on demand
 

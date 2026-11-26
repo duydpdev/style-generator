@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: bb6f09b6f6ee -->
+<!-- source: documents/reference/core.md sha256: 82ea97f85eb0 -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -174,7 +174,7 @@ Output includes:
    the selector is pinned to `html` because a `$`-alias
    `var()` resolves to the value computed at the element that DECLARES the
    custom property, so an override on a non-root element wouldn't affect
-   an alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules).
+   an alias's inherited value (see `.claude/rules/theme-rules.md`).
 3. `\@theme inline` block: the `resetTailwindDefaults` lines
    (`--color-*: initial;`, …) first, then the mapping of `--sg-*` → Tailwind v4 namespaces
 

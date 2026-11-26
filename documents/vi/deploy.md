@@ -1,4 +1,4 @@
-<!-- source: documents/deploy.md sha256: 7f78fc5073df -->
+<!-- source: documents/deploy.md sha256: ded271567caa -->
 
 # Triển khai & CI/CD
 
@@ -28,6 +28,7 @@ Quy trình triển khai cho thư viện `@duydpdev/style-generator`.
   - [Quy trình phát hành](#quy-trình-phát-hành)
     - [Quy trình đúng](#quy-trình-đúng)
     - [Cắt một bản phát hành](#cắt-một-bản-phát-hành)
+    - [Nhịp phát hành](#nhịp-phát-hành)
     - [DEV theo yêu cầu](#dev-theo-yêu-cầu)
     - [Hotfix](#hotfix)
     - [Chu kỳ major](#chu-kỳ-major)
@@ -261,6 +262,10 @@ Thất bại khi `git rev-list --count origin/develop..origin/main` > 0 và đ�
 3. `gh pr create --base main --head develop --title "[chore] release $(date +%F)" --body-file <file liệt kê các thay đổi>`. Đừng đặt số phiên bản vào tiêu đề: semantic-release tự tính.
 4. Chờ ba check bắt buộc và mọi job tầng nặng của `ci-matrix.yml` đạt.
 5. **Create a merge commit**, rồi `npm view @duydpdev/style-generator dist-tags` hiện `latest` mới (có thể mất khoảng 10 phút).
+
+### Nhịp phát hành
+
+Chỉ mở PR release `develop` → `main` khi thay đổi đến tay người dùng package: cú pháp theme, CSS được sinh ra hoặc hợp đồng CLI. Tài liệu, test, rule cho agent (`.claude/**`) và refactor không đổi những thứ đó thì chờ trên `develop` và đi cùng bản release kế tiếp có thay đổi như vậy. Một ngoại lệ canvas của sản phẩm (một key radius, một board thêm, một thang chữ) là sửa file `--standard` của chính sản phẩm đó (`canvas-standard.json`), không bao giờ là một bản release thư viện.
 
 ### DEV theo yêu cầu
 

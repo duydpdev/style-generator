@@ -16,7 +16,7 @@
 
 1. Read `.claude/rules/lessons.md` to avoid repeating past mistakes.
 2. Before code or design work, load the matching skill from the runtime (e.g. `tdd-workflow`, `testing-patterns`, `tailwind-patterns`, `clean-code`) when the runtime provides one. This repository does not vendor agents, commands or skills.
-3. Documentation output from any tool goes under `documents/` (see "Documentation layout" in `.claude/CLAUDE.md`).
+3. Documentation output from any tool goes under `documents/` (see `.claude/rules/documentation-layout.md`).
 
 ## Self-Improvement
 

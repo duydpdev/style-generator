@@ -20,7 +20,7 @@ The checks have two layers:
      the `docs_only` detection (below) → `build:all` → upload of `dist/`. It outputs `docs_only`;
    - job `lint` (`Lint and types`): `check:tokens` → `yarn workspace plain-nuxt-example prepare:nuxt` (writes the `.nuxt/tsconfig.*.json` files that ESLint needs for
      `examples/plain-nuxt/app/**`) → lint (type-aware ESLint also scans `examples/**`, which import the built library through `link:../..`, hence the `dist/` artifact) → `check:comments` → `prettier:check` → `tsc` →
-     syntax check (`node --check`) and type check (`yarn typecheck:scripts`) of `scripts/*.mjs` and `site/scripts/*.mjs` → the `data-part` guard;
+     syntax check (`node --check`) and type check (`yarn typecheck:scripts`) of `scripts/*.mjs` and `site/scripts/*.mjs` → the guard against the old part-hook attribute (the last step of the job, a `git grep` over `site`, `examples`, `src`, `e2e-site` and `documents`, so this text must not spell the attribute out);
    - job `docs` (`Docs and examples`): `prepare:nuxt` → site build (`yarn workspace site build`) → `yarn workspace site check:links` (relative links,
      absolute `https://github.com/duydpdev/style-generator/blob/main/…` links as README.md writes them,
      and `#anchor`s in the markdown that the site renders) → `node scripts/docs-embed.mjs --check` (tutorial code equals the example regions it embeds) → `node scripts/check-docs-i18n.mjs` (every rendered

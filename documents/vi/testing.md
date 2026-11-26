@@ -1,4 +1,4 @@
-<!-- source: documents/testing.md sha256: 89e184bb5743 -->
+<!-- source: documents/testing.md sha256: a0953a590a55 -->
 
 # Hướng dẫn kiểm thử
 
@@ -22,7 +22,7 @@ Các bước kiểm tra có hai lớp:
      bước phát hiện `docs_only` (bên dưới) → `build:all` → tải `dist/` lên. Nó xuất output `docs_only`;
    - job `lint` (`Lint and types`): `check:tokens` → `yarn workspace plain-nuxt-example prepare:nuxt` (ghi các file `.nuxt/tsconfig.*.json` mà ESLint cần cho
      `examples/plain-nuxt/app/**`) → lint (ESLint nhận biết kiểu cũng quét `examples/**`, nơi import thư viện đã build qua `link:../..`, nên cần artifact `dist/`) → `check:comments` → `prettier:check` → `tsc` →
-     kiểm tra cú pháp (`node --check`) và kiểm tra kiểu (`yarn typecheck:scripts`) cho `scripts/*.mjs` và `site/scripts/*.mjs` → chốt chặn `data-part`;
+     kiểm tra cú pháp (`node --check`) và kiểm tra kiểu (`yarn typecheck:scripts`) cho `scripts/*.mjs` và `site/scripts/*.mjs` → chốt chặn thuộc tính part-hook cũ (bước cuối của job, một lệnh `git grep` trên `site`, `examples`, `src`, `e2e-site` và `documents`, nên văn bản này không được viết nguyên tên thuộc tính);
    - job `docs` (`Docs and examples`): `prepare:nuxt` → build site (`yarn workspace site build`) → `yarn workspace site check:links` (liên kết tương đối,
      liên kết tuyệt đối `https://github.com/duydpdev/style-generator/blob/main/…` như README.md viết,
      và các `#anchor` trong markdown mà site render) → `node scripts/docs-embed.mjs --check` (mã trong hướng dẫn bằng với các vùng ví dụ mà nó nhúng) → `node scripts/check-docs-i18n.mjs` (mỗi tài liệu được

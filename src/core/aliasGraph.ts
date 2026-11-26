@@ -119,13 +119,13 @@ interface AxisVariantRecords {
   ])[];
 }
 
+// Rationale: documents/architecture.md#validatecrossaxisaliascycles-why-alias-cycles-are-checked-across-axes
 /**
  * Report the first alias cycle that needs variants of two or more axes active together.
  * @param {z.RefinementCtx} ctx - Zod refinement context
  * @param {Record<string, string> | undefined} base - Base record of the category
  * @param {Record<string, Record<string, Record<string, string> | undefined>>} axes - `themeAxes` projected on this category
  * @param {string} category - Category key, used in the issue path
- * Rationale: documents/architecture.md#validatecrossaxisaliascycles-why-alias-cycles-are-checked-across-axes
  */
 export const validateCrossAxisAliasCycles = (
   ctx: z.RefinementCtx,

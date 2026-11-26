@@ -41,16 +41,7 @@ export interface GenerateHooks {
   debounceMs?: number;
 }
 
-/**
- * Print one failure the way the command always has. A stale tokens file
- * (`--check`) gets the generate command and a missing theme the init command,
- * both for the project's package manager.
- * @param {string} cwd - Project root, for the package manager of the hints
- * @param {{stage: string, message: string}} failure - The failed outcome
- * @param {string} failure.stage - Pipeline stage that failed
- * @param {string} failure.message - The message to print
- * @param {string} [noConfig] - Set when no config file exists: said before the init hint of a missing theme
- */
+// A stale tokens file gets the generate hint, a missing theme `noConfig` (when set) and the init hint.
 function reportFailure(
   cwd: string,
   failure: { stage: string; message: string },
@@ -76,12 +67,6 @@ function reportFailure(
   );
 }
 
-/**
- * Print one emit outcome the way the command always has.
- * @param {string} cwd - Project root, for the relative output paths
- * @param {EmitResult} result - What `emitTheme`/`watchThemeFile` reported
- * @param {string} [noConfig] - See {@link reportFailure}
- */
 function report(cwd: string, result: EmitResult, noConfig?: string): void {
   if (!result.ok) {
     reportFailure(cwd, result, noConfig);
@@ -99,16 +84,8 @@ function report(cwd: string, result: EmitResult, noConfig?: string): void {
   );
 }
 
-/**
- * `--check`: report whether the tokens file matches the theme and config,
- * writing nothing. A malformed config fails it: the other commands fall back
- * to the defaults, and a check that did so would vouch for a tokens file
- * nobody configured.
- * @param {string} cwd - Project root, for the relative path in the message
- * @param {EmitTarget} target - The resolved emit target
- * @param {string | undefined} configError - Why the config file was ignored, if it was
- * @returns {number} 0 when current, 1 otherwise
- */
+// `--check` writes nothing. A malformed config fails it: falling back to the defaults would
+// vouch for a tokens file nobody configured.
 function check(
   cwd: string,
   target: EmitTarget,
@@ -128,23 +105,8 @@ function check(
 }
 
 /**
- * Generate command handler: reads the theme, validates it, runs the same
- * pipeline as `generate()` (through the shared Node runner) and writes the
- * resulting CSS (`@theme`/`@theme inline`/typography/spacing/`@source
- * inline` blocks) and the typed `theme.tokens.ts` to disk, only when a file
- * changed. Consumers `@import` the CSS directly next to `@import
- * "tailwindcss";` and import `tokens` from the tokens module.
- *
- * One-shot: returns 1 on any failure so scripts and CI stop. `--check`
- * writes nothing and returns 1 when the tokens file is missing or differs
- * from what the theme and config generate, or when the config file is
- * malformed (the other commands fall back to the defaults). It cannot be
- * combined with `--watch`. `--watch`: emits once, then re-emits when the theme or the
- * config file changes. A failure after startup is logged and watching
- * continues; an invalid config edit keeps the last valid one. An unreadable
- * theme or an invalid config at startup still returns 1, before any watcher
- * starts. In watch mode the promise resolves 0 once the watcher is attached;
- * chokidar then keeps the process alive.
+ * Writes the CSS and `theme.tokens.ts` when they changed; `--watch` resolves 0
+ * once attached and keeps the last valid config on an invalid edit.
  * @param {GenerateArgs} args - Generate arguments from CLI
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
  * @param {GenerateHooks} [hooks] - Test seams

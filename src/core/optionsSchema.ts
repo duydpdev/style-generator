@@ -174,10 +174,10 @@ const CoverageSchema = z
     }
   });
 
+// Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
 /**
  * Strict shape of `StyleGeneratorOptions` without the cross-field refinement;
  * `src/node/loadStyleGenConfig.ts` extends it for `style-gen.config.json`.
- * Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
  */
 export const StyleGeneratorOptionsShape = z.strictObject({
   breakpoints: z.array(OptionKey).optional(),

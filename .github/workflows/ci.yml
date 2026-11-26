@@ -97,6 +97,10 @@ jobs:
         # library through `link:../..`; without dist/ their types are unresolved.
         run: yarn lint
 
+      - name: Comment ceiling
+        # JSDoc <= 8 lines, comment runs <= 3, comment-only lines < 20 % of src/.
+        run: yarn check:comments
+
       - name: Prettier check
         run: yarn prettier:check
 

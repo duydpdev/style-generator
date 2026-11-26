@@ -22,10 +22,7 @@ interface MergeBase {
 }
 
 /**
- * The config `init` merges into: the object `readConfigFile` parsed (an
- * existing `style-gen.config.json`, else `package.json["style-gen"]`), else
- * nothing. A `style-gen.config.json` that is not a JSON object aborts before
- * anything is written; an unreadable `package.json` section is not merged.
+ * The config `init` merges into: the object `readConfigFile` parsed, else `{}`.
  * @param {string} cwd The project root.
  * @param {ConfigFile} file The project's config, as `readConfigFile` read it.
  * @returns {MergeBase} The config path, where the content came from and the content.
@@ -44,12 +41,7 @@ export function loadMergeBase(cwd: string, file: ConfigFile): MergeBase {
   return { configPath, content: {} };
 }
 
-/**
- * The `theme`/`output` of a project's config. A valid config is resolved the
- * way `generate` reads it (a config without a `theme` key means
- * `styles/theme.json`); an invalid one still declares them, and `init` keeps
- * what it declares instead of redirecting it.
- */
+/** The `theme`/`output` a config declares, defaults applied; `init` keeps them even when invalid. */
 export interface ConfigLayout {
   /** `style-gen.config.json` or `package.json`. */
   source: string;
@@ -57,17 +49,12 @@ export interface ConfigLayout {
   output: string;
   /** Why `generate` ignores the config (malformed, schema issues). */
   problem: string | undefined;
-  /**
-   * Whether `theme` is what the config declares (or the default when it has
-   * no `theme` key). `false` when the key is present but not a non-empty
-   * string, or the file cannot be parsed: `theme` is then only the default.
-   */
+  /** `false` when the `theme` key is unusable or the file unparsable: `theme` is then only the default. */
   themeReadable: boolean;
 }
 
 /**
- * Read the existing config (`style-gen.config.json`, else
- * `package.json#style-gen`) with the defaults `generate` applies.
+ * Read the existing config with the defaults `generate` applies.
  * @param {ConfigFile} file - The project's config, as `readConfigFile` read it
  * @returns {ConfigLayout | undefined} The layout, or `undefined` without a config
  */
@@ -86,18 +73,12 @@ export function readConfigLayout(file: ConfigFile): ConfigLayout | undefined {
 }
 
 /**
- * The config `init` can build on. A valid one, and an invalid one whose
- * `theme` is readable, keep the theme they declare. `--yes` refuses an
- * invalid config and a `--theme` that disagrees with the config: defaults
- * would put a second theme next to the one the config names. Without
- * `--yes`, an explicit `--theme` or a wizard answer is the user's own
- * choice; an invalid config whose theme cannot be read needs one of them.
  * @param {InitArgs} args - The CLI arguments
  * @param {string} cwd - The project root
  * @param {ConfigLayout | undefined} found - The existing config, when there is one
  * @param {boolean} isInteractive - Whether a TTY can answer the prompts
- * @returns {ConfigLayout | undefined} The config to keep, or `undefined` when there is none to build on
- * @throws {Error} Under `--yes`, when the config is invalid or `--theme` names another theme; without a terminal, when the theme cannot be read and `--theme` is missing
+ * @returns {ConfigLayout | undefined} The config `init` builds on, or `undefined` when there is none
+ * @throws {Error} Under `--yes` on an invalid config or a differing `--theme` (defaults would add a second theme); without a TTY when the theme is unreadable and `--theme` is missing
  */
 export function usableConfig(
   args: InitArgs,
@@ -129,9 +110,7 @@ export function usableConfig(
 }
 
 /**
- * Say so when init leaves a config that `generate` rejects, so a success
- * message does not hide it: kept as it is, or with only the theme merged in
- * (the keys that make it invalid stay).
+ * Warn when init leaves a config `generate` rejects, so a success message does not hide it.
  * @param {string} cwd - The project root, for the package manager of the hint
  * @param {string} source - The config file init kept or merged into
  * @param {string | undefined} problem - Why `generate` rejects that config, if it does
@@ -150,17 +129,12 @@ export function warnInvalidConfig(
 }
 
 /**
- * Settle the config: one that already names this theme stays as it is
- * (`package.json#style-gen` included, so no `style-gen.config.json` shadows
- * it); otherwise `theme` is merged into it, and `output` only when it has
- * none, or a new config is written. A custom `output` is never rewritten,
- * and an invalid config keeps the keys that make it invalid (warned).
  * @param {string} cwd - The project root
  * @param {MergeBase} mergeBase - The existing config content, if any
  * @param {ConfigLayout | undefined} config - The existing config whose theme is readable, if any
  * @param {string} themeLoc - Repo-relative POSIX path of the theme
  * @param {string | undefined} problem - Why `generate` rejects the existing config, if it does
- * @returns {{ layout: { theme: string; output: string }; changed: boolean }} The theme and output in effect, and whether a config file was written
+ * @returns {{ layout: { theme: string; output: string }; changed: boolean }} The layout in effect and whether a config was written: one naming this theme is kept (no new file shadows `package.json#style-gen`), else `theme` (and a missing `output`) is merged in
  */
 export function updateConfig(
   cwd: string,

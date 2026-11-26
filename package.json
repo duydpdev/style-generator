@@ -143,7 +143,6 @@
     "schema:refresh": "yarn build:cli && node dist/cli/index.mjs schema --out examples/theme.schema.json --config-out examples/style-gen.config.schema.json && node dist/cli/index.mjs schema --out examples/design-system/src/theme.schema.json --config-out examples/design-system/style-gen.config.schema.json && node dist/cli/index.mjs schema --out site/src/theme/theme.schema.json --config-out site/style-gen.config.schema.json && prettier --write --log-level warn examples/theme.schema.json examples/style-gen.config.schema.json examples/design-system/src/theme.schema.json examples/design-system/style-gen.config.schema.json site/src/theme/theme.schema.json site/style-gen.config.schema.json",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",
     "check:comments": "node scripts/check-comments.mjs",
-    "check:comments:core": "yarn check:comments --dirs src/core,src/shared,src/node,src/exports,src/index.ts",
     "check:docs": "node scripts/docs-embed.mjs --check && node scripts/check-docs-i18n.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-exports.mjs && node scripts/check-doc-reference.mjs",
     "check:externals": "node scripts/check-externals.mjs",
     "check:next-build": "node scripts/next-build-smoke.mjs",
@@ -171,7 +170,7 @@
     "site:build": "yarn build:all && yarn workspace site build",
     "typecheck:dist": "tsc -p tsconfig.dts-check.json && tsc -p tsconfig.dts-check.cjs.json",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json",
-    "verify": "yarn build:all && yarn check:tokens && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types && yarn typecheck:scripts && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:comments:core && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs"
+    "verify": "yarn build:all && yarn check:tokens && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types && yarn typecheck:scripts && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:comments && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

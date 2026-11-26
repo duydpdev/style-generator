@@ -1,4 +1,4 @@
-<!-- source: documents/reference/next.md sha256: d5a3ddc4069d -->
+<!-- source: documents/reference/next.md sha256: 4035b3d1269a -->
 
 # Next.js (./next)
 
@@ -18,49 +18,8 @@ export declare const styleGenNext: (
 ) => (phase: string, ctx?: NextConfigContext) => ResolvedNextConfig<TConfig>;
 ```
 
-Next.js config wrapper that emits `theme.css` and `theme.tokens.ts` from a
-theme JSON — equivalent to `styleGenVite` for consumers who don't use Vite.
-Deliberately does not import `next`: it stays a plain function of the config
-object and phase string, so it works under both webpack and Turbopack
-without adding a peer dependency.
-
-Usage in `next.config.mjs`:
-
-```js
-import { styleGenNext } from "@duydpdev/style-generator/next";
-export default styleGenNext()(nextConfig);
-```
-
-Every option lives in `style-gen.config.json` (else
-`package.json#style-gen`) in `root` (default `process.cwd()`) — the
-`theme`, `output`, `tokensOutput` and every `generate()` option — exactly
-as `style-gen generate` reads them. The only plugin option is `root`, the
-directory holding that file (a relative one resolves against
-`process.cwd()`): `styleGenNext({ root })(nextConfig)`.
-
-Path rules (`resolveProjectPath`, against the root): the theme may live
-anywhere (absolute, or `..` out of the project: a monorepo shares one); the
-generated files must stay inside it.
-
-Only `phase-development-server` and `phase-production-build` read the
-theme and write the files; every other phase (`phase-production-server`,
-`phase-export`, `phase-info`, `phase-test`) returns the config without
-touching the disk, so a production container need not ship the theme JSON.
-A function-form Next config is called with `(phase, ctx)` and its result
-is returned.
-
-In `next dev` a change to the config file reloads it in place and
-re-emits; an invalid edit is logged and the last valid config stays in
-force.
-
-**Limitation:**
-
-- **Symlinks are not `realpath`'d.** `resolveProjectPath` compares the
-  logical (non-dereferenced) path against the root; it never calls
-  `fs.realpathSync`. An `output` that is itself a symlink living inside
-  the project is accepted even if its TARGET resolves outside it — the
-  guard only rejects a literal `..`-escaping input path, not a symlink
-  whose target escapes after the filesystem resolves it.
+Next.js config wrapper that emits `theme.css` and `theme.tokens.ts`, read from `style-gen.config.json` in `root`.
+Only the dev-server and production-build phases touch the disk; `next dev` also watches and re-emits.
 
 <!-- /signature -->
 

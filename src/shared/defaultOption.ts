@@ -41,7 +41,8 @@ export const DEFAULT_ROUNDED_VALUES = [
 /** Default border width values, used when `theme.borderWidth` is omitted. */
 export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
 
-/** Breakpoint keys used when `options.breakpoints` is not set. Rationale: documents/architecture.md#default_breakpoints-why-only-md-and-lg */
+// Rationale: documents/architecture.md#default_breakpoints-why-only-md-and-lg
+/** Breakpoint keys used when `options.breakpoints` is not set. */
 export const DEFAULT_BREAKPOINTS = ["md", "lg"] as const;
 
 /** Literal union of the default spacing keys (`"p" | "px" | … | "left"`), the spacing-key type used repo-wide. */

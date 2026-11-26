@@ -147,6 +147,31 @@ describe("check-comments", () => {
     expect(result.out).toMatch(/^src\/core: ratio /m);
   });
 
+  it("counts a block comment that starts after code on the same line", () => {
+    writeTmpFile(
+      root,
+      "src/a.ts",
+      `export const first = 1; /* a\n b\n c\n d */\n${codeLines(60)}\n`,
+    );
+    const result = run();
+    expect(result.status).toBe(1);
+    expect(result.out).toContain("src/a.ts:1: comment run of 4 lines (max 3)");
+
+    writeTmpFile(
+      root,
+      "src/a.ts",
+      `export const first = 1; /* a\n b\n c */\n${codeLines(60)}\n`,
+    );
+    expect(run().status).toBe(0);
+  });
+
+  it("exits 2 when the scope holds no checked file", () => {
+    writeTmpFile(root, "src/only.test.ts", withCode(jsdoc(3)));
+    const result = run();
+    expect(result.status).toBe(2);
+    expect(result.out).toContain("no checked .ts files");
+  });
+
   it("exits 2 when a --dirs path does not exist", () => {
     const result = run(["--dirs", "src/missing"]);
     expect(result.status).toBe(2);

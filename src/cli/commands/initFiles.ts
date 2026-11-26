@@ -42,9 +42,7 @@ export function projectHas(cwd: string, dir: string): boolean {
 }
 
 /**
- * Whether two project-relative paths name the same file (`sameFile`: one
- * inode, or one canonical path, so a different case, a symlink or `/tmp` vs
- * `/private/tmp` does not make them differ).
+ * Whether two project-relative paths name one file (`sameFile`: inode or canonical path).
  * @param {string} cwd - The project root
  * @param {string} a - A path, relative to `cwd` or absolute
  * @param {string} b - Another path

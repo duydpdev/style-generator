@@ -1,10 +1,6 @@
 import { toKebabCase } from "../../shared/helpers";
 
-/**
- * The slice of the design tokens the extension reads. `generate().tokens.Web`
- * and `createDesignTokens().DesignTokens.Web` are assignable to it; `colors`
- * and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
- */
+/** The slice of `DesignTokens.Web` the extension reads. */
 export interface TailwindMergeTokens {
   readonly typography: readonly string[];
   readonly shadows: readonly string[];
@@ -19,11 +15,8 @@ export interface TailwindMergeTokens {
   readonly zIndex?: readonly string[];
 }
 
-/**
- * Structural shape of a `tailwind-merge` v3 `extendTailwindMerge(...)`
- * argument. Declared here, not imported, so `dist/recipes.d.ts` never names
- * `tailwind-merge` (it is the app's dependency, not this package's).
- */
+/** Structural shape of a `tailwind-merge` v3 `extendTailwindMerge(...)` argument. */
+// Declared, not imported: `tailwind-merge` is the app's dependency, so the published types must not name it.
 export interface TailwindMergeExtension {
   readonly extend: {
     readonly classGroups: Readonly<
@@ -40,12 +33,8 @@ export interface TailwindMergeExtension {
   };
 }
 
-/**
- * Class prefixes of the border-width family. A local literal table on
- * purpose: the registry copy lives in the `./tokens` entry chunk and
- * importing it would move it into a shared chunk (cost on `./tokens`).
- * `extendTailwindMerge.test.ts` pins it against the registry.
- */
+// Local copies of registry prefixes (importing them would grow the `./tokens` chunk);
+// `extendTailwindMerge.test.ts` pins both tables to the registry.
 const BORDER_WIDTH_PREFIXES = [
   "border",
   "border-x",
@@ -60,17 +49,8 @@ const BORDER_WIDTH_PREFIXES = [
   "divide-y",
 ] as const;
 
-/**
- * The scale token fields, each with the `tailwind-merge` class group its
- * utilities belong to and the class prefix the registry emits. A local
- * literal table for the same reason as {@link BORDER_WIDTH_PREFIXES};
- * `extendTailwindMerge.test.ts` pins the prefixes to the registry.
- * `--height-control-*` also feeds Tailwind's `min-h-*`/`max-h-*`, so
- * `controlHeight` has two extra rows the registry does not cover (an app
- * that writes `min-h-control-md` gets it from its own source scan).
- * `--opacity-*` also feeds `backdrop-opacity-*`, an extra `opacity` row
- * for the same reason.
- */
+// [token field, tailwind-merge group, class prefix]. The `min-h`/`max-h` and `backdrop-opacity`
+// rows have no registry prefix: the same `@theme` variables feed those utilities too.
 const SCALE_GROUPS = [
   ["motionDuration", "duration", "duration"],
   ["motionEasing", "ease", "ease"],
@@ -84,45 +64,13 @@ const SCALE_GROUPS = [
 ] as const;
 
 /**
- * Build the `tailwind-merge` v3 config extension for a theme's custom
- * tokens, so `twMerge` stops treating `border-thin` as a border colour,
- * `rounded-pill` / `shadow-card` as unknown classes, or `text-10-light` as a
- * text colour:
- * ```ts
- * import { extendTailwindMerge } from "tailwind-merge";
- * import { createTailwindMergeExtension } from "@duydpdev/style-generator/recipes";
- * declare const tokens: Parameters<typeof createTailwindMergeExtension>[0];
- *
- * const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
- * ```
- * - `shadows`, `backdropBlurs` and `borderWidth` (incl. side, logical and
- *   `divide-*` prefixes) extend the matching `tailwind-merge` groups; the
- *   group ids are `tailwind-merge`'s own (`border-w`, `border-w-x`, …).
- * - `borderRadius` extends `tailwind-merge`'s `radius` theme scale, which
- *   every `rounded-*` group reads, so `rounded-pill` merges with
- *   `rounded-lg`, and `rounded-tl-pill`/`rounded-s-pill` with their own
- *   side and corner siblings.
- * - `typography` keys are whole class names (`text-10-light`) and form the
- *   group `sg-typography`. A later `sg-typography` class removes earlier
- *   `font-size`/`font-weight`/`leading`/`tracking` classes; a later
- *   single-property utility refines it (both are kept).
- * - the scale tokens (`motionDuration`, `motionEasing`, `controlHeight`,
- *   `iconSize`, `opacity`, `zIndex`; each optional, an absent one adds
- *   nothing) extend `duration`, `ease`, `h`, `min-h`, `max-h`, `size`,
- *   `opacity` and `z`, so `h-control-md` replaces an earlier `h-10`.
- * - `colors` and `fontFamily` are deliberately absent: the default `color`
- *   and `font-family` groups already accept any value.
- *
- * Variants (`hover:`, `md:`) are stripped by `tailwind-merge` before group
- * lookup, so only bare class parts are listed. Empty token lists emit no
- * group.
+ * Builds the `tailwind-merge` v3 extension that teaches `twMerge` a theme's
+ * own classes (`border-thin`, `rounded-pill`, `text-10-light`, `h-control-md`).
+ * A later typography class removes earlier font-size/weight/leading/tracking classes.
  * @param {TailwindMergeTokens} tokens - `generate().tokens.Web` or `createDesignTokens().DesignTokens.Web`
  * @returns {TailwindMergeExtension} Argument for `extendTailwindMerge`
- * @example
- * import { extendTailwindMerge } from "tailwind-merge";
- *
- * const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
  */
+// Rationale: documents/architecture.md#createtailwindmergeextension-which-groups-each-category-extends
 export const createTailwindMergeExtension = (
   tokens: TailwindMergeTokens,
 ): TailwindMergeExtension => {

@@ -14,13 +14,7 @@ const STACK_NAMES: Record<BundlerStack, string> = {
   nuxt: "Nuxt",
 };
 
-/**
- * The CSS entry the stack's starter template uses; only the directory
- * matters, for the relative `@import` path.
- * @param {BundlerStack} stack - The detected stack
- * @param {string} cwd - The project root
- * @returns {string} Project-relative POSIX path
- */
+// The stack's starter CSS entry; only its directory matters, for the relative `@import`.
 function cssEntryFile(stack: BundlerStack, cwd: string): string {
   if (stack === "vite") {
     return projectHas(cwd, "src") ? "src/index.css" : "index.css";
@@ -36,9 +30,7 @@ function cssEntryFile(stack: BundlerStack, cwd: string): string {
 }
 
 /**
- * Print what to do after scaffolding: the bundler snippet for the detected
- * stack (never written to the config file), or the CLI fallback.
- * @param {DetectedStack} detected - The detected stack
+ * @param {DetectedStack} detected - The stack whose next steps are printed: its bundler snippet (never written) or the CLI fallback
  * @param {{ theme: string; output: string }} written - Paths written to the config
  * @param {string} written.theme - Project-relative theme file
  * @param {string} written.output - Project-relative generated CSS file
@@ -89,8 +81,7 @@ export function printNextSteps(
 }
 
 /**
- * The CSS file the printed Tailwind lines belong in: the stack's entry, or an
- * `index.css` next to the generated CSS when no bundler config was found.
+ * The CSS file the printed lines belong in: the stack's entry, else `index.css` beside the output.
  * @param {DetectedStack} detected - The detected stack
  * @param {string} output - Project-relative POSIX path of `theme.css`
  * @param {string} cwd - The project root

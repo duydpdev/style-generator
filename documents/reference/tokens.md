@@ -19,13 +19,8 @@ export declare function createDesignTokens<
 ): DesignTokensResult<TTheme, O>;
 ```
 
-Creates a structured design tokens object from the theme configuration.
-Useful for sharing token data with consumer applications (e.g., for CVA variant maps).
-With `options`, `const O` keeps literal `breakpoints`, `screens` keys and
-`spacing.properties` keys in the result's types; options typed as
-`StyleGeneratorOptions` — or an explicit `<typeof theme>` type argument,
-which leaves `O` at its default — widen them to `string`. Without
-`options` the result carries the library defaults.
+Creates the typed design tokens from a theme. Literal `breakpoints`, `screens` and
+`spacing.properties` keys of `options` stay in the types; `StyleGeneratorOptions` widens them.
 
 <!-- /signature -->
 

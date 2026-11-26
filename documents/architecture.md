@@ -484,6 +484,106 @@ The re-arm `add()` counts as an initial add that `ignoreInitial` drops, and a th
 `run` skips a theme that is still gone when the timer fires; a theme that comes back later reports an `add` of its own.
 Removing a config file means "the next candidate, else the defaults", so it triggers a reload.
 
+### `TokenCategoryDescriptor`: namespace, opacity and percent invariants
+
+Every built-in `cssVarPrefix` starts a distinct `--sg-<category>-` namespace: none is a prefix of another, nor of the spacing `--sg-sp-`, so two categories can never produce the same variable.
+`themeNamespace` is omitted for categories the library emits its own `@utility` rules for (typography) or that have no CSS variable at all.
+Only color utilities set `opacityModifier`: `shadow-<key>/<n>` sets `--tw-shadow-alpha`, but the shadow colours sit inside the opaque `var(--sg-shadow-<key>)` and stay unchanged.
+`themeValue: "percent"` exists for `opacity`: `--opacity-<key>` feeds both `opacity-<key>` and the colour modifier `bg-primary/<key>`, whose `color-mix()` takes only a percentage, so the `@theme inline` mapping is `calc(var(--sg-…) * 100%)` while the `--sg-*` variable keeps the theme's number.
+
+### `categoryTokenMeta`: why defaults live apart from the descriptors
+
+The typed tokens (`createDesignTokens`) only need the category defaults at runtime. Keeping them in a module of their own, free of the CSS half of the descriptors (class prefixes, states, `--sg-*` naming), keeps the browser-safe `./tokens` entry small.
+The built-in descriptors spread these objects, so a category's defaults are still declared exactly once.
+
+### `backdropBlursCategory`: why not the blur namespace
+
+The category maps into `--backdrop-blur-*`, which Tailwind v4's `backdrop-blur-*` utility resolves (`.backdrop-blur-sm` compiles to `blur(var(--sg-backdrop-blur-sm))`).
+`--blur-*` is deliberately not used: it would also redefine the `blur-*` filter scale and override Tailwind's default `--blur-sm`/`md`/`lg` values.
+
+### `borderWidthCategory`: the undocumented border-width namespace
+
+`borderWidth` replaced the old `border` category. It maps into `--border-width-*`, the namespace Tailwind v4's `border-*`, `border-{x,y,t,r,b,l,s,e}-*` and `divide-{x,y}-*` utilities read widths from, so `@theme inline` generates every side and logical class and no bespoke `@utility` is emitted.
+`--border-width-*` is not a documented Tailwind theme namespace (it works on 4.1–4.3); the real-engine assertion in `src/__integration__/tailwind-compile.test.ts` is the tripwire for a future Tailwind change.
+
+### `buildStateLines`: one source line per state
+
+The registry emits one `@source inline` state line per state, never one merged directive: states can have different sibling sets (a token may declare `primaryHover` but not `primaryActive`), and one shell-style brace group would cross-multiply into invalid pairings such as `hover:bg-primary-active`.
+Siblings are detected on camelCased keys, the exact form `createDesignTokens` feeds to `createVariantMapper` (`primary-hover` and `primaryHover` both become `primaryHover`), and the line emits the kebab-cased sibling, the same class the mapper chains onto the base token.
+The state is emitted kebab-cased (`focusVisible` → `focus-visible:`) so it is a valid Tailwind variant, and a state with no sibling emits no line rather than empty braces.
+
+### `generateSourceInline`: one line per category
+
+Each category gets its own `@source inline` line instead of one giant merged directive, so a single category that exceeds a reasonable brace-expansion size never threatens the others.
+The `sp-*` coverage uses one brace-expansion directive rather than one directive per key.
+
+### `generateSpacingCss`: `@utility` blocks, fallback chains and `@property`
+
+Spacing and typography utilities are emitted as `@utility` blocks, never bare `.class {}` rules: a plain selector fed as raw CSS text is invisible to Tailwind's candidate matcher, so `hover:`/`md:` variants would not apply.
+Each breakpoint level of a spacing utility carries the full accumulated `var()` fallback chain: range media queries (`width >= X`) can be true at the same time, the last matching `@media` block wins by source order, and with only its own override a wider viewport could fall back past a narrower breakpoint's value.
+The `@property` registrations deliberately have no `initial-value`: a `syntax: "*"` property without one is guaranteed-invalid when unset, which makes the `var(--x, fallback)` chain fall through to its fallback instead of resolving to an empty string.
+
+### `buildDesignTokens`: why a literal and not a descriptor loop
+
+`buildDesignTokens` lists every category in an object literal instead of looping over the descriptors, because the loop would pull the descriptors into the `./tokens` size budget.
+The property names are still compiler-checked against each descriptor's `key` (`CategoryTokenArrays`), and `cva-roundtrip.test.ts` pins every array's keys and defaults to the `@source inline` keys of its descriptor.
+
+### `createTailwindMergeExtension`: which groups each category extends
+
+`shadows`, `backdropBlurs` and `borderWidth` (side, logical and `divide-*` prefixes included) extend tailwind-merge's own groups (`border-w`, `border-w-x`, …); `borderRadius` extends the `radius` theme scale that every `rounded-*` group reads.
+Typography keys are whole class names and form the group `sg-typography`, which conflicts with `font-size`, `font-weight`, `leading` and `tracking`; a later single-property utility refines it and both are kept.
+The scale tokens extend `duration`, `ease`, `h`, `min-h`, `max-h`, `size`, `opacity`/`backdrop-opacity` and `z`; the `min-h`/`max-h`/`backdrop-opacity` rows exist because the same `@theme` variables feed those utilities, although the registry's `@source inline` lines do not cover them.
+`colors` and `fontFamily` are absent because the default `color` and `font-family` groups already accept any value, and variants are stripped by tailwind-merge before group lookup, so only bare class parts are listed.
+
+### `styleGenNext`: why the dev watcher is a non-persistent singleton
+
+`next.config.*` can be evaluated several times per process (phase detection, the dev server itself, sometimes once per worker), so the dev watcher is module-scoped and a repeat call reuses it; a call for another theme, output or set of generator options replaces it.
+The watcher uses `persistent: false` so it is never what keeps a Node process alive: during `next dev` Next's own HTTP server holds the event loop open, while a persistent watcher would hang a short-lived process that only evaluates the config.
+
+### `styleGenVite`: dev-server lifecycle and the duplicate-output registry
+
+The module-scoped `activeOutFiles` registry records an `owner` (the config file, else the root) and the plugin `instance`, so a dev-server restart (the new instance registers before the old server closes) and the per-environment instances of one config are not reported as duplicates; two `styleGenVite()` calls in one config are indistinguishable from those and are not warned about.
+The slot is released by wrapping `server.close()`, and `release()` deletes it only if this instance still owns it. `closeBundle`/`buildEnd` are no use, because they also run after every rebuild of `vite build --watch` and the registration must outlive those; `httpServer` is null in middleware mode.
+
+### `run.ts`: why `runCli` returns codes and parses flags in two passes
+
+`runCli` never throws and never calls `process.exit`, so tests drive it directly and `src/cli/index.ts` only assigns `process.exitCode`.
+Parsing takes two passes: a lenient global pass finds `--help`/`--version` and the command name, then the command's own flags are parsed strictly, so a misspelled flag (`--them`) is an error instead of being silently ignored.
+Exit codes: 0 for success, `--help`, `--version`, no command or a cancelled prompt; 1 for a failure or an unknown command or flag; 2 for the flag errors of `budget` and `canvas`.
+
+### `schema.ts`: why an invalid config still gets its schema
+
+A config with schema issues still gets its config JSON Schema written, because that is the moment an upgrader needs editor hints.
+Without `--out` the issues are then reported, the exit code is 1 and no theme schema is written, since only a valid config's `theme` decides where the theme schema goes; with `--out` both schemas are written, nothing is reported and the exit code is 0.
+The theme an invalid config declares is still protected from being overwritten, because `readConfigFile` keeps the raw object.
+A malformed config file is warned about and read as the defaults, as `generate` does.
+
+### `utilityCollisions.ts`: why collisions are warnings only
+
+The check reports schema-valid keys whose generated `@theme`/`@utility` output silently overrides, or is overridden by, a built-in Tailwind class.
+A collision can be intentional (a digit-only `borderWidth` key replaces Tailwind's width, an override to confirm), so it never becomes a schema error.
+`themeAxes` overrides are not inspected separately: the schema requires every override key to exist in the base theme, so a colliding key is always reported once through the base record.
+
+### `aliasHints.ts`: why a redefined base key is never suggested
+
+A base key that any variant of any axis redefines in that category is never suggested as an alias target.
+Axes stack on `html`, so its variable resolves to the override value under the active variant (`var(--sg-color-text)` is the dark value under `data-theme="dark"`), and aliasing it would change the colour instead of repeating the literal.
+An override equal to its own base key is a redundant override, not an alias candidate, and only the first matching base key is named.
+
+### `configJsonSchema.ts`: why the narrowing is stricter and can fall back
+
+`uniqueItems` on `opacities` also flags two identical groups, which the CLI accepts: JSON Schema cannot compare the plain numbers alone, and the editor being stricter there is deliberate.
+Rules that compare two keys (`breakpoints` must name a screen, `screens` must share one unit after merging with the defaults) stay out of the JSON Schema, and the descriptions of those keys say so.
+`zod` is a runtime dependency with a `^4` range, so another 4.x may shape its JSON output differently from the version the narrowing was written against; the narrowing is then skipped and the plain `z.toJSONSchema` output (looser, still valid) is returned, so `schema` and `init` keep working.
+
+### `templates.ts`: why the bundler snippets look the way they do
+
+`init` prints the bundler snippet and never edits the bundler config; Vite and Next.js read `style-gen.config.json` themselves, so their plugins take no arguments.
+Nuxt 4 sets Vite's root to `app/`, so the Nuxt snippet passes `root`, the project folder that holds the config file.
+The text is Prettier-formatted except the Next.js config object, which keeps the create-next-app form (its doc fence is `prettier-ignore`d).
+The README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt) show these blocks byte for byte, which `templates.test.ts` checks.
+`getCssImport` computes relative paths from absolute paths under `cwd`, never from `process.cwd()`, and writes each specifier as a JSON string literal, which is also a valid CSS string.
+
 ---
 
 ## Landing Site (`site/`)

@@ -15,14 +15,8 @@ import { projectHas, samePath, toRepoPath, writeFile } from "./initFiles";
 import { getInteractiveConfig, type InteractiveConfig } from "./initPrompts";
 import { writeConfigSchema, writeThemeSchema } from "./schema";
 
-/**
- * Default theme location. `styleGenVite` writes only inside the Vite root,
- * which Nuxt 4 sets to `app/`, so a Nuxt theme (and the `theme.css` next to
- * it) defaults to `<srcDir>/assets/css`.
- * @param {DetectedStack} detected - The detected stack
- * @param {string} cwd - The project root
- * @returns {string} Project-relative theme path
- */
+// `styleGenVite` writes only inside the Vite root, which Nuxt 4 sets to `app/`, so a Nuxt
+// theme (and its `theme.css`) defaults to `<srcDir>/assets/css`.
 function defaultThemeLoc(detected: DetectedStack, cwd: string): string {
   if (detected.stack === "nuxt") {
     return projectHas(cwd, "app")
@@ -33,10 +27,8 @@ function defaultThemeLoc(detected: DetectedStack, cwd: string): string {
 }
 
 /**
- * Where the first config points the theme: a theme already at the location
- * `generate` reads without a config (`defaultConfig.theme`) stays the theme,
- * so `init` never orphans it behind a second one in the stack's own
- * directory; otherwise the stack's default.
+ * Where the first config points the theme: an existing `defaultConfig.theme`
+ * stays the theme (never orphaned behind a second one), else the stack default.
  * @param {DetectedStack} detected - The detected stack
  * @param {string} cwd - The project root
  * @param {ConfigLayout | undefined} config - The valid existing config, which names its own theme
@@ -53,8 +45,7 @@ export function firstConfigTheme(
 }
 
 /**
- * The theme location and the dark-mode answer: the wizard's, else the flags',
- * else the config's theme, else the stack's default.
+ * The theme location and dark-mode answer: wizard, flags, config, stack default.
  * @param {InitArgs} args - The CLI arguments
  * @param {ConfigLayout | undefined} config - The config to keep, when there is one
  * @param {string} defaultTheme - The stack's default theme location
@@ -79,9 +70,7 @@ export async function chooseTheme(
 }
 
 /**
- * Resolve the theme path inside the project root. A config's own theme may
- * live outside it (a monorepo's shared theme): that one is returned as the
- * config instead.
+ * Resolve the theme path inside the root; a config's own outside theme returns the config.
  * @param {string} cwd - The project root
  * @param {string} themeLoc - The chosen theme location
  * @param {ConfigLayout | undefined} config - The config to keep, when there is one
@@ -151,10 +140,7 @@ export function writeMissingConfigSchema(cwd: string): void {
 }
 
 /**
- * Write the theme and the schemas that are missing, or all of them when the
- * user confirmed the overwrite. A file that exists is not touched and not
- * reported. The theme template references "./theme.schema.json" via
- * "$schema", the config "./style-gen.config.schema.json".
+ * Write the theme and the missing schemas, or all of them on a confirmed overwrite.
  * @param {string} cwd - The project root
  * @param {ThemeTarget} target - Where they go
  * @param {boolean} includeDark - Whether the theme template has the dark axis
@@ -185,9 +171,7 @@ export function writeThemeFiles(
 }
 
 /**
- * Refuse a theme path that is also a file `init` writes or merges into: the
- * theme template would overwrite it (`--theme styles/theme.schema.json`,
- * `--theme style-gen.config.schema.json`, `--theme package.json`).
+ * Refuse a theme path that is also a file `init` writes or merges into.
  * @param {string} cwd - The project root
  * @param {ThemeTarget} target - Where the theme and its schemas go
  * @throws {Error} When the theme path equals one of those files

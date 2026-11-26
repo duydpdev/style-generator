@@ -64,8 +64,7 @@ export declare const recipeFromTables: <T extends RecipeTables>(
 ) => RecipeFn<T>;
 ```
 
-cva over a recipe's tables. Compound and default entries are loose
-records, so they are cast here once instead of in every recipe.
+cva over a recipe's tables; its variant names type the recipe's props.
 
 <!-- /signature -->
 
@@ -154,9 +153,7 @@ export declare interface RecipeTokens {
 }
 ```
 
-The token arrays a recipe factory reads: a structural subset of
-`DesignTokens.Web`, so `generate().tokens.Web` and
-`createDesignTokens().DesignTokens.Web` are assignable to it.
+The token arrays a recipe factory reads: a structural subset of `DesignTokens.Web`.
 
 <!-- /signature -->
 
@@ -185,10 +182,8 @@ export declare const contrastText: (
 ) => string;
 ```
 
-The text colour that sits on an intent's fill: `text-<intent>-foreground`
-when the theme declares `<intent>Foreground`, else `text-<fallback>`.
-An `on<Intent>` key is not read; `style-gen doctor` names its
-`<intent>Foreground` rename.
+The text colour on an intent's fill: `text-<intent>-foreground` when the
+theme declares `<intent>Foreground` (an `on<Intent>` key is not read), else `text-<fallback>`.
 
 <!-- /signature -->
 
@@ -203,11 +198,8 @@ An `on<Intent>` key is not read; `style-gen doctor` names its
 export declare const createCn: (tokens: TailwindMergeTokens) => Cn;
 ```
 
-One `cn` per theme. `clsx` joins the inputs; a `tailwind-merge`
-extended with `createTailwindMergeExtension(tokens)` then keeps the
-last class of each group, including the theme's own classes
-(`text-16-medium`, `shadow-md`, `rounded-pill`, `border-thin`), which
-the default `tailwind-merge` does not know.
+One `cn` per theme: `clsx`, then a `tailwind-merge` that also knows the
+theme's own classes (`text-16-medium`, `rounded-pill`, …).
 
 <!-- /signature -->
 
@@ -248,12 +240,8 @@ export declare const splitLayout: (
 ) => Split;
 ```
 
-Layout props → box-recipe classes, size style and spacing; the rest
-passes through. A key in `variantKeys` is a recipe variant (a string or a
-finite number is passed on; anything else becomes `undefined`); a key in `sizeKeys` is an
-inline size: a string is kept, a finite number `n` becomes `"<n>px"`
-(`0` becomes `"0"`), anything else is dropped. `extra` variants win
-over props.
+Layout props → box-recipe classes, size style and spacing; the rest passes
+through. A size number `n` becomes `"<n>px"` (`0` → `"0"`); `extra` variants win.
 
 <!-- /signature -->
 

@@ -1,13 +1,13 @@
 import type { ExactOptions, StyleGeneratorOptions } from "./Options";
 import { parseTheme, type ThemeConfig } from "./themeSchema";
 
+// Rationale: documents/architecture.md#definetheme-why-it-is-optional-and-only-in-the-root-entry
 /**
  * Validate a theme against `ThemeSchema` and keep its literal types.
  * @template T
  * @param {T} config - Theme config object
  * @returns {T} The parsed theme, structurally identical to `config`
  * @throws {Error} A `ZodError` on unknown keys or CSS-injection-unsafe values
- * Rationale: documents/architecture.md#definetheme-why-it-is-optional-and-only-in-the-root-entry
  */
 export function defineTheme<const T extends ThemeConfig>(config: T): T {
   return parseTheme(config);

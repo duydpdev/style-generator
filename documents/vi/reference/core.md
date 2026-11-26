@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: e4b792a6a6bc -->
+<!-- source: documents/reference/core.md sha256: 8c2d118fd0bc -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -149,23 +149,9 @@ export declare const generateThemeCss: (
 ) => string;
 ```
 
-Generate a complete CSS string for Tailwind v4 `\@theme` integration.
-
-Output includes:
-
-1. `:root` block with `--sg-*` intermediate CSS variables
-2. `html[data-<axis-kebab>="<variant-kebab>"]` blocks for each `themeAxes`
-   axis/variant, in config declaration order (both axes and variants) —
-   the selector is pinned to `html` because a `$`-alias
-   `var()` resolves to the value computed at the element that DECLARES the
-   custom property, so an override on a non-root element wouldn't affect
-   an alias's inherited value (see `.claude/rules/theme-rules.md`).
-3. `\@theme inline` block: the `resetTailwindDefaults` lines
-   (`--color-*: initial;`, …) first, then the mapping of `--sg-*` → Tailwind v4 namespaces
-
-Parses `options` and `config` like `generate()` — options first — so an
-invalid or injection-unsafe option or theme throws a `ZodError` instead of
-reaching the CSS.
+Generates the `:root` `--sg-*` variables, one `html[data-<axis>="<variant>"]`
+block per `themeAxes` variant, then `@theme inline`. Parses options, then the
+theme, like `generate()`: invalid input throws a `ZodError`.
 
 <!-- /signature -->
 

@@ -18,19 +18,9 @@ const resolveValue = (prefix: string, value: string | number): string => {
 };
 
 /**
- * Flatten a theme category's flat key-value data into intermediate CSS
- * variable declarations, using the category descriptor's `cssVarPrefix`.
- * One registry-driven `--${prefix}-${kebabKey}` computation shared by every
- * category.
- *
- * A value matching `$<TokenKey>` (see `parseAliasRef`) is resolved to
- * `var(--<cssVarPrefix>-<kebab-target>)`; `$<TokenKey>/<n>` to
- * `color-mix(in srgb, var(…) <n>%, transparent)`. `ThemeSchema` has already
- * proven the reference exists (same category), is acyclic and, for `/<n>`,
- * sits in a colour category, so this function trusts it.
- *
- * Categories without a `cssVarPrefix` (e.g. `typography`, which has no
- * CSS variable at all) flatten to `{}`.
+ * Flattens one category's data into `--<cssVarPrefix>-<kebab-key>`
+ * declarations (`{}` without a `cssVarPrefix`). Aliases are trusted:
+ * `ThemeSchema` already proved they exist, are acyclic and sit in the right category.
  * @param {TokenCategoryDescriptor} descriptor - Category descriptor
  * @param {Readonly<Record<string, string | number>> | undefined} data - Flat key-value theme data for this category (numbers for `opacity`/`zIndex`)
  * @returns {Record<string, string>} CSS variable map, e.g. `{ "--sg-color-primary": "#fff" }`

@@ -1,94 +1,35 @@
 import type { ColorState } from "../../shared/colorStates";
 
 /**
- * Describes how a single theme token category (colors, shadows, typography,
- * etc.) is flattened into CSS variables, which utility classes it feeds and
- * which typed-token names it surfaces as. This is the single source of
- * truth the registry-driven pipelines (`flattenByCategory`,
- * `generateThemeCss`, `generateSourceInline`, `createDesignTokens`) and the
- * `DesignTokensWeb` / `DesignTokenKeys` types read from instead of
- * hard-coding per-category branches.
- *
- * Token data is read with `theme[descriptor.key]` (`key` is the
- * `ThemeConfig` field name), so a descriptor carries no accessor of its own;
- * `DesignTokens.Web` names this category's typed token array by the same `key`.
- * @template K Literal union of valid category keys, kept for call-site type
- * narrowing (`builtInCategories` is `as const satisfies` this interface).
+ * How one theme token category is flattened into CSS variables, which
+ * utilities it feeds and which typed-token names it surfaces as; the single
+ * source of truth the registry-driven pipelines read. Token data is read with
+ * `theme[descriptor.key]`.
+ * @template K Literal union of valid category keys
  */
+// Rationale: documents/architecture.md#tokencategorydescriptor-namespace-opacity-and-percent-invariants
 export interface TokenCategoryDescriptor<K extends string = string> {
   /** Stable identifier for the category (matches the `ThemeConfig` key). */
   key: K;
-  /**
-   * Name of this category's key-union alias in `DesignTokenKeys`
-   * (e.g. `"colorKey"`).
-   */
+  /** Name of this category's key-union alias in `DesignTokenKeys` (e.g. `"colorKey"`). */
   tokenKeyName: string;
-  /**
-   * Bare intermediate CSS variable prefix (no leading/trailing dash), e.g.
-   * `"sg-color"` for colors or `"sg-shadow"` for shadows. Combined with a
-   * kebab-cased token key to produce `--<cssVarPrefix>-<key>`. Every
-   * built-in prefix starts a distinct `--sg-<category>-` namespace (none is
-   * a prefix of another, nor of the spacing `--sg-sp-`), so two categories
-   * can never produce the same variable.
-   * `undefined` when the category has no CSS variable representation.
-   */
+  /** Bare `--sg-*` variable prefix (e.g. `"sg-color"`); absent when the category has no CSS variable. */
   cssVarPrefix?: string;
-  /**
-   * Tailwind v4 `@theme` namespace prefix (including the leading `--` and
-   * trailing dash), e.g. `"--color-"` or `"--radius-"`. When set,
-   * `generateThemeCss` maps every intermediate var into
-   * `${themeNamespace}<key>: var(--<cssVarPrefix>-<key>)` inside
-   * `@theme inline`, letting Tailwind auto-generate the matching
-   * utilities. Omitted for categories the library emits its own
-   * `@utility` rules for (typography) or that have no CSS variable at all.
-   * `--border-width-` (border width) is an undocumented Tailwind
-   * namespace, pinned by the real-engine integration test.
-   */
+  /** Tailwind `@theme` namespace with leading `--` and trailing dash (e.g. `"--color-"`). */
   themeNamespace?: string;
-  /**
-   * Utility class prefixes this category's tokens participate in, e.g.
-   * `["bg", "text", "border", "ring", "outline", "divide", "placeholder"]` for colors. Every entry is non-empty except
-   * for a `bareClassName` category, whose single entry is `""`.
-   */
+  /** Utility class prefixes the tokens feed; a `bareClassName` category has the single entry `""`. */
   classPrefixes?: readonly string[];
-  /**
-   * `true` when the token key itself is the full class name (typography:
-   * `.text-12-mono` comes from the key `text12Mono`), so `classPrefixes`
-   * is the single empty-string entry and `@source inline` emits bare keys
-   * instead of `<prefix>-<key>`.
-   */
+  /** `true` when the token key itself is the full class name (typography `text12Mono` → `.text-12-mono`). */
   bareClassName?: boolean;
   /** Whether this category gets responsive (`md:`, `lg:`, …) variants. */
   responsive?: boolean;
-  /**
-   * Interactive states this category supports: a sibling key `<token><suffix>`
-   * gets the `<variant>:` state line (`COLOR_STATES`).
-   */
+  /** Interactive states: a sibling key `<token><suffix>` gets the `<variant>:` state line. */
   states?: readonly ColorState[];
-  /**
-   * `true` when this category's utilities take Tailwind's `/<n>` opacity
-   * modifier (`bg-primary/10` compiles to `color-mix(in oklab,
-   * var(--sg-color-primary) 10%, transparent)`); it gates
-   * `coverage.<key>.opacities`. Only color utilities do: `shadow-<key>/<n>`
-   * sets `--tw-shadow-alpha`, but the shadow colours sit inside the opaque
-   * `var(--sg-shadow-<key>)` and stay unchanged.
-   */
+  /** `true` when the utilities take Tailwind's `/<n>` opacity modifier; gates `coverage.<key>.opacities`. */
   opacityModifier?: boolean;
-  /**
-   * `true` for a scale category (`motionDuration`, `zIndex`, …): its values
-   * follow one typed grammar and hold no `$` alias, and it has a single
-   * class prefix, so `coverage.<key>` is only `false`, `true` or
-   * `{ keys: "all" }` (no `keys: "aliased"`, no `prefixes`).
-   */
+  /** `true` for a scale category (no `$` alias, one prefix): `coverage.<key>` is only `false`, `true` or `{ keys: "all" }`. */
   literalScale?: boolean;
-  /**
-   * How the `@theme inline` mapping reads the `--sg-*` variable. Absent:
-   * `var(--sg-…)` as it is. `"percent"`: `calc(var(--sg-…) * 100%)`, for a
-   * 0–1 number whose namespace Tailwind also uses as a percentage (`opacity`:
-   * `--opacity-<key>` feeds both `opacity-<key>` and the colour modifier
-   * `bg-primary/<key>`, whose `color-mix()` takes only a percentage). The
-   * `--sg-*` variable itself keeps the theme's number.
-   */
+  /** `"percent"` maps the `--sg-*` 0–1 number as `calc(var(--sg-…) * 100%)` in `@theme inline`. */
   themeValue?: "percent";
   /** Fallback values used when the theme config omits this category. */
   defaultValues?: Readonly<Record<string, unknown>> | readonly unknown[];

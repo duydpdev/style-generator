@@ -1,35 +1,8 @@
 /**
- * `style-gen canvas check`: the one-theme rule for a design canvas (a folder
- * of `*.dc.html` artboards plus their stylesheets).
- *
- * Every artboard reads its tokens from ONE theme, the one `--theme` names:
- * - the only custom properties read or declared are the generated `--sg-*`
- *   variables plus `--spacing`, `--tw-*` and `--layout-*`; any other name
- *   (`--bl-ink`, `--muted`, …) is a second token namespace;
- * - every `var(--sg-<prefix>-<key>)` names a token the theme produces
- *   (`--sg-sp-*` spacing variables are always allowed);
- * - text sizes come from typography classes: no `font-size:` other than
- *   `inherit` (lengths and `{{binding}}` values alike) and no `font:`
- *   shorthand other than `font: inherit`;
- * - no artboard loads a `/_blob/` stylesheet or links a `/_blob/` file, both
- *   of which live outside the theme;
- * - with `--stamp`, the design system was built from these theme bytes; with
- *   `--intents`, every `*.Button` `color` is one of those variant names;
- * - with `--naming`, no `font-weight:` other than `inherit`, no hand-written
- *   `border-radius`/`line-height`/`font-family`, the theme keys follow the
- *   naming convention, and only the manifest's `primitiveBoards` read a
- *   primitive colour variable;
- * - with `--boards`, `canvas.json` holds the manifest's pages, core boards (in
- *   order) and one `c-<kebab>` board per design-system component; core boards
- *   carry their sections, theme literals and provenance block; component pages
- *   follow the `s-*`/`c-*` split; every `$preview` matches its frame; with
- *   `--recipes <file>`, every `c-<name>` board marks each axis value of its
- *   recipe with `data-sg-cell="<axis>:<value>"`;
- * - with `--ds-version <namespace>=<version>`, `canvas.json` installs that
- *   design-system version.
- *
- * Scanned: every `*.dc.html` and `*.css` under `--canvas`, recursively, except
- * `node_modules` and the two files a design-system producer writes.
+ * `style-gen canvas check`: every artboard of a design canvas reads its tokens
+ * from the ONE theme `--theme` names. The rules are listed in
+ * `documents/standards/design-canvas.md`; scanned are every `*.dc.html` and
+ * `*.css` under `--canvas` except `node_modules` and design-system producer files.
  */
 import type { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
@@ -87,13 +60,7 @@ export interface CheckOptions {
   cwd?: string | undefined;
 }
 
-/**
- * Whether the stamp records the SHA-256 of these theme bytes.
- * @param {string} stamp - Stamp JSON file (`{ themeSha256 }`)
- * @param {string} label - The path as the user wrote it, for messages
- * @param {Buffer} themeBytes - Theme file contents
- * @returns {boolean} True when it does
- */
+// Whether the stamp (`{ themeSha256 }`) records the SHA-256 of these theme bytes.
 function stampMatches(
   stamp: string,
   label: string,
@@ -182,10 +149,7 @@ export interface CanvasArgs {
   recipes?: string | undefined;
 }
 
-/**
- * @param {string} value - `<namespace>=<version>`
- * @returns {DsVersion | null} Both sides, or null unless there is exactly one `=` with non-empty sides
- */
+// `<namespace>=<version>`: null unless exactly one `=` with non-empty sides.
 function parseDsVersion(value: string): DsVersion | null {
   const parts = value.split("=");
   const [namespace = "", version = ""] = parts;
@@ -249,13 +213,7 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
 // eslint-disable-next-line no-control-regex -- control characters are what oneLine escapes
 const CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g;
 
-/**
- * Escapes line breaks and other control characters as `\uXXXX`, so a value
- * copied from a board, `canvas.json` or a path never starts an output line
- * of its own (such as a forged `OK:` line).
- * @param {string} text - One output line
- * @returns {string} The same line, printable on one terminal line
- */
+// Escapes control characters as `\uXXXX`, so a copied value never forges an output line (`OK:`).
 function oneLine(text: string): string {
   return text.replace(
     CONTROL,
@@ -263,12 +221,7 @@ function oneLine(text: string): string {
   );
 }
 
-/**
- * Runs the check (or the inventory) and prints the result.
- * @param {CanvasArgs} args - Validated arguments
- * @param {string} cwd - Base of relative paths
- * @returns {number} 0 ok, 1 violations
- */
+// Runs the check (or the inventory) and prints the result: 0 ok, 1 violations.
 function runCheck(args: CanvasArgs, cwd: string): number {
   const canvasDir = resolve(cwd, args.canvas);
   if (args.inventory || args.theme === undefined) {
@@ -296,9 +249,8 @@ function runCheck(args: CanvasArgs, cwd: string): number {
 }
 
 /**
- * `style-gen canvas check`. Never throws: an unreadable or unparsable input,
- * an invalid `--standard` and any unexpected error exit 2, so only real
- * violations exit 1.
+ * `style-gen canvas check`. Never throws: input, `--standard` and unexpected
+ * errors exit 2, so only real violations exit 1.
  * @param {FlagValues} values - Parsed flag values
  * @param {string} cwd - The project root
  * @returns {number} 0 ok, 1 violations, 2 usage or input error

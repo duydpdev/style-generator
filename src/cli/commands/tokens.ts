@@ -18,24 +18,9 @@ export interface TokensArgs {
 }
 
 /**
- * Executes the `tokens` CLI command: writes only the theme's `theme.tokens.ts`
- * (`DesignTokens.Web`: one array of camelCased keys per category, plus the
- * breakpoints, screens, spacing properties and opacity steps, and the
- * `themeAxes` variant names with their `ThemeAxesState` type), so a client
- * bundle can import the key lists without shipping the `./tokens` runtime and
- * the theme JSON. `generate` and the bundler plugins write the same file
- * together with the CSS; this command is for a project that wants the module
- * alone, or at another path.
- *
- * The object is the one `createDesignTokens()` builds at runtime, serialised
- * as JSON, so the two cannot drift; `as const` keeps the literal key types.
- * The theme and options go through the same validation (and the same error
- * labels) as `generate`. The default `--out` is the config's `tokensOutput`,
- * else `theme.tokens.ts` beside `output`, and must stay inside the project
- * root. `--out` must name a `.ts`, `.mts` or `.cts` file (not a
- * declaration file): the module is TypeScript. It must not be the theme file
- * or the configured `output`: either would be overwritten. A file whose content is
- * already current is not rewritten, so file watchers stay quiet.
+ * Executes the `tokens` CLI command: writes only `theme.tokens.ts`, serialised
+ * from what `createDesignTokens()` builds so the two cannot drift. `--out` is a
+ * TypeScript file inside the root, distinct from the theme and `output`.
  * @param {TokensArgs} args - `--theme` and `--out`
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
  * @returns {number} The process exit code

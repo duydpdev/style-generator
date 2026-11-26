@@ -6,10 +6,10 @@ import { toCamelCase, toKebabCase } from "../shared/helpers";
 const TOKEN_KEY_SOURCE = "[A-Za-z0-9][A-Za-z0-9-]*";
 export const TOKEN_KEY_RE = new RegExp(`^${TOKEN_KEY_SOURCE}$`);
 
+// Rationale: documents/architecture.md#tokenkey-why-underscores-and-leading-uppercase-runs-are-rejected
 /**
  * Key grammar of every theme record, axis and variant name: no character that
  * could be echoed unsafely into the CSS, and a class that survives the typed-token round trip.
- * Rationale: documents/architecture.md#tokenkey-why-underscores-and-leading-uppercase-runs-are-rejected
  */
 export const TokenKey = z
   .string()
@@ -59,10 +59,10 @@ const findUnbalancedBracket = (v: string): string | undefined => {
   return open === undefined ? undefined : `unclosed \`${open}\``;
 };
 
+// Rationale: documents/architecture.md#tokenvalue-what-the-value-grammar-blocks-and-why-quotes-stay-legal
 /**
  * Token value grammar: no CSS/HTML injection characters, balanced quotes and
  * balanced `(`/`[`. A `"$<key>"` alias is a valid value too.
- * Rationale: documents/architecture.md#tokenvalue-what-the-value-grammar-blocks-and-why-quotes-stay-legal
  */
 export const TokenValue = z
   .string()

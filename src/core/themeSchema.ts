@@ -297,13 +297,13 @@ const ThemeSchemaShape = ThemeCssVarShape.extend({
 /** Theme configuration schema, the single source of truth for JSON and TypeScript themes. */
 export const ThemeSchema = z.preprocess(checkRawTheme, ThemeSchemaShape);
 
+// Rationale: documents/architecture.md#parsetheme-why-the-cast-to-the-callers-type-is-safe
 /**
  * Validate `config` against `ThemeSchema` and return it typed as the caller's `T`.
  * @template T
  * @param {T} config - Theme config object
  * @returns {T} The validated theme, structurally identical to `config`
  * @throws {z.ZodError} On unknown keys or CSS-injection-unsafe values
- * Rationale: documents/architecture.md#parsetheme-why-the-cast-to-the-callers-type-is-safe
  */
 export const parseTheme = <T extends ThemeConfig>(config: T): T =>
   ThemeSchema.parse(config) as T;

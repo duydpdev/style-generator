@@ -59,8 +59,9 @@ function walk(abs, out) {
 }
 
 /**
- * Every comment the parser sees: the leading trivia of each token, so a `//`
- * inside a string, template or regex literal is never mistaken for one.
+ * Every comment the parser sees: the leading and trailing trivia of each
+ * token, so a comment after code on the same line is found and a `//` inside a
+ * string, template or regex literal is never mistaken for one.
  * @param {ts.SourceFile} sf - Parsed file
  * @returns {ts.CommentRange[]} Comment ranges in source order
  */
@@ -77,8 +78,11 @@ function commentRanges(sf) {
     const children = node.getChildren(sf);
     children.forEach(visit);
     if (children.length > 0) return;
-    const leading = ts.getLeadingCommentRanges(sf.text, node.getFullStart());
-    for (const range of leading ?? []) {
+    const around = [
+      ...(ts.getLeadingCommentRanges(sf.text, node.getFullStart()) ?? []),
+      ...(ts.getTrailingCommentRanges(sf.text, node.getEnd()) ?? []),
+    ];
+    for (const range of around) {
       if (seen.has(range.pos)) continue;
       seen.add(range.pos);
       found.push(range);
@@ -120,6 +124,25 @@ function runTracker(rel, violations) {
 }
 
 /**
+ * A block that stands alone (JSDoc) or starts after code: checked by itself.
+ * @param {string} rel - Root-relative POSIX path, for the message
+ * @param {number} first - Zero-based first line
+ * @param {number} last - Zero-based last line
+ * @param {string[]} violations - Receives the message when over the ceiling
+ * @param {boolean} jsdoc - JSDoc block (max 8) rather than a plain comment (max 3)
+ * @returns {number} Length of the block in lines
+ */
+function checkBlock(rel, first, last, violations, jsdoc) {
+  const length = last - first + 1;
+  const max = jsdoc ? MAX_JSDOC : MAX_RUN;
+  if (length > max)
+    violations.push(
+      `${rel}:${first + 1}: ${jsdoc ? "JSDoc block" : "comment run"} of ${length} lines (max ${max})`,
+    );
+  return length;
+}
+
+/**
  * @param {string} rel - Root-relative POSIX path
  * @param {string} text - File contents
  * @returns {{ commentLines: number, codeLines: number, longest: number, violations: string[] }} Measures of one file
@@ -144,13 +167,16 @@ function measure(rel, text) {
       text.startsWith("/**", range.pos) && text[range.pos + 3] !== "/";
     if (isJsdoc || !standalone) longest = Math.max(longest, runs.close());
     if (isJsdoc) {
-      const length = last - first + 1;
-      longest = Math.max(longest, length);
-      if (length > MAX_JSDOC)
-        violations.push(
-          `${rel}:${first + 1}: JSDoc block of ${length} lines (max ${MAX_JSDOC})`,
-        );
+      longest = Math.max(
+        longest,
+        checkBlock(rel, first, last, violations, true),
+      );
     } else if (standalone) runs.add(first, last);
+    else
+      longest = Math.max(
+        longest,
+        checkBlock(rel, first, last, violations, false),
+      );
   }
   longest = Math.max(longest, runs.close());
   const codeLines = text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
@@ -164,6 +190,16 @@ try {
 } catch (error) {
   console.error(
     `check-comments: ${error instanceof Error ? error.message : error}`,
+  );
+  process.exit(2);
+}
+
+if (
+  files.filter((abs) => isChecked(relative(root, abs).split(sep).join("/")))
+    .length === 0
+) {
+  console.error(
+    `check-comments: no checked .ts files under ${scopes.join(", ")}`,
   );
   process.exit(2);
 }

@@ -85,15 +85,10 @@ export const themeTemplateDark = `${JSON.stringify({ $schema, colors, themeAxes:
 const NO_ARGUMENT_NOTE =
   "// No arguments: reads style-gen.config.json (theme, output, options).";
 
+// Rationale: documents/architecture.md#templatests-why-the-bundler-snippets-look-the-way-they-do
 /**
- * The bundler config `init` prints for a detected stack; `init` never
- * edits the file. Vite and Next.js read style-gen.config.json themselves
- * (no arguments). Nuxt 4 sets Vite's root to `app/`, so the Nuxt snippet
- * passes `root`, the project folder that holds the config file. The text is
- * Prettier-formatted, except the Next.js config object, which keeps the
- * create-next-app form (its doc fence is `prettier-ignore`d). The README
- * (Vite) and `documents/reference/cli.md` (Next.js, Nuxt) show these blocks
- * byte for byte (`templates.test.ts`).
+ * The bundler config `init` prints (never writes); the README and
+ * `documents/reference/cli.md` show it byte for byte (`templates.test.ts`).
  * @param {Extract<DetectedStack, { configFile: string }>} detected - The detected stack and its config file
  * @returns {string} The snippet, first line `// <config file>`
  */
@@ -150,11 +145,7 @@ export default defineNuxtConfig({
 };
 
 /**
- * The lines that load Tailwind and the generated CSS from a CSS entry, plus
- * an `@source not` for a directory Tailwind must not scan (the agent rules
- * hold example class literals). Relative paths are computed from absolute
- * paths under `cwd`, never from `process.cwd()`; each specifier is a JSON
- * string literal, which is also a valid CSS string.
+ * Tailwind and generated-CSS imports plus an `@source not` (agent rules hold class literals).
  * @param {string} cwd - The project root
  * @param {string} cssEntry - Project-relative POSIX path of the CSS entry
  * @param {string} output - Project-relative POSIX path of `theme.css`

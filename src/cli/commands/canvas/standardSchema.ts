@@ -15,18 +15,12 @@ const positiveInt = z.number().int().positive();
 const segment = z.string().regex(/^[A-Z][a-z0-9]*$/);
 
 /**
- * The design-canvas manifest. The keys of the 8.x manifest plus `dsComponents`
- * are required; every other rule input is optional and its rule is skipped
- * when the key is absent. Unknown keys are accepted and ignored, so a manifest
- * written for a later release still loads.
+ * The design-canvas manifest: an absent optional key skips its rule, and
+ * unknown keys are ignored so a manifest for a later release still loads.
  */
 export const StandardSchema = z.object({
   semanticCore: z.array(z.string()),
-  /**
-   * The v2 semantic colour grammar: neutral keys, core roles, the suffixes in
-   * order, the states (always last) and the deprecated names with their v2
-   * replacement. Absent: the grammar rule is skipped.
-   */
+  /** The v2 colour grammar; suffixes in order, states always last. */
   grammar: z
     .object({
       neutral: z.array(z.string()),

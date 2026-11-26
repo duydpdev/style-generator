@@ -21,21 +21,11 @@ export const DEFAULT_RULES_SOURCE = new URL(
   import.meta.url,
 );
 
-/**
- * Line 1 of a rules file `init` wrote: the HTML comment `agentRulesHeader`
- * (`scripts/agent-rules.mjs`) writes, the package name, then the version.
- */
+/** Line 1 of a rules file `init` wrote (`agentRulesHeader` in `scripts/agent-rules.mjs`). */
 const RULES_HEADER_RE = /^<!-- @duydpdev\/style-generator (\S+) /;
 
-/**
- * Write the agent rules file: create it when absent, leave an identical copy,
- * and replace a changed one only after an interactive confirm. A build
- * without the rules (no `dist/agent/`) warns instead of failing `init`.
- * @param {string} cwd - The project root
- * @param {string | URL} source - The rules file shipped with this version
- * @param {boolean} isInteractive - Whether a TTY can answer the prompt
- * @returns {Promise<boolean>} Whether the rules file exists afterwards
- */
+// Create when absent, refresh another version's stamped copy, replace an edited one only after a
+// confirm; a build without `dist/agent/` warns instead of failing. True when the file exists after.
 async function writeAgentRules(
   cwd: string,
   source: string | URL,
@@ -112,16 +102,12 @@ export async function applyAgentRules(
 }
 
 /**
- * `init --rules-only`: refuse the flags that scaffold, else write or refresh
- * the rules and print the CSS lines that keep Tailwind out of `.claude/`; the
- * theme and config stay as they are. Without a config there is no generated
- * CSS to point at, so it prints no CSS lines and says so.
  * @param {InitArgs} args The initial CLI arguments.
  * @param {DetectedStack} detected The detected stack.
  * @param {string} cwd The project root.
  * @param {string | URL} rulesSource The agent rules file to copy.
  * @param {boolean} isInteractive Whether a TTY can answer the prompt.
- * @returns {Promise<number>} The exit code.
+ * @returns {Promise<number>} The exit code of `init --rules-only`: rules written, CSS lines printed when a config exists.
  */
 export async function runRulesOnly(
   args: InitArgs,

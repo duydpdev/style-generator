@@ -265,9 +265,7 @@ export declare type DefaultBreakpointKeys =
   (typeof DEFAULT_BREAKPOINTS)[number];
 ```
 
-Breakpoint keys the spacing CSS covers by default (`DEFAULT_BREAKPOINTS`,
-`md`/`lg`). A project that sets `options.breakpoints` passes its own keys
-as `BKeys`, e.g. `ResponsiveValueStrict<number, "sm" | "md" | "xl">`.
+Breakpoint keys the spacing CSS covers by default (`md`/`lg`).
 
 <!-- /signature -->
 
@@ -296,10 +294,8 @@ export declare type ResponsiveValueStrict<
 > = T | Partial<Record<BKeys | "base", T | undefined>>;
 ```
 
-Responsive value type: simple value or per-breakpoint object.
-The generic `BKeys` lets a project customize the breakpoints when wrapping the type.
-`base` is always available by default, independent of `BKeys`. A typo in a
-breakpoint key is a type error — there is no `(string & {})` fallback.
+A plain value or a per-breakpoint object (`{ base: 4, md: 8 }`). `base` is
+always accepted; any other key must be in `BKeys`, so a typo is a type error.
 
 <!-- /signature -->
 

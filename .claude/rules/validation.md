@@ -1,8 +1,14 @@
 # Validation & Plan Protocol
 
-## Gate before reporting done
+## Fast gate
 
-A task is done only when this chain exits 0 at the repo root (`yarn build:all` comes first because type-aware ESLint also covers `examples/**`, which import the built library through `link:../..`):
+After each committed change, run `yarn verify:fast` (under a minute): `lint-staged --diff="$(git merge-base HEAD origin/develop)...HEAD"` runs the pre-commit chain
+(eslint → prettier → `tsc --noEmit` → `vitest related --run`) on the files the branch changed against `develop`, not only the staged ones. It needs the `origin/develop` ref (`git fetch origin develop`) and fails with that hint when the ref is missing. It reads committed changes only, and `eslint --fix` / `prettier --write` rewrite files on disk, so run `git status` afterwards and commit what the fixers changed.
+When an `examples/**` file is in the diff, type-aware ESLint reads the built library, so run `yarn build:all` first. It never replaces the full gate: it skips the rest of `yarn test`, `test:types`, `check:*`, e2e and the site build.
+
+## Full gate
+
+Run it once before opening a PR, and before reporting a task done. A task is done only when this chain exits 0 at the repo root (`yarn build:all` comes first because type-aware ESLint also covers `examples/**`, which import the built library through `link:../..`):
 
 ```bash
 yarn build:all && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types

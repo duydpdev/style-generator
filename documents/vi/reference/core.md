@@ -1,4 +1,4 @@
-<!-- source: documents/reference/core.md sha256: 8c2d118fd0bc -->
+<!-- source: documents/reference/core.md sha256: 8b80ef9cf37b -->
 
 # API lõi (@duydpdev/style-generator)
 
@@ -92,7 +92,7 @@ Các peer dependency (`typescript`, `vite` và bốn peer của UI-kit là tùy 
 > [!WARNING]
 > npm 7 trở lên vẫn báo lỗi `ERESOLVE` khi cây dependency của bạn đã có sẵn một bản nằm ngoài dải của một peer tùy chọn (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`), kể cả khi ứng dụng không bao giờ import `./ui` hay `./ui-react`. Hãy đưa phiên bản đó về đúng dải ở bảng trên, hoặc cài đặt với `--legacy-peer-deps`.
 
-CI chạy phiên bản phát hành mới nhất của từng bản major trong mục "Đã kiểm thử trong CI"; cận dưới của một dải (ví dụ `vite@5.0.0`) không được kiểm thử. Job `check` bao gồm các phiên bản trong lockfile (Vite 7.3, TypeScript 5.9). Job `peer-matrix` kiểm thử Vite 5, 6 và 8 cùng TypeScript 6: nó build `examples/harness`, chạy một Vite dev server phát sinh lại file khi theme được sửa, và kiểm tra kiểu cho ví dụ cùng `dist/*.d.ts`. Một nhánh kiểm thử thất bại đối với một bản major đã phát hành sẽ khiến CI thất bại. Job `ts-peer` kiểm thử các bản major của TypeScript trong một scratch project npm (xem [`documents/testing.md`](../testing.md)).
+CI chạy phiên bản phát hành mới nhất của từng bản major trong mục "Đã kiểm thử trong CI"; cận dưới của một dải (ví dụ `vite@5.0.0`) không được kiểm thử. Các job `unit` và `dist-checks` của `ci.yml` bao gồm các phiên bản trong lockfile (Vite 7.3, TypeScript 5.9). Job `peer-matrix` kiểm thử Vite 5, 6 và 8 cùng TypeScript 6: nó build `examples/harness`, chạy một Vite dev server phát sinh lại file khi theme được sửa, và kiểm tra kiểu cho ví dụ cùng `dist/*.d.ts`. Một nhánh kiểm thử thất bại đối với một bản major đã phát hành sẽ khiến CI thất bại. Job `ts-peer` kiểm thử các bản major của TypeScript trong một scratch project npm (xem [`documents/testing.md`](../testing.md)).
 
 `zod` là một dependency thông thường của package; bạn không cần tự cài đặt nó.
 

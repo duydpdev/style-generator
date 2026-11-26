@@ -25,6 +25,7 @@ yarn vitest                  # watch mode; `yarn test:coverage` for v8 coverage
 yarn test:types              # *.test-d.ts (expectTypeOf); `yarn test` does not run them
 yarn test:e2e                # Playwright (Chromium + WebKit): spacing inheritance, compiled CSS
 yarn vitest run src/features/registry/generateSourceInline.test.ts   # one file
+yarn verify:fast             # fast gate (<1 min): pre-commit chain on the files this branch changed vs origin/develop
 yarn verify                  # base gate + src gate (documents/testing.md → Gate table)
 yarn lint                    # ESLint, --max-warnings 0; `yarn lint --fix` writes
 yarn prettier:check          # CI gate; `yarn prettier:fix` writes

@@ -127,8 +127,8 @@ describe("integration: canvas check theme rules", () => {
     lines.map((line) => line.slice(line.indexOf(":1 ") + 3));
 
   describe("body-log theme", () => {
-    it("fails the closed scale, contrast and collision rules with their basis", () => {
-      const { errors } = check(BODYLOG);
+    it("fails the closed scale, contrast and collision rules with their basis", async () => {
+      const { errors } = await check(BODYLOG);
       const text = withoutPath(errors);
       expect(text).toContain(
         "controlHeight mixes units: rem (sm, md, lg), px (pill, chip) [scale-unit; technical: mixed units cannot be compared or ordered]",
@@ -161,8 +161,8 @@ describe("integration: canvas check theme rules", () => {
       ).toBe(true);
     });
 
-    it("renames foregroundSubtle to foregroundSecondary", () => {
-      const text = withoutPath(check(BODYLOG).errors);
+    it("renames foregroundSubtle to foregroundSecondary", async () => {
+      const text = withoutPath((await check(BODYLOG)).errors);
       expect(
         text.filter((l) => l.startsWith("colors.foregroundSubtle ")),
       ).toEqual([
@@ -172,8 +172,8 @@ describe("integration: canvas check theme rules", () => {
       ]);
     });
 
-    it("reports an off-scale step and an undeclared role as findings, not errors", () => {
-      const { errors, findings } = check(BODYLOG);
+    it("reports an off-scale step and an undeclared role as findings, not errors", async () => {
+      const { errors, findings } = await check(BODYLOG);
       expect(errors.some((l) => l.includes("controlHeight.pill"))).toBe(false);
       expect(
         findings.some(
@@ -192,32 +192,32 @@ describe("integration: canvas check theme rules", () => {
       ).toBe(true);
     });
 
-    it("never value-checks a compound shadow or a cubic-bezier", () => {
-      const { errors, findings } = check(BODYLOG);
+    it("never value-checks a compound shadow or a cubic-bezier", async () => {
+      const { errors, findings } = await check(BODYLOG);
       for (const line of [...errors, ...findings]) {
         expect(line).not.toContain("shadows.");
         expect(line).not.toContain("motionEasing.");
       }
     });
 
-    it("keeps failing scale-unit for a full-copy standard", () => {
+    it("keeps failing scale-unit for a full-copy standard", async () => {
       const full = JSON.parse(
         readFileSync(join(fixtures, "bodylog-standard.json"), "utf8"),
       ) as object;
-      const { errors } = check(BODYLOG, { standard: full });
+      const { errors } = await check(BODYLOG, { standard: full });
       expect(errors.some((l) => l.includes("[scale-unit;"))).toBe(true);
     });
   });
 
   describe("fixed body-log theme", () => {
-    it("passes the scale, contrast, collision and vocabulary rules", () => {
-      const { errors, findings } = check(FIXED());
+    it("passes the scale, contrast, collision and vocabulary rules", async () => {
+      const { errors, findings } = await check(FIXED());
       expect(withoutPath(errors)).toEqual([]);
       expect(findings.some((l) => l.includes("is not measurable"))).toBe(false);
     });
 
-    it("measures the fixed muted text colour", () => {
-      const { errors } = check(
+    it("measures the fixed muted text colour", async () => {
+      const { errors } = await check(
         FIXED((t) => {
           (t.colors as Record<string, string>).mutedForeground = "$navy400";
         }),
@@ -230,14 +230,14 @@ describe("integration: canvas check theme rules", () => {
   });
 
   describe("declared roles", () => {
-    it("silences the finding of a role the additions file declares", () => {
+    it("silences the finding of a role the additions file declares", async () => {
       const roles = Object.fromEntries(
         ["cellAuto", "domainBody"].map((r) => [
           r,
           { description: `${r} fill` },
         ]),
       );
-      const { findings } = check(FIXED(), { standard: { roles } });
+      const { findings } = await check(FIXED(), { standard: { roles } });
       expect(
         findings.some((l) => l.includes("role cellAuto is not declared")),
       ).toBe(false);
@@ -293,24 +293,26 @@ describe("integration: canvas check theme rules", () => {
         ]),
       ),
     });
-    const contrast = (value: object) =>
-      withoutPath(check(value).errors).filter((l) => l.includes("[contrast-"));
+    const contrast = async (value: object) =>
+      withoutPath((await check(value)).errors).filter((l) =>
+        l.includes("[contrast-"),
+      );
 
-    it("passes with either axis alone", () => {
-      expect(contrast(axes(["a"]))).toEqual([]);
-      expect(contrast(axes(["b"]))).toEqual([]);
+    it("passes with either axis alone", async () => {
+      expect(await contrast(axes(["a"]))).toEqual([]);
+      expect(await contrast(axes(["b"]))).toEqual([]);
     });
 
-    it("fails only where both axes apply at once", () => {
-      const lines = contrast(axes(["a", "b"]));
+    it("fails only where both axes apply at once", async () => {
+      const lines = await contrast(axes(["a", "b"]));
       expect(lines.length).toBeGreaterThan(0);
       for (const line of lines) expect(line).toContain("(in a=x+b=x)");
     });
   });
 
   describe("descriptions", () => {
-    it("reports a usage entry naming no theme colour", () => {
-      const { errors } = check(FIXED(), {
+    it("reports a usage entry naming no theme colour", async () => {
+      const { errors } = await check(FIXED(), {
         usage: { usage: { ghost: "Nothing." } },
       });
       expect(withoutPath(errors)).toContainEqual(
@@ -320,8 +322,10 @@ describe("integration: canvas check theme rules", () => {
       );
     });
 
-    it("reports a blank description for a neutral key", () => {
-      const { errors } = check(FIXED(), { usage: { usage: { focus: "  " } } });
+    it("reports a blank description for a neutral key", async () => {
+      const { errors } = await check(FIXED(), {
+        usage: { usage: { focus: "  " } },
+      });
       expect(withoutPath(errors)).toContainEqual(
         expect.stringMatching(
           /^colors\.focus has an empty description \[description-empty/,
@@ -428,7 +432,7 @@ process.stdout.write(JSON.stringify(themeToDsTokens(JSON.parse(input), { name: "
     const ONLY = (lines: string[], id: string) =>
       lines.filter((l) => l.includes(`[${id}`));
 
-    it("silences exactly the exempted name and nothing else of that rule", () => {
+    it("silences exactly the exempted name and nothing else of that rule", async () => {
       const standard = {
         exemptions: [
           {
@@ -438,19 +442,19 @@ process.stdout.write(JSON.stringify(themeToDsTokens(JSON.parse(input), { name: "
           },
         ],
       };
-      const { errors, findings } = check(BODYLOG, { standard });
+      const { errors, findings } = await check(BODYLOG, { standard });
       expect(ONLY(errors, "scale-duplicate")).toEqual([]);
       expect(errors.some((l) => l.includes("[scale-unit;"))).toBe(true);
       expect(findings.some((l) => l.includes("exemption-unused"))).toBe(false);
     });
 
-    it("reports an exemption that matches nothing, once, as a finding", () => {
+    it("reports an exemption that matches nothing, once, as a finding", async () => {
       const standard = {
         exemptions: [
           { rule: "scale-duplicate", name: "controlHeight.ghost", reason: "x" },
         ],
       };
-      const { findings } = check(FIXED(), { standard });
+      const { findings } = await check(FIXED(), { standard });
       expect(
         findings.filter((l) =>
           l.includes(
@@ -461,19 +465,19 @@ process.stdout.write(JSON.stringify(themeToDsTokens(JSON.parse(input), { name: "
       expect(findings.some((l) => l.endsWith("[exemption-unused]"))).toBe(true);
     });
 
-    it("does not call an exemption stale when its rule was switched off", () => {
+    it("does not call an exemption stale when its rule was switched off", async () => {
       const standard = {
         exemptions: [{ rule: "contrast-text", name: "a/b", reason: "x" }],
         disabledRules: { "contrast-text": { reason: "backlog" } },
       };
-      const { findings } = check(FIXED(), {
+      const { findings } = await check(FIXED(), {
         standard,
         noRule: ["contrast-text"],
       });
       expect(findings.some((l) => l.includes("exemption-unused"))).toBe(false);
     });
 
-    it("lets a contrast exception silence its pair, and reports one that matches nothing", () => {
+    it("lets a contrast exception silence its pair, and reports one that matches nothing", async () => {
       const standard = {
         exceptions: {
           contrast: [
@@ -483,7 +487,7 @@ process.stdout.write(JSON.stringify(themeToDsTokens(JSON.parse(input), { name: "
           ],
         },
       };
-      const { errors, findings } = check(BODYLOG, { standard });
+      const { errors, findings } = await check(BODYLOG, { standard });
       expect(errors.some((l) => l.includes("mutedForeground on"))).toBe(false);
       expect(
         findings.filter((l) =>
@@ -494,8 +498,8 @@ process.stdout.write(JSON.stringify(themeToDsTokens(JSON.parse(input), { name: "
       ).toHaveLength(1);
     });
 
-    it("reports a pair it cannot measure as a finding instead of passing it", () => {
-      const { errors, findings } = check(
+    it("reports a pair it cannot measure as a finding instead of passing it", async () => {
+      const { errors, findings } = await check(
         FIXED((t) => {
           (t.colors as Record<string, string>).mutedForeground =
             "oklch(40% 0.1 250)";
@@ -556,8 +560,8 @@ process.stdout.write(JSON.stringify(themeToDsTokens(JSON.parse(input), { name: "
       ),
     });
 
-    it("switches a rule off when the additions file records a reason", () => {
-      const result = check(BODYLOG, {
+    it("switches a rule off when the additions file records a reason", async () => {
+      const result = await check(BODYLOG, {
         standard: disabling(["contrast-text"]),
         noRule: ["contrast-text"],
       });

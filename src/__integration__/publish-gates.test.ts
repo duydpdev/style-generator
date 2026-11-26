@@ -82,6 +82,9 @@ function writeCleanBuild(root: string) {
   bundle(root, "dist/cli/canvas.mjs", "export const canvas = 1;\n", [
     "../../src/cli/commands/canvas/check.ts",
   ]);
+  bundle(root, "dist/cli/canvas-classes.mjs", "export const classes = 1;\n", [
+    "../../src/cli/commands/canvas/boardTokenRules.ts",
+  ]);
 }
 
 /**

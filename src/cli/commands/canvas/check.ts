@@ -19,15 +19,24 @@ import {
   loadRecipes,
   type DsVersion,
 } from "./boardRules";
+import { presetUses } from "./classCandidates";
 import {
   fileViolations,
   themeVariableNames,
+  unknownTokenReads,
   type FileRules,
 } from "./fileRules";
 import { contrastRules } from "./contrast";
 import { descriptionRules } from "./descriptions";
 import { asRecord } from "./parseHtml";
-import { createReporter, type Report } from "./ruleReport";
+import {
+  ALWAYS_RULES,
+  BOARD_RULES,
+  THEME_RULES,
+  createReporter,
+  type Reporter,
+  type Report,
+} from "./ruleReport";
 import { scaleRules } from "./scaleRules";
 import {
   CanvasInputError,
@@ -36,7 +45,9 @@ import {
   parseJson,
   readInput,
   readJson,
+  readText,
   scanCanvas,
+  type ScannedFile,
 } from "./scan";
 import { loadStandard, type LoadedStandard } from "./standardLayer";
 import { packagedStandard } from "./standardSchema";
@@ -53,6 +64,10 @@ export interface CheckOptions {
   intents?: readonly string[] | undefined;
   naming?: boolean | undefined;
   boards?: boolean | undefined;
+  /** With `boards`: the preset source whose class names are read as text, never run. */
+  preset?: string | undefined;
+  /** With `boards`: `style-gen.config.json`, the product's `generate()` options. */
+  config?: string | undefined;
   /** Additions file layered over the packaged standard; the packaged standard alone when absent. */
   standard?: string | undefined;
   /** `ds.usage.json`: colour descriptions and spacing token names; read only with `naming`. */
@@ -127,13 +142,32 @@ export interface CheckResult extends Report {
   disabled: string[];
 }
 
+// The per-file rules: raw violation lines, then the variables nothing declares (`ref-var`).
+function fileRules(
+  scanned: readonly ScannedFile[],
+  rules: FileRules,
+  known: ReadonlySet<string>,
+  reporter: Reporter,
+): void {
+  for (const s of scanned) {
+    for (const line of fileViolations(s, rules)) reporter.raw(line);
+    for (const o of unknownTokenReads(s, known))
+      reporter.error(
+        `${o.file}:${String(o.line)}`,
+        `unknown token ${o.value}`,
+        "ref-var",
+        o.value,
+      );
+  }
+}
+
 /**
  * Violations of the one-theme rule: `errors` fail the run, `findings` are reported and pass.
  * @param {CheckOptions} options - Canvas, theme and the optional checks
  * @returns {CheckResult} Empty when the canvas follows the theme
  * @throws {CanvasInputError} When an input cannot be read or parsed, or `--standard` or `--no-rule` is invalid
  */
-export function checkCanvas(options: CheckOptions): CheckResult {
+export async function checkCanvas(options: CheckOptions): Promise<CheckResult> {
   const { theme, stamp, intents, naming = false, boards = false } = options;
   const at = (path: string) => resolve(options.cwd ?? process.cwd(), path);
   const canvasDir = at(options.canvasDir);
@@ -163,8 +197,8 @@ export function checkCanvas(options: CheckOptions): CheckResult {
   const primitiveKeys = Object.keys(asRecord(asRecord(parsed).colors)).filter(
     (k) => PRIMITIVE.test(k),
   );
+  const known = themeVariableNames(parsed);
   const rules: FileRules = {
-    known: themeVariableNames(parsed),
     intents,
     naming,
     primitiveVars: new Set(
@@ -172,10 +206,8 @@ export function checkCanvas(options: CheckOptions): CheckResult {
     ),
     primitiveBoards: naming ? standard.primitiveBoards : [],
   };
-  for (const line of scanCanvas(canvasDir, options.canvasDir).flatMap((s) =>
-    fileViolations(s, rules),
-  ))
-    reporter.raw(line);
+  const scanned = scanCanvas(canvasDir, options.canvasDir);
+  fileRules(scanned, rules, known, reporter);
   if (naming) themeRules(parsed, standard, usage, reporter, `${theme}:1`);
   const boardOptions = {
     boards,
@@ -190,6 +222,11 @@ export function checkCanvas(options: CheckOptions): CheckResult {
     ...boardContentViolations(canvasDir, parsed, boardOptions, standard),
   ])
     reporter.raw(line);
+  if (boards)
+    await boardClassRules(
+      { options, at, scanned, theme: asRecord(parsed), standard },
+      reporter,
+    );
   if (
     stamp !== undefined &&
     stampFile !== undefined &&
@@ -198,7 +235,54 @@ export function checkCanvas(options: CheckOptions): CheckResult {
     reporter.raw(
       `${stamp}:1 stamp does not match theme (rebuild the design system)`,
     );
+  reporter.staleExemptions(`${theme}:1`, [
+    ...ALWAYS_RULES,
+    ...(naming ? THEME_RULES : []),
+    ...(boards ? BOARD_RULES : []),
+  ]);
   return { ...reporter.report(), disabled: [...disabled] };
+}
+
+// The class rules compile with Tailwind, so they load through their own chunk.
+async function boardClassRules(
+  input: {
+    options: CheckOptions;
+    at: (path: string) => string;
+    scanned: readonly ScannedFile[];
+    theme: Record<string, unknown>;
+    standard: LoadedStandard["standard"];
+  },
+  reporter: Reporter,
+): Promise<void> {
+  const { options, at, scanned, theme, standard } = input;
+  const uses = scanned.flatMap((s) => s.classUses);
+  const presetSource =
+    options.preset === undefined
+      ? undefined
+      : readText(at(options.preset), options.preset);
+  if (options.preset !== undefined && presetSource !== undefined)
+    uses.push(...presetUses(options.preset, presetSource));
+  const { boardTokenRules } = await import("./boardTokenRules");
+  await boardTokenRules(
+    {
+      uses,
+      theme,
+      configFile:
+        options.config === undefined
+          ? undefined
+          : { path: at(options.config), label: options.config },
+      standard,
+      cwd: options.cwd ?? process.cwd(),
+      vars: new Set(
+        scanned.flatMap((s) =>
+          s.occurrences.filter((o) => o.kind === "sgVar").map((o) => o.value),
+        ),
+      ),
+      preset: presetSource === undefined ? undefined : { source: presetSource },
+      themePath: options.theme,
+    },
+    reporter,
+  );
 }
 
 // The theme-level rules, all under `--naming`; each line names the theme file.
@@ -239,7 +323,6 @@ function themeRules(
       name,
     );
   }
-  reporter.staleExemptions(path);
 }
 
 /** The parsed flags of `style-gen canvas check`. */
@@ -257,6 +340,8 @@ export interface CanvasArgs {
   recipes?: string | undefined;
   usage?: string | undefined;
   noRule?: string[] | undefined;
+  preset?: string | undefined;
+  config?: string | undefined;
 }
 
 // `<namespace>=<version>`: null unless exactly one `=` with non-empty sides.
@@ -282,6 +367,14 @@ const strings = (value: FlagValues[string]): string[] | undefined => {
   return list.length === 0 ? undefined : list;
 };
 
+// Boards run the variant grid and the class rules, `--naming` the descriptions.
+const FLAG_NEEDS = [
+  ["recipes", "boards"],
+  ["preset", "boards"],
+  ["config", "boards"],
+  ["usage", "naming"],
+] as const;
+
 /**
  * Validates the flags of `style-gen canvas check` (parsed strictly by the registry).
  * @param {FlagValues} values - Parsed flag values
@@ -299,14 +392,19 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
   if (theme === undefined && !inventory)
     return "--theme is required (unless --inventory)";
   // Dropping an empty optional path would skip its check silently.
-  for (const key of ["stamp", "standard", "recipes", "usage"])
+  for (const key of [
+    "stamp",
+    "standard",
+    "recipes",
+    "usage",
+    "preset",
+    "config",
+  ])
     if (str(key) === "") return `--${key} must not be empty`;
-  // The variant grid is a board rule: without --boards it would never run.
-  if (str("recipes") !== undefined && values.boards !== true)
-    return "--recipes needs --boards";
-  // The descriptions it feeds are a theme rule: without --naming they would never run.
-  if (str("usage") !== undefined && values.naming !== true)
-    return "--usage needs --naming";
+  // A flag that feeds a rule needs the switch that runs it, or it would never run.
+  for (const [key, needs] of FLAG_NEEDS)
+    if (str(key) !== undefined && values[needs] !== true)
+      return `--${key} needs --${needs}`;
   const dsVersionText = str("ds-version");
   const dsVersion =
     dsVersionText === undefined ? undefined : parseDsVersion(dsVersionText);
@@ -328,6 +426,8 @@ export function parseCanvasArgs(values: FlagValues): CanvasArgs | string {
     dsVersion,
     recipes: str("recipes"),
     usage: str("usage"),
+    preset: str("preset"),
+    config: str("config"),
     noRule: strings(values["no-rule"]),
   };
 }
@@ -345,7 +445,7 @@ function oneLine(text: string): string {
 }
 
 // Runs the check (or the inventory) and prints the result: 0 ok or findings only, 1 errors.
-function runCheck(args: CanvasArgs, cwd: string): number {
+async function runCheck(args: CanvasArgs, cwd: string): Promise<number> {
   const canvasDir = resolve(cwd, args.canvas);
   if (args.inventory || args.theme === undefined) {
     logger.log(
@@ -353,7 +453,7 @@ function runCheck(args: CanvasArgs, cwd: string): number {
     );
     return 0;
   }
-  const result = checkCanvas({
+  const result = await checkCanvas({
     ...args,
     canvasDir: args.canvas,
     theme: args.theme,
@@ -390,14 +490,17 @@ function runCheck(args: CanvasArgs, cwd: string): number {
  * @param {string} cwd - The project root
  * @returns {number} 0 ok, 1 violations, 2 usage or input error
  */
-export function canvasCheckCommand(values: FlagValues, cwd: string): number {
+export async function canvasCheckCommand(
+  values: FlagValues,
+  cwd: string,
+): Promise<number> {
   const args = parseCanvasArgs(values);
   if (typeof args === "string") {
     logger.error(oneLine(args));
     return 2;
   }
   try {
-    return runCheck(args, cwd);
+    return await runCheck(args, cwd);
   } catch (error) {
     logger.error(
       oneLine(

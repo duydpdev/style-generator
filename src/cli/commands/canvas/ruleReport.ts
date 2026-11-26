@@ -7,10 +7,10 @@ export interface Report {
 }
 
 /**
- * Rule ids this release evaluates. An exemption of any other id is not reported
- * as stale: its rule has not run, so it could not have matched.
+ * Rule ids a run evaluates, by the flag that turns them on. An exemption of a
+ * rule that did not run is not reported as stale: it could not have matched.
  */
-export const EVALUATED_RULES: readonly string[] = [
+export const THEME_RULES: readonly string[] = [
   "name-vocabulary",
   "description-empty",
   "description-unknown-key",
@@ -26,6 +26,16 @@ export const EVALUATED_RULES: readonly string[] = [
   "ds-name-collision",
 ];
 
+/** Rules `--boards` adds. */
+export const BOARD_RULES: readonly string[] = [
+  "ref-class",
+  "token-bypass",
+  "token-unused",
+];
+
+/** Rules every run evaluates. */
+export const ALWAYS_RULES: readonly string[] = ["ref-var"];
+
 /** Collects the lines of a run; a disabled rule or an exempted name adds nothing. */
 export interface Reporter {
   /** An error line `<path> <message> [<rule>; <basis>]` (no suffix without a rule). */
@@ -34,8 +44,8 @@ export interface Reporter {
   finding(path: string, message: string, rule: string, name?: string): void;
   /** A violation line some other check already formatted. */
   raw(line: string): void;
-  /** Findings for every exemption of an evaluated rule that silenced nothing. */
-  staleExemptions(path: string): void;
+  /** Findings for every exemption of an `evaluated` rule that silenced nothing. */
+  staleExemptions(path: string, evaluated: readonly string[]): void;
   report(): Report;
 }
 
@@ -90,12 +100,12 @@ export function createReporter(
       if (silenced(rule, name)) return;
       report.findings.push(`finding: ${path} ${message} [${rule}]`);
     },
-    staleExemptions(path) {
+    staleExemptions(path, evaluated) {
       exemptions.forEach((entry, index) => {
         if (
           used.has(index) ||
           disabled.has(entry.rule) ||
-          !EVALUATED_RULES.includes(entry.rule)
+          !evaluated.includes(entry.rule)
         )
           return;
         report.findings.push(

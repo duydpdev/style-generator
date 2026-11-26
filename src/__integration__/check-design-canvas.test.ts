@@ -206,8 +206,13 @@ describe("integration: style-gen canvas check", () => {
       standard?: string | undefined;
       dsVersion?: { namespace: string; version: string } | undefined;
       recipes?: string | undefined;
+      preset?: string | undefined;
+      config?: string | undefined;
     } = {},
-  ) => checkCanvas({ canvasDir: canvas, theme, ...extra }).errors;
+  ) =>
+    checkCanvas({ canvasDir: canvas, theme, ...extra }).then(
+      (result) => result.errors,
+    );
   const useTheme = (value: object): void => {
     theme = writeTmpFile(dir, "theme.json", value);
   };
@@ -307,60 +312,60 @@ describe("integration: style-gen canvas check", () => {
     });
 
   // eslint-disable-next-line sonarjs/parameterized-tests -- each case builds its own fixture and asserts a different message, so a table would hide the scenario names
-  it("passes a board that reads only theme tokens", () => {
+  it("passes a board that reads only theme tokens", async () => {
     board(
       '<div style="color:var(--sg-color-primary-foreground);border-radius:var(--sg-radius-md)">x</div>',
     );
-    expect(check()).toEqual([]);
+    expect(await check()).toEqual([]);
   });
 
-  it("reports a --bl-* variable as a second token namespace", () => {
+  it("reports a --bl-* variable as a second token namespace", async () => {
     board('<p style="color:var(--bl-ink)">x</p>');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("second token namespace --bl-ink");
     expect(out[0]).toContain(":1 ");
   });
 
   // eslint-disable-next-line sonarjs/parameterized-tests -- each case builds its own fixture and asserts a different message, so a table would hide the scenario names
-  it("reports any unprefixed variable, not only --bl-*", () => {
+  it("reports any unprefixed variable, not only --bl-*", async () => {
     board('<p style="color:var(--muted)">x</p>');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("second token namespace --muted");
   });
 
-  it("allows --layout-*, --spacing and --sg-sp-*", () => {
+  it("allows --layout-*, --spacing and --sg-sp-*", async () => {
     board(
       '<div style="width:var(--layout-sidebar);padding:calc(var(--spacing) * 4);margin:var(--sg-sp-4)">x</div>',
     );
-    expect(check()).toEqual([]);
+    expect(await check()).toEqual([]);
   });
 
-  it("reports --bl- text that is not a variable", () => {
+  it("reports --bl- text that is not a variable", async () => {
     board("<table><tr><td>--bl-input-*</td></tr></table>");
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("parallel token text");
   });
 
-  it("reports a /_blob/ stylesheet", () => {
+  it("reports a /_blob/ stylesheet", async () => {
     board('<link rel="stylesheet" href="/_blob/abc">');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("unchecked stylesheet /_blob/abc");
   });
 
-  it("reports a /_blob/ stylesheet whatever the attribute order", () => {
+  it("reports a /_blob/ stylesheet whatever the attribute order", async () => {
     board('<link href="/_blob/abc" rel="stylesheet">');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("unchecked stylesheet /_blob/abc");
   });
 
-  it("reports a /_blob/ download link apart from stylesheets", () => {
+  it("reports a /_blob/ download link apart from stylesheets", async () => {
     board('<a href="/_blob/abc" download="x.json">tokens</a>');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("unchecked blob link /_blob/abc");
     expect(out[0]).not.toContain("unchecked stylesheet");
@@ -369,14 +374,14 @@ describe("integration: style-gen canvas check", () => {
     expect(inv.blobLinks).toEqual({});
   });
 
-  it("reports a px font-size", () => {
+  it("reports a px font-size", async () => {
     board('<p style="font-size:13px">x</p>');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("font-size 13px");
   });
 
-  it("reports a bound font-size and records its literals", () => {
+  it("reports a bound font-size and records its literals", async () => {
     board(
       [
         '<h1 style="font-size:{{h1}}">Title</h1>',
@@ -385,7 +390,7 @@ describe("integration: style-gen canvas check", () => {
         "</script>",
       ].join("\n"),
     );
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("font-size {{h1}}");
     const [size] = inventoryCanvas(canvas).fontSizes;
@@ -393,49 +398,49 @@ describe("integration: style-gen canvas check", () => {
     expect(size?.literals).toEqual(["60px", "38px"]);
   });
 
-  it("allows font-size: inherit and font: inherit", () => {
+  it("allows font-size: inherit and font: inherit", async () => {
     board(
       '<p style="font-size:inherit">a</p><button style="font: inherit">b</button>',
     );
-    expect(check()).toEqual([]);
+    expect(await check()).toEqual([]);
   });
 
-  it("reports a font shorthand", () => {
+  it("reports a font shorthand", async () => {
     board('<p style="font: 600 14px/1 x">a</p>');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("font shorthand");
   });
 
-  it("reports an --sg-* token the theme does not produce", () => {
+  it("reports an --sg-* token the theme does not produce", async () => {
     board('<p style="color:var(--sg-color-nope)">x</p>');
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("unknown token --sg-color-nope");
   });
 
-  it("allows any --sg-sp-* spacing variable", () => {
+  it("allows any --sg-sp-* spacing variable", async () => {
     board('<p style="margin:var(--sg-sp-4)">x</p>');
-    expect(check()).toEqual([]);
+    expect(await check()).toEqual([]);
   });
 
-  it("skips the producer files but scans the rest of ds/", () => {
+  it("skips the producer files but scans the rest of ds/", async () => {
     writeTmpFile(canvas, "ds/x/tokens.css", ":root { --primary: red; }");
     writeTmpFile(
       canvas,
       "ds/x/components/bundle.css",
       ":root { --primary: red; }",
     );
-    expect(check()).toEqual([]);
+    expect(await check()).toEqual([]);
     writeTmpFile(canvas, "ds/x/extra.css", ":root { --primary: red; }");
-    const out = check();
+    const out = await check();
     expect(out).toHaveLength(1);
     expect(out[0]).toContain(
       "ds/x/extra.css:1 second token namespace --primary",
     );
   });
 
-  it("reports button intents outside the allowed list, bound ones included", () => {
+  it("reports button intents outside the allowed list, bound ones included", async () => {
     board(
       [
         '<x-import component-from-global-scope="BodyLog.Button" color="danger"></x-import>',
@@ -446,30 +451,30 @@ describe("integration: style-gen canvas check", () => {
         "</script>",
       ].join("\n"),
     );
-    const out = check({ intents: ["primary", "ok", "bad"] });
+    const out = await check({ intents: ["primary", "ok", "bad"] });
     expect(out.filter((v) => v.includes("unknown intent danger"))).toHaveLength(
       2,
     );
     expect(out).toHaveLength(2);
   });
 
-  it("reports a stamp built from other theme bytes", () => {
+  it("reports a stamp built from other theme bytes", async () => {
     const stamp = writeTmpFile(dir, "ds-stamp.json", {
       themeSha256: "0".repeat(64),
     });
     board("<p>x</p>");
-    const out = check({ stamp });
+    const out = await check({ stamp });
     expect(out).toHaveLength(1);
     expect(out[0]).toContain("stamp does not match theme");
   });
 
-  it("accepts a stamp built from these theme bytes", () => {
+  it("accepts a stamp built from these theme bytes", async () => {
     const sha = createHash("sha256")
       .update(JSON.stringify(THEME))
       .digest("hex");
     const stamp = writeTmpFile(dir, "ds-stamp.json", { themeSha256: sha });
     board("<p>x</p>");
-    expect(check({ stamp })).toEqual([]);
+    expect(await check({ stamp })).toEqual([]);
   });
 
   it("inventories two boards", () => {
@@ -511,35 +516,35 @@ describe("integration: style-gen canvas check", () => {
       useTheme(NAMED);
     });
 
-    it("reports an inline font-weight under naming", () => {
+    it("reports an inline font-weight under naming", async () => {
       board('<b style="font-weight:600">x</b>');
-      expect(check({ naming: true })).toEqual([
+      expect(await check({ naming: true })).toEqual([
         "a.dc.html:1 font-weight 600 (use a typography class)",
       ]);
     });
 
-    it("allows font-weight: inherit under naming", () => {
+    it("allows font-weight: inherit under naming", async () => {
       board('<b style="font-weight:inherit">x</b>');
-      expect(check({ naming: true })).toEqual([]);
+      expect(await check({ naming: true })).toEqual([]);
     });
 
-    it("reports font-weight in a stylesheet under naming", () => {
+    it("reports font-weight in a stylesheet under naming", async () => {
       writeTmpFile(canvas, "x.css", ".a{font-weight:700}");
-      expect(check({ naming: true })).toEqual([
+      expect(await check({ naming: true })).toEqual([
         "x.css:1 font-weight 700 (use a typography class)",
       ]);
     });
 
-    it("reports a bound font-weight under naming whole", () => {
+    it("reports a bound font-weight under naming whole", async () => {
       board('<b style="font-weight:{{ w }}">x</b>');
-      expect(check({ naming: true })).toEqual([
+      expect(await check({ naming: true })).toEqual([
         "a.dc.html:1 font-weight {{ w }} (use a typography class)",
       ]);
     });
 
-    it("ignores font-weight without naming", () => {
+    it("ignores font-weight without naming", async () => {
       board('<b style="font-weight:600">x</b>');
-      expect(check()).toEqual([]);
+      expect(await check()).toEqual([]);
     });
 
     it("inventories font-weight with or without naming", () => {
@@ -550,20 +555,22 @@ describe("integration: style-gen canvas check", () => {
   });
 
   describe("--naming: theme grammar", () => {
-    const grammar = (t: NamedTheme): string[] => {
+    const grammar = async (t: NamedTheme): Promise<string[]> => {
       useTheme(t);
       board("<p>x</p>");
-      return check({ naming: true }).map((line) =>
+      return (await check({ naming: true })).map((line) =>
         line.slice(line.indexOf(":1 ") + 3),
       );
     };
 
-    it("naming passes a theme that follows every rule", () => {
-      expect(grammar(NAMED)).toEqual([]);
+    it("naming passes a theme that follows every rule", async () => {
+      expect(await grammar(NAMED)).toEqual([]);
     });
 
-    it("naming accepts the xl radius key", () => {
-      expect(grammar(named((t) => (t.borderRadius.xl = "24px")))).toEqual([]);
+    it("naming accepts the xl radius key", async () => {
+      expect(await grammar(named((t) => (t.borderRadius.xl = "24px")))).toEqual(
+        [],
+      );
     });
 
     it.each<[string, (t: NamedTheme) => void, string]>([
@@ -647,14 +654,18 @@ describe("integration: style-gen canvas check", () => {
           }),
         "typography.text18Regular size 18px is not on the scale",
       ],
-    ])("naming reports %s", (_name, edit, message) => {
-      expect(grammar(named(edit))).toEqual([message]);
+    ])("naming reports %s", async (_name, edit, message) => {
+      expect(await grammar(named(edit))).toEqual([message]);
     });
 
-    it("naming reports a radius key off the scale as a finding, not an error", () => {
+    it("naming reports a radius key off the scale as a finding, not an error", async () => {
       useTheme(named((t) => (t.borderRadius.huge = "32px")));
       board("<p>x</p>");
-      const result = checkCanvas({ canvasDir: canvas, theme, naming: true });
+      const result = await checkCanvas({
+        canvasDir: canvas,
+        theme,
+        naming: true,
+      });
       expect(result.errors).toEqual([]);
       expect(result.findings).toEqual([
         expect.stringContaining(
@@ -664,9 +675,9 @@ describe("integration: style-gen canvas check", () => {
       expect(result.findings[0]).toMatch(/\[scale-name\]$/);
     });
 
-    it("naming reports a malformed theme instead of throwing", () => {
+    it("naming reports a malformed theme instead of throwing", async () => {
       expect(
-        grammar({
+        await grammar({
           colors: "x",
           typography: { text16Regular: null },
         } as unknown as NamedTheme),
@@ -679,95 +690,95 @@ describe("integration: style-gen canvas check", () => {
       useTheme(NAMED);
     });
 
-    it("reports a primitive token on a screen", () => {
+    it("reports a primitive token on a screen", async () => {
       board(
         '<p style="color:var(--sg-color-blue-600)">x</p>',
         "screen.dc.html",
       );
-      expect(check({ naming: true })).toEqual([
+      expect(await check({ naming: true })).toEqual([
         "screen.dc.html:1 primitive token --sg-color-blue-600 (use a semantic key)",
       ]);
     });
 
-    it("allows a primitive token on ds-mau", () => {
+    it("allows a primitive token on ds-mau", async () => {
       board(
         '<p style="color:var(--sg-color-blue-600)">x</p>',
         "ds-mau.dc.html",
       );
-      expect(check({ naming: true })).toEqual([]);
+      expect(await check({ naming: true })).toEqual([]);
     });
 
-    it("ignores primitive tokens without naming", () => {
+    it("ignores primitive tokens without naming", async () => {
       board(
         '<p style="color:var(--sg-color-blue-600)">x</p>',
         "screen.dc.html",
       );
-      expect(check()).toEqual([]);
+      expect(await check()).toEqual([]);
     });
   });
 
   describe("--boards", () => {
-    it("boards passes the full fixture", () => {
+    it("boards passes the full fixture", async () => {
       writeBoards();
-      expect(check({ boards: true })).toEqual([]);
+      expect(await check({ boards: true })).toEqual([]);
     });
 
-    it("boards reports a missing core board", () => {
+    it("boards reports a missing core board", async () => {
       writeBoards();
       unlinkSync(join(canvas, "ds-mau.dc.html"));
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 missing core board ds-mau.dc.html",
       ]);
     });
 
-    it("boards reports a core board on the wrong page", () => {
+    it("boards reports a core board on the wrong page", async () => {
       writeBoards((c) => {
         entry(c.boards, "ds-chu.dc.html").page = "cl";
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 board ds-chu.dc.html is on page cl, expected ds",
         "canvas.json:1 board ds-chu.dc.html on page cl is not a c-* board",
       ]);
     });
 
-    it("boards reports a wrong core title", () => {
+    it("boards reports a wrong core title", async () => {
       writeBoards((c) => {
         entry(c.boards, "ds-luoi.dc.html").title = "Grid";
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         'canvas.json:1 board ds-luoi.dc.html title "Grid", expected "Board / Design system / Lưới & breakpoint"',
       ]);
     });
 
-    it("boards reports a missing component board", () => {
+    it("boards reports a missing component board", async () => {
       writeBoards((c) => {
         c.order = c.order.filter((f) => f !== "c-button.dc.html");
         delete c.boards["c-button.dc.html"];
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 missing component board c-button.dc.html",
       ]);
     });
 
-    it("boards reports a component title without the prefix", () => {
+    it("boards reports a component title without the prefix", async () => {
       writeBoards((c) => {
         entry(c.boards, "c-box.dc.html").title = "Box";
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         'canvas.json:1 board c-box.dc.html title must start with "Component / "',
       ]);
     });
 
-    it("boards reports a missing page", () => {
+    it("boards reports a missing page", async () => {
       writeBoards((c) => {
         c.pages = c.pages.filter((p) => p.id !== "bia");
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 missing page bia",
       ]);
     });
 
-    it("boards reports core boards out of order", () => {
+    it("boards reports core boards out of order", async () => {
       writeBoards((c) => {
         const [a, b] = [
           c.order.indexOf("ds-mau.dc.html"),
@@ -775,19 +786,19 @@ describe("integration: style-gen canvas check", () => {
         ];
         [c.order[a], c.order[b]] = ["ds-chu.dc.html", "ds-mau.dc.html"];
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 core boards out of order in canvas.json#order (expected Main.dc.html, ds-mau.dc.html, ds-chu.dc.html, ds-khung.dc.html, ds-luoi.dc.html, ds-token.dc.html)",
       ]);
     });
 
-    it("boards reports a missing canvas.json", () => {
+    it("boards reports a missing canvas.json", async () => {
       board("<p>x</p>");
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 missing canvas.json",
       ]);
     });
 
-    it("boards keeps the packaged titles when the standard option renames one", () => {
+    it("boards keeps the packaged titles when the standard option renames one", async () => {
       const copy = structuredClone(STANDARD);
       const mau = copy.boards.find((b) => b.file === "ds-mau.dc.html");
       if (mau) mau.title = "X";
@@ -801,21 +812,21 @@ describe("integration: style-gen canvas check", () => {
       const expected = [
         'canvas.json:1 board ds-mau.dc.html title "X", expected "Board / Design system / Màu sắc / Light + Dark"',
       ];
-      expect(check({ boards: true, standard })).toEqual(expected);
-      expect(check({ boards: true })).toEqual(expected);
+      expect(await check({ boards: true, standard })).toEqual(expected);
+      expect(await check({ boards: true })).toEqual(expected);
     });
   });
 
   describe("--boards: additions file", () => {
-    it("boards applies the packaged content rules to an empty additions file", () => {
+    it("boards applies the packaged content rules to an empty additions file", async () => {
       writeBoards(undefined, {}, true);
       const standard = writeTmpFile(dir, "standard.json", {});
-      const packaged = check({ boards: true });
+      const packaged = await check({ boards: true });
       expect(packaged).not.toEqual([]);
-      expect(check({ boards: true, standard })).toEqual(packaged);
+      expect(await check({ boards: true, standard })).toEqual(packaged);
     });
 
-    it("boards applies the packaged content rules to a full copy without content", () => {
+    it("boards applies the packaged content rules to a full copy without content", async () => {
       const older = JSON.parse(readFileSync(standardFile, "utf8")) as Record<
         string,
         unknown
@@ -825,17 +836,17 @@ describe("integration: style-gen canvas check", () => {
       delete older.provenanceBoard;
       const standard = writeTmpFile(dir, "standard.json", older);
       writeBoards(undefined, {}, true);
-      expect(check({ boards: true, standard })).toEqual(
-        check({ boards: true }),
+      expect(await check({ boards: true, standard })).toEqual(
+        await check({ boards: true }),
       );
     });
   });
 
   describe("board content", () => {
-    it("content passes core boards with their sections, literals and provenance", () => {
+    it("content passes core boards with their sections, literals and provenance", async () => {
       writeBoards();
       expect(
-        check({
+        await check({
           boards: true,
           stamp: writeStamp(),
           dsVersion: { namespace: "BodyLog", version: "3" },
@@ -896,15 +907,15 @@ describe("integration: style-gen canvas check", () => {
         (t) => t.replace('"built":"2026-11-24"', '"built":"24/11/2026"'),
         'Main.dc.html:2 provenance built "24/11/2026" is not YYYY-MM-DD',
       ],
-    ])("content reports %s", (_name, file, edit, message) => {
+    ])("content reports %s", async (_name, file, edit, message) => {
       writeBoards();
       rewrite(file, edit);
-      expect(check({ boards: true })).toContain(message);
+      expect(await check({ boards: true })).toContain(message);
     });
 
-    it("content reports a provenance theme the stamp does not have", () => {
+    it("content reports a provenance theme the stamp does not have", async () => {
       writeBoards();
-      const out = check({
+      const out = await check({
         boards: true,
         stamp: writeStamp({ themeSha256: "0".repeat(64) }),
       });
@@ -913,29 +924,32 @@ describe("integration: style-gen canvas check", () => {
       );
     });
 
-    it("content reports a provenance lib the stamp does not have", () => {
+    it("content reports a provenance lib the stamp does not have", async () => {
       writeBoards();
       expect(
-        check({ boards: true, stamp: writeStamp({ libVersion: "9.0.0" }) }),
+        await check({
+          boards: true,
+          stamp: writeStamp({ libVersion: "9.0.0" }),
+        }),
       ).toContain('Main.dc.html:2 provenance lib "8.2.3", stamp has "9.0.0"');
     });
 
-    it("content reports a provenance ds other than --ds-version", () => {
+    it("content reports a provenance ds other than --ds-version", async () => {
       writeBoards();
       expect(
-        check({
+        await check({
           boards: true,
           dsVersion: { namespace: "BodyLog", version: "4" },
         }),
       ).toContain('Main.dc.html:2 provenance ds "3", expected "4"');
     });
 
-    it("content echoes a board value on one line", () => {
+    it("content echoes a board value on one line", async () => {
       writeBoards();
       rewrite("ds-mau.dc.html", (t) =>
         t.replace('"primary":"#000"', '"primary":"#000\\nOK: 1 files"'),
       );
-      const out = check({ boards: true });
+      const out = await check({ boards: true });
       expect(out).toEqual([
         'ds-mau.dc.html:2 literal colors.primary is "#000\\nOK: 1 files", theme has "#000"',
       ]);
@@ -951,66 +965,69 @@ describe("integration: style-gen canvas check", () => {
     const recipes = (value: object | string): string =>
       writeTmpFile(dir, "recipes.json", value);
 
-    it("passes a c-* board that marks every axis value of its recipe", () => {
+    it("passes a c-* board that marks every axis value of its recipe", async () => {
       writeBoards(undefined, { "c-box.dc.html": cells("size:sm", "size:md") });
       expect(
-        check({
+        await check({
           boards: true,
           recipes: recipes({ box: { size: ["sm", "md"] } }),
         }),
       ).toEqual([]);
     });
 
-    it("reports each missing cell at line 1 of the board", () => {
+    it("reports each missing cell at line 1 of the board", async () => {
       writeBoards(undefined, { "c-box.dc.html": cells("size:sm", "tone:md") });
       expect(
-        check({
+        await check({
           boards: true,
           recipes: recipes({ box: { size: ["sm", "md"], tone: ["md"] } }),
         }),
       ).toEqual(["c-box.dc.html:1 missing cell size:md"]);
     });
 
-    it("reads a marker in any case, single-quoted, with its entities decoded", () => {
+    it("reads a marker in any case, single-quoted, with its entities decoded", async () => {
       writeBoards(undefined, {
         "c-box.dc.html": padded(`<span DATA-SG-CELL='tone:a&amp;b'>x</span>`),
       });
       expect(
-        check({ boards: true, recipes: recipes({ box: { tone: ["a&b"] } }) }),
+        await check({
+          boards: true,
+          recipes: recipes({ box: { tone: ["a&b"] } }),
+        }),
       ).toEqual([]);
     });
 
-    it("reports a value repeated in the recipe once", () => {
+    it("reports a value repeated in the recipe once", async () => {
       writeBoards();
       expect(
-        check({
+        await check({
           boards: true,
           recipes: recipes({ box: { size: ["sm", "sm"] } }),
         }),
       ).toEqual(["c-box.dc.html:1 missing cell size:sm"]);
     });
 
-    it("checks no cell without --recipes", () => {
+    it("checks no cell without --recipes", async () => {
       writeBoards();
-      expect(check({ boards: true })).toEqual([]);
+      expect(await check({ boards: true })).toEqual([]);
     });
 
-    it("reports a recipe whose c-* board is missing once", () => {
+    it("reports a recipe whose c-* board is missing once", async () => {
       writeBoards((c) => {
         delete c.boards["c-box.dc.html"];
         c.order = c.order.filter((f) => f !== "c-box.dc.html");
       });
       const file = recipes({ box: { size: ["sm"] }, toast: { size: ["sm"] } });
-      expect(check({ boards: true, recipes: file })).toEqual([
+      expect(await check({ boards: true, recipes: file })).toEqual([
         "canvas.json:1 missing component board c-box.dc.html",
         "canvas.json:1 missing component board c-toast.dc.html for recipe toast",
       ]);
     });
 
-    it("keeps a __proto__ axis as an axis", () => {
+    it("keeps a __proto__ axis as an axis", async () => {
       writeBoards();
       const file = recipes('{"box": {"__proto__": ["x"]}}');
-      expect(check({ boards: true, recipes: file })).toEqual([
+      expect(await check({ boards: true, recipes: file })).toEqual([
         "c-box.dc.html:1 missing cell __proto__:x",
       ]);
     });
@@ -1045,10 +1062,10 @@ describe("integration: style-gen canvas check", () => {
       ],
     ])(
       "rejects a recipes file with %s as an input error",
-      (_name, value, why) => {
+      async (_name, value, why) => {
         writeBoards();
         const file = recipes(value);
-        expect(() => check({ boards: true, recipes: file })).toThrow(
+        await expect(check({ boards: true, recipes: file })).rejects.toThrow(
           `${file}: ${why}`,
         );
       },
@@ -1057,10 +1074,14 @@ describe("integration: style-gen canvas check", () => {
     it("CLI: exit 1 on a missing cell, exit 2 on a malformed recipes file", async () => {
       writeBoards();
       recipes({ box: { size: ["sm"] } });
-      expect(await cli("--boards", "--recipes", "recipes.json")).toMatchObject({
-        status: 1,
-        stdout: "c-box.dc.html:1 missing cell size:sm\n1 violation(s)",
-      });
+      const missing = await cli("--boards", "--recipes", "recipes.json");
+      expect(missing.status).toBe(1);
+      expect(missing.stdout.split("\n")).toEqual([
+        "c-box.dc.html:1 missing cell size:sm",
+        expect.stringContaining("[token-unused]"),
+        expect.stringContaining("[token-unused]"),
+        "1 violation(s)",
+      ]);
       recipes("{");
       expect((await cli("--boards", "--recipes", "recipes.json")).status).toBe(
         2,
@@ -1085,14 +1106,14 @@ describe("integration: style-gen canvas check", () => {
     const imports = (...names: string[]): string =>
       padded(names.map((n) => `<dc-import name="${n}"></dc-import>`).join(""));
 
-    it("component pages pass a c-* board that imports its s-* source", () => {
+    it("component pages pass a c-* board that imports its s-* source", async () => {
       writeBoards(withToast, {
         "c-toast.dc.html": imports("s-toast", "Icon"),
       });
-      expect(check({ boards: true })).toEqual([]);
+      expect(await check({ boards: true })).toEqual([]);
     });
 
-    it("component pages pass a c-* board that repeats its source, one instance per state", () => {
+    it("component pages pass a c-* board that repeats its source, one instance per state", async () => {
       writeBoards(withToast, {
         "c-toast.dc.html": padded(
           '<dc-import name="s-toast" preset="added"></dc-import>' +
@@ -1100,7 +1121,7 @@ describe("integration: style-gen canvas check", () => {
             '<dc-import name="s-toast" preset="error"></dc-import>',
         ),
       });
-      expect(check({ boards: true })).toEqual([]);
+      expect(await check({ boards: true })).toEqual([]);
     });
 
     it.each<[string, Record<string, string>, string]>([
@@ -1149,12 +1170,12 @@ describe("integration: style-gen canvas check", () => {
         },
         "c-box.dc.html:2 root has no padding (use calc(var(--spacing) * 8) or more)",
       ],
-    ])("component pages report %s", (_name, roots, message) => {
+    ])("component pages report %s", async (_name, roots, message) => {
       writeBoards(withToast, roots);
-      expect(check({ boards: true })).toEqual([message]);
+      expect(await check({ boards: true })).toEqual([message]);
     });
 
-    it("component pages report a cl-* board", () => {
+    it("component pages report a cl-* board", async () => {
       writeBoards((c) => {
         c.boards["cl-x.dc.html"] = {
           title: "Component / X",
@@ -1163,13 +1184,13 @@ describe("integration: style-gen canvas check", () => {
         };
         c.order.push("cl-x.dc.html");
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "cl-x.dc.html:1 cl-* boards are retired (split into one c-* board per component)",
         "canvas.json:1 board cl-x.dc.html on page cl is not a c-* board",
       ]);
     });
 
-    it("component pages report a non-c-* board on the component page", () => {
+    it("component pages report a non-c-* board on the component page", async () => {
       writeBoards((c) => {
         c.boards["group.dc.html"] = {
           title: "Component / Group",
@@ -1178,12 +1199,12 @@ describe("integration: style-gen canvas check", () => {
         };
         c.order.push("group.dc.html");
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 board group.dc.html on page cl is not a c-* board",
       ]);
     });
 
-    it("component pages report an s-* board off the source page", () => {
+    it("component pages report an s-* board off the source page", async () => {
       writeBoards(
         (c) => {
           withToast(c);
@@ -1191,12 +1212,12 @@ describe("integration: style-gen canvas check", () => {
         },
         { "c-toast.dc.html": imports("s-toast") },
       );
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 board s-toast.dc.html is on page ds, expected src",
       ]);
     });
 
-    it("component pages report a screen that imports a c-* board", () => {
+    it("component pages report a screen that imports a c-* board", async () => {
       writeBoards(
         (c) => {
           withToast(c);
@@ -1212,21 +1233,21 @@ describe("integration: style-gen canvas check", () => {
           "screen.dc.html": imports("c-toast"),
         },
       );
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "screen.dc.html:2 imports showcase board c-toast (import s-toast)",
       ]);
     });
 
-    it("component pages report a frame larger than 1440×1600", () => {
+    it("component pages report a frame larger than 1440×1600", async () => {
       writeBoards((c) => {
         entry(c.boards, "c-box.dc.html").w = 1441;
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 board c-box.dc.html frame 1441×300 exceeds 1440×1600",
       ]);
     });
 
-    it("component pages keep the packaged height limit for a full copy without it", () => {
+    it("component pages keep the packaged height limit for a full copy without it", async () => {
       const manifest = JSON.parse(readFileSync(standardFile, "utf8")) as {
         componentBoards: Record<string, unknown>;
       };
@@ -1235,7 +1256,7 @@ describe("integration: style-gen canvas check", () => {
       writeBoards((c) => {
         entry(c.boards, "c-box.dc.html").w = 1441;
       });
-      expect(check({ boards: true, standard })).toEqual([
+      expect(await check({ boards: true, standard })).toEqual([
         "canvas.json:1 board c-box.dc.html frame 1441×300 exceeds 1440×1600",
       ]);
     });
@@ -1248,30 +1269,30 @@ describe("integration: style-gen canvas check", () => {
     const declarations =
       "<div style=\"border-radius: 12px; line-height: 1.5; font-family: 'Geist', sans-serif\">x</div>";
 
-    it("hand-written values are reported under naming", () => {
+    it("hand-written values are reported under naming", async () => {
       board(declarations);
-      expect(check({ naming: true })).toEqual([
+      expect(await check({ naming: true })).toEqual([
         "a.dc.html:1 border-radius 12px (use var(--sg-radius-*) or a rounded-* class)",
         "a.dc.html:1 line-height 1.5 (use a typography class)",
         "a.dc.html:1 font-family 'Geist', sans-serif (use a font-* class)",
       ]);
     });
 
-    it("hand-written values are reported in stylesheets and bindings", () => {
+    it("hand-written values are reported in stylesheets and bindings", async () => {
       writeTmpFile(canvas, "x.css", ".a{border-top-left-radius:4px}");
       board('<p style="line-height:{{ lh }}">x</p>');
-      expect(check({ naming: true })).toEqual([
+      expect(await check({ naming: true })).toEqual([
         "a.dc.html:1 line-height {{ lh }} (use a typography class)",
         "x.css:1 border-top-left-radius 4px (use var(--sg-radius-*) or a rounded-* class)",
       ]);
     });
 
-    it("hand-written values are reported on a primitive board too", () => {
+    it("hand-written values are reported on a primitive board too", async () => {
       board(declarations, "ds-mau.dc.html");
-      expect(check({ naming: true })).toHaveLength(3);
+      expect(await check({ naming: true })).toHaveLength(3);
     });
 
-    it("hand-written values allow 0, inherit and theme variables", () => {
+    it("hand-written values allow 0, inherit and theme variables", async () => {
       board(
         [
           '<div style="border-radius: 0; line-height: inherit; font-family: inherit">a</div>',
@@ -1280,41 +1301,43 @@ describe("integration: style-gen canvas check", () => {
         ].join("\n"),
       );
       expect(
-        check({ naming: true }).filter((l) => !l.includes("unknown token")),
+        (await check({ naming: true })).filter(
+          (l) => !l.includes("unknown token"),
+        ),
       ).toEqual([]);
     });
 
-    it("hand-written values read a single-quoted style attribute", () => {
+    it("hand-written values read a single-quoted style attribute", async () => {
       board(
         [
           "<div style='line-height: inherit; font-family: inherit'>a</div>",
           "<div style='border-radius: 4px'>b</div>",
         ].join("\n"),
       );
-      expect(check({ naming: true })).toEqual([
+      expect(await check({ naming: true })).toEqual([
         "a.dc.html:2 border-radius 4px (use var(--sg-radius-*) or a rounded-* class)",
       ]);
     });
 
-    it("hand-written values are ignored without naming", () => {
+    it("hand-written values are ignored without naming", async () => {
       board(declarations);
-      expect(check()).toEqual([]);
+      expect(await check()).toEqual([]);
     });
   });
 
   describe("frames", () => {
-    it("frames report a $preview that differs from the frame", () => {
+    it("frames report a $preview that differs from the frame", async () => {
       writeBoards();
       rewrite("c-box.dc.html", (t) => t.replace('"width":400', '"width":500'));
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "c-box.dc.html:1 $preview 500×300, canvas.json frame 400×300",
       ]);
     });
 
-    it("frames report a listed board without $preview", () => {
+    it("frames report a listed board without $preview", async () => {
       writeBoards();
       rewrite("c-box.dc.html", (t) => t.slice(0, t.indexOf("<script")));
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "c-box.dc.html:1 missing $preview",
       ]);
     });
@@ -1335,12 +1358,12 @@ describe("integration: style-gen canvas check", () => {
         '<div class="flex overflow-hidden" style="padding: calc(var(--spacing) * 8)">x</div>',
         "c-box.dc.html:2 root hides overflow",
       ],
-    ])("frames report %s", (_name, root, message) => {
+    ])("frames report %s", async (_name, root, message) => {
       writeBoards(undefined, { "c-box.dc.html": root });
-      expect(check({ boards: true })).toEqual([message]);
+      expect(await check({ boards: true })).toEqual([message]);
     });
 
-    it("frames report order groups out of order", () => {
+    it("frames report order groups out of order", async () => {
       writeBoards((c) => {
         c.boards["s-x.dc.html"] = { title: "X", page: "src", ...FRAME };
         c.order = [
@@ -1349,43 +1372,45 @@ describe("integration: style-gen canvas check", () => {
           ...COMPONENT_BOARDS,
         ];
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 order groups out of order: c-box.dc.html after s-x.dc.html (expected core, c-*, s-*, screens)",
       ]);
     });
 
-    it("frames report pages out of order", () => {
+    it("frames report pages out of order", async () => {
       writeBoards((c) => {
         const [bia, ds, ...rest] = c.pages;
         if (bia === undefined || ds === undefined) throw new Error("pages");
         c.pages = [ds, bia, ...rest];
       });
-      expect(check({ boards: true })).toEqual([
+      expect(await check({ boards: true })).toEqual([
         "canvas.json:1 pages out of order (expected bia, ds, cl, src, then screens)",
       ]);
     });
 
-    it("frames never read a canvas.json key outside the canvas", () => {
+    it("frames never read a canvas.json key outside the canvas", async () => {
       writeTmpFile(dir, "outside.dc.html", "<div>no preview</div>");
       writeBoards((c) => {
         c.boards["../outside.dc.html"] = { title: "X", page: "cl" };
       });
-      expect(check({ boards: true, naming: true }).join("\n")).not.toContain(
-        "outside",
-      );
+      expect(
+        (await check({ boards: true, naming: true })).join("\n"),
+      ).not.toContain("outside");
     });
   });
 
   describe("broken canvas fixture", () => {
-    it("broken canvas reports one line of each new rule kind", () => {
+    it("broken canvas reports one line of each new rule kind", async () => {
       const fixture = join(__dirname, "__fixtures__", "canvas-broken");
-      const out = checkCanvas({
-        canvasDir: fixture,
-        theme: join(fixture, "theme.json"),
-        stamp: join(fixture, "ds-stamp.json"),
-        naming: true,
-        boards: true,
-      }).errors;
+      const out = (
+        await checkCanvas({
+          canvasDir: fixture,
+          theme: join(fixture, "theme.json"),
+          stamp: join(fixture, "ds-stamp.json"),
+          naming: true,
+          boards: true,
+        })
+      ).errors;
       for (const kind of [
         "literal colors",
         "provenance",
@@ -1400,13 +1425,15 @@ describe("integration: style-gen canvas check", () => {
         ).toBe(true);
     });
 
-    it("broken canvas reports each v1 colour name with its v2 rename", () => {
+    it("broken canvas reports each v1 colour name with its v2 rename", async () => {
       const fixture = join(__dirname, "__fixtures__", "canvas-broken");
-      const out = checkCanvas({
-        canvasDir: fixture,
-        theme: join(fixture, "theme.json"),
-        naming: true,
-      }).errors;
+      const out = (
+        await checkCanvas({
+          canvasDir: fixture,
+          theme: join(fixture, "theme.json"),
+          naming: true,
+        })
+      ).errors;
       const form = "<role>[Subtle][Border][Foreground][Hover|Active|Selected]";
       for (const [key, v2] of [
         ["okInk", "successForeground"],
@@ -1425,31 +1452,31 @@ describe("integration: style-gen canvas check", () => {
   });
 
   describe("--ds-version", () => {
-    it("accepts the installed version", () => {
+    it("accepts the installed version", async () => {
       writeBoards();
       expect(
-        check({ dsVersion: { namespace: "BodyLog", version: "3" } }),
+        await check({ dsVersion: { namespace: "BodyLog", version: "3" } }),
       ).toEqual([]);
     });
 
-    it("reports another installed version", () => {
+    it("reports another installed version", async () => {
       writeBoards();
       expect(
-        check({ dsVersion: { namespace: "BodyLog", version: "4" } }),
+        await check({ dsVersion: { namespace: "BodyLog", version: "4" } }),
       ).toEqual(["canvas.json:1 design system BodyLog version 3, expected 4"]);
     });
 
-    it("reports a design system that is not installed", () => {
+    it("reports a design system that is not installed", async () => {
       writeBoards();
       expect(
-        check({ dsVersion: { namespace: "Other", version: "1" } }),
+        await check({ dsVersion: { namespace: "Other", version: "1" } }),
       ).toEqual(["canvas.json:1 design system Other is not installed"]);
     });
 
-    it("reports a missing canvas.json once with boards", () => {
+    it("reports a missing canvas.json once with boards", async () => {
       board("<p>x</p>");
       expect(
-        check({
+        await check({
           boards: true,
           dsVersion: { namespace: "BodyLog", version: "3" },
         }),
@@ -1503,6 +1530,10 @@ describe("integration: style-gen canvas check", () => {
       writeBoards();
       const standard = writeTmpFile(dir, "standard.json", {
         alphaScale: [8, 12],
+        reserved: {
+          "colors.primaryForeground": { reason: "read by the sample recipe" },
+          "borderRadius.md": { reason: "read by the sample recipe" },
+        },
       });
       const run = await cli("--boards", "--standard", standard);
       expect(run.status).toBe(0);

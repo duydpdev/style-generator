@@ -2,7 +2,7 @@ name: CI Check
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, ci/control-base]
     types: [opened, synchronize, reopened, ready_for_review]
 
 # Cancel any in-progress run for the same PR when new commits are pushed.

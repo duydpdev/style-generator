@@ -1,3 +1,72 @@
+# [9.3.0](https://github.com/duydpdev/style-generator/compare/v9.2.0...v9.3.0) (2026-11-27)
+
+### Features
+
+- button preset keys for the hover dim and the transition duration ([fd34a67](https://github.com/duydpdev/style-generator/commit/fd34a67d40e43e7456147f4d99ca5ff9c5abc23b))
+
+  The button factory hard-coded `hover:opacity-90` and `duration-150`, raw
+  values the canvas token-bypass rule flags in a theme that has `opacity` or
+  `motionDuration` tokens. `ButtonPreset` now takes optional `hoverDim` and
+  `duration` keys. Their defaults are today's literals, so the bound recipes
+  and the 9.2 goldens keep their output.
+
+- canvas check --boards class rules: ref-class, token-bypass, token-unused, ref-var rule id, --preset and --config ([77f8be8](https://github.com/duydpdev/style-generator/commit/77f8be8475233eba10dcfe57a7edb33ac83134e8))
+
+  Board and preset classes are compiled with Tailwind against the product theme (preset read as text, never run); the class rules load from their own lazy entry with its own size budget.
+
+- canvas check theme rules: closed scales, contrast, descriptions, ds name collisions, --no-rule and findings ([024cbd9](https://github.com/duydpdev/style-generator/commit/024cbd9f21036a33cd5293a293df16375cf01eea))
+
+  - rules report as [rule-id; type: source]; findings print without failing the run (FINDINGS: k in n files)
+  - closed scale steps, unit, duplicate and order rules; compound values are never compared
+  - WCAG contrast over every themeAxes combination; ds token name collisions share one namespace
+  - roles are closed: undeclared well-formed roles are one finding per role
+  - --usage and --no-rule (reason recorded in the additions file); descriptions for secondary, accent, info
+  - canvas commands load through their own lazy chunk with its own size budget
+
+- canvas standard vocabulary, closed scales and additions-only product standard ([26ad1ea](https://github.com/duydpdev/style-generator/commit/26ad1eadcd606f14d8044100ac6a5bca1984063d))
+
+  The packaged standard gains the confirmed colour vocabulary, closed scale
+  families with a kind, default descriptions and a basis for every rule. A
+  product's --standard file now layers additions over it instead of replacing
+  it, and a full copy is converted in memory with a notice. The manifest is read
+  from the emitted file at run time so its text stays out of the CLI bundle.
+  canvas standard init and migrate create and rewrite the additions file.
+
+- style-gen ds build: design-system files from a theme and a data preset, compiled with the product's tailwindcss ([d1c8d57](https://github.com/duydpdev/style-generator/commit/d1c8d57f79a5733436e8e5d0c0018b8ca9978a01))
+
+  The 9.2 script moves into the CLI as `style-gen ds build` behind its own lazy entry. The six components are precompiled into the package; at run time the preset is loaded as data (.mjs, .js, .json, or a native-stripped .ts on Node 22.18+), bundle.js is assembled from strings and bundle.css is compiled with core tailwindcss, so a product installs nothing else.
+
+  - two-pass candidates: classes the components build at run time (bg-<intent>-subtle) are collected from the rendered trees, and the output gate fails when a rendered class has no rule in bundle.css
+  - ds-stamp.json records libVersion, themeSha256, presetSha256 and tailwindVersion; canvas check --stamp compares the library version by major.minor
+  - canvas check --boards reads the product's package.json style-gen key like the other commands
+  - scripts/build-ds.mjs stays as a thin wrapper around the CLI; the old tokens, docs and template scripts are removed and their tests now import the CLI modules
+  - cli-ds gets its own size budget; cli stays under its budget
+  - the publish-gates fixture carries the two new dist files the size gate now counts
+
+
+### Bug Fixes
+
+- read class names from selectors only when checking which classes a stylesheet has a rule for ([48a5123](https://github.com/duydpdev/style-generator/commit/48a5123c1fcefe04cbd82370591c621e28d94526))
+
+  selectedClasses matched every `.name` in the compiled text, so a decimal in a value (`.25em`), an at-rule prelude or the licence line (`.com`) counted as a class, and the set changed with how a Tailwind release prints numbers. That made the ds build parity test fail on the Tailwind 4.1 floor and let a rendered class pass the output gate on a number's fragment.
+
+  It now reads only the text before a `{`, skips comments and at-rule preludes, and has its own tests. The 9.2 selector golden is the same set derived from the raw 9.2 stylesheet with this reader: it loses the eleven tokens that were never classes (1, 2, 3, 4, 5, 98, 25em, 25rem, 5em, 75rem, com) and gains none.
+
+- validate additions roles, scale families and rule ids, reject mixed and malformed standards ([de97846](https://github.com/duydpdev/style-generator/commit/de97846ec2765249ef2290fb3a821a1bcbac5182))
+
+  A file mixing manifest-only and additions-only keys, and a full copy whose
+  surviving parts are malformed, now exit 2 instead of being read as partial or
+  empty. Declared roles must be valid, unpackaged role names, scale families and
+  rule ids must exist, every problem is reported at once, and migrate leaves
+  roles that break the grammar as rename findings. Multi-segment renames match
+  whole keys only, and the packaged manifest is read on first use.
+
+
+### Refactor
+
+- cap comment length in core, shared and node ([87112ae](https://github.com/duydpdev/style-generator/commit/87112ae062a927a20a4b100da1cd6586614258e8))
+- cap comment length in features and cli ([850f772](https://github.com/duydpdev/style-generator/commit/850f772fcd4008489a72f1dc49db393b5520a170))
+
 # [9.2.0](https://github.com/duydpdev/style-generator/compare/v9.1.0...v9.2.0) (2026-11-26)
 
 ### Features

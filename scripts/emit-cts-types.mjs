@@ -45,7 +45,7 @@ if (!existsSync(dist)) fail("dist/ does not exist; run `yarn build` first");
 
 // A relative specifier in a declaration would resolve as ESM from the copy.
 const RELATIVE_SPECIFIER_RE =
-  // eslint-disable-next-line sonarjs/slow-regex -- runs on our own build output, never on untrusted input
+  // eslint-disable-next-line sonarjs/super-linear-regex -- runs on our own build output, never on untrusted input
   /(?:from|import)\s*\(?\s*["']\.{1,2}\//;
 
 const declarations = readdirSync(dist).filter(

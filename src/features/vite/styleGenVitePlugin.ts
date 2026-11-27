@@ -15,22 +15,14 @@ import { emitTheme, type EmitTarget } from "../../node/themeEmitter";
 
 /** Options of the `styleGenVite()` Vite plugin. */
 export interface StyleGenViteOptions {
-  /**
-   * Directory holding `style-gen.config.json`; default: Vite's root. A
-   * relative path resolves against Vite's root.
-   */
+  /** Directory holding `style-gen.config.json`; default and base of a relative path: Vite's root. */
   root?: string;
 }
 
 const PLUGIN_NAME = "style-gen-vite";
 
-/**
- * Module-scoped registry: detects configs writing to the same file. `owner` is
- * the config file (else the root) that created the entry, `instance` the
- * plugin that holds it, so a dev-server restart (new instance registered
- * BEFORE the old server closes) and per-environment builder instances of ONE
- * config are not mistaken for duplicates.
- */
+// Detects configs writing the same file: `owner` is the config file (else root), `instance` the plugin.
+// Rationale: documents/architecture.md#stylegenvite-dev-server-lifecycle-and-the-duplicate-output-registry
 const activeOutFiles = new Map<string, { owner: string; instance: object }>();
 
 const debounce = <Args extends unknown[]>(
@@ -48,58 +40,11 @@ const debounce = <Args extends unknown[]>(
 };
 
 /**
- * Vite plugin that emits `theme.css` and `theme.tokens.ts` from a theme JSON.
- * The files are written in `buildStart` (before any module is transformed, so
- * `@tailwindcss/vite` finds the CSS when it scans for `@source`), the theme is
- * registered with `addWatchFile`, and the dev server re-emits and sends a
- * full-reload when it changes. A failure in `buildStart` fails the build
- * through `this.error`.
- *
- * Every option lives in `style-gen.config.json` (else
- * `package.json#style-gen`) in the plugin's `root` (default: Vite's root): the
- * `theme`, `output`, `tokensOutput` and every `generate()` option, exactly as
- * `style-gen generate` reads them. The only plugin option is `root`; a
- * relative one resolves against Vite's root (Nuxt sets Vite's root to `app/`,
- * so it passes the project folder).
- *
- * A change to the config file in the dev server reloads it in place: the
- * target is resolved again, the files are re-emitted and the page reloads. An
- * invalid edit is logged and the last valid config stays in force. The server
- * is never restarted, so this works inside hosts that own it (Nuxt, Storybook).
- *
- * Emitting is write-if-changed, so the second `buildStart` of a `vite build`
- * (one per environment) is a no-op.
- *
- * Path rules (`resolveProjectPath`): the theme may live anywhere (absolute, or
- * `..` out of the root); the generated files must stay inside `root`.
- *
- * Monorepo: warns once if a plugin instance from a DIFFERENT Vite config (or
- * root, when there is no config file) targets the same `theme.css`. Two
- * `styleGenVite()` calls inside ONE config file are not warned about: that
- * is indistinguishable from the per-environment instances Vite creates in
- * builder mode and from a dev-server restart.
- *
- * `theme.css` is written atomically (`writeFileAtomic`: sibling temp file +
- * `renameSync`), so `@tailwindcss/vite` never reads a half-written file.
- *
- * **Limitations:**
- * - **Symlinks are not `realpath`'d.** `resolveProjectPath` compares the
- *   logical (non-dereferenced) path against the project root; it never calls
- *   `fs.realpathSync`. An `output` that is itself a symlink living inside the
- *   root is accepted even if its TARGET resolves outside it — the guard only
- *   rejects a literal `..`-escaping input path, not a symlink whose target
- *   escapes after the filesystem resolves it.
+ * Vite plugin that emits `theme.css` and `theme.tokens.ts` in `buildStart`, reading `style-gen.config.json` in `root`.
+ * The dev server re-emits on a theme or config edit and sends a full reload; a `buildStart` failure fails the build.
  * @param {StyleGenViteOptions} [opts] - `{ root }`; omit it to read the config from Vite's root
  * @returns {Plugin} A Vite plugin instance
- * @throws {Error} At call time for an unknown option key such as `themePath` or `outDir`: the theme path, output and generator options belong in `style-gen.config.json`
- * @example
- * // vite.config.ts
- * export default defineConfig({
- *   plugins: [styleGenVite(), tailwindcss()],
- * });
- *
- * // Nuxt 4 sets Vite's root to `app/`: pass the project folder, which holds the config
- * // vite: { plugins: [styleGenVite({ root: fileURLToPath(new URL(".", import.meta.url)) })] }
+ * @throws {Error} For an unknown option key such as `themePath`: those settings belong in `style-gen.config.json`
  */
 export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
   const { root: rootOption } = parsePluginRootOptions(opts, PLUGIN_NAME);
@@ -113,7 +58,7 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
   let registeredOutFile: string | null = null;
   const self = {};
 
-  /** Free this instance's slot in `activeOutFiles` (dev-server shutdown). */
+  // Free this instance's slot in `activeOutFiles` (dev-server shutdown).
   const release = (): void => {
     if (
       registeredOutFile !== null &&
@@ -124,24 +69,16 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
     registeredOutFile = null;
   };
 
-  /**
-   * The resolved target; only valid after `configResolved`.
-   * @returns {EmitTarget} The emit target
-   */
+  // The resolved target; only valid after `configResolved`.
   const requireTarget = (): EmitTarget => {
     if (!target) throw new Error(`[${PLUGIN_NAME}] used before configResolved`);
     return target;
   };
 
-  /**
-   * Claim the current `theme.css` in `activeOutFiles`, warning when a plugin of
-   * another config already targets it.
-   * @param {Pick<Logger, "warn">} log - Where the duplicate warning goes
-   */
+  // Claim `theme.css` in `activeOutFiles`, warning when another config's plugin targets it.
   const register = (log: Pick<Logger, "warn">): void => {
     const { outFile } = requireTarget();
-    // A plugin instance runs `configResolved` again per environment; it
-    // must not collide with itself.
+    // `configResolved` runs again per environment; an instance must not collide with itself.
     if (registeredOutFile === outFile) return;
     if (registeredOutFile !== null) release();
     const existing = activeOutFiles.get(outFile);
@@ -158,23 +95,18 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
     `[${PLUGIN_NAME}] Wrote ${emitTarget.outFile} and ${emitTarget.tokensFile}\n` +
     `  Tip: add theme.css to .gitignore; commit theme.tokens.ts.`;
 
-  // `perEnvironmentStartEndDuringDev` exists on Vite >= 6 typings only; the
-  // widened local type keeps the literal valid against the Vite 5 typings.
+  // `perEnvironmentStartEndDuringDev` is in Vite >= 6 typings only; widened for Vite 5.
   const plugin: Plugin & { perEnvironmentStartEndDuringDev?: boolean } = {
     name: PLUGIN_NAME,
     enforce: "pre",
-    // Vite >= 6 starts a non-client environment's plugin container lazily and
-    // skips its `buildStart` in dev unless this is set; without it
-    // `createServer()` + `ssrLoadModule()` (no `listen()`) never writes
-    // `theme.css`. Emitting is write-if-changed, so the repeat is a no-op.
+    // Without it Vite >= 6 skips `buildStart` for `createServer()` + `ssrLoadModule()` (no `listen()`).
     perEnvironmentStartEndDuringDev: true,
 
     configResolved(config) {
       logger = config.logger;
       root = path.resolve(config.root, rootOption ?? ".");
       owner = config.configFile ?? config.root;
-      // Vite 5/6 call `configResolved` unbound (`this.error` is unavailable),
-      // so a bad config or path is a plain throw.
+      // Vite 5/6 call `configResolved` unbound (no `this.error`), so errors are plain throws.
       const resolved = resolvePluginTarget(root, PLUGIN_NAME);
       target = resolved.target;
       configFiles = resolved.configFiles;
@@ -195,17 +127,13 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
     },
 
     configureServer(server) {
-      // A theme outside the project root is not watched by Vite otherwise,
-      // and a config file may be git-ignored or outside Vite's module graph.
-      // Both candidates are watched, existing or not: the config can move
-      // between `style-gen.config.json` and `package.json#style-gen`.
+      // Vite may not watch an outside theme or an ignored config; both config candidates are
+      // watched, existing or not, since the config can move between them.
       server.watcher.add(requireTarget().themeFile);
       server.watcher.add([...configFiles]);
 
       const reemit = debounce(() => {
-        // A theme removed for good (its `unlink` schedules this too) has
-        // nothing to emit; a re-created one reports `add`, or on Linux only a
-        // bare `unlink` of the file that already exists again.
+        // A removed theme has nothing to emit; on Linux a re-created one may report only `unlink`.
         if (!existsSync(requireTarget().themeFile)) return;
         const result = emitTheme(requireTarget());
         if (!result.ok) {
@@ -213,19 +141,15 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
             `[${PLUGIN_NAME}] Re-emit failed:\n${result.message}`,
           );
         } else if (result.changed) {
-          // Kept even though Tailwind's own HMR would pick the CSS up: a
-          // gitignored `theme.css` is outside Vite's module graph watch.
+          // A gitignored `theme.css` is outside Vite's module graph, so Tailwind's HMR misses it.
           server.ws.send({ type: "full-reload", path: "*" });
         }
       }, 200);
 
-      // Reload the config in place (never `server.restart()`: hosts such as
-      // Nuxt and Storybook own the server). An invalid edit keeps the last
-      // valid target, like `style-gen generate --watch`.
+      // Reload the config in place (hosts such as Nuxt own the server); an invalid edit keeps the last target.
       let primaryPending = false;
       const reloadConfig = debounce(() => {
-        // A `package.json` event alone (`yarn add`) that leaves the target
-        // as it is needs no emit.
+        // A `package.json` event alone that leaves the target unchanged needs no emit.
         const conditionalOnly = !primaryPending;
         primaryPending = false;
         let resolved: PluginTarget;
@@ -258,8 +182,7 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
         }
       }, 200);
 
-      // An event of a candidate shadowed by an earlier one that exists is not
-      // the config (`yarn add` while `style-gen.config.json` is in force).
+      // An event of a candidate shadowed by an existing earlier one is not the config.
       const onConfigFile = (file: string): void => {
         const index = liveConfigIndex(configFiles, file);
         if (index === undefined) return;
@@ -271,27 +194,19 @@ export const styleGenVite = (opts?: StyleGenViteOptions): Plugin => {
         else onConfigFile(file);
       };
       server.watcher.on("change", onWatched);
-      // `add`/`unlink` cover editors that save by replacing the file, and a
-      // config created or removed while the server runs.
+      // `add`/`unlink`: editors that save by replacing, and configs created or removed live.
       server.watcher.on("add", onWatched);
       server.watcher.on("unlink", (file) => {
-        // chokidar 3 (bundled by every Vite) closes a file's watch on
-        // `unlink`: without a re-arm, its re-creation and later edits are
-        // never seen. Unwatching first clears the ignore entry, so `add`
-        // starts a fresh watch. Never `add()` a directory: that is recursive.
+        // Re-arm: chokidar 3 drops a file's watch on `unlink`. Never `add()` a directory (recursive).
+        // Rationale: documents/architecture.md#watchthemefile-re-arming-the-watch-after-unlink
         if (file === requireTarget().themeFile || configFiles.includes(file)) {
           server.watcher.unwatch(file);
           server.watcher.add(file);
         }
         onWatched(file);
       });
-      // Free this instance's `activeOutFiles` slot when the dev server
-      // closes. Vite's `restartServer` resolves the NEW config (new
-      // instance) before closing the old server, so `release()` deletes the
-      // slot only if this instance still owns it. `closeBundle` / `buildEnd`
-      // are no use: they also run after every rebuild of a
-      // `vite build --watch`, and the registration must outlive those.
-      // `httpServer` is null in middleware mode, so wrap `close()` instead.
+      // Release the `activeOutFiles` slot when the dev server closes.
+      // Rationale: documents/architecture.md#stylegenvite-dev-server-lifecycle-and-the-duplicate-output-registry
       const close = server.close.bind(server);
       server.close = async () => {
         release();

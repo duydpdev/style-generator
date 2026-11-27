@@ -20,6 +20,7 @@ The code is the source of truth for _how_ things work; this document only keeps 
   - [Multi-axis Theming (`themeAxes`)](#multi-axis-theming-themeaxes)
   - [Spacing System](#spacing-system)
   - [Exports API](#exports-api)
+  - [Design rationale](#design-rationale)
   - [Landing Site (`site/`)](#landing-site-site)
 
 ---
@@ -376,6 +377,212 @@ for example `{ inset: ["top", "bottom"] }`; the value is always `var(--sg-sp-<ke
 
 The export list per subpath, with signatures and examples, lives in [`reference/`](./reference/core.md#all-exports-by-subpath);
 `node scripts/check-doc-exports.mjs` guarantees that every export has a heading there. Breaking changes between majors are in the guides under `migration/` (the latest is [`migration/8.x-to-9.0.md`](./migration/8.x-to-9.0.md)).
+
+---
+
+## Design rationale
+
+Why some source files look the way they do. The code carries a one-line `Rationale:` pointer to the matching heading below instead of a long comment (`yarn check:comments` caps comment length).
+
+### `TokenKey`: why underscores and leading uppercase runs are rejected
+
+The key grammar guards against structurally unsafe keys (spaces, leading dashes, semicolons) that would otherwise be echoed into the CSS as a custom-property name or selector; typos such as `colours` are caught by `strictObject` instead. A key must also keep its class through the typed tokens: the registry emits `toKebabCase(key)`, while `createDesignTokens` exposes `toCamelCase(key)`, which `createVariantMapper` kebab-cases again. `_` breaks that round trip because `toKebabCase` keeps it (`bg-primary_active`) while the typed token drops it (`primaryActive`), so the mapper class would not exist. A leading uppercase run breaks it too (`CTA` gives `bg-cta`, but the token `cTA` gives `bg-c-ta`), so such keys are rejected with the rename that keeps the registry class. Relaxing the `_` rule later is non-breaking.
+
+### `TokenValue`: what the value grammar blocks and why quotes stay legal
+
+A value must not contain `;`, `{`, `}`, `<`, `@`, `\`, `/*` or a line break, because each could inject a new CSS rule, an HTML tag, an at-rule, a comment or a line break into the generated CSS. Quotes are allowed only when balanced: an odd count could break out of a quoted CSS or HTML attribute context, while balanced quotes are needed for `fontFamily` stacks such as `"Plus Jakarta Sans", system-ui`. Unbalanced `(` or `[` outside quoted strings are rejected because Tailwind would otherwise fail far from the theme key with an unclosed-block error. A `"$<key>"` alias is also a valid value; `flattenByCategory` resolves it to `var(--<cssVarPrefix>-<key>)` only after the schema has proven the target exists and the graph is acyclic.
+
+### `validateThemeOverride`: why override keys skip the collision checks
+
+Every override key must already exist in the matching base record: the CSS generator only iterates base keys, so an override-only key would produce no class. Because of that rule, any kebab-key, `borderWidth`/`colors` or `fontFamily` weight-name collision between override keys is also a collision between base keys, which the base pass already reports. The override pass therefore only checks key existence and the alias graph merged over the base.
+
+### `ThemeAxesSchema`: why integer-like axis and variant names are rejected
+
+`themeAxes` relies on declaration order: blocks are emitted in that order and, for a token overridden by two axes, the axis declared last wins. JavaScript enumerates canonical integer keys (`0`, `7`, `2024`, no leading zero) first and in ascending order, ahead of every string key, regardless of how they were written in the JSON file. That order is lost before the library sees the object, which would silently break the "last declared wins" rule, so such axis and variant names are rejected. Names like `007` or `2xl` are not canonical integers and stay valid.
+
+### `rejectProtoKeys`: why prototype-key names are scanned on the raw input
+
+Zod's `z.record` skips an input key `__proto__` before the key schema runs, as a prototype-pollution guard, so a `__proto__` colour, axis, variant or override key would be dropped without an error. Only a parsed JSON document can carry it as an own key; the object literal `{ __proto__: x }` sets the prototype instead. Detecting it needs the raw input, so the scan runs in the `z.preprocess` step of `ThemeSchema`, bounded to the deepest level that can hold a token name so a cyclic object cannot overflow the stack. Since `z.preprocess` skips the main schema once this step adds an issue, this error hides every other issue until the key is removed.
+
+### `parseTheme`: why the cast to the caller's type is safe
+
+`ThemeSchema.parse` returns the widened `ThemeConfig`, but callers need their own literal key and value types for downstream inference such as `DesignTokensWeb<T, O>`. `parseTheme` is the one place that casts the result back to `T`. The cast cannot hide a shape mismatch because the schema has no coercion or defaults, so a successful parse is structurally identical to the input.
+
+### `validateCrossAxisAliasCycles`: why alias cycles are checked across axes
+
+Every axis's `html[data-<axis>]` block applies to the same element at once, so an alias in one axis and another in a second axis can form a cycle that no single base-plus-variant pass sees (`x.one: a → $b` with `y.two: b → $a` makes both custom properties invalid). The check walks every combination of at most one variant per axis, merges them over the base in axis declaration order (the last declaring axis wins a key, like the emitted CSS) and reports the first cycle whose edges come from at least two axes. Cycles from the base plus one axis are already reported by `validateCategoryAliasGraph`. Axes without aliases are skipped, and nothing runs unless two axes carry aliases in the category.
+
+### `StyleGeneratorOptions`: why each option is declared in four files
+
+Each option is declared in four places: the public type in `Options.ts`, the Zod shape in `optionsSchema.ts`, and the resolved defaults in `resolveTokenOptions.ts` and `resolveOptions.ts`. `optionsSchema.test-d.ts` pins these types to each other, so adding an option to one place without the others fails the type tests. The two resolve modules stay separate so the browser-safe `./tokens` entry only bundles the options the typed tokens read, not coverage resolution or breakpoint sorting.
+
+### `defineTheme`: why it is optional and only in the root entry
+
+`defineTheme` is exported only from the root entry (`.`), never from `./tokens`, so Zod never reaches the browser-safe subpaths. Calling it is optional because `generate()`, the CLI and the Vite plugin all validate the theme again on their own. Calling it still helps: the same mistakes also show up as IDE type errors, since `T` is checked against `ThemeConfig` at compile time.
+
+### `DeclaredCategoryKey`: why an optional category widens to string
+
+For a category with default keys, the property's optionality decides the declared key type. A required property yields its declared keys, and an absent one yields `never`, so the caller falls back to the defaults. An optional property, such as `borderRadius?` on a `ThemeConfig`-annotated theme filled by `JSON.parse`, yields `string`, because either the declared keys or the defaults may apply at runtime.
+
+### `axisAttributeName`: why it has its own module
+
+The CSS generator (the emitted selector) and the `./recipes` DOM helper both call `axisAttributeName`, so the two can never disagree about an attribute name. It lives in its own module instead of `helpers.ts` so the shared `helpers` chunk that `./tokens` and `./cva` import does not grow.
+
+### `colorStates`: why it lives in a dependency-free module
+
+`COLOR_STATES` is the single source for both sides of the color-state contract: the registry's `colorsCategory.states`, which drives the `@source inline` state lines, and consumers passing `{ states: COLOR_STATES }` to `createVariantMapper`. It sits in a module with no dependencies so the browser-safe `./cva` subpath can re-export it without pulling in Zod or the registry.
+
+### `DEFAULT_BREAKPOINTS`: why only md and lg
+
+`DEFAULT_BREAKPOINTS` is the single default shared by the `@source inline` responsive variants, the spacing `@media` chains and `DesignTokens.Web.breakpoints`. `md` and `lg` are the only responsive variants the `@source inline` lines emit (no `sm:`, `xl:` or `2xl:`). Defaulting to every `screens` key would advertise breakpoints that no line covers.
+
+### `types.ts`: why `Breakpoint` is not re-exported
+
+`Breakpoint` is also a runtime const, shipped from `./tokens`. The declaration rollup would turn a type-only re-export of it in `./types` into a declared value that this entry never ships, so `./types` leaves it out.
+
+### `ui-react.ts`: why React types live in their own subpath
+
+`./ui-react` is type-only: its JS module is empty and its declarations import `react` types, so it needs `@types/react`. Keeping those types out of `./ui` means `./ui` names no React type, and Vue apps can use it without React.
+
+### `writeFileAtomic`: why rename over write
+
+The data goes to a temp file in the target's own directory, which is then renamed over the target with `renameSync`.
+`rename(2)` is atomic on POSIX and NTFS as long as source and destination share a filesystem, and the same-directory temp file guarantees that.
+A concurrent reader (Tailwind's `@tailwindcss/postcss` and `@tailwindcss/vite`, Turbopack's CSS loader) therefore never sees a partially written file.
+The parent directory must already exist.
+On a failed write or rename the temp file is removed; after a successful rename that cleanup is a no-op because `force` swallows `ENOENT`.
+
+### `resolveProjectPath`: containment rules
+
+A relative path is joined to the root; an absolute path is taken as the filesystem path it names, with no leading-slash rewrite (`/styles/theme.json` is not `root/styles/theme.json`).
+Both go through `resolve`, so `.` and `..` segments and doubled separators are normalised and the result is a stable key for a watcher or an output file.
+The theme may live outside the root (a theme shared by a monorepo), so it is resolved with `allowOutsideRoot`; every generated or scaffolded file must stay inside the root.
+The traversal check matches a `..` path component (`rel === ".."` or `rel.startsWith(".." + sep)`), not any `rel` that starts with two dots: a sibling directory such as `..foo` yields `"..foo/bar"`, a normal in-root path.
+Symlinks are not resolved with `realpath`: the logical path is compared against the root.
+
+### `emitTheme`: one synchronous pipeline that writes only on change
+
+`emitTheme` is the one pipeline behind the Vite plugin, the Next.js integration, `style-gen generate` and `style-gen tokens`.
+It validates with the same `prepareGenerate` that `generate()` runs, so their verdicts cannot drift.
+A file is written only when its content changes, and atomically, so Tailwind never reads a half-written file; missing output directories are created.
+Every failure comes back as `{ ok: false, stage, message, cause }` instead of a throw.
+It is synchronous so a bundler hook can finish before the CSS is `@import`ed.
+
+### `watchThemeFile`: config reload semantics
+
+Every config candidate is watched, also when it does not exist yet or is removed and created again; a change, creation or removal of one reloads the target and re-emits.
+An event on a candidate shadowed by an earlier one that exists is ignored (a `package.json` edit such as `yarn add` while `style-gen.config.json` is in force), and a `package.json` edit that leaves the reloaded target unchanged emits nothing.
+A config that cannot be used is reported with stage `config`; the last valid target stays in force, watching goes on, and a theme edit in the same burst still emits with that target.
+A reloaded target with another `themeFile` makes the watcher unwatch the old theme and watch the new one.
+Nothing in the watcher throws or stops it, so a broken edit is reported and the next good one recovers.
+
+### `watchThemeFile`: re-arming the watch after unlink
+
+chokidar watches a file that existed at start through a watch on the file itself and drops that watch on `unlink`; without a re-arm, its re-creation (`git checkout`, `git stash`) and later edits are never seen.
+Unwatching first clears chokidar's ignore entry, so the following `add` really starts a fresh watch.
+The re-arm `add()` counts as an initial add that `ignoreInitial` drops, and a theme recreated within a few tens of milliseconds is already back, so the run is scheduled from the `unlink` itself.
+`run` skips a theme that is still gone when the timer fires; a theme that comes back later reports an `add` of its own.
+Removing a config file means "the next candidate, else the defaults", so it triggers a reload.
+
+### `TokenCategoryDescriptor`: namespace, opacity and percent invariants
+
+Every built-in `cssVarPrefix` starts a distinct `--sg-<category>-` namespace: none is a prefix of another, nor of the spacing `--sg-sp-`, so two categories can never produce the same variable.
+`themeNamespace` is omitted for categories the library emits its own `@utility` rules for (typography) or that have no CSS variable at all.
+Only color utilities set `opacityModifier`: `shadow-<key>/<n>` sets `--tw-shadow-alpha`, but the shadow colours sit inside the opaque `var(--sg-shadow-<key>)` and stay unchanged.
+`themeValue: "percent"` exists for `opacity`: `--opacity-<key>` feeds both `opacity-<key>` and the colour modifier `bg-primary/<key>`, whose `color-mix()` takes only a percentage, so the `@theme inline` mapping is `calc(var(--sg-…) * 100%)` while the `--sg-*` variable keeps the theme's number.
+
+### `categoryTokenMeta`: why defaults live apart from the descriptors
+
+The typed tokens (`createDesignTokens`) only need the category defaults at runtime. Keeping them in a module of their own, free of the CSS half of the descriptors (class prefixes, states, `--sg-*` naming), keeps the browser-safe `./tokens` entry small.
+The built-in descriptors spread these objects, so a category's defaults are still declared exactly once.
+
+### `backdropBlursCategory`: why not the blur namespace
+
+The category maps into `--backdrop-blur-*`, which Tailwind v4's `backdrop-blur-*` utility resolves (`.backdrop-blur-sm` compiles to `blur(var(--sg-backdrop-blur-sm))`).
+`--blur-*` is deliberately not used: it would also redefine the `blur-*` filter scale and override Tailwind's default `--blur-sm`/`md`/`lg` values.
+
+### `borderWidthCategory`: the undocumented border-width namespace
+
+`borderWidth` replaced the old `border` category. It maps into `--border-width-*`, the namespace Tailwind v4's `border-*`, `border-{x,y,t,r,b,l,s,e}-*` and `divide-{x,y}-*` utilities read widths from, so `@theme inline` generates every side and logical class and no bespoke `@utility` is emitted.
+`--border-width-*` is not a documented Tailwind theme namespace (it works on 4.1–4.3); the real-engine assertion in `src/__integration__/tailwind-compile.test.ts` is the tripwire for a future Tailwind change.
+
+### `buildStateLines`: one source line per state
+
+The registry emits one `@source inline` state line per state, never one merged directive: states can have different sibling sets (a token may declare `primaryHover` but not `primaryActive`), and one shell-style brace group would cross-multiply into invalid pairings such as `hover:bg-primary-active`.
+Siblings are detected on camelCased keys, the exact form `createDesignTokens` feeds to `createVariantMapper` (`primary-hover` and `primaryHover` both become `primaryHover`), and the line emits the kebab-cased sibling, the same class the mapper chains onto the base token.
+The state is emitted kebab-cased (`focusVisible` → `focus-visible:`) so it is a valid Tailwind variant, and a state with no sibling emits no line rather than empty braces.
+
+### `generateSourceInline`: one line per category
+
+Each category gets its own `@source inline` line instead of one giant merged directive, so a single category that exceeds a reasonable brace-expansion size never threatens the others.
+The `sp-*` coverage uses one brace-expansion directive rather than one directive per key.
+
+### `generateSpacingCss`: `@utility` blocks, fallback chains and `@property`
+
+Spacing and typography utilities are emitted as `@utility` blocks, never bare `.class {}` rules: a plain selector fed as raw CSS text is invisible to Tailwind's candidate matcher, so `hover:`/`md:` variants would not apply.
+Each breakpoint level of a spacing utility carries the full accumulated `var()` fallback chain: range media queries (`width >= X`) can be true at the same time, the last matching `@media` block wins by source order, and with only its own override a wider viewport could fall back past a narrower breakpoint's value.
+The `@property` registrations deliberately have no `initial-value`: a `syntax: "*"` property without one is guaranteed-invalid when unset, which makes the `var(--x, fallback)` chain fall through to its fallback instead of resolving to an empty string.
+
+### `buildDesignTokens`: why a literal and not a descriptor loop
+
+`buildDesignTokens` lists every category in an object literal instead of looping over the descriptors, because the loop would pull the descriptors into the `./tokens` size budget.
+The property names are still compiler-checked against each descriptor's `key` (`CategoryTokenArrays`), and `cva-roundtrip.test.ts` pins every array's keys and defaults to the `@source inline` keys of its descriptor.
+
+### `createTailwindMergeExtension`: which groups each category extends
+
+`shadows`, `backdropBlurs` and `borderWidth` (side, logical and `divide-*` prefixes included) extend tailwind-merge's own groups (`border-w`, `border-w-x`, …); `borderRadius` extends the `radius` theme scale that every `rounded-*` group reads.
+Typography keys are whole class names and form the group `sg-typography`, which conflicts with `font-size`, `font-weight`, `leading` and `tracking`; a later single-property utility refines it and both are kept.
+The scale tokens extend `duration`, `ease`, `h`, `min-h`, `max-h`, `size`, `opacity`/`backdrop-opacity` and `z`; the `min-h`/`max-h`/`backdrop-opacity` rows exist because the same `@theme` variables feed those utilities, although the registry's `@source inline` lines do not cover them.
+`colors` and `fontFamily` are absent because the default `color` and `font-family` groups already accept any value, and variants are stripped by tailwind-merge before group lookup, so only bare class parts are listed.
+
+### `styleGenNext`: why the dev watcher is a non-persistent singleton
+
+`next.config.*` can be evaluated several times per process (phase detection, the dev server itself, sometimes once per worker), so the dev watcher is module-scoped and a repeat call reuses it; a call for another theme, output or set of generator options replaces it.
+The watcher uses `persistent: false` so it is never what keeps a Node process alive: during `next dev` Next's own HTTP server holds the event loop open, while a persistent watcher would hang a short-lived process that only evaluates the config.
+
+### `styleGenVite`: dev-server lifecycle and the duplicate-output registry
+
+The module-scoped `activeOutFiles` registry records an `owner` (the config file, else the root) and the plugin `instance`, so a dev-server restart (the new instance registers before the old server closes) and the per-environment instances of one config are not reported as duplicates; two `styleGenVite()` calls in one config are indistinguishable from those and are not warned about.
+The slot is released by wrapping `server.close()`, and `release()` deletes it only if this instance still owns it. `closeBundle`/`buildEnd` are no use, because they also run after every rebuild of `vite build --watch` and the registration must outlive those; `httpServer` is null in middleware mode.
+
+### `run.ts`: why `runCli` returns codes and parses flags in two passes
+
+`runCli` never throws and never calls `process.exit`, so tests drive it directly and `src/cli/index.ts` only assigns `process.exitCode`.
+Parsing takes two passes: a lenient global pass finds `--help`/`--version` and the command name, then the command's own flags are parsed strictly, so a misspelled flag (`--them`) is an error instead of being silently ignored.
+Exit codes: 0 for success, `--help`, `--version`, no command or a cancelled prompt; 1 for a failure or an unknown command or flag; 2 for the flag errors of `budget` and `canvas`.
+
+### `schema.ts`: why an invalid config still gets its schema
+
+A config with schema issues still gets its config JSON Schema written, because that is the moment an upgrader needs editor hints.
+Without `--out` the issues are then reported, the exit code is 1 and no theme schema is written, since only a valid config's `theme` decides where the theme schema goes; with `--out` both schemas are written, nothing is reported and the exit code is 0.
+The theme an invalid config declares is still protected from being overwritten, because `readConfigFile` keeps the raw object.
+A malformed config file is warned about and read as the defaults, as `generate` does.
+
+### `utilityCollisions.ts`: why collisions are warnings only
+
+The check reports schema-valid keys whose generated `@theme`/`@utility` output silently overrides, or is overridden by, a built-in Tailwind class.
+A collision can be intentional (a digit-only `borderWidth` key replaces Tailwind's width, an override to confirm), so it never becomes a schema error.
+`themeAxes` overrides are not inspected separately: the schema requires every override key to exist in the base theme, so a colliding key is always reported once through the base record.
+
+### `aliasHints.ts`: why a redefined base key is never suggested
+
+A base key that any variant of any axis redefines in that category is never suggested as an alias target.
+Axes stack on `html`, so its variable resolves to the override value under the active variant (`var(--sg-color-text)` is the dark value under `data-theme="dark"`), and aliasing it would change the colour instead of repeating the literal.
+An override equal to its own base key is a redundant override, not an alias candidate, and only the first matching base key is named.
+
+### `configJsonSchema.ts`: why the narrowing is stricter and can fall back
+
+`uniqueItems` on `opacities` also flags two identical groups, which the CLI accepts: JSON Schema cannot compare the plain numbers alone, and the editor being stricter there is deliberate.
+Rules that compare two keys (`breakpoints` must name a screen, `screens` must share one unit after merging with the defaults) stay out of the JSON Schema, and the descriptions of those keys say so.
+`zod` is a runtime dependency with a `^4` range, so another 4.x may shape its JSON output differently from the version the narrowing was written against; the narrowing is then skipped and the plain `z.toJSONSchema` output (looser, still valid) is returned, so `schema` and `init` keep working.
+
+### `templates.ts`: why the bundler snippets look the way they do
+
+`init` prints the bundler snippet and never edits the bundler config; Vite and Next.js read `style-gen.config.json` themselves, so their plugins take no arguments.
+Nuxt 4 sets Vite's root to `app/`, so the Nuxt snippet passes `root`, the project folder that holds the config file.
+The text is Prettier-formatted except the Next.js config object, which keeps the create-next-app form (its doc fence is `prettier-ignore`d).
+The README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt) show these blocks byte for byte, which `templates.test.ts` checks.
+`getCssImport` computes relative paths from absolute paths under `cwd`, never from `process.cwd()`, and writes each specifier as a JSON string literal, which is also a valid CSS string.
 
 ---
 

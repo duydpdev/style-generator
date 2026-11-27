@@ -9,7 +9,7 @@ const RE = {
   // eslint-disable-next-line sonarjs/regex-complexity -- tokenizer grammar is one alternation per token class; splitting it would change match precedence/highlighting
   css: /(\/\*[\s\S]*?\*\/)|(--[a-z0-9-]+)|(#[0-9a-f]{3,8})\b|(@[a-z-]+)|("(?:\\.|[^"\\])*")/gi,
   ts: new RegExp(
-    // eslint-disable-next-line sonarjs/regex-complexity, sonarjs/slow-regex -- same single-pass alternation as json/css; input is the site's own static snippets, and the lazy block-comment match is bounded by the closing delimiter
+    // eslint-disable-next-line sonarjs/regex-complexity, sonarjs/super-linear-regex -- same single-pass alternation as json/css; input is the site's own static snippets, and the lazy block-comment match is bounded by the closing delimiter
     "(\\/\\*[\\s\\S]*?\\*\\/)" +
       "|(\\/\\/[^\\n]*)" +
       '|("(?:\\\\.|[^"\\\\])*")' +

@@ -138,12 +138,14 @@
   ],
   "scripts": {
     "build": "tsc && vite build && node scripts/emit-cts-types.mjs && node scripts/emit-agent-rules.mjs",
-    "build:cli": "tsdown && node scripts/emit-canvas-standard.mjs",
+    "build:cli": "tsdown && node scripts/emit-canvas-standard.mjs && node scripts/emit-ds-runtime.mjs",
     "build:all": "yarn build && yarn build:cli",
     "schema:refresh": "yarn build:cli && node dist/cli/index.mjs schema --out examples/theme.schema.json --config-out examples/style-gen.config.schema.json && node dist/cli/index.mjs schema --out examples/design-system/src/theme.schema.json --config-out examples/design-system/style-gen.config.schema.json && node dist/cli/index.mjs schema --out site/src/theme/theme.schema.json --config-out site/style-gen.config.schema.json && prettier --write --log-level warn examples/theme.schema.json examples/style-gen.config.schema.json examples/design-system/src/theme.schema.json examples/design-system/style-gen.config.schema.json site/src/theme/theme.schema.json site/style-gen.config.schema.json",
     "check:browser-safe": "node scripts/check-browser-safe.mjs",
-    "check:docs": "node scripts/docs-embed.mjs --check && node scripts/check-docs-i18n.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-exports.mjs && node scripts/check-doc-reference.mjs",
+    "check:comments": "node scripts/check-comments.mjs",
+    "check:docs": "node scripts/docs-embed.mjs --check && node scripts/docs-standard-tables.mjs --check && node scripts/check-docs-i18n.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-exports.mjs && node scripts/check-doc-reference.mjs",
     "check:externals": "node scripts/check-externals.mjs",
+    "check:ds-build": "node scripts/ds-build-smoke.mjs",
     "check:next-build": "node scripts/next-build-smoke.mjs",
     "check:plain-ui": "node scripts/check-plain-ui.mjs",
     "check:publish-target": "node scripts/check-publish-target.mjs",
@@ -153,6 +155,7 @@
     "check:tokens": "node scripts/check-tokens-fresh.mjs",
     "check:types-pack": "node scripts/check-types-pack.mjs",
     "docs:embed": "node scripts/docs-embed.mjs --write",
+    "docs:standard": "node scripts/docs-standard-tables.mjs --write",
     "docs:signatures": "node scripts/check-doc-exports.mjs --write",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored",
     "prettier:check": "prettier --check .",
@@ -169,7 +172,8 @@
     "site:build": "yarn build:all && yarn workspace site build",
     "typecheck:dist": "tsc -p tsconfig.dts-check.json && tsc -p tsconfig.dts-check.cjs.json",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json",
-    "verify": "yarn build:all && yarn check:tokens && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types && yarn typecheck:scripts && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs"
+    "verify:fast": "(git rev-parse --verify --quiet origin/develop > /dev/null || (echo \"verify:fast needs origin/develop: run git fetch origin develop\" >&2 && exit 1)) && lint-staged --diff=\"$(git merge-base HEAD origin/develop)...HEAD\"",
+    "verify": "yarn build:all && yarn check:tokens && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types && yarn typecheck:scripts && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:comments && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
@@ -205,13 +209,14 @@
     "semantic-release": "^25.0.3",
     "tailwind-merge": "^3.0.0",
     "tailwindcss": "4.3.5",
-    "tsdown": "^0.21.0",
+    "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.3.8",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^5.1.0",
-    "vue-eslint-parser": "^10.4.1"
+    "vue-eslint-parser": "^10.4.1",
+    "yaml": "^2.9.1"
   },
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",
@@ -265,6 +270,7 @@
     "@joshwooding/vite-plugin-react-docgen-typescript/glob": "^14.0.4",
     "@nuxt/vite-builder/vite": "^8.3.5",
     "vite-node/vite": "^8.3.5",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "eslint-plugin-sonarjs/typescript": "^5.9.3"
   }
 }

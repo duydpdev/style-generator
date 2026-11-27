@@ -32,13 +32,7 @@ export interface BudgetArgs {
 export const BUDGET_USAGE =
   "style-gen budget <file.css|dir> --max-gzip <bytes> [--coverage-cost [--theme <path>]]";
 
-/**
- * The CSS files to measure: one file, or every `.css` file under a directory.
- * @param {string} target - A `.css` file or a directory, relative to `cwd`
- * @param {string} cwd - Directory `target` is resolved against
- * @returns {string[]} Absolute file paths, sorted by name within a directory
- * @throws {Error} When `target` cannot be read
- */
+// One file, or every `.css` file under a directory (recursive, sorted by name); throws when unreadable.
 function collectCss(target: string, cwd: string): string[] {
   const abs = resolve(cwd, target);
   let isDirectory: boolean;
@@ -59,15 +53,8 @@ function collectCss(target: string, cwd: string): string[] {
     });
 }
 
-/**
- * Print the theme class groups of the measured CSS by marginal gzip cost,
- * each with the `coverage` setting that removes it (an upper bound: the
- * classes the app's source uses stay after the cut).
- * @param {{ file: string; css: string }[]} files - The measured CSS files and their text
- * @param {string | undefined} theme - `--theme`; default: the config's theme
- * @param {string} cwd - Project root
- * @returns {boolean} `false` after logging why the config or the theme cannot be read
- */
+// Theme class groups by marginal gzip cost with the `coverage` setting that removes each (an upper
+// bound: classes the app's source uses stay). `false` after logging an unreadable config or theme.
 function logCoverageCost(
   files: readonly { file: string; css: string }[],
   theme: string | undefined,
@@ -99,18 +86,11 @@ function logCoverageCost(
 }
 
 /**
- * Executes the `budget` CLI command: sums the gzip size (`node:zlib`
- * defaults) of every `.css` file under
- * the target and compares it with `--max-gzip`. Directories are walked
- * recursively (Next emits `.next/static/css/*.css`). The two summary lines
- * (`OK: …` / `OVER BUDGET: …`) are stable: consumer CI greps them. With
- * `--coverage-cost`, informational cost lines follow the summary line.
- *
- * Exit codes: 0 = within budget, 1 = over budget, 2 = usage error, unreadable
- * target, no CSS found, or (with `--coverage-cost`) an unreadable config or theme.
+ * Executes the `budget` CLI command: total gzip of the target's `.css` files
+ * against `--max-gzip`. The `OK: …`/`OVER BUDGET: …` lines are a contract consumer CI greps.
  * @param {BudgetArgs} args - Target path, raw `--max-gzip` value and the `--coverage-cost` flags
  * @param {string} cwd - Directory the target is resolved against
- * @returns {number} The process exit code
+ * @returns {number} 0 within budget, 1 over, 2 usage or input error
  */
 export function budgetCommand(
   args: BudgetArgs,

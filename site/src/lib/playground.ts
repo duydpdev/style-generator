@@ -6,8 +6,7 @@ import {
 } from "@duydpdev/style-generator";
 
 export type PlaygroundResult =
-  | { ok: true; css: string; tokens: string }
-  | { ok: false; message: string };
+  { ok: true; css: string; tokens: string } | { ok: false; message: string };
 
 type ZodErrorLike = Parameters<typeof formatZodError>[0];
 

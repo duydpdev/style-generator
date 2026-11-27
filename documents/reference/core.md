@@ -90,7 +90,7 @@ Peer dependencies (`typescript`, `vite` and the four UI-kit peers are optional: 
 > [!WARNING]
 > npm 7 and later still fail with `ERESOLVE` when your dependency tree already holds an off-range copy of an optional peer (`class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react`), even if the app never imports `./ui` or `./ui-react`. Align that dependency with the range above, or install with `--legacy-peer-deps`.
 
-CI runs the latest release of each major in "Tested in CI"; the floor of a range (for example `vite@5.0.0`) is not tested. The `check` job covers the lockfile versions (Vite 8.x, TypeScript 5.9). The `peer-matrix` job covers Vite 5, 6, 7 and 8 and TypeScript 6: it builds `examples/harness`, runs a Vite dev server that re-emits on a theme edit, and type-checks the example and `dist/*.d.ts`. A failing leg for a published major fails CI. The `ts-peer` job covers the TypeScript majors in a scratch npm project (see [`documents/testing.md`](../testing.md)).
+CI runs the latest release of each major in "Tested in CI"; the floor of a range (for example `vite@5.0.0`) is not tested. The `unit` and `dist-checks` jobs of `ci.yml` cover the lockfile versions (Vite 8.x, TypeScript 5.9). The `peer-matrix` job covers Vite 5, 6, 7 and 8 and TypeScript 6: it builds `examples/harness`, runs a Vite dev server that re-emits on a theme edit, and type-checks the example and `dist/*.d.ts`. A failing leg for a published major fails CI. The `ts-peer` job covers the TypeScript majors in a scratch npm project (see [`documents/testing.md`](../testing.md)).
 
 `zod` is a regular dependency of the package; you do not install it yourself.
 
@@ -111,23 +111,8 @@ export declare function generate<
 ): GenerateResult<TTheme, O>;
 ```
 
-Generate the complete registry-driven CSS string (breakpoint `@theme`
-override + theme vars + `@theme inline` mapping + typography/spacing
-`@utility` blocks) and typed design tokens for a theme. Returns a single
-static CSS string meant to be written to a file and `@import`ed alongside
-`@import "tailwindcss"` (Tailwind v4 only).
-
-Validates `options` first, then `theme` against `ThemeSchema` — independent
-of whether the caller already went through `defineTheme()` — so CLI/Vite/
-Next callers that hand it raw `JSON.parse()` output get the same
-guarantees. Both failures are a `ZodError`.
-
-With `options`, their literal `breakpoints`, `screens` and
-`spacing.properties` keys type `tokens`; options typed as
-`StyleGeneratorOptions`, or an explicit `<typeof theme>` type argument
-(which leaves `O` at its default), widen them to `string`. Without
-`options` the tokens carry the library defaults.
-`generate()` with `options`.
+Validate options, then the theme; return the Tailwind v4 CSS, typed tokens and theme JSON Schema.
+`generate()` with `options`, whose literal keys type `tokens`.
 
 <!-- /signature -->
 
@@ -162,23 +147,9 @@ export declare const generateThemeCss: (
 ) => string;
 ```
 
-Generate a complete CSS string for Tailwind v4 `\@theme` integration.
-
-Output includes:
-
-1. `:root` block with `--sg-*` intermediate CSS variables
-2. `html[data-<axis-kebab>="<variant-kebab>"]` blocks for each `themeAxes`
-   axis/variant, in config declaration order (both axes and variants) —
-   the selector is pinned to `html` because a `$`-alias
-   `var()` resolves to the value computed at the element that DECLARES the
-   custom property, so an override on a non-root element wouldn't affect
-   an alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules).
-3. `\@theme inline` block: the `resetTailwindDefaults` lines
-   (`--color-*: initial;`, …) first, then the mapping of `--sg-*` → Tailwind v4 namespaces
-
-Parses `options` and `config` like `generate()` — options first — so an
-invalid or injection-unsafe option or theme throws a `ZodError` instead of
-reaching the CSS.
+Generates the `:root` `--sg-*` variables, one `html[data-<axis>="<variant>"]`
+block per `themeAxes` variant, then `@theme inline`. Parses options, then the
+theme, like `generate()`: invalid input throws a `ZodError`.
 
 <!-- /signature -->
 
@@ -213,16 +184,7 @@ The type of what `generate()` returns for a theme and options type; it is export
 export declare function defineTheme<const T extends ThemeConfig>(config: T): T;
 ```
 
-Runtime-validated theme config helper — the only place `defineTheme` is
-exported from is the root barrel (`.`), never `./tokens`, so Zod never
-reaches the browser-safe subpaths. Parses `config` against `ThemeSchema`
-and returns the parsed result, throwing a `ZodError` (with a precise
-`path`) for unknown keys or CSS-injection-unsafe values.
-
-`generate()`, the CLI, and the Vite plugin all re-validate independently,
-so calling `defineTheme()` is optional — but doing so surfaces the same
-error as an IDE type error too, since `T` is checked against
-`ThemeConfig` at compile time.
+Validate a theme against `ThemeSchema` and keep its literal types.
 
 <!-- /signature -->
 
@@ -238,10 +200,7 @@ export declare function defineOptions<const O extends StyleGeneratorOptions>(
 ): O;
 ```
 
-Type-safe options helper. Zero runtime cost. `const O` keeps the literal
-`breakpoints`, `screens` and `spacing.properties` keys, which flow into
-`DesignTokensWeb<T, O>` when the same object is passed to `generate()` or
-`createDesignTokens()`.
+Type-only options helper: `const O` keeps the literal keys that type the tokens.
 
 <!-- /signature -->
 
@@ -255,13 +214,8 @@ Type-safe options helper with no runtime cost; it keeps literal `breakpoints`, `
 export declare const formatZodError: (error: z.ZodError) => string;
 ```
 
-Format every issue in a `ZodError` as one `"path → message"` line, safe to
-print to a terminal or throw as a plain `Error` message — every CLI/Vite
-consumer that catches a `ZodError` from `ThemeSchema.parse()` funnels it
-through this instead of dumping the raw (deeply nested) `ZodError` object.
-Record-key grammar failures arrive as `invalid_key` wrappers whose useful
-message (e.g. the `_` hint) lives in the nested issues, so those are
-surfaced instead of Zod's generic "Invalid key in record".
+Format every issue in a `ZodError` as one `"path → message"` line. Nested
+`invalid_key` issues are surfaced instead of Zod's generic record-key message.
 
 <!-- /signature -->
 

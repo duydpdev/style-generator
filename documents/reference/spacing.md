@@ -87,10 +87,7 @@ export declare const resolveSpacing: <
 };
 ```
 
-Resolve a single spacing prop into className + inline style CSS variables.
-Breakpoint keys default to the ones the spacing CSS emits (`md`/`lg`); pass
-`BKeys` when `options.breakpoints` adds others. `BKeys` is never inferred
-from the value ({@link NoInferBKeys}), so a typo such as `{ tablet: 4 }` stays an error.
+Resolves one spacing prop to its `sp-<prop>` class and `--sg-sp-*` style variables.
 
 <!-- /signature -->
 
@@ -126,10 +123,7 @@ export declare const DEFAULT_SPACING_PROPERTIES: {
 };
 ```
 
-Default spacing properties → CSS properties each utility sets.
-`generateSpacingCss` turns each entry into an `@utility sp-<key>` block
-whose declarations read `var(--sg-sp-<key>)`. Passing
-`options.spacing.properties` REPLACES this map; spread it to extend.
+Default spacing key → CSS properties of its `@utility sp-<key>`. `options.spacing.properties` REPLACES this map; spread it to extend.
 
 <!-- /signature -->
 

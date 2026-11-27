@@ -27,15 +27,7 @@ const padStr = (str: string) => {
   return str.length < minLen ? str.padEnd(minLen, " ") : str + " ";
 };
 
-/**
- * Resolve the emit paths the way `generate` does (`resolveEmitTarget`), or
- * report why it would refuse: `output` or `tokensOutput` outside the project
- * root, a `tokensOutput` that is not a `.ts` file, two of theme, output and
- * tokens module being the same file.
- * @param {string} cwd - Project root
- * @param {StyleGenConfig} config - Resolved configuration
- * @returns {EmitTarget | undefined} The target, or `undefined` after printing the error
- */
+// The emit paths as `generate` resolves them, or `undefined` after printing why it would refuse.
 function resolveTarget(
   cwd: string,
   config: StyleGenConfig,
@@ -49,17 +41,7 @@ function resolveTarget(
   }
 }
 
-/**
- * Validates the theme file: JSON syntax first, then `ThemeSchema`, then the
- * theme against the configured generator options (`resetTailwindDefaults`
- * without the matching category) — the same verdict `generate` reaches.
- * Schema violations (unknown
- * keys, injection-unsafe values, ...) are printed as `path → message` lines
- * via `formatZodError`.
- * @param {string} cwd - Project root
- * @param {StyleGenConfig} config - Resolved configuration (theme path, output, generator options)
- * @returns {boolean} True if there are errors, false otherwise
- */
+// JSON, then `ThemeSchema`, then the generator options: the verdict `generate` reaches. True on errors.
 function checkTheme(cwd: string, config: StyleGenConfig): boolean {
   const themePath = resolveProjectPath(cwd, config.theme, "theme", {
     allowOutsideRoot: true,
@@ -108,21 +90,11 @@ function checkTheme(cwd: string, config: StyleGenConfig): boolean {
   return false;
 }
 
-/**
- * The hint after a failed check.
- * @param {string} cwd - Project root, for the package manager
- * @returns {string} The hint line
- */
 const fixHint = (cwd: string): string =>
   `💡 Fix errors above or start fresh by running: ${styleGenCommand(cwd, "init")}\n`;
 
-/**
- * Report the config file. An unusable one (malformed, schema issues) ends the
- * run: checking the theme against the defaults it was meant to replace would
- * only print noise.
- * @param {ConfigFile} configFile - The config as read
- * @returns {boolean} True when the config is unusable
- */
+// True when unusable, which ends the run: checking the theme against the defaults it was meant
+// to replace would only print noise.
 function checkConfig(configFile: ConfigFile): boolean {
   const problem = configFile.error ?? configFile.issues;
   if (problem !== undefined) {
@@ -139,12 +111,6 @@ function checkConfig(configFile: ConfigFile): boolean {
   return false;
 }
 
-/**
- * Report the generated CSS file.
- * @param {string} output - The configured output path, as shown
- * @param {string} outPath - Its absolute path
- * @returns {"missing" | "generated"} Its state
- */
 function checkOutput(output: string, outPath: string): "missing" | "generated" {
   if (fs.existsSync(outPath)) {
     logger.log(`  Output  (${padStr(output)}) ✅ Generated`);
@@ -155,8 +121,7 @@ function checkOutput(output: string, outPath: string): "missing" | "generated" {
 }
 
 /**
- * Executes the `doctor` CLI command.
- * Checks the setup status and validates the configuration and theme schema.
+ * Executes the `doctor` CLI command: config, theme and output checks.
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
  * @returns {number} 1 when any check failed, else 0
  */

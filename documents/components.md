@@ -227,12 +227,7 @@ import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
   readonly variant?:
-    | "solid"
-    | "outline"
-    | "soft"
-    | "ghost"
-    | "link"
-    | undefined;
+    "solid" | "outline" | "soft" | "ghost" | "link" | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
   readonly size?: "sm" | "md" | "lg" | "icon" | undefined;
@@ -514,7 +509,7 @@ A component declares the axes that apply to it (a checkbox has `color` and `size
 
 - `className`/`class` and `style` are allowed on tags.
 - A pattern that has a rule or repeats becomes a component with typed props.
-- No `data-*` attribute as a bespoke CSS hook (ESLint and the CI `check` job ban the old part-hook attribute repo-wide); bespoke CSS hooks in the plain apps are ordinary `className`s.
+- No `data-*` attribute as a bespoke CSS hook (ESLint and the CI `lint` job ban the old part-hook attribute repo-wide); bespoke CSS hooks in the plain apps are ordinary `className`s.
 - `src/**` (Nuxt `app/**`) never imports `design-system-example` or `harness-example` (ESLint).
 - A ui folder imports only `./…`, `../../theme` and packages.
 
@@ -789,11 +784,7 @@ type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly align?: "left" | "center" | "right" | undefined;
   readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
   readonly transform?:
-    | "uppercase"
-    | "lowercase"
-    | "capitalize"
-    | "normalCase"
-    | undefined;
+    "uppercase" | "lowercase" | "capitalize" | "normalCase" | undefined;
   readonly italic?: boolean | undefined;
   readonly truncate?: boolean | undefined;
   readonly lineClamp?: 1 | 2 | 3 | 4 | 5 | 6 | "none" | undefined;

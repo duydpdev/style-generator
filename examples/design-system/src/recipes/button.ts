@@ -26,7 +26,7 @@ export const intents = [
 export type Intent = (typeof intents)[number];
 // #endregion docs:intents
 
-/** Design-system button roles. `focusRing`, `disabled` and `hoverTint` are literal classes, so Tailwind's scanner sees them. */
+/** Design-system button roles. `focusRing`, `disabled` and `hoverTint` are literal classes, so Tailwind's scanner sees them. `hoverDim` and `duration` are optional and left at their defaults (`hover:opacity-90`, `duration-150`) here. */
 export const buttonPreset = {
   intents,
   background: "background",

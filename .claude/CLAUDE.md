@@ -1,72 +1,42 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) in this repository. Area rules live in `.claude/rules/` and load when you read files of that area; before editing or creating a file in an area you have not read a file of, Read that area's rule file.
 
 ## Project Overview
 
-`@duydpdev/style-generator` — TypeScript library + CLI that compiles a theme JSON into Tailwind CSS **v4** utilities via a single `generate()` call:
-a CSS string (`@theme inline` variables, `themeAxes` overrides, registry-generated `@source inline` utility coverage), typed design tokens, and a JSON Schema.
-**Tailwind v4 only** — no v3 support, no version auto-detection. ESM-first (`"type": "module"`) with CJS interop.
+`@duydpdev/style-generator` — TypeScript library + CLI that compiles a theme JSON into Tailwind CSS **v4** utilities through one `generate()` call:
+a CSS string (`@theme inline` variables, `themeAxes` overrides, registry-generated `@source inline` coverage), typed design tokens and a JSON Schema.
+**Tailwind v4 only**, ESM-first (`"type": "module"`) with CJS interop. Flow: `theme.json → generate(theme, options) → { css, tokens, schema }`.
+Source layout: `documents/architecture.md`; public exports per subpath and the CLI: `documents/reference/`.
 
 ## Package Manager
 
-Use **Yarn Berry v4** exclusively. Never `npm`/`npx` directly.
-
-```bash
-yarn install
-yarn add <package>
-```
+Use **Yarn Berry v4** only. Never `npm`/`npx` directly: `yarn install`, `yarn add <package>`.
 
 ## Common Commands
 
 ```bash
-# Build
-yarn build          # Vite library build (ESM + CJS + .d.ts via vite-plugin-dts)
-yarn build:cli      # tsdown (tsdown.config.ts) → dist/cli/index.mjs + map, node shebang, no .d.mts; then scripts/emit-canvas-standard.mjs → dist/canvas/design-canvas-standard.json
-yarn build:all      # Both
-
-# Test
-yarn test           # Vitest run, unit (*.test.ts)
-yarn vitest          # Watch mode
-yarn test:coverage  # v8 coverage; excludes test files and dist/
-yarn test:types     # vitest run --typecheck.only — *.test-d.ts (expectTypeOf); `yarn test` does not run them
-yarn test:e2e       # Playwright (Chromium + WebKit) — spacing inheritance, compiled CSS
-yarn test:visual    # after yarn site:build: Playwright screenshots of the built site (Chromium); Linux baselines, compared in visual.yml, rewritten only via the visual-update label (visual-update.yml)
-yarn workspace plain-react-example test   # after build:all + `yarn playwright install chromium`: Storybook stories + plain-vs-harness class parity gate (Vitest browser, Chromium)
-yarn workspace plain-nuxt-example test:stories   # needs `prepare:nuxt` first (CI job `plain-nuxt`)
-node examples/plain-react/scripts/copy-out-smoke.mjs   # after build:all: a copied src/ui/button/ type-checks with the packed tarball + peers only (CI)
-yarn vitest run src/features/registry/generateSourceInline.test.ts   # Single file
-
-# Quality
-yarn verify         # base gate + src gate in one command (documents/testing.md → Gate table)
-yarn lint           # ESLint, --max-warnings 0, --report-unused-disable-directives
-yarn lint --fix
-yarn prettier:check # CI gate (check mode); yarn prettier:fix writes
-yarn tsc --noEmit   # Type check
-yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target   # publish gates (all four run by prepublish; CI runs the first three, deploy.yml runs publish-target)
-yarn check:smoke    # after build:all: import+require every subpath, run the CLI incl. init stack detection + generate in a fresh project (CI)
-node scripts/starter-smoke.mjs   # after build:all, needs network: packed tarball + npm in a copy of starters/vite-react, vite build + tsc (CI)
-yarn check:tokens   # after build:all: `generate --check` in each app that commits a theme.tokens.ts (plain-react, plain-nuxt, design-system, site) — fails when one is stale (CI)
-yarn check:next-build   # after build:all, needs network: packed tarball + next@16.4.5 in a scratch project, init + `next build` (Turbopack) through styleGenNext (CI node-floor)
-yarn check:ts-peer   # after build:all: tarball + npm + TypeScript 5.0/5.2/5.9/6/7 in a scratch project, tsc on every subpath (CI ts-peer job; needs network)
-yarn check:types-pack   # after build:all: yarn pack + @arethetypeswrong/cli (node16 profile) — ESM .d.ts / CJS .d.cts resolve for every subpath (CI)
-yarn site:build     # lib build + landing site (renders documents/*.md)
-yarn schema:refresh # build:cli + rewrite the six committed theme/config JSON Schemas (examples/, examples/design-system/, site/) and prettier them
-yarn docs:embed         # rewrite <!-- embed: path#region --> blocks from the marked example regions
-yarn docs:signatures    # rewrite <!-- signature: Name --> blocks in documents/reference from dist/*.d.ts (after build:all)
-yarn check:docs    # docs gates (after build:all; CI check job runs them as five steps): embed, i18n, snippets, exports, reference; doc-reference: CLI flags + config keys documented, no version history on pages
-yarn check:plain-ui     # examples/plain-react/src/ui/<folder>/: style.ts, types.ts, <Name>.tsx, index.ts; relative imports only ./… and ../../theme; package allow-list (CI)
+yarn install                 # Yarn Berry never runs `prepare`; Husky is installed by `postinstall`
+yarn build                   # library: Vite build, ESM + CJS + .d.ts
+yarn build:cli               # CLI: tsdown, then the packaged canvas standard JSON
+yarn build:all               # both; run before `yarn lint` (type-aware ESLint reads the built library)
+yarn test                    # Vitest unit tests (*.test.ts)
+yarn vitest                  # watch mode; `yarn test:coverage` for v8 coverage
+yarn test:types              # *.test-d.ts (expectTypeOf); `yarn test` does not run them
+yarn test:e2e                # Playwright (Chromium + WebKit): spacing inheritance, compiled CSS
+yarn vitest run src/features/registry/generateSourceInline.test.ts   # one file
+yarn verify:fast             # fast gate (<1 min): pre-commit chain on the files this branch changed vs origin/develop
+yarn verify                  # base gate + src gate (documents/testing.md → Gate table)
+yarn lint                    # ESLint, --max-warnings 0; `yarn lint --fix` writes
+yarn prettier:check          # CI gate; `yarn prettier:fix` writes
+yarn tsc --noEmit            # type check
+yarn check:comments          # comment ceiling for src/** (JSDoc <= 8 lines, runs <= 3, ratio < 20%)
+yarn site:build              # library build + landing site (renders documents/*.md)
 ```
 
-The gate a task must pass before it is reported done lives in `.claude/rules/validation.md`.
-
-Pre-commit (Husky): `.husky/pre-commit` runs only `yarn lint-staged`, which works on the staged snapshot:
-eslint --fix → prettier → `tsc --noEmit` → `vitest related --run` (`lint-staged.config.js`). Yarn Berry never runs `prepare`,
-so Husky is installed via `postinstall: husky` (verify with `git config core.hooksPath` → `.husky/_`).
-`pinst` (`prepack: pinst --disable`, `postpack: pinst --enable`) renames `postinstall` to `_postinstall` inside the published tarball so consumers never run Husky.
-Release CI sets `HUSKY=0`. `.husky/pre-push` runs `scripts/check-branch-name.sh`, also a step of `pr-title.yml`:
-branch names are `<type>/<slug>` (`feat|fix|docs|chore|ci|build|refactor|test|perf|revert`, slug 1–6 lowercase words joined by `-`), plus `dependabot/**` (`documents/deploy.md` → Branching Strategy);
-a PR into `main` must come from `develop`, `fix/<slug>`, `docs/<slug>` or `dependabot/**`.
+Publish gates, smoke checks, schema refresh and docs gates: `.claude/rules/build-publish.md`, `.claude/rules/examples-site.md`.
+The gate a task must pass before it is reported done: `.claude/rules/validation.md`.
+Pre-commit (Husky) runs `yarn lint-staged` only; branch names are `<type>/<slug>` (`.husky/pre-push`, details in `.claude/rules/build-publish.md`).
 
 ## Commit Convention
 
@@ -79,244 +49,34 @@ Custom format `[type] subject`, lowercase type (NOT conventional-commits `type:`
 | `[fix]` `[perf]` `[revert]`                                         | patch   |
 | `[chore]` `[docs]` `[test]` `[build]` `[ci]` `[refactor]` `[style]` | none    |
 
-`[conf]` `[temp]` `[wip]` are valid, no release. Features are cut from `develop` and land once, as a merge commit (never squash), through a PR into `develop`; a merge into `develop` publishes nothing.
-A stable release is one PR `develop` → `main` (merge commit): semantic-release computes ONE version from every commit header that PR adds, Deploy publishes it to **npmjs.org** (public, scope `@duydpdev`, npm trusted publishing: no token secret)
-and the back-merge returns `main` to `develop`. A DEV pre-release is cut only by hand: `gh workflow run release.yml --ref develop`. Hotfixes (`fix/<slug>`, `docs/<slug>`) are cut from `main` and go straight into `main`.
-`[release]` (major) commits enter `develop` only while the repo variable `MAJOR_CYCLE` is `open`; CI fails a PR into `develop` that carries one otherwise.
-The `no-delete` ruleset keeps GitHub from deleting `develop` after the release PR merges. Details: `documents/deploy.md`.
+`[conf]` `[temp]` `[wip]` are valid, no release. Release flow (feature branches, `develop` → `main`, hotfixes): `.claude/rules/publishing-guards.md`, `documents/deploy.md`.
 
-## Architecture
+## Where things live
 
 ```text
-theme.json → generate(theme, options) → { css, tokens, schema }
+src/core/        generate(), schemas, option resolution       → .claude/rules/theme-rules.md
+src/features/    registry, theme-css, tokens, cva, ui, vite…   → .claude/rules/theme-rules.md
+src/shared/      shared defaults and class-prefix tables       → .claude/rules/theme-rules.md
+src/cli/ src/node/  CLI commands, config loading, watchers      → .claude/rules/cli-node.md
+scripts/ .github/ package.json build configs                   → .claude/rules/build-publish.md
+examples/ site/  sample apps, landing site                      → .claude/rules/examples-site.md
+documents/       all documentation (index: documents/README.md) → .claude/rules/documentation-layout.md
 ```
 
-`generate()` (`src/core/generate.ts`) validates `options` first (`StyleGeneratorOptionsSchema.parse` → `resolveOptions`),
-then always re-validates `theme` against `ThemeSchema` (a Zod `strictObject` with `.superRefine()` alias/injection checks — unknown keys throw a `ZodError`),
-then returns `css` (written to a file and `@import`ed next to `@import "tailwindcss";`), `tokens` (typed `DesignTokens.Web.*`,
-one array per `ThemeConfig` field under the same name — `colors`, `typography`, `borderRadius`, … — plus `spacingProperties`/`breakpoints`/`screens`;
-also `createDesignTokens()` from `./tokens`) and `schema` (`z.toJSONSchema(ThemeSchema)`).
-
-Pipelines, all driven by the category registry:
-
-1. **registry** (`src/features/registry/`) — `builtInCategories.ts` declares one `TokenCategoryDescriptor` per category (`colors`, `typography`, `shadows`, `backdropBlurs`,
-   `borderRadius`, `fontFamily`, `borderWidth`, and the `literalScale` groups `motionDuration`→`duration`, `motionEasing`→`ease`, `controlHeight`→`h-control`, `iconSize`→`size-icon`,
-   `opacity`, `zIndex`→`z` (no `$` aliases; `coverage` takes only `true`/`false`/`{ keys: "all" }`; a digit-only `opacity` key is rejected because `--opacity-<n>` would replace the colour `/<n>` modifier; `--height-control-*` also yields `min-h-control-*`/`max-h-control-*`, which `createTailwindMergeExtension` groups but `@source inline` does not cover); `colors` feeds `bg`, `text`, `border`, `ring`, `outline`, `divide`, `placeholder`);
-   `generateSourceInline.ts` emits one `@source inline(...)` per category.
-2. **theme-css** (`src/features/theme-css/`) — `:root` `--sg-*` vars, `html[data-<axis>="<variant>"]` overrides,
-   `@theme inline` mapping (including `--border-width-<key>` for `borderWidth`); `generateScreensCss.ts` (custom breakpoints).
-3. **tokens**, **typography** (`@utility <kebab-key>`), **spacing** (`.sp-*` utilities over `var(--sg-sp-*)`), **cva**, **vite**, **next** under `src/features/`.
-   **recipes** (`./recipes`: `createTailwindMergeExtension`, `splitSpacingProps`/`SpacingProps`, `themeAxisAttributes`) is subpath-only (not re-exported from `.`), browser-safe,
-   and imports nothing from `tailwind-merge` (structural `TailwindMergeExtension` type; the app owns that dependency; `check:externals` fails if any entry but `./ui` imports it).
-   **ui** (`./ui`: `recipeFromTables`, `pick`, `contrastText`, `createCn`, `splitSpacing`, `splitLayout`, `mergeStyle` + types, `src/features/ui/`; `./ui-react`:
-   type-only `Polymorphic`) is subpath-only; `class-variance-authority`, `clsx`, `tailwind-merge`, `@types/react` are optional peers (ranges in `package.json#peerDependencies`;
-   `ui-peer-floor` tests their floors). `borderRadius` goes through tailwind-merge's `radius` theme scale (every `rounded-*` group reads it);
-   its local prefix table for `border`/`divide-*`/`shadow`/`backdrop-blur` is pinned to the registry descriptors by `extendTailwindMerge.test.ts`;
-   do not import `builtInCategories.ts`/`classPrefixes.ts` from it (that would split a shared chunk and grow `./tokens`).
-   `recipeFromTables(tables)` returns `RecipeFn<typeof tables>` (props typed by the tables' variant names; a bare `RecipeFn` is the loose `(props?: RecipeProps) => string` and opts out of the check);
-   `splitLayout(props, { recipe, spacingKeys, variantKeys, sizeKeys, extra? })` takes one options object (`SplitLayoutOptions`).
-   Every public symbol has ONE import path (8.0): `COLOR_STATES` from `./cva` only; `ResponsiveValueStrict`, `DefaultBreakpointKeys`, `SpacingKey` from `./types` only; `./spacing` exports `resolveSpacing`
-   and `DEFAULT_SPACING_PROPERTIES` (`resolveSpacingProps` is gone).
-
-`DEFAULT_BREAKPOINTS = ["md", "lg"]` (`src/shared/defaultOption.ts`) is the single fallback for `@source inline` variants,
-spacing `@media` chains and `DesignTokens.Web.breakpoints` when `options.breakpoints` is unset. Why `md`/`lg` only:
-defaulting to every `screens` key would advertise breakpoints no `@source inline` line covers. `src/shared/classPrefixes.ts` holds the `roundedProperties`/`borderProperties`
-class-prefix lists.
-
-Build outputs: `dist/{index,tokens,cva,spacing,recipes,types,ui,ui-react,vite,next}.{js,cjs,d.ts,d.cts}` (10 subpaths, Vite lib multi-entry;
-`dist/<n>.d.cts` is `dist/<n>.d.ts` run through `toCjsDeclaration` (`scripts/cjs-declaration.mjs`) by `scripts/emit-cts-types.mjs`, the last step of `yarn build`:
-the single `vite` import becomes `import type … with { 'resolution-mode': 'import' }` because Vite has no usable CommonJS types, `zod`, `class-variance-authority`, `clsx`,
-`tailwind-merge` and `react` are kept, any other external specifier or import form fails the build; `with` parses on TypeScript 5.3+ and TypeScript 7 rejects `assert` (TS2880), so `dist/vite.legacy.d.cts`
-(`toLegacyCjsDeclaration`) keeps `assert` and `package.json#exports["./vite"].require["types@<5.3"]` points at it, because `with` is a parse error on TypeScript < 5.3) + `dist/cli/index.mjs` (tsdown, JSDoc stripped via `outputOptions.comments.jsdoc = false`, `//#region` markers via `inputOptions.experimental.attachDebugInfo = "none"`).
-`package.json#exports` uses nested conditions (`import: { types: .d.ts, default: .js }`, `require: { types: .d.cts, default: .cjs }`) and has no top-level `types`;
-`moduleResolution: node10` is unsupported. `yarn typecheck:dist` checks the `.d.ts` under ESNext + Bundler (`tsconfig.dts-check.json`) and the `.d.cts` as a CommonJS consumer under
-`node16` with `skipLibCheck: false` (`tsconfig.dts-check.cjs.json`, `scripts/dist-types.cjs.assert.cts`); attw never resolves peer types, so it cannot replace that check.
-Shared hashed chunks are internal. `vite.config.ts` pins the modules several entries share to stable chunks with Rolldown's `output.codeSplitting.groups` (`helpers`+`colorStates` → `helpers`,
-`exports/cva`+`createVariantMapper` → `cva`, the `./tokens` internals → `tokens`) so a new entry cannot reshuffle chunks and push `tokens`/`cva`/`spacing`/`index` over budget;
-a group name equal to an entry name merges the group with that entry, so a group that is not meant to merge MUST use a name no entry has; when a new shared module or entry makes those four sizes drift,
-pin it or restructure the import instead of raising their budgets (`scripts/check-dist-reachable.mjs`, chained into `check:sizes`, fails when a `dist` file is not reachable from a published entry, which would leave it uncounted).
-Only `dist/` is published, `"sideEffects": false`; gzip budgets in `scripts/check-sizes.mjs`.
-
-Source layout: `documents/architecture.md`; public exports per subpath and CLI: `documents/reference/`.
-The internal helper `toCamelCase` is not exported from any barrel; `toKebabCase` is public (from `./cva`) because it is the function the registry and
-`createVariantMapper` share. Breaking changes from 3.x: `documents/migration/3.x-to-4.0.md`; from 4.x: `documents/migration/4.x-to-5.0.md`; from 5.x:
-`documents/migration/5.x-to-6.0.md`; from 6.x: `documents/migration/6.x-to-7.0.md`; from 7.x: `documents/migration/7.x-to-8.0.md`; from 8.x: `documents/migration/8.x-to-9.0.md`.
-
-Sample components (examples, not an API; nothing is published): `Box`, `Text`, `Stack`, `Flex`, `Grid`, `Button` live in the harness app over the `examples/design-system` recipes.
-React: `examples/harness/src/ui/*.tsx`, each a self-contained factory file `create<Name>(tokens, preset?)` with its own prop types and `Polymorphic` type (all six import
-`splitLayout`/`splitSpacing`/`mergeStyle` from `@duydpdev/style-generator/ui` and `Polymorphic` from `/ui-react`;
-`src/ui/layout.ts` keeps only the harness's `LayoutProps` type and `LAYOUT_SIZE_KEYS`), exported as `harness-example/ui` and bound once in `examples/harness/src/ui.ts`;
-`site` imports the same files and binds them to its own tokens in `site/src/ui.ts`. Recipes are theme-free factories in `design-system-example/recipes` (`create<Name>Recipe`,
-`<name>Tables`, built with `recipeFromTables` from `./ui`) plus the bound recipes and presets in `design-system-example`.
-ESLint reads component names and banned tags from `examples/ui-registry.mjs`. Touchpoints for a new component, app-code and layout rules: `documents/components.md`.
-Plain apps (copy-paste, never import the harness): `examples/plain-react` (Storybook + parity gate) and `examples/plain-nuxt`,
-one folder per component in `src/ui/<folder>/` (Nuxt `app/ui/<folder>/`) over `@duydpdev/style-generator/ui`;
-`yarn check:plain-ui` enforces the layout and the identical `style.ts`; lint also needs `yarn workspace plain-nuxt-example prepare:nuxt`.
-
-## Theme / Color Rules (current v4 API)
-
-- `colors` is the only **required** field in `ThemeConfig`; all others (`typography`, `shadows`, `backdropBlurs`, `borderRadius`, `fontFamily`, `borderWidth`, `themeAxes`) are optional.
-- Colors are a **flat camelCase** object. Nested color objects and `DEFAULT` key are unsupported.
-- Key conversion: camelCase → kebab-case CSS vars/classes. Letter→digit boundary adds a dash (`blue500` → `blue-500`); digit-prefix tokens preserved (`2xl`).
-  Keys that collide once kebab-cased (`blue500`/`blue-500`) are rejected. **`_` and a leading uppercase run of two or more letters (`CTA`, `ABtn`,
-  `HTMLParser`) are rejected in every token-name position**: the camelCased token would map to a class the registry never emits (a single capital such as `Blue`,
-  or an inner run such as `primaryCTA`, round-trips and is accepted). `formatZodError` prints the hint on the path.
-  Each category owns a distinct `--sg-<category>-` namespace (`sg-color`, `sg-shadow`, `sg-backdrop-blur`, `sg-radius`, `sg-font`, `sg-border-width`, `sg-duration`, `sg-ease`, `sg-control`, `sg-icon`, `sg-opacity`, `sg-z`, plus spacing's `sg-sp`),
-  so cross-category variable collisions are impossible by construction. A `typography` key kebab-casing to `sp-*` or `font-*` is rejected,
-  and `typography.*.fontWeight` is a number in 1–1000.
-- A `__proto__` key is rejected at its exact path wherever it appears in a theme (`rejectProtoKeys`, the raw-input `z.preprocess` step of `ThemeSchema`, `src/core/themeSchema.ts`):
-  Zod's `z.record` skips that key before the key schema runs, so without the scan the token would be dropped silently. Only a parsed JSON document can carry it as an own key.
-  The options records (`screens`, `spacing.properties`) are not scanned: they hold no token names.
-- `themeAxes: Record<axisName, Record<variantName, ThemeOverride>>` — independent axes (e.g. `theme.dark` and `palette.forest` at once),
-  each activated via `html[data-<axis-kebab>="<variant-kebab>"]` (`axisAttributeName`, `src/shared/axisAttributeName.ts`, shared with `themeAxisAttributes`).
-  The selector is always pinned to `html` and the attribute name is not configurable, because a `$`-alias `var()` resolves where the custom property is declared (`:root`);
-  a scoped theme on another element or a custom attribute name is hand-written CSS in the app.
-  Blocks emit after `:root` in declaration order, so for a token overridden by two axes the axis declared **last** wins.
-- An override key must already exist in the matching base category — override-only keys are rejected (they would produce no utility).
-- Axis and variant names must NOT be canonical integers (`/^(0|[1-9]\d*)$/`) — JS enumerates integer-like keys first, which would silently invert "last declared wins". `007`/`2xl` are fine.
-- Variant names of one axis must not kebab-case to the same attribute value (`darkMode` ≡ `dark-mode`).
-  Alias cycles are also checked across axes (`validateCrossAxisAliasCycles`, `src/core/aliasGraph.ts`):
-  every combination of at most one variant per axis is merged in declaration order, because all axes apply to the same `html` element at once;
-  the cycle is reported at the later axis.
-- Alias `"$<key>"` resolves within the SAME category to `var(--<cssVarPrefix>-<kebab-key>)` using that category's `cssVarPrefix` (`src/features/registry/builtInCategories.ts`):
-  `$blue500` in `colors` → `var(--sg-color-blue-500)`, `$base` in `shadows` → `var(--sg-shadow-base)`. Existence and acyclicity are validated at parse time.
-  Use the raw key (`$blue500`, not `$blue-500`). In `colors` only, `"$<key>/<n>"` (n an integer percent 1–100, `parseAliasRef`) emits `color-mix(in srgb, var(--sg-color-<kebab-key>) <n>%, transparent)`. Not supported inside `typography`. The emitted `--sg-*` variables (`--sg-color-<key>`, `--sg-shadow-<key>`,
-  …) are a public contract (consumers read them); renaming one is breaking.
-- `COLOR_STATES` (a `{ suffix, variant }` table: `Hover` → `hover`, `Active` → `active`, `Selected` → `aria-selected`; `src/shared/colorStates.ts`, exported from `./cva` only with the `ColorState` type) is the single state table for the registry's `@source inline` state lines and
-  `createVariantMapper(prefix, tokens, { states: COLOR_STATES })` (`states` takes `readonly ColorState[]`, not plain strings, since 9.0). Sibling detection uses camelCased keys (`primary-hover` ≡ `primaryHover`);
-  the class is chained behind the row's `variant` as written (`primarySelected` → `aria-selected:bg-primary-selected`).
-- `contrastText(colors, intent, fallback)` reads only `<intent>Foreground` (9.0); `on<Intent>` keys are not read, and `style-gen doctor` names their v2 rename (`src/cli/commands/deprecatedColorKeys.ts`).
-- A theme key whose class equals a Tailwind _static_ utility (`bg-none`, typography `text-sm`, …) is not rejected, but Tailwind picks the winner — rename it (`clear`, `flat`,
-  `zero`). `style-gen doctor` warns on known collisions (`src/cli/commands/utilityCollisions.ts`). A digit-only `borderWidth` key (`2`) is an override, not a tie:
-  with `--border-width-2` in `@theme`, Tailwind resolves `border-2`/`border-x-2`/`divide-x-2` to the theme value; doctor still warns so the override is deliberate.
-- `fontFamily` keys must not kebab-case to a font-_weight_ name (`thin` … `black`) or start with the `weight`/`size` segment (`weightBold` → `--font-weight-bold` is Tailwind's
-  weight scale, not a family) — all share the `font-` prefix. A `typography` key must not equal another category's class (`<classPrefix>-<kebab key>`:
-  `colors.primary` + `typography.textPrimary` → `text-primary`), checked from the registry's `classPrefixes` (`checkTypographyClassCollisions`).
-- `borderWidth` replaces `border` (omitted or empty → Tailwind's `border-0/1/2/4`); a key sharing a color's `border-*` class (`thinLine`/`thin-line`) is invalid.
-  A `colors` key kebab-casing to `x`, `y`, `x-<integer>`/`y-<integer>` or `x-<borderWidth key>` is rejected (`checkDivideColorCollision`:
-  `divide-<key>` would be a Tailwind divider width).
-- `generate()` validates options with a strict schema (`src/core/optionsSchema.ts`, internal): unknown keys rejected (also in `spacing`/`typography`); flags are booleans;
-  `screens` values are one px/rem/em length and the map merged with `defaultScreens` uses one unit; `breakpoints` must name a screen.
-  `style-gen.config.json` uses the same Shape (`StyleGenConfigSchema`, `src/node/loadStyleGenConfig.ts`, shared by the CLI, `styleGenVite` and `styleGenNext`);
-  the file-level `StyleGenConfigFileSchema` adds the `$schema` editor pointer (dropped on read, never reaches `generate()`) and is what the config JSON Schema is generated from.
-  `extraSources` and `axes` are plain unknown keys: classes built at runtime are declared by the app with its own `@source inline(...)` next to the generated import.
-- `options.coverage` (`Partial<Record<CategoryKey, boolean | { prefixes?, keys?: "aliased" | "all", opacities? }>>`) only changes the registry's `@source inline` lines:
-  `false` drops a category's lines (state lines included), `prefixes` must be a **non-empty** list of real `classPrefixes` of that category (typography has none),
-  `keys: "aliased"` keeps the alias **holders** — declared keys whose value is a `$alias` in the base record or any `themeAxes` override of the same category;
-  the primitives they point to need no class (rejected for `typography`, which has no aliases). `opacities` (distinct integers 1–100, non-empty;
-  only for categories whose descriptor sets `opacityModifier`, i.e. `colors`) adds ONE line `{bg,text,border,ring,outline,divide,placeholder}-{keys}/{steps}` right after the
-  category line, following `prefixes`/`keys`, steps sorted ascending in `resolveOptions`, never crossed with the state lines. An `opacities` entry may be a group
-  `{ steps, prefixes?, keys? }` that adds its own line after the plain-step line (`prefixes` checked in the schema, `keys` against `theme.colors` in `assertThemeOptions`, error path
-  `coverage.colors.opacities.<i>.keys.<j>`); groups never reach `DesignTokens.Web.opacities`. A group's own `prefixes`/`keys` are not limited to the rule's; a step repeated across plain steps and groups, or two identical groups, are accepted and build one class (`tailwind-compile.test.ts`); `budget --coverage-cost` (`suggestCoverage`) appends `(opacity group <i> still adds it)` (`<i>` = zero-based index in `opacities`) when a group lists the prefix itself.
-  The plain steps are `DesignTokens.Web.opacities` (`OpacitySteps<O>`, `resolveTokenOptions`), which `createVariantMapper(prefix, colors, { opacities })` turns into `token/step`
-  keys; coverage changes no other typed token. Absent/`true`/`{}` is byte-identical to no option. `generate()` resolves every option default once in `resolveOptions()`
-  (`src/core/resolveOptions.ts`, which spreads the slim `resolveTokenOptions()`); never re-apply `options.x ?? DEFAULT_X` downstream.
-  Category defaults live in `src/features/registry/categoryTokenMeta.ts` (descriptors spread it); both it and `resolveTokenOptions.ts` must stay separate small files so the
-  `./tokens` gzip budget holds (`vite.config.ts` sets `preserveEntrySignatures: "allow-extension"` for the same reason).
-- Values must balance `(`/`[`. `typography.*.letterSpacing` is optional. `formatZodError` is exported from `.`.
-- `options.resetTailwindDefaults` (`("colors" | "radius" | "shadow")[]`) adds `--color-*: initial;` / `--radius-*: initial;` / `--shadow-*: initial;` as the FIRST lines of
-  `@theme inline` (order matters: after the mapping they would wipe the theme's own variables); `"colors"` also drops `--color-white`/`--color-black`;
-  each name needs a NON-EMPTY replacement in the theme: `"colors"` needs `colors` (the schema accepts `colors: {}`), `"radius"` needs `borderRadius`,
-  `"shadow"` needs `shadows` (cross-field check in `assertThemeOptions`, `src/core/themeOptionsChecks.ts`; `ZodError` at `resetTailwindDefaults.<i>`).
-- A `themeAxes` variant must not be named `base` (reserved: `"base"` is the "no override" value of `ThemeAxesState`/`themeAxisAttributes`); an axis named `base` is fine.
-- **Node code lives in `src/node/`** (`loadStyleGenConfig`, `resolveProjectPath`, `sameFile`, `configSource`, `resolveEmitTarget`, `themeEmitter`, `watchThemeFile`, `resolvePluginTarget`,
-  `writeFileAtomic`, `errorMessage`, `isPlainObject`) and is imported only by `src/cli/**`, `src/features/vite/**` and `src/features/next/**`; never from `src/core`,
-  the browser-safe exports or the root barrel (it would leak `node:*`/chokidar into `dist/index.js`; `check:browser-safe` and `check:sizes` catch it).
-  `resolveProjectPath(root, input, label, { allowOutsideRoot })` replaces the old `resolveSafePath`,
-  normalises every path through `resolve(root, input)` (absolute ones too) and does NOT rewrite a leading `/`: `theme`/`--theme` may be absolute or outside the root,
-  `output`/`tokensOutput`/`--out` must stay inside it. `styleGenVite()`/`styleGenNext()` take only `{ root }` (the directory holding the config; Nuxt passes the project folder because it sets Vite's root to `app/`):
-  `resolvePluginTarget(root, label)` reads `style-gen.config.json` (else `package.json#style-gen`) exactly like the CLI, so `theme`, `output`, `tokensOutput` and every `generate()` option live there, and a config edit is reloaded in place (re-resolve, re-register, re-emit, full reload; an invalid edit keeps the last target).
-  The plugins write `theme.css` and `theme.tokens.ts` (the typed `tokens` plus `ThemeAxesState`; apps import them from that file instead of calling `createDesignTokens`); the file is committed in apps that import it (`yarn check:tokens` fails when it is stale) and git-ignored where nothing imports it (harness).
-  `generate()` is `prepareGenerate()` (validation) + `generateFromParsed()` (CSS only; `generate()` builds `tokens`/`schema` itself);
-  the emitter calls the two separately to label the failing stage (`read`, `parse`, `options`, `theme`, `cross`, `generate`, `write`; the watcher adds `config`, `watch`).
-- CLI (`src/cli/`): `run.ts` holds the command registry (`init`, `generate`, `doctor`, `schema`, `tokens`, `budget`, `canvas`),
-  `runCli(args, cwd)` returns the exit code (0 ok/help/version/cancel, 1 failure, `budget` and `canvas` 2 for usage) and parses flags strictly per command;
-  **commands never call `process.exit`** (only `src/cli/index.ts` assigns `process.exitCode`), so tests drive `runCli`/the command functions directly.
-  `generate --watch` (like the Vite/Next dev servers) watches the theme AND both config candidates (`style-gen.config.json`, `package.json#style-gen`; resolved by `src/node/configSource.ts`, `package.json` events ignored while `style-gen.config.json` exists) and keeps the last valid config when an edit is invalid.
-  `generate --check` compares the committed tokens file with CRLF normalised and fails on a malformed config (the other commands warn `Ignoring … using defaults`). `generate`, `doctor` and the plugins resolve outputs through `resolveEmitTarget` (`output`/`tokensOutput` inside the root, `tokensOutput` a `.ts`/`.mts`/`.cts` file, theme, CSS, tokens module, `style-gen.config.json` and `package.json` five different files, decided by `sameFile`: same canonical path or same inode, so another case, a symlink or a hard link counts; both config files are protected even when absent); `doctor` reports a refusal as `Output (…) ❌ Invalid emit paths`.
-  `schema` writes `theme.schema.json` (next to the theme, `--out`) and `style-gen.config.schema.json` (project root, `--config-out`; the config schema is written even when the config violates the schema: without `--out` the issues are then reported and the exit code is 1, with `--out` both schemas are written and the exit code is 0) from `z.toJSONSchema(StyleGenConfigFileSchema)` narrowed by `buildConfigJsonSchema` (`src/cli/configJsonSchema.ts`: per-category `coverage` prefixes/`keys`, distinct `opacities`); a valid `style-gen.config.json` without `$schema` gets that one line inserted after its `{` (every other byte kept, written in place; an invalid one is left as it is and the line to add is printed; `package.json#style-gen` is never edited); neither target may be the theme, `style-gen.config.json` or `package.json`, nor each other;
-  cross-field rules (`breakpoints` ⊂ screens, one `screens` unit, `resetTailwindDefaults` replacements) and path rules stay out of the JSON Schema; the three committed copies (`examples/`, `examples/design-system/`, `site/`) are pinned by `committed-schema.test.ts`.
-  `init --yes`/`-y` never prompts and never overwrites (existing files kept, exit 0) and keeps an existing config as it is: it reads the theme from it and exits 1 when the config is invalid or `--theme` names another theme; `init` writes `"$schema": "./style-gen.config.schema.json"` as a new config's first key. `init --rules-only` without a config prints no CSS lines (it says no config was found). A config `generate` rejects keeps the `theme`/`output` it declares and is left byte for byte as it was (warning), a `style-gen.config.json` that is not valid JSON stops `init` with exit 1, and a `--theme` that names a file `init` writes or merges into exits 1.
-  `init` detects the stack (`detectStack`: `nuxt.config.*` > `next.config.*` > `vite.config.*` > none,
-  project root only) and only PRINTS the bundler snippet (`getBundlerSnippet` in `src/cli/templates.ts`,
-  shown byte for byte in the README (Vite) and `documents/reference/cli.md` (Next.js, Nuxt); `src/cli/templates.test.ts` compares them);
-  it never edits a bundler config and scaffolds no generator script; `init` merges `theme`/`$schema` (and `output` only when absent) into a valid config that does not already name the theme (or into a copy of `package.json["style-gen"]`) when it writes, and drops no key a major removed (7.x-to-8.0.md B10):
-  an invalid config is kept as it is, or gets only the chosen theme merged in (both with a warning), so a key the schema rejects (`plugin`, `extraSources`, `axes`) stays and `generate` reports it as an unknown key. `budget` writes `OK: …`/`OVER BUDGET: …` lines that are a contract
-  consumers grep; `--coverage-cost` adds informational cost lines after them (`src/cli/coverageCost.ts`, an upper bound: classes the app's source uses stay).
-
-## Testing
-
-Vitest (Node env) with colocated `*.test.ts`; type tests in `*.test-d.ts` via `yarn test:types` (`expectTypeOf`);
-integration tests in `src/__integration__/` compile through the real Tailwind engine; Playwright e2e via `yarn test:e2e`;
-`yarn typecheck:dist` checks `dist/*.d.ts` and the `dist/*.d.cts` copies with `skipLibCheck: false`, but only under `module: ESNext` + Bundler resolution (never as CommonJS);
-`require`-condition resolution is covered by `yarn check:types-pack` (attw, node16); `node scripts/vite-dev-smoke.mjs` runs `styleGenVite` under a real Vite dev server in two
-scenarios (`createServer()` without `listen()` + `ssrLoadModule`, then `listen()` + a theme edit; the plugin sets `perEnvironmentStartEndDuringDev: true` and `buildStart` does the
-emit). The design-system DX test (`yarn workspace design-system-example test`, needs `yarn build:all` because the package links `dist/*.d.ts`) type-checks
-`examples/design-system/src/recipes/button.ts` against the real theme and against a copy with `danger` renamed, and asserts the diagnostic lands in that file;
-the root `vitest.config.ts` excludes `examples/**`. The sample components have no test runner of their own:
-`yarn workspace harness-example typecheck` compiles `examples/harness/tests/ui-types.tsx` (expect-error type test; needs `yarn build:all`).
-Two example apps have a Storybook (`plain-react`, `plain-nuxt`; component stories only, `ui/**` per `.storybook/main.ts`; autodocs,
-`yarn workspace <app>-example test:stories` runs the stories as Vitest browser tests; `storybook:build` builds it; stories use the app's own components, never raw Tailwind classes,
-and each app's CSS has `@source not` for `*.stories.*`). The `plain-react` job of `ci.yml` (Storybook stories and the plain-vs-harness parity gate) is separate from `check` and
-runs on drafts and documentation-only PRs; the `plain-nuxt` job (its stories, not a required check) runs alongside it. Layers and CI legs (including `tailwind-floor`, `node-floor`,
-`peer-matrix` (decides the `vite`/`typescript` peer ranges), `ts-peer` (proves the `typescript` range in a scratch npm project) and `ui-peer-floor` (proves the floors of the UI-kit peer ranges); every leg must pass;
-these 9 jobs are the heavy tier in `.github/workflows/ci-matrix.yml`: nightly on `main`, manual dispatch and PRs into `main` (the `develop` → `main` release PR), not on PRs into `develop`;
-it skips `documents/**`-only PRs and, on PRs, draft PRs, while `ci.yml` (`check`, `plain-react`, `e2e`) runs on every PR;
-`check` and `plain-react` also run on drafts, `e2e` skips draft PRs and re-runs on `ready_for_review`): `documents/testing.md`.
-`.github/workflows/nightly.yml` (not a required check) adds `yarn test` on `macos-latest` and `scripts/bun-smoke.mjs` (Bun installed with `npm install -g bun`, no third-party action) every night and on PRs into `main` that change it.
-
-## Publishing guards
-
-- `yarn check:publish-target` (`prepublish` + `deploy.yml`) locks the registry to `registry.npmjs.org` and `access: public`; `deploy.yml` also runs `yarn npm publish --dry-run` and asserts `Package would be published to https://registry.npmjs.org`, then publishes with `--provenance` through npm trusted publishing (OIDC, `id-token: write`, no `NPM_TOKEN`).
-  Yarn Berry runs `prepublish`, not `prepublishOnly`, on `yarn npm publish`.
-- `yarn check:externals` fails if any `dist/**/*.map` lists a peer/dependency under `node_modules/` (or a JS file ships without a map) or any entry but `./ui` reaches a UI peer;
-  `yarn check:sizes` enforces gzip budgets incl. the `cli` bundle (`scripts/check-sizes.mjs`); `yarn check:browser-safe` keeps browser subpaths free of Node/Zod.
-  Negative controls: `src/__integration__/publish-gates.test.ts`.
-- `yarn check:types-pack` (`scripts/check-types-pack.mjs`; CI after `build:all`, and `deploy.yml` before publish) packs the package and runs
-  `@arethetypeswrong/cli --profile node16` on the tarball, so every subpath must resolve to `.d.ts` under `import` and `.d.cts` under `require`.
-- The package is public on npmjs.org: consumers need no token or scope config. 7.2.0 is the first npm release and 8.0.0 the first npm major; versions up to 7.1.1 exist only on GitHub Packages (npm holds 1.7–3.0).
-- The site is deployed by `deploy-site.yml` (GitHub Pages, base `/style-generator/`, `404.html` copy of `index.html` as the SPA fallback, `llms.txt` built from `site/src/lib/docs-meta.json` by `site/scripts/build-llms.mjs`); its deploy job runs only from `main` and holds the only `pages: write` / `id-token: write` permissions of that workflow.
+Always loaded: `.claude/rules/publishing-guards.md` (registry lock, trusted publishing, no `NPM_TOKEN`).
 
 ## Project-Specific Workflow Rules
 
-Read before any code/design work:
+Read before any code or design work:
 
-- `.claude/rules/agent-protocol.md` — request classification (plan required for complex code/design) and session start (read `lessons.md`, load the runtime skill for the task).
-  The repo does not vendor agents, commands or skills.
+- `.claude/rules/agent-protocol.md` — request classification (plan required for complex code/design), session start; the repo vendors no agents, commands or skills.
 - `.claude/rules/coding-standards.md` — TIER 0/1 rules; Socratic gate before complex changes.
-- `.claude/rules/validation.md` — yarn gate before reporting done; **4-Phase plan protocol**; plan and phase templates.
-  **NEVER write code before the user approves the plan.** Wait for explicit "ok"/"proceed"/"approved".
+- `.claude/rules/validation.md` — yarn gate before reporting done; **4-Phase plan protocol**. **NEVER write code before the user approves the plan.**
 - `.claude/rules/lessons.md` — past mistakes; review at session start; append an entry on every user correction.
 
-### Documentation layout
-
-All project documentation lives under `documents/` (index: `documents/README.md`). This is the explicit docs route for every tool,
-including the AgentKit `ak:docs` skill (also set in `.agentkit/config.yaml` → `paths.docs: documents`). Never create a root `docs/` or root `plans/` directory.
-
-```text
-documents/
-├── README.md                     # index of everything below
-├── architecture.md guide.md troubleshooting.md testing.md deploy.md components.md cookbook.md   # rendered by the site
-├── getting-started/  reference/  # rendered by the site (site/src/lib/docs-meta.json)
-├── vi/                           # Vietnamese twin of every rendered doc (node scripts/check-docs-i18n.mjs)
-├── migration/                    # upgrade guides + v4 measurement proofs
-├── standards/                    # cross-repo standards (git-workflow-app.md)
-├── brainstorm/YYYY-MM-DD/<topic>.md
-└── plans/
-    ├── YYYY-MM-DD/<plan-slug>/   # plan.md + phase-NN-<name>.md (+ reports/)
-    ├── reports/                  # reports that belong to no plan
-    └── journals/YYYY-MM-DD-<slug>.md
-```
-
-- Plans: one directory per plan under the creation date; `plan.md` holds the phase table and status; no per-day `task.md`.
-  On completion flip `[ ]` → `[x]` in the phase file and update the phase row in `plan.md` immediately. Materialize the plan directory even when the user supplies the plan inline.
-- Brainstorm: `documents/brainstorm/YYYY-MM-DD/<topic>.md` (an advise `-state.md` file sits next to its report); no per-day `session.md`.
-- Journals and standalone reports are written by AgentKit into `documents/plans/journals/` and `documents/plans/reports/`.
-- `documents/plans/` and `documents/brainstorm/` are git-ignored local working directories: they are never committed or published, so plan bookkeeping (checkbox flips,
-  phase tables) is local and needs no commit.
-- **Relative paths only** — no absolute paths in docs.
+All documentation lives under `documents/`; never create a root `docs/` or `plans/` directory. `documents/plans/` and `documents/brainstorm/` are git-ignored local directories.
+Docs use relative paths only. Plan layout: `documents/plans/YYYY-MM-DD/<plan-slug>/` (`plan.md` + `phase-NN-<name>.md`).
 
 ### ESM gotcha
 
-`package.json` is `"type": "module"`. Ad-hoc Node scripts must use `import` syntax, or use `.cjs` extension — `require()` in a `.js` file throws
-`ReferenceError: require is not defined in ES module scope`.
+`package.json` is `"type": "module"`. Ad-hoc Node scripts must use `import` syntax or the `.cjs` extension; `require()` in a `.js` file throws `ReferenceError: require is not defined in ES module scope`.

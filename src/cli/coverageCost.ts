@@ -14,8 +14,7 @@ export interface CoverageGroup {
 }
 
 /**
- * The printable id of a group: `<category>/<prefix>`, or the bare category
- * for a group without a prefix (typography).
+ * The printable id of a group: `<category>/<prefix>`, or the bare category.
  * @param {CoverageGroup} g - The group
  * @returns {string} `"colors/ring"`, `"typography"`
  */
@@ -23,9 +22,8 @@ export const groupId = (g: CoverageGroup): string =>
   g.prefix === "" ? g.category : `${g.category}/${g.prefix}`;
 
 /**
- * Maps every class the theme's tokens can produce to its group, for every
- * built-in category. A category the theme omits (or declares empty) uses
- * its descriptor's `defaultValues` keys, like `generateSourceInline`.
+ * Maps every class the theme's tokens can produce to its group; an omitted or
+ * empty category uses its `defaultValues` keys, like `generateSourceInline`.
  * @param {ThemeConfig} theme - A theme that already passed `ThemeSchema`
  * @returns {Map<string, CoverageGroup>} Class name (`ring-primary`) to group
  */
@@ -73,9 +71,7 @@ const stripVariants = (name: string): string => {
 };
 
 /**
- * The theme class of one selector: the first class outside `[...]`,
- * unescaped, without its variants, a leading or trailing `!` and a `/<n>`
- * opacity step.
+ * The first class outside `[...]`, unescaped, without variants, `!` and a `/<n>` step.
  * @param {string} selector - One selector (no top-level comma)
  * @returns {string | undefined} The class, or `undefined` when there is none
  */
@@ -149,12 +145,7 @@ export function splitSelectorList(prelude: string): string[] {
   return out;
 }
 
-/**
- * Index just past the `}` closing the `{` at `open`.
- * @param {string} css - CSS text
- * @param {number} open - Index of the opening `{`
- * @returns {number} The index just past the matching `}`, or the text length
- */
+// Index just past the `}` closing the `{` at `open`, or the text length.
 const blockEnd = (css: string, open: number): number => {
   let depth = 0;
   let i = open;
@@ -172,12 +163,7 @@ const blockEnd = (css: string, open: number): number => {
   return css.length;
 };
 
-/**
- * Reads one prelude or declaration.
- * @param {string} css - CSS text
- * @param {number} start - Index the prelude starts at
- * @returns {[number, string]} Its end index and terminator (`{`, `;` or `""` at the end)
- */
+// One prelude or declaration: its end index and terminator (`{`, `;` or `""` at the end).
 const readPrelude = (css: string, start: number): [number, string] => {
   let i = start;
   let paren = 0;
@@ -199,12 +185,9 @@ const readPrelude = (css: string, start: number): [number, string] => {
 const UNTOUCHED = /^@(?:property|keyframes|font-face)\b/;
 
 /**
- * Removes every rule whose selectors all have a member class, in one pass
- * over `{`/`}` depth that skips strings and comments. A removed rule takes
- * its whole block (nested rules included); a kept rule is searched for
- * nested member rules; at-rules are searched, never removed (a block left
- * empty by removals stays, which gzips to a few bytes); `@property`, `@keyframes` and `@font-face`
- * are copied untouched.
+ * Removes every rule whose selectors all have a member class, nested rules
+ * included; at-rules are searched, never removed; `@property`, `@keyframes`
+ * and `@font-face` are copied untouched.
  * @param {string} css - Flat (minified) or nested CSS
  * @param {(cls: string) => boolean} isMember - Whether a class is in the group
  * @returns {{ css: string; removed: number }} The remaining CSS and the removed rule count
@@ -257,8 +240,7 @@ export function stripGroupRules(
 const gzipSize = (css: string): number => gzipSync(css).length;
 
 /**
- * The marginal gzip cost of each group: for every group with a rule in the
- * CSS, the sum over the files of `gzip(css) − gzip(css without the group)`.
+ * Marginal gzip cost per group: the sum over files of `gzip(css) − gzip(css without the group)`.
  * @param {readonly { file: string; css: string }[]} files - The built CSS files
  * @param {Map<string, CoverageGroup>} groups - From `themeClassGroups`
  * @returns {{ group: CoverageGroup; bytes: number; rules: number }[]} Groups with at least one rule, by bytes descending then id
@@ -290,8 +272,8 @@ export function coverageCost(
 }
 
 /**
- * The `coverage` setting that removes a group's `@source inline` classes.
- * A group that lists the prefix in its own `prefixes` keeps emitting it when only the rule's `prefixes` shrinks, so the line names that group.
+ * The `coverage` setting that removes a group's `@source inline` classes; an
+ * opacity group listing the prefix itself keeps emitting it, so it is named.
  * @param {CoverageGroup} group - The group
  * @param {ResolvedOptions} resolved - The project's options through `resolveOptions`
  * @returns {string} The setting, or why the classes already come from the app's source

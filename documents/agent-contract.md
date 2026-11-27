@@ -27,43 +27,178 @@ This convention applies to new themes and new design canvases. Never rename a ke
 
 - Colours come in two layers: primitives hold every literal value, semantic keys point at primitives.
 - A primitive key is a hue and a step, or `black`/`white`: it matches `^(?:[a-z]+(?:50|[1-9]00|950)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray50`, `white`; `gray150` is not one). Its value is a literal, never `$…`. The hue is lowercase letters only; the steps are 50, 100 to 900 and 950, and a scale may skip steps.
-- A translucent colour is a primitive with an alpha suffix in percent (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
-- A semantic colour may also alias `"$<primitive>/<n>"` (`<n>` an integer percent, 1–100): `border: "$navy700/8"` emits `color-mix(in srgb, var(--sg-color-navy-700) 8%, transparent)`. It is an additional form next to the alpha suffix above, and it still aliases a primitive; the alpha keys stay valid.
+- A translucent colour is a semantic key (or a `themeAxes` override) that aliases a primitive with a percent, `"$<primitive>/<n>"` (`<n>` an integer percent, 1–100): `scrim: "$gray900/50"` emits `color-mix(in srgb, var(--sg-color-gray-900) 50%, transparent)`. This is the canonical form; `alphaScale` of an additions file lists the steps a product allows.
+- `<primitive>Alpha<n>` primitives (`blue600Alpha10: "rgba(37, 99, 235, 0.10)"`) are the legacy form: they stay valid and a semantic key may alias one (`scrim: "$blue600Alpha10"`), but a new theme writes `"$<primitive>/<n>"` instead.
 - Every other colour key is semantic. Its value is `"$<primitive>"` in the base `colors` and in every `themeAxes` override that redefines it; a semantic key never aliases another semantic key, and an override never redefines a primitive.
 
 Semantic core: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.
-`muted` is a quiet fill and `mutedForeground` the secondary text on it (and on `background`), like every `<intent>`/`<intent>Foreground` pair.
+`muted` is a quiet fill and `mutedForeground` the lowest text tier, the secondary text on it (and on `background`), like every `<intent>`/`<intent>Foreground` pair. The text tiers fall in this order: `foreground`, then `foregroundSecondary`, then `mutedForeground`; no tier may read stronger than the one above it (`order-text`).
 Product keys (`domainNutrition`) sit beside them.
 
-- A semantic key is a neutral key (`background`, `foreground`, `surface`, `surfaceRaised`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`) or `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: a core or product role, then the suffixes in that order, then at most one state, always last. `primaryForegroundHover` is the hover sibling of `primaryForeground`; `successSubtleForeground` is the text on a `successSubtle` fill. A product role is camelCase with one capital per segment (`domainNutrition`, not `primaryCTA`). Its first segment is not `on`, `ok`, `bad`, `warn` or `line`, and a role of several segments does not end in a suffix, a state, `Ink`, `Soft`, `Line`, `Ok`, `Bad` or `Warn` (`chartLine` reads as a v1 name).
-- `style-gen canvas check --naming` reports the v1 names with their v2 rename: `on<Role>` → `<role>Foreground`, `…Ink` → `…Foreground`, `…Soft` → `…Subtle`, `…Line` → `…Border`, `ok`/`bad`/`warn` → `success`/`danger`/`warning`, `line`/`lineStrong` → `border`/`borderStrong`. When the new name already exists, it says `merge manually` instead.
+- A semantic key is a neutral key (the list is in the key grammar table under Standard vocabulary) or `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: a core or product role, then the suffixes in that order, then at most one state, always last. `primaryForegroundHover` is the hover sibling of `primaryForeground`; `successSubtleForeground` is the text on a `successSubtle` fill. A product role is camelCase with one capital per segment (`domainNutrition`, not `primaryCTA`). Its first segment is not `on`, `ok`, `bad`, `warn` or `line`, and a role of several segments does not end in a suffix, a state, `Ink`, `Soft`, `Line`, `Ok`, `Bad` or `Warn` (`chartLine` reads as a v1 name).
+- `style-gen canvas check --naming` reports the v1 names with their v2 rename: `on<Role>` → `<role>Foreground`, `…Ink` → `…Foreground`, `…Soft` → `…Subtle`, `…Line` → `…Border`, `ok`/`bad`/`warn` → `success`/`danger`/`warning`, `line`/`lineStrong` → `border`/`borderStrong`, `foregroundSoft`/`foregroundSubtle` → `foregroundSecondary` (the full list is the renamed-keys table under Standard vocabulary). When the new name already exists, it says `merge manually` instead.
 
 - A typography key is `text<size><Weight>`: it matches `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. The digits are `fontSize` in px (a rem value counts as rem × 16) and the word is `fontWeight` 400/500/600/700. Every key with the same size has the same `lineHeight`. The scale is 12, 14, 16, 20, 24, 32, 40, 56.
-- A typography entry never sets `fontFamily`. A different face is the `font-<fontFamily key>` class next to the typography class: `class="text-56-regular font-display"`.
+- A typography entry never sets `fontFamily`. A different face is the `font-<fontFamily key>` class next to the typography class: `class="text-32-bold font-display"`.
 - Radius keys are `sm`, `md`, `lg`, `xl` and `full`. The list is closed; a theme may declare any subset of it, and xl is for large surfaces (device frames, sheets, panels).
 
+<!-- canvas-check: theme -->
 <!-- prettier-ignore -->
 ```json
 {
   "colors": {
+    "white": "#ffffff",
+    "gray50": "#f9fafb",
+    "gray100": "#f3f4f6",
+    "gray200": "#e5e7eb",
+    "gray300": "#d1d5db",
+    "gray600": "#4b5563",
+    "gray700": "#374151",
+    "gray800": "#1f2937",
+    "gray900": "#111827",
+    "blue200": "#bfdbfe",
+    "blue300": "#93c5fd",
     "blue400": "#60a5fa",
     "blue600": "#2563eb",
-    "blue600Alpha10": "rgba(37, 99, 235, 0.10)",
+    "blue700": "#1d4ed8",
+    "blue800": "#1e40af",
+    "red600": "#dc2626",
+    "green700": "#15803d",
+    "amber600": "#d97706",
+    "background": "$white",
+    "foreground": "$gray900",
+    "surface": "$gray50",
+    "muted": "$gray100",
+    "mutedForeground": "$gray600",
+    "border": "$gray200",
+    "focus": "$blue600",
+    "scrim": "$gray900/50",
     "primary": "$blue600",
-    "primaryHover": "$blue400",
-    "scrim": "$blue600Alpha10"
+    "primaryForeground": "$white",
+    "primaryHover": "$blue700",
+    "primaryActive": "$blue800",
+    "danger": "$red600",
+    "success": "$green700",
+    "warning": "$amber600"
   },
   "themeAxes": {
-    "theme": { "dark": { "colors": { "primary": "$blue400" } } }
+    "theme": {
+      "dark": {
+        "colors": {
+          "background": "$gray900",
+          "foreground": "$gray50",
+          "surface": "$gray800",
+          "muted": "$gray800",
+          "mutedForeground": "$gray300",
+          "border": "$gray700",
+          "focus": "$blue400",
+          "primary": "$blue400",
+          "primaryForeground": "$gray900",
+          "primaryHover": "$blue300",
+          "primaryActive": "$blue200"
+        }
+      }
+    }
   },
   "typography": {
     "text16Regular": { "fontSize": "16px", "lineHeight": "24px", "fontWeight": 400 },
     "text32Bold": { "fontSize": "32px", "lineHeight": "40px", "fontWeight": 700 }
+  },
+  "fontFamily": {
+    "sans": "\"Geist\", sans-serif",
+    "display": "\"Newsreader\", serif"
   }
 }
 ```
 
 Components and artboards use semantic keys only. Every colour key has a class by default; `coverage: { colors: { keys: "aliased" } }` in `style-gen.config.json` (recommended) drops the generated coverage of the primitives, so only the semantic keys are always built. Add `resetTailwindDefaults: ["colors"]` only for a new app that uses no Tailwind palette classes: it removes Tailwind's palette, so an existing `bg-red-500` stops being emitted.
+
+### Standard vocabulary
+
+These tables are generated from the canvas standard that `style-gen canvas check` applies (`dist/canvas/design-canvas-standard.json` in the installed package); `yarn docs:standard` rewrites them and `yarn check:docs` fails when one drifts. A product adds to the standard through an additions file; it never edits the tables.
+
+**Key grammar.** A semantic colour key is a neutral key, or a role followed by the suffixes in this order and at most one state, always last.
+
+<!-- standard-table: grammar -->
+
+| Part                             | Values                                                                                                                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Neutral keys                     | `background`, `foreground`, `foregroundSecondary`, `surface`, `surfaceRaised`, `surfaceStrong`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`                         |
+| Roles                            | `primary`, `secondary`, `accent`, `danger`, `success`, `warning`, `info`                                                                                                                       |
+| Suffixes, in this order          | `Subtle`, `Border`, `Foreground`                                                                                                                                                               |
+| States, at most one, always last | `Hover`, `Active`, `Selected`                                                                                                                                                                  |
+| Semantic core                    | `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning` |
+
+<!-- /standard-table -->
+
+**Renamed keys.** `style-gen canvas check --naming` reports each v1 name with its v2 name.
+
+<!-- standard-table: renames -->
+
+| v1 name            | v2 name               |
+| ------------------ | --------------------- |
+| `Ink`              | `Foreground`          |
+| `Soft`             | `Subtle`              |
+| `Line`             | `Border`              |
+| `ok`               | `success`             |
+| `bad`              | `danger`              |
+| `warn`             | `warning`             |
+| `line`             | `border`              |
+| `lineStrong`       | `borderStrong`        |
+| `foregroundSoft`   | `foregroundSecondary` |
+| `foregroundSubtle` | `foregroundSecondary` |
+
+<!-- /standard-table -->
+
+**Default descriptions.** Every semantic key needs a description; a key of the standard has one by default, and a role's description covers its suffixes and states.
+
+<!-- standard-table: descriptions -->
+
+| Key                   | Default description                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `background`          | Page background behind every surface.                                                             |
+| `foreground`          | Primary text and icons on background and surface.                                                 |
+| `foregroundSecondary` | Secondary text: captions and supporting copy, quieter than foreground but still readable.         |
+| `surface`             | Card, panel and popover fill resting on background.                                               |
+| `surfaceRaised`       | Fill of a layer that floats above surface, such as a menu.                                        |
+| `surfaceStrong`       | Emphasised fill for a region that must stand apart from surface, such as a table header.          |
+| `muted`               | Quiet fill for disabled areas, tracks and subtle containers.                                      |
+| `mutedForeground`     | Text and icons on muted and surface that stay readable but recede.                                |
+| `border`              | Default hairline between surfaces and around inputs.                                              |
+| `borderStrong`        | Emphasised border: active inputs and dividers that must show.                                     |
+| `focus`               | Focus ring colour; needs 3:1 against the background.                                              |
+| `scrim`               | Translucent layer behind modals and drawers.                                                      |
+| `primary`             | Brand action fill: the main button and selected controls.                                         |
+| `primaryForeground`   | Text and icons on primary.                                                                        |
+| `primaryHover`        | Primary fill while the pointer is over it.                                                        |
+| `primaryActive`       | Primary fill while it is pressed.                                                                 |
+| `secondary`           | Supporting action fill: the second button beside primary, less prominent than it.                 |
+| `accent`              | Highlight fill for a feature, badge or callout that must stand out without being the main action. |
+| `danger`              | Destructive action fill and error emphasis.                                                       |
+| `success`             | Positive outcome fill and confirmation emphasis.                                                  |
+| `warning`             | Caution fill and warning emphasis.                                                                |
+| `info`                | Neutral information fill and emphasis: notices that are neither success nor warning.              |
+
+<!-- /standard-table -->
+
+**Closed scales.** A theme category that has a scale uses these step names. The kind says what is checked beyond the names: a `size` scale keeps one unit and rises with the step order, an `ordinal` scale keeps the order of its steps, and a `name` scale is a closed list of names.
+
+<!-- standard-table: scales -->
+
+| Scale            | Kind    | Steps                                             |
+| ---------------- | ------- | ------------------------------------------------- |
+| `controlHeight`  | size    | `xs`, `sm`, `md`, `lg`, `xl`                      |
+| `iconSize`       | size    | `xs`, `sm`, `md`, `lg`, `xl`                      |
+| `borderRadius`   | size    | `sm`, `md`, `lg`, `xl`, `full`                    |
+| `borderWidth`    | size    | `thin`, `thick`                                   |
+| `motionDuration` | size    | `fast`, `base`, `slow`                            |
+| `zIndex`         | ordinal | `dropdown`, `sticky`, `overlay`, `modal`, `toast` |
+| `shadows`        | name    | `xs`, `sm`, `md`, `lg`, `xl`                      |
+| `fontFamily`     | name    | `sans`, `display`, `mono`                         |
+| `opacity`        | name    | `disabled`                                        |
+| `motionEasing`   | name    | `standard`, `entrance`, `exit`                    |
+
+<!-- /standard-table -->
 
 ## 2. Layout
 

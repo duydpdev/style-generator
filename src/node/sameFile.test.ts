@@ -107,13 +107,12 @@ describe("sameFile", () => {
     fs.writeFileSync(at("real", "a.json"), "{}");
     fs.writeFileSync(at("real", "b.json"), "{}");
     const original = fs.statSync;
-    vi.spyOn(fs, "statSync").mockImplementation(((
-      file: fs.PathLike,
-      options?: fs.StatSyncOptions,
-    ) => {
-      const stats = original(file, options) as fs.BigIntStats | undefined;
-      return stats === undefined ? stats : Object.assign(stats, { ino: 0n });
-    }) as typeof fs.statSync);
+    vi.spyOn(fs, "statSync").mockImplementation(
+      (file: fs.PathLike, options?: fs.StatSyncOptions) => {
+        const stats = original(file, options) as fs.BigIntStats | undefined;
+        return stats === undefined ? stats : Object.assign(stats, { ino: 0n });
+      },
+    );
 
     expect(sameFile(at("link", "a.json"), at("real", "a.json"))).toBe(true);
     expect(sameFile(at("real", "a.json"), at("real", "b.json"))).toBe(false);

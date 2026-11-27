@@ -11,7 +11,8 @@
  *   - have the same heading levels in the same order, each with the same
  *     inline code spans;
  *   - have the same doc-script markers (`<!-- embed: -->`, `<!-- signature: -->`,
- *     `<!-- /signature -->`, `<!-- snippet: -->`) and GitHub alert lines
+ *     `<!-- /signature -->`, `<!-- snippet: -->`, `<!-- standard-table: -->`,
+ *     `<!-- /standard-table -->`, `<!-- canvas-check: -->`) and GitHub alert lines
  *     (`> [!NOTE]` …), in order;
  *   - have byte-identical fenced code blocks and signature blocks;
  *   - be Unicode NFC (heading anchors are compared byte-wise).
@@ -45,8 +46,8 @@ const USAGE =
   "usage: check-docs-i18n.mjs [--only <path>]... [--write-hash <vi file>]... [--untranslated] [--root <dir>]";
 const META = "site/src/lib/docs-meta.json";
 const MARKER =
-  /^(?:<!-- (?:embed:|signature:|\/signature -->|snippet:)|> ?\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\])/;
-// eslint-disable-next-line sonarjs/slow-regex -- runs on this repo's own markdown, never on untrusted input
+  /^(?:<!-- (?:embed:|signature:|\/signature -->|snippet:|standard-table:|\/standard-table -->|canvas-check:)|> ?\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\])/;
+// eslint-disable-next-line sonarjs/super-linear-regex -- runs on this repo's own markdown, never on untrusted input
 const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*)$/;
 const SIGNATURE_OPEN = "<!-- signature:";
 const SIGNATURE_CLOSE = "<!-- /signature -->";

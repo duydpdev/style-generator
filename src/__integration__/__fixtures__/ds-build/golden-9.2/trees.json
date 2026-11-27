@@ -1,0 +1,618 @@
+{
+  "Box:default": {
+    "type": "div",
+    "props": {
+      "className": "relative",
+      "children": ["x", false]
+    }
+  },
+  "Box:padding": {
+    "type": "div",
+    "props": {
+      "className": "relative sp-p",
+      "style": {
+        "--sg-sp-p-0": "NaNrem",
+        "--sg-sp-p-1": "NaNrem"
+      },
+      "children": ["x", false]
+    }
+  },
+  "Text:default": {
+    "type": "p",
+    "props": {
+      "children": "x",
+      "className": "wrap-anywhere whitespace-pre-wrap text-16-regular text-foreground"
+    }
+  },
+  "Stack:default": {
+    "type": "div",
+    "props": {
+      "children": "x",
+      "className": "flex flex-col"
+    }
+  },
+  "Flex:default": {
+    "type": "div",
+    "props": {
+      "children": "x",
+      "className": "flex flex-row"
+    }
+  },
+  "Grid:default": {
+    "type": "div",
+    "props": {
+      "children": "x",
+      "className": "grid"
+    }
+  },
+  "Button:primary/solid/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-sm px-2.5 bg-primary hover:bg-primary-hover active:bg-primary-active text-primary-foreground",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/solid/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-md px-3.5 bg-primary hover:bg-primary-hover active:bg-primary-active text-primary-foreground",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/solid/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-lg px-5 text-20-semibold bg-primary hover:bg-primary-hover active:bg-primary-active text-primary-foreground",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/outline/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled bg-surface active:scale-[0.98] h-control-sm px-2.5 border-primary text-primary hover:bg-primary-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/outline/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled bg-surface active:scale-[0.98] h-control-md px-3.5 border-primary text-primary hover:bg-primary-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/outline/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled bg-surface active:scale-[0.98] h-control-lg px-5 text-20-semibold border-primary text-primary hover:bg-primary-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/soft/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-sm px-2.5 bg-primary-subtle text-primary-subtle-foreground hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/soft/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-md px-3.5 bg-primary-subtle text-primary-subtle-foreground hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/soft/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-lg px-5 text-20-semibold bg-primary-subtle text-primary-subtle-foreground hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/ghost/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-sm px-2.5 text-primary hover:bg-primary-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/ghost/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-md px-3.5 text-primary hover:bg-primary-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/ghost/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-lg px-5 text-20-semibold text-primary hover:bg-primary-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/link/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent underline-offset-4 hover:underline h-control-sm px-2.5 text-primary",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/link/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent underline-offset-4 hover:underline h-control-md px-3.5 text-primary",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:primary/link/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent underline-offset-4 hover:underline h-control-lg px-5 text-20-semibold text-primary",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/solid/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-sm px-2.5 bg-danger text-surface hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/solid/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-md px-3.5 bg-danger text-surface hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/solid/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-lg px-5 text-20-semibold bg-danger text-surface hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/outline/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled bg-surface active:scale-[0.98] h-control-sm px-2.5 border-danger text-danger hover:bg-danger-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/outline/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled bg-surface active:scale-[0.98] h-control-md px-3.5 border-danger text-danger hover:bg-danger-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/outline/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled bg-surface active:scale-[0.98] h-control-lg px-5 text-20-semibold border-danger text-danger hover:bg-danger-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/soft/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-sm px-2.5 bg-danger-subtle text-danger-subtle-foreground hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/soft/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-md px-3.5 bg-danger-subtle text-danger-subtle-foreground hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/soft/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-lg px-5 text-20-semibold bg-danger-subtle text-danger-subtle-foreground hover:opacity-90",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/ghost/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-sm px-2.5 text-danger hover:bg-danger-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/ghost/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-md px-3.5 text-danger hover:bg-danger-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/ghost/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent active:scale-[0.98] h-control-lg px-5 text-20-semibold text-danger hover:bg-danger-subtle",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/link/sm": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent underline-offset-4 hover:underline h-control-sm px-2.5 text-danger",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/link/md": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer text-16-regular whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent underline-offset-4 hover:underline h-control-md px-3.5 text-danger",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  },
+  "Button:danger/link/lg": {
+    "type": "button",
+    "props": {
+      "type": "button",
+      "data-slot": "button",
+      "className": "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border cursor-pointer whitespace-nowrap outline-hidden select-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus transition-[background-color,color,opacity] duration-150 disabled:cursor-not-allowed disabled:opacity-disabled border-transparent underline-offset-4 hover:underline h-control-lg px-5 text-20-semibold text-danger",
+      "children": [
+        false,
+        {
+          "type": "span",
+          "props": {
+            "className": "empty:hidden",
+            "children": "x"
+          }
+        },
+        false
+      ]
+    }
+  }
+}

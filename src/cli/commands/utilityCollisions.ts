@@ -6,20 +6,13 @@ import {
 } from "../../features/registry/builtInCategories";
 import { toKebabCase } from "../../shared/helpers";
 
-/**
- * Tailwind `text-<name>` static utilities a `theme.typography` key can shadow
- * (font-size scale + text-align + text-wrap + text-overflow). Curated, not
- * exhaustive: only names whose meaning is unambiguous and stable across
- * Tailwind v4.
- */
+// Curated `text-<name>` statics a typography key can shadow: only names stable across Tailwind v4.
 const TAILWIND_TEXT_UTILITY_RE =
   /^text-(xs|sm|base|lg|xl|[2-9]xl|left|center|right|justify|start|end|wrap|nowrap|balance|pretty|ellipsis|clip)$/;
 
 /**
- * Tailwind functional utilities that accept a bare integer (`h-1`, `z-10`).
- * A typography key kebab-casing to `<root>-<digits>` (`h1` → `h-1`, `p2` →
- * `p-2`) emits an `@utility` with the class Tailwind already owns. Every
- * root is proven against the real compiler in
+ * Tailwind functional utilities that accept a bare integer: a typography key
+ * like `h1` (→ `h-1`) emits a class Tailwind owns. Each root is proven in
  * `src/__integration__/utility-collisions.test.ts`.
  */
 export const TAILWIND_NUMERIC_UTILITY_ROOTS = [
@@ -67,11 +60,7 @@ export const TAILWIND_NUMERIC_UTILITY_ROOTS = [
   "line-clamp",
 ] as const;
 
-/**
- * Tailwind static utilities a typography key can be named after (`italic`,
- * `underline`, `truncate`). Proven against the real compiler like
- * {@link TAILWIND_NUMERIC_UTILITY_ROOTS}.
- */
+/** Tailwind static utilities a typography key can be named after (`italic`, `truncate`). */
 export const TAILWIND_STATIC_UTILITY_NAMES = [
   "italic",
   "underline",
@@ -109,11 +98,8 @@ const TAILWIND_STATIC_UTILITY_SET: ReadonlySet<string> = new Set(
 );
 
 /**
- * Tailwind static utilities a `colors` key can shadow through the `ring`,
- * `outline` and `divide` color prefixes (`colors.solid` → `outline-solid`).
- * `outline-none`/`divide-none` are left out: `colors.none` is reported by
- * the `none` check. Proven against the real compiler in
- * `src/__integration__/utility-collisions.test.ts`.
+ * Statics a `colors` key shadows through `ring`/`outline`/`divide`
+ * (`colors.solid` → `outline-solid`); `*-none` is left to the `none` check.
  */
 export const TAILWIND_COLOR_STATIC_CLASSES = [
   "ring-inset",
@@ -146,11 +132,6 @@ const COLOR_NUMERIC_RE = new RegExp(
 );
 const COLOR_STATIC_PREFIXES = ["ring", "outline", "divide"] as const;
 
-/**
- * Whether a typography `@utility` name is also a Tailwind utility class.
- * @param {string} utilityName - Kebab-cased typography key
- * @returns {boolean} `true` when Tailwind ships a utility with that class
- */
 const isTailwindUtilityName = (utilityName: string): boolean =>
   TAILWIND_TEXT_UTILITY_RE.test(utilityName) ||
   TAILWIND_NUMERIC_UTILITY_RE.test(utilityName) ||
@@ -158,12 +139,7 @@ const isTailwindUtilityName = (utilityName: string): boolean =>
 
 const TAILWIND_COLOR_KEYWORD_RE = /^(transparent|current|inherit)$/;
 
-/**
- * Warnings for one `colors` key: Tailwind's color keywords, then the
- * `ring`/`outline`/`divide` statics or integer widths its class shadows.
- * @param {string} key - Raw (camelCase) `colors` key
- * @returns {string[]} `colors.<key> → …` lines, keyword line first
- */
+// Keyword line first, then the `ring`/`outline`/`divide` classes the key shadows.
 const colorKeyCollisions = (key: string): string[] => {
   const warnings: string[] = [];
   if (TAILWIND_COLOR_KEYWORD_RE.test(key)) {
@@ -184,11 +160,8 @@ const colorKeyCollisions = (key: string): string[] => {
 };
 
 /**
- * Scale categories whose class prefix Tailwind already owns, with the static
- * class names it ships under that prefix and whether it also takes a bare
- * integer (`z-10`, `duration-150`). Proven against the real compiler in
- * `src/__integration__/utility-collisions.test.ts`. `opacity` is absent:
- * the schema rejects a digit-only opacity key, and `opacity` has no static.
+ * Scale categories whose prefix Tailwind owns: its statics and whether it takes
+ * a bare integer. `opacity` is absent: the schema rejects digit-only keys.
  */
 export const TAILWIND_SCALE_COLLISIONS = [
   { category: zIndexCategory, statics: ["auto"], numeric: true },
@@ -200,11 +173,6 @@ export const TAILWIND_SCALE_COLLISIONS = [
   },
 ] as const;
 
-/**
- * Warnings for the scale keys whose class Tailwind already ships.
- * @param {ThemeConfig} theme - A theme that already passed `ThemeSchema`
- * @returns {string[]} `<category>.<key> → …` lines
- */
 const scaleKeyCollisions = (theme: ThemeConfig): string[] => {
   const warnings: string[] = [];
   for (const { category, statics, numeric } of TAILWIND_SCALE_COLLISIONS) {
@@ -230,28 +198,11 @@ const NONE_COLLIDING_CATEGORIES = [
   "borderRadius",
 ] as const;
 
+// Rationale: documents/architecture.md#utilitycollisionsts-why-collisions-are-warnings-only
 /**
- * Warnings for theme keys that are schema-valid but collide with a Tailwind
- * static utility, so the generated `@theme`/`@utility` output silently
- * overrides (or is overridden by) the built-in class:
- * - `none` in colors/shadows/backdropBlurs/borderRadius (`bg-none`,
- *   `shadow-none`, `backdrop-blur-none`, `rounded-none`);
- * - digit-only `borderWidth` keys (`border-0`, `border-2`, ...): the theme value
- *   replaces Tailwind's built-in width, so this is an override to confirm;
- * - `typography` keys kebab-casing to a Tailwind utility class: `text-xs`…
- *   `text-9xl`, text-align/wrap/overflow, a numeric functional utility
- *   (`h1` → `h-1`) or a static one (`italic`, `truncate`);
- * - `colors` keys `transparent` / `current` / `inherit`;
- * - `colors` keys whose `ring-`/`outline-`/`divide-` class is a Tailwind
- *   static (`ring-inset`, `outline-solid`, `divide-x-reverse`) or an integer
- *   width/offset (`ring-3`, `outline-offset-2`);
- * - `zIndex`/`motionDuration`/`motionEasing` keys whose class is
- *   a Tailwind static (`z-auto`, `ease-in`) or integer (`z-10`) utility;
- *
- * `themeAxes` overrides are not inspected separately: the schema requires
- * every override key to exist in the base theme, so a colliding key is always
- * reported once through the base record. Warnings only — a collision can be
- * intentional, so it never becomes a schema error.
+ * Warnings for schema-valid theme keys whose generated class shadows (or is
+ * shadowed by) a Tailwind utility: `none` keys, digit-only `borderWidth`,
+ * typography, color and scale keys. `themeAxes` overrides are not inspected.
  * @param {ThemeConfig} theme - A theme that already passed `ThemeSchema`
  * @returns {string[]} One human-readable `path → message` line per collision
  */

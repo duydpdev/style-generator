@@ -1,4 +1,4 @@
-<!-- source: documents/agent-contract.md sha256: e449a25c0477 -->
+<!-- source: documents/agent-contract.md sha256: e469771973e3 -->
 
 # Hợp đồng cho agent
 
@@ -29,43 +29,178 @@ Quy ước này áp dụng cho theme mới và design canvas mới. Đừng bao 
 
 - Màu gồm hai lớp: primitive giữ mọi giá trị literal, key ngữ nghĩa trỏ tới primitive.
 - Key primitive là một sắc độ kèm một bậc, hoặc `black`/`white`: nó khớp `^(?:[a-z]+(?:50|[1-9]00|950)|black|white)(?:Alpha[1-9]\d?)?$` (`blue600`, `gray50`, `white`; `gray150` thì không). Giá trị của nó là literal, không bao giờ là `$…`. Sắc độ chỉ gồm chữ thường; các bậc là 50, từ 100 đến 900 và 950, và một thang có thể bỏ trống bậc.
-- Màu trong suốt là một primitive có hậu tố alpha tính theo phần trăm (1–99): `blue600Alpha10: "rgba(37, 99, 235, 0.10)"`.
-- Một key màu ngữ nghĩa cũng có thể là alias `"$<primitive>/<n>"` (`<n>` là số nguyên phần trăm, 1–100): `border: "$navy700/8"` phát ra `color-mix(in srgb, var(--sg-color-navy-700) 8%, transparent)`. Đây là dạng bổ sung bên cạnh hậu tố alpha ở trên, và nó vẫn là alias của một primitive; các key alpha vẫn hợp lệ.
+- Màu trong suốt là một key ngữ nghĩa (hoặc một override `themeAxes`) là alias của một primitive kèm phần trăm, `"$<primitive>/<n>"` (`<n>` là số nguyên phần trăm, 1–100): `scrim: "$gray900/50"` phát ra `color-mix(in srgb, var(--sg-color-gray-900) 50%, transparent)`. Đây là dạng chuẩn; `alphaScale` của file additions liệt kê các bậc mà một sản phẩm cho phép.
+- Primitive `<primitive>Alpha<n>` (`blue600Alpha10: "rgba(37, 99, 235, 0.10)"`) là dạng cũ: nó vẫn hợp lệ và một key ngữ nghĩa có thể là alias của nó (`scrim: "$blue600Alpha10"`), nhưng theme mới viết `"$<primitive>/<n>"`.
 - Mọi key màu khác là key ngữ nghĩa. Giá trị của nó là `"$<primitive>"` trong `colors` gốc và trong mọi override `themeAxes` định nghĩa lại nó; key ngữ nghĩa không bao giờ là alias của key ngữ nghĩa khác, và override không bao giờ định nghĩa lại primitive.
 
 Lõi ngữ nghĩa: `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning`.
-`muted` là một màu nền nhẹ và `mutedForeground` là màu chữ phụ trên nó (và trên `background`), giống mọi cặp `<intent>`/`<intent>Foreground`.
+`muted` là một màu nền nhẹ và `mutedForeground` là bậc chữ thấp nhất, màu chữ phụ trên nó (và trên `background`), giống mọi cặp `<intent>`/`<intent>Foreground`. Các bậc chữ theo thứ tự: `foreground`, rồi `foregroundSecondary`, rồi `mutedForeground`; không bậc nào được đọc rõ hơn bậc ở trên nó (`order-text`).
 Key riêng của sản phẩm (`domainNutrition`) đứng cạnh chúng.
 
-- Một key ngữ nghĩa là key trung tính (`background`, `foreground`, `surface`, `surfaceRaised`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`) hoặc `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: một role lõi hoặc role sản phẩm, rồi các hậu tố theo đúng thứ tự đó, rồi tối đa một trạng thái, luôn đứng cuối. `primaryForegroundHover` là sibling hover của `primaryForeground`; `successSubtleForeground` là màu chữ trên nền `successSubtle`. Role sản phẩm là camelCase, mỗi segment một chữ hoa (`domainNutrition`, không phải `primaryCTA`). Segment đầu không phải `on`, `ok`, `bad`, `warn` hay `line`, và role nhiều segment không kết thúc bằng một hậu tố, một trạng thái, `Ink`, `Soft`, `Line`, `Ok`, `Bad` hay `Warn` (`chartLine` bị đọc là tên v1).
-- `style-gen canvas check --naming` báo các tên v1 kèm tên v2 thay thế: `on<Role>` → `<role>Foreground`, `…Ink` → `…Foreground`, `…Soft` → `…Subtle`, `…Line` → `…Border`, `ok`/`bad`/`warn` → `success`/`danger`/`warning`, `line`/`lineStrong` → `border`/`borderStrong`. Khi tên mới đã tồn tại, nó báo `merge manually` thay vì đổi tên.
+- Một key ngữ nghĩa là key trung tính (danh sách nằm trong bảng ngữ pháp key ở mục Từ vựng của standard) hoặc `<role>[Subtle][Border][Foreground][Hover|Active|Selected]`: một role lõi hoặc role sản phẩm, rồi các hậu tố theo đúng thứ tự đó, rồi tối đa một trạng thái, luôn đứng cuối. `primaryForegroundHover` là sibling hover của `primaryForeground`; `successSubtleForeground` là màu chữ trên nền `successSubtle`. Role sản phẩm là camelCase, mỗi segment một chữ hoa (`domainNutrition`, không phải `primaryCTA`). Segment đầu không phải `on`, `ok`, `bad`, `warn` hay `line`, và role nhiều segment không kết thúc bằng một hậu tố, một trạng thái, `Ink`, `Soft`, `Line`, `Ok`, `Bad` hay `Warn` (`chartLine` bị đọc là tên v1).
+- `style-gen canvas check --naming` báo các tên v1 kèm tên v2 thay thế: `on<Role>` → `<role>Foreground`, `…Ink` → `…Foreground`, `…Soft` → `…Subtle`, `…Line` → `…Border`, `ok`/`bad`/`warn` → `success`/`danger`/`warning`, `line`/`lineStrong` → `border`/`borderStrong`, `foregroundSoft`/`foregroundSubtle` → `foregroundSecondary` (danh sách đầy đủ là bảng key đã đổi tên ở mục Từ vựng của standard). Khi tên mới đã tồn tại, nó báo `merge manually` thay vì đổi tên.
 
 - Key typography có dạng `text<size><Weight>`: nó khớp `^text(\d{2,3})(Regular|Medium|Semibold|Bold)$`. Phần số là `fontSize` tính bằng px (giá trị rem tính là rem × 16) và từ phía sau là `fontWeight` 400/500/600/700. Mọi key cùng cỡ chữ có cùng `lineHeight`. Thang cỡ chữ là 12, 14, 16, 20, 24, 32, 40, 56.
-- Một mục typography không bao giờ đặt `fontFamily`. Một kiểu chữ khác là class `font-<fontFamily key>` đặt cạnh class typography: `class="text-56-regular font-display"`.
+- Một mục typography không bao giờ đặt `fontFamily`. Một kiểu chữ khác là class `font-<fontFamily key>` đặt cạnh class typography: `class="text-32-bold font-display"`.
 - Key radius là `sm`, `md`, `lg`, `xl` và `full`. Danh sách là đóng; theme có thể khai báo bất kỳ tập con nào, và xl dành cho bề mặt lớn (khung thiết bị, sheet, panel).
 
+<!-- canvas-check: theme -->
 <!-- prettier-ignore -->
 ```json
 {
   "colors": {
+    "white": "#ffffff",
+    "gray50": "#f9fafb",
+    "gray100": "#f3f4f6",
+    "gray200": "#e5e7eb",
+    "gray300": "#d1d5db",
+    "gray600": "#4b5563",
+    "gray700": "#374151",
+    "gray800": "#1f2937",
+    "gray900": "#111827",
+    "blue200": "#bfdbfe",
+    "blue300": "#93c5fd",
     "blue400": "#60a5fa",
     "blue600": "#2563eb",
-    "blue600Alpha10": "rgba(37, 99, 235, 0.10)",
+    "blue700": "#1d4ed8",
+    "blue800": "#1e40af",
+    "red600": "#dc2626",
+    "green700": "#15803d",
+    "amber600": "#d97706",
+    "background": "$white",
+    "foreground": "$gray900",
+    "surface": "$gray50",
+    "muted": "$gray100",
+    "mutedForeground": "$gray600",
+    "border": "$gray200",
+    "focus": "$blue600",
+    "scrim": "$gray900/50",
     "primary": "$blue600",
-    "primaryHover": "$blue400",
-    "scrim": "$blue600Alpha10"
+    "primaryForeground": "$white",
+    "primaryHover": "$blue700",
+    "primaryActive": "$blue800",
+    "danger": "$red600",
+    "success": "$green700",
+    "warning": "$amber600"
   },
   "themeAxes": {
-    "theme": { "dark": { "colors": { "primary": "$blue400" } } }
+    "theme": {
+      "dark": {
+        "colors": {
+          "background": "$gray900",
+          "foreground": "$gray50",
+          "surface": "$gray800",
+          "muted": "$gray800",
+          "mutedForeground": "$gray300",
+          "border": "$gray700",
+          "focus": "$blue400",
+          "primary": "$blue400",
+          "primaryForeground": "$gray900",
+          "primaryHover": "$blue300",
+          "primaryActive": "$blue200"
+        }
+      }
+    }
   },
   "typography": {
     "text16Regular": { "fontSize": "16px", "lineHeight": "24px", "fontWeight": 400 },
     "text32Bold": { "fontSize": "32px", "lineHeight": "40px", "fontWeight": 700 }
+  },
+  "fontFamily": {
+    "sans": "\"Geist\", sans-serif",
+    "display": "\"Newsreader\", serif"
   }
 }
 ```
 
 Component và artboard chỉ dùng key ngữ nghĩa. Mặc định mọi key màu đều có class; `coverage: { colors: { keys: "aliased" } }` trong `style-gen.config.json` (khuyến nghị) bỏ phần coverage sinh ra cho primitive, nên chỉ key ngữ nghĩa luôn được build. Chỉ thêm `resetTailwindDefaults: ["colors"]` cho app mới không dùng class palette nào của Tailwind: nó xoá palette của Tailwind, nên một `bg-red-500` đang có sẽ không còn được sinh ra.
+
+### Từ vựng của standard
+
+Các bảng này được sinh từ canvas standard mà `style-gen canvas check` áp dụng (`dist/canvas/design-canvas-standard.json` trong package đã cài); `yarn docs:standard` ghi lại chúng và `yarn check:docs` fail khi một bảng lệch. Một sản phẩm bổ sung vào standard qua file additions; không bao giờ sửa các bảng.
+
+**Ngữ pháp key.** Một key màu ngữ nghĩa là key trung tính, hoặc một role theo sau là các hậu tố theo thứ tự này và tối đa một state, luôn ở cuối.
+
+<!-- standard-table: grammar -->
+
+| Part                             | Values                                                                                                                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Neutral keys                     | `background`, `foreground`, `foregroundSecondary`, `surface`, `surfaceRaised`, `surfaceStrong`, `muted`, `mutedForeground`, `border`, `borderStrong`, `focus`, `scrim`                         |
+| Roles                            | `primary`, `secondary`, `accent`, `danger`, `success`, `warning`, `info`                                                                                                                       |
+| Suffixes, in this order          | `Subtle`, `Border`, `Foreground`                                                                                                                                                               |
+| States, at most one, always last | `Hover`, `Active`, `Selected`                                                                                                                                                                  |
+| Semantic core                    | `background`, `foreground`, `surface`, `muted`, `mutedForeground`, `border`, `focus`, `scrim`, `primary`, `primaryForeground`, `primaryHover`, `primaryActive`, `danger`, `success`, `warning` |
+
+<!-- /standard-table -->
+
+**Key đã đổi tên.** `style-gen canvas check --naming` báo từng tên v1 kèm tên v2.
+
+<!-- standard-table: renames -->
+
+| v1 name            | v2 name               |
+| ------------------ | --------------------- |
+| `Ink`              | `Foreground`          |
+| `Soft`             | `Subtle`              |
+| `Line`             | `Border`              |
+| `ok`               | `success`             |
+| `bad`              | `danger`              |
+| `warn`             | `warning`             |
+| `line`             | `border`              |
+| `lineStrong`       | `borderStrong`        |
+| `foregroundSoft`   | `foregroundSecondary` |
+| `foregroundSubtle` | `foregroundSecondary` |
+
+<!-- /standard-table -->
+
+**Mô tả mặc định.** Mọi key ngữ nghĩa cần một mô tả; key của standard có mô tả mặc định, và mô tả của một role bao phủ các hậu tố và state của nó.
+
+<!-- standard-table: descriptions -->
+
+| Key                   | Default description                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `background`          | Page background behind every surface.                                                             |
+| `foreground`          | Primary text and icons on background and surface.                                                 |
+| `foregroundSecondary` | Secondary text: captions and supporting copy, quieter than foreground but still readable.         |
+| `surface`             | Card, panel and popover fill resting on background.                                               |
+| `surfaceRaised`       | Fill of a layer that floats above surface, such as a menu.                                        |
+| `surfaceStrong`       | Emphasised fill for a region that must stand apart from surface, such as a table header.          |
+| `muted`               | Quiet fill for disabled areas, tracks and subtle containers.                                      |
+| `mutedForeground`     | Text and icons on muted and surface that stay readable but recede.                                |
+| `border`              | Default hairline between surfaces and around inputs.                                              |
+| `borderStrong`        | Emphasised border: active inputs and dividers that must show.                                     |
+| `focus`               | Focus ring colour; needs 3:1 against the background.                                              |
+| `scrim`               | Translucent layer behind modals and drawers.                                                      |
+| `primary`             | Brand action fill: the main button and selected controls.                                         |
+| `primaryForeground`   | Text and icons on primary.                                                                        |
+| `primaryHover`        | Primary fill while the pointer is over it.                                                        |
+| `primaryActive`       | Primary fill while it is pressed.                                                                 |
+| `secondary`           | Supporting action fill: the second button beside primary, less prominent than it.                 |
+| `accent`              | Highlight fill for a feature, badge or callout that must stand out without being the main action. |
+| `danger`              | Destructive action fill and error emphasis.                                                       |
+| `success`             | Positive outcome fill and confirmation emphasis.                                                  |
+| `warning`             | Caution fill and warning emphasis.                                                                |
+| `info`                | Neutral information fill and emphasis: notices that are neither success nor warning.              |
+
+<!-- /standard-table -->
+
+**Thang đóng.** Một nhóm theme có thang dùng đúng các tên bậc này. Cột kind cho biết ngoài tên còn kiểm tra gì: thang `size` giữ một đơn vị và tăng theo thứ tự bậc, thang `ordinal` giữ thứ tự các bậc, thang `name` là danh sách tên đóng.
+
+<!-- standard-table: scales -->
+
+| Scale            | Kind    | Steps                                             |
+| ---------------- | ------- | ------------------------------------------------- |
+| `controlHeight`  | size    | `xs`, `sm`, `md`, `lg`, `xl`                      |
+| `iconSize`       | size    | `xs`, `sm`, `md`, `lg`, `xl`                      |
+| `borderRadius`   | size    | `sm`, `md`, `lg`, `xl`, `full`                    |
+| `borderWidth`    | size    | `thin`, `thick`                                   |
+| `motionDuration` | size    | `fast`, `base`, `slow`                            |
+| `zIndex`         | ordinal | `dropdown`, `sticky`, `overlay`, `modal`, `toast` |
+| `shadows`        | name    | `xs`, `sm`, `md`, `lg`, `xl`                      |
+| `fontFamily`     | name    | `sans`, `display`, `mono`                         |
+| `opacity`        | name    | `disabled`                                        |
+| `motionEasing`   | name    | `standard`, `entrance`, `exit`                    |
+
+<!-- /standard-table -->
 
 ## 2. Bố cục
 

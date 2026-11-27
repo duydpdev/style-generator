@@ -47,40 +47,9 @@ export declare const createTailwindMergeExtension: (
 ) => TailwindMergeExtension;
 ```
 
-Build the `tailwind-merge` v3 config extension for a theme's custom
-tokens, so `twMerge` stops treating `border-thin` as a border colour,
-`rounded-pill` / `shadow-card` as unknown classes, or `text-10-light` as a
-text colour:
-
-```ts
-import { extendTailwindMerge } from "tailwind-merge";
-import { createTailwindMergeExtension } from "@duydpdev/style-generator/recipes";
-declare const tokens: Parameters<typeof createTailwindMergeExtension>[0];
-
-const twMerge = extendTailwindMerge(createTailwindMergeExtension(tokens));
-```
-
-- `shadows`, `backdropBlurs` and `borderWidth` (incl. side, logical and
-  `divide-*` prefixes) extend the matching `tailwind-merge` groups; the
-  group ids are `tailwind-merge`'s own (`border-w`, `border-w-x`, …).
-- `borderRadius` extends `tailwind-merge`'s `radius` theme scale, which
-  every `rounded-*` group reads, so `rounded-pill` merges with
-  `rounded-lg`, and `rounded-tl-pill`/`rounded-s-pill` with their own
-  side and corner siblings.
-- `typography` keys are whole class names (`text-10-light`) and form the
-  group `sg-typography`. A later `sg-typography` class removes earlier
-  `font-size`/`font-weight`/`leading`/`tracking` classes; a later
-  single-property utility refines it (both are kept).
-- the scale tokens (`motionDuration`, `motionEasing`, `controlHeight`,
-  `iconSize`, `opacity`, `zIndex`; each optional, an absent one adds
-  nothing) extend `duration`, `ease`, `h`, `min-h`, `max-h`, `size`,
-  `opacity` and `z`, so `h-control-md` replaces an earlier `h-10`.
-- `colors` and `fontFamily` are deliberately absent: the default `color`
-  and `font-family` groups already accept any value.
-
-Variants (`hover:`, `md:`) are stripped by `tailwind-merge` before group
-lookup, so only bare class parts are listed. Empty token lists emit no
-group.
+Builds the `tailwind-merge` v3 extension that teaches `twMerge` a theme's
+own classes (`border-thin`, `rounded-pill`, `text-10-light`, `h-control-md`).
+A later typography class removes earlier font-size/weight/leading/tracking classes.
 
 <!-- /signature -->
 
@@ -103,9 +72,7 @@ export declare interface TailwindMergeExtension {
 }
 ```
 
-Structural shape of a `tailwind-merge` v3 `extendTailwindMerge(...)`
-argument. Declared here, not imported, so `dist/recipes.d.ts` never names
-`tailwind-merge` (it is the app's dependency, not this package's).
+Structural shape of a `tailwind-merge` v3 `extendTailwindMerge(...)` argument.
 
 <!-- /signature -->
 
@@ -127,9 +94,7 @@ export declare interface TailwindMergeTokens {
 }
 ```
 
-The slice of the design tokens the extension reads. `generate().tokens.Web`
-and `createDesignTokens().DesignTokens.Web` are assignable to it; `colors`
-and `fontFamily` are not needed (see {@link createTailwindMergeExtension}).
+The slice of `DesignTokens.Web` the extension reads.
 
 <!-- /signature -->
 
@@ -157,20 +122,7 @@ export declare const splitSpacingProps: <
 };
 ```
 
-Split a component's props into its spacing props (resolved to the
-`sp-*` class and inline `--sg-sp-*` style) and everything else. Every
-camelCased key of `keys` is removed from `rest`, even when its value is
-`undefined`, so `p={undefined}` never reaches the DOM.
-
-`props` is checked against `SpacingProps<BKeys, K>`, so a literal such as
-`{ p: "4" }` or `{ p: { tablet: 4 } }` is a type error. `BKeys` is not
-inferred (it defaults to `md | lg`): props typed with
-`SpacingProps<BKeys>` are accepted as they are, since extra breakpoint
-keys are structurally compatible, but an object literal mixing a known
-and an unknown breakpoint (`{ md: 4, tablet: 4 }`) is not caught. Pass all
-three type arguments (`splitSpacingProps<K, Props, BKeys>(...)`, `BKeys`
-from `BreakpointKeys<typeof options>`) to check a literal against the
-configured breakpoints.
+Splits props into resolved spacing and the rest; every spacing key leaves `rest`, even `undefined`.
 
 <!-- /signature -->
 
@@ -182,18 +134,12 @@ export declare type SpacingProps<
   K extends string = SpacingKey,
 > = {
   readonly [P in SpacingPropKeys<K> as CamelCase<P>]?:
-    | ResponsiveValueStrict<number, BKeys>
-    | undefined;
+    ResponsiveValueStrict<number, BKeys> | undefined;
 };
 ```
 
 Component props for the spacing utilities: every key of `K` camelCased
-(`gap-x` → `gapX`), each optional and responsive. `K` defaults to the
-built-in properties; pass `tokens.spacingProperties` elements when
-`options.spacing.properties` adds or removes some, and `BKeys` (e.g.
-`BreakpointKeys<typeof options>`) when `options.breakpoints` adds
-breakpoints. A widened `K` (`string`) means the built-in properties;
-explicit literal keys give the narrowest result.
+(`gap-x` → `gapX`), optional and responsive. A widened `K` means the built-in properties.
 
 <!-- /signature -->
 
@@ -209,25 +155,9 @@ export declare const themeAxisAttributes: (
 ) => Readonly<Record<string, string>>;
 ```
 
-The DOM attributes that activate a theme's axis variants, mirroring the
-`html[data-<axis>="<variant>"]` selectors `generate()` emits. Spread the
-result on `<html>`, the element the selectors target. Type the state with
-`ThemeAxesState` from the generated `theme.tokens.ts`:
-
-```tsx
-import { themeAxisAttributes } from "@duydpdev/style-generator/recipes";
-
-import type { ThemeAxesState } from "~/theme/theme.tokens";
-
-const state: ThemeAxesState = { theme: "dark", palette: "base" };
-const root = <html {...themeAxisAttributes(state)} />;
-// → data-theme="dark" (palette emits nothing)
-```
-
-An axis that is `"base"` or `undefined` produces **no** attribute, so no
-override block matches and the `:root` values apply. React removes a prop
-that disappears between renders; an imperative caller must
-`removeAttribute(...)` for an axis it omits.
+The `data-<axis>` attributes that activate a theme's axis variants; spread
+them on `<html>`, the element the generated selectors target. A `"base"` or
+`undefined` axis yields no attribute; an imperative caller must remove it.
 
 <!-- /signature -->
 

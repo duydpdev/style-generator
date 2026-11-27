@@ -24,12 +24,7 @@ export interface SchemaArgs {
 
 const SCHEMA_FILE_NAME = "theme.schema.json";
 
-/**
- * Writes `jsonSchema` to `filePath` (creating parent directories) in the
- * committed-file style: two-space JSON and a trailing newline.
- * @param {string} filePath - Absolute target path
- * @param {unknown} jsonSchema - The JSON Schema document
- */
+// Committed-file style: parent directories created, two-space JSON, trailing newline.
 function writeJsonSchema(filePath: string, jsonSchema: unknown): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(
@@ -61,16 +56,8 @@ export function writeConfigSchema(cwd: string, absPath: string): void {
   );
 }
 
-/**
- * `text` with `"$schema": <pointer>` inserted as the first key of the JSON
- * object it holds, every other byte unchanged: the line ending is the
- * file's (CRLF when it has one), the indent that of the first property line
- * (two spaces when there is none). An empty object gets the key on its own
- * line.
- * @param {string} text - The content of `style-gen.config.json`
- * @param {string} pointer - The value of `"$schema"`
- * @returns {string | undefined} The new content, or `undefined` when it would not be a JSON object that starts with `$schema`
- */
+// Inserts `"$schema"` as the first key, keeping every other byte (the file's EOL, the first
+// property's indent); `undefined` unless the result parses as an object starting with `$schema`.
 function insertSchemaKey(text: string, pointer: string): string | undefined {
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
   const open = text.indexOf("{");
@@ -102,18 +89,8 @@ function insertSchemaKey(text: string, pointer: string): string | undefined {
   }
 }
 
-/**
- * Point `style-gen.config.json` at its JSON Schema: a valid file without
- * `"$schema"` gets that one line after the opening `{`, written in place
- * (through a symlink, file mode kept). Any other `style-gen.config.json`
- * without `"$schema"` (invalid, malformed, or when the insertion would not
- * parse) is left as it is and the line to add is printed. A config in
- * `package.json["style-gen"]` and a file that already has `"$schema"` are
- * never touched.
- * @param {string} cwd - Project root
- * @param {ConfigFile} file - The project's config, as `readConfigFile` read it
- * @param {string} pointer - The value of `"$schema"`, relative to the project root
- */
+// A valid `style-gen.config.json` without `"$schema"` gets it in place (symlink and mode kept);
+// any other one only gets the line printed; `package.json["style-gen"]` is never touched.
 function pointConfigAtSchema(
   cwd: string,
   file: ConfigFile,
@@ -138,16 +115,7 @@ function pointConfigAtSchema(
   );
 }
 
-/**
- * Names the first file two roles share among the theme file, the config
- * files and the two schema targets, which a write would clobber.
- * @param {string} cwd - Project root, to print paths relative to it
- * @param {string | undefined} outPath - Resolved theme-schema target
- * @param {string} configOutPath - Resolved config-schema target
- * @param {string} themePath - Resolved theme file (the one the config declares, else the default)
- * @param {readonly string[]} configFiles - Every file the config can live in
- * @returns {string | undefined} The error message, or `undefined` when the files are distinct
- */
+// The error for the first file a schema write would clobber (theme, config, the other target).
 function describeCollision(
   cwd: string,
   outPath: string | undefined,
@@ -175,31 +143,11 @@ function describeCollision(
   return undefined;
 }
 
+// Rationale: documents/architecture.md#schemats-why-an-invalid-config-still-gets-its-schema
 /**
- * Executes the `schema` CLI command: writes `ThemeSchema`'s and
- * `style-gen.config.json`'s JSON Schemas (via `z.toJSONSchema`) to disk so
- * editors can offer autocomplete and unknown-key warnings for a theme.json or
- * a config referencing them via `"$schema"`.
- * Without `--out` the theme schema lands next to the configured `theme`,
- * where the theme's `"$schema": "./theme.schema.json"` expects it. The config
- * schema goes to `--config-out`, else `style-gen.config.schema.json` in the
- * project root, where the config's `"$schema": "./style-gen.config.schema.json"`
- * expects it. The config is read like `generate` reads it: a malformed file
- * is warned about (also with `--out`) and read as the defaults. A config with
- * schema issues still gets its config schema written (the moment an upgrader
- * needs it); without `--out` the issues are then reported, the exit code is 1
- * and no theme schema is written, while with `--out` both schemas are written,
- * nothing is reported and the exit code is 0.
- * A valid `style-gen.config.json` without `"$schema"` gets that one line
- * after its opening `{` (nothing else in the file changes); an invalid or
- * malformed one is left as it is and the line to add is printed;
- * `package.json["style-gen"]` is never edited.
- *
- * Both targets must stay inside the project root, so a theme outside it
- * (a monorepo's shared theme) needs an explicit `--out`. Nothing is written
- * when a target would overwrite the other, the theme file (the `theme` of a
- * valid config, else the one an invalid config declares, else the default),
- * `style-gen.config.json` or `package.json`.
+ * Executes the `schema` CLI command: writes the theme and config JSON Schemas
+ * (contract: `documents/reference/cli.md`). Both targets stay inside the root
+ * and may not overwrite each other, the theme or a config file.
  * @param {SchemaArgs} args - Schema command arguments from the CLI
  * @param {string} [cwd] - Project root; defaults to `process.cwd()`
  * @returns {number} The process exit code

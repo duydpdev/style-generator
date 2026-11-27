@@ -25,13 +25,7 @@ export interface Split {
   readonly rest: Readonly<Record<string, unknown>>;
 }
 
-/**
- * A size prop as a CSS length: a string is kept, a finite number `n`
- * becomes `"<n>px"` and `0` becomes `"0"` (what React renders for the
- * same value in `style`); anything else is dropped.
- * @param {unknown} value - A size prop value
- * @returns {string | undefined} The CSS value, or `undefined` when the value is not a size
- */
+// A size prop as a CSS length, as React renders it in `style`; `undefined` when not a size.
 const cssSize = (value: unknown): string | undefined => {
   if (typeof value === "string") return value;
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -75,12 +69,8 @@ export interface SplitLayoutOptions {
 }
 
 /**
- * Layout props → box-recipe classes, size style and spacing; the rest
- * passes through. A key in `variantKeys` is a recipe variant (a string or a
- * finite number is passed on; anything else becomes `undefined`); a key in `sizeKeys` is an
- * inline size: a string is kept, a finite number `n` becomes `"<n>px"`
- * (`0` becomes `"0"`), anything else is dropped. `extra` variants win
- * over props.
+ * Layout props → box-recipe classes, size style and spacing; the rest passes
+ * through. A size number `n` becomes `"<n>px"` (`0` → `"0"`); `extra` variants win.
  * @param {object} props - Component props
  * @param {SplitLayoutOptions} options - The recipe, the prop-name lists and the component's own `extra` variants
  * @returns {Split} Classes, style, the variants passed to `recipe`, and the remaining props

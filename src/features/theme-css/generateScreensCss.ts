@@ -3,18 +3,10 @@ import type { ResolvedOptions } from "../../core/resolveOptions";
 import { cssBlock } from "../../shared/cssBlock";
 
 /**
- * Generate a `@theme { --breakpoint-<key>: <value>; ... }` block overriding
- * Tailwind v4's own rem-based default breakpoint scale
- * (`--breakpoint-md: 48rem`, `--breakpoint-lg: 64rem`, ...) with the
- * library's pixel-based `defaultScreens` (merged with `options.screens`).
- *
- * Without it, `md:`/`lg:`/... utility variants would resolve against
- * Tailwind's defaults instead of the library's screens, changing every
- * responsive utility's breakpoint.
- *
- * Emitted unconditionally, independent of `enableResponsive`, which only
- * gates the spacing breakpoint var chain.
- * @param {Pick<ResolvedOptions, "screens">} [options] - Resolved generator options (`screens`)
+ * Generates the `@theme` `--breakpoint-*` block that replaces Tailwind's rem
+ * scale with the resolved `screens`, so `md:`/`lg:` match the library's
+ * breakpoints. Emitted regardless of `enableResponsive`.
+ * @param {Pick<ResolvedOptions, "screens">} [options] - Resolved generator options
  * @returns {string} `@theme { ... }` block
  */
 export const generateScreensCss = (

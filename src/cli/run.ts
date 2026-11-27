@@ -3,7 +3,6 @@ import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { errorMessage } from "../node/errorMessage";
 
 import { BUDGET_USAGE, budgetCommand } from "./commands/budget";
-import { canvasCheckCommand } from "./commands/canvas";
 import { doctorCommand } from "./commands/doctor";
 import { generateCommand } from "./commands/generate";
 import { initCommand } from "./commands/init";
@@ -291,15 +290,41 @@ Exit codes: 0 within budget, 1 over budget, 2 usage error, no CSS found, or (wit
 const CANVAS_USAGE =
   "style-gen canvas check --canvas <dir> --theme <file> [options]";
 
+/** The flags each `canvas` subcommand accepts; any other given flag is a usage error. */
+const CANVAS_FLAGS: Record<string, readonly string[]> = {
+  check: [
+    "canvas",
+    "theme",
+    "stamp",
+    "intents",
+    "standard",
+    "ds-version",
+    "recipes",
+    "usage",
+    "preset",
+    "config",
+    "no-rule",
+    "naming",
+    "boards",
+    "inventory",
+  ],
+  "standard init": ["standard"],
+  "standard migrate": ["theme", "standard", "dry-run"],
+};
+
 const canvasCli: CliCommand = {
   name: "canvas",
   description:
     "Check a design canvas against the theme and the canvas standard",
   usage: `Usage: ${CANVAS_USAGE}
        style-gen canvas check --inventory --canvas <dir>
+       style-gen canvas standard init [--standard <file>]
+       style-gen canvas standard migrate --theme <file> [--standard <file>] [--dry-run]
 
 Check every *.dc.html and *.css under the canvas directory against ONE theme
-and the design-canvas standard (the manifest bundled with the package).
+and the design-canvas standard (the manifest bundled with the package). A
+product's --standard file only adds to it (roles, extra scale steps, boards,
+exemptions with a reason); it never replaces a packaged rule.
 
 Options:
   --canvas <dir>                  Canvas directory (required)
@@ -311,11 +336,23 @@ Options:
   --ds-version <namespace>=<ver>  canvas.json installs this design-system version
   --recipes <file>                With --boards: each c-<name> board marks every axis value
                                   of its recipe (data-sg-cell="<axis>:<value>")
-  --standard <file>               Manifest replacing the bundled one
+  --usage <file>                  With --naming: ds.usage.json, the colour descriptions and
+                                  spacing token names the design system build reads
+  --preset <file>                 With --boards: the preset source; its class names are read as
+                                  text (never run) and checked like a board's
+  --config <file>                 With --boards: the product's style-gen.config.json, the
+                                  options its theme CSS is generated with
+  --standard <file>               Additions file layered over the bundled standard
+                                  (init, migrate: the file to write; default canvas-standard.json)
+  --no-rule <id>                  Switch one rule off for this run (repeatable); the --standard
+                                  file must hold disabledRules.<id>.reason, and the output
+                                  prints "rules disabled: <ids>"
+  --dry-run                       migrate: print the result, write nothing
   --inventory                     Print what the canvas uses (JSON) instead of checking
 
-Output: one "<file>:<line> <message>" line per violation, then "<n> violation(s)";
-or "OK: <n> files".
+Output: one "<file>:<line> <message> [<rule>; <basis>]" line per violation, then
+"<n> violation(s)". A "finding: ..." line is reported without failing the run and
+ends with "FINDINGS: <k> in <n> files"; a clean run prints "OK: <n> files".
 
 Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
 (canvas, theme, stamp, canvas.json, recipes) or an invalid --standard.`,
@@ -327,18 +364,82 @@ Exit codes: 0 ok, 1 violations, 2 usage error, an unreadable or unparsable input
     standard: { type: "string" },
     "ds-version": { type: "string" },
     recipes: { type: "string" },
+    usage: { type: "string" },
+    preset: { type: "string" },
+    config: { type: "string" },
+    "no-rule": { type: "string", multiple: true },
     naming: { type: "boolean" },
     boards: { type: "boolean" },
     inventory: { type: "boolean" },
+    "dry-run": { type: "boolean" },
   },
   allowPositionals: true,
   usageExitCode: 2,
-  run: (values, positionals, ctx) => {
-    if (positionals.length !== 1 || positionals[0] !== "check") {
+  run: async (values, positionals, ctx) => {
+    const sub = positionals.join(" ");
+    const allowed = CANVAS_FLAGS[sub];
+    if (allowed === undefined) {
       logger.error(`Usage: ${CANVAS_USAGE}`);
       return 2;
     }
-    return canvasCheckCommand(values, ctx.cwd);
+    const stray = Object.keys(values).find(
+      (key) => values[key] !== undefined && !allowed.includes(key),
+    );
+    if (stray !== undefined) {
+      logger.error(`--${stray} is not valid for canvas ${sub}`);
+      return 2;
+    }
+    const canvas = await import("./commands/canvas");
+    if (sub === "standard init")
+      return canvas.standardInitCommand(values, ctx.cwd);
+    if (sub === "standard migrate")
+      return canvas.standardMigrateCommand(values, ctx.cwd);
+    return canvas.canvasCheckCommand(values, ctx.cwd);
+  },
+};
+
+const DS_USAGE =
+  "style-gen ds build --theme <file> --config <file> --preset <file> --namespace <Name> --out <dir> [--name <title>]";
+
+const dsCli: CliCommand = {
+  name: "ds",
+  description: "Build the files of a claude.ai design-system artifact",
+  usage: `Usage: ${DS_USAGE}
+
+Writes tokens.json, README.md, ds-stamp.json and components/ (bundle.js,
+bundle.css, index.d.ts, Cover/preview.html) from a theme, its config and a
+preset module exporting boxPreset, textPreset and buttonPreset.
+
+Options:
+  --theme <file>       Theme JSON (required)
+  --config <file>      style-gen.config.json or a package.json (required)
+  --preset <file>      .mjs, .js, .json or .ts preset (.ts needs Node 22.18+)
+  --namespace <Name>   Global the bundle defines, a JS identifier (required)
+  --out <dir>          Output directory (required)
+  --name <title>       Title; defaults to the namespace
+
+The preset is imported as code with your privileges, like a config file; keep
+it free of imports. node:vm only runs the self-check of the bundle this command
+assembled; it is not a sandbox. Needs the tailwindcss package.
+
+Exit codes: 0 written, 1 a gate failed (nothing written), 2 usage or input error.`,
+  options: {
+    theme: { type: "string" },
+    config: { type: "string" },
+    preset: { type: "string" },
+    namespace: { type: "string" },
+    out: { type: "string" },
+    name: { type: "string" },
+  },
+  allowPositionals: true,
+  usageExitCode: 2,
+  run: async (values, positionals, ctx) => {
+    if (positionals.join(" ") !== "build") {
+      logger.error(`Usage: ${DS_USAGE}`);
+      return 2;
+    }
+    const ds = await import("./commands/ds");
+    return ds.dsBuildCommand(values, ctx.cwd);
   },
 };
 
@@ -351,6 +452,7 @@ export const commands: readonly CliCommand[] = [
   tokensCli,
   budgetCli,
   canvasCli,
+  dsCli,
 ];
 
 /* ------------------ Help ------------------ */
@@ -381,18 +483,10 @@ Options:
 
 /* ------------------ Entry ------------------ */
 
+// Rationale: documents/architecture.md#runts-why-runcli-returns-codes-and-parses-flags-in-two-passes
 /**
  * The CLI, minus the process: parses `args`, runs the command and returns the
- * exit code. Never throws and never calls `process.exit`, so tests drive it
- * directly and `index.ts` just assigns `process.exitCode`.
- *
- * Parsing is two-pass. A lenient global pass finds `--help`/`--version` and
- * the command name; the command's own flags are then parsed strictly, so a
- * misspelled flag (`--them`) is an error instead of being silently ignored.
- *
- * Exit codes: 0 success, `--help`, `--version`, no command, or a cancelled
- * prompt; 1 failure, unknown command or flag (2 for `budget`'s and `canvas`'s
- * flag errors).
+ * exit code (0 ok/help/version/cancel, 1 failure, 2 for `budget`/`canvas` usage).
  * @param {string[]} args - Arguments after `style-gen`
  * @param {string} cwd - The project root
  * @returns {Promise<number>} The process exit code
@@ -466,5 +560,5 @@ async function dispatch(args: string[], cwd: string): Promise<number> {
     return command.usageExitCode ?? 1;
   }
 
-  return command.run(parsed.values as CliValues, parsed.positionals, { cwd });
+  return command.run(parsed.values, parsed.positionals, { cwd });
 }

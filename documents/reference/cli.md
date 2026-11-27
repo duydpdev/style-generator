@@ -83,6 +83,7 @@ These are the snippets `init` prints for Next.js and Nuxt (the Vite one is in th
 
 The theme goes to `styles/theme.json` (`src/styles/theme.json` with a `src/` directory). Tailwind runs through `@tailwindcss/postcss` (`postcss.config.mjs`), as in `create-next-app --tailwind`. Wrap your config; `styleGenNext()` reads `style-gen.config.json` and works with webpack and Turbopack:
 
+<!-- prettier-ignore -->
 ```ts
 // next.config.ts
 import type { NextConfig } from "next";
@@ -239,31 +240,73 @@ Each line is a group (`<category>/<class prefix>`): the gzip bytes saved when it
 
 ### `style-gen canvas`
 
-Check a design canvas (a folder of `*.dc.html` artboards, their stylesheets and `canvas.json`) against ONE theme and the design-canvas standard ([`documents/standards/design-canvas.md`](../standards/design-canvas.md)). The only subcommand is `check`.
+Check a design canvas (a folder of `*.dc.html` artboards, their stylesheets and `canvas.json`) against ONE theme and the design-canvas standard ([`documents/standards/design-canvas.md`](../standards/design-canvas.md)). Subcommands: `check` and `standard init|migrate` (the product additions file, below).
 
 ```bash
 yarn style-gen canvas check --canvas design/canvas --theme styles/theme.json --naming --boards
 yarn style-gen canvas check --inventory --canvas design/canvas
 ```
 
-| Flag                             | Type      | Default  | Description                                                                                                           |
-| :------------------------------- | :-------- | :------- | :-------------------------------------------------------------------------------------------------------------------- |
-| `--canvas <dir>`                 | `string`  | required | Canvas directory; every `*.dc.html` and `*.css` under it is checked                                                   |
-| `--theme <file>`                 | `string`  | required | Theme JSON the canvas reads its tokens from; not needed with `--inventory`                                            |
-| `--stamp <file>`                 | `string`  | none     | `ds-stamp.json`: the design system was built from these theme bytes; with `--boards`, the provenance block matches it |
-| `--intents <a,b,c>`              | `string`  | none     | The allowed `color` values of every `*.Button`                                                                        |
-| `--naming`                       | `boolean` | off      | Theme naming convention, no inline `font-weight`, no hand-written radius, line height or font family                  |
-| `--boards`                       | `boolean` | off      | `canvas.json` pages and boards, core-board content, component pages, frames; an empty canvas is a violation           |
-| `--ds-version <namespace>=<ver>` | `string`  | none     | `canvas.json` installs this design-system version; with `--boards`, the provenance block names it                     |
-| `--recipes <file>`               | `string`  | none     | With `--boards`: each `c-<name>` board marks every axis value of its recipe with `data-sg-cell="<axis>:<value>"`      |
-| `--standard <file>`              | `string`  | bundled  | A manifest that replaces the bundled one (same shape; an invalid file is an input error)                              |
-| `--inventory`                    | `boolean` | off      | Print what the canvas uses (variables, font sizes and weights, intents) as JSON instead of checking                   |
+| Flag                             | Type      | Default  | Description                                                                                                                                    |
+| :------------------------------- | :-------- | :------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--canvas <dir>`                 | `string`  | required | Canvas directory; every `*.dc.html` and `*.css` under it is checked                                                                            |
+| `--theme <file>`                 | `string`  | required | Theme JSON the canvas reads its tokens from; not needed with `--inventory`                                                                     |
+| `--stamp <file>`                 | `string`  | none     | `ds-stamp.json`: the design system was built from these theme bytes; with `--boards`, the provenance block matches it                          |
+| `--intents <a,b,c>`              | `string`  | none     | The allowed `color` values of every `*.Button`                                                                                                 |
+| `--naming`                       | `boolean` | off      | Theme naming convention, no inline `font-weight`, no hand-written radius, line height or font family                                           |
+| `--boards`                       | `boolean` | off      | `canvas.json` pages and boards, core-board content, component pages, frames; an empty canvas is a violation                                    |
+| `--ds-version <namespace>=<ver>` | `string`  | none     | `canvas.json` installs this design-system version; with `--boards`, the provenance block names it                                              |
+| `--recipes <file>`               | `string`  | none     | With `--boards`: each `c-<name>` board marks every axis value of its recipe with `data-sg-cell="<axis>:<value>"`                               |
+| `--usage <file>`                 | `string`  | none     | With `--naming`: `ds.usage.json`, one sentence per colour key and the spacing token names the design-system build reads                        |
+| `--preset <file>`                | `string`  | none     | With `--boards`: the recipe file (`ds.preset.ts`); its class strings get the class rules and its keys count as reads (read as text, never run) |
+| `--config <file>`                | `string`  | none     | With `--boards`: `style-gen.config.json`, so the class rules know which Tailwind defaults are reset and what is covered                        |
+| `--no-rule <id>`                 | `string`  | none     | Repeatable. Switch one rule off for this run; the `--standard` file must hold `disabledRules.<id>.reason`                                      |
+| `--standard <file>`              | `string`  | bundled  | An additions file layered over the bundled standard; a full copy is converted in memory with a notice (invalid: input error)                   |
+| `--inventory`                    | `boolean` | off      | Print what the canvas uses (variables, font sizes and weights, intents) as JSON instead of checking                                            |
 
 Paths are resolved against the current directory; violation lines name the canvas files relative to `--canvas`, and the theme and stamp as given. Input errors name the canvas, theme, stamp and recipes file as given too. Boards are top-level files of `--canvas`: a `.dc.html` in a subfolder gets the token rules but not the board rules.
 
-Output: one `<file>:<line> <message>` line per violation, then `<n> violation(s)`; or `OK: <n> files` when there is none. An empty canvas under `--boards` is the violation `canvas.json:1 no .dc.html files under <dir>`. Line breaks and other control characters copied into a line (board text, a `canvas.json` name, a path) are escaped as `\uXXXX`, so each violation stays one line. The contract is that line format, the two summary lines and the exit codes; the wording of a message is not, and may change in a minor release. A minor release may add manifest keys only as optional keys, so a `--standard` file keeps working. Exit codes: `0` no violation (or `--inventory`), `1` violations, `2` a usage error (unknown flag, a subcommand other than `check`, a missing or empty `--canvas` or `--theme`, an empty `--stamp`, `--standard` or `--recipes`, a malformed `--ds-version`, `--recipes` without `--boards`), an input that cannot be read or parsed (canvas directory, theme, stamp, an unparsable `canvas.json`, a recipes file that is not `{ "<kebab name>": { "<axis>": ["<value>", …] } }`; the message names the file and the reason, e.g. `theme.json: cannot read (ENOENT)`; a missing `canvas.json` under `--boards` or `--ds-version` is the violation `canvas.json:1 missing canvas.json`, exit `1`), or an invalid `--standard` (the message names the key, e.g. `standard.json: dsComponents …`).
+Output: one `<file>:<line> <message> [<rule-id>; <type>: <source>]` line per violation (the bracket names the rule and why it exists: `wcag`, `technical`, `choice`), then `<n> violation(s)`. A `finding: <file>:<line> <message> [<rule-id>]` line is reported but does not fail the run; a run with findings and no violation ends with `FINDINGS: <k> in <n> files` and exits `0`. A clean run prints `OK: <n> files`. With `--no-rule`, `rules disabled: <ids>` is printed before the last line, so a muted rule never passes unseen. An empty canvas under `--boards` is the violation `canvas.json:1 no .dc.html files under <dir>`. Line breaks and other control characters copied into a line (board text, a `canvas.json` name, a path) are escaped as `\uXXXX`, so each violation stays one line. The contract is that line format, the summary lines and the exit codes; the wording of a message is not, and may change in a minor release. A minor release may add keys to the bundled standard, which a `--standard` additions file inherits without edits. Exit codes: `0` no violation (or `--inventory`), `1` violations, `2` a usage error (unknown flag, an unknown subcommand, a flag the subcommand does not take, a missing or empty `--canvas` or `--theme`, an empty `--stamp`, `--standard` or `--recipes`, a malformed `--ds-version`, `--recipes` without `--boards`, `--usage` without `--naming`, a `--no-rule` id that is not a rule, or one the `--standard` file does not disable with a reason), an input that cannot be read or parsed (canvas directory, theme, stamp, an unparsable `canvas.json`, a recipes file that is not `{ "<kebab name>": { "<axis>": ["<value>", …] } }`; the message names the file and the reason, e.g. `theme.json: cannot read (ENOENT)`; a missing `canvas.json` under `--boards` or `--ds-version` is the violation `canvas.json:1 missing canvas.json`, exit `1`), or an invalid `--standard` (the message names the key, e.g. `standard.json: dsComponents …`).
 
-The default manifest is bundled into the CLI; a copy ships at `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json` to start a `--standard` file from.
+With `--boards`, the class rules add `ref-class` and `token-bypass` (violations) and `token-unused` (a finding); `unknown token` carries `ref-var`. Each rule and its exemptions: [design-canvas standard](../standards/design-canvas.md#checking-a-canvas).
+
+The standard is bundled into the CLI and cannot be removed or replaced: a `--standard` file only adds roles, scale steps, exemptions, boards and content on top of it, each with a `reason` where it relaxes a rule. A copy of the bundled standard ships at `node_modules/@duydpdev/style-generator/dist/canvas/design-canvas-standard.json` for reading; start your own file with `canvas standard init`.
+
+#### `style-gen canvas standard`
+
+```bash
+yarn style-gen canvas standard init
+yarn style-gen canvas standard migrate --theme styles/theme.json --dry-run
+```
+
+`init` writes an empty additions file (`{}`) and exits `1` without touching it when the file exists. `migrate` rewrites a full copy of the standard as an additions file holding only what the theme and the copy add to the bundled standard (roles, extra scale steps with an empty `reason` to fill in, boards, `alphaScale`); an additions file is left unchanged. Exit `2` for a missing `--theme`, an unreadable file or an invalid standard.
+
+| Flag                | Type      | Default                | Description                                                   |
+| :------------------ | :-------- | :--------------------- | :------------------------------------------------------------ |
+| `--theme <file>`    | `string`  | required for `migrate` | Theme JSON whose colour roles and scale steps `migrate` reads |
+| `--standard <file>` | `string`  | `canvas-standard.json` | The additions file to create (`init`) or rewrite (`migrate`)  |
+| `--dry-run`         | `boolean` | off                    | `migrate` prints the additions JSON and writes nothing        |
+
+### `style-gen ds`
+
+Build the files of a claude.ai design-system artifact from a theme: `style-gen ds build`. The result is what [`canvas check --stamp`](#style-gen-canvas) later verifies.
+
+```bash
+yarn style-gen ds build --theme styles/theme.json --config style-gen.config.json --preset ds.preset.mjs --namespace Acme --out design/ds
+```
+
+| Flag                 | Type     | Default   | Description                                                                                   |
+| :------------------- | :------- | :-------- | :-------------------------------------------------------------------------------------------- |
+| `--theme <file>`     | `string` | required  | Theme JSON                                                                                    |
+| `--config <file>`    | `string` | required  | `style-gen.config.json`, or a `package.json` with a `style-gen` key                           |
+| `--preset <file>`    | `string` | required  | `.mjs`, `.js`, `.json` or `.ts` preset exporting `boxPreset`, `textPreset` and `buttonPreset` |
+| `--namespace <Name>` | `string` | required  | The global the bundle defines; a JavaScript identifier                                        |
+| `--out <dir>`        | `string` | required  | Output directory                                                                              |
+| `--name <title>`     | `string` | namespace | Title of the README and the cover                                                             |
+
+It writes `tokens.json`, `README.md`, `ds-stamp.json` and `components/` (`bundle.js`, `bundle.css`, `index.d.ts`, `Cover/preview.html`), everything computed in memory and written last. The six components (Box, Text, Stack, Flex, Grid, Button) are precompiled into the package; the preset is loaded as data and `bundle.css` is compiled with the product's `tailwindcss` (the package's own copy is the fallback), so `tailwindcss` is the only peer it uses and nothing else needs to be installed. A `.ts` preset is imported natively and needs Node 22.18+ (rename it to `.mjs` otherwise). The preset is imported as code with your privileges, like a config file; keep it free of imports. `node:vm` only runs the self-check of the bundle the command assembled; it is not a sandbox.
+
+Exit codes: `0` written, `1` a gate failed (a missing theme key, an unfilled placeholder, a rendered class with no rule in `bundle.css`; nothing is written), `2` a usage or input error (a missing flag, a namespace that is not an identifier, an unreadable theme, config or preset, a preset that is not data).
 
 ### `style-gen --version`
 
@@ -271,7 +314,7 @@ Print the installed CLI version.
 
 ### Help and exit codes
 
-`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` is rejected instead of silently using the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget` and `canvas` use `2` for usage errors, see above).
+`style-gen --help` lists the commands; `style-gen <command> --help` prints that command's options. Flags are parsed strictly: **an unknown flag is an error** (`--them` is rejected instead of silently using the default theme), as is an unknown command. Every command exits `0` on success, `--help`, `--version` or a cancelled prompt, and `1` on failure (`budget`, `canvas` and `ds` use `2` for usage errors, see above).
 
 ## Configuration file
 

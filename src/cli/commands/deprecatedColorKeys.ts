@@ -1,44 +1,25 @@
 import type { ThemeConfig } from "../../core/themeSchema";
 
-import { DEFAULT_STANDARD } from "./canvas/standardSchema";
+import { packagedStandard } from "./canvas/standardSchema";
 
-/** The v2 grammar states (`Hover`, `Active`, `Selected`), always last in a key. */
-const STATES = DEFAULT_STANDARD.grammar?.states ?? [];
-
-/**
- * The intent without a trailing grammar state (`primaryHover` → `primary`).
- * @param {string} intent - The key without `on`, first letter lower-cased
- * @returns {string} The intent, or the input when it ends in no state
- */
+// `primaryHover` → `primary`; the input when it ends in no state (the grammar states: `Hover`, `Active`, `Selected`).
 const withoutState = (intent: string): string => {
-  const state = STATES.find(
+  const state = (packagedStandard().grammar?.states ?? []).find(
     (name) => intent.endsWith(name) && intent.length > name.length,
   );
   return state === undefined ? intent : intent.slice(0, -state.length);
 };
 
-/**
- * The v2 name of an `on<Intent>` key. A state at the end of the intent moves
- * after `Foreground` (`onPrimaryHover` → `primaryForegroundHover`), as the
- * grammar puts the state last.
- * @param {string} intent - The key without `on`, first letter lower-cased
- * @returns {string} The v2 name
- */
+// The state goes last: `onPrimaryHover` → `primaryForegroundHover`.
 const v2Name = (intent: string): string => {
   const base = withoutState(intent);
   return `${base}Foreground${intent.slice(base.length)}`;
 };
 
 /**
- * Doctor warnings for the `on<Intent>` contrast keys that 9.0 no longer
- * reads: every `colors` key `on<Intent>` whose `<intent>` is also a colour,
- * or whose `<intent>` minus a trailing state is (`onPrimaryHover` with `primary`).
- * `contrastText` reads only `<intent>Foreground`, so such a key falls back.
- * A key such as `onboarding` (no upper-case letter after `on`) or an
- * `onCard` without a `card` colour is not a contrast key and is not warned.
- * A key with a state names its stateless key, which is the one
- * `contrastText` read. When the v2 name already exists, renaming would
- * collide, so the warning asks for a merge instead.
+ * Doctor warnings for `on<Intent>` keys 9.0 no longer reads (`contrastText` reads
+ * only `<intent>Foreground`): `<intent>`, or it minus a trailing state, is a colour.
+ * An existing v2 name gets a merge hint instead of a rename.
  * @param {ThemeConfig} theme - A theme that already passed `ThemeSchema`
  * @returns {string[]} One warning per `on<Intent>` key
  */

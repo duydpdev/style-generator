@@ -1,4 +1,4 @@
-<!-- source: documents/getting-started/next.md sha256: d57fd8a7a05d -->
+<!-- source: documents/getting-started/next.md sha256: 70a07fc0fd82 -->
 
 # Bắt đầu: Next.js
 
@@ -417,12 +417,7 @@ import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
   readonly variant?:
-    | "solid"
-    | "outline"
-    | "soft"
-    | "ghost"
-    | "link"
-    | undefined;
+    "solid" | "outline" | "soft" | "ghost" | "link" | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
   readonly size?: "sm" | "md" | "lg" | "icon" | undefined;

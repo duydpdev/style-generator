@@ -1,13 +1,13 @@
 /**
- * Shared design-system data for `build-ds.mjs` and `style-gen canvas check`, and the pure helpers that write
- * the design system's README and cover and check the producer's own output. No file I/O.
+ * Shared design-system data for `style-gen ds build` and `style-gen canvas check`, and the pure helpers that
+ * write the design system's README and cover and check the producer's own output. No file I/O.
  */
-import { toKebabCase } from "../dist/cva.js";
+import { toKebabCase } from "../../../shared/helpers";
 
-/** @typedef {import("./ds-tokens.mjs").ThemeInput} ThemeInput */
+import type { ThemeInput } from "./dsTokens";
 
-/** Header order = the page's component order; the bindings mirror examples/harness/src/ui.ts. */
-export const COMPONENTS = [
+/** Header order = the page's component order; the bindings mirror `examples/harness/src/ui.ts`. */
+export const COMPONENTS: readonly { name: string; preset?: string }[] = [
   { name: "Box", preset: "boxPreset" },
   { name: "Text", preset: "textPreset" },
   { name: "Stack" },
@@ -25,34 +25,24 @@ export const README_SECTIONS = [
   "Components",
 ];
 
-/**
- * A Markdown table cell: `|` escaped, an empty value shown as `—`.
- * @param {unknown} value - The cell value
- * @returns {string} The cell text
- */
-const cell = (value) =>
-  value === undefined || value === null || value === ""
+// A Markdown table cell: `|` escaped, an empty value shown as `—`.
+type Cell = string | number | undefined;
+
+const cell = (value: Cell): string =>
+  value === undefined || value === ""
     ? "—"
     : String(value).replaceAll("|", "\\|");
 
-/**
- * A Markdown table.
- * @param {string[]} head - Column titles
- * @param {unknown[][]} rows - Cell values
- * @returns {string[]} The table lines
- */
-const table = (head, rows) => [
+const table = (head: string[], rows: Cell[][]): string[] => [
   `| ${head.join(" | ")} |`,
   `| ${head.map(() => "---").join(" | ")} |`,
   ...rows.map((row) => `| ${row.map(cell).join(" | ")} |`),
 ];
 
-/**
- * Every `themeAxes` variant with its colour overrides, in declaration order.
- * @param {ThemeInput} theme - The theme
- * @returns {{ name: string, colors: Record<string, string> }[]} The variants
- */
-const colourVariants = (theme) =>
+// Every `themeAxes` variant with its colour overrides, in declaration order.
+const colourVariants = (
+  theme: ThemeInput,
+): { name: string; colors: Record<string, string> }[] =>
   Object.values(theme.themeAxes ?? {}).flatMap((axis) =>
     Object.entries(axis).map(([name, override]) => ({
       name,
@@ -60,22 +50,14 @@ const colourVariants = (theme) =>
     })),
   );
 
-/**
- * A colour value for the README: `$navy700/8` reads `$navy700 at 8%`, anything else is kept.
- * @param {string | undefined} value - A theme colour value
- * @returns {string | undefined} The README text
- */
-const aliasLabel = (value) =>
-  value?.replace(/^(\$[A-Za-z0-9][A-Za-z0-9-]*)\/(\d+)$/, "$1 at $2%");
+// A colour value for the README: `$navy700/8` reads `$navy700 at 8%`, anything else is kept.
+const aliasLabel = (value: string | undefined): string | undefined =>
+  value?.replace(/^(\$[A-Za-z\d][A-Za-z\d-]*)\/(\d+)$/, "$1 at $2%");
 
-/**
- * The `## Colours` lines: literal primitives, then the semantic aliases per theme variant.
- * @param {ThemeInput} theme - The theme
- * @returns {string[]} The section body
- */
-function colourLines(theme) {
+// The `## Colours` lines: literal primitives, then the semantic aliases per theme variant.
+function colourLines(theme: ThemeInput): string[] {
   const entries = Object.entries(theme.colors);
-  const isAlias = (/** @type {string} */ value) => value.startsWith("$");
+  const isAlias = (value: string): boolean => value.startsWith("$");
   const variants = colourVariants(theme);
   return [
     "### Primitives",
@@ -100,17 +82,14 @@ function colourLines(theme) {
   ];
 }
 
-/**
- * The `## Components` lines: one `jsx` example per component, read from `window.<namespace>`.
- * @param {string} namespace - The bundle's global name
- * @param {string | undefined} firstType - The first typography key, if any
- * @param {string | undefined} intent - The Button preset's first intent
- * @returns {string[]} The section body
- */
-function componentLines(namespace, firstType, intent) {
+// The `## Components` lines: one `jsx` example per component, read from `window.<namespace>`.
+function componentLines(
+  namespace: string,
+  firstType: string | undefined,
+  intent: string | undefined,
+): string[] {
   const typeProp = firstType ? ` type="${firstType}"` : "";
-  /** @type {(name: string) => string} */
-  const example = (name) => {
+  const example = (name: string): string => {
     if (name === "Button")
       return `<Button color="${intent ?? ""}" variant="solid">Save</Button>`;
     if (name === "Text") return `<Text${typeProp}>Body copy</Text>`;
@@ -130,17 +109,31 @@ function componentLines(namespace, firstType, intent) {
   });
 }
 
+/** What the README is written from. */
+export interface ReadmeInput {
+  /** The design system's title. */
+  name: string;
+  /** The theme's file name. */
+  themeFile: string;
+  theme: ThemeInput;
+  /** The bundle's global name. */
+  namespace: string;
+  /** The Button preset's intents. */
+  intents: readonly string[];
+}
+
 /**
  * The design system's README: a title, the provenance line, then `README_SECTIONS` in order.
- * @param {object} input - The README's inputs
- * @param {string} input.name - The design system's title
- * @param {string} input.themeFile - The theme's file name
- * @param {ThemeInput} input.theme - The theme
- * @param {string} input.namespace - The bundle's global name
- * @param {readonly string[]} input.intents - The Button preset's intents
+ * @param {ReadmeInput} input - The README's inputs
  * @returns {string} The README
  */
-export function buildReadme({ name, themeFile, theme, namespace, intents }) {
+export function buildReadme({
+  name,
+  themeFile,
+  theme,
+  namespace,
+  intents,
+}: ReadmeInput): string {
   const typography = Object.entries(theme.typography ?? {});
   const radius = Object.entries(theme.borderRadius ?? {});
   return [
@@ -190,26 +183,38 @@ export function buildReadme({ name, themeFile, theme, namespace, intents }) {
 
 /**
  * The colour keys the cover reads: every `{{v:<key>}}` placeholder of the template, in order, without repeats.
- * @param {string} template - `scripts/ds-cover.html.tmpl`
+ * @param {string} template - The cover template
  * @returns {string[]} The keys
  */
-const coverColourKeys = (template) => [
+export const coverColourKeys = (template: string): string[] => [
   ...new Set(
     [...template.matchAll(/\{\{v:(\w+)\}\}/g)].map(([, key]) => key ?? ""),
   ),
 ];
 
+/** The parts of a Button preset the input check reads. */
+export interface ButtonPresetInput {
+  intents: readonly string[];
+  height?: Record<string, string> | undefined;
+}
+
 /**
- * The producer's input requirements, checked before the build: at least one typography key (the cover title and
- * the Text component read one), every colour the cover reads, and the keys the Button preset reads (one
- * `controlHeight` key per size, `<intent>Subtle` and `<intent>SubtleForeground` per intent). `borderRadius` is optional.
+ * The theme keys the build reads (typography, the cover's colours, the Button preset's), checked before the build.
  * @param {object} input - The inputs
  * @param {ThemeInput} input.theme - The theme, already accepted by `generate()`
- * @param {string} input.coverTemplate - `scripts/ds-cover.html.tmpl`
- * @param {{ intents: string[], height?: Record<string, string> }} input.buttonPreset - The preset module's `buttonPreset`
+ * @param {string} input.coverTemplate - The cover template
+ * @param {ButtonPresetInput} input.buttonPreset - The preset module's `buttonPreset`
  * @returns {string[]} One failure per missing input; empty when the theme can build a design system
  */
-export function dsInputFailures({ theme, coverTemplate, buttonPreset }) {
+export function dsInputFailures({
+  theme,
+  coverTemplate,
+  buttonPreset,
+}: {
+  theme: ThemeInput;
+  coverTemplate: string;
+  buttonPreset: ButtonPresetInput;
+}): string[] {
   const keys = coverColourKeys(coverTemplate);
   const typography =
     Object.keys(theme.typography ?? {}).length === 0
@@ -223,16 +228,16 @@ export function dsInputFailures({ theme, coverTemplate, buttonPreset }) {
       (key) =>
         `theme has no colour key "${key}": the cover reads ${keys.join(", ")}`,
     );
-  const heights = !buttonPreset.height
-    ? [
-        "button preset has no height map: it needs one controlHeight key per size (height: { sm, md, lg })",
-      ]
-    : Object.entries(buttonPreset.height)
+  const heights = buttonPreset.height
+    ? Object.entries(buttonPreset.height)
         .filter(([, key]) => !Object.hasOwn(theme.controlHeight ?? {}, key))
         .map(
           ([size, key]) =>
             `theme has no controlHeight key "${key}": the Button preset's size ${size} reads it`,
-        );
+        )
+    : [
+        "button preset has no height map: it needs one controlHeight key per size (height: { sm, md, lg })",
+      ];
   const subtle = buttonPreset.intents
     .flatMap((intent) => [`${intent}Subtle`, `${intent}SubtleForeground`])
     .filter((key) => !Object.hasOwn(theme.colors, key))
@@ -243,64 +248,60 @@ export function dsInputFailures({ theme, coverTemplate, buttonPreset }) {
   return [...typography, ...colours, ...heights, ...subtle];
 }
 
-/**
- * `&`, `<`, `>` and `"` as HTML entities.
- * @param {string} text - Plain text
- * @returns {string} The escaped text
- */
-const escapeHtml = (text) =>
+// `&`, `<`, `>` and `"` as HTML entities.
+const escapeHtml = (text: string): string =>
   text
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 
+/** What the cover is filled with. */
+export interface CoverInput {
+  /** The design system's title. */
+  name: string;
+  /** The bundle's global name. */
+  namespace: string;
+  theme: ThemeInput;
+  /** The typography class of the title. */
+  titleClass: string;
+}
+
 /**
- * The cover: `{{name}}` (HTML-escaped), `{{namespace}}`, `{{titleClass}}` and `{{v:<key>}}` filled in one pass.
- * `{{v:<key>}}` is the bundle.css variable of colour `<key>` (`--sg-color-<kebab>`); a key the theme lacks and any
- * unknown placeholder stay as they are, so `verifyDsOutput` reports them.
- * @param {string} template - `scripts/ds-cover.html.tmpl`
- * @param {object} input - The values
- * @param {string} input.name - The design system's title
- * @param {string} input.namespace - The bundle's global name
- * @param {ThemeInput} input.theme - The theme
- * @param {string} input.titleClass - The typography class of the title
+ * The cover: `{{name}}` (HTML-escaped), `{{namespace}}`, `{{titleClass}}` and `{{v:<key>}}` (the `--sg-color-<kebab>`
+ * variable of colour `<key>`) filled in one pass; an unknown placeholder stays, so `verifyDsOutput` reports it.
+ * @param {string} template - The cover template
+ * @param {CoverInput} input - The values
  * @returns {string} The rendered cover
  */
-export function renderCover(template, { name, namespace, theme, titleClass }) {
-  /** @type {Record<string, string>} */
-  const values = { name: escapeHtml(name), namespace, titleClass };
+export function renderCover(
+  template: string,
+  { name, namespace, theme, titleClass }: CoverInput,
+): string {
+  const values: Record<string, string> = {
+    name: escapeHtml(name),
+    namespace,
+    titleClass,
+  };
   for (const [, key] of template.matchAll(/\{\{v:(\w+)\}\}/g))
     if (key !== undefined && Object.hasOwn(theme.colors, key))
       values[`v:${key}`] = `--sg-color-${toKebabCase(key)}`;
-  return template.replace(
-    /\{\{([\w:]+)\}\}/g,
-    (whole, /** @type {string} */ key) =>
-      Object.hasOwn(values, key) ? (values[key] ?? whole) : whole,
+  return template.replaceAll(/\{\{([\w:]+)\}\}/g, (whole, key: string) =>
+    Object.hasOwn(values, key) ? (values[key] ?? whole) : whole,
   );
 }
 
 const TABLE_RULE = /^\|(?:\s*-+\s*\|)+$/;
 
-/**
- * Whether a section line carries content: not blank, not a heading, not a table's rule or header row.
- * @param {string} line - The line
- * @param {string | undefined} next - The line after it
- * @returns {boolean} True for a content line
- */
-const isContent = (line, next) =>
+// Whether a section line carries content: not blank, not a heading, not a table's rule or header row.
+const isContent = (line: string, next: string | undefined): boolean =>
   line.trim() !== "" &&
   !line.startsWith("#") &&
   !TABLE_RULE.test(line) &&
   !TABLE_RULE.test(next ?? "");
 
-/**
- * The README problems: a section of `README_SECTIONS` missing, or with no content line before the next `## `
- * (headings and table header rows alone do not count, so a table without rows is empty).
- * @param {string} readme - The README
- * @returns {string[]} One failure per problem
- */
-function readmeFailures(readme) {
+// A section of `README_SECTIONS` missing, or with no content line before the next `## `.
+function readmeFailures(readme: string): string[] {
   const lines = readme.split("\n");
   return README_SECTIONS.flatMap((section) => {
     const start = lines.indexOf(`## ${section}`);
@@ -314,29 +315,34 @@ function readmeFailures(readme) {
   });
 }
 
-/**
- * The title-class problem: no class (a theme without typography), or a class bundle.css does not define.
- * @param {string} titleClass - The cover title's typography class
- * @param {string} bundleCss - The compiled `components/bundle.css`
- * @returns {string[]} At most one failure
- */
-function titleClassFailures(titleClass, bundleCss) {
+// No class (a theme without typography), or a class bundle.css does not define.
+function titleClassFailures(titleClass: string, bundleCss: string): string[] {
   if (titleClass === "")
     return ["theme has no typography key for the cover title"];
-  const escaped = titleClass.replaceAll(/[^\w-]/g, "\\$&");
-  return new RegExp(`\\.${escaped}(?![\\w-])`).test(bundleCss)
+  const escaped = titleClass.replaceAll(/[^\w-]/g, String.raw`\$&`);
+  return new RegExp(String.raw`\.${escaped}(?![\w-])`).test(bundleCss)
     ? []
     : [`cover title class .${titleClass} is not in bundle.css`];
 }
 
+/** The files `verifyDsOutput` checks. */
+export interface DsOutput {
+  readme: string;
+  /** The rendered cover. */
+  cover: string;
+  /** The custom properties the cover may read. */
+  coverVars: ReadonlySet<string>;
+  /** The cover title's typography class. */
+  titleClass: string;
+  /** The compiled `components/bundle.css`. */
+  bundleCss: string;
+  /** Classes the components render that no rule of `bundleCss` selects. */
+  unstyledClasses?: readonly string[];
+}
+
 /**
  * The producer's own output gate: README sections, cover variables, the title's class, no unfilled cover placeholder.
- * @param {object} output - The files to check
- * @param {string} output.readme - The README
- * @param {string} output.cover - The rendered cover
- * @param {ReadonlySet<string>} output.coverVars - The custom properties the cover may read
- * @param {string} output.titleClass - The cover title's typography class
- * @param {string} output.bundleCss - The compiled `components/bundle.css`
+ * @param {DsOutput} output - The files to check
  * @returns {string[]} One failure per problem; empty when the output is consistent
  */
 export function verifyDsOutput({
@@ -345,7 +351,8 @@ export function verifyDsOutput({
   coverVars,
   titleClass,
   bundleCss,
-}) {
+  unstyledClasses = [],
+}: DsOutput): string[] {
   const placeholders = [...cover.matchAll(/\{\{[\w:]*\}\}/g)].map(
     ([whole]) => `cover keeps placeholder ${whole}`,
   );
@@ -360,5 +367,10 @@ export function verifyDsOutput({
     ...readmeFailures(readme),
     ...unknownVars,
     ...titleClassFailures(titleClass, bundleCss),
+    ...(unstyledClasses.length > 0
+      ? [
+          `components render classes that bundle.css has no rule for: ${unstyledClasses.join(" ")}`,
+        ]
+      : []),
   ];
 }

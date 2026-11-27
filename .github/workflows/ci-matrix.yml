@@ -81,7 +81,8 @@ jobs:
         run: yarn test:e2e
 
   # `engines.node` is `^20.19.0 || >=22.12.0`, while every other job runs
-  # Node 22. This leg loads the built package on the floor release: every
+  # Node 22. This leg compiles on Node 22 (the bundler, tsdown, does not run
+  # on Node 20) and loads the built package on the floor release: every
   # subpath via import + require (the CJS entries `require` ESM-only
   # chokidar 5, unflagged only from 20.19), the CLI, `init` included, and a
   # real `next build` through `styleGenNext` (scripts/next-build-smoke.mjs).
@@ -95,10 +96,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Node.js
+      - name: Setup Node.js (compile)
         uses: actions/setup-node@v7
         with:
-          node-version: "20.19.0"
+          node-version: "22"
           cache: "yarn"
           cache-dependency-path: "yarn.lock"
 
@@ -107,6 +108,14 @@ jobs:
 
       - name: Build
         run: yarn build:all
+
+      - name: Setup Node.js (floor)
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20.19.0"
+
+      - name: Assert the floor Node runs the smoke steps
+        run: test "$(node -p process.versions.node)" = "20.19.0"
 
       - name: Smoke-run built artifacts
         run: yarn check:smoke
@@ -225,6 +234,43 @@ jobs:
 
       - name: Type-check the packed package with TypeScript 5.0 to 7
         run: yarn check:ts-peer
+
+  # `style-gen ds build` in the product's own install: the packed tarball next
+  # to `tailwindcss`, its only peer (no Vite, React or oxide), on each OS and
+  # on the peer floor and the release the lockfile resolves
+  # (scripts/ds-build-smoke.mjs; an empty `tailwind` means the lockfile's).
+  ds-smoke:
+    name: ds build (${{ matrix.os }}, tailwindcss ${{ matrix.tailwind == '' && 'lockfile' || matrix.tailwind }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        tailwind: ["4.1.0", ""]
+    env:
+      DS_SMOKE_TAILWIND: ${{ matrix.tailwind }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Build a design system from the packed tarball
+        run: yarn check:ds-build
 
   # The floors of the four optional UI-kit peer ranges (`./ui`,
   # `./ui-react`). `peer-matrix` tests latest majors of vite/typescript;

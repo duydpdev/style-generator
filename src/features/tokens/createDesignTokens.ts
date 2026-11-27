@@ -15,16 +15,8 @@ import {
   defaultKeysOf,
 } from "../registry/categoryTokenMeta";
 
-/**
- * The typed-token keys of one category: the theme's declared keys
- * (camelCased), else the category's defaults. A category that is absent OR
- * declared as an empty record counts as not declared — the same rule
- * `generateSourceInline` applies, so the token arrays always match the
- * `@source inline` coverage.
- * @param {Readonly<Record<string, unknown>> | undefined} record - The theme's record for the category
- * @param {readonly unknown[]} [defaults] - The category's `defaultValues` (none when omitted)
- * @returns {string[]} CamelCased declared keys, or the literal default suffixes
- */
+// Declared keys (camelCased), else the defaults; an empty record counts as absent,
+// as in `generateSourceInline`, so the token arrays match the `@source inline` coverage.
 const categoryTokenKeys = (
   record: Readonly<Record<string, unknown>> | undefined,
   defaults?: readonly unknown[],
@@ -40,20 +32,11 @@ type ColorRecord = Readonly<Record<string, unknown>> | undefined;
 interface ColorSource {
   readonly colors?: ColorRecord;
   readonly themeAxes?:
-    | Readonly<Record<string, Readonly<Record<string, ColorSource>>>>
-    | undefined;
+    Readonly<Record<string, Readonly<Record<string, ColorSource>>>> | undefined;
 }
 
-/**
- * The camelCased color keys whose value is a `$<key>` alias, in the base
- * record or in any `themeAxes` override — the same holders
- * `coverage.keys: "aliased"` keeps — in declaration order. An override may
- * only redefine a declared key (the schema rejects the rest), so walking the
- * base keys finds every holder once. Tolerates an unvalidated theme (no
- * `colors`, non-string values).
- * @param {ColorSource} theme - The theme (only `colors` and `themeAxes` are read)
- * @returns {string[]} CamelCased alias-holder keys
- */
+// CamelCased color keys holding a `$` alias in the base or any axis override (the
+// `coverage.keys: "aliased"` holders); tolerates an unvalidated theme.
 const aliasedColorKeys = (theme: ColorSource): string[] =>
   Object.keys(theme.colors ?? {})
     .filter((key) =>
@@ -67,25 +50,17 @@ const aliasedColorKeys = (theme: ColorSource): string[] =>
     .map(toCamelCase);
 
 /**
- * Build the design tokens from already-resolved options. `generate()` calls
- * this with the options it resolved once; {@link createDesignTokens} wraps it
- * for callers holding raw options. Kept a literal, not a descriptor loop
- * (that would pull the descriptors into the `./tokens` budget): property
- * names are compiler-checked against each descriptor's `key`
- * (`CategoryTokenArrays`), and `cva-roundtrip.test.ts` pins every array's
- * keys and defaults to the `@source inline` keys of its descriptor.
- *
- * `O` is the type of the caller's raw options: it only shapes the return type
- * (`breakpoints`, `spacingProperties`, `screens`, `opacities`); every runtime value comes
- * from `options`.
+ * Builds the design tokens from resolved options; `O` only shapes the return type.
  * @template TTheme
  * @template O
  * @param {ThemeConfig} config - Theme configuration
- * @param {ResolvedTokenOptions} options - Resolved token options (`breakpoints`, `screens`, `spacing`, `opacities`)
+ * @param {ResolvedTokenOptions} options - Resolved token options
  * @returns {DesignTokensResult<ThemeConfig, O>} Design tokens object inferred from theme and options
  */
+// Rationale: documents/architecture.md#builddesigntokens-why-a-literal-and-not-a-descriptor-loop
 export const buildDesignTokens = <
   TTheme extends ThemeConfig,
+  // eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- `{}` is the "no extra options" default of the options type parameter
   O = Record<never, never>,
 >(
   config: TTheme,
@@ -150,8 +125,7 @@ export const buildDesignTokens = <
         TTheme,
         O
       >["DesignTokens"]["Web"]["screens"],
-      // The key set is only known at runtime; the type is the superset
-      // `AliasedColorKey` (see inference.ts).
+      // Runtime key set; the type is the superset `AliasedColorKey`.
       aliasedColors: aliasedColorKeys(config) as unknown as DesignTokensResult<
         TTheme,
         O
@@ -162,13 +136,8 @@ export const buildDesignTokens = <
 });
 
 /**
- * Creates a structured design tokens object from the theme configuration.
- * Useful for sharing token data with consumer applications (e.g., for CVA variant maps).
- * With `options`, `const O` keeps literal `breakpoints`, `screens` keys and
- * `spacing.properties` keys in the result's types; options typed as
- * `StyleGeneratorOptions` — or an explicit `<typeof theme>` type argument,
- * which leaves `O` at its default — widen them to `string`. Without
- * `options` the result carries the library defaults.
+ * Creates the typed design tokens from a theme. Literal `breakpoints`, `screens` and
+ * `spacing.properties` keys of `options` stay in the types; `StyleGeneratorOptions` widens them.
  * @template TTheme
  * @template O
  * @param {ThemeConfig} config - Theme configuration (the optional second argument is the `StyleGeneratorOptions`)

@@ -12,48 +12,8 @@ The plugin writes the same `theme.css` as `generate()`; `@import` the file next 
 export declare const styleGenVite: (opts?: StyleGenViteOptions) => Plugin_2;
 ```
 
-Vite plugin that emits `theme.css` and `theme.tokens.ts` from a theme JSON.
-The files are written in `buildStart` (before any module is transformed, so
-`@tailwindcss/vite` finds the CSS when it scans for `@source`), the theme is
-registered with `addWatchFile`, and the dev server re-emits and sends a
-full-reload when it changes. A failure in `buildStart` fails the build
-through `this.error`.
-
-Every option lives in `style-gen.config.json` (else
-`package.json#style-gen`) in the plugin's `root` (default: Vite's root): the
-`theme`, `output`, `tokensOutput` and every `generate()` option, exactly as
-`style-gen generate` reads them. The only plugin option is `root`; a
-relative one resolves against Vite's root (Nuxt sets Vite's root to `app/`,
-so it passes the project folder).
-
-A change to the config file in the dev server reloads it in place: the
-target is resolved again, the files are re-emitted and the page reloads. An
-invalid edit is logged and the last valid config stays in force. The server
-is never restarted, so this works inside hosts that own it (Nuxt, Storybook).
-
-Emitting is write-if-changed, so the second `buildStart` of a `vite build`
-(one per environment) is a no-op.
-
-Path rules (`resolveProjectPath`): the theme may live anywhere (absolute, or
-`..` out of the root); the generated files must stay inside `root`.
-
-Monorepo: warns once if a plugin instance from a DIFFERENT Vite config (or
-root, when there is no config file) targets the same `theme.css`. Two
-`styleGenVite()` calls inside ONE config file are not warned about: that
-is indistinguishable from the per-environment instances Vite creates in
-builder mode and from a dev-server restart.
-
-`theme.css` is written atomically (`writeFileAtomic`: sibling temp file +
-`renameSync`), so `@tailwindcss/vite` never reads a half-written file.
-
-**Limitations:**
-
-- **Symlinks are not `realpath`'d.** `resolveProjectPath` compares the
-  logical (non-dereferenced) path against the project root; it never calls
-  `fs.realpathSync`. An `output` that is itself a symlink living inside the
-  root is accepted even if its TARGET resolves outside it — the guard only
-  rejects a literal `..`-escaping input path, not a symlink whose target
-  escapes after the filesystem resolves it.
+Vite plugin that emits `theme.css` and `theme.tokens.ts` in `buildStart`, reading `style-gen.config.json` in `root`.
+The dev server re-emits on a theme or config edit and sends a full reload; a `buildStart` failure fails the build.
 
 <!-- /signature -->
 

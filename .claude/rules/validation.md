@@ -1,8 +1,14 @@
 # Validation & Plan Protocol
 
-## Gate before reporting done
+## Fast gate
 
-A task is done only when this chain exits 0 at the repo root (`yarn build:all` comes first because type-aware ESLint also covers `examples/**`, which import the built library through `link:../..`):
+After each committed change, run `yarn verify:fast` (under a minute): `lint-staged --diff="$(git merge-base HEAD origin/develop)...HEAD"` runs the pre-commit chain
+(eslint → prettier → `tsc --noEmit` → `vitest related --run`) on the files the branch changed against `develop`, not only the staged ones. It needs the `origin/develop` ref (`git fetch origin develop`) and fails with that hint when the ref is missing. It reads committed changes only, and `eslint --fix` / `prettier --write` rewrite files on disk, so run `git status` afterwards and commit what the fixers changed.
+When an `examples/**` file is in the diff, type-aware ESLint reads the built library, so run `yarn build:all` first. It never replaces the full gate: it skips the rest of `yarn test`, `test:types`, `check:*`, e2e and the site build.
+
+## Full gate
+
+Run it once before opening a PR, and before reporting a task done. A task is done only when this chain exits 0 at the repo root (`yarn build:all` comes first because type-aware ESLint also covers `examples/**`, which import the built library through `link:../..`):
 
 ```bash
 yarn build:all && yarn lint && yarn prettier:check && yarn tsc --noEmit && yarn test && yarn test:types
@@ -14,7 +20,7 @@ Add the rows that match the change:
 
 | When the change touches                                                         | Also run                                                                                                                                                                                                                                                                                                      |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/**`, `package.json`, `vite.config.ts`, `tsdown.config.ts`, `scripts/*.mjs` | `yarn typecheck:scripts && yarn build:all && yarn check:tokens && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs`                                    |
+| `src/**`, `package.json`, `vite.config.ts`, `tsdown.config.ts`, `scripts/*.mjs` | `yarn typecheck:scripts && yarn build:all && yarn check:tokens && yarn typecheck:dist && yarn check:externals && yarn check:sizes && yarn check:browser-safe && yarn check:comments && yarn check:publish-target && yarn check:smoke && yarn check:types-pack && node scripts/vite-dev-smoke.mjs`             |
 | Spacing, generated CSS, `@source inline`, `themeAxes`                           | `yarn build:all && yarn test:e2e`                                                                                                                                                                                                                                                                             |
 | `README.md`, `documents/**/*.md`, `site/**`, `examples/**`                      | `yarn site:build && yarn workspace site typecheck && yarn workspace site check:links && yarn check:docs && yarn check:plain-ui && yarn workspace plain-react-example test && yarn workspace plain-nuxt-example prepare:nuxt && yarn workspaces foreach -A --include '*-example' --include site run typecheck` |
 | `examples/plain-react/src/ui/**` (also the theme files it reads)                | `node examples/plain-react/scripts/copy-out-smoke.mjs` (needs network; a copied `src/ui/<folder>/` type-checks with the packed tarball and peers only)                                                                                                                                                        |

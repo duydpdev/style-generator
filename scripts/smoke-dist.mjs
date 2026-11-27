@@ -440,7 +440,9 @@ const canvasOk = runNode(
   [...canvasArgs, "--theme", config.theme, "--naming", "--boards"],
   project,
 );
-if (!canvasOk.startsWith("OK: ")) {
+// The sample boards read one colour, so unread tokens are reported as findings; the run still passes.
+const canvasLast = canvasOk.trimEnd().split("\n").at(-1) ?? "";
+if (!/^(?:OK|FINDINGS): /.test(canvasLast)) {
   fail(`canvas check on a valid canvas printed no OK line:\n${canvasOk}`);
 }
 writeFileSync(join(canvasDir, "cl-x.dc.html"), boardHtml("x"));

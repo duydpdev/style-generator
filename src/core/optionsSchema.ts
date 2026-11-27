@@ -12,11 +12,7 @@ import type {
 import { mergeScreens } from "./resolveTokenOptions";
 import { TOKEN_KEY_RE } from "./tokenGrammar";
 
-/**
- * Option names echoed into the CSS (`--breakpoint-<key>`, `md:` variants,
- * `sp-<key>`, `--sg-sp-<key>-<bp>`) use the theme key grammar, without the
- * typed-token round-trip check (options never become typed tokens).
- */
+// Option names reach the CSS: theme key grammar, minus the typed-token round trip.
 const OptionKey = z
   .string()
   .regex(
@@ -24,7 +20,6 @@ const OptionKey = z
     "Key must start with a letter/digit and contain only letters, digits, `-`",
   );
 
-/** A CSS property name (`padding`, `column-gap`, `--custom`). */
 const CssPropertyName = z
   .string()
   .regex(
@@ -32,12 +27,7 @@ const CssPropertyName = z
     "CSS property name must be lowercase letters, digits and `-`",
   );
 
-/**
- * One screen width: a single non-negative length in px, rem or em. The
- * value becomes `--breakpoint-<key>`, which Tailwind sorts to order the
- * responsive variants — anything else (`banana`, `10vw`, `calc(…)`) breaks
- * that ordering or the media query.
- */
+// Tailwind sorts `--breakpoint-<key>` values, so only one plain length sorts right.
 const SCREEN_LENGTH_RE = /^\d+(\.\d+)?(px|rem|em)$/;
 
 const ScreenValue = z
@@ -47,11 +37,6 @@ const ScreenValue = z
     "Screen width must be a single length in px, rem or em (e.g. 768px, 48rem)",
   );
 
-/**
- * The category keys `coverage` accepts: exactly the registry's
- * `CategoryKey` union, derived from the descriptors so a new category cannot
- * be forgotten here.
- */
 const CoverageCategoryKey = z.enum(
   // `map` loses the tuple type z.enum needs; the registry is never empty.
   builtInCategories.map((descriptor) => descriptor.key) as [
@@ -60,15 +45,9 @@ const CoverageCategoryKey = z.enum(
   ],
 );
 
-/** One opacity-modifier step (`bg-primary/10` → `10`): an integer 1–100. */
 const OpacityStep = z.number().int().min(1).max(100);
 
-/**
- * One opacity group of `coverage.colors.opacities`: its own steps with their
- * own prefixes and/or theme color keys (each defaulting to the rule's covered
- * ones, not limited to them). Prefixes are checked against the category in the
- * coverage refinement, keys against the theme in `assertThemeOptions`.
- */
+// Group prefixes are checked in `CoverageSchema`, keys in `assertThemeOptions`.
 const OpacityGroup = z.strictObject({
   steps: z
     .array(OpacityStep)
@@ -81,17 +60,8 @@ const OpacityGroup = z.strictObject({
   keys: z.array(z.string()).min(1).optional(),
 });
 
-/**
- * Issues of a coverage rule that a category without `$` aliases cannot
- * honour: `keys: "aliased"` (it would drop every key) and, on a literal scale
- * (one class prefix), `prefixes`.
- * @param {BuiltInCategory} descriptor - The rule's category
- * @param {object} rule - The category's coverage rule
- * @param {string} [rule.keys] - `"aliased"` or `"all"`
- * @param {readonly string[]} [rule.prefixes] - Kept class prefixes
- * @param {z.RefinementCtx} ctx - Refinement context that receives the issues
- * @returns {boolean} `true` when `prefixes` was reported on a literal scale
- */
+// Reject `keys: "aliased"` on an alias-free category and `prefixes` on a
+// literal scale; returns `true` when `prefixes` was reported.
 const checkAliasFreeRule = (
   descriptor: BuiltInCategory,
   rule: {
@@ -120,15 +90,8 @@ const checkAliasFreeRule = (
   return true;
 };
 
-/**
- * Per-category `@source inline` coverage. A bare boolean switches the
- * category on/off; the object form narrows it to some class prefixes
- * and/or to the alias holders. Every `prefixes` entry must be a real class
- * prefix of that category (`bg`, `rounded-t`, …): a typo would otherwise
- * silently drop the category's coverage. `opacities` (colors only, distinct
- * integers 1–100, or groups of steps with their own prefixes and keys) adds
- * the `/<n>` opacity-modifier classes of the covered prefixes and keys.
- */
+// Every `prefixes` entry must be a real prefix of its category: a typo would
+// otherwise silently drop that category's coverage.
 const CoverageSchema = z
   .partialRecord(
     CoverageCategoryKey,
@@ -211,16 +174,10 @@ const CoverageSchema = z
     }
   });
 
+// Rationale: documents/architecture.md#stylegeneratoroptions-why-each-option-is-declared-in-four-files
 /**
- * Strict shape of `StyleGeneratorOptions`, without the cross-field
- * refinement: unknown keys (also inside `spacing`/`typography`) are
- * rejected, behavioural flags must be booleans, and every option that
- * reaches `generate().css` follows the theme's injection-safe grammar.
+ * Strict shape of `StyleGeneratorOptions` without the cross-field refinement;
  * `src/node/loadStyleGenConfig.ts` extends it for `style-gen.config.json`.
- *
- * Option declared in 4 places: here, Options.ts (public type),
- * resolveTokenOptions.ts and resolveOptions.ts (resolved defaults). The
- * types are pinned to each other by optionsSchema.test-d.ts.
  */
 export const StyleGeneratorOptionsShape = z.strictObject({
   breakpoints: z.array(OptionKey).optional(),
@@ -244,17 +201,12 @@ export const StyleGeneratorOptionsShape = z.strictObject({
 });
 
 /**
- * Cross-field checks on `screens` merged with the px `defaultScreens`:
- * (1) every merged screen uses the same unit — Tailwind sorts breakpoints by
- * value, so mixing `rem` with the px defaults orders the variants wrongly;
- * (2) every `breakpoints` entry names a merged screen. The fields are typed
- * `unknown` and guarded, because the refinement can run while they already
- * carry their own issues.
+ * Merged screens must share one unit (Tailwind sorts them by value) and every
+ * breakpoint must name one. Fields are `unknown`: they may carry own issues.
  * @param {object} options - Options being validated
  * @param {unknown} [options.breakpoints] - Breakpoint keys
  * @param {unknown} [options.screens] - Custom screens map
  * @param {z.RefinementCtx} ctx - Zod refinement context
- * @returns {void}
  */
 export const refineStyleGeneratorOptions = (
   options: { breakpoints?: unknown; screens?: unknown },
@@ -298,11 +250,6 @@ export const refineStyleGeneratorOptions = (
   });
 };
 
-/**
- * Validates every `generate()` option. Internal: not exported from any
- * barrel; `src/node/loadStyleGenConfig.ts` reuses {@link StyleGeneratorOptionsShape} and
- * {@link refineStyleGeneratorOptions} so `style-gen.config.json` gets the
- * same verdict.
- */
+/** Validates every `generate()` option; internal, not exported from any barrel. */
 export const StyleGeneratorOptionsSchema =
   StyleGeneratorOptionsShape.superRefine(refineStyleGeneratorOptions);

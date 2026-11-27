@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { COLOR_STATES } from "../../shared/colorStates";
 
-import { DEFAULT_STANDARD } from "./canvas/standardSchema";
+import { packagedStandard } from "./canvas/standardSchema";
 import { findDeprecatedColorKeys } from "./deprecatedColorKeys";
+
+const DEFAULT_STANDARD = packagedStandard();
 
 describe("findDeprecatedColorKeys", () => {
   it("warns on an on<Intent> key whose intent is a colour", () => {

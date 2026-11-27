@@ -19,13 +19,8 @@ export declare function createDesignTokens<
 ): DesignTokensResult<TTheme, O>;
 ```
 
-Creates a structured design tokens object from the theme configuration.
-Useful for sharing token data with consumer applications (e.g., for CVA variant maps).
-With `options`, `const O` keeps literal `breakpoints`, `screens` keys and
-`spacing.properties` keys in the result's types; options typed as
-`StyleGeneratorOptions` — or an explicit `<typeof theme>` type argument,
-which leaves `O` at its default — widen them to `string`. Without
-`options` the result carries the library defaults.
+Creates the typed design tokens from a theme. Literal `breakpoints`, `screens` and
+`spacing.properties` keys of `options` stay in the types; `StyleGeneratorOptions` widens them.
 
 <!-- /signature -->
 
@@ -82,9 +77,7 @@ export declare const Breakpoint: {
 export declare type Breakpoint = (typeof Breakpoint)[keyof typeof Breakpoint];
 ```
 
-Tailwind's default breakpoint keys. A const object (not an enum) so the
-runtime values and the string-literal type are one structural thing:
-`Breakpoint.MD` is `"md"`, and `const b: Breakpoint = "md"` compiles.
+Tailwind's default breakpoint keys; a const object, so `"md"` is assignable to `Breakpoint`.
 
 <!-- /signature -->
 
@@ -152,8 +145,7 @@ Border class prefixes (`border`, `border-x` … `divide-y`) as a mutable array, 
 export declare const roundedProperties: (typeof ROUNDED_PREFIXES)[number][];
 ```
 
-Mutable copies of the prefix lists, typed with the literal unions so they
-pass `createVariantMapper(borderProperties, keys)` as they are.
+Rounded class prefixes as a mutable array, typed so it passes `createVariantMapper(roundedProperties, keys)` as is.
 
 <!-- /signature -->
 

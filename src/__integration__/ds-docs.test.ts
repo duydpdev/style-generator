@@ -1,81 +1,35 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
+import * as mod from "../cli/commands/ds/dsDocs";
+import type { ThemeInput } from "../cli/commands/ds/dsTokens";
+import { COVER_TEMPLATE } from "../cli/commands/ds/templates";
 import { generate } from "../index";
 
 import { buttonPreset } from "./__fixtures__/ds-build/ds.preset";
 
-interface Theme {
-  colors: Record<string, string>;
-  typography?: Record<string, { fontSize: string }> | undefined;
-  borderRadius?: Record<string, string> | undefined;
-  controlHeight?: Record<string, string> | undefined;
-  themeAxes?: Record<
-    string,
-    Record<string, { colors?: Record<string, string> }>
-  >;
-}
-interface DsDocsModule {
-  README_SECTIONS: string[];
-  buildReadme: (input: {
-    name: string;
-    themeFile: string;
-    theme: Theme;
-    namespace: string;
-    intents: readonly string[];
-  }) => string;
-  renderCover: (
-    template: string,
-    input: {
-      name: string;
-      namespace: string;
-      theme: Theme;
-      titleClass: string;
-    },
-  ) => string;
-  dsInputFailures: (input: {
-    theme: Theme;
-    coverTemplate: string;
-    buttonPreset: typeof buttonPreset;
-  }) => string[];
-  verifyDsOutput: (output: {
-    readme: string;
-    cover: string;
-    coverVars: ReadonlySet<string>;
-    titleClass: string;
-    bundleCss: string;
-  }) => string[];
-}
+type Theme = ThemeInput;
 
-const root = join(__dirname, "..", "..");
 const fixtureDir = join(__dirname, "__fixtures__", "ds-build");
 const theme = JSON.parse(
   readFileSync(join(fixtureDir, "theme.json"), "utf8"),
 ) as Theme;
-const template = readFileSync(
-  join(root, "scripts", "ds-cover.html.tmpl"),
-  "utf8",
-);
+const template = COVER_TEMPLATE;
 const coverVars = new Set(
   [...generate(theme as never).css.matchAll(/(--sg-[a-z0-9-]+)\s*:/g)].map(
     (m) => m[1] ?? "",
   ),
 );
 const titleClass = "text-32-bold";
-/** Stands in for the compiled bundle.css; build-ds.test.ts checks the real one. */
+/** Stands in for the compiled bundle.css; ds-build.test.ts checks the real one. */
 const bundleCss = ".text-32-bold { font-size: 32px; }";
 
-let mod: DsDocsModule;
 let readme: string;
 let cover: string;
 
-beforeAll(async () => {
-  mod = (await import(
-    pathToFileURL(join(root, "scripts", "ds-docs.mjs")).href
-  )) as DsDocsModule;
+beforeAll(() => {
   readme = mod.buildReadme({
     name: "Fixture",
     themeFile: "theme.json",
@@ -134,8 +88,8 @@ describe("buildReadme", () => {
     });
     expect(alpha).toContain("| `border` | $navy700 at 8% | $navy700 at 16% |");
     expect(
-      alpha.split("\n").filter((l) => l.includes("$navy700/")).length,
-    ).toBe(0);
+      alpha.split("\n").filter((l) => l.includes("$navy700/")),
+    ).toHaveLength(0);
   });
 
   it.each([

@@ -191,6 +191,14 @@ export default pluginTs.config(
     },
   },
 
+  // JSDoc is required on exports only; `yarn check:comments` caps its length.
+  {
+    files: ["src/**/*.ts"],
+    rules: {
+      "jsdoc/require-jsdoc": ["error", { publicOnly: true }],
+    },
+  },
+
   // Node scripts (publish gates, smoke run, site example build): plain JS
   // with Node globals. Type-aware rules are off because JSON.parse & co. are
   // `any` in JS. `yarn typecheck:scripts` (tsconfig.scripts.json, checkJs)
@@ -219,7 +227,16 @@ export default pluginTs.config(
     ],
     rules: {
       "sonarjs/void-use": "off",
+      "@typescript-eslint/no-meaningless-void-operator": "off",
       "sonarjs/assertions-in-tests": "off",
+    },
+  },
+
+  // Type-level fixtures: `{}` is a deliberate input shape there (an empty theme or options object).
+  {
+    files: ["**/*.test-d.ts"],
+    rules: {
+      "@typescript-eslint/no-generated-empty-object-type": "off",
     },
   },
 
@@ -373,6 +390,8 @@ export default pluginTs.config(
       // Git-ignored local working directories (plans, brainstorms); never committed or published.
       "documents/plans/**",
       "documents/brainstorm/**",
+      // Generated output pinned byte for byte as a build parity golden.
+      "src/__integration__/__fixtures__/ds-build/golden-*/**",
       "examples/**/.next/**",
       "examples/**/.nuxt/**",
       "examples/**/.output/**",

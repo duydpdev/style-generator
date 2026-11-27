@@ -9,12 +9,7 @@ import { toKebabCase } from "../../shared/helpers";
 import { cssVarCategories } from "../registry/builtInCategories";
 import { flattenByCategory } from "../registry/flattenByCategory";
 
-/**
- * Build intermediate `--sg-*` CSS variables for every registered category
- * present on the given theme source (base theme or a `themeAxes.<axis>.<variant>` override).
- * @param {ThemeOverride} source - Theme source data (a base `ThemeConfig` is structurally assignable)
- * @returns {Record<string, string>} CSS variable map
- */
+// `--sg-*` variables of every CSS-var category in a base theme or axis override.
 const buildIntermediateVars = (
   source: ThemeOverride,
 ): Record<string, string> => {
@@ -27,12 +22,7 @@ const buildIntermediateVars = (
   );
 };
 
-/**
- * Format a CSS variable map into a CSS rule block.
- * @param {string} selector - CSS selector
- * @param {Record<string, string>} vars - CSS variable map
- * @returns {string} Formatted CSS block or empty string
- */
+// A CSS rule block of the variables, or `""` when there are none.
 const formatCssBlock = (
   selector: string,
   vars: Record<string, string>,
@@ -44,14 +34,7 @@ const formatCssBlock = (
   return cssBlock(selector, lines);
 };
 
-/**
- * Map intermediate `--sg-*` vars to Tailwind v4 `\@theme` namespace vars.
- * Each category is flattened from its OWN theme data: every category owns a
- * distinct `--sg-<category>-` prefix (`--sg-color-`, `--sg-shadow-`, …), so
- * its vars are sliced by that prefix.
- * @param {ThemeConfig} config - Theme configuration (base theme only)
- * @returns {Record<string, string>} Tailwind v4 theme mapping
- */
+// `@theme inline` mapping of the base theme's `--sg-*` vars into Tailwind namespaces.
 const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
   const mapping: Record<string, string> = {};
 
@@ -72,11 +55,7 @@ const buildThemeMapping = (config: ThemeConfig): Record<string, string> => {
   return mapping;
 };
 
-/**
- * `resetTailwindDefaults` name → its `@theme inline` line, in the fixed
- * order they are emitted (so duplicates and the written order do not change
- * the CSS).
- */
+// Fixed emit order, so duplicates and the written order do not change the CSS.
 const RESET_LINES = [
   ["colors", "  --color-*: initial;"],
   ["radius", "  --radius-*: initial;"],
@@ -84,22 +63,9 @@ const RESET_LINES = [
 ] as const;
 
 /**
- * Generate a complete CSS string for Tailwind v4 `\@theme` integration.
- *
- * Output includes:
- * 1. `:root` block with `--sg-*` intermediate CSS variables
- * 2. `html[data-<axis-kebab>="<variant-kebab>"]` blocks for each `themeAxes`
- *    axis/variant, in config declaration order (both axes and variants) —
- *    the selector is pinned to `html` because a `$`-alias
- *    `var()` resolves to the value computed at the element that DECLARES the
- *    custom property, so an override on a non-root element wouldn't affect
- *    an alias's inherited value (see `.claude/CLAUDE.md`'s Theme rules).
- * 3. `\@theme inline` block: the `resetTailwindDefaults` lines
- *    (`--color-*: initial;`, …) first, then the mapping of `--sg-*` → Tailwind v4 namespaces
- *
- * Parses `options` and `config` like `generate()` — options first — so an
- * invalid or injection-unsafe option or theme throws a `ZodError` instead of
- * reaching the CSS.
+ * Generates the `:root` `--sg-*` variables, one `html[data-<axis>="<variant>"]`
+ * block per `themeAxes` variant, then `@theme inline`. Parses options, then the
+ * theme, like `generate()`: invalid input throws a `ZodError`.
  * @param {ThemeConfig} config - Theme configuration
  * @param {StyleGeneratorOptions} [options] - Generator options; only `resetTailwindDefaults` affects this output
  * @returns {string} CSS string
@@ -113,11 +79,9 @@ export const generateThemeCss = (
 };
 
 /**
- * {@link generateThemeCss} without validation, for `generate()`, which has
- * already parsed the theme and the options. Not exported from any public
- * barrel.
+ * {@link generateThemeCss} without validation, for `generate()`, which has already parsed both.
  * @param {ThemeConfig} config - Theme already parsed by `ThemeSchema`
- * @param {Pick<ResolvedOptions, "resetTailwindDefaults">} options - Resolved options (`resetTailwindDefaults`: namespaces to clear)
+ * @param {Pick<ResolvedOptions, "resetTailwindDefaults">} options - Resolved options
  * @returns {string} CSS string
  */
 export const buildThemeCss = (
@@ -139,9 +103,7 @@ export const buildThemeCss = (
     if (overrideBlock) blocks.push(overrideBlock);
   });
 
-  // 3. @theme inline: the Tailwind default resets first (they wipe the
-  // namespace, so anything declared after them survives), then the mapping
-  // (only base theme vars, not overrides)
+  // 3. @theme inline: resets first (they wipe the namespace), then the base mapping
   const lines = [
     ...RESET_LINES.filter(([name]) =>
       options.resetTailwindDefaults.includes(name),

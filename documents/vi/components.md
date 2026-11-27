@@ -1,4 +1,4 @@
-<!-- source: documents/components.md sha256: 01902c062a93 -->
+<!-- source: documents/components.md sha256: 9d1508b7c345 -->
 
 # Component: các ví dụ, không phải một API
 
@@ -229,12 +229,7 @@ import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
   readonly variant?:
-    | "solid"
-    | "outline"
-    | "soft"
-    | "ghost"
-    | "link"
-    | undefined;
+    "solid" | "outline" | "soft" | "ghost" | "link" | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
   readonly size?: "sm" | "md" | "lg" | "icon" | undefined;
@@ -516,7 +511,7 @@ Một component khai báo các trục áp dụng cho nó (checkbox có `color` v
 
 - `className`/`class` và `style` được phép dùng trên các thẻ tag.
 - Một pattern có quy tắc riêng hoặc lặp lại sẽ trở thành một component có prop được định kiểu.
-- Không dùng thuộc tính `data-*` làm hook CSS riêng (ESLint và job `check` của CI cấm thuộc tính part-hook cũ toàn repo); các hook CSS riêng trong các app plain là `className` thông thường.
+- Không dùng thuộc tính `data-*` làm hook CSS riêng (ESLint và job `lint` của CI cấm thuộc tính part-hook cũ toàn repo); các hook CSS riêng trong các app plain là `className` thông thường.
 - `src/**` (Nuxt `app/**`) không bao giờ import `design-system-example` hoặc `harness-example` (ESLint).
 - Một thư mục ui chỉ import `./…`, `../../theme` và các package.
 
@@ -791,11 +786,7 @@ type TextOwnProps<W extends RecipeTokens> = ThemeSpacingProps<W> & {
   readonly align?: "left" | "center" | "right" | undefined;
   readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
   readonly transform?:
-    | "uppercase"
-    | "lowercase"
-    | "capitalize"
-    | "normalCase"
-    | undefined;
+    "uppercase" | "lowercase" | "capitalize" | "normalCase" | undefined;
   readonly italic?: boolean | undefined;
   readonly truncate?: boolean | undefined;
   readonly lineClamp?: 1 | 2 | 3 | 4 | 5 | 6 | "none" | undefined;

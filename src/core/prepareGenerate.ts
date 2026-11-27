@@ -9,22 +9,12 @@ import { assertThemeOptions } from "./themeOptionsChecks";
 export type PrepareStage = "options" | "theme" | "cross";
 
 /**
- * The one validation prologue shared by `generate()`, `generateThemeCss()` and
- * the Node runner, so they cannot drift: options parse
- * (`StyleGeneratorOptionsSchema`), `resolveOptions`, theme parse
- * (`parseTheme`), then `assertThemeOptions` — the checks that need both. Each
- * failure is a `ZodError`; options fail before the theme is even looked at.
- *
- * `onStage` is called right before each step with the step's name, so a
- * caller that wants to say which one failed (the runner) can remember the
- * last stage; the others pass nothing. Internal: not exported from any
- * barrel.
+ * The validation prologue every entry shares: options, resolve, theme, then theme × options.
  * @template T
  * @param {T} theme - Raw theme (`JSON.parse()` output or a typed theme)
  * @param {StyleGeneratorOptions} [options] - Raw generator options
- * @param {(stage: PrepareStage) => void} [onStage] - Called before each step
- * @returns {{ parsed: T, resolved: ResolvedOptions }} The validated theme, typed as the caller's `T`, and the resolved options
- * @throws {Error} A `ZodError` on an invalid option, an invalid theme, or a theme × options conflict
+ * @param {(stage: PrepareStage) => void} [onStage] - Called before each step, so a caller can name the failing one
+ * @returns {{ parsed: T, resolved: ResolvedOptions }} The validated theme and the resolved options; a `ZodError` is thrown on any failure
  */
 export const prepareGenerate = <T extends ThemeConfig>(
   theme: T,

@@ -120,7 +120,7 @@ function maskCode(md, inline) {
       return " ".repeat(line.length);
     }
     if (!inline) return line;
-    // eslint-disable-next-line sonarjs/slow-regex -- runs on this repo's own markdown, never on untrusted input
+    // eslint-disable-next-line sonarjs/super-linear-regex -- runs on this repo's own markdown, never on untrusted input
     return line.replace(/(`+)[^`]+?\1/g, (span) => " ".repeat(span.length));
   });
   return lines.join("\n");
@@ -134,9 +134,9 @@ function maskCode(md, inline) {
 function slugify(text) {
   return (
     text
-      // eslint-disable-next-line sonarjs/slow-regex -- runs on this repo's own markdown, never on untrusted input
+      // eslint-disable-next-line sonarjs/super-linear-regex -- runs on this repo's own markdown, never on untrusted input
       .replace(/<[^>]+>/g, "")
-      // eslint-disable-next-line sonarjs/slow-regex -- runs on this repo's own markdown, never on untrusted input
+      // eslint-disable-next-line sonarjs/super-linear-regex -- runs on this repo's own markdown, never on untrusted input
       .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
       .replace(/[`*~]/g, "")
       .trim()
@@ -156,7 +156,7 @@ function collectAnchors(md) {
   const anchors = new Set();
   const seen = new Map();
   for (const line of maskCode(md, false).split("\n")) {
-    // eslint-disable-next-line sonarjs/slow-regex -- runs on this repo's own markdown, never on untrusted input
+    // eslint-disable-next-line sonarjs/super-linear-regex -- runs on this repo's own markdown, never on untrusted input
     const heading = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(line);
     if (!heading) continue;
     const base = slugify(heading[1]);

@@ -86,6 +86,11 @@ const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 // 2026-11-25 (`style-gen canvas check`: the design-canvas checker moves from a repository script into the CLI, with its manifest inlined; user-approved 2026-11-24, measured 43873 B): cli budget raised 32000 -> 48270 (measured + ~10 %, rounded up to 10 B). No other budget changed.
 // 2026-11-25 (six scale token groups: motionDuration, motionEasing, controlHeight, iconSize, opacity, zIndex; six descriptors, their value grammar and schema shapes; user-approved): vite measured 15525 B (101 %), next 15716 B (98 %); budgets raised to measured + ~10 %, rounded up to 10 B: vite 15430 -> 17080, next 16100 -> 17290. Shortening the easing error message saved 51 B and was not enough. index 11181 (82 %), tokens 1752 (95 %), recipes 1933, ui 2889, cli 45187 stay within their budgets.
 // 2026-11-26 (colour alias `$key/<n>`: alias grammar parser, its error messages and the `color-mix` emission land in the CLI through `generate()`; user-approved): cli measured 48392 B (develop 48100 B, +292 B; merging the two grammar messages and replacing a `Set` saved 19 B and was not enough); budget raised to measured + ~10 %, rounded up to 10 B: 48270 -> 53240. index, tokens, cva, vite, next and the other budgets stay within theirs.
+// 2026-11-26 (canvas commands load through `import()` from their own entry `dist/cli/canvas.mjs`, so `generate`, `init` and `--version` stop paying for them; user-approved plan): cli measured 36968 B transitive (was 50264 B before the split; the `standardSchema` chunk it shares with `canvas` is counted in both), new `cli-canvas` measured 19872 B transitive. Budgets set to measured + ~10 %, rounded up to 10 B: cli 53240 -> 40670, cli-canvas 21860.
+// 2026-11-26 (rules chunk owns its budget under the user-approved plan: the theme rules land in `dist/cli/canvas.mjs`: closed scales, contrast, descriptions, design-system name collisions, rule reports): `cli-canvas` provisional 21860 (measured 19872 B before the rules existed) -> measured 25564 B transitive; budget 28130 (measured + ~10 %, rounded up to 10 B). `cli` stays 40670 (37210 B measured, 91 %).
+// 2026-11-26 (board class rules under the user-approved plan: `ref-class`, `token-bypass` and `token-unused` load from their own entry `dist/cli/canvas-classes.mjs` through `import()`, so only `canvas check --boards` pays for the Tailwind compile helper, the class lexer and the token reads): `cli-canvas-classes` new, 24487 B transitive (the chunks it shares with `canvas` are counted in both), budget 26940 (measured + ~10 %, rounded up to 10 B). `cli-canvas` 25564 -> 27967 B (class candidates now live in the shared scan chunk), budget 28130 -> 30770. `cli` stays 40670 (38630 B measured, 95 %).
+// 2026-11-26 (`style-gen ds build` runs from a precompiled runtime `dist/ds/runtime.js`: the six components with their recipes, `ui`, class-variance-authority, clsx and tailwind-merge inlined, so the product installs none of them; user-approved plan): `ds` new, 24636 B gzip transitive, budget 27100 (measured + ~10 %, rounded up to 10 B). `cli` stays 40670.
+// 2026-11-26 (`style-gen ds build` loads through `import()` from its own entry `dist/cli/ds.mjs`, so only that command pays for the preset loader, the docs and token mappers, the bundle assembly and the stylesheet compile; user-approved plan): `cli-ds` new, 40700 B gzip transitive (the chunks it shares with `canvas` are counted in both), budget 44770 (measured + ~10 %, rounded up to 10 B). `cli` 38630 -> 39700 B (the `ds` command registration and its help text), still under 40670 (98 %); `cli-canvas` 27967 -> 29441 B, under 30770.
 // Budgets = measured + ~10% headroom; tokens, cva, spacing and types are
 // unchanged and must not drift (fix the import or chunk, don't raise them).
 const budgets = {
@@ -99,17 +104,27 @@ const budgets = {
   "ui-react": 70,
   vite: 17_080,
   next: 17_290,
-  cli: 53_240,
+  cli: 40_670,
+  "cli-canvas": 30_770,
+  "cli-canvas-classes": 26_940,
+  ds: 27_100,
+  "cli-ds": 44_770,
 };
 
 // Budgeted files that are not `package.json#exports` subpaths.
-const extraFiles = { cli: "dist/cli/index.mjs" };
+const extraFiles = {
+  cli: "dist/cli/index.mjs",
+  "cli-canvas": "dist/cli/canvas.mjs",
+  "cli-canvas-classes": "dist/cli/canvas-classes.mjs",
+  ds: "dist/ds/runtime.js",
+  "cli-ds": "dist/cli/ds.mjs",
+};
 
 // Static `import … from "./x.js"`, `export … from "./x.js"` and bare
 // `import "./x.js"` of a sibling build chunk (`.js`, `.mjs` or `.cjs`).
 // Package imports are externals (see `check:externals`) and not counted.
 const RELATIVE_IMPORT_RE =
-  // eslint-disable-next-line sonarjs/slow-regex -- runs on our own build output, never on untrusted input
+  // eslint-disable-next-line sonarjs/super-linear-regex -- runs on our own build output, never on untrusted input
   /(?:^|[\s;])(?:import|export)\s*(?:[^'"`;]*?\s*from\s*)?["'](\.{1,2}\/[^"']+\.[cm]?js)["']/g;
 
 /**

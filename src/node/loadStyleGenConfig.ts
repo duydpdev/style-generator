@@ -12,41 +12,22 @@ import { formatZodError } from "../core/themeSchema";
 
 import { isPlainObject } from "./isPlainObject";
 
-/**
- * Config-only keys, layered on the strict `generate()` options shape so
- * `style-gen.config.json` gets the same unknown-key, flag and screen checks
- * as `generate()` itself.
- */
+// Config-only paths (relative to the root) on the strict `generate()` shape.
 const cliKeys = {
-  /** Theme JSON path, relative to the project root. */
   theme: z.string().min(1),
-  /** Generated CSS path, relative to the project root. */
   output: z.string().min(1),
-  /**
-   * Generated tokens module path, relative to the project root; default:
-   * `theme.tokens.ts` beside `output`.
-   */
+  /** Default: `theme.tokens.ts` beside `output`. */
   tokensOutput: z.string().min(1).optional(),
 };
 
-/**
- * Resolved configuration: the config-only keys plus every `generate()`
- * option (`breakpoints`, `screens`, `enableResponsive`, `spacing`,
- * `typography`, `coverage`, `resetTailwindDefaults`),
- * forwarded through {@link toGeneratorOptions}.
- */
+/** Resolved configuration: the config-only keys plus every `generate()` option. */
 export const StyleGenConfigSchema = StyleGeneratorOptionsShape.extend(
   cliKeys,
 ).superRefine(refineStyleGeneratorOptions);
 
 export type StyleGenConfig = z.infer<typeof StyleGenConfigSchema>;
 
-/**
- * The file form of {@link StyleGenConfigSchema}: `theme`/`output` may be
- * omitted (the defaults apply) and `$schema`, the editor's pointer to the
- * config's JSON Schema, is accepted. `$schema` belongs to the file only: it
- * is not a key of the resolved {@link StyleGenConfig}.
- */
+/** File form of {@link StyleGenConfigSchema}: `theme`/`output` optional, `$schema` accepted. */
 export const StyleGenConfigFileSchema = StyleGeneratorOptionsShape.extend({
   ...cliKeys,
   $schema: z.string().optional(),
@@ -54,12 +35,7 @@ export const StyleGenConfigFileSchema = StyleGeneratorOptionsShape.extend({
   output: cliKeys.output.optional(),
 }).superRefine(refineStyleGeneratorOptions);
 
-/**
- * Raw CLI/programmatic flags input: unlike {@link StyleGenConfig}, each
- * field may be explicitly `undefined` (e.g. an unset `parseArgs` flag, or
- * a caller spreading an optional value) — `sanitizeFlags` strips those
- * before merging with file config and defaults.
- */
+/** CLI/programmatic flags: any key may be explicitly `undefined` (dropped before merging). */
 export type StyleGenConfigFlags = {
   [K in keyof StyleGenConfig]?: StyleGenConfig[K] | undefined;
 };
@@ -71,63 +47,39 @@ export const defaultConfig: StyleGenConfig = {
 
 const CONFIG_KEYS = StyleGenConfigSchema.keyof().options;
 
-/**
- * Drops `undefined` values so a flag or file key that is unset never
- * overrides a lower layer (file config or defaults). The key list comes from
- * {@link StyleGenConfigSchema}, so a new option is carried through
- * automatically.
- * @param {StyleGenConfigFlags} flags - The flags or file config to sanitize
- * @returns {Partial<StyleGenConfig>} The sanitized values
- */
+// Drop `undefined` so an unset key never overrides a lower layer.
 function sanitizeFlags(flags: StyleGenConfigFlags): Partial<StyleGenConfig> {
   const sanitized: Record<string, unknown> = {};
   for (const key of CONFIG_KEYS) {
     if (flags[key] !== undefined) sanitized[key] = flags[key];
   }
-  return sanitized as Partial<StyleGenConfig>;
+  return sanitized;
 }
 
-/**
- * `style-gen.config.json` contents: every key optional (defaults apply). The
- * editor's `$schema` key is accepted in the file and dropped on read.
- */
+/** `style-gen.config.json` contents: every key optional, `$schema` dropped on read. */
 export type StyleGenFileConfig = z.infer<typeof StyleGenConfigFileSchema>;
 
 /** File-based configuration and where it came from. */
 export interface ConfigFile {
   config: StyleGenFileConfig;
-  /** `style-gen.config.json` or `package.json`, when one was read. */
   source?: string;
   /** Why the file was ignored (malformed JSON, non-object config). */
   error?: string;
-  /**
-   * Schema violations, one `path → message` line each; the file is not
-   * merged.
-   */
+  /** Schema violations, one `path → message` line each; the file is not merged. */
   issues?: string;
-  /**
-   * The config object as it was parsed, valid or not, so a caller can read
-   * what it declares ({@link declaredLayout}) or merge into it (`init`);
-   * unset without a config and for a file that is not a JSON object.
-   */
+  /** The parsed config object, valid or not; unset when it is not a JSON object. */
   raw?: Record<string, unknown>;
 }
 
 /** The `theme`/`output` a config file declares, and where it came from. */
 export interface DeclaredLayout {
-  /** `style-gen.config.json` or `package.json`. */
   source: string;
-  /** The `theme` key, when it is a non-empty string. */
   theme?: string;
-  /** The `output` key, when it is a non-empty string. */
   output?: string;
 }
 
 /**
- * The raw `theme`/`output` strings of a config file, whether or not the file
- * passes validation: an invalid config still declares them, so a caller that
- * repairs it (`init`) can keep them. A key that is not a non-empty string is
- * left out.
+ * The non-empty `theme`/`output` a config file declares, valid or not (`init` keeps them).
  * @param {ConfigFile} file - {@link readConfigFile}'s result
  * @returns {DeclaredLayout | undefined} The declared paths, or `undefined` without a config
  */
@@ -142,12 +94,6 @@ export function declaredLayout(file: ConfigFile): DeclaredLayout | undefined {
   return declared;
 }
 
-/**
- * Validate a file config object against the strict config schema.
- * @param {Record<string, unknown>} value - The parsed config object
- * @param {string} source - Where it was read from
- * @returns {ConfigFile} The parsed config, or no config plus the formatted issues
- */
 const validateFileConfig = (
   value: Record<string, unknown>,
   source: string,
@@ -167,13 +113,7 @@ const validateFileConfig = (
   return { config, source, raw: value };
 };
 
-/**
- * Reads and parses one JSON file, telling a file that cannot be read (a
- * directory, a permission error) from one that holds invalid JSON.
- * @param {string} filePath - The file to read
- * @param {string} source - The label used in the error message
- * @returns {{ value: unknown } | { error: string }} The parsed value or the error
- */
+// Tells a file that cannot be read (a directory, a permission error) from invalid JSON.
 const readJsonFile = (
   filePath: string,
   source: string,
@@ -195,9 +135,7 @@ const readJsonFile = (
 };
 
 /**
- * Reads `style-gen.config.json`, else `package.json#style-gen`, from `cwd`.
- * A malformed file is ignored (defaults apply) and reported through `error`
- * so callers can warn (`generate`) or fail (`doctor`, the bundler plugins).
+ * Reads the config from `cwd`; a malformed file is ignored and reported through `error`.
  * @param {string} cwd - The project root
  * @returns {ConfigFile} The file config, its source and any error
  */
@@ -245,11 +183,7 @@ export function readConfigFile(cwd: string): ConfigFile {
 const GENERATOR_OPTION_KEYS = StyleGeneratorOptionsShape.keyof().options;
 
 /**
- * Pick the `generate()` options out of a resolved config, dropping the
- * config-only keys (`theme`, `output`, `tokensOutput`) that the strict
- * options schema would reject. The key list comes from
- * `StyleGeneratorOptionsShape`, so a new option is forwarded automatically.
- * The only way config options reach `generate()` and the runner.
+ * The `generate()` options of a resolved config: the only path from config to `generate()`.
  * @param {StyleGenConfig} config - Resolved configuration
  * @returns {StyleGeneratorOptions} The options to pass to `generate()`
  */
@@ -260,7 +194,7 @@ export function toGeneratorOptions(
   for (const key of GENERATOR_OPTION_KEYS) {
     if (config[key] !== undefined) picked[key] = config[key];
   }
-  return picked as StyleGeneratorOptions;
+  return picked;
 }
 
 /**
@@ -286,11 +220,7 @@ export type LoadedStyleGenConfig = Omit<ConfigFile, "config"> & {
 };
 
 /**
- * Load the config the way the Vite plugin, the Next.js integration and the
- * CLI do when they are given no options: `style-gen.config.json`, else
- * `package.json#style-gen`, read from `root`, merged over the defaults.
- * `source`, `error` and `issues` are passed through so the caller can refuse
- * an invalid config (`issues`, `error`) instead of silently using defaults.
+ * Load the config from `root` over the defaults; `error`/`issues` pass through.
  * @param {string} root - The project root
  * @returns {LoadedStyleGenConfig} The resolved config and where it came from
  */
@@ -300,9 +230,7 @@ export function loadStyleGenConfig(root: string): LoadedStyleGenConfig {
 }
 
 /**
- * The line a caller prints when it finds no config in `root`, so a wrong
- * `root` (Nuxt's `app/` folder) or a misplaced file is visible instead of
- * silently meaning "use the defaults".
+ * The line printed when `root` holds no config, so a wrong `root` is visible.
  * @param {string} root - The directory that was searched
  * @returns {string} One sentence, no label prefix
  */

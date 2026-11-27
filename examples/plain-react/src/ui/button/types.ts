@@ -8,12 +8,7 @@ import type { ButtonIntent } from "./style";
 
 export type ButtonOwnProps = ThemeSpacingProps<typeof tokens> & {
   readonly variant?:
-    | "solid"
-    | "outline"
-    | "soft"
-    | "ghost"
-    | "link"
-    | undefined;
+    "solid" | "outline" | "soft" | "ghost" | "link" | undefined;
   /** One of `buttonIntents`. */
   readonly color?: ButtonIntent | undefined;
   readonly size?: "sm" | "md" | "lg" | "icon" | undefined;

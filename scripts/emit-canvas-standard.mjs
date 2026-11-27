@@ -3,7 +3,7 @@
  * Copy `src/cli/canvas/design-canvas-standard.json`, the manifest
  * `style-gen canvas check` applies by default, to
  * `dist/canvas/design-canvas-standard.json`, so a project can read it from
- * the installed package and pass an edited copy with `--standard`.
+ * the installed package (a read-only reference; a product adds to it through a `--standard` additions file).
  *
  * Runs as the last step of `yarn build:cli`, after tsdown (which cleans only
  * `dist/cli`).

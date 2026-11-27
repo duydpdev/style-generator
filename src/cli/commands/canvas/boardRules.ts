@@ -7,6 +7,8 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
+import { sameMinor } from "../ds/stamp";
+
 import {
   asArray,
   asRecord,
@@ -60,24 +62,14 @@ export interface BoardOptions {
 /** Reads one board by its path relative to the canvas directory. */
 type ReadBoard = (file: string) => string;
 
-/**
- * A value copied from a board, `canvas.json` or a stamp into a message: JSON,
- * at most 80 characters, so it can never start a line of its own.
- * @param {unknown} value - Any value
- * @returns {string} The echo
- */
+// A copied value as JSON, at most 80 characters, so it never starts a line of its own.
 function echo(value: unknown): string {
   // JSON.stringify returns undefined for undefined, functions and symbols.
   const text = (JSON.stringify(value) as string | undefined) ?? String(value);
   return text.length > 80 ? `${text.slice(0, 79)}…` : text;
 }
 
-/**
- * A name or number copied into a message: as is when it is a plain token,
- * else `echo(value)`.
- * @param {unknown} value - Any value
- * @returns {string} The label
- */
+// A plain name or number as is, anything else through `echo`.
 function token(value: unknown): string {
   if (typeof value === "number") return String(value);
   return typeof value === "string" && /^[\w.-]{1,80}$/.test(value)
@@ -85,14 +77,7 @@ function token(value: unknown): string {
     : echo(value);
 }
 
-/**
- * Board messages of `canvas.json`: pages, core boards and their order,
- * one board per design-system component.
- * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
- * @param {Set<string>} files - `*.dc.html` paths present in the canvas
- * @param {Standard} standard - Manifest
- * @returns {string[]} Messages without a location
- */
+// Pages, core boards and their order, one board per design-system component.
 function boardViolations(
   canvasJson: Record<string, unknown>,
   files: Set<string>,
@@ -107,10 +92,7 @@ function boardViolations(
       : `page ${page.id} is named ${echo(found.name)}, expected "${page.name}"`;
   });
   const boards = asRecord(canvasJson.boards);
-  /**
-   * @param {string} file - Board file
-   * @returns {Record<string, unknown> | null} Its `canvas.json` entry when the file exists too
-   */
+  // The `canvas.json` entry, only when the board file exists too.
   const present = (file: string): Record<string, unknown> | null =>
     files.has(file) && file in boards ? asRecord(boards[file]) : null;
   for (const { file, page, title } of standard.boards)
@@ -147,15 +129,7 @@ function boardViolations(
   return out.filter((m) => m !== null);
 }
 
-/**
- * One board: present, on its page, with a valid title.
- * @param {string} file - Board file
- * @param {Record<string, unknown> | null} board - Its `canvas.json` entry, null when missing
- * @param {string} page - Expected page id
- * @param {"core" | "component"} kind - Which kind of board, for the missing message
- * @param {(title: unknown) => string | null} titleMessage - Message for a wrong title
- * @returns {string | null} The first message, or null
- */
+// One board: present, on its page, with a valid title; the first message or null.
 function boardMessage(
   file: string,
   board: Record<string, unknown> | null,
@@ -169,12 +143,6 @@ function boardMessage(
   return titleMessage(board.title);
 }
 
-/**
- * The installed version of one design system in `canvas.json`.
- * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
- * @param {DsVersion} expected - Namespace and version
- * @returns {string | null} The message, or null when that version is installed
- */
 function dsVersionViolation(
   canvasJson: Record<string, unknown>,
   expected: DsVersion,
@@ -216,13 +184,7 @@ export function canvasJsonViolations(
   return messages.map((m) => `canvas.json:1 ${m}`);
 }
 
-/**
- * How a `data-sg-literal` block differs from the theme sub-tree it copies.
- * @param {string} path - Theme path (`colors`, `themeAxes.theme.dark`)
- * @param {unknown} actual - The block's value
- * @param {unknown} expected - The theme's value
- * @returns {string[]} Messages without a location
- */
+// How a `data-sg-literal` block differs from the theme sub-tree at `path`.
 function literalDiff(
   path: string,
   actual: unknown,
@@ -248,13 +210,6 @@ function literalDiff(
     : [`literal ${path} is ${echo(actual)}, theme has ${echo(expected)}`];
 }
 
-/**
- * The provenance block of the manifest's `provenanceBoard`.
- * @param {string} file - Board file
- * @param {string} text - Its contents
- * @param {BoardOptions} options - `stamp` and `dsVersion`, when given
- * @returns {string[]} Located messages
- */
 function provenanceViolations(
   file: string,
   text: string,
@@ -275,9 +230,9 @@ function provenanceViolations(
     const sha = String(stamp.themeSha256).slice(0, 12);
     if (theme !== sha)
       out.push(`${at} provenance theme ${echo(theme)}, stamp has ${echo(sha)}`);
-    if (lib !== stamp.libVersion)
+    if (typeof lib !== "string" || !sameMinor(lib, stamp.libVersion))
       out.push(
-        `${at} provenance lib ${echo(lib)}, stamp has ${echo(stamp.libVersion)}`,
+        `${at} provenance lib ${echo(lib)}, stamp has ${echo(stamp.libVersion)} (major.minor must match)`,
       );
   }
   if (options.dsVersion !== undefined && ds !== options.dsVersion.version)
@@ -287,14 +242,7 @@ function provenanceViolations(
   return out;
 }
 
-/**
- * The sections and literal blocks of one core board.
- * @param {string} file - Board file
- * @param {string} text - Its contents
- * @param {ContentRule} content - What the manifest asks of it
- * @param {Record<string, unknown>} theme - Parsed theme JSON
- * @returns {string[]} Located messages
- */
+// The sections and literal blocks of one core board.
 function boardContentMessages(
   file: string,
   text: string,
@@ -321,17 +269,7 @@ function boardContentMessages(
   return out;
 }
 
-/**
- * Board content (`--boards`): every core board carries its `data-sg-section`
- * ids and its `data-sg-literal` blocks, the blocks equal the theme, and the
- * provenance block matches the stamp and the installed design system.
- * @param {ReadBoard} read - Reads a board of the canvas
- * @param {Set<string>} files - `*.dc.html` paths present in the canvas
- * @param {unknown} theme - Parsed theme JSON
- * @param {Standard} standard - Manifest
- * @param {BoardOptions} options - `stamp` and `dsVersion`, when given
- * @returns {string[]} Located messages
- */
+// Core board sections and literals equal the theme; provenance matches stamp and design system.
 function contentViolations(
   read: ReadBoard,
   files: Set<string>,
@@ -350,13 +288,7 @@ function contentViolations(
   return out;
 }
 
-/**
- * The root padding of a component board.
- * @param {string} file - Board file
- * @param {string} text - Its contents
- * @param {number} minSteps - Smallest `calc(var(--spacing) * <n>)`
- * @returns {string | null} Located message, or null when the padding is large enough
- */
+// The root padding of a component board is at least `calc(var(--spacing) * minSteps)`.
 function rootPaddingViolation(
   file: string,
   text: string,
@@ -374,14 +306,7 @@ function rootPaddingViolation(
     : `${at} root padding ${echo(padding)} ${hint}`;
 }
 
-/**
- * The sources a component board imports: only its own, as often as it needs.
- * @param {string} file - `c-<stem>.dc.html`
- * @param {string} text - Its contents
- * @param {Set<string>} dsNames - Kebab-cased design-system component names
- * @param {string} prefix - Source board prefix (`s-`)
- * @returns {string | null} Located message, or null
- */
+// A component board imports only its own source, as often as it needs.
 function componentImportViolation(
   file: string,
   text: string,
@@ -404,15 +329,7 @@ function componentImportViolation(
   return `${file}:1 board must import exactly ${prefix}${stem}, found ${found}`;
 }
 
-/**
- * Pages of the component and source boards: only `c-*` boards on the
- * component page, every source board on its own page.
- * @param {Set<string>} files - `*.dc.html` paths present in the canvas
- * @param {Record<string, unknown>} boards - `canvas.json#boards`
- * @param {string} page - Component page id
- * @param {SourceBoards} sources - Source board page and prefix
- * @returns {string[]} Located messages
- */
+// Only `c-*` boards on the component page, every source board on its own page.
 function componentPlacementViolations(
   files: Set<string>,
   boards: Record<string, unknown>,
@@ -439,15 +356,7 @@ function componentPlacementViolations(
   return out;
 }
 
-/**
- * One `c-*` board: its sources, root padding and frame size.
- * @param {string} file - `c-<stem>.dc.html`
- * @param {string} text - Its contents
- * @param {Record<string, unknown>} board - Its `canvas.json` entry (`{}` when absent)
- * @param {Standard["componentBoards"]} limits - Largest frame and smallest padding
- * @param {ComponentSources} sources - Design-system names and the source prefix
- * @returns {string[]} Located messages
- */
+// One `c-*` board: its sources, root padding and frame size (`board` is `{}` when absent).
 function componentBoardViolations(
   file: string,
   text: string,
@@ -474,18 +383,7 @@ function componentBoardViolations(
   return out.filter((m) => m !== null);
 }
 
-/**
- * Component pages (`--boards`, when the manifest has `sourceBoards`): no
- * `cl-*` boards; the component page holds only `c-*` boards; each `c-*` board
- * imports exactly its `s-*` source (a design-system component renders from
- * the bundle and imports none), inside a padded frame no larger than the
- * manifest's; `s-*` boards live on their page; no board imports a `c-*` board.
- * @param {ReadBoard} read - Reads a board of the canvas
- * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
- * @param {Set<string>} files - `*.dc.html` paths present in the canvas
- * @param {Standard} standard - Manifest
- * @returns {string[]} Located messages
- */
+// Component pages, when the manifest has `sourceBoards`; no board imports a `c-*` board.
 function componentPageViolations(
   read: ReadBoard,
   canvasJson: Record<string, unknown>,
@@ -526,30 +424,14 @@ function componentPageViolations(
   return out;
 }
 
-/**
- * The rank of a board in `canvas.json#order`: core, `c-*`, `s-*`, the rest.
- * @param {string} file - Board file
- * @param {Standard} standard - Manifest
- * @param {string} prefix - Source board prefix
- * @returns {number} 0–3
- */
+// Rank in `canvas.json#order`: 0 core, 1 `c-*`, 2 source boards, 3 the rest.
 function orderRank(file: string, standard: Standard, prefix: string): number {
   if (standard.boards.some((b) => b.file === file)) return 0;
   if (file.startsWith("c-")) return 1;
   return file.startsWith(prefix) ? 2 : 3;
 }
 
-/**
- * Frames (`--boards`, when the manifest has `sourceBoards`): every board's
- * `$preview` equals its `canvas.json` frame; core and `c-*` roots neither fix
- * their height nor hide overflow; the manifest pages come first, in order;
- * `canvas.json#order` lists core, `c-*`, `s-*`, then screens.
- * @param {ReadBoard} read - Reads a board of the canvas
- * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
- * @param {Set<string>} files - `*.dc.html` paths present in the canvas
- * @param {Standard} standard - Manifest
- * @returns {string[]} Located messages
- */
+// Frames: `$preview` equals the frame, core and `c-*` roots do not clip, pages and order grouped.
 function frameViolations(
   read: ReadBoard,
   canvasJson: Record<string, unknown>,
@@ -574,12 +456,6 @@ function frameViolations(
   return out.filter((m) => m !== null);
 }
 
-/**
- * @param {string} file - Board file
- * @param {string} text - Its contents
- * @param {Record<string, unknown>} board - Its `canvas.json` entry
- * @returns {string | null} Located message when `$preview` is missing or differs from the frame
- */
 function previewViolation(
   file: string,
   text: string,
@@ -593,12 +469,7 @@ function previewViolation(
     : `${file}:1 $preview ${String(preview.width)}×${String(preview.height)}, canvas.json frame ${token(w)}×${token(h)}`;
 }
 
-/**
- * A root that fixes its height or hides its overflow clips the frame.
- * @param {string} file - Core or `c-*` board
- * @param {string} text - Its contents
- * @returns {string[]} Located messages
- */
+// A root that fixes its height or hides its overflow clips the frame.
 function rootFrameViolations(file: string, text: string): string[] {
   const root = rootElement(text);
   if (!root) return [];
@@ -618,11 +489,7 @@ function rootFrameViolations(file: string, text: string): string[] {
   return out;
 }
 
-/**
- * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
- * @param {Standard} standard - Manifest
- * @returns {string | null} Located message unless the manifest pages come first, in order (a missing page is reported elsewhere)
- */
+// The manifest pages come first, in order; a missing page is reported elsewhere.
 function pageOrderViolation(
   canvasJson: Record<string, unknown>,
   standard: Standard,
@@ -635,13 +502,6 @@ function pageOrderViolation(
     : null;
 }
 
-/**
- * @param {Record<string, unknown>} canvasJson - Parsed `canvas.json`
- * @param {Set<string>} files - `*.dc.html` paths present in the canvas
- * @param {Standard} standard - Manifest
- * @param {string} prefix - Source board prefix
- * @returns {string | null} Located message at the first board listed before a lower group
- */
 function orderGroupViolation(
   canvasJson: Record<string, unknown>,
   files: Set<string>,
@@ -676,7 +536,7 @@ export function loadRecipes(file: string, label: string): Recipes {
   };
   if (!isPlainObject(parsed)) fail("must map component names to their axes");
   // Object.fromEntries defines own keys, so a "__proto__" axis stays an axis.
-  return Object.fromEntries(
+  return Object.fromEntries<Record<string, string[]>>(
     Object.entries(asRecord(parsed)).map(([name, axes]) => {
       if (!KEBAB.test(name))
         fail(`component name ${token(name)} is not kebab-case`);
@@ -694,18 +554,10 @@ export function loadRecipes(file: string, label: string): Recipes {
       );
       return [name, Object.fromEntries(grid)];
     }),
-  ) as Recipes;
+  );
 }
 
-/**
- * The variant grid (`--boards --recipes`): every `c-<name>` board marks each
- * axis value of its recipe with a `data-sg-cell="<axis>:<value>"` element.
- * @param {ReadBoard} read - Reads a board of the canvas
- * @param {Set<string>} files - `*.dc.html` paths present in the canvas
- * @param {Recipes} recipes - The recipes
- * @param {Standard} standard - Manifest
- * @returns {string[]} Located messages
- */
+// Every `c-<name>` board marks each recipe axis value with `data-sg-cell="<axis>:<value>"`.
 function recipeViolations(
   read: ReadBoard,
   files: Set<string>,
@@ -733,9 +585,7 @@ function recipeViolations(
 }
 
 /**
- * The `--boards` rules that read board contents: content, component pages
- * frames and, with `--recipes`, the variant grid. Empty unless `--boards` is
- * asked for and `canvas.json` exists.
+ * `--boards` rules over board contents (content, component pages, frames, `--recipes` grid).
  * @param {string} canvasDir - Canvas directory
  * @param {unknown} theme - Parsed theme JSON
  * @param {BoardOptions} options - Which checks to run

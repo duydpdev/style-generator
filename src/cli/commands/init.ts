@@ -150,9 +150,7 @@ async function scaffold(
 }
 
 /**
- * Initialize project scaffolding for style-gen. Never exits the process: a
- * cancelled prompt returns 0 (after printing the cancel message), any other
- * failure is logged and returns 1.
+ * Initialize project scaffolding; never exits: a cancelled prompt returns 0, a failure 1.
  * @param {InitArgs} args The initial CLI arguments.
  * @param {string} [cwd] The project root; defaults to `process.cwd()`.
  * @param {string | URL} [rulesSource] The agent rules file to copy; defaults to the one this build ships.

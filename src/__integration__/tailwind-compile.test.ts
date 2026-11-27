@@ -297,8 +297,8 @@ describe("integration: Tailwind v4 compile pipeline", () => {
     postcss.parse(compiled).walkDecls("background-color", (decl) => {
       if (decl.value !== "var(--sg-color-primary-selected)") return;
       const chain: string[] = [];
-      for (let node = decl.parent; node && node.type !== "root"; ) {
-        if (node.type === "rule") chain.unshift((node as Rule).selector);
+      for (let node = decl.parent; node && node.type !== "root";) {
+        if (node.type === "rule") chain.unshift(node.selector);
         node = node.parent;
       }
       chains.push(chain.join(" "));

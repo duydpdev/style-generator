@@ -49,26 +49,10 @@ export type LayoutProps = ThemeSpacingProps<Tokens> & {
     | "hidden"
     | undefined;
   readonly overflow?:
-    | "auto"
-    | "hidden"
-    | "clip"
-    | "visible"
-    | "scroll"
-    | undefined;
+    "auto" | "hidden" | "clip" | "visible" | "scroll" | undefined;
   readonly zIndex?: 0 | 10 | 20 | 30 | 40 | 50 | "auto" | undefined;
   readonly opacity?:
-    | 0
-    | 10
-    | 20
-    | 30
-    | 40
-    | 50
-    | 60
-    | 70
-    | 80
-    | 90
-    | 100
-    | undefined;
+    0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100 | undefined;
   readonly cursor?:
     | "auto"
     | "default"
@@ -82,21 +66,10 @@ export type LayoutProps = ThemeSpacingProps<Tokens> & {
   readonly pointerEvents?: "none" | "auto" | undefined;
   readonly select?: "none" | "text" | "all" | "auto" | undefined;
   readonly transition?:
-    | "none"
-    | "all"
-    | "colors"
-    | "opacity"
-    | "shadow"
-    | "transform"
-    | undefined;
+    "none" | "all" | "colors" | "opacity" | "shadow" | "transform" | undefined;
   readonly aspect?: "auto" | "square" | "video" | undefined;
   readonly objectFit?:
-    | "contain"
-    | "cover"
-    | "fill"
-    | "none"
-    | "scaleDown"
-    | undefined;
+    "contain" | "cover" | "fill" | "none" | "scaleDown" | undefined;
   readonly visibility?: "visible" | "invisible" | "collapse" | undefined;
   readonly ringColor?: ColorValue | undefined;
   readonly outlineColor?: ColorValue | undefined;

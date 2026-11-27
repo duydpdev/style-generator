@@ -20,86 +20,45 @@ import {
 
 /** Options of `styleGenNext()`, which wraps a Next.js config and emits `theme.css` and `theme.tokens.ts` for `next dev` and `next build`. */
 export interface StyleGenNextOptions {
-  /**
-   * Directory holding `style-gen.config.json`, resolved against
-   * `process.cwd()` (which is the default).
-   */
+  /** Directory holding `style-gen.config.json`, resolved against `process.cwd()` (the default). */
   root?: string;
 }
 
 const PLUGIN_NAME = "style-gen-next";
 
-/** Next phases that need `theme.css` on disk: dev server and production build. */
+// Next phases that need `theme.css` on disk: dev server and production build.
 const EMIT_PHASES = new Set([
   "phase-development-server",
   "phase-production-build",
 ]);
 
-/** Second argument Next passes to a function-form config. */
+// Second argument Next passes to a function-form config.
 interface NextConfigContext {
   defaultConfig: Record<string, unknown>;
 }
 
-/**
- * The config Next ends up with: a function-form config's return value, else
- * the object itself. `never[]` parameters match a function whatever it
- * annotates `ctx` as.
- */
+// A function-form config's return value, else the object; `never[]` matches any `ctx` annotation.
 type ResolvedNextConfig<T> = T extends (...args: never[]) => infer R ? R : T;
 
-/**
- * Module-scoped dev watcher. `next.config.*` can be evaluated more than
- * once per process (Next re-reads it for phase detection, then again for
- * the actual dev server, and again per worker in some setups) — a second
- * `styleGenNext(...)(...)(...)` call in the same process must reuse the
- * existing watcher instead of spawning another one on the same file. A call
- * for another theme or output file replaces it.
- */
+// Rationale: documents/architecture.md#stylegennext-why-the-dev-watcher-is-a-non-persistent-singleton
 let devWatcher: ThemeWatchHandle | null = null;
 let devWatcherKey: string | null = null;
 
-/**
- * Roots whose "no config found" line was already printed. Next evaluates
- * `next.config.*` several times per process, so the line is said once per
- * root and process (Next's workers each print it once).
- */
+// Roots whose "no config found" line was printed: once per root and process.
 const noConfigReported = new Set<string>();
 
-/**
- * Close a watcher without letting its rejection escape: nothing can react to
- * a failed close during a swap or teardown.
- * @param {ThemeWatchHandle} watcher - The watcher to close
- */
+// Nothing can react to a failed close during a swap or teardown.
 const closeQuietly = (watcher: ThemeWatchHandle): void => {
   watcher.close().catch(() => undefined);
 };
 
-/**
- * Start (or reuse) the singleton dev watcher for `target`. `next dev`
- * re-emits `theme.css` on save, debounced by `watchThemeFile` (200ms, like
- * the Vite plugin). A failed re-emit or a watcher error is logged and the
- * watcher keeps running, so the next good save recovers.
- *
- * `persistent: false`: this watcher must never be what keeps a Node
- * process alive. The real long-running process during `next dev` is
- * Next's own HTTP dev server — that's what keeps the event loop open.
- * If `next.config.*` is ever evaluated in a short-lived process (e.g. a
- * config-validation pass before the dev server actually starts), a
- * `persistent: true` watcher would hang that process forever since
- * nothing else keeps its event loop busy. `persistent: false` lets Node
- * exit on its own schedule regardless of who's holding this reference.
- * @param {EmitTarget} target - Theme file, output file and options to re-emit with
- * @param {readonly string[]} configFiles - Config files to watch; an edit of one reloads the target in place
- * @param {string} root - Directory the config is read from
- */
+// Starts (or reuses) the dev watcher; a failed re-emit is logged and the next good save recovers.
 const startDevWatcher = (
   target: EmitTarget,
   configFiles: readonly string[],
   root: string,
 ): void => {
-  // Options take part in the key: a re-evaluated config with the same paths
-  // but other generator options must not keep the watcher (and its options)
-  // of the earlier evaluation.
+  // Options are in the key: other options with the same paths must not keep the old watcher.
   const key = JSON.stringify([
     target.themeFile,
     target.outFile,
@@ -110,8 +69,7 @@ const startDevWatcher = (
   if (devWatcher && devWatcherKey === key) return;
   if (devWatcher) closeQuietly(devWatcher);
 
-  // Same reload `generate --watch` does: a bad config keeps the last valid
-  // target instead of falling back to the defaults halfway through an edit.
+  // Like `generate --watch`: a bad config keeps the last valid target, not the defaults.
   const reloadTarget = (): EmitTarget | ConfigIssues => {
     const reloaded = readConfigFile(root);
     const toIssues = (problem: string): ConfigIssues => ({
@@ -145,55 +103,11 @@ const startDevWatcher = (
 };
 
 /**
- * Next.js config wrapper that emits `theme.css` and `theme.tokens.ts` from a
- * theme JSON — equivalent to `styleGenVite` for consumers who don't use Vite.
- * Deliberately does not import `next`: it stays a plain function of the config
- * object and phase string, so it works under both webpack and Turbopack
- * without adding a peer dependency.
- *
- * Usage in `next.config.mjs`:
- * ```js
- * import { styleGenNext } from "@duydpdev/style-generator/next";
- * export default styleGenNext()(nextConfig);
- * ```
- *
- * Every option lives in `style-gen.config.json` (else
- * `package.json#style-gen`) in `root` (default `process.cwd()`) — the
- * `theme`, `output`, `tokensOutput` and every `generate()` option — exactly
- * as `style-gen generate` reads them. The only plugin option is `root`, the
- * directory holding that file (a relative one resolves against
- * `process.cwd()`): `styleGenNext({ root })(nextConfig)`.
- *
- * Path rules (`resolveProjectPath`, against the root): the theme may live
- * anywhere (absolute, or `..` out of the project: a monorepo shares one); the
- * generated files must stay inside it.
- *
- * Only `phase-development-server` and `phase-production-build` read the
- * theme and write the files; every other phase (`phase-production-server`,
- * `phase-export`, `phase-info`, `phase-test`) returns the config without
- * touching the disk, so a production container need not ship the theme JSON.
- * A function-form Next config is called with `(phase, ctx)` and its result
- * is returned.
- *
- * In `next dev` a change to the config file reloads it in place and
- * re-emits; an invalid edit is logged and the last valid config stays in
- * force.
- *
- * **Limitation:**
- * - **Symlinks are not `realpath`'d.** `resolveProjectPath` compares the
- *   logical (non-dereferenced) path against the root; it never calls
- *   `fs.realpathSync`. An `output` that is itself a symlink living inside
- *   the project is accepted even if its TARGET resolves outside it — the
- *   guard only rejects a literal `..`-escaping input path, not a symlink
- *   whose target escapes after the filesystem resolves it.
+ * Next.js config wrapper that emits `theme.css` and `theme.tokens.ts`, read from `style-gen.config.json` in `root`.
+ * Only the dev-server and production-build phases touch the disk; `next dev` also watches and re-emits.
  * @param {StyleGenNextOptions} [opts] - `{ root }`; omit it to read the config from `process.cwd()`
- * @returns {(nextConfig: unknown) => (phase: string, ctx?: object) => unknown}
- *   A function that takes the consumer's Next config and returns the
- *   phase-aware config function Next.js expects from `next.config.*`.
- * @throws {Error} At call time for an unknown option key such as `themePath` or `outDir`: the theme path, output and generator options belong in `style-gen.config.json`
- * @example
- * // next.config.ts
- * export default styleGenNext()(nextConfig);
+ * @returns {(nextConfig: unknown) => (phase: string, ctx?: object) => unknown} Wraps the Next config into the phase-aware config function
+ * @throws {Error} For an unknown option key such as `themePath`: those settings belong in `style-gen.config.json`
  */
 export const styleGenNext = (opts?: StyleGenNextOptions) => {
   const { root: rootOption } = parsePluginRootOptions(opts, PLUGIN_NAME);

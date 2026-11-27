@@ -34,6 +34,7 @@ const ruleFor = (root: Root, selector: string): Rule | undefined => {
 };
 
 const isMedia = (n: { type: string }): n is AtRule =>
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-class-instance-assignment -- the guard narrows a structural node type, nothing is constructed
   n.type === "atrule" && (n as AtRule).name === "media";
 
 /**

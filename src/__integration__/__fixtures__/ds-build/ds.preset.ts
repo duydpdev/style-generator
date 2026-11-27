@@ -1,4 +1,4 @@
-// Fixture presets for build-ds.test.ts (same shape the producer's --preset reads: `examples/design-system/src/recipes/button.ts`).
+// Fixture presets for the ds build tests (same shape `style-gen ds build --preset` reads: `examples/design-system/src/recipes/button.ts`).
 export const boxPreset = { base: "relative" } as const;
 
 export const textPreset = {

@@ -24,12 +24,7 @@ type ButtonOwnProps<
   B extends string,
 > = ThemeSpacingProps<W> & {
   readonly variant?:
-    | "solid"
-    | "outline"
-    | "soft"
-    | "ghost"
-    | "link"
-    | undefined;
+    "solid" | "outline" | "soft" | "ghost" | "link" | undefined;
   /** One of `preset.intents`. */
   readonly color?: B | undefined;
   readonly size?: "sm" | "md" | "lg" | "icon" | undefined;

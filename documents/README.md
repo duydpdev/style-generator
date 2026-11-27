@@ -1,6 +1,6 @@
 # Documents
 
-Index of all documentation for `@duydpdev/style-generator`. API, option and CLI reference lives in [`reference/`](./reference/core.md); the repo's [`README.md`](../README.md) only keeps the introduction, installation and quickstart; releases are listed in the [`CHANGELOG.md`](../CHANGELOG.md). Conventions for agents live in [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
+Index of all documentation for `@duydpdev/style-generator`. API, option and CLI reference lives in [`reference/`](./reference/core.md); the repo's [`README.md`](../README.md) only keeps the introduction, installation and quickstart; releases are listed in the [`CHANGELOG.md`](../CHANGELOG.md). Conventions for agents live in [`.claude/CLAUDE.md`](../.claude/CLAUDE.md) and the area rules in [`.claude/rules/`](../.claude/rules/).
 
 ## Start here (shown on the site `/docs`)
 
@@ -28,7 +28,7 @@ The site renders the files listed in `site/src/lib/docs-meta.json` at `/docs/<sl
 
 ## Vietnamese mirror ([`vi/`](./vi/README.md))
 
-English is the source of truth. Every file listed in `site/src/lib/docs-meta.json` has a Vietnamese twin at the same path under `vi/` (the repo `README.md` → `vi/README.md`); the site renders it at `/vi/docs/<slug>` with the entry's `vi.title`. `node scripts/check-docs-i18n.mjs` (CI check job, after `node scripts/docs-embed.mjs --check`) fails when a twin is missing, when line 1 (`<!-- source: <english path> sha256: <hash> -->`) records an older version of the English file, or when the twin's heading levels (with their inline code), doc-script markers (`embed`, `signature`, `snippet`, `> [!NOTE]`-style alerts), code blocks or signature blocks differ from the English file. Code blocks and signature blocks are copied verbatim; everything else is translated.
+English is the source of truth. Every file listed in `site/src/lib/docs-meta.json` has a Vietnamese twin at the same path under `vi/` (the repo `README.md` → `vi/README.md`); the site renders it at `/vi/docs/<slug>` with the entry's `vi.title`. `node scripts/check-docs-i18n.mjs` (CI `docs` job, after `node scripts/docs-embed.mjs --check`) fails when a twin is missing, when line 1 (`<!-- source: <english path> sha256: <hash> -->`) records an older version of the English file, or when the twin's heading levels (with their inline code), doc-script markers (`embed`, `signature`, `snippet`, `> [!NOTE]`-style alerts), code blocks or signature blocks differ from the English file. Code blocks and signature blocks are copied verbatim; everything else is translated.
 
 When you change an English doc:
 

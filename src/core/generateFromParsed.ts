@@ -8,11 +8,7 @@ import type { ResolvedOptions } from "./resolveOptions";
 import type { ThemeConfig } from "./themeSchema";
 
 /**
- * The CSS half of `generate()`: join the screens `@theme`, the theme vars +
- * `@theme inline` mapping, the typography and spacing `@utility` blocks and
- * the registry's `@source inline` lines. Does no validation: `parsed` and
- * `resolved` must come from `prepareGenerate`. Internal: not exported from
- * any barrel.
+ * The CSS half of `generate()`; no validation, inputs come from `prepareGenerate`.
  * @param {ThemeConfig} parsed - Theme already validated
  * @param {ResolvedOptions} resolved - Options already resolved
  * @returns {string} The complete CSS string

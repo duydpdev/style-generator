@@ -8,6 +8,7 @@ import { join, relative, sep } from "node:path";
 
 import { errorMessage } from "../../../node/errorMessage";
 
+import { boardClassUses, type ClassUse } from "./classCandidates";
 import {
   ANY_LITERAL,
   BINDING,
@@ -20,13 +21,7 @@ import {
   type LineOf,
 } from "./parseHtml";
 
-/**
- * UTF-16 code-unit order, the order of `Array#sort()` without a comparator:
- * reports and the inventory list files the same way on every locale.
- * @param {string} a - First string
- * @param {string} b - Second string
- * @returns {number} Negative, zero or positive
- */
+// UTF-16 code-unit order, so reports list files the same way on every locale.
 const byCodeUnit = (a: string, b: string): number =>
   Number(a > b) - Number(a < b);
 
@@ -35,11 +30,7 @@ export class CanvasInputError extends Error {
   override name = "CanvasInputError";
 }
 
-/**
- * The reason of a failed read: the errno code when there is one.
- * @param {unknown} error - What `readFileSync`/`readdirSync` threw
- * @returns {string} `ENOENT`, `EISDIR`, … or the error message
- */
+// The errno code of a failed read (`ENOENT`, …), else the error message.
 const readReason = (error: unknown): string => {
   const code = (error as { code?: unknown } | null)?.code;
   return typeof code === "string" ? code : errorMessage(error);
@@ -148,6 +139,8 @@ export interface ScannedFile {
   dsGlobals: string[];
   dsPaths: string[];
   intents: Located[];
+  /** The `class="…"` names of a board; none for a stylesheet. */
+  classUses: ClassUse[];
 }
 
 /** Files a design-system producer writes; they declare the theme's own aliases. */
@@ -165,7 +158,6 @@ const PRODUCER_FILES = [
  */
 export function canvasFiles(dir: string, label = dir): string[] {
   const out: string[] = [];
-  /** @param {string} at - Directory to read */
   const walk = (at: string) => {
     let entries;
     try {
@@ -192,14 +184,7 @@ export function canvasFiles(dir: string, label = dir): string[] {
   return out.sort(byCodeUnit);
 }
 
-/**
- * Custom properties read (`var(--x)`) or declared (`--x:`), then any other
- * `--bl-` text.
- * @param {string} file - Path relative to the canvas dir (POSIX)
- * @param {string} text - File contents
- * @param {LineOf} lineOf - Index to line
- * @returns {Occurrence[]} In that order
- */
+// Custom properties read (`var(--x)`) or declared (`--x:`), then any other `--bl-` text.
 function collectVars(file: string, text: string, lineOf: LineOf): Occurrence[] {
   const out: Occurrence[] = [];
   const varStarts = new Set<number>();
@@ -224,13 +209,7 @@ function collectVars(file: string, text: string, lineOf: LineOf): Occurrence[] {
   return out;
 }
 
-/**
- * `/_blob/` stylesheets, then every other `/_blob/` link.
- * @param {string} file - Path relative to the canvas dir (POSIX)
- * @param {string} text - File contents
- * @param {LineOf} lineOf - Index to line
- * @returns {Occurrence[]} In that order
- */
+// `/_blob/` stylesheets, then every other `/_blob/` link.
 function collectBlobs(
   file: string,
   text: string,
@@ -263,13 +242,7 @@ function collectBlobs(
   return out;
 }
 
-/**
- * `bl-*` class names, one entry per use: in `class="…"`, and in string
- * literals of `<script>` blocks, which bind a class at runtime
- * (`frost: sc ? 'bl-frost' : ''`).
- * @param {string} text - File contents
- * @returns {string[]} Class names
- */
+// `bl-*` class names per use: in `class="…"` and in `<script>` string literals bound at runtime.
 function collectBlClasses(text: string): string[] {
   const attributes = [...text.matchAll(/\bclass\s*=\s*(["'])([^"']*)\1/g)];
   const scripts = [...text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
@@ -284,23 +257,11 @@ function collectBlClasses(text: string): string[] {
   );
 }
 
-/**
- * @param {string} value - Declared `font-size` value
- * @param {boolean} isBinding - Whether the value is a `{{name}}` binding
- * @returns {FontSize["kind"]} The value's kind
- */
 function fontSizeKind(value: string, isBinding: boolean): FontSize["kind"] {
   if (isBinding) return "binding";
   return /^(?:\d+(?:\.\d+)?|\.\d+)px$/.test(value) ? "px" : "other";
 }
 
-/**
- * Every `font-size:` declaration.
- * @param {string} file - Path relative to the canvas dir (POSIX)
- * @param {string} text - File contents
- * @param {LineOf} lineOf - Index to line
- * @returns {FontSize[]} In document order
- */
 function collectFontSizes(
   file: string,
   text: string,
@@ -328,13 +289,6 @@ function collectFontSizes(
   });
 }
 
-/**
- * Every `font-weight:` declaration.
- * @param {string} file - Path relative to the canvas dir (POSIX)
- * @param {string} text - File contents
- * @param {LineOf} lineOf - Index to line
- * @returns {Located[]} In document order
- */
 function collectFontWeights(
   file: string,
   text: string,
@@ -350,16 +304,8 @@ function collectFontWeights(
   }));
 }
 
-/**
- * Every `border-radius` (and `border-*-radius`), `line-height` and
- * `font-family` declaration. A value runs to `;` or the end of its `style`
- * attribute, so a quoted family (`'Geist', sans-serif`) is read whole;
- * outside an attribute it runs to `;`, `}`, `<` or the end of the line.
- * @param {string} file - Path relative to the canvas dir (POSIX)
- * @param {string} text - File contents
- * @param {LineOf} lineOf - Index to line
- * @returns {HandValue[]} In document order
- */
+// Radius, line-height and font-family values; inside a `style` attribute a value runs to `;`
+// or the attribute end (a quoted family is read whole), elsewhere to `;`, `}`, `<` or EOL.
 function collectHandValues(
   file: string,
   text: string,
@@ -386,13 +332,7 @@ function collectHandValues(
   return out;
 }
 
-/**
- * Every `*.Button` `color`, a binding expanded to the literals assigned to it.
- * @param {string} file - Path relative to the canvas dir (POSIX)
- * @param {string} text - File contents
- * @param {LineOf} lineOf - Index to line
- * @returns {Located[]} In document order
- */
+// Every `*.Button` `color`, a binding expanded to the literals assigned to it.
 function collectIntents(file: string, text: string, lineOf: LineOf): Located[] {
   const out: Located[] = [];
   for (const tag of text.matchAll(/<[\w-]+\b[^>]*>/g)) {
@@ -440,6 +380,7 @@ export function scanText(file: string, text: string): ScannedFile {
     ].map((m) => m[1] ?? ""),
     dsPaths: [...text.matchAll(/(?<![\w-])ds\/[^"' )]+/g)].map((m) => m[0]),
     intents: collectIntents(file, text, lineOf),
+    classUses: file.endsWith(".dc.html") ? boardClassUses(file, text) : [],
   };
 }
 
@@ -457,10 +398,6 @@ export function scanCanvas(
   );
 }
 
-/**
- * @param {Record<string, number>} counts - Counter to update
- * @param {string} key - Key to count once more
- */
 function bump(counts: Record<string, number>, key: string) {
   counts[key] = (counts[key] ?? 0) + 1;
 }

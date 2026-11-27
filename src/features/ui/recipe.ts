@@ -3,11 +3,7 @@ import type { ClassValue } from "clsx";
 
 import { createVariantMapper } from "../cva/createVariantMapper";
 
-/**
- * The token arrays a recipe factory reads: a structural subset of
- * `DesignTokens.Web`, so `generate().tokens.Web` and
- * `createDesignTokens().DesignTokens.Web` are assignable to it.
- */
+/** The token arrays a recipe factory reads: a structural subset of `DesignTokens.Web`. */
 export interface RecipeTokens {
   readonly colors: readonly string[];
   readonly typography: readonly string[];
@@ -29,11 +25,9 @@ export interface RecipeTables {
   readonly base: ClassValue;
   readonly variants: VariantTable;
   readonly compoundVariants?:
-    | readonly Readonly<Record<string, ClassValue>>[]
-    | undefined;
+    readonly Readonly<Record<string, ClassValue>>[] | undefined;
   readonly defaultVariants?:
-    | Readonly<Record<string, string | number | boolean | undefined>>
-    | undefined;
+    Readonly<Record<string, string | number | boolean | undefined>> | undefined;
 }
 
 /** Recipe call props: variant name → option (`true`/`false` for boolean variants, a number for a numeric option such as `zIndex: 10`). */
@@ -41,9 +35,8 @@ export type RecipeProps = Readonly<
   Record<string, string | number | boolean | null | undefined>
 >;
 
-// `string extends O`: the tables are not literal, so any option is possible.
-// A numeric key (`10`) also takes its string form; a numeric string key (`"10"`) also takes the number.
-// `${infer N extends number}` infers a wide `number` for a key that does not round-trip (`"01"`, `".5"`, `"1.0"`, `"0x10"`, `"1e3"`):
+// Non-literal tables accept any option. A numeric key also takes its string form and vice versa,
+// except a string that does not round-trip through `String(n)` (`"01"`, `".5"`, `"1e3"`):
 // cva looks up `String(n)`, so those keys stay string-only.
 type VariantOptionValue<O> = string extends O
   ? string | number | boolean
@@ -62,9 +55,7 @@ type VariantOptionValue<O> = string extends O
 /** Call props of a recipe: every variant name of `T`, only the option keys of its table as values (`"true"`/`"false"` keys mean boolean, a numeric key also takes its number or string form). */
 export type RecipeVariantProps<T extends RecipeTables> = Readonly<{
   [K in keyof T["variants"]]?:
-    | VariantOptionValue<keyof T["variants"][K]>
-    | null
-    | undefined;
+    VariantOptionValue<keyof T["variants"][K]> | null | undefined;
 }>;
 
 /** A recipe built from tables: props in, one class string out; `RecipeFn<T>` knows the variant names of its tables `T`. */
@@ -73,17 +64,10 @@ export type RecipeFn<T extends RecipeTables = RecipeTables> = (
 ) => string;
 
 /**
- * cva over a recipe's tables. Compound and default entries are loose
- * records, so they are cast here once instead of in every recipe.
- * @template T - The tables type; its variant names type the recipe's props
+ * cva over a recipe's tables; its variant names type the recipe's props.
+ * @template T - The tables type
  * @param {T} tables - Base classes, variants, compound and default variants
  * @returns {RecipeFn<T>} The recipe
- * @example
- * const box = recipeFromTables({
- *   base: "flex",
- *   variants: { rounded: createVariantMapper("rounded", tokens.borderRadius) },
- * });
- * box({ rounded: "pill" });
  */
 export const recipeFromTables = <T extends RecipeTables>(
   tables: T,
@@ -109,10 +93,8 @@ export const pick = (map: object, key: string): string => {
 };
 
 /**
- * The text colour that sits on an intent's fill: `text-<intent>-foreground`
- * when the theme declares `<intent>Foreground`, else `text-<fallback>`.
- * An `on<Intent>` key is not read; `style-gen doctor` names its
- * `<intent>Foreground` rename.
+ * The text colour on an intent's fill: `text-<intent>-foreground` when the
+ * theme declares `<intent>Foreground` (an `on<Intent>` key is not read), else `text-<fallback>`.
  * @param {readonly string[]} colors - The theme's `colors` tokens
  * @param {string} intent - A color key (`primary`)
  * @param {string} fallback - The color key used when `<intent>Foreground` is absent

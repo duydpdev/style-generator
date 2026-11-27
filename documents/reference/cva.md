@@ -79,29 +79,8 @@ export declare function createVariantMapper<
 };
 ```
 
-Creates a mapping of tokens to their corresponding prefixed CSS classes.
-Classes are always kebab-cased with the SAME `toKebabCase` used by the
-registry (`flattenByCategory`/`generateSourceInline`), so a mapper's
-output is guaranteed to match a class the registry emits `@source
-inline(...)` for.
-
-The optional `{ states }` argument (e.g. `COLOR_STATES`) is a table of
-`{ suffix, variant }` states to look up as sibling RAW tokens. For a raw
-token `t`, a state is appended to `t`'s class as `<variant>:<class>` only
-when `tokens` also contains `t` + `suffix` (`primary` + `Hover` ->
-`primaryHover` -> `hover:bg-primary-hover`; `Selected` maps to
-`aria-selected:`). A token with no matching sibling keeps its plain
-single class; sibling tokens themselves are plain single classes. The
-result is a literal chained string when `states` is a literal tuple
-(`as const`, `COLOR_STATES`) and `string` when it is typed
-`readonly ColorState[]`. `{ allowUnregisteredPrefix: true }` accepts any
-prefix string instead of only registry prefixes.
-
-`{ opacities }` (e.g. `tokens.opacities`) adds a `token/step` key per token
-and step mapped to `class/step` (`primary/10` -> `bg-primary/10`); combined
-with `{ states }`, the state classes stay on the base key only
-(`primary/10` never carries `hover:`). Not combinable with
-`allowUnregisteredPrefix`.
+Maps tokens to prefixed classes kebab-cased like the registry's, so each class has an `@source inline` line.
+`{ states }` chains `variant:class` for sibling tokens (`primaryHover`); `{ opacities }` adds `token/step` keys.
 
 <!-- /signature -->
 
@@ -192,15 +171,7 @@ export declare const COLOR_STATES: readonly [
 ];
 ```
 
-The interactive states a flat color token can opt into by declaring a
-sibling key (`primary` + `primaryHover` -> `hover:bg-primary-hover`,
-`primarySelected` -> `aria-selected:bg-primary-selected`).
-
-Single source of truth for BOTH sides of the contract: the registry's
-`colorsCategory.states` (which drives the `@source inline` state lines) and
-consumers passing `{ states: COLOR_STATES }` to `createVariantMapper`.
-Kept in its own dependency-free module so the browser-safe `./cva`
-subpath can re-export it without pulling Zod or the registry.
+States a color token opts into via a sibling key; single source for the registry and `createVariantMapper`.
 
 <!-- /signature -->
 
@@ -217,9 +188,7 @@ export declare interface ColorState {
 }
 ```
 
-One interactive state a flat color token can opt into: the sibling key is
-the token plus `suffix` (`primary` + `Hover` → `primaryHover`), and its
-class is chained behind the Tailwind `variant` (`hover:bg-primary-hover`).
+One interactive state: sibling key `<token><suffix>` (`primaryHover`), class behind `variant` (`hover:bg-primary-hover`).
 
 <!-- /signature -->
 

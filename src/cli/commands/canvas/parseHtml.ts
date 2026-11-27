@@ -1,8 +1,6 @@
 /**
- * Parsers for the `/design` editor's board markup: line lookup, `<script>`
- * assignments, `style` attributes, the root element inside `<x-dc>`,
- * `<dc-import>`, the `data-sg-*` marker blocks and the `$preview` frame.
- * Every marker format the canvas rules read lives here.
+ * Parsers for the `/design` editor's board markup; every marker format the
+ * canvas rules read lives here.
  */
 
 /**
@@ -36,13 +34,7 @@ const CLOSERS = ")]}";
 
 const TERMINATORS = ",;\n";
 
-/**
- * Where the expression starting at `start` ends: a top-level `,`, `;`,
- * newline or unmatched closing bracket, else the end of the script.
- * @param {string} script - Script source
- * @param {number} start - Index of the expression's first character
- * @returns {number} Index one past the expression
- */
+// One past the expression at `start`: a top-level `,`, `;`, newline or unmatched closer.
 function expressionEnd(script: string, start: number): number {
   let depth = 0;
   let quote: string | null = null;
@@ -59,13 +51,7 @@ function expressionEnd(script: string, start: number): number {
   return script.length;
 }
 
-/**
- * The expression assigned to `name` (`name: expr` or `name = expr`), ending at
- * a top-level `,`, `;`, closing bracket or newline.
- * @param {string} script - Script source
- * @param {string} name - Key or variable name
- * @returns {string[]} Every assigned expression
- */
+// Every expression assigned to `name` (`name: expr` or `name = expr`).
 function assignedExpressions(script: string, name: string): string[] {
   const escaped = name.replace(/[$]/g, "\\$&");
   const re = new RegExp(`(?<![\\w$])${escaped}['"]?\\s*(?::|=(?![=>]))`, "g");
@@ -76,8 +62,7 @@ function assignedExpressions(script: string, name: string): string[] {
 }
 
 /**
- * Quoted string literals the file's `<script>` blocks assign to `name`, in
- * order, without duplicates.
+ * Quoted literals the `<script>` blocks assign to `name`, in order, deduplicated.
  * @param {string} text - File contents
  * @param {string} name - Binding name (`h1`, `s.h1` → `h1`)
  * @param {RegExp} literal - Which literals count (must have one capture group)
@@ -143,8 +128,7 @@ export function styleAttributes(text: string): StyleAttr[] {
 }
 
 /**
- * The declaration block around `index`, and the element text when it is a
- * `style` attribute.
+ * The declaration block around `index`, plus the element text for a `style` attribute.
  * @param {string} text - File contents
  * @param {StyleAttr[]} styleAttrs - From `styleAttributes(text)`
  * @param {number} index - Position of the declaration
@@ -160,7 +144,7 @@ export function declarationContext(
     const close = text.indexOf(">", attr.end);
     const after = close === -1 ? "" : text.slice(close + 1, close + 1 + 400);
     const plain = after
-      // eslint-disable-next-line sonarjs/slow-regex -- the input is a slice of at most 400 characters
+      // eslint-disable-next-line sonarjs/super-linear-regex -- the input is a slice of at most 400 characters
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
@@ -175,12 +159,7 @@ export function declarationContext(
 /** An HTML start tag, `>` inside a quoted attribute value included. */
 const START_TAG = /<([a-zA-Z][\w-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>/y;
 
-/**
- * The value of one attribute of a start tag.
- * @param {string} tag - Start tag source
- * @param {string} name - Attribute name
- * @returns {string | null} The value (`""` for a bare attribute), or null when absent
- */
+// An attribute value of a start tag: `""` for a bare attribute, null when absent.
 function attributeValue(tag: string, name: string): string | null {
   const match = new RegExp(
     `\\s${name}(?:\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+)))?(?=[\\s/>])`,
@@ -191,8 +170,7 @@ function attributeValue(tag: string, name: string): string | null {
 }
 
 /**
- * The first element inside `<x-dc>`, after whitespace, comments and the
- * `<helmet>` block.
+ * The first element inside `<x-dc>`, after whitespace, comments and `<helmet>`.
  * @param {string} text - File contents
  * @returns {{ style: string, className: string, line: number } | null} Its `style` and `class` (empty when absent) and 1-based line, or null
  */
@@ -234,7 +212,6 @@ export function styleDeclarations(style: string): Map<string, string> {
   let start = 0;
   let depth = 0;
   let quote: string | null = null;
-  /** @param {number} end - Index one past the declaration */
   const push = (end: number) => {
     const declaration = style.slice(start, end);
     const colon = declaration.indexOf(":");
@@ -309,11 +286,7 @@ export function jsonBlocks(
   return out;
 }
 
-/**
- * Decodes the five entities an editor writes into an attribute value.
- * @param {string} value - Attribute value as saved
- * @returns {string} The value
- */
+// Decodes the five entities an editor writes into an attribute value.
 const decodeEntities = (value: string): string =>
   value
     .replaceAll("&quot;", '"')
@@ -322,14 +295,7 @@ const decodeEntities = (value: string): string =>
     .replaceAll("&gt;", ">")
     .replaceAll("&amp;", "&");
 
-/**
- * The values of one `data-sg-*` marker attribute across a board (any case,
- * quoted, entities decoded). A marker inside a comment or another
- * attribute's value still counts.
- * @param {string} text - File contents
- * @param {"section" | "cell"} marker - `data-sg-<marker>`
- * @returns {string[]} In document order
- */
+// `data-sg-<marker>` values (any case, quoted, entities decoded); one inside a comment counts too.
 function markerValues(text: string, marker: "section" | "cell"): string[] {
   const attribute = new RegExp(
     `\\sdata-sg-${marker}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`,
@@ -349,8 +315,7 @@ export const sectionIds = (text: string): string[] =>
   markerValues(text, "section");
 
 /**
- * The `data-sg-cell` values of a board (`<axis>:<value>`): the variant-grid
- * cells a `c-*` board shows.
+ * The `data-sg-cell` values (`<axis>:<value>`) of a board.
  * @param {string} text - File contents
  * @returns {string[]} In document order
  */

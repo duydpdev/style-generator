@@ -1,10 +1,6 @@
 /**
- * Subpath: `@duydpdev/style-generator/recipes`
- *
- * Browser-safe integration recipes for component code: a `tailwind-merge`
- * extension for the theme's custom tokens, typed spacing props, and the DOM
- * attributes of the active theme axes. Not re-exported from the root.
- * `tailwind-merge` is the app's own dependency — nothing here imports it.
+ * Subpath `@duydpdev/style-generator/recipes`: browser-safe `tailwind-merge` extension, spacing props and theme axis attributes.
+ * Not re-exported from the root; `tailwind-merge` is the app's own dependency.
  */
 export { createTailwindMergeExtension } from "../features/recipes/extendTailwindMerge";
 export type {

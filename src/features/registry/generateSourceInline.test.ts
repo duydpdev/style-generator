@@ -103,7 +103,7 @@ describe("generateSourceInline coverage", () => {
         dark: { colors: { brandHover: "$brand" } },
       },
     },
-  } as ThemeConfig;
+  };
   const linesOf = (options: StyleGeneratorOptions): string[] =>
     generateSourceInline(theme, { ...base, ...options })
       .trim()
@@ -188,7 +188,7 @@ describe("generateSourceInline coverage", () => {
       {
         colors: { primary: "#fff", accent: "#00f" },
         themeAxes: { theme: { dark: { colors: { primary: "$accent" } } } },
-      } as ThemeConfig,
+      },
       { ...base, coverage: { colors: { keys: "aliased" } } },
     );
     expect(lines).toContain(

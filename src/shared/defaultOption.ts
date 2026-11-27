@@ -1,11 +1,6 @@
 import type { SpacingPropertyMap } from "../core/Options";
 
-/**
- * Default spacing properties → CSS properties each utility sets.
- * `generateSpacingCss` turns each entry into an `@utility sp-<key>` block
- * whose declarations read `var(--sg-sp-<key>)`. Passing
- * `options.spacing.properties` REPLACES this map; spread it to extend.
- */
+/** Default spacing key → CSS properties of its `@utility sp-<key>`. `options.spacing.properties` REPLACES this map; spread it to extend. */
 export const DEFAULT_SPACING_PROPERTIES = {
   p: ["padding"],
   px: ["padding-left", "padding-right"],
@@ -46,24 +41,11 @@ export const DEFAULT_ROUNDED_VALUES = [
 /** Default border width values, used when `theme.borderWidth` is omitted. */
 export const DEFAULT_BORDER_VALUES = [0, 1, 2, 4] as const;
 
-/**
- * Breakpoint keys used when `options.breakpoints` is not set — the single
- * default shared by the `@source inline` responsive variants, the spacing
- * `@media` chains, and `DesignTokens.Web.breakpoints`. `md`/`lg` are the
- * only responsive variants the `@source inline` lines emit (no
- * `sm:`/`xl:`/`2xl:`); defaulting to every `screens` key would advertise
- * breakpoints no line covers.
- */
+// Rationale: documents/architecture.md#default_breakpoints-why-only-md-and-lg
+/** Breakpoint keys used when `options.breakpoints` is not set. */
 export const DEFAULT_BREAKPOINTS = ["md", "lg"] as const;
 
-// ---- Type helpers for defaults (used in type inference) ----
-
-/**
- * Literal union of every default spacing property key (e.g. `"p" | "px" |
- * ... | "left"`). The single spacing-key type used repo-wide — inferred
- * from `DEFAULT_SPACING_PROPERTIES` via `as const satisfies` so it stays a
- * literal union instead of widening to `string`.
- */
+/** Literal union of the default spacing keys (`"p" | "px" | … | "left"`), the spacing-key type used repo-wide. */
 export type SpacingKey = keyof typeof DEFAULT_SPACING_PROPERTIES;
 
 /** One of `DEFAULT_ROUNDED_VALUES`, the radius keys used when `theme.borderRadius` is omitted. */

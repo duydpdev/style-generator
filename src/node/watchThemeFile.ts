@@ -10,40 +10,18 @@ import type { EmitResult, EmitTarget } from "./themeEmitter";
 
 /** What {@link WatchThemeOptions.reloadTarget} returns for an unusable config. */
 export interface ConfigIssues {
-  /** The schema violations or the read error, ready to print. */
   issues: string;
-  /** Where the config was read from (`style-gen.config.json`, `package.json`). */
   source?: string;
 }
 
 export interface WatchThemeOptions {
-  /**
-   * The files the config can live in, highest precedence first
-   * (`configCandidates(root)`). All are watched, also when they do not exist
-   * yet or are removed and created again; a change, creation or removal of one
-   * calls {@link WatchThemeOptions.reloadTarget} and re-emits. An event of a file
-   * shadowed by an earlier one that exists is ignored, and an edit of a later
-   * one (`package.json`) that leaves the reloaded target unchanged emits nothing.
-   */
+  /** `configCandidates(root)`: all watched, existing or not; an event reloads the target. */
   configFiles?: readonly string[];
-  /**
-   * Build the target again after a config file changed. Return
-   * {@link ConfigIssues} for a config that cannot be used: it is reported
-   * (`stage: "config"`), the last valid target stays in force and watching
-   * goes on. A target with another `themeFile` makes the watcher unwatch the
-   * old theme and watch the new one.
-   */
+  /** Rebuild the target after a config change; {@link ConfigIssues} keeps the last valid one. */
   reloadTarget?: () => EmitTarget | ConfigIssues;
-  /**
-   * Quiet period collapsing a burst of events into one emit.
-   * @default 200
-   */
+  /** Quiet period (ms) collapsing a burst of events into one emit; default 200. */
   debounceMs?: number;
-  /**
-   * `false` lets the process exit while the watcher is alive (Next.js dev
-   * servers own the process lifetime).
-   * @default true
-   */
+  /** `false` lets the process exit while watching (Next.js owns it); default `true`. */
   persistent?: boolean;
   /** Test seam: replaces `chokidar.watch`. */
   watch?: typeof chokidarWatch;
@@ -58,13 +36,8 @@ export interface ThemeWatchHandle {
 }
 
 /**
- * Re-run {@link emitTheme} whenever the theme file (or the config file)
- * changes. Does not emit on start: callers emit once themselves and hand the
- * watcher the follow-ups. Every emit — successful, unchanged or failed — and
- * every watcher error reaches `onResult`; nothing here throws or stops the
- * watcher, so a broken edit is reported and the next good one recovers.
- *
- * Lives apart from `themeEmitter` so `./vite` never imports chokidar.
+ * Re-run {@link emitTheme} on theme/config changes (not on start), reporting all to `onResult`.
+ * Apart from `themeEmitter` so `./vite` never imports chokidar.
  * @param {EmitTarget} target - Theme file, output file and options to start with
  * @param {(r: EmitResult) => void} onResult - Receives every emit outcome and error
  * @param {WatchThemeOptions} [o] - Config reload, debounce, persistence and the `watch` seam
@@ -86,8 +59,7 @@ export function watchThemeFile(
   let primaryDirty = false;
   let themeDirty = false;
 
-  // `failed`: the config could not be used and `current` stays in force.
-  // `same`: it loaded and describes the target already in force.
+  // `failed`: config unusable, `current` stays; `same`: it describes `current`.
   const reload = (): "failed" | "same" | "changed" => {
     if (reloadTarget === undefined) return "changed";
     let next: EmitTarget | ConfigIssues;
@@ -134,15 +106,13 @@ export function watchThemeFile(
     const outcome = configDirty ? reload() : "changed";
     const nothingToEmit =
       (outcome === "failed" && !themeDirty) ||
-      // `package.json` changed (`yarn add`, a version bump) without touching
-      // the `style-gen` section: nothing to emit and nothing to log.
+      // A `package.json` edit outside the `style-gen` section: nothing to do.
       (outcome === "same" && !primaryDirty && !themeDirty);
     configDirty = false;
     primaryDirty = false;
     themeDirty = false;
-    // An unusable config alone changes nothing: report it and leave the
-    // output as the last valid config made it. A theme edit in the same
-    // burst still emits (with that last valid target).
+    // An unusable config alone emits nothing (a theme edit in the burst still does).
+    // Rationale: documents/architecture.md#watchthemefile-config-reload-semantics
     if (!nothingToEmit) onResult(emitTheme(current));
   };
 
@@ -173,19 +143,11 @@ export function watchThemeFile(
     if (!candidates.includes(abs) && abs !== path.resolve(current.themeFile)) {
       return;
     }
-    // chokidar watches a file that existed at start through a watch on the
-    // file itself and drops that watch on `unlink`: without a re-arm its
-    // re-creation (`git checkout`, `git stash`) and later edits are never
-    // seen. Unwatching first clears chokidar's ignore entry, so `add` really
-    // starts a fresh watch.
+    // chokidar drops a file's own watch on `unlink`; unwatch-then-add re-arms it.
+    // Rationale: documents/architecture.md#watchthemefile-re-arming-the-watch-after-unlink
     watcher.unwatch(file);
     watcher.add(file);
-    // A config file being removed means "the next candidate, else defaults":
-    // reload. A theme recreated within a few tens of ms is already back, and
-    // the re-arm `add()` counts as an initial add that `ignoreInitial` drops,
-    // so the run is scheduled from the `unlink` itself (A16); `run` skips a
-    // theme that is still gone when it fires. A theme that comes back later
-    // reports an `add` of its own.
+    // Scheduled here: `ignoreInitial` drops the re-arm `add`; `run` skips a still-gone theme.
     schedule(file);
   });
   watcher.on("error", (error) => {

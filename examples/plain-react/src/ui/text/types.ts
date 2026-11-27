@@ -17,11 +17,7 @@ export type TextOwnProps = ThemeSpacingProps<Tokens> & {
   readonly align?: "left" | "center" | "right" | undefined;
   readonly decoration?: "underline" | "lineThrough" | "none" | undefined;
   readonly transform?:
-    | "uppercase"
-    | "lowercase"
-    | "capitalize"
-    | "normalCase"
-    | undefined;
+    "uppercase" | "lowercase" | "capitalize" | "normalCase" | undefined;
   readonly italic?: boolean | undefined;
   readonly truncate?: boolean | undefined;
   readonly lineClamp?: 1 | 2 | 3 | 4 | 5 | 6 | "none" | undefined;
